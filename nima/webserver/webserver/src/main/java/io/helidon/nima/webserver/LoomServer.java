@@ -40,6 +40,8 @@ import java.util.logging.Logger;
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
@@ -58,12 +60,9 @@ class LoomServer implements WebServer {
     private volatile List<ListenerFuture> startFutures;
     private volatile boolean alreadyStarted = false;
 
-    LoomServer(Builder builder, DirectHandlers simpleHandlers) {
+    LoomServer(Builder builder, DirectHandlers directHandlers) {
         this.registerShutdownHook = builder.shutdownHook();
         this.context = builder.context();
-        ServerContextImpl serverContext = new ServerContextImpl(context,
-                                                                builder.mediaContext(),
-                                                                builder.contentEncodingContext());
 
         List<ServerConnectionSelector> connectionProviders = builder.connectionProviders();
 
@@ -80,7 +79,7 @@ class LoomServer implements WebServer {
             defaultRouter = Router.empty();
         }
 
-       boolean inheritThreadLocals = builder.inheritThreadLocals();
+        boolean inheritThreadLocals = builder.inheritThreadLocals();
 
         for (String socketName : socketNames) {
             Router router = routers.get(socketName);
@@ -88,20 +87,26 @@ class LoomServer implements WebServer {
                 router = defaultRouter;
             }
             ListenerConfiguration.Builder socketBuilder = sockets.get(socketName);
-            ListenerConfiguration socketConfig;
             if (socketBuilder == null) {
-                socketConfig = ListenerConfiguration.create(socketName);
-            } else {
-                socketConfig = socketBuilder.build();
+                socketBuilder = ListenerConfiguration.builder(socketName);
             }
 
+            // defaults for each listener
+            MediaContext mediaContext = builder.mediaContext();
+            ContentEncodingContext contentEncodingContext = builder.contentEncodingContext();
+
+            ListenerConfiguration socketConfig = socketBuilder
+                    .defaultMediaContext(mediaContext)
+                    .defaultContentEncodingContext(contentEncodingContext)
+                    .defaultDirectHandlers(directHandlers)
+                    .parentContext(context)
+                    .build();
+
             listeners.put(socketName,
-                          new ServerListener(serverContext,
-                                             connectionProviders,
+                          new ServerListener(connectionProviders,
                                              socketName,
                                              socketConfig,
                                              router,
-                                             simpleHandlers,
                                              inheritThreadLocals));
         }
 
@@ -189,6 +194,7 @@ class LoomServer implements WebServer {
         return context;
     }
 
+
     private void stopIt() {
         // We may be in a shutdown hook and new threads may not be created
         for (ServerListener listener : listeners.values()) {
@@ -232,13 +238,13 @@ class LoomServer implements WebServer {
 
     private void registerShutdownHook() {
         this.shutdownHook = new Thread(() -> {
-                    LOGGER.log(System.Logger.Level.INFO, "Shutdown requested by JVM shutting down");
-                    listeners.values().forEach(ServerListener::stop);
-                    if (startFutures != null) {
-                        startFutures.forEach(future -> future.future().cancel(true));
-                    }
-                    LOGGER.log(System.Logger.Level.INFO, "Shutdown finished");
-                }, "nima-shutdown-hook");
+            LOGGER.log(System.Logger.Level.INFO, "Shutdown requested by JVM shutting down");
+            listeners.values().forEach(ServerListener::stop);
+            if (startFutures != null) {
+                startFutures.forEach(future -> future.future().cancel(true));
+            }
+            LOGGER.log(System.Logger.Level.INFO, "Shutdown finished");
+        }, "nima-shutdown-hook");
 
         Runtime.getRuntime().addShutdownHook(shutdownHook);
         // we also need to keep the logging system active until the shutdown hook completes

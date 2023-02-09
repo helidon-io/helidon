@@ -116,7 +116,7 @@ public interface WebServer {
     }
 
     /**
-     * Context associated with the {@code WebServer}, used as a parent for request contexts.
+     * Context associated with the {@code WebServer}, used as a parent for listener contexts.
      *
      * @return a server context
      */
@@ -160,7 +160,7 @@ public interface WebServer {
 
         private final Map<String, ListenerConfiguration.Builder> socketBuilder = new HashMap<>();
         private final Map<String, Router.Builder> routers = new HashMap<>();
-        private final DirectHandlers.Builder simpleHandlers = DirectHandlers.builder();
+        private final DirectHandlers.Builder directHandlers = DirectHandlers.builder();
 
         private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders
                 = HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
@@ -193,7 +193,7 @@ public interface WebServer {
                         .build();
             }
 
-            return new LoomServer(this, simpleHandlers.build());
+            return new LoomServer(this, directHandlers.build());
         }
 
         /**
@@ -347,7 +347,7 @@ public interface WebServer {
          */
         public Builder directHandler(DirectHandler handler, DirectHandler.EventType... eventTypes) {
             for (DirectHandler.EventType eventType : eventTypes) {
-                simpleHandlers.addHandler(eventType, handler);
+                directHandlers.addHandler(eventType, handler);
             }
 
             return this;

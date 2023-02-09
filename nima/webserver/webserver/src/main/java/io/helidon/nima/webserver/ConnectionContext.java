@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,65 +20,25 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketContext;
-import io.helidon.nima.webserver.http.DirectHandlers;
 
 /**
  * Server connection context.
  */
 public interface ConnectionContext extends SocketContext {
     /**
-     * Create a new connection context.
+     * Context of the listener. Configuration specific to a single listener.
      *
-     * @param serverContext          context of the server
-     * @param sharedExecutor         executor service to use to handle asynchronous tasks
-     * @param dataWriter             data writer to write response
-     * @param dataReader             data reader to read request
-     * @param router                 router with available routings
-     * @param serverChannelId        server channel id (listener)
-     * @param channelId              channel id (connection)
-     * @param simpleHandlers         error handling configuration
-     * @param socket                 socket to obtain information about peers
-     * @param maxPayloadSize         maximal size of a payload entity
-     * @return a new context
+     * @return listener specific context
      */
-    static ConnectionContext create(ServerContext serverContext,
-                                    ExecutorService sharedExecutor,
-                                    DataWriter dataWriter,
-                                    DataReader dataReader,
-                                    Router router,
-                                    String serverChannelId,
-                                    String channelId,
-                                    DirectHandlers simpleHandlers,
-                                    HelidonSocket socket,
-                                    long maxPayloadSize) {
-
-        return new ConnectionContextImpl(serverContext,
-                                         sharedExecutor,
-                                         dataWriter,
-                                         dataReader,
-                                         router,
-                                         serverChannelId,
-                                         channelId,
-                                         simpleHandlers,
-                                         socket,
-                                         maxPayloadSize);
-    }
-
-    /**
-     * Context of the server. Configuration shared by all listeners and connections.
-     *
-     * @return server context
-     */
-    ServerContext serverContext();
+    ListenerContext listenerContext();
 
     /**
      * Executor service to submit asynchronous tasks.
      *
      * @return executor service
      */
-    ExecutorService sharedExecutor();
+    ExecutorService executor();
 
     /**
      * Data writer to write response bytes.
@@ -100,18 +60,4 @@ public interface ConnectionContext extends SocketContext {
      * @return rouer
      */
     Router router();
-
-    /**
-     * Maximal number of bytes in an entity.
-     *
-     * @return maximal size
-     */
-    long maxPayloadSize();
-
-    /**
-     * Simple handler to customize processing of HTTP exceptions.
-     *
-     * @return simple handlers
-     */
-    DirectHandlers directHandlers();
 }

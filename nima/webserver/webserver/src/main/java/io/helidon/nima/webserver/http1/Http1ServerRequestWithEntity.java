@@ -59,7 +59,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
                                                                         it -> readEntityFromPipeline.get(),
                                                                         entityReadLatch::countDown,
                                                                         headers,
-                                                                        ctx.serverContext().mediaContext()));
+                                                                        ctx.listenerContext().mediaContext()));
     }
 
     @Override

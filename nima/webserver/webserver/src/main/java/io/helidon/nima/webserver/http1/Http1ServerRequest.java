@@ -32,7 +32,7 @@ import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.ServerContext;
+import io.helidon.nima.webserver.ListenerContext;
 import io.helidon.nima.webserver.http.HttpSecurity;
 import io.helidon.nima.webserver.http.RoutingRequest;
 
@@ -43,13 +43,12 @@ abstract class Http1ServerRequest implements RoutingRequest {
     private final ServerRequestHeaders headers;
     private final ConnectionContext ctx;
     private final HttpSecurity security;
-    private final HttpPrologue prologue;
     private final int requestId;
 
     private RoutedPath path;
     private WritableHeaders<?> writable;
 
-    private HttpPrologue newPrologue;
+    private HttpPrologue prologue;
     private Context context;
 
     Http1ServerRequest(ConnectionContext ctx,
@@ -59,18 +58,13 @@ abstract class Http1ServerRequest implements RoutingRequest {
                        int requestId) {
         this.ctx = ctx;
         this.security = security;
-        this.prologue = prologue;
         this.headers = ServerRequestHeaders.create(headers);
         this.requestId = requestId;
-        this.newPrologue = prologue;
+        this.prologue = prologue;
     }
 
-    /**
+    /*
      * Create a new request without an entity.
-     *
-     * @param prologue
-     * @param headers
-     * @return
      */
     static Http1ServerRequest create(ConnectionContext ctx,
                                      HttpSecurity security,
@@ -80,14 +74,8 @@ abstract class Http1ServerRequest implements RoutingRequest {
         return new Http1ServerRequestNoEntity(ctx, security, prologue, headers, requestId);
     }
 
-    /**
+    /*
      * Create a new request with an entity.
-     *
-     * @param prologue
-     * @param headers
-     * @param requestId
-     * @param entitySupplier
-     * @return
      */
     static Http1ServerRequest create(ConnectionContext ctx,
                                      Http1Connection connection,
@@ -137,7 +125,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     public Context context() {
         if (context == null) {
             context = Contexts.context().orElseGet(() -> Context.builder()
-                    .parent(ctx.serverContext().context())
+                    .parent(ctx.listenerContext().context())
                     .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId)
                     .build());
         }
@@ -145,8 +133,8 @@ abstract class Http1ServerRequest implements RoutingRequest {
     }
 
     @Override
-    public ServerContext serverContext() {
-        return ctx.serverContext();
+    public ListenerContext listenerContext() {
+        return ctx.listenerContext();
     }
 
     @Override
@@ -156,7 +144,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
 
     @Override
     public HttpPrologue prologue() {
-        return newPrologue;
+        return prologue;
     }
 
     @Override
@@ -205,7 +193,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
 
     @Override
     public Http1ServerRequest prologue(HttpPrologue newPrologue) {
-        this.newPrologue = newPrologue;
+        this.prologue = newPrologue;
         return this;
     }
 }

@@ -27,18 +27,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.context.Context;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.HelidonSocket;
-import io.helidon.nima.http.encoding.ContentEncodingContext;
-import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.testing.junit5.webserver.DirectPeerInfo;
 import io.helidon.nima.testing.junit5.webserver.DirectSocket;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.ServerContext;
-import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.client.ClientWsConnection;
 import io.helidon.nima.websocket.webserver.WsConnection;
@@ -79,23 +74,30 @@ class DirectWsConnection {
                                                  Optional.empty(),
                                                  Optional.empty());
         this.socket = DirectSocket.create(info, info, false);
-        this.ctx = ConnectionContext.create(
-                ServerContext.create(Context.create(),
-                                     MediaContext.create(),
-                                     ContentEncodingContext.create()),
-                executorService,
-                serverWriter,
-                serverReader,
-                Router.builder().build(),
-                "unit-server",
-                "unit-channel",
-                DirectHandlers.builder().build(),
-                socket,
-                -1);
+        this.ctx = new DirectWsServerContext(executorService,
+                                             Router.builder().build(),
+                                             socket,
+                                             serverWriter,
+                                             serverReader);
     }
 
     static DirectWsConnection create(HttpPrologue prologue, WsListener clientListener, WsRoute serverRoute) {
         return new DirectWsConnection(prologue, clientListener, serverRoute);
+    }
+
+    private static DataReader reader(ArrayBlockingQueue<byte[]> queue) {
+        return new DataReader(() -> {
+            byte[] data;
+            try {
+                data = queue.take();
+            } catch (InterruptedException e) {
+                throw new IllegalArgumentException("Thread interrupted", e);
+            }
+            if (data.length == 0) {
+                return null;
+            }
+            return data;
+        });
     }
 
     void start() {
@@ -120,21 +122,6 @@ class DirectWsConnection {
         if (c != null) {
             c.cancel(true);
         }
-    }
-
-    private static DataReader reader(ArrayBlockingQueue<byte[]> queue) {
-        return new DataReader(() -> {
-            byte[] data;
-            try {
-                data = queue.take();
-            } catch (InterruptedException e) {
-                throw new IllegalArgumentException("Thread interrupted", e);
-            }
-            if (data.length == 0) {
-                return null;
-            }
-            return data;
-        });
     }
 
     private DataWriter writer(ArrayBlockingQueue<byte[]> queue) {

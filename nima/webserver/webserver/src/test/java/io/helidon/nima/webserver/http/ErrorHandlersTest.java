@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.http.media.ReadableEntityBase;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.ListenerContext;
 
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
@@ -133,7 +134,9 @@ class ErrorHandlersTest {
                                                             UriQuery.empty(),
                                                             UriFragment.empty()));
         when(req.content()).thenReturn(ReadableEntityBase.empty());
-        when(ctx.directHandlers()).thenReturn(DirectHandlers.builder().build());
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        when(ctx.listenerContext()).thenReturn(listenerContext);
+        when(listenerContext.directHandlers()).thenReturn(DirectHandlers.builder().build());
 
         handlers.runWithErrorHandling(ctx, req, res, () -> {
             throw e;

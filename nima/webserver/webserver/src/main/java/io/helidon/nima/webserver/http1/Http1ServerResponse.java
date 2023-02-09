@@ -33,7 +33,6 @@ import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.ServerResponseBase;
 
 /*
@@ -121,7 +120,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     @Override
-    public ServerResponse header(HeaderValue header) {
+    public Http1ServerResponse header(HeaderValue header) {
         this.headers.set(header);
         return this;
     }
