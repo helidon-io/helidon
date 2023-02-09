@@ -148,6 +148,7 @@ public final class OidcFeature implements HttpFeature {
     private final OidcConfig oidcConfig;
     private final OidcCookieHandler tokenCookieHandler;
     private final OidcCookieHandler idTokenCookieHandler;
+    private final OidcCookieHandler tenantCookieHandler;
     private final boolean enabled;
     private final CorsSupport corsSupport;
 
@@ -156,6 +157,7 @@ public final class OidcFeature implements HttpFeature {
         this.enabled = builder.enabled;
         this.tokenCookieHandler = oidcConfig.tokenCookieHandler();
         this.idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
+        this.tenantCookieHandler = oidcConfig.tenantCookieHandler();
         this.corsSupport = prepareCrossOriginSupport(oidcConfig.redirectUri(), oidcConfig.crossOriginConfig());
         this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
 
@@ -304,7 +306,7 @@ public final class OidcFeature implements HttpFeature {
 
         idTokenCookieHandler.decrypt(encryptedIdToken)
                 .forSingle(idToken -> {
-                    StringBuilder sb = new StringBuilder(oidcConfig.logoutEndpointUri()
+                    StringBuilder sb = new StringBuilder(tenant.logoutEndpointUri()
                                                                  + "?id_token_hint="
                                                                  + idToken
                                                                  + "&post_logout_redirect_uri=" + postLogoutUri(req));
@@ -315,6 +317,7 @@ public final class OidcFeature implements HttpFeature {
                     ServerResponseHeaders headers = res.headers();
                     headers.addCookie(tokenCookieHandler.removeCookie().build());
                     headers.addCookie(idTokenCookieHandler.removeCookie().build());
+                    headers.addCookie(tenantCookieHandler.removeCookie().build());
 
                     res.status(Http.Status.TEMPORARY_REDIRECT_307)
                             .header(Http.Header.LOCATION, sb.toString())
