@@ -103,8 +103,7 @@ class LoomServer implements WebServer {
                     .build();
 
             listeners.put(socketName,
-                          new ServerListener(
-                                  connectionProviders,
+                          new ServerListener(connectionProviders,
                                              socketName,
                                              socketConfig,
                                              router,
