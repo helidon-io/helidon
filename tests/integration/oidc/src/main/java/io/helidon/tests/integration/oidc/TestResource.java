@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import javax.enterprise.context.RequestScoped;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
 import io.helidon.security.annotations.Authenticated;
@@ -32,6 +34,7 @@ import io.helidon.security.annotations.Authenticated;
 public class TestResource {
 
     public static final String EXPECTED_TEST_MESSAGE = "Hello world";
+    public static final String EXPECTED_POST_LOGOUT_TEST_MESSAGE = "Post logout endpoint reached with no cookies";
 
     /**
      * Return hello world message.
@@ -45,5 +48,14 @@ public class TestResource {
         return EXPECTED_TEST_MESSAGE;
     }
 
+    @Path("/postLogout")
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String postLogout(@Context HttpHeaders httpHeaders) {
+        if (httpHeaders.getCookies().isEmpty()) {
+            return EXPECTED_POST_LOGOUT_TEST_MESSAGE;
+        }
+        return "Cookies are not cleared!";
+    }
 }
 
