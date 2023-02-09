@@ -20,6 +20,7 @@ import java.util.function.BiConsumer;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
 /**
@@ -31,12 +32,13 @@ import io.helidon.nima.webserver.http.ServerResponse;
 public interface SinkProvider<T, X extends Sink<T>> {
 
     /**
-     * Checks if a provider supports this type.
+     * Checks if a provider supports the type.
      *
      * @param type the type
+     * @param request the current request
      * @return outcome of test
      */
-    boolean supports(GenericType<? extends Sink<T>> type);
+    boolean supports(GenericType<? extends Sink<T>> type, ServerRequest request);
 
     /**
      * Creates a sink using this provider.

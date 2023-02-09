@@ -20,18 +20,17 @@ import io.helidon.common.http.Http;
 import io.helidon.nima.sse.webserver.SseEvent;
 import io.helidon.nima.sse.webserver.SseSink;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
-
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.HeaderValues.ACCEPT_EVENT_STREAM;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -144,7 +143,7 @@ class SseServerTest {
     }
 
     private void testSse(String path, String result) {
-        try (Http1ClientResponse response = client.get(path).request()) {
+        try (Http1ClientResponse response = client.get(path).header(ACCEPT_EVENT_STREAM).request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is(result));
         }

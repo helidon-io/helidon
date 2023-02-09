@@ -40,6 +40,7 @@ import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.HeaderValues.ACCEPT_EVENT_STREAM;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -77,7 +78,7 @@ class SseServerMediaTest {
     }
 
     private void testSse(String path, String result) {
-        try (Http1ClientResponse response = client.get(path).request()) {
+        try (Http1ClientResponse response = client.get(path).header(ACCEPT_EVENT_STREAM).request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is(result));
         }

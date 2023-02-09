@@ -20,6 +20,8 @@ import java.util.function.BiConsumer;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.spi.Sink;
 import io.helidon.nima.webserver.http.spi.SinkProvider;
@@ -30,8 +32,8 @@ import io.helidon.nima.webserver.http.spi.SinkProvider;
 public class SseSinkProvider implements SinkProvider<SseEvent, SseSink> {
 
     @Override
-    public boolean supports(GenericType<? extends Sink<SseEvent>> type) {
-        return type == SseSink.TYPE;
+    public boolean supports(GenericType<? extends Sink<SseEvent>> type, ServerRequest request) {
+        return type == SseSink.TYPE && request.headers().isAccepted(MediaTypes.TEXT_EVENT_STREAM);
     }
 
     @Override

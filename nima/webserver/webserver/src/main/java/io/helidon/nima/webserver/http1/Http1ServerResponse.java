@@ -34,6 +34,7 @@ import io.helidon.common.http.Http.DateTime;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaType;
@@ -231,13 +232,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
         List<SinkProvider> providers = SINK_PROVIDER_LOADER.asList();
         for (SinkProvider p : providers) {
-            if (p.supports(sinkType)) {
+            if (p.supports(sinkType, request)) {
                 return (X) p.create(this,
                         (e, m) -> handleSinkData(e, (MediaType) m),
                         this::commit);
             }
         }
-        throw new IllegalArgumentException("Unable to find provider for type " + sinkType);
+        // Request not acceptable if provider not found
+        throw new HttpException("Unable to find sink provider for request", Http.Status.NOT_ACCEPTABLE_406);
     }
 
     private void handleSinkData(Object data, MediaType mediaType) {

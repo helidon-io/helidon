@@ -1611,6 +1611,10 @@ public final class Http {
          */
         public static final HeaderValue ACCEPT_TEXT = Header.createCached(Header.ACCEPT, "text/plain;charset=UTF-8");
         /**
+         * Accept text/event-stream.
+         */
+        public static final HeaderValue ACCEPT_EVENT_STREAM = Header.createCached(Header.ACCEPT, "text/event-stream");
+        /**
          * Expect 100 header.
          */
         public static final HeaderValue EXPECT_100 = Header.createCached(Header.EXPECT, "100-continue");
