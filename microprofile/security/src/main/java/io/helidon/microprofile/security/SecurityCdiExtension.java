@@ -163,8 +163,7 @@ public class SecurityCdiExtension implements Extension {
         this.security.set(security);
     }
 
-    private CompletionStage<AuthenticationResponse> failingAtnProvider(ProviderRequest request) {
-        return CompletableFuture
-                .completedFuture(AuthenticationResponse.failed("No provider configured"));
+    private AuthenticationResponse failingAtnProvider(ProviderRequest request) {
+        return AuthenticationResponse.failed("No provider configured");
     }
 }

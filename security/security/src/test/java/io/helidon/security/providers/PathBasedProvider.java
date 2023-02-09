@@ -66,8 +66,8 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
     }
 
     @Override
-    public CompletionStage<AuthorizationResponse> authorize(ProviderRequest context) {
-        return CompletableFuture.completedFuture(context.env().path().map(path -> {
+    public AuthorizationResponse authorize(ProviderRequest context) {
+        return context.env().path().map(path -> {
             switch (path) {
             case "/atz/permit":
                 return AuthorizationResponse.permit();
@@ -83,7 +83,7 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
             default:
                 return AuthorizationResponse.permit();
             }
-        }).orElse(AuthorizationResponse.abstain()));
+        }).orElse(AuthorizationResponse.abstain());
     }
 
     @Override

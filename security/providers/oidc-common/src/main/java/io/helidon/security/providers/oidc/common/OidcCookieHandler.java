@@ -42,8 +42,8 @@ public class OidcCookieHandler {
     private final List<Consumer<SetCookie.Builder>> createCookieUpdaters = new LinkedList<>();
     private final String cookieName;
     private final String valuePrefix;
-    private final Function<String, Single<String>> encryptFunction;
-    private final Function<String, Single<String>> decryptFunction;
+    private final Function<String, String> encryptFunction;
+    private final Function<String, String> decryptFunction;
 
     private OidcCookieHandler(Builder builder) {
         this.cookieName = builder.cookieName;
@@ -148,7 +148,7 @@ public class OidcCookieHandler {
      * @param headers headers to process
      * @return cookie value, or empty if the cookie could not be found
      */
-    public Optional<Single<String>> findCookie(Map<String, List<String>> headers) {
+    public Optional<String> findCookie(Map<String, List<String>> headers) {
         Objects.requireNonNull(headers);
 
         List<String> cookies = headers.get("Cookie");
@@ -176,7 +176,7 @@ public class OidcCookieHandler {
      * @param cipherText cipher text to decrypt
      * @return secret
      */
-    public Single<String> decrypt(String cipherText) {
+    public String decrypt(String cipherText) {
         return decryptFunction.apply(cipherText);
     }
 

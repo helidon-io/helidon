@@ -19,7 +19,6 @@ package io.helidon.security.spi;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 
 /**
@@ -34,7 +33,7 @@ public interface SecretsProvider<T extends ProviderConfig> extends SecurityProvi
      * @param config config located on the node of the specific secret {@code config} node
      * @return supplier to retrieve the secret
      */
-    Supplier<Single<Optional<String>>> secret(Config config);
+    Supplier<Optional<String>> secret(Config config);
 
     /**
      * Create secret supplier from configuration object.
@@ -42,5 +41,5 @@ public interface SecretsProvider<T extends ProviderConfig> extends SecurityProvi
      * @param providerConfig configuration of a specific secret
      * @return supplier to retrieve the secret
      */
-    Supplier<Single<Optional<String>>> secret(T providerConfig);
+    Supplier<Optional<String>> secret(T providerConfig);
 }

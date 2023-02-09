@@ -80,28 +80,28 @@ public class ResourceBasedProvider implements AuthenticationProvider, Authorizat
     }
 
     @Override
-    public CompletionStage<AuthorizationResponse> authorize(ProviderRequest context) {
+    public AuthorizationResponse authorize(ProviderRequest context) {
         SecurityEnvironment env = context.env();
 
-        return CompletableFuture.completedFuture(env.abacAttribute("resourceType")
-                                                         .map(String::valueOf)
-                                                         .map(resource -> {
-                                                             switch (resource) {
-                                                             case "atz/permit":
-                                                                 return AuthorizationResponse.permit();
-                                                             case "atz/deny":
-                                                                 return AuthorizationResponse.deny();
-                                                             case "atz/abstain":
-                                                                 return AuthorizationResponse.abstain();
-                                                             case "atz/fail":
-                                                                 return AuthorizationResponse.builder()
-                                                                         .status(SecurityResponse.SecurityStatus.FAILURE)
-                                                                         .description("Intentional failure")
-                                                                         .build();
-                                                             default:
-                                                                 return AuthorizationResponse.permit();
-                                                             }
-                                                         }).orElse(AuthorizationResponse.abstain()));
+        return env.abacAttribute("resourceType")
+                .map(String::valueOf)
+                .map(resource -> {
+                    switch (resource) {
+                    case "atz/permit":
+                        return AuthorizationResponse.permit();
+                    case "atz/deny":
+                        return AuthorizationResponse.deny();
+                    case "atz/abstain":
+                        return AuthorizationResponse.abstain();
+                    case "atz/fail":
+                        return AuthorizationResponse.builder()
+                                .status(SecurityResponse.SecurityStatus.FAILURE)
+                                .description("Intentional failure")
+                                .build();
+                    default:
+                        return AuthorizationResponse.permit();
+                    }
+                }).orElse(AuthorizationResponse.abstain());
     }
 
     @Override

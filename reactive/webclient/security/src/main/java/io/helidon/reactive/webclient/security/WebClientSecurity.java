@@ -145,6 +145,8 @@ public class WebClientSecurity implements WebClientService {
             throw e;
         }
 
+        OutboundSecurityResponse providerResponse = clientBuilder.submit();
+
         return Single.create(clientBuilder.submit()
                                      .thenApply(providerResponse -> processResponse(request, span, providerResponse)));
     }

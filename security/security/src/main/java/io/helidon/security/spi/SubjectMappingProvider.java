@@ -15,8 +15,6 @@
  */
 package io.helidon.security.spi;
 
-import java.util.concurrent.CompletionStage;
-
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.ProviderRequest;
 
@@ -42,5 +40,5 @@ public interface SubjectMappingProvider extends SecurityProvider {
      * @param previousResponse response from previous authentication or subject mapping provider
      * @return a new authentication response with updated user and/or service subjects
      */
-    CompletionStage<AuthenticationResponse> map(ProviderRequest providerRequest, AuthenticationResponse previousResponse);
+    AuthenticationResponse map(ProviderRequest providerRequest, AuthenticationResponse previousResponse);
 }

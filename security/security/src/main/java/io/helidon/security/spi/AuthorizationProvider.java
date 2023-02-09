@@ -16,8 +16,6 @@
 
 package io.helidon.security.spi;
 
-import java.util.concurrent.CompletionStage;
-
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
@@ -44,7 +42,7 @@ public interface AuthorizationProvider extends SecurityProvider {
      * @return response that either permits, denies or abstains from decision
      * @see AuthorizationResponse#permit()
      */
-    CompletionStage<AuthorizationResponse> authorize(ProviderRequest context);
+    AuthorizationResponse authorize(ProviderRequest context);
 
     /**
      * Return true if current user is in the specified role.

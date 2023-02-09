@@ -16,9 +16,6 @@
 
 package io.helidon.security;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.OutboundSecurityProvider;
 
@@ -52,14 +49,15 @@ final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurit
     }
 
     @Override
-    public CompletionStage<OutboundSecurityResponse> submit() {
+    public OutboundSecurityResponse submit() {
         OutboundSecurityProvider providerInstance = findProvider();
 
         if (null == providerInstance) {
-            return CompletableFuture.completedFuture(OutboundSecurityResponse.empty());
+            return OutboundSecurityResponse.empty();
         }
 
-        return providerInstance.outboundSecurity(providerRequest, outboundEnv, outboundEpConfig).thenApply(response -> {
+        try {
+            OutboundSecurityResponse response = providerInstance.outboundSecurity(providerRequest, outboundEnv, outboundEpConfig);
             if (response.status().isSuccess()) {
                 //Audit success
                 context.audit(SecurityAuditEvent.success(AuditEvent.OUTBOUND_TYPE_PREFIX + ".outbound",
@@ -84,7 +82,7 @@ final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurit
             }
 
             return response;
-        }).exceptionally(e -> {
+        } catch (Exception e) {
             context.audit(SecurityAuditEvent.error(AuditEvent.OUTBOUND_TYPE_PREFIX + ".outbound",
                                                    "Provider %s, Description %s, Request %s. Subject %s")
                                   .addParam(AuditEvent.AuditParam.plain("provider", providerInstance.getClass().getName()))
@@ -94,7 +92,7 @@ final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurit
                                   .addParam(AuditEvent.AuditParam
                                                     .plain("subject", context.user().orElse(SecurityContext.ANONYMOUS))));
             throw new SecurityException("Failed to process security", e);
-        });
+        }
     }
 
     private OutboundSecurityProvider findProvider() {

@@ -30,7 +30,6 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.AuditProvider;
@@ -74,7 +73,7 @@ final class SecurityImpl implements Security {
     private final Config securityConfig;
     private final boolean enabled;
 
-    private final Map<String, Supplier<Single<Optional<String>>>> secrets;
+    private final Map<String, Supplier<Optional<String>>> secrets;
     private final Map<String, EncryptionProvider.EncryptionSupport> encryptions;
     private final Map<String, DigestProvider.DigestSupport> digests;
 
@@ -209,73 +208,72 @@ final class SecurityImpl implements Security {
     }
 
     @Override
-    public Single<String> encrypt(String configurationName, byte[] bytesToEncrypt) {
+    public String encrypt(String configurationName, byte[] bytesToEncrypt) {
         EncryptionProvider.EncryptionSupport encryption = encryptions.get(configurationName);
         if (encryption == null) {
-            return Single.error(new SecurityException("There is no configured encryption named " + configurationName));
+            throw new SecurityException("There is no configured encryption named " + configurationName);
         }
 
         return encryption.encrypt(bytesToEncrypt);
     }
 
     @Override
-    public Single<byte[]> decrypt(String configurationName, String cipherText) {
+    public byte[] decrypt(String configurationName, String cipherText) {
         EncryptionProvider.EncryptionSupport encryption = encryptions.get(configurationName);
         if (encryption == null) {
-            return Single.error(new SecurityException("There is no configured encryption named " + configurationName));
+            throw new SecurityException("There is no configured encryption named " + configurationName);
         }
 
         return encryption.decrypt(cipherText);
     }
 
     @Override
-    public Single<String> digest(String configurationName, byte[] bytesToDigest, boolean preHashed) {
+    public String digest(String configurationName, byte[] bytesToDigest, boolean preHashed) {
         DigestProvider.DigestSupport digest = digests.get(configurationName);
         if (digest == null) {
-            return Single.error(new SecurityException("There is no configured digest named " + configurationName));
+            throw new SecurityException("There is no configured digest named " + configurationName);
         }
         return digest.digest(bytesToDigest, preHashed);
     }
 
     @Override
-    public Single<String> digest(String configurationName, byte[] bytesToDigest) {
+    public String digest(String configurationName, byte[] bytesToDigest) {
         return digest(configurationName, bytesToDigest, false);
     }
 
     @Override
-    public Single<Boolean> verifyDigest(String configurationName, byte[] bytesToDigest, String digest, boolean preHashed) {
+    public boolean verifyDigest(String configurationName, byte[] bytesToDigest, String digest, boolean preHashed) {
         DigestProvider.DigestSupport digestSupport = digests.get(configurationName);
         if (digest == null) {
-            return Single.error(new SecurityException("There is no configured digest named " + configurationName));
+            throw new SecurityException("There is no configured digest named " + configurationName);
         }
         return digestSupport.verify(bytesToDigest, preHashed, digest);
     }
 
     @Override
-    public Single<Boolean> verifyDigest(String configurationName, byte[] bytesToDigest, String digest) {
+    public boolean verifyDigest(String configurationName, byte[] bytesToDigest, String digest) {
         return verifyDigest(configurationName, bytesToDigest, digest, false);
     }
 
     @Override
-    public Single<Optional<String>> secret(String configurationName) {
-        Supplier<Single<Optional<String>>> singleSupplier = secrets.get(configurationName);
-        if (singleSupplier == null) {
-            return Single.error(new SecurityException("Secret \"" + configurationName + "\" is not configured."));
+    public Optional<String> secret(String configurationName) {
+        Supplier<Optional<String>> supplier = secrets.get(configurationName);
+        if (supplier == null) {
+            throw new SecurityException("Secret \"" + configurationName + "\" is not configured.");
         }
 
-        return singleSupplier.get();
+        return supplier.get();
     }
 
     @Override
-    public Single<String> secret(String configurationName, String defaultValue) {
-        Supplier<Single<Optional<String>>> singleSupplier = secrets.get(configurationName);
-        if (singleSupplier == null) {
+    public String secret(String configurationName, String defaultValue) {
+        Supplier<Optional<String>> supplier = secrets.get(configurationName);
+        if (supplier == null) {
             LOGGER.finest(() -> "There is no configured secret named " + configurationName + ", using default value");
-            return Single.just(defaultValue);
+            return defaultValue;
         }
 
-        return singleSupplier.get()
-                .map(it -> it.orElse(defaultValue));
+        return supplier.get().orElse(defaultValue);
     }
 
     @Override

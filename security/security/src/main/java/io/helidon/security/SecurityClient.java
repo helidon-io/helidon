@@ -16,8 +16,6 @@
 
 package io.helidon.security;
 
-import java.util.concurrent.CompletionStage;
-
 /**
  * Common methods for security clients.
  *
@@ -33,7 +31,7 @@ public interface SecurityClient<T extends SecurityResponse> {
      * SecurityResponse.SecurityStatus#isSuccess()}
      * Otherwise security request failed or could not be processed.
      */
-    CompletionStage<T> submit();
+    T submit();
 
     /**
      * Synchronous complement to {@link #submit()}.

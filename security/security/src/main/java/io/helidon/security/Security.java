@@ -30,8 +30,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -40,7 +38,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
@@ -203,7 +200,7 @@ public interface Security {
      * @param bytesToEncrypt    bytes to encrypt
      * @return future with cipher text
      */
-    Single<String> encrypt(String configurationName, byte[] bytesToEncrypt);
+    String encrypt(String configurationName, byte[] bytesToEncrypt);
 
     /**
      * Decrypt cipher text.
@@ -214,7 +211,7 @@ public interface Security {
      * @param cipherText        cipher text to decrypt
      * @return future with decrypted bytes
      */
-    Single<byte[]> decrypt(String configurationName, String cipherText);
+    byte[] decrypt(String configurationName, String cipherText);
 
     /**
      * Create a digest for the provided bytes.
@@ -224,7 +221,7 @@ public interface Security {
      * @param preHashed         whether the data is already a hash
      * @return future with digest (such as signature or HMAC)
      */
-    Single<String> digest(String configurationName, byte[] bytesToDigest, boolean preHashed);
+    String digest(String configurationName, byte[] bytesToDigest, boolean preHashed);
 
     /**
      * Create a digest for the provided raw bytes.
@@ -233,7 +230,7 @@ public interface Security {
      * @param bytesToDigest     data to digest
      * @return future with digest (such as signature or HMAC)
      */
-    Single<String> digest(String configurationName, byte[] bytesToDigest);
+    String digest(String configurationName, byte[] bytesToDigest);
 
     /**
      * Verify a digest.
@@ -244,7 +241,7 @@ public interface Security {
      * @param preHashed         whether the data is already a hash
      * @return future with result of verification ({@code true} means the digest is valid)
      */
-    Single<Boolean> verifyDigest(String configurationName, byte[] bytesToDigest, String digest, boolean preHashed);
+    boolean verifyDigest(String configurationName, byte[] bytesToDigest, String digest, boolean preHashed);
 
     /**
      * Verify a digest.
@@ -254,7 +251,7 @@ public interface Security {
      * @param digest            digest as provided by a third party (or another component)
      * @return future with result of verification ({@code true} means the digest is valid)
      */
-    Single<Boolean> verifyDigest(String configurationName, byte[] bytesToDigest, String digest);
+    boolean verifyDigest(String configurationName, byte[] bytesToDigest, String digest);
 
     /**
      * Get a secret.
@@ -262,7 +259,7 @@ public interface Security {
      * @param configurationName name of the secret configuration
      * @return future with the secret value, or error if the secret is not configured
      */
-    Single<Optional<String>> secret(String configurationName);
+    Optional<String> secret(String configurationName);
 
     /**
      * Get a secret.
@@ -271,7 +268,7 @@ public interface Security {
      * @param defaultValue      default value to use if secret not configured
      * @return future with the secret value
      */
-    Single<String> secret(String configurationName, String defaultValue);
+    String secret(String configurationName, String defaultValue);
 
     /**
      * Security environment builder, to be used to create
@@ -361,7 +358,7 @@ public interface Security {
         private final Map<String, DigestProvider<?>> digestProviders = new HashMap<>();
         private final Map<SecurityProvider, Boolean> allProviders = new IdentityHashMap<>();
 
-        private final Map<String, Supplier<Single<Optional<String>>>> secrets = new HashMap<>();
+        private final Map<String, Supplier<Optional<String>>> secrets = new HashMap<>();
         private final Map<String, EncryptionProvider.EncryptionSupport> encryptions = new HashMap<>();
         private final Map<String, DigestProvider.DigestSupport> digests = new HashMap<>();
         private final Set<String> providerNames = new HashSet<>();
@@ -885,8 +882,7 @@ public interface Security {
             }
 
             if (atnProviders.isEmpty()) {
-                addAuthenticationProvider(context -> CompletableFuture
-                        .completedFuture(AuthenticationResponse.success(SecurityContext.ANONYMOUS)), "default");
+                addAuthenticationProvider(context -> AuthenticationResponse.success(SecurityContext.ANONYMOUS), "default");
             }
 
             if (atzProviders.isEmpty()) {
@@ -1402,7 +1398,7 @@ public interface Security {
             return allProviders;
         }
 
-        Map<String, Supplier<Single<Optional<String>>>> secrets() {
+        Map<String, Supplier<Optional<String>>> secrets() {
             return secrets;
         }
 
@@ -1460,9 +1456,8 @@ public interface Security {
 
         private static class DefaultAtzProvider implements AuthorizationProvider {
             @Override
-            public CompletionStage<AuthorizationResponse> authorize(ProviderRequest context) {
-                return CompletableFuture
-                        .completedFuture(AuthorizationResponse.permit());
+            public AuthorizationResponse authorize(ProviderRequest context) {
+                return AuthorizationResponse.permit();
             }
         }
     }

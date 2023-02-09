@@ -18,7 +18,6 @@ package io.helidon.security.spi;
 
 import java.util.function.Function;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 
 /**
@@ -49,8 +48,8 @@ public interface EncryptionProvider<T extends ProviderConfig> extends SecurityPr
      * Encryption support created for each named encryption configuration.
      */
     class EncryptionSupport {
-        private final Function<byte[], Single<String>> encryptionFunction;
-        private final Function<String, Single<byte[]>> decryptionFunction;
+        private final Function<byte[], String> encryptionFunction;
+        private final Function<String, byte[]> decryptionFunction;
 
         /**
          * Encryption support based on the two functions.
@@ -58,8 +57,8 @@ public interface EncryptionProvider<T extends ProviderConfig> extends SecurityPr
          * @param encryptionFunction encrypts the provided bytes into cipher text
          * @param decryptionFunction decrypts cipher text into bytes
          */
-        protected EncryptionSupport(Function<byte[], Single<String>> encryptionFunction,
-                                    Function<String, Single<byte[]>> decryptionFunction) {
+        protected EncryptionSupport(Function<byte[], String> encryptionFunction,
+                                    Function<String, byte[]> decryptionFunction) {
             this.encryptionFunction = encryptionFunction;
             this.decryptionFunction = decryptionFunction;
         }
@@ -71,8 +70,8 @@ public interface EncryptionProvider<T extends ProviderConfig> extends SecurityPr
          * @param decryptionFunction decrypts cipher text into bytes
          * @return new encryption support
          */
-        public static EncryptionSupport create(Function<byte[], Single<String>> encryptionFunction,
-                                               Function<String, Single<byte[]>> decryptionFunction) {
+        public static EncryptionSupport create(Function<byte[], String> encryptionFunction,
+                                               Function<String, byte[]> decryptionFunction) {
             return new EncryptionSupport(encryptionFunction, decryptionFunction);
         }
 
@@ -82,7 +81,7 @@ public interface EncryptionProvider<T extends ProviderConfig> extends SecurityPr
          * @param bytes bytes to encrypt
          * @return future with the encrypted cipher text
          */
-        public Single<String> encrypt(byte[] bytes) {
+        public String encrypt(byte[] bytes) {
             return encryptionFunction.apply(bytes);
         }
 
@@ -92,7 +91,7 @@ public interface EncryptionProvider<T extends ProviderConfig> extends SecurityPr
          * @param encrypted cipher text
          * @return future with the decrypted bytes
          */
-        public Single<byte[]> decrypt(String encrypted) {
+        public byte[] decrypt(String encrypted) {
             return decryptionFunction.apply(encrypted);
         }
     }

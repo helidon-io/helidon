@@ -38,12 +38,12 @@ public class CubbyholeSecurityProvider implements SecretsProvider<CubbyholeSecur
     }
 
     @Override
-    public Supplier<Single<Optional<String>>> secret(Config config) {
+    public Supplier<Optional<String>> secret(Config config) {
         return secret(CubbyholeSecretConfig.create(config));
     }
 
     @Override
-    public Supplier<Single<Optional<String>>> secret(CubbyholeSecretConfig providerConfig) {
+    public Supplier<Optional<String>> secret(CubbyholeSecretConfig providerConfig) {
         String key = providerConfig.key;
 
         return () -> secrets.get(providerConfig.request())

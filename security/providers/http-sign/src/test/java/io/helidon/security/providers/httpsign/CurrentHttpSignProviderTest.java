@@ -84,7 +84,7 @@ abstract class CurrentHttpSignProviderTest {
         when(request.env()).thenReturn(se);
         when(request.endpointConfig()).thenReturn(ep);
 
-        AuthenticationResponse atnResponse = Single.create(provider.authenticate(request)).await(TIMEOUT);
+        AuthenticationResponse atnResponse = provider.authenticate(request);
 
         assertThat(atnResponse.description().orElse("Unknown problem"),
                    atnResponse.status(),
@@ -126,7 +126,7 @@ abstract class CurrentHttpSignProviderTest {
         when(request.env()).thenReturn(se);
         when(request.endpointConfig()).thenReturn(ep);
 
-        AuthenticationResponse atnResponse = Single.create(provider.authenticate(request)).await(TIMEOUT);
+        AuthenticationResponse atnResponse = provider.authenticate(request);
 
         assertThat(atnResponse.description().orElse("Unknown problem"),
                    atnResponse.status(),
@@ -164,8 +164,7 @@ abstract class CurrentHttpSignProviderTest {
         boolean outboundSupported = getProvider().isOutboundSupported(request, outboundEnv, outboundEp);
         assertThat("Outbound should be supported", outboundSupported, is(true));
 
-        OutboundSecurityResponse response = Single.create(getProvider().outboundSecurity(request, outboundEnv, outboundEp))
-                .await(TIMEOUT);
+        OutboundSecurityResponse response = getProvider().outboundSecurity(request, outboundEnv, outboundEp);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
@@ -209,8 +208,7 @@ abstract class CurrentHttpSignProviderTest {
         boolean outboundSupported = getProvider().isOutboundSupported(request, outboundEnv, outboundEp);
         assertThat("Outbound should be supported", outboundSupported, is(true));
 
-        OutboundSecurityResponse response = Single.create(getProvider().outboundSecurity(request, outboundEnv, outboundEp))
-                                                                  .await(TIMEOUT);
+        OutboundSecurityResponse response = getProvider().outboundSecurity(request, outboundEnv, outboundEp);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 

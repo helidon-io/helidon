@@ -161,7 +161,7 @@ class TenantAuthenticationHandler {
         }
     }
 
-    CompletionStage<AuthenticationResponse> authenticate(String tenantId, ProviderRequest providerRequest) {
+    AuthenticationResponse authenticate(String tenantId, ProviderRequest providerRequest) {
         /*
         1. Get token from request - if available, validate it and continue
         2. If not - Redirect to login page

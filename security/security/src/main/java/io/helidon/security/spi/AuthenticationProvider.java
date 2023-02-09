@@ -16,8 +16,6 @@
 
 package io.helidon.security.spi;
 
-import java.util.concurrent.CompletionStage;
-
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
@@ -50,5 +48,5 @@ public interface AuthenticationProvider extends SecurityProvider {
      * @return response that either authenticates the request, fails authentication or abstains from authentication
      * @see AuthenticationResponse#success(Subject)
      */
-    CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest);
+    AuthenticationResponse authenticate(ProviderRequest providerRequest);
 }

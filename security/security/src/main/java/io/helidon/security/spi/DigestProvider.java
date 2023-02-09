@@ -16,7 +16,6 @@
 
 package io.helidon.security.spi;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 
 /**
@@ -56,7 +55,7 @@ public interface DigestProvider<T extends ProviderConfig> extends SecurityProvid
          * @param preHashed whether the data is already a hash ({@code true}), or the raw data ({@code false})
          * @return future with the digest string (signature, HMAC)
          */
-        Single<String> apply(byte[] data, Boolean preHashed);
+        String apply(byte[] data, Boolean preHashed);
     }
 
     /**
@@ -72,7 +71,7 @@ public interface DigestProvider<T extends ProviderConfig> extends SecurityProvid
          * @param digest original digest of the data (signature, HMAC)
          * @return future with the result of verification
          */
-        Single<Boolean> apply(byte[] data, Boolean preHashed, String digest);
+        boolean apply(byte[] data, Boolean preHashed, String digest);
     }
 
     /**
@@ -114,7 +113,7 @@ public interface DigestProvider<T extends ProviderConfig> extends SecurityProvid
          * @param preHashed whether the bytes are pre-hashed
          * @return future with the digest (signature or HMAC)
          */
-        public Single<String> digest(byte[] bytes, boolean preHashed) {
+        public String digest(byte[] bytes, boolean preHashed) {
             return digestFunction.apply(bytes, preHashed);
         }
 
@@ -127,7 +126,7 @@ public interface DigestProvider<T extends ProviderConfig> extends SecurityProvid
          * @return future with {@code true} if the digest is valid, {@code false} if not valid, and an error if not
          *  a supported digest
          */
-        public Single<Boolean> verify(byte[] bytes, boolean preHashed, String digest) {
+        public boolean verify(byte[] bytes, boolean preHashed, String digest) {
             return verifyFunction.apply(bytes, preHashed, digest);
         }
     }

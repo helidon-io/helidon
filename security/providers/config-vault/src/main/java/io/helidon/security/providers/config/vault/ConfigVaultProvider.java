@@ -78,13 +78,13 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
     }
 
     @Override
-    public Supplier<Single<Optional<String>>> secret(Config config) {
+    public Supplier<Optional<String>> secret(Config config) {
         Supplier<Optional<String>> supplier = config.get("value").asString().optionalSupplier();
-        return () -> Single.just(supplier.get());
+        return supplier::get;
     }
 
     @Override
-    public Supplier<Single<Optional<String>>> secret(SecretConfig providerConfig) {
+    public Supplier<Optional<String>> secret(SecretConfig providerConfig) {
         return providerConfig.value();
     }
 
@@ -140,12 +140,8 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
 
         private static EncryptionSupport encryptionSupport(char[] password) {
             SymmetricCipher symmetricCipher = SymmetricCipher.create(password);
-            Function<byte[], Single<String>> encrypt = bytes -> {
-                return Single.just(symmetricCipher.encryptToString(Base64Value.create(bytes)));
-            };
-            Function<String, Single<byte[]>> decrypt = cipherText -> {
-                return Single.just(symmetricCipher.decryptFromString(cipherText).toBytes());
-            };
+            Function<byte[], String> encrypt = bytes -> symmetricCipher.encryptToString(Base64Value.create(bytes));
+            Function<String, byte[]> decrypt = cipherText -> symmetricCipher.decryptFromString(cipherText).toBytes();
             return EncryptionSupport.create(encrypt, decrypt);
         }
 
@@ -160,22 +156,10 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
     @Configured(description = "Provider of secrets defined in configuration itself",
                 provides = SecretsProviderConfig.class)
     public static class SecretConfig implements SecretsProviderConfig {
-        private final Supplier<Single<Optional<String>>> value;
+        private final Supplier<Optional<String>> value;
 
-        private SecretConfig(Supplier<Single<Optional<String>>> value) {
+        private SecretConfig(Supplier<Optional<String>> value) {
             this.value = value;
-        }
-
-        /**
-         * Create a new secret configuration with a supplier of a future ({@link io.helidon.common.reactive.Single}),
-         * such as when retrieving the secret from a remote service.
-         * The supplier must be thread safe.
-         *
-         * @param valueSupplier supplier of a value
-         * @return a new secret configuration
-         */
-        public static SecretConfig createSingleSupplier(Supplier<Single<Optional<String>>> valueSupplier) {
-            return new SecretConfig(valueSupplier);
         }
 
         /**
@@ -187,7 +171,7 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
          * @return a new secret configuration
          */
         public static SecretConfig createOptionalSupplier(Supplier<Optional<String>> valueSupplier) {
-            return new SecretConfig(() -> Single.just(valueSupplier.get()));
+            return new SecretConfig(valueSupplier);
         }
 
         /**
@@ -198,7 +182,7 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
          * @return a new secret configuration
          */
         public static SecretConfig create(Supplier<String> valueSupplier) {
-            return new SecretConfig(() -> Single.just(Optional.of(valueSupplier.get())));
+            return new SecretConfig(() -> Optional.of(valueSupplier.get()));
         }
 
         /**
@@ -210,10 +194,10 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
         @ConfiguredOption(key = "value", description = "Value of the secret, can be a reference to another configuration key"
                 + ", such as ${app.secret}")
         public static SecretConfig create(String value) {
-            return new SecretConfig(() -> Single.just(Optional.of(value)));
+            return new SecretConfig(() -> Optional.of(value));
         }
 
-        Supplier<Single<Optional<String>>> value() {
+        Supplier<Optional<String>> value() {
             return value;
         }
     }

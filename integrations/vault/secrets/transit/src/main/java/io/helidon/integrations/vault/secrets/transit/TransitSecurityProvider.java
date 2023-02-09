@@ -47,12 +47,12 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
 
     @Override
     public EncryptionSupport encryption(TransitEncryptionConfig providerConfig) {
-        Function<byte[], Single<String>> encrypt = bytes -> transit.encrypt(providerConfig.encryptionRequest()
+        Function<byte[], String> encrypt = bytes -> transit.encrypt(providerConfig.encryptionRequest()
                                                                                     .data(Base64Value.create(bytes)))
                 .map(Encrypt.Response::encrypted)
                 .map(Encrypt.Encrypted::cipherText);
 
-        Function<String, Single<byte[]>> decrypt = encrypted -> transit.decrypt(providerConfig.decryptionRequest()
+        Function<String, byte[]> decrypt = encrypted -> transit.decrypt(providerConfig.decryptionRequest()
                                                                                         .cipherText(encrypted))
                 .map(Decrypt.Response::decrypted)
                 .map(Base64Value::toBytes);

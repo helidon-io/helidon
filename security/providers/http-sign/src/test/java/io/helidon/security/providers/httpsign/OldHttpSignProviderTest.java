@@ -87,7 +87,7 @@ abstract class OldHttpSignProviderTest {
         when(request.env()).thenReturn(se);
         when(request.endpointConfig()).thenReturn(ep);
 
-        AuthenticationResponse atnResponse = Single.create(provider.authenticate(request)).await(TIMEOUT);
+        AuthenticationResponse atnResponse = provider.authenticate(request);
 
         assertThat(atnResponse.description().orElse("Unknown problem"),
                    atnResponse.status(),
@@ -129,7 +129,7 @@ abstract class OldHttpSignProviderTest {
         when(request.env()).thenReturn(se);
         when(request.endpointConfig()).thenReturn(ep);
 
-        AuthenticationResponse atnResponse = Single.create(provider.authenticate(request)).await(TIMEOUT);
+        AuthenticationResponse atnResponse = provider.authenticate(request);
 
         assertThat(atnResponse.description().orElse("Unknown problem"),
                    atnResponse.status(),

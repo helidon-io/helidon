@@ -16,8 +16,6 @@
 
 package io.helidon.security;
 
-import java.util.concurrent.CompletionStage;
-
 import io.helidon.common.Builder;
 
 /**
@@ -64,9 +62,9 @@ public class SecurityClientBuilder<T extends SecurityResponse>
     /**
      * A shortcut method to build the client and invoke {@link SecurityClient#submit()} on it.
      *
-     * @return {@link CompletionStage} with {@link SecurityResponse} of expected type
+     * @return {@link SecurityResponse} of expected type
      */
-    public CompletionStage<T> submit() {
+    public T submit() {
         return build().submit();
     }
 

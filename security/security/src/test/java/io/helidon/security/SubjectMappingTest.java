@@ -158,8 +158,8 @@ public class SubjectMappingTest {
 
     private static class Atn implements AuthenticationProvider {
         @Override
-        public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-            return CompletableFuture.completedFuture(buildResponse(providerRequest));
+        public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
+            return buildResponse(providerRequest);
         }
 
         private AuthenticationResponse buildResponse(ProviderRequest providerRequest) {

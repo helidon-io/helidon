@@ -16,7 +16,6 @@
 
 package io.helidon.security;
 
-import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
@@ -109,9 +108,9 @@ public class OutboundSecurityClientBuilder extends SecurityRequestBuilder<Outbou
     /**
      * A shortcut method to build the client and invoke {@link SecurityClient#submit()} on it.
      *
-     * @return {@link CompletionStage} with {@link SecurityResponse} of expected type
+     * @return {@link SecurityResponse} of expected type
      */
-    public CompletionStage<OutboundSecurityResponse> submit() {
+    public OutboundSecurityResponse submit() {
         return build().submit();
     }
 }

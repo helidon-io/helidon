@@ -143,13 +143,11 @@ class OptionalSecurityTest {
         };
     }
 
-    private static CompletionStage<AuthenticationResponse> authenticate(ProviderRequest request) {
-        AuthenticationResponse res = AuthenticationResponse.builder()
+    private static AuthenticationResponse authenticate(ProviderRequest request) {
+        return AuthenticationResponse.builder()
                 .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
                 .statusCode(301)
                 .build();
-
-        return CompletableFuture.completedFuture(res);
     }
 
     @Path("/")

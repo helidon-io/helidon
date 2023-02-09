@@ -16,8 +16,6 @@
 
 package io.helidon.security.spi;
 
-import java.util.concurrent.CompletionStage;
-
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.ProviderRequest;
@@ -63,7 +61,7 @@ public interface OutboundSecurityProvider extends SecurityProvider {
      * @return response with generated headers and other possible configuration
      * @see OutboundSecurityResponse#builder()
      */
-    CompletionStage<OutboundSecurityResponse> outboundSecurity(ProviderRequest providerRequest,
-                                                               SecurityEnvironment outboundEnv,
-                                                               EndpointConfig outboundConfig);
+    OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                              SecurityEnvironment outboundEnv,
+                                              EndpointConfig outboundConfig);
 }

@@ -38,12 +38,12 @@ public class Kv1SecurityProvider implements SecretsProvider<Kv1SecurityProvider.
     }
 
     @Override
-    public Supplier<Single<Optional<String>>> secret(Config config) {
+    public Supplier<Optional<String>> secret(Config config) {
         return secret(Kv1SecretConfig.create(config));
     }
 
     @Override
-    public Supplier<Single<Optional<String>>> secret(Kv1SecretConfig providerConfig) {
+    public Supplier<Optional<String>> secret(Kv1SecretConfig providerConfig) {
         String key = providerConfig.key;
 
         return () -> secrets.get(providerConfig.request())
