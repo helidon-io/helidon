@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 = Helidon SE Tracing Guide
 :description: Helidon tracing
 :keywords: helidon, tracing, microprofile, guide
+:toc:
 :rootdir: {docdir}/../..
 :imagesdir: {rootdir}/images
 
@@ -161,32 +162,30 @@ WebServer server = WebServer.builder(createRouting(config))
 <2> Build and register a `Tracer` object using the tracing configuration.
 
 [source,java]
-.Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class; Replace the `getDefaultMessageHandler` method:
 ----
-import io.opentracing.Span; // <1>
-...
     private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
 
-        var spanBuilder = request.tracer()  // <2>
-                .buildSpan("getDefaultMessageHandler");  // <3>
-        request.spanContext().ifPresent(spanBuilder::asChildOf);  // <4>
-        Span span = spanBuilder.start();  // <5>
+        var span = request.tracer() // <1>
+                .spanBuilder("getDefaultMessageHandler") // <2>
+                .update(spanBuilder -> request.spanContext().ifPresent(spanBuilder::parent)) // <3>
+                .start(); // <4>
 
         try {
             sendResponse(response, "World");
-        } finally {
-            span.finish();  // <6>
+            span.end(); // <5>
+        } catch (Throwable t) {
+            span.end(t);  // <6>
         }
     }
 ----
-<1> Add new import statement.
-<2> Get the `Tracer` object from the request.
-<3> Build a new span named `getDefaultMessageHandler`.
-<4> Make the new span a child of the current span.
-<5> Start the span.  The current timestamp is used as the starting time for the span.
-<6> Finish the span.  The current timestamp is used as the ending time for the span.
-
+<1> Get the `Tracer` object from the request.
+<2> Build a new span named `getDefaultMessageHandler`.
+<3> Make the new span a child of the request's span if it has one.
+<4> Start the span.  The current timestamp is used as the starting time for the span.
+<5> End the span successfully.  The current timestamp is used as the ending time for the span.
+<6> End the span in the error case.
 
 [source,bash]
 .Build the application, skipping unit tests, then run it:
@@ -383,25 +382,30 @@ WebServer server = WebServer.builder(createRouting(config))
 ----
 
 [source,java]
-.Update the `GreetService` class; 1) Add new import and 2) Replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class; Replace the `getDefaultMessageHandler` method:
 ----
-import io.opentracing.Span;
-//...
     private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
 
-        var spanBuilder = request.tracer()
-                .buildSpan("getDefaultMessageHandler");
-        request.spanContext().ifPresent(spanBuilder::asChildOf);
-        Span span = spanBuilder.start();
+        var span = request.tracer() // <1>
+                .spanBuilder("getDefaultMessageHandler") // <2>
+                .update(spanBuilder -> request.spanContext().ifPresent(spanBuilder::parent)) // <3>
+                .start(); // <4>
 
         try {
             sendResponse(response, "World");
-        } finally {
-            span.finish();
+            span.end(); // <5>
+        } catch (Throwable t) {
+            span.end(t);  // <6>
         }
     }
 ----
+<1> Get the `Tracer` object from the request.
+<2> Build a new span named `getDefaultMessageHandler`.
+<3> Make the new span a child of the request's span if it has one.
+<4> Start the span.  The current timestamp is used as the starting time for the span.
+<5> End the span successfully.  The current timestamp is used as the ending time for the span.
+<6> End the span in the error case.
 
 [source,bash]
 .Build the application, skipping unit tests, then run it:
@@ -459,7 +463,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import io.opentracing.Span;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 import jakarta.json.Json;
@@ -492,17 +495,19 @@ public class GreetService implements Service {
         .put("/greeting", this::updateGreetingHandler);
   }
 
-  private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
+  private void getDefaultMessageHandler(ServerRequest request,
+                                 ServerResponse response) {
 
-    var spanBuilder = request.tracer()
-                .buildSpan("getDefaultMessageHandler");
-    request.spanContext().ifPresent(spanBuilder::asChildOf);
-    Span span = spanBuilder.start();
+    var span = request.tracer()
+          .spanBuilder("getDefaultMessageHandler")
+          .update(spanBuilder -> request.spanContext().ifPresent(spanBuilder::parent))
+          .start();
 
     try {
       sendResponse(response, "World");
-    } finally {
-      span.finish();
+      span.end();
+    } catch (Throwable t) {
+      span.end(t);
     }
   }
 
@@ -527,13 +532,13 @@ public class GreetService implements Service {
   }
 
   private void outboundMessageHandler(ServerRequest request, ServerResponse response) {
-    Invocation.Builder requestBuilder = webTarget.request();
+        Invocation.Builder requestBuilder = webTarget.request();
 
     // <2>
-    var spanBuilder = request.tracer()
-                .buildSpan("outboundMessageHandler");
-    request.spanContext().ifPresent(spanBuilder::asChildOf);
-    Span span = spanBuilder.start();
+    var span = request.tracer()
+          .spanBuilder("outboundMessageHandler")
+          .update(spanBuilder -> request.spanContext().ifPresent(spanBuilder::parent))
+          .start();
 
     try {
       requestBuilder.property(
@@ -542,16 +547,20 @@ public class GreetService implements Service {
       requestBuilder   // <4>
           .rx()
           .get(String.class)
-          .thenAccept(response::send)
+          .thenAccept(str -> {
+              response.send(str);
+              span.end(); // <5>
+          })
           .exceptionally(
               throwable -> {
                 // process exception
                 response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
                 response.send("Failed with: " + throwable);
+                span.end(throwable); // <5>
                 return null;
               });
-    } finally {
-      span.finish();   // <5>
+    } catch (Throwable t) {
+        span.end(t);   // <5>
     }
   }
 
@@ -564,7 +573,7 @@ public class GreetService implements Service {
 <2> Create and start a span that is a child of the current span.
 <3> Set a property with the `SpanContext`.
 <4> Invoke the second service.
-<5> Stop the span.
+<5> End the span.
 
 [source,bash]
 .Build and run the application, then invoke the endpoint and check the response:

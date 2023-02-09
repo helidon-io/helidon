@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ The Jaeger builder is loaded through `ServiceLoader` and configured. You could
 also use the Jaeger builder directly, though this would create a source-code dependency
 on the Jaeger tracer.
 
-Since Helidon 3.0.0, we use Jaeger OpenTelemetry Tracing client to
+Helidon 3.0 uses the Jaeger OpenTelemetry Tracing client to
 integrate with Jaeger tracer.
 
 include::{rootdir}/includes/dependencies.adoc[]
@@ -45,16 +45,20 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Configuring Jaeger
 
+NOTE: Jaeger changed its client implementation, so some Jaeger settings exposed by earlier releases of Helidon are no longer available. Please note the currently-supported settings in the table below.
+
 include::{rootdir}/config/io_helidon_tracing_jaeger_JaegerTracerBuilder.adoc[tag=config,levelOffset=1]
 
-The following is an example of a Jaeger configuration, specified in the YAML format.
+The following is an example of a Jaeger configuration, specified in the YAML format. 
+
+NOTE: The the Jaeger OpenTelemetry client uses port 14250, but you can override this value if needed. The default is defined by each tracing integration.  
 [source,yaml]
 ----
 tracing:
     service: "helidon-full-http"
     protocol: "https"
     host: "jaeger"
-    port: 14240
+    port: 14250
 ----
 
 // end::jaeger-configuration[]
