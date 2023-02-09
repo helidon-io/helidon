@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,33 @@ public abstract class OpenAPISupport implements Service {
      * header.
      */
     public static final MediaType DEFAULT_RESPONSE_MEDIA_TYPE = MediaType.APPLICATION_OPENAPI_YAML;
+
+    /**
+     * Some logic related to the possible format values as requested in the query
+     * parameter {@value OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER}.
+     */
+    enum QueryParameterRequestedFormat {
+        JSON(MediaType.APPLICATION_JSON), YAML(MediaType.APPLICATION_OPENAPI_YAML);
+
+        static QueryParameterRequestedFormat chooseFormat(String format) {
+            return QueryParameterRequestedFormat.valueOf(format);
+        }
+
+        private final MediaType mt;
+
+        QueryParameterRequestedFormat(MediaType mt) {
+            this.mt = mt;
+        }
+
+        MediaType mediaType() {
+            return mt;
+        }
+    }
+
+    /**
+     * URL query parameter for specifying the requested format when retrieving the OpenAPI document.
+     */
+    static final String OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER = "format";
 
     /**
      * Path to the Jandex index file.
