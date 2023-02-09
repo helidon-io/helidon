@@ -92,10 +92,10 @@ public class OidcCookieHandler {
                                                          builder.encryptionName,
                                                          builder.encryptionPassword);
             this.encryptFunction = it -> cookieEncryption.encrypt(it.getBytes(StandardCharsets.UTF_8));
-            this.decryptFunction = it -> cookieEncryption.decrypt(it).map(String::new);
+            this.decryptFunction = it -> new String(cookieEncryption.decrypt(it));
         } else {
-            this.encryptFunction = Single::just;
-            this.decryptFunction = Single::just;
+            this.encryptFunction = it -> it;
+            this.decryptFunction = it -> it;
         }
 
         if (LOGGER.isLoggable(Level.TRACE)) {
@@ -115,9 +115,8 @@ public class OidcCookieHandler {
      * @param value value of the cookie
      * @return a new builder to configure set cookie configured from OIDC Config
      */
-    public Single<SetCookie.Builder> createCookie(String value) {
-        return encryptFunction.apply(value)
-                .map(this::createCookieDirectValue);
+    public SetCookie.Builder createCookie(String value) {
+        return createCookieDirectValue(encryptFunction.apply(value));
     }
 
     /**

@@ -37,15 +37,15 @@ import io.helidon.security.Role;
 import io.helidon.security.SecurityLevel;
 import io.helidon.security.Subject;
 import io.helidon.security.spi.AuthenticationProvider;
-import io.helidon.security.spi.SynchronousProvider;
+import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Example of an authentication provider implementation - synchronous.
  * This is a full-blows example of a provider that requires additional configuration on a resource.
  */
-public class AtnProviderSync extends SynchronousProvider implements AuthenticationProvider {
+public class AtnProviderSync implements AuthenticationProvider, SecurityProvider {
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
 
         // first obtain the configuration of this request
         // either from annotation, custom object or config

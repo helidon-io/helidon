@@ -21,10 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.Builder;
 
@@ -46,27 +42,6 @@ public abstract class SecurityResponse {
         this.requestHeaders = builder.requestHeaders;
         this.responseHeaders = builder.responseHeaders;
         this.statusCode = builder.statusCode;
-    }
-
-    /**
-     * Synchronize a completion stage.
-     *
-     * @param stage future response
-     * @param <T>   type the future response will provide
-     * @return instance the future returns
-     * @throws SecurityException in case of timeout, interrupted call or exception during future processing
-     */
-    static <T> T get(CompletionStage<T> stage) {
-        try {
-            // since java 9 this method is not optional, so we can safely call it
-            return stage.toCompletableFuture().get(60, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new SecurityException("Interrupted while waiting for completion stage to complete", e);
-        } catch (ExecutionException e) {
-            throw new SecurityException("Failure while executing asynchronous security", e);
-        } catch (TimeoutException e) {
-            throw new SecurityException("Timed out after waiting for completion stage to complete", e);
-        }
     }
 
     /**

@@ -38,8 +38,8 @@ import io.helidon.security.spi.OutboundSecurityProvider;
  */
 public class PathBasedProvider implements AuthenticationProvider, OutboundSecurityProvider, AuthorizationProvider {
     @Override
-    public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-        return CompletableFuture.completedFuture(providerRequest.env().path().map(path -> {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
+        return providerRequest.env().path().map(path -> {
             switch (path) {
             case "/jack":
                 return ResourceBasedProvider.success("path-jack");
@@ -62,7 +62,7 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
                 }
                 return AuthenticationResponse.failed("path-Invalid request");
             }
-        }).orElse(AuthenticationResponse.abstain()));
+        }).orElse(AuthenticationResponse.abstain());
     }
 
     @Override
@@ -94,11 +94,11 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
     }
 
     @Override
-    public CompletionStage<OutboundSecurityResponse> outboundSecurity(ProviderRequest providerRequest,
-                                                                      SecurityEnvironment outboundEnv,
-                                                                      EndpointConfig outboundConfig) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundConfig) {
 
-        return CompletableFuture.completedFuture(providerRequest.env().path().map(path -> {
+        return providerRequest.env().path().map(path -> {
             switch (path) {
             case "/jack":
                 return OutboundSecurityResponse.withHeaders(Map.of("path", List.of("path-jack")));
@@ -119,6 +119,6 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
                 return OutboundSecurityResponse.builder().status(SecurityResponse.SecurityStatus.FAILURE)
                         .description("path-Invalid request").build();
             }
-        }).orElse(OutboundSecurityResponse.abstain()));
+        }).orElse(OutboundSecurityResponse.abstain());
     }
 }

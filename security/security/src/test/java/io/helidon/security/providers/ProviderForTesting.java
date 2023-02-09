@@ -27,13 +27,13 @@ import io.helidon.security.SecurityTest;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
-import io.helidon.security.spi.SynchronousProvider;
+import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Just a simple testing provider.
  */
-public class ProviderForTesting extends SynchronousProvider
-        implements AuthenticationProvider, AuthorizationProvider, OutboundSecurityProvider {
+public class ProviderForTesting implements AuthenticationProvider, AuthorizationProvider, OutboundSecurityProvider,
+                                           SecurityProvider {
     private final String denyResource;
 
     public ProviderForTesting(String denyResource) {
@@ -45,15 +45,15 @@ public class ProviderForTesting extends SynchronousProvider
     }
 
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         return AuthenticationResponse
                 .success(SecurityTest.SYSTEM);
     }
 
     @Override
-    protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                    SecurityEnvironment outboundEnv,
-                                                    EndpointConfig outboundEndpointConfig) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundEndpointConfig) {
         return OutboundSecurityResponse.empty();
     }
 

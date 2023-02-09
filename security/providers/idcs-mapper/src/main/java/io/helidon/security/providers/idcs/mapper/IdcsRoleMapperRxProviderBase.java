@@ -162,9 +162,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
      * @param subject subject to enhance
      * @return future with enhanced subject
      */
-    protected abstract Single<Subject> enhance(ProviderRequest request,
-                                               AuthenticationResponse previousResponse,
-                                               Subject subject);
+    protected abstract Subject enhance(ProviderRequest request, AuthenticationResponse previousResponse, Subject subject);
 
     /**
      * Updates original subject with the list of grants.
@@ -182,7 +180,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
         return builder.build();
     }
 
-    protected Single<List<? extends Grant>> processRoleRequest(WebClientRequestBuilder request,
+    protected List<? extends Grant> processRoleRequest(WebClientRequestBuilder request,
                                                                Object entity,
                                                                String subjectName) {
         return postJsonResponse(request,

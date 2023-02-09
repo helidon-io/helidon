@@ -110,8 +110,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
     }
 
     @Override
-    public CompletionStage<AuthenticationResponse> map(ProviderRequest authenticatedRequest,
-                                                       AuthenticationResponse previousResponse) {
+    public AuthenticationResponse map(ProviderRequest authenticatedRequest, AuthenticationResponse previousResponse) {
 
         Optional<Subject> maybeUser = previousResponse.user();
         Optional<Subject> maybeService = previousResponse.service();
@@ -155,8 +154,8 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      * @param response authentication response to complete with
      * @return stage completed with the response
      */
-    protected CompletionStage<AuthenticationResponse> complete(AuthenticationResponse response) {
-        return CompletableFuture.completedFuture(response);
+    protected AuthenticationResponse complete(AuthenticationResponse response) {
+        return response;
     }
 
     /**

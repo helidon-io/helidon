@@ -108,7 +108,7 @@ public class GoogleTokenProviderTest {
     @Test
     public void testInbound() {
         ProviderRequest inboundRequest = createInboundRequest("Authorization", "bearer " + TOKEN_VALUE);
-        AuthenticationResponse response = provider.syncAuthenticate(inboundRequest);
+        AuthenticationResponse response = provider.authenticate(inboundRequest);
         assertThat(response.user(), is(not(Optional.empty())));
         response.user().ifPresent(subject -> {
             Principal principal = subject.principal();
@@ -120,7 +120,7 @@ public class GoogleTokenProviderTest {
     @Test
     public void testInboundIncorrectToken() throws ExecutionException, InterruptedException {
         ProviderRequest inboundRequest = createInboundRequest("Authorization", "tearer " + TOKEN_VALUE);
-        AuthenticationResponse response = provider.authenticate(inboundRequest).toCompletableFuture().get();
+        AuthenticationResponse response = provider.authenticate(inboundRequest);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.statusCode().orElse(200), is(400));
@@ -130,7 +130,7 @@ public class GoogleTokenProviderTest {
     @Test
     public void testInboundMissingToken() throws ExecutionException, InterruptedException {
         ProviderRequest inboundRequest = createInboundRequest("OtherHeader", "tearer " + TOKEN_VALUE);
-        AuthenticationResponse response = provider.authenticate(inboundRequest).toCompletableFuture().get();
+        AuthenticationResponse response = provider.authenticate(inboundRequest);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.statusCode().orElse(200), is(401));
@@ -144,7 +144,7 @@ public class GoogleTokenProviderTest {
         GoogleTokenProvider provider = GoogleTokenProvider.builder().clientId("clientId").verifier(verifier).build();
 
         ProviderRequest inboundRequest = createInboundRequest("Authorization", "bearer " + TOKEN_VALUE);
-        AuthenticationResponse response = provider.authenticate(inboundRequest).toCompletableFuture().get();
+        AuthenticationResponse response = provider.authenticate(inboundRequest);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.statusCode().orElse(200), is(401));
@@ -159,7 +159,7 @@ public class GoogleTokenProviderTest {
         GoogleTokenProvider provider = GoogleTokenProvider.builder().clientId("clientId").verifier(verifier).build();
 
         ProviderRequest inboundRequest = createInboundRequest("Authorization", "bearer " + TOKEN_VALUE);
-        AuthenticationResponse response = provider.authenticate(inboundRequest).toCompletableFuture().get();
+        AuthenticationResponse response = provider.authenticate(inboundRequest);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.statusCode().orElse(200), is(401));
@@ -199,7 +199,7 @@ public class GoogleTokenProviderTest {
                    provider.isOutboundSupported(outboundRequest, outboundEnv, outboundEp),
                    is(true));
 
-        OutboundSecurityResponse response = provider.syncOutbound(outboundRequest, outboundEnv, outboundEp);
+        OutboundSecurityResponse response = provider.outboundSecurity(outboundRequest, outboundEnv, outboundEp);
 
         List<String> authorization = response.requestHeaders().get("Authorization");
 

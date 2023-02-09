@@ -49,14 +49,13 @@ import io.helidon.security.providers.httpauth.spi.UserStoreService;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SecurityProvider;
-import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
 
 /**
  * Http authentication security provider.
  * Provides support for username and password authentication, with support for roles list.
  */
-public class HttpBasicAuthProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
+public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
     /**
      * Configure this for outbound requests to override user to use.
      */
@@ -138,9 +137,9 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     }
 
     @Override
-    protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                    SecurityEnvironment outboundEnv,
-                                                    EndpointConfig outboundEp) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundEp) {
 
         // explicit username in request properties
         Optional<Object> maybeUsername = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
@@ -209,7 +208,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     }
 
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         Map<String, List<String>> headers = providerRequest.env().headers();
         List<String> authorizationHeader = headers.get(HEADER_AUTHENTICATION);
 

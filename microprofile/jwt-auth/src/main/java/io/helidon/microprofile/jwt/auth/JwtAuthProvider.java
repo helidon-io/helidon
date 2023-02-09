@@ -84,7 +84,7 @@ import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
-import io.helidon.security.spi.SynchronousProvider;
+import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.TokenHandler;
 
 import jakarta.enterprise.inject.spi.DeploymentException;
@@ -100,7 +100,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Provider that provides JWT authentication.
  */
-public class JwtAuthProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
+public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
 
     /**
      * Configure this for outbound requests to override user to use.
@@ -212,7 +212,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     }
 
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         if (!authenticate) {
             return AuthenticationResponse.abstain();
         }
@@ -376,9 +376,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     }
 
     @Override
-    public OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                 SecurityEnvironment outboundEnv,
-                                                 EndpointConfig outboundEndpointConfig) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundEndpointConfig) {
 
         Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
         return maybeUsername

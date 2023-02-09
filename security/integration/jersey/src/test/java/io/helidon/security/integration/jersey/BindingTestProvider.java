@@ -29,15 +29,16 @@ import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
+import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 
 /**
  * Simple authorization provider, denying access to "deny" path.
  */
-public class BindingTestProvider extends SynchronousProvider
-        implements AuthorizationProvider, AuthenticationProvider, OutboundSecurityProvider {
+public class BindingTestProvider
+        implements AuthorizationProvider, AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
     @Override
-    protected AuthorizationResponse syncAuthorize(ProviderRequest providerRequest) {
+    public AuthorizationResponse authorize(ProviderRequest providerRequest) {
         String path = providerRequest
                 .env().path().orElseThrow(() -> new IllegalArgumentException("Path is a required parameter"));
         if ("/deny".equals(path)) {
@@ -47,7 +48,7 @@ public class BindingTestProvider extends SynchronousProvider
     }
 
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         List<String> strings = providerRequest.env().headers().get("x-user");
 
         if (null == strings) {
@@ -57,9 +58,9 @@ public class BindingTestProvider extends SynchronousProvider
     }
 
     @Override
-    protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                    SecurityEnvironment outboundEnv,
-                                                    EndpointConfig outboundEndpointConfig) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundEndpointConfig) {
         return providerRequest.securityContext()
                 .user()
                 .map(user -> OutboundSecurityResponse

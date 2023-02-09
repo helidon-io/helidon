@@ -104,7 +104,7 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
     }
 
     @Override
-    protected Single<Subject> enhance(ProviderRequest request,
+    protected Subject enhance(ProviderRequest request,
                                       AuthenticationResponse previousResponse,
                                       Subject subject) {
         String username = subject.principal().getName();

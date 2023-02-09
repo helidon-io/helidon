@@ -32,15 +32,15 @@ import io.helidon.security.Subject;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
-import io.helidon.security.spi.SynchronousProvider;
+import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Sample provider.
  */
-class MyProvider extends SynchronousProvider implements AuthenticationProvider, AuthorizationProvider, OutboundSecurityProvider {
+class MyProvider implements AuthenticationProvider, AuthorizationProvider, OutboundSecurityProvider, SecurityProvider {
 
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         //get username and password
         List<String> headers = providerRequest.env().headers().getOrDefault("authorization", List.of());
         if (headers.isEmpty()) {
@@ -75,7 +75,7 @@ class MyProvider extends SynchronousProvider implements AuthenticationProvider, 
     }
 
     @Override
-    protected AuthorizationResponse syncAuthorize(ProviderRequest providerRequest) {
+    public AuthorizationResponse authorize(ProviderRequest providerRequest) {
         if ("CustomResourceType"
                 .equals(providerRequest.env().abacAttribute("resourceType").orElseThrow(() -> new IllegalArgumentException(
                         "Resource type is a required parameter")))) {
@@ -98,9 +98,9 @@ class MyProvider extends SynchronousProvider implements AuthenticationProvider, 
     }
 
     @Override
-    protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                    SecurityEnvironment outboundEnv,
-                                                    EndpointConfig outboundEndpointConfig) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundEndpointConfig) {
 
         return providerRequest.securityContext()
                 .user()

@@ -43,7 +43,6 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
 import io.helidon.security.providers.abac.spi.AbacValidatorService;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.SecurityProvider;
-import io.helidon.security.spi.SynchronousProvider;
 
 import jakarta.annotation.security.DenyAll;
 import jakarta.annotation.security.PermitAll;
@@ -58,7 +57,7 @@ import jakarta.annotation.security.RolesAllowed;
  * @see #builder()
  * @see #create(Config)
  */
-public final class AbacProvider extends SynchronousProvider implements AuthorizationProvider {
+public final class AbacProvider implements AuthorizationProvider, SecurityProvider {
 
     private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
     private final Set<Class<? extends Annotation>> supportedAnnotations;
@@ -128,7 +127,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
     }
 
     @Override
-    protected AuthorizationResponse syncAuthorize(ProviderRequest providerRequest) {
+    public AuthorizationResponse authorize(ProviderRequest providerRequest) {
         //let's find attributes to be validated
         Errors.Collector collector = Errors.collector();
         List<RuntimeAttribute> attributes = new ArrayList<>();

@@ -49,7 +49,6 @@ import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SecurityProvider;
-import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
@@ -73,7 +72,7 @@ import com.google.api.client.json.gson.GsonFactory;
  *
  * See google-login example.
  */
-public final class GoogleTokenProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
+public final class GoogleTokenProvider implements AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(GoogleTokenProvider.class.getName());
     private static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
 
@@ -157,7 +156,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
     }
 
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         Optional<String> maybeToken;
         try {
             maybeToken = tokenHandler.extractToken(providerRequest.env().headers());
@@ -272,9 +271,9 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
     }
 
     @Override
-    protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                    SecurityEnvironment outboundEnv,
-                                                    EndpointConfig outboundEndpointConfig) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundEndpointConfig) {
         return providerRequest.securityContext()
                 .user()
                 .flatMap(subject -> subject.publicCredential(TokenCredential.class))

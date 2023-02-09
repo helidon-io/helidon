@@ -19,6 +19,7 @@ package io.helidon.security;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
+import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 
 import org.junit.jupiter.api.Test;
@@ -56,9 +57,9 @@ public class SynchronousProviderTest {
         assertThat(response.description().get(), is("unit.test"));
     }
 
-    private class Atn extends SynchronousProvider implements AuthenticationProvider {
+    private class Atn implements AuthenticationProvider, SecurityProvider {
         @Override
-        protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+        public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
             return AuthenticationResponse.builder()
                     .description("unit.test")
                     .status(SecurityResponse.SecurityStatus.ABSTAIN)
@@ -66,9 +67,9 @@ public class SynchronousProviderTest {
         }
     }
 
-    private class Atz extends SynchronousProvider implements AuthorizationProvider {
+    private class Atz implements AuthorizationProvider, SecurityProvider {
         @Override
-        protected AuthorizationResponse syncAuthorize(ProviderRequest providerRequest) {
+        public AuthorizationResponse authorize(ProviderRequest providerRequest) {
             return AuthorizationResponse.builder()
                     .description("unit.test")
                     .status(SecurityResponse.SecurityStatus.ABSTAIN)
@@ -76,11 +77,11 @@ public class SynchronousProviderTest {
         }
     }
 
-    private class Outbound extends SynchronousProvider implements OutboundSecurityProvider {
+    private class Outbound implements OutboundSecurityProvider, SecurityProvider {
         @Override
-        protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                        SecurityEnvironment outEnv,
-                                                        EndpointConfig epc) {
+        public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                         SecurityEnvironment outEnv,
+                                                         EndpointConfig epc) {
             return OutboundSecurityResponse.builder()
                     .description("unit.test")
                     .status(SecurityResponse.SecurityStatus.ABSTAIN)

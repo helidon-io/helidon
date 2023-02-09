@@ -53,7 +53,6 @@ import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SecurityProvider;
-import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
 
 /**
@@ -64,7 +63,7 @@ import io.helidon.security.util.TokenHandler;
  * Verification and signatures of tokens is done through JWK standard - two separate
  * JWK files are expected (one for verification, one for signatures).
  */
-public final class JwtProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
+public final class JwtProvider implements AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(JwtProvider.class.getName());
 
     /**
@@ -144,7 +143,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     }
 
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         if (!authenticate) {
             return AuthenticationResponse.abstain();
         }
@@ -267,9 +266,9 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     }
 
     @Override
-    protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                    SecurityEnvironment outboundEnv,
-                                                    EndpointConfig outboundEndpointConfig) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundEndpointConfig) {
 
         Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
         return maybeUsername

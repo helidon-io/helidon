@@ -37,14 +37,13 @@ import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SecurityProvider;
-import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
 
 /**
  * Security provider that extracts a username (or service name) from a header.
  * This provider also supports propagation of identity through a header.
  */
-public class HeaderAtnProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
+public class HeaderAtnProvider implements AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
     private final boolean optional;
     private final boolean authenticate;
     private final boolean propagate;
@@ -86,7 +85,7 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
     }
 
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         if (!authenticate) {
             return AuthenticationResponse.abstain();
         }
@@ -129,9 +128,9 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
     }
 
     @Override
-    protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                    SecurityEnvironment outboundEnv,
-                                                    EndpointConfig outboundEndpointConfig) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                        SecurityEnvironment outboundEnv,
+                                                        EndpointConfig outboundEndpointConfig) {
 
         Optional<Subject> toPropagate;
         if (subjectType == SubjectType.USER) {

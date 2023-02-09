@@ -41,7 +41,7 @@ public interface SecurityClient<T extends SecurityResponse> {
      * @throws SecurityException in case of timeout, interrupted call or exception during future processing
      */
     default T get() {
-        return SecurityResponse.get(submit());
+        return submit();
     }
 
 }
