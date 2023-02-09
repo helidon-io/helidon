@@ -31,6 +31,7 @@ import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.HeaderValues.ACCEPT_EVENT_STREAM;
+import static io.helidon.common.http.Http.HeaderValues.ACCEPT_JSON;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -50,7 +51,7 @@ class SseServerTest {
         rules.get("/sseJson1", SseServerTest::sseJson1);
         rules.get("/sseJson2", SseServerTest::sseJson2);
         rules.get("/sseMixed", SseServerTest::sseMixed);
-
+        rules.get("/sseIdComment", SseServerTest::sseIdComment);
     }
 
     private static void sseString1(ServerRequest req, ServerResponse res) {
@@ -114,6 +115,17 @@ class SseServerTest {
         }
     }
 
+    private static void sseIdComment(ServerRequest req, ServerResponse res) {
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            SseEvent event = SseEvent.builder()
+                    .id("1")
+                    .comment("This is a comment")
+                    .data("hello")
+                    .build();
+            sseSink.emit(event);
+        }
+    }
+
     @Test
     void testSseString1() {
         testSse("/sseString1", "data:hello\n\ndata:world\n\n");
@@ -140,6 +152,18 @@ class SseServerTest {
                 "data:hello\n\ndata:world\n\n" +
                         "data:{\"hello\":\"world\"}\n\n" +
                         "data:{\"hello\":\"world\"}\n\n");
+    }
+
+    @Test
+    void testIdComment() {
+        testSse("/sseIdComment", ":This is a comment\nid:1\ndata:hello\n\n");
+    }
+
+    @Test
+    void testWrongAcceptType() {
+        try (Http1ClientResponse response = client.get("/sseString1").header(ACCEPT_JSON).request()) {
+            assertThat(response.status(), is(Http.Status.NOT_ACCEPTABLE_406));
+        }
     }
 
     private void testSse(String path, String result) {

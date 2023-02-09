@@ -123,7 +123,7 @@ public class SseEvent {
      * @return optional reconnect
      */
     public Optional<Long> reconnectMillis() {
-        return Optional.ofNullable(reconnectMillis);
+        return Optional.of(reconnectMillis);
     }
 
     /**
@@ -152,7 +152,7 @@ public class SseEvent {
          * @param id the id
          * @return updated builder instance
          */
-        Builder id(String id) {
+        public Builder id(String id) {
             this.id = id;
             return this;
         }
@@ -186,7 +186,7 @@ public class SseEvent {
          * @param mediaType media type of event data
          * @return updated builder instance
          */
-        Builder mediaType(MediaType mediaType) {
+        public Builder mediaType(MediaType mediaType) {
             this.mediaType = mediaType;
             return this;
         }
@@ -197,7 +197,7 @@ public class SseEvent {
          * @param data event data
          * @return updated builder instance
          */
-        Builder data(Object data) {
+        public Builder data(Object data) {
             this.data = data;
             return this;
         }
@@ -209,7 +209,7 @@ public class SseEvent {
          * @param reconnectMillis reconnection delay in milliseconds
          * @return updated builder instance
          */
-        Builder reconnectDelay(long reconnectMillis) {
+        public Builder reconnectDelay(long reconnectMillis) {
             this.reconnectMillis = reconnectMillis;
             return this;
         }
