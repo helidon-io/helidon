@@ -20,6 +20,8 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
 import io.helidon.security.annotations.Authenticated;
@@ -32,6 +34,7 @@ import io.helidon.security.annotations.Authenticated;
 public class TestResource {
 
     public static final String EXPECTED_TEST_MESSAGE = "Hello world";
+    public static final String EXPECTED_POST_LOGOUT_TEST_MESSAGE = "Post logout endpoint reached with no cookies";
 
     /**
      * Return hello world message.
@@ -43,6 +46,16 @@ public class TestResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String getDefaultMessage() {
         return EXPECTED_TEST_MESSAGE;
+    }
+
+    @Path("/postLogout")
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String postLogout(@Context HttpHeaders httpHeaders) {
+        if (httpHeaders.getCookies().isEmpty()) {
+            return EXPECTED_POST_LOGOUT_TEST_MESSAGE;
+        }
+        return "Cookies are not cleared!";
     }
 
 }

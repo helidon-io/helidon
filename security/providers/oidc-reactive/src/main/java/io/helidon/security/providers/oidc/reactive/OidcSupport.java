@@ -242,6 +242,7 @@ public final class OidcSupport implements Service {
     private void logoutWithTenant(ServerRequest req, ServerResponse res, Tenant tenant) {
         OidcCookieHandler idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
         OidcCookieHandler tokenCookieHandler = oidcConfig.tokenCookieHandler();
+        OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
 
         Optional<String> idTokenCookie = req.headers()
                 .cookies()
@@ -269,6 +270,7 @@ public final class OidcSupport implements Service {
                     ResponseHeaders headers = res.headers();
                     headers.addCookie(tokenCookieHandler.removeCookie().build());
                     headers.addCookie(idTokenCookieHandler.removeCookie().build());
+                    headers.addCookie(tenantCookieHandler.removeCookie().build());
 
                     res.status(Http.Status.TEMPORARY_REDIRECT_307)
                             .addHeader(Http.Header.LOCATION, sb.toString())
@@ -457,7 +459,7 @@ public final class OidcSupport implements Service {
                     .forSingle(builder -> {
                         headers.addCookie(builder.build());
                         if (idToken != null && oidcConfig.logoutEnabled()) {
-                            tokenCookieHandler.createCookie(idToken)
+                            oidcConfig.idTokenCookieHandler().createCookie(idToken)
                                     .forSingle(it -> {
                                         headers.addCookie(it.build());
                                         res.send();

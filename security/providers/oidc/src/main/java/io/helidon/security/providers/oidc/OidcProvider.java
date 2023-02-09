@@ -248,8 +248,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 provides = {AuthenticationProvider.class, SecurityProvider.class})
     public static final class Builder implements io.helidon.common.Builder<Builder, OidcProvider> {
 
-        private static final int BUILDER_WEIGHT = 50000;
-        private static final int DEFAULT_WEIGHT = 100000;
+        private static final int BUILDER_WEIGHT = 300;
+        private static final int DEFAULT_WEIGHT = 100;
 
         private final HelidonServiceLoader.Builder<TenantConfigProvider> tenantConfigProviders = HelidonServiceLoader
                 .builder(ServiceLoader.load(TenantConfigProvider.class))
