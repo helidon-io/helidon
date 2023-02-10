@@ -35,8 +35,8 @@ This will mount `~/.oci` as a volume in the running docker container.
         </method>
     </methods>
     <variables>
-        <text path="module-dir">server</text>
-        <boolean path="multi-module">true</boolean>
+        <text path="module-dir" transient="true">server</text>
+        <boolean path="multi-module" transient="true">true</boolean>
     </variables>
     <presets>
         <boolean path="db">false</boolean>
