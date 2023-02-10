@@ -46,6 +46,7 @@ import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.ServiceProviderProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.services.DefaultServiceBinder;
+import io.helidon.pico.spi.CallingContext;
 import io.helidon.pico.tools.AbstractFilerMsgr;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ApplicationCreator;
@@ -73,12 +74,14 @@ import static io.helidon.pico.maven.plugin.Utils.applicationCreator;
 import static io.helidon.pico.maven.plugin.Utils.hasValue;
 import static io.helidon.pico.maven.plugin.Utils.picoServices;
 import static io.helidon.pico.maven.plugin.Utils.toDescriptions;
+import static io.helidon.pico.spi.CallingContext.*;
 import static io.helidon.pico.tools.ApplicationCreatorConfigOptions.PermittedProviderType;
 import static io.helidon.pico.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
 import static io.helidon.pico.tools.ModuleUtils.isUnnamedModuleName;
 import static io.helidon.pico.tools.ModuleUtils.toBasePath;
 import static io.helidon.pico.tools.ModuleUtils.toSuggestedGeneratedPackageName;
 import static io.helidon.pico.tools.ModuleUtils.toSuggestedModuleName;
+import static java.util.Optional.*;
 
 /**
  * Abstract base for pico maven plugins responsible for creating application and test application's.
@@ -126,9 +129,25 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     private List<String> permittedProviderQualifierTypeNames;
 
     /**
+     * Sets the debug flag.
+     * See {@link io.helidon.pico.PicoServicesConfig#TAG_DEBUG}.
+     */
+    @Parameter(property = PicoServicesConfig.TAG_DEBUG, readonly = true)
+    private boolean isDebugEnabled;
+
+    /**
      * Default constructor.
      */
     protected AbstractApplicationCreatorMojo() {
+    }
+
+    /**
+     * Returns true if debug is enabled.
+     *
+     * @return true if in debug mode
+     */
+    protected boolean isDebugEnabled() {
+        return isDebugEnabled;
     }
 
     /**
@@ -308,6 +327,9 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
         this.permittedProviderType = PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
 
+        Optional<CallingContext> callingContext =
+                maybeCreate(false, ofNullable(getThisModuleName()), of(isDebugEnabled), true, true);
+
         // we MUST get the exclusion list prior to building the next loader, since it will reset the service registry
         Set<TypeName> serviceNamesForExclusion = getServiceTypeNamesForExclusion();
         boolean hasModuleInfo = hasModuleInfo();
@@ -349,6 +371,8 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             serviceTypeNames.removeAll(serviceNamesForExclusion);
 
             String moduleInfoModuleName = getThisModuleName();
+//            CallingContext.globalCallingContext();
+
             ServiceProvider<Module> moduleSp = lookupThisModule(moduleInfoModuleName, services);
             String typeSuffix = getClassPrefixName();
             AtomicReference<File> moduleInfoPathRef = new AtomicReference<>();
@@ -361,7 +385,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             CodeGenPaths codeGenPaths = DefaultCodeGenPaths.builder()
                     .generatedSourcesPath(getGeneratedSourceDirectory().getPath())
                     .outputPath(getOutputDirectory().getPath())
-                    .moduleInfoPath(Optional.ofNullable(moduleInfoPath))
+                    .moduleInfoPath(ofNullable(moduleInfoPath))
                     .build();
             ApplicationCreatorCodeGen applicationCodeGen = DefaultApplicationCreatorCodeGen.builder()
                     .packageName(packageName)

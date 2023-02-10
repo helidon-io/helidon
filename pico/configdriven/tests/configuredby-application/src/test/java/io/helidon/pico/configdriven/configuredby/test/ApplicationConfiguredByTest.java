@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.configdriven.configuredby.testsubjects;
+package io.helidon.pico.configdriven.configuredby.test;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -26,7 +26,7 @@ import io.helidon.pico.Metrics;
 import io.helidon.pico.RunLevel;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.configdriven.configuredby.application.testsubjects.ASimpleRunLevelService;
+import io.helidon.pico.configdriven.configuredby.application.test.ASimpleRunLevelService;
 
 import org.junit.jupiter.api.Test;
 
@@ -36,9 +36,9 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
 /**
- * Designed to re-run the same tests, but using the application-created DI model instead.
+ * Designed to re-run the same tests from base, but using the application-created DI model instead.
  */
-class ApplicationConfiguredByTest extends ConfiguredByTest {
+class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
 
     /**
      * In application mode, we should not have any lookups recorded.

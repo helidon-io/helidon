@@ -17,4 +17,4 @@
 /**
  * For Testing.
  */
-package io.helidon.pico.configdriven.configuredby.testsubjects;
+package io.helidon.pico.configdriven.configuredby.test;

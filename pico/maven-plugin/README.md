@@ -66,8 +66,8 @@ The example from above cover the basics for generation. There are one more advan
 ```pom.xml
     <configuration>
         <compilerArgs>
-            <arg>-Aio.helidon.pico.debugAnnoProcessor=true</arg>
-            <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>
+            <arg>-Apico.debug=true</arg>
+            <arg>-Apico.autoAddNonContractInterfaces=true</arg>
         </compilerArgs>
         <packageNames>
             <packageName>org.atinject.tck.auto</packageName>

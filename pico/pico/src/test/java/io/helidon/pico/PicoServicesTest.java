@@ -52,7 +52,8 @@ class PicoServicesTest {
         assertThat(PicoServices.globalBootstrap().orElseThrow(), sameInstance(bootstrap));
 
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> PicoServices.globalBootstrap(bootstrap));
-        assertThat(e.getMessage(), equalTo("bootstrap already set"));
+        assertThat(e.getMessage(),
+                   equalTo("bootstrap already set - use the (-D and/or -A) tag 'pico.debug=true' to see full trace output."));
 
         PicoServices picoServices = PicoServices.picoServices().orElseThrow();
         assertThat(picoServices, notNullValue());

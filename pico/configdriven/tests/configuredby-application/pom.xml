@@ -26,7 +26,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-pico-configdriven-tests-test-configuredby-application</artifactId>
+    <artifactId>helidon-pico-configdriven-test-configuredby-application</artifactId>
     <name>Helidon Pico Config-Driven ConfiguredBy Appl Tests</name>
     <description>the same tests as test-configuredby, but instead using the maven application generation in order to calc di plan at compile-time</description>
 
@@ -47,15 +47,8 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.pico.configdriven.tests</groupId>
-            <artifactId>helidon-pico-configdriven-tests-test-configuredby</artifactId>
+            <artifactId>helidon-pico-configdriven-test-configuredby</artifactId>
             <version>${helidon.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.pico.configdriven.tests</groupId>
-            <artifactId>helidon-pico-configdriven-tests-test-configuredby</artifactId>
-            <version>${helidon.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>
@@ -104,11 +97,11 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Aio.helidon.pico.debugAnnoProcessor=true</arg>
-                        <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>
-                        <arg>-Aio.helidon.pico.whiteListedInterceptorAnnotations=jakarta.inject.Named</arg>
-                        <arg>-Aio.helidon.pico.application.pre.create=true</arg>
-                        <arg>-Aio.helidon.pico.mapApplicationToSingletonScope=true</arg>
+                        <arg>-Apico.debug=${pico.debug}</arg>
+                        <arg>-Apico.autoAddNonContractInterfaces=true</arg>
+                        <arg>-Apico.whiteListedInterceptorAnnotations=jakarta.inject.Named</arg>
+                        <arg>-Apico.application.pre.create=true</arg>
+                        <arg>-Apico.mapApplicationToSingletonScope=true</arg>
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
@@ -147,9 +140,9 @@
                 </executions>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Aio.helidon.pico.debugAnnoProcessor=true</arg>
-                        <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>
-                        <arg>-Aio.helidon.pico.application.pre.create=true</arg>
+                        <arg>-Apico.debug=${pico.debug}</arg>
+                        <arg>-Apico.autoAddNonContractInterfaces=true</arg>
+                        <arg>-Apico.application.pre.create=true</arg>
 <!--                        <arg>-XprintProcessorInfo</arg>-->
 <!--                        <arg>-XprintRounds</arg>-->
 <!--                        <arg>-verbose</arg>-->

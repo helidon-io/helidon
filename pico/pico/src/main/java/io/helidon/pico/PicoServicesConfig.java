@@ -35,12 +35,6 @@ import io.helidon.config.metadata.ConfiguredOption;
 public abstract class PicoServicesConfig {
 
     /**
-     * Default Constructor.
-     */
-    protected PicoServicesConfig() {
-    }
-
-    /**
      * The short name for pico.
      */
     public static final String NAME = "pico";
@@ -54,6 +48,22 @@ public abstract class PicoServicesConfig {
      * The key association with the name of the provider implementation.
      */
     public static final String KEY_PROVIDER_NAME = "provider-name";
+
+    /**
+     * Tag for putting Pico tooling, processing, and runtime into debug mode.
+     */
+    public static final String TAG_DEBUG = NAME + ".debug";
+
+    /**
+     * Identify the module name being processed or the desired target module name.
+     */
+    public static final String TAG_MODULE_NAME = /* do not use #NAME here */ "modulename";
+
+    /**
+     * Default Constructor.
+     */
+    protected PicoServicesConfig() {
+    }
 
     /**
      * The provider implementation name.

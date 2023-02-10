@@ -35,14 +35,14 @@ import static io.helidon.pico.tools.CommonUtils.toList;
 public class Options {
 
     /**
-     * Put pico's annotation processing into debug mode.
+     * Tag for putting Pico's annotation processing into debug mode.
      */
-    public static final String TAG_DEBUG = PicoServicesConfig.FQN + ".debugAnnoProcessor";
+    public static final String TAG_DEBUG = PicoServicesConfig.TAG_DEBUG;
 
     /**
      * Treat all super types as a contract for a given service type being added.
      */
-    public static final String TAG_AUTO_ADD_NON_CONTRACT_INTERFACES = PicoServicesConfig.FQN + ".autoAddNonContractInterfaces";
+    public static final String TAG_AUTO_ADD_NON_CONTRACT_INTERFACES = PicoServicesConfig.NAME + ".autoAddNonContractInterfaces";
 
     /**
      * Pre-creates a placeholder for an {@link io.helidon.pico.Application}.
@@ -50,36 +50,36 @@ public class Options {
     public static final String TAG_APPLICATION_PRE_CREATE = ActivatorCreatorConfigOptions.TAG_APPLICATION_PRE_CREATE;
 
     /**
-     * For future use.  Should the module-info.java be automatically patched to reflect the pico DI model.
+     * For future use. Should the module-info.java be automatically patched to reflect the pico DI model.
      */
-    static final String TAG_AUTO_PATCH_MODULE_INFO = PicoServicesConfig.FQN + ".autoPatchModuleInfo";
+    static final String TAG_AUTO_PATCH_MODULE_INFO = PicoServicesConfig.NAME + ".autoPatchModuleInfo";
 
     /**
      * Identify the module name being processed or the desired target module name.
      */
-    public static final String TAG_MODULE_NAME = "module_name";
+    public static final String TAG_MODULE_NAME = PicoServicesConfig.TAG_MODULE_NAME;
 
     /**
-     * Identify the pico sidecar (module-info.java.pico) file name.
+     * Identify the pico sidecar (module-info.java.pico) module file name or path.
      */
-    public static final String TAG_PICO_MODULE_NAME = PicoServicesConfig.FQN + "." + TAG_MODULE_NAME;
+    public static final String TAG_PICO_MODULE_NAME = PicoServicesConfig.NAME + "." + TAG_MODULE_NAME;
 
     /**
      * Identify the additional annotation type names that will trigger interception.
      */
-    static final String TAG_WHITE_LISTED_INTERCEPTOR_ANNOTATIONS = PicoServicesConfig.FQN
+    static final String TAG_WHITE_LISTED_INTERCEPTOR_ANNOTATIONS = PicoServicesConfig.NAME
             + ".whiteListedInterceptorAnnotations";
 
     /**
      * Identify whether any application scopes (from ee) is translated to {@link jakarta.inject.Singleton}.
      */
-    public static final String TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE = PicoServicesConfig.FQN
+    public static final String TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE = PicoServicesConfig.NAME
             + ".mapApplicationToSingletonScope";
 
     /**
      * Identify whether any unsupported types should trigger annotation processing to keep going (the default is to fail).
      */
-    public static final String TAG_IGNORE_UNSUPPORTED_ANNOTATIONS = PicoServicesConfig.FQN
+    public static final String TAG_IGNORE_UNSUPPORTED_ANNOTATIONS = PicoServicesConfig.NAME
             + ".ignoreUnsupportedAnnotations";
 
     private static final Map<String, String> OPTS = new HashMap<>();

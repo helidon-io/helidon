@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.configdriven.configuredby.testsubjects;
+package io.helidon.pico.configdriven.configuredby.test;
 
 import java.util.List;
 import java.util.Map;
@@ -49,12 +49,15 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class ConfiguredByTest {
-    static final String TAG_FAKE_SOCKET_CONFIG = "fake-socket-config";
-    static final String TAG_FAKE_SERVER_CONFIG_CONFIG = "fake-server-config";
+/**
+ * Tests for {@link io.helidon.pico.configdriven.ConfiguredBy}.
+ */
+public abstract class AbstractConfiguredByTest {
+    protected static final String TAG_FAKE_SOCKET_CONFIG = "fake-socket-config";
+    protected static final String TAG_FAKE_SERVER_CONFIG_CONFIG = "fake-server-config";
 
-    PicoServices picoServices;
-    Services services;
+    protected PicoServices picoServices;
+    protected Services services;
 
     @BeforeAll
     static void initialStateChecks() {
@@ -63,7 +66,7 @@ class ConfiguredByTest {
     }
 
     @BeforeEach
-    void reset() {
+    public void reset() {
         PicoTestingSupport.resetAll();
         Config config = io.helidon.config.Config.create(
                 ConfigSources.create(
@@ -72,7 +75,7 @@ class ConfiguredByTest {
                                 PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_ACTIVATION_LOGS, "true",
                                 PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_SERVICE_LOOKUP_CACHING, "true",
                                 TAG_FAKE_SOCKET_CONFIG + ".port", "8080",
-                               TAG_FAKE_SERVER_CONFIG_CONFIG + ".worker-count", "1"
+                                TAG_FAKE_SERVER_CONFIG_CONFIG + ".worker-count", "1"
                         ), "config-1"));
         this.picoServices = testableServices(config);
         this.services = picoServices.services();
@@ -80,7 +83,7 @@ class ConfiguredByTest {
     }
 
     @Test
-    void testItAll() {
+    public void testItAll() {
         // verify the services registry
         testRegistry();
 
@@ -99,7 +102,7 @@ class ConfiguredByTest {
         testShutdown(fakeWebServer.get());
     }
 
-//    @Test
+    //    @Test
     void testRegistry() {
         DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
                 .addQualifier(DefaultQualifierAndValue.create(ConfiguredBy.class))
@@ -154,7 +157,7 @@ class ConfiguredByTest {
                    contains("ASingletonService{1}:ACTIVE"));
     }
 
-//    @Test
+    //    @Test
     void testShutdown(
             FakeWebServer fakeWebServer) {
         assertThat(fakeWebServer.isRunning(), is(true));
@@ -164,7 +167,7 @@ class ConfiguredByTest {
         assertThat(fakeWebServer.isRunning(), is(false));
     }
 
-//    @Test
+    //    @Test
     void testBeanRegistry() {
         ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
         assertThat(cbr.ready(), is(true));

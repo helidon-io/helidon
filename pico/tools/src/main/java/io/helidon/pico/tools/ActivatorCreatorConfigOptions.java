@@ -33,7 +33,7 @@ public interface ActivatorCreatorConfigOptions {
      * This option (use -A at compile time) should be set to opt into {@link io.helidon.pico.Application} stub
      * creation.
      */
-    String TAG_APPLICATION_PRE_CREATE = PicoServicesConfig.FQN + ".application.pre.create";
+    String TAG_APPLICATION_PRE_CREATE = PicoServicesConfig.NAME + ".application.pre.create";
 
     /**
      * Should jsr-330 be followed in strict accordance. The default here is actually set to false for two reasons:

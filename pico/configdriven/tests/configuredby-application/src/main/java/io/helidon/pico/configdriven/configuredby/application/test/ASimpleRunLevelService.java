@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.configdriven.configuredby.application.testsubjects;
+package io.helidon.pico.configdriven.configuredby.application.test;
 
 import java.util.List;
 import java.util.Objects;
 
 import io.helidon.pico.RunLevel;
-import io.helidon.pico.configdriven.configuredby.testsubjects.ASingletonServiceContract;
-import io.helidon.pico.configdriven.configuredby.testsubjects.FakeWebServerContract;
+import io.helidon.pico.configdriven.configuredby.test.ASingletonServiceContract;
+import io.helidon.pico.configdriven.configuredby.test.FakeWebServerContract;
 import io.helidon.pico.spi.Resetable;
 
 import jakarta.annotation.PostConstruct;

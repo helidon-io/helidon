@@ -17,6 +17,7 @@
 package io.helidon.pico;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -78,7 +79,9 @@ public interface PicoServices {
      * @param bootstrap the primordial global bootstrap configuration
      * @see #globalBootstrap()
      */
-    static void globalBootstrap(Bootstrap bootstrap) {
+    static void globalBootstrap(
+            Bootstrap bootstrap) {
+        Objects.requireNonNull(bootstrap);
         PicoServicesHolder.bootstrap(bootstrap);
     }
 
@@ -114,7 +117,8 @@ public interface PicoServices {
      *
      * @return the service binder capable of binding, or empty if not permitted/available
      */
-    Optional<ServiceBinder> createServiceBinder(Module module);
+    Optional<ServiceBinder> createServiceBinder(
+            Module module);
 
     /**
      * Optionally, the injector.

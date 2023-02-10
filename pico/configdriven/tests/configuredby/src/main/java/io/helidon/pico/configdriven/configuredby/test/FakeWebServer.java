@@ -14,29 +14,34 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.configdriven.configuredby.testsubjects;
+package io.helidon.pico.configdriven.configuredby.test;
 
 import java.util.Objects;
+import java.util.Optional;
 
-import io.helidon.builder.config.testsubjects.fakes.FakeWebServerTlsConfig;
+import io.helidon.builder.config.testsubjects.fakes.FakeServerConfig;
+import io.helidon.builder.config.testsubjects.fakes.FakeTracer;
 import io.helidon.pico.configdriven.ConfiguredBy;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 
-@ConfiguredBy(FakeWebServerTlsConfig.class)
-@Named("jimmy")
-public class FakeTlsWSNotDrivenByCB {
+/**
+ * For Testing.
+ */
+@ConfiguredBy(FakeServerConfig.class)
+public class FakeWebServer implements FakeWebServerContract {
 
-    private FakeWebServerTlsConfig cfg;
+    private FakeServerConfig cfg;
     private boolean running;
 
     @Inject
-    FakeTlsWSNotDrivenByCB(
-            FakeWebServerTlsConfig cfg) {
+    FakeWebServer(
+            FakeServerConfig cfg,
+            Optional<FakeTracer> tracer) {
         this.cfg = Objects.requireNonNull(cfg);
+        assert (tracer.isEmpty());
     }
 
     /**
@@ -56,10 +61,12 @@ public class FakeTlsWSNotDrivenByCB {
         running = false;
     }
 
-    public FakeWebServerTlsConfig configuration() {
+    @Override
+    public FakeServerConfig configuration() {
         return cfg;
     }
 
+    @Override
     public boolean isRunning() {
         return running;
     }

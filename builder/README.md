@@ -3,7 +3,7 @@
 The <b>Helidon Builder</b> provides compile-time code generation for fluent builders. It was inspired by [Lombok]([https://projectlombok.org/), but the implementation here in Helidon is different in a few ways:
 <ol>
     <li>The <i>Builder</i> annotation targets interface or annotation types only. Your interface effectively contains the attributes of your getter as well as serving as the contract for your getter methods.</li>
-    <li>Generated classes implement your target interface (or annotation) and provide a fluent builder that will always have an implementation of <i>toString(), hashCode(), and equals().</i> implemented</li>
+    <li>Generated classes implement your target interface (or annotation or abstract class) and provide a fluent builder that will always have an implementation of <i>toString(), hashCode(), and equals().</i> implemented</li>
     <li>Generated classes always behave like a <i>SuperBuilder</i> from Lombok. Basically this means that builders can form
       a hierarchy on the types they target (e.g., Level2 derives from Level1 derives from Level0, etc.).</li>
     <li>Lombok uses AOP while the Helidon Builder generates source code. You can use the <i>Builder</i> annotation (as well as other annotations in the package and <i>ConfiguredOption</i>) to control the naming and other features of what and how the implementation classes are generated and behave.</li>
@@ -51,14 +51,17 @@ The result of this will create (under ./target/generated-sources/annotations):
 
 ## Modules
 * [builder](./builder) - provides the compile-time annotations, as well as optional runtime supporting types.
+* [types](./types) - provides the basic types for builder.
 * [processor-spi](./processor-spi) - defines the Builder Processor SPI runtime definitions used by builder tooling. This module is only needed at compile time.
 * [processor-tools](./processor-tools) - provides the concrete creators & code generators. This module is only needed at compile time.
 * [processor](./processor) - the annotation processor which delegates to the processor-tools module for the main processing logic. This module is only needed at compile time.
-* [tests/builder](./tests/builder) - tests that can also serve as examples for usage.
+* [builder-config](./builder-config) - extension to the builder to additionally support [Helidon (Common) Config](../common/config).
+* [builder-config-processor](./builder-config-processor) - defines the ConfigBean builder.
+* [tests](./tests) - tests that can also serve as examples for usage.
 
-## Customizations
+## Customizations and Extensibility
 To implement your own custom <i>Builder</i>:
-* See [builder-config](../builder-config) for an example.
+* See [builder-config](../builder-config) serving as an example.
 
 ## Usage
 See [tests/builder](./tests/builder) for usage examples.

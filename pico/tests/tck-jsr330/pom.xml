@@ -93,8 +93,8 @@
                 </executions>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Aio.helidon.pico.debugAnnoProcessor=true</arg>
-                        <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>
+                        <arg>-Apico.debug=${pico.debug}</arg>
+                        <arg>-Apico.autoAddNonContractInterfaces=true</arg>
                     </compilerArgs>
                     <packageNames>
                         <packageName>org.atinject.tck.auto</packageName>

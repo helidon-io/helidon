@@ -26,7 +26,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-pico-configdriven-tests-test-configuredby</artifactId>
+    <artifactId>helidon-pico-configdriven-test-configuredby</artifactId>
     <name>Helidon Pico Config-Driven ConfiguredBy Svcs Tests</name>
     <description>tests the fuller config-driven services (i.e., full config not just common and with config-driven services)</description>
 
@@ -76,22 +76,22 @@
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope> <!-- not a mistake; we need our junit tests in downstream moule tests -->
         </dependency>
         <dependency>
             <groupId>io.helidon.pico</groupId>
             <artifactId>helidon-pico-testing</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope> <!-- not a mistake; we need our junit tests in downstream moule tests -->
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope> <!-- not a mistake; we need our junit tests in downstream moule tests -->
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope> <!-- not a mistake; we need our junit tests in downstream moule tests -->
         </dependency>
     </dependencies>
 
@@ -110,7 +110,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>
+                        <arg>-Apico.autoAddNonContractInterfaces=true</arg>
 <!--                        <arg>-XprintProcessorInfo</arg>-->
 <!--                        <arg>-XprintRounds</arg>-->
 <!--                        <arg>-verbose</arg>-->
@@ -129,17 +129,6 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

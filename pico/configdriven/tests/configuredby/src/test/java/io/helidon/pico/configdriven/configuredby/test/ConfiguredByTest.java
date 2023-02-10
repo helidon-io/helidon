@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.configdriven.configuredby.testsubjects;
+package io.helidon.pico.configdriven.configuredby.test;
 
-import io.helidon.builder.config.ConfigBean;
-
-@ConfigBean(atLeastOne = true, wantDefaultConfigBean = true)
-public interface ASingletonConfigBean {
+/**
+ * Executes the tests from the base.
+ */
+public class ConfiguredByTest extends AbstractConfiguredByTest {
 
 }

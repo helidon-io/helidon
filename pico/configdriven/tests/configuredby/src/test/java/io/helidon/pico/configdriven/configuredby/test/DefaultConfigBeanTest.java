@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.configdriven.configuredby.testsubjects;
+package io.helidon.pico.configdriven.configuredby.test;
 
 /**
- * Designed to re-run the same tests, but using the application-created DI model instead.
+ * Executes the tests from the base.
  */
-class ApplicationConfigBeanTest extends DefaultConfigBeanTest {
+class DefaultConfigBeanTest extends AbstractConfigBeanTest {
 
 }

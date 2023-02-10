@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.configdriven.configuredby.testsubjects;
+package io.helidon.pico.configdriven.configuredby.test;
 
 import java.util.List;
 import java.util.Map;
@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * See {@code BasicConfigBeanTest}, this repeats some of that with a fuller classpath with config-driven-services and full config
  * enabled.  This means that extra validation (e.g., required config attributes, etc.) will be tested here.
  */
-class DefaultConfigBeanTest {
+public class AbstractConfigBeanTest {
 
     @Test
     void emptyConfig() {

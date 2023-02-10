@@ -14,24 +14,30 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.configdriven.configuredby.testsubjects;
-
-import java.util.Optional;
+package io.helidon.pico.configdriven.configuredby.test;
 
 import io.helidon.builder.config.testsubjects.fakes.FakeServerConfig;
-import io.helidon.builder.config.testsubjects.fakes.FakeTracer;
-import io.helidon.pico.configdriven.ConfiguredBy;
+import io.helidon.pico.Contract;
 
-import jakarta.inject.Inject;
+/**
+ * For Testing.
+ */
+@Contract
+public interface FakeWebServerContract {
 
-@ConfiguredBy(value = FakeServerConfig.class, overrideBean = true, drivesActivation = false)
-public class FakeWebServerNotDrivenByServiceOverrides extends FakeWebServer {
+    /**
+     * Gets effective server configuration.
+     *
+     * @return Server configuration
+     */
+    FakeServerConfig configuration();
 
-    @Inject
-    FakeWebServerNotDrivenByServiceOverrides(
-            FakeServerConfig cfg,
-            Optional<FakeTracer> tracer) {
-        super(cfg, tracer);
-    }
+    /**
+     * Returns {@code true} if the server is currently running. Running server in stopping phase returns {@code true} until it
+     * is not fully stopped.
+     *
+     * @return {@code true} if server is running
+     */
+    boolean isRunning();
 
 }

@@ -22,6 +22,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.pico.spi.CallingContext;
 import io.helidon.pico.spi.PicoServicesProvider;
 import io.helidon.pico.spi.Resetable;
 
@@ -33,7 +34,7 @@ import io.helidon.pico.spi.Resetable;
  */
 // exposed in the testing module as non deprecated
 public abstract class PicoServicesHolder {
-    private static final AtomicReference<Bootstrap> BOOTSTRAP = new AtomicReference<>();
+    private static final AtomicReference<InternalBootstrap> BOOTSTRAP = new AtomicReference<>();
     private static final AtomicReference<ProviderAndServicesTuple> INSTANCE = new AtomicReference<>();
 
     /**
@@ -53,9 +54,9 @@ public abstract class PicoServicesHolder {
         if (INSTANCE.get() == null) {
             INSTANCE.compareAndSet(null, new ProviderAndServicesTuple(load()));
             if (INSTANCE.get().picoServices == null) {
-                System.getLogger(PicoServices.class.getName()).log(System.Logger.Level.WARNING,
-                                                         DefaultPicoServicesConfig.NAME
-                                                                 + " runtime services not detected on the classpath");
+                System.getLogger(PicoServices.class.getName())
+                        .log(System.Logger.Level.WARNING,
+                             DefaultPicoServicesConfig.NAME + " runtime services not detected on the classpath");
             }
         }
         return Optional.ofNullable(INSTANCE.get().picoServices);
@@ -75,18 +76,30 @@ public abstract class PicoServicesHolder {
 
     static void bootstrap(
             Bootstrap bootstrap) {
-        if (!BOOTSTRAP.compareAndSet(null, Objects.requireNonNull(bootstrap))) {
-            throw new IllegalStateException("bootstrap already set");
+        Objects.requireNonNull(bootstrap);
+        InternalBootstrap iBootstrap = InternalBootstrap.create(bootstrap, null);
+        if (!BOOTSTRAP.compareAndSet(null, iBootstrap)) {
+            InternalBootstrap existing = BOOTSTRAP.get();
+            CallingContext callingContext = (existing == null) ? null : existing.callingContext().orElse(null);
+            StackTraceElement[] trace = (callingContext == null) ? new StackTraceElement[] {} : callingContext.trace();
+            if (trace != null && trace.length > 0) {
+                throw new IllegalStateException("bootstrap already set from this code path below: "
+                                                        + CallingContext.stackTraceOf(trace));
+            }
+            throw new IllegalStateException("bootstrap already set - use the (-D and/or -A) tag '"
+                                                    + PicoServicesConfig.TAG_DEBUG + "=true' to see full trace output.");
         }
     }
 
     static Optional<Bootstrap> bootstrap(
             boolean assignIfNeeded) {
         if (assignIfNeeded) {
-            BOOTSTRAP.compareAndSet(null, DefaultBootstrap.builder().build());
+            InternalBootstrap iBootstrap = InternalBootstrap.create();
+            BOOTSTRAP.compareAndSet(null, iBootstrap);
         }
 
-        return Optional.ofNullable(BOOTSTRAP.get());
+        InternalBootstrap iBootstrap = BOOTSTRAP.get();
+        return Optional.ofNullable((iBootstrap != null) ? iBootstrap.bootStrap() : null);
     }
 
     private static Optional<PicoServicesProvider> load() {
