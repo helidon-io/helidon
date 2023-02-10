@@ -21,8 +21,8 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <variables>
-        <text path="module-dir"><![CDATA[]]></text>
-        <boolean path="multi-module">false</boolean>
+        <text path="module-dir" transient="true"><![CDATA[]]></text>
+        <boolean path="multi-module" transient="true">false</boolean>
     </variables>
     <step name="Helidon Flavor" optional="true">
         <inputs>
