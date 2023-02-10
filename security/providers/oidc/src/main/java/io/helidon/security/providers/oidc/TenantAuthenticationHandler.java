@@ -298,7 +298,8 @@ class TenantAuthenticationHandler {
             if (DEFAULT_TENANT_ID.equals(tenantId)) {
                 redirectUri = encode(redirectUri(providerRequest.env()));
             } else {
-                redirectUri = encode(redirectUri(providerRequest.env()) + "?"
+                String baseRedirect = redirectUri(providerRequest.env());
+                redirectUri = encode(baseRedirect + (baseRedirect.contains("?") ? "&" : "?")
                                              + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantId));
             }
 
