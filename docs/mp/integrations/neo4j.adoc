@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
+* <<Neo4j Metrics Propagation, Neo4j Metrics Propagation>>
+* <<Neo4j Health Checks, Neo4j Health Checks>>
 - <<References, References>>
 
 == Overview
@@ -47,7 +49,7 @@ include::{rootdir}/includes/dependencies.adoc[]
    <artifactId>helidon-integrations-neo4j</artifactId>
 </dependency>
 ----
-NOTE: Check <<Neo4j Metrics propagation, Neo4j Metrics propagation>> and <<Neo4j Health Checks, Neo4j Health Checks>> for additional dependencies for _Neo4j_ `Metrics` and `Health Checks` integration.
+NOTE: Check <<Neo4j Metrics Propagation, Neo4j Metrics Propagation>> and <<Neo4j Health Checks, Neo4j Health Checks>> for additional dependencies for _Neo4j_ `Metrics` and `Health Checks` integration.
 
 == Usage
 
@@ -224,7 +226,7 @@ Full example code is available in link:https://github.com/oracle/helidon/tree/ma
 
 == Additional Information
 
-=== Neo4j Metrics propagation
+=== Neo4j Metrics Propagation
 
 Neo4j metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add
 
@@ -249,7 +251,7 @@ By applying these two actions, Neo4j metrics will be automatically added to the 
 
 === Neo4j Health Checks
 
-If your application is highly dependent on Neo4j database, health and liveness checks are essential for this application to work correctly.
+If your application is highly dependent on the Neo4j database, health and liveness checks are essential for this application to work correctly.
 
 `MicroProfile` Health checks for Neo4j are implemented in a separate Maven module:
 

@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LRA
+= Long Running Actions (LRA)
 :description: Long Running Actions
 :keywords: helidon, mp, lra
 :h1Prefix: MP

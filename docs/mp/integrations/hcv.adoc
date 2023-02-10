@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,7 +29,12 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Overview, Overview>>
 - <<maven-coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
+* <<Extensibility, Extensibility>>
 - <<Examples, Examples>>
+* <<Cubbyhole Secrets, Cubbyhole Secrets>>
+* <<KV1 Secrets, KV1 Secrets>>
+* <<KV2 Secrets, KV2 Secrets>>
+* <<Transit Secrets, Transit Secrets>>
 - <<Local-Testing, Local Testing>>
 - <<References, References>>
 
@@ -101,8 +106,8 @@ Each of these features is implemented as a separate module, with the Vault class
 
 The following classes can be injected into any CDI bean (if appropriate module is on the classpath):
 
-* Kv2Secrets - Key/Value Version 2 Secrets (versioned secrets, default)
-* Kv1Secrets - Key/Value Version 1 Secrets (un-versioned secrets, legacy)
+* Kv2Secrets - Key/Value Version 2 secrets (versioned secrets, default)
+* Kv1Secrets - Key/Value Version 1 secrets (un-versioned secrets, legacy)
 * CubbyholeSecrets - Cubbyhole secrets (token bound secrets)
 * DbSecrets - Database secrets (for generating temporary DB credentials)
 * PkiSecrets - PKI secrets (for generating keys and X.509 certificates)
@@ -176,7 +181,7 @@ class TransitResource {
 }
 ----
 
-=== Cubbyhole secrets
+=== Cubbyhole Secrets
 
 Cubbyhole example:
 
@@ -232,7 +237,7 @@ public class CubbyholeResource {
 <2> Delete the secret on a specified path.
 <3> Get the secret on a specified path.
 
-=== KV1 secrets
+=== KV1 Secrets
 
 Key/Value version 1 secrets engine operations:
 
@@ -311,7 +316,7 @@ public class Kv1Resource {
 <4> Delete the secret on a specified path.
 <5> Get the secret on a specified path.
 
-=== KV2 secrets
+=== KV2 Secrets
 
 Key/Value version 2 secrets engine operations:
 
@@ -367,7 +372,7 @@ public class Kv2Resource {
 <3> Get the secret on a specified path.
 
 
-=== Transit secrets
+=== Transit Secrets
 
 Transit secrets engine operations:
 

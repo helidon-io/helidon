@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,7 +30,11 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Overview, Overview>>
 - <<maven-coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
+* <<Configuring the Helidon OCI SDK Extension, Configuring the Helidon OCI SDK Extension>>
+* <<Accessing OCI Services, Accessing OCI Services>>
 - <<Examples, Examples>>
+* <<Injecting an Object Storage Client, Injecting an Object Storage Client>>
+* <<Using the Object Storage Client, Using the Object Storage Client>>
 - <<References, References>>
 
 == Overview
@@ -128,7 +132,7 @@ public class MyClass {
 The extension implements this injection point by creating an Object Storage client
 object in the link:{jakarta-inject-javadoc-url}/jakarta/inject/Singleton.html[singleton scope].
 
-=== Using the Object Storage client
+=== Using the Object Storage Client
 
 Once you have injected an ObjectStorage client you can use it as described in:
 
