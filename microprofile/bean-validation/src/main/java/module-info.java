@@ -18,7 +18,6 @@
  * and to handle validation exceptions and map them to JAX-RS response.
  */
 module helidon.microprofile.bean.validation {
-    requires jakarta.activation;
     requires transitive jakarta.ws.rs;
     requires transitive jakarta.validation;
 
