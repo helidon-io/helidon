@@ -53,6 +53,7 @@ class ProviderImpl implements Config.Context {
 
     private final Executor changesExecutor;
     private final boolean keyResolving;
+    private final boolean keyResolvingFailOnMissing;
     private final Function<String, List<String>> aliasGenerator;
 
     private ConfigDiff lastConfigsDiff;
@@ -67,6 +68,7 @@ class ProviderImpl implements Config.Context {
                  boolean cachingEnabled,
                  Executor changesExecutor,
                  boolean keyResolving,
+                 boolean keyResolvingFailOnMissing,
                  Function<String, List<String>> aliasGenerator) {
         this.configMapperManager = configMapperManager;
         this.configSource = configSource;
@@ -79,6 +81,7 @@ class ProviderImpl implements Config.Context {
         this.lastConfig = (AbstractConfigImpl) Config.empty();
 
         this.keyResolving = keyResolving;
+        this.keyResolvingFailOnMissing = keyResolvingFailOnMissing;
         this.aliasGenerator = aliasGenerator;
     }
 
@@ -154,7 +157,7 @@ class ProviderImpl implements Config.Context {
             Map<String, String> tokenValueMap = tokenToValueMap(flattenValueNodes);
             boolean failOnMissingKeyReference = getBoolean(flattenValueNodes,
                                                            "config.key-resolving.fail-on-missing-reference",
-                                                           true);
+                                                           keyResolvingFailOnMissing);
 
             resolveTokenFunction = (token) -> {
                 if (token.startsWith("$")) {

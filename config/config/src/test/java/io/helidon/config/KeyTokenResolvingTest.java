@@ -182,6 +182,7 @@ public class KeyTokenResolvingTest {
                                                         .build()))
                     .disableSystemPropertiesSource()
                     .disableEnvironmentVariablesSource()
+                    .failOnMissingKeyReference(true)
                     .build();
 
             config.traverse().forEach(System.out::println);
@@ -199,6 +200,7 @@ public class KeyTokenResolvingTest {
                                                     .build()))
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
+                .failOnMissingKeyReference(true)
                 .build();
         });
         assertThat(ex.getMessage(), startsWith("Missing token 'ad' to resolve"));
