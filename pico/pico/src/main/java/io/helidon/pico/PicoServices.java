@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Abstract factory for all services provided by a single Helidon Pico provider implementation.
@@ -51,6 +52,28 @@ public interface PicoServices {
      * @return the bootstrap configuration instance
      */
     Bootstrap bootstrap();
+
+    /**
+     * Returns true if debugging is enabled.
+     *
+     * @return true if debugging is enabled
+     * @see io.helidon.pico.PicoServicesConfig#TAG_DEBUG
+     */
+    // Note that here in Pico at this level we don't have much access to information.
+    // <ul>
+    //      <li>we don't have access to full config, just common config - so no config sources from system properties, etc.</li>
+    //      <li>we don't have access to annotation processing options that may be passed</li>
+    // </ul>
+    static boolean isDebugEnabled() {
+        Supplier<Boolean> lastResortSupplier = () -> Boolean.getBoolean(PicoServicesConfig.TAG_DEBUG);
+        Optional<Bootstrap> bootstrap = globalBootstrap();
+        if (bootstrap.isPresent()) {
+            return PicoServicesConfig.asBoolean(PicoServicesConfig.TAG_DEBUG, lastResortSupplier);
+        } else {
+            // last resort
+            return lastResortSupplier.get();
+        }
+    }
 
     /**
      * Retrieves any primordial bootstrap configuration that previously set.

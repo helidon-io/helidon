@@ -53,6 +53,9 @@ import io.helidon.pico.spi.Resetable;
 
 import jakarta.inject.Provider;
 
+import static io.helidon.pico.spi.CallingContext.maybeCreate;
+import static io.helidon.pico.spi.CallingContext.toErrorMessage;
+
 /**
  * The default reference implementation of {@link io.helidon.pico.Services}.
  */
@@ -453,9 +456,12 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     static void assertPermitsDynamic(
             PicoServicesConfig cfg) {
         if (!cfg.permitsDynamic()) {
-            throw new IllegalStateException("Services are configured to prevent dynamic updates.\n"
-                                        + "Set config '" + PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC
-                                        + " = true' to enable");
+            String msg = toErrorMessage(maybeCreate(),
+                                        "Services are configured to prevent dynamic updates.\n"
+                                                + "Set config '"
+                                                + PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC
+                                                + " = true' to enable");
+            throw new IllegalStateException(msg);
         }
     }
 

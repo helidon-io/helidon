@@ -236,7 +236,7 @@ public abstract class AbstractServiceProvider<T>
      * @return the pico services assigned to this service provider
      */
     public PicoServices picoServices() {
-        return Objects.requireNonNull(picoServices);
+        return Objects.requireNonNull(picoServices, description() + ": picoServices should have been previously set");
     }
 
     @Override

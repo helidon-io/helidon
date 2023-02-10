@@ -40,6 +40,11 @@ class State implements Resetable, Cloneable {
     }
 
     @Override
+    public String toString() {
+        return "currentPhase=" + currentPhase + ", isFinished=" + isFinished + ", lastError=" + lastError;
+    }
+
+    @Override
     public boolean reset(
             boolean deep) {
         currentPhase(Phase.INIT).finished(false).lastError(null);

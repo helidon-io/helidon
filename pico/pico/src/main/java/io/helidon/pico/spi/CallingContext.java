@@ -22,22 +22,35 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.Builder;
-import io.helidon.pico.PicoServicesConfig;
+import io.helidon.pico.PicoServices;
+
+import static io.helidon.pico.PicoServicesConfig.TAG_DEBUG;
 
 /**
  * For internal use only to Helidon. Applicable when {@link io.helidon.pico.PicoServicesConfig#TAG_DEBUG} is enabled.
  *
  * @deprecated for internal use only to helidon.
  */
-@Builder
+@Builder(interceptor = CallingContext.BuilderInterceptor.class)
 @Deprecated
 public abstract class CallingContext {
 
+    /**
+     * Helpful hint to give developers needing to see more debug info.
+     */
+    public static final String DEBUG_HINT = "use the (-D and/or -A) tag '" + TAG_DEBUG + "=true' to see full trace output.";
+
     private static CallingContext defaultCallingContext;
+
+    /**
+     * This needs to be private since a generated builder will be extending this.
+     */
+    protected CallingContext() {
+    }
 
     @Override
     public String toString() {
-        return "module name: " + moduleName() + "; trace:\n" + stackTraceOf(trace());
+        return "module name: " + moduleName() + "; thread name: " + threadName() + "; trace:\n" + stackTraceOf(trace());
     }
 
     /**
@@ -55,6 +68,13 @@ public abstract class CallingContext {
     public abstract Optional<String> moduleName();
 
     /**
+     * The thread that created the calling context.
+     *
+     * @return thread creating the calling context
+     */
+    public abstract String threadName();
+
+    /**
      * Returns a stack trace as a list of strings.
      *
      * @param trace the trace
@@ -64,30 +84,23 @@ public abstract class CallingContext {
             StackTraceElement[] trace) {
         List<String> result = new ArrayList<>();
         for (StackTraceElement e : trace) {
-            result.add(e.toString());
+            result.add(e.toString() + "\n");
         }
         return result;
     }
 
     /**
      * Creates a new calling context instance.
-     * <p>
-     * Note that here in Pico at this level we don't have much access to information.
-     * <ul>
-     *     <li>we don't have access to full config, just common config - so no config sources from system properties, etc.</li>
-     *     <li>we don't have access to annotation processing options that may be passed</li>
-     * </ul>
-     * For this reason, we will optionally accept the {@code isDebugEnabled} flag. If not passed then we will fall back to system
-     * properties.
      *
      * @param moduleName     the module name if known
      * @param isDebugEnabled the debug flag if known
      * @return a new calling context if there is indication that debug mode is enabled
+     * @see io.helidon.pico.PicoServices#isDebugEnabled()
      */
     public static Optional<CallingContext> maybeCreate(
             Optional<String> moduleName,
             Optional<Boolean> isDebugEnabled) {
-        boolean debug = isDebugEnabled.orElseGet(() -> Boolean.getBoolean(PicoServicesConfig.TAG_DEBUG));
+        boolean debug = isDebugEnabled.orElseGet(() -> PicoServices.isDebugEnabled());
         if (!debug) {
             return Optional.empty();
         }
@@ -165,6 +178,33 @@ public abstract class CallingContext {
         }
 
         CallingContext.defaultCallingContext = callingContext;
+    }
+
+    /**
+     * Convenience method for producing an error message that may involve advising the user to apply a debug mode.
+     *
+     * @param callingContext the calling context (caller can be using a custom calling context, which is why we accept it here instead of using the global one)
+     * @param msg the base message to display
+     * @return the message appropriate for any exception being thrown
+     */
+    public static String toErrorMessage(
+            Optional<CallingContext> callingContext,
+            String msg) {
+        if (callingContext.isEmpty()) {
+            return msg + " - " + DEBUG_HINT;
+        } else {
+            return msg + " - previous calling context: " + callingContext.orElseThrow();
+        }
+    }
+
+    static class BuilderInterceptor implements io.helidon.builder.BuilderInterceptor<DefaultCallingContext.Builder> {
+        @Override
+        public DefaultCallingContext.Builder intercept(DefaultCallingContext.Builder target) {
+            if (target.threadName() == null) {
+                target.threadName(Thread.currentThread().getName());
+            }
+            return target;
+        }
     }
 
 }

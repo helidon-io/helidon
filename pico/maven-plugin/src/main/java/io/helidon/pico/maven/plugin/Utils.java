@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.config.spi.BasicConfigBeanRegistry;
+import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
@@ -32,6 +34,7 @@ import io.helidon.pico.Phase;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesHolder;
 import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.spi.Resetable;
 import io.helidon.pico.tools.ActivatorCreator;
 import io.helidon.pico.tools.ApplicationCreator;
 import io.helidon.pico.tools.ExternalModuleCreator;
@@ -133,6 +136,10 @@ class Utils {
     private static class Internal extends PicoServicesHolder {
         public static void reset() {
             PicoServicesHolder.reset();
+            BasicConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
+            if (cbr instanceof Resetable) {
+                ((Resetable) cbr).reset(true);
+            }
         }
     }
 

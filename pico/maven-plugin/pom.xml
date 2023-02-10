@@ -81,6 +81,11 @@
             <groupId>io.helidon.pico</groupId>
             <artifactId>helidon-pico-tools</artifactId>
         </dependency>
+        <!-- for ConfigBeanRegistry (reset) -->
+        <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-config</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
@@ -88,6 +93,7 @@
         <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
+            <scope>compile</scope> <!-- for Provider -->
         </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>

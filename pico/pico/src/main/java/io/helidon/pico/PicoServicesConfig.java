@@ -51,6 +51,7 @@ public abstract class PicoServicesConfig {
 
     /**
      * Tag for putting Pico tooling, processing, and runtime into debug mode.
+     * @see PicoServices#isDebugEnabled()
      */
     public static final String TAG_DEBUG = NAME + ".debug";
 
@@ -169,10 +170,9 @@ public abstract class PicoServicesConfig {
      */
     public static final String KEY_PERMITS_DYNAMIC = "permits-dynamic";
     /**
-     * The default value for this is true, meaning that the services registry can be changed during runtime post Pico startup.
+     * The default value for this is false, meaning that the services registry can be changed during runtime post Pico startup.
      */
-    // note to self: ideally we should have this be false, but parallel maven builds are failing with this enabled!
-    public static final String DEFAULT_PERMITS_DYNAMIC = "true";
+    public static final String DEFAULT_PERMITS_DYNAMIC = "false";
 
     /**
      * Flag indicating whether the services registry permits dynamic behavior (key is {@link #KEY_PERMITS_DYNAMIC}). The default
@@ -432,7 +432,7 @@ public abstract class PicoServicesConfig {
      * @param defaultValueSupplier supplier of default value
      * @return value
      */
-    protected String asString(
+    static String asString(
             String key,
             Supplier<String> defaultValueSupplier) {
         Optional<Config> cfg = get(key);
@@ -450,7 +450,7 @@ public abstract class PicoServicesConfig {
      * @param defaultValueSupplier supplier of default value
      * @return value
      */
-    protected Boolean asBoolean(
+    static Boolean asBoolean(
             String key,
             Supplier<Boolean> defaultValueSupplier) {
         Optional<Config> cfg = get(key);
@@ -468,7 +468,7 @@ public abstract class PicoServicesConfig {
      * @param defaultValueSupplier supplier of default value
      * @return value
      */
-    protected Long asLong(
+    static Long asLong(
             String key,
             Supplier<Long> defaultValueSupplier) {
         Optional<Config> cfg = get(key);
@@ -487,7 +487,7 @@ public abstract class PicoServicesConfig {
      * @param key the config key relative to the parent global bootstrap configuration
      * @return the configuration for the key
      */
-    protected Optional<Config> get(
+    static Optional<Config> get(
             String key) {
         Optional<Bootstrap> bootstrap = PicoServicesHolder.bootstrap(false);
         if (bootstrap.isEmpty() || bootstrap.get().config().isEmpty()) {

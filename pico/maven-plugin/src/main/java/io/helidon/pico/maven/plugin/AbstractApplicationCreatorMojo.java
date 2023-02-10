@@ -74,14 +74,16 @@ import static io.helidon.pico.maven.plugin.Utils.applicationCreator;
 import static io.helidon.pico.maven.plugin.Utils.hasValue;
 import static io.helidon.pico.maven.plugin.Utils.picoServices;
 import static io.helidon.pico.maven.plugin.Utils.toDescriptions;
-import static io.helidon.pico.spi.CallingContext.*;
+import static io.helidon.pico.spi.CallingContext.maybeCreate;
+import static io.helidon.pico.spi.CallingContext.toErrorMessage;
 import static io.helidon.pico.tools.ApplicationCreatorConfigOptions.PermittedProviderType;
 import static io.helidon.pico.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
 import static io.helidon.pico.tools.ModuleUtils.isUnnamedModuleName;
 import static io.helidon.pico.tools.ModuleUtils.toBasePath;
 import static io.helidon.pico.tools.ModuleUtils.toSuggestedGeneratedPackageName;
 import static io.helidon.pico.tools.ModuleUtils.toSuggestedModuleName;
-import static java.util.Optional.*;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
 
 /**
  * Abstract base for pico maven plugins responsible for creating application and test application's.
@@ -322,12 +324,16 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     @Override
-    public void execute() throws MojoExecutionException {
-        getLog().debug("Executing " + getClass().getName() + "...");
+    // special note: we are adding synchronized to this since it would appear maven is being invoked in parallel on the same
+    // module in the same jvm -- very strange. note to self: investigate further.
+    // note 2: it is very likely that maven is calling this in parallel on two different instances, so the synchronized will have
+    // no benefit -- we might need to consider changing this to be static Semaphore based to serialize access.
+    public synchronized void execute() throws MojoExecutionException {
+        getLog().info("Started " + getClass().getName() + " for " + getProject());
 
         this.permittedProviderType = PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
 
-        Optional<CallingContext> callingContext =
+        Optional<CallingContext> ignoreCallingContext =
                 maybeCreate(false, ofNullable(getThisModuleName()), of(isDebugEnabled), true, true);
 
         // we MUST get the exclusion list prior to building the next loader, since it will reset the service registry
@@ -342,7 +348,9 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             Thread.currentThread().setContextClassLoader(loader);
 
             PicoServices picoServices = picoServices(false);
-            assert (!picoServices.config().usesCompileTimeApplications());
+            if (picoServices.config().usesCompileTimeApplications()) {
+                throw new IllegalStateException(toErrorMessage(maybeCreate(), "should not be using 'application' bindings"));
+            }
             Services services = picoServices.services();
 
             // get the application creator only after pico services were initialized (we need to ignore any existing apps)
@@ -352,18 +360,14 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     .lookupAll(DefaultServiceInfoCriteria.builder().addContractImplemented(Module.class.getName()).build());
             getLog().info("processing modules: " + toDescriptions(allModules));
             if (allModules.isEmpty()) {
-                getLog().warn("no modules to process");
+                warn("no modules to process");
             }
 
             // retrieves all the services in the registry
             List<ServiceProvider<?>> allServices = services
                     .lookupAll(DefaultServiceInfoCriteria.builder().build(), false);
             if (allServices.isEmpty()) {
-                ToolsException e = new ToolsException("no services to process");
-                getLog().warn(e.getMessage(), e);
-                if (isFailOnWarning()) {
-                    throw e;
-                }
+                warn("no services to process");
                 return;
             }
 
@@ -371,8 +375,6 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             serviceTypeNames.removeAll(serviceNamesForExclusion);
 
             String moduleInfoModuleName = getThisModuleName();
-//            CallingContext.globalCallingContext();
-
             ServiceProvider<Module> moduleSp = lookupThisModule(moduleInfoModuleName, services);
             String typeSuffix = getClassPrefixName();
             AtomicReference<File> moduleInfoPathRef = new AtomicReference<>();
@@ -440,6 +442,11 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             throw new MojoExecutionException("creator failed", t);
         } finally {
             Thread.currentThread().setContextClassLoader(prev);
+            // special note: we are adding reset here since it would appear maven is being invoked in parallel on the same
+            // module in the same jvm -- very strange. note to self: investigate further. Also see notes at the top of the method.
+            Utils.resetAll();
+
+            getLog().info("Finished " + getClass().getName() + " for " + getProject());
         }
     }
 
@@ -470,6 +477,19 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             }
         });
         return new TreeSet<>(result.keySet());
+    }
+
+    void warn(
+            String msg) {
+        ToolsException e = new ToolsException(toErrorMessage(maybeCreate(), "no modules to process"));
+        if (PicoServices.isDebugEnabled()) {
+            getLog().warn(e.getMessage(), e);
+        } else {
+            getLog().warn(e.getMessage());
+        }
+        if (isFailOnWarning()) {
+            throw e;
+        }
     }
 
 }

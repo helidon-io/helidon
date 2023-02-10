@@ -54,4 +54,10 @@
         <Bug pattern="DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED"/>
     </Match>
 
+    <Match>
+        <!-- debug variables -->
+        <Class name="io.helidon.pico.maven.plugin.AbstractApplicationCreatorMojo"/>
+        <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
+    </Match>
+
 </FindBugsFilter>

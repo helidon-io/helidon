@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -59,7 +58,11 @@ import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceBinder;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.spi.CallingContext;
 import io.helidon.pico.spi.Resetable;
+
+import static io.helidon.pico.spi.CallingContext.maybeCreate;
+import static io.helidon.pico.spi.CallingContext.toErrorMessage;
 
 /**
  * The default implementation for {@link io.helidon.pico.PicoServices}.
@@ -67,8 +70,9 @@ import io.helidon.pico.spi.Resetable;
 class DefaultPicoServices implements PicoServices, Resetable {
     static final System.Logger LOGGER = System.getLogger(DefaultPicoServices.class.getName());
 
-    private final AtomicBoolean initializingServices = new AtomicBoolean();
-    private final AtomicBoolean isBinding = new AtomicBoolean();
+    private final AtomicBoolean initializingServicesStarted = new AtomicBoolean(false);
+    private final AtomicBoolean initializingServicesFinished = new AtomicBoolean(false);
+    private final AtomicBoolean isBinding = new AtomicBoolean(false);
     private final AtomicReference<DefaultServices> services = new AtomicReference<>();
     private final AtomicReference<List<io.helidon.pico.Module>> moduleList = new AtomicReference<>();
     private final AtomicReference<List<Application>> applicationList = new AtomicReference<>();
@@ -77,7 +81,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
     private final boolean isGlobal;
     private final DefaultActivationLog log;
     private final State state = State.create(Phase.INIT);
-    private CountDownLatch initializedServices = new CountDownLatch(1);
+    private CallingContext initializationCallingContext;
 
     /**
      * Constructor taking the bootstrap.
@@ -150,13 +154,12 @@ class DefaultPicoServices implements PicoServices, Resetable {
 
     @Override
     public DefaultServices services() {
-        if (!initializingServices.getAndSet(true)) {
+        if (!initializingServicesStarted.getAndSet(true)) {
             try {
                 initializeServices();
-                initializedServices.countDown();
             } catch (Throwable t) {
-                initializingServices.set(false);
                 state.lastError(t);
+                initializingServicesStarted.set(false);
                 if (t instanceof PicoException) {
                     throw (PicoException) t;
                 } else {
@@ -164,6 +167,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
                 }
             } finally {
                 state.finished(true);
+                initializingServicesFinished.set(true);
             }
         }
 
@@ -308,36 +312,78 @@ class DefaultPicoServices implements PicoServices, Resetable {
     }
 
     @Override
-    public boolean reset(
+    // note that this is typically only called during testing, and also in the pico-maven-plugin
+    public synchronized boolean reset(
             boolean deep) {
-        DefaultServices.assertPermitsDynamic(cfg);
-        boolean result = deep;
-
-        DefaultServices prev = services.get();
-        if (prev != null) {
-            boolean affected = prev.reset(deep);
-            result |= affected;
-        }
-
-        boolean affected = log.reset(deep);
-        result |= affected;
-
-        if (deep) {
-            isBinding.set(false);
-            initializedServices = new CountDownLatch(1);
-            moduleList.set(null);
-            applicationList.set(null);
-            if (prev != null) {
-                services.set(new DefaultServices(cfg));
+        try {
+            assertNotInitializing();
+            if (isInitializing() || isInitialized()) {
+                // we allow dynamic updates leading up to initialization - after that it should be prevented if not configured on
+                DefaultServices.assertPermitsDynamic(cfg);
             }
-            initializingServices.set(false);
-            state.reset(true);
-        }
+            boolean result = deep;
 
-        return result;
+            DefaultServices prev = services.get();
+            if (prev != null) {
+                boolean affected = prev.reset(deep);
+                result |= affected;
+            }
+
+            boolean affected = log.reset(deep);
+            result |= affected;
+
+            if (deep) {
+                isBinding.set(false);
+                moduleList.set(null);
+                applicationList.set(null);
+                if (prev != null) {
+                    services.set(new DefaultServices(cfg));
+                }
+                state.reset(true);
+                initializingServicesStarted.set(false);
+                initializingServicesFinished.set(false);
+                initializationCallingContext = null;
+            }
+
+            return result;
+        } catch (Exception e) {
+            throw new PicoException("failed to reset (state=" + state
+                                            + ", isInitialized=" + isInitialized()
+                                            + ", isInitializing=" + isInitializing() + ")", e);
+        }
+    }
+
+    /**
+     * Returns true if Pico is in the midst of initialization.
+     *
+     * @return true if initialization is underway
+     */
+    public boolean isInitializing() {
+        return initializingServicesStarted.get() && !initializingServicesFinished.get();
+    }
+
+    /**
+     * Returns true if Pico was initialized.
+     *
+     * @return true if already initialized
+     */
+    public boolean isInitialized() {
+        return initializingServicesStarted.get() && initializingServicesFinished.get();
+    }
+
+    private void assertNotInitializing() {
+        if (isBinding.get() || isInitializing()) {
+            CallingContext initializationCallingContext = this.initializationCallingContext;
+            throw new PicoException(toErrorMessage(Optional.ofNullable(initializationCallingContext),
+                                                   "reset() during the initialization sequence is not supported (binding="
+                                                           + isBinding + ", initializingServicesFinished="
+                                                           + initializingServicesFinished + ")"));
+        }
     }
 
     private synchronized void initializeServices() {
+        initializationCallingContext = maybeCreate().orElse(null);
+
         if (services.get() == null) {
             services.set(new DefaultServices(cfg));
         }

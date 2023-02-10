@@ -156,7 +156,7 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        getLog().debug("Executing " + getClass().getName() + "...");
+        getLog().info("Started " + getClass().getName() + " for " + getProject());
 
         if (packageNames == null || packageNames.isEmpty()) {
             throw new MojoExecutionException("packageNames are required to be specified");
@@ -216,6 +216,7 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
             throw new MojoExecutionException("creator failed", t);
         } finally {
             Thread.currentThread().setContextClassLoader(prev);
+            getLog().info("Finished " + getClass().getName() + " for " + getProject());
         }
     }
 }

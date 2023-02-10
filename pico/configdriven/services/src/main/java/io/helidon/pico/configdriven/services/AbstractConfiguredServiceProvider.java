@@ -32,11 +32,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.config.ConfigBean;
+import io.helidon.builder.config.spi.BasicConfigBeanRegistry;
 import io.helidon.builder.config.spi.BasicConfigResolver;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.pico.ContextualServiceQuery;
 import io.helidon.pico.DefaultContextualServiceQuery;
@@ -59,10 +61,13 @@ import io.helidon.pico.ServiceProviderBindable;
 import io.helidon.pico.ServiceProviderProvider;
 import io.helidon.pico.configdriven.ConfiguredBy;
 import io.helidon.pico.services.AbstractServiceProvider;
+import io.helidon.pico.spi.CallingContext;
 import io.helidon.pico.spi.InjectionResolver;
 
 import static io.helidon.pico.configdriven.services.Utils.hasValue;
 import static io.helidon.pico.configdriven.services.Utils.isBlank;
+import static io.helidon.pico.spi.CallingContext.maybeCreate;
+import static io.helidon.pico.spi.CallingContext.toErrorMessage;
 
 /**
  * Abstract base for any config-driven-service.
@@ -80,9 +85,13 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     private static final CBInstanceComparator BEAN_INSTANCE_ID_COMPARATOR = new CBInstanceComparator();
     private static final System.Logger LOGGER = System.getLogger(AbstractConfiguredServiceProvider.class.getName());
 
+    private final LazyValue<InternalConfigBeanRegistry> configBeanRegistry = LazyValue.create(() -> resolveConfigBeanRegistry());
+
     private final AtomicReference<Boolean> isRootProvider = new AtomicReference<>();    // this one indicates intention
     private final AtomicReference<ConfiguredServiceProvider<T, CB>> rootProvider = new AtomicReference<>();
     private final AtomicBoolean initialized = new AtomicBoolean();
+    private final AtomicReference<CallingContext> initializationCallingContext
+            = new AtomicReference<>();  // used only when we are in pico.debug mode
     private final Map<String, Object> configBeanMap
             = new TreeMap<>(BEAN_INSTANCE_ID_COMPARATOR);
     private final Map<String, Optional<AbstractConfiguredServiceProvider<T, CB>>> managedConfiguredServicesMap
@@ -146,18 +155,22 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         isRootProvider.set(null);
         rootProvider.set(null);
         initialized.set(false);
+        initializationCallingContext.set(null);
         return true;
     }
 
     void assertIsInitializing() {
         if (initialized.get()) {
-            throw new PicoServiceProviderException(description() + " was already initialized", null, this);
+            CallingContext callingContext = initializationCallingContext.get();
+            throw new PicoServiceProviderException(
+                    toErrorMessage(Optional.ofNullable(callingContext),
+                                   description() + " was previously initialized"), this);
         }
     }
 
     void assertIsInitialized() {
         if (!initialized.get()) {
-            throw new PicoServiceProviderException(description() + " was expected to be initialized", null, this);
+            throw new PicoServiceProviderException(description() + " was expected to be initialized", this);
         }
     }
 
@@ -256,7 +269,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             return "{root}";
         }
 
-        String instanceId = toConfigBeanInstanceId(configBean().orElse(null));
+        Optional<CB> configBean = configBean();
+        String instanceId = toConfigBeanInstanceId(configBean.orElse(null));
         return "{" + instanceId + "}";
     }
 
@@ -296,16 +310,18 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                 serviceInfo = DefaultServiceInfo.toBuilder(serviceInfo)
                         .addQualifier(DefaultQualifierAndValue.WILDCARD_NAMED)
                         .build();
+                serviceInfo(serviceInfo);
             }
 
             // bind to the config bean registry ...  but, don't yet resolve!
-            InternalConfigBeanRegistry cbr = (InternalConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry()
-                    .orElseThrow();
-            Optional<QualifierAndValue> configuredByQualifier = serviceInfo.qualifiers().stream()
-                    .filter(q -> q.typeName().name().equals(ConfiguredBy.class.getName()))
-                    .findFirst();
-            assert (configuredByQualifier.isPresent());
-            cbr.bind(this, configuredByQualifier.get(), metaConfigBeanInfo());
+            InternalConfigBeanRegistry cbr = configBeanRegistry.get();
+            if (cbr != null) {
+                Optional<QualifierAndValue> configuredByQualifier = serviceInfo.qualifiers().stream()
+                        .filter(q -> q.typeName().name().equals(ConfiguredBy.class.getName()))
+                        .findFirst();
+                assert (configuredByQualifier.isPresent());
+                cbr.bind(this, configuredByQualifier.get(), metaConfigBeanInfo());
+            }
         }
     }
 
@@ -324,14 +340,15 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             }
 
             // one of the configured services need to "tickle" the bean registry to initialize
-            InternalConfigBeanRegistry cbr = (InternalConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry()
-                    .orElseThrow();
-            cbr.initialize(picoServices);
+            InternalConfigBeanRegistry cbr = configBeanRegistry.get();
+            if (cbr != null) {
+                cbr.initialize(picoServices);
 
-            // pre-initialize ourselves
-            if (isRootProvider()) {
-                // pre-activate our managed services
-                configBeanMap.forEach(this::preActivateManagedService);
+                // pre-initialize ourselves
+                if (isRootProvider()) {
+                    // pre-activate our managed services
+                    configBeanMap.forEach(this::preActivateManagedService);
+                }
             }
         } else if (phase == Phase.FINAL_RESOLVE) {
             // post-initialize ourselves
@@ -820,6 +837,18 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             }
             return str1.compareTo(str2);
         }
+    }
+
+    InternalConfigBeanRegistry resolveConfigBeanRegistry() {
+        BasicConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
+        if (cbr == null) {
+            LOGGER.log(System.Logger.Level.INFO, "Config-Driven Services disabled (config bean registry not found");
+        } else if (!(cbr instanceof InternalConfigBeanRegistry)) {
+            throw new PicoServiceProviderException(
+                    toErrorMessage(maybeCreate(), "Config-Driven Services disabled (unsupported implementation): " + cbr), this);
+        }
+
+        return (InternalConfigBeanRegistry) cbr;
     }
 
 }

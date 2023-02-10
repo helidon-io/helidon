@@ -23,6 +23,7 @@ module io.helidon.pico.maven.plugin {
     requires maven.project;
     requires maven.artifact;
     requires maven.model;
+    requires io.helidon.builder.config;
     requires io.helidon.common;
     requires io.helidon.config;
     requires transitive io.helidon.pico.tools;
