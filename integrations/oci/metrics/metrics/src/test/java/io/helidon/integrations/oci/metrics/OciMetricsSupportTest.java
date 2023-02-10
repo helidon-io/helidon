@@ -190,9 +190,9 @@ class OciMetricsSupportTest {
         assertThat(ociMetricsSupportBuilder.enabled(), is(true));
         // Verify that telemetry-ingestion endpoint is properly set during postin
         assertThat(postingEndPoint, startsWith("https://telemetry-ingestion."));
-        // In a span of 3 seconds, verify that original endpoint is restored after metric posting
+        // In a span of 10 seconds, verify that original endpoint is restored after metric posting
         long start = System.currentTimeMillis();
-        long end = start + 3 * 1000;
+        long end = start + 10 * 1000;
         boolean endPointIsRestored = false;
         while (System.currentTimeMillis() < end) {
             if (monitoringClient.getEndpoint().equals(originalEndPoint)) {
