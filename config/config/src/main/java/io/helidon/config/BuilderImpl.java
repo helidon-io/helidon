@@ -90,7 +90,9 @@ class BuilderImpl implements Config.Builder {
      */
     private boolean cachingEnabled;
     private boolean keyResolving;
+    private boolean keyResolvingFailOnMissing;
     private boolean valueResolving;
+    private boolean valueResolvingFailOnMissing;
     private boolean systemPropertiesSourceEnabled;
     private boolean environmentVariablesSourceEnabled;
     private boolean envVarAliasGeneratorEnabled;
@@ -262,8 +264,20 @@ class BuilderImpl implements Config.Builder {
     }
 
     @Override
+    public Config.Builder failOnMissingKeyReference(boolean shouldFail) {
+        this.keyResolvingFailOnMissing = shouldFail;
+        return this;
+    }
+
+    @Override
     public Config.Builder disableValueResolving() {
         this.valueResolving = false;
+        return this;
+    }
+
+    @Override
+    public Config.Builder failOnMissingValueReference(boolean shouldFail) {
+        this.valueResolvingFailOnMissing = shouldFail;
         return this;
     }
 
@@ -282,7 +296,7 @@ class BuilderImpl implements Config.Builder {
     @Override
     public AbstractConfigImpl build() {
         if (valueResolving) {
-            addFilter(ConfigFilters.valueResolving());
+            addFilter(ConfigFilters.valueResolving().failOnMissingReference(valueResolvingFailOnMissing));
         }
         if (null == changesExecutor) {
             changesExecutor = Executors.newCachedThreadPool(new ConfigThreadFactory("config-changes"));
@@ -329,6 +343,7 @@ class BuilderImpl implements Config.Builder {
                               cachingEnabled,
                               changesExecutor,
                               keyResolving,
+                              keyResolvingFailOnMissing,
                               aliasGenerator)
                 .newConfig();
     }
@@ -439,6 +454,7 @@ class BuilderImpl implements Config.Builder {
                                 boolean cachingEnabled,
                                 Executor changesExecutor,
                                 boolean keyResolving,
+                                boolean keyResolvingFailOnMissing,
                                 Function<String, List<String>> aliasGenerator) {
         return new ProviderImpl(configMapperManager,
                                 targetConfigSource,
@@ -447,6 +463,7 @@ class BuilderImpl implements Config.Builder {
                                 cachingEnabled,
                                 changesExecutor,
                                 keyResolving,
+                                keyResolvingFailOnMissing,
                                 aliasGenerator);
     }
 
