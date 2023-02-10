@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -239,6 +239,11 @@ import io.helidon.config.spi.OverrideSource;
  * precedence over values from config sources with lower priority.
  */
 public interface Config {
+    /**
+     * Generic type of configuration.
+     */
+    GenericType<Config> GENERIC_TYPE = GenericType.create(Config.class);
+
     /**
      * Returns empty instance of {@code Config}.
      *
@@ -1304,6 +1309,16 @@ public interface Config {
         Builder disableKeyResolving();
 
         /**
+         * When key resolving is enabled and a reference cannot be resolved, should we fail, or use the key verbatim.
+         * Defaults to {@code false}, so key resolving does not fail when a reference is missing.
+         *
+         * @param shouldFail whether to fail when key reference cannot be resolved
+         * @return updated builder
+         * @see #disableKeyResolving()
+         */
+        Builder failOnMissingKeyReference(boolean shouldFail);
+
+        /**
          * Disables an usage of resolving value tokens.
          * <p>
          * A value can contain tokens enclosed in {@code ${}} (i.e. ${name}), that are resolved by default and tokens are replaced
@@ -1314,6 +1329,16 @@ public interface Config {
          * @return an updated builder instance
          */
         Builder disableValueResolving();
+
+        /**
+         * When value resolving is enabled and a reference cannot be resolved, should we fail, or use the value verbatim.
+         * Defaults to {@code false}, so value resolving does not fail when a reference is missing.
+         *
+         * @param shouldFail whether to fail when value reference cannot be resolved
+         * @return updated builder
+         * @see #disableValueResolving()
+         */
+        Builder failOnMissingValueReference(boolean shouldFail);
 
         /**
          * Disables use of {@link ConfigSources#environmentVariables() environment variables config source}.

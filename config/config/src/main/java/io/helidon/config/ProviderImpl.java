@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ class ProviderImpl implements Config.Context {
 
     private final Executor changesExecutor;
     private final boolean keyResolving;
+    private final boolean keyResolvingFailOnMissing;
     private final Function<String, List<String>> aliasGenerator;
 
     private ConfigDiff lastConfigsDiff;
@@ -68,6 +69,7 @@ class ProviderImpl implements Config.Context {
                  boolean cachingEnabled,
                  Executor changesExecutor,
                  boolean keyResolving,
+                 boolean keyResolvingFailOnMissing,
                  Function<String, List<String>> aliasGenerator) {
         this.configMapperManager = configMapperManager;
         this.configSource = configSource;
@@ -80,6 +82,7 @@ class ProviderImpl implements Config.Context {
         this.lastConfig = (AbstractConfigImpl) Config.empty();
 
         this.keyResolving = keyResolving;
+        this.keyResolvingFailOnMissing = keyResolvingFailOnMissing;
         this.aliasGenerator = aliasGenerator;
     }
 
@@ -153,10 +156,22 @@ class ProviderImpl implements Config.Context {
             }
 
             Map<String, String> tokenValueMap = tokenToValueMap(flattenValueNodes);
+            boolean failOnMissingKeyReference = getBoolean(flattenValueNodes,
+                                                           "config.key-resolving.fail-on-missing-reference",
+                                                           keyResolvingFailOnMissing);
 
             resolveTokenFunction = (token) -> {
                 if (token.startsWith("$")) {
-                    return tokenValueMap.get(parseTokenReference(token));
+                    String tokenRef = parseTokenReference(token);
+                    String resolvedValue = tokenValueMap.get(tokenRef);
+                    if (resolvedValue.isEmpty()) {
+                        if (failOnMissingKeyReference) {
+                            throw new ConfigException(String.format("Missing token '%s' to resolve a key reference.", tokenRef));
+                        } else {
+                            return token;
+                        }
+                    }
+                    return resolvedValue;
                 }
                 return token;
             };
@@ -164,25 +179,33 @@ class ProviderImpl implements Config.Context {
         return ObjectNodeBuilderImpl.create(rootNode, resolveTokenFunction).build();
     }
 
+    /*
+     * Returns a map of required replacement tokens to their respective values from the current config tree.
+     * The values may be empty strings, representing unresolved references.
+     */
     private Map<String, String> tokenToValueMap(Map<String, String> flattenValueNodes) {
         return flattenValueNodes.keySet()
                 .stream()
                 .flatMap(this::tokensFromKey)
                 .distinct()
-                .collect(Collectors.toMap(Function.identity(), t ->
-                        flattenValueNodes.compute(Config.Key.unescapeName(t), (k, v) -> {
-                            if (v == null) {
-                                throw new ConfigException(String.format("Missing token '%s' to resolve.", t));
-                            } else if (v.equals("")) {
-                                throw new ConfigException(String.format("Missing value in token '%s' definition.", t));
-                            } else if (v.startsWith("$")) {
-                                throw new ConfigException(String.format(
-                                        "Key token '%s' references to a reference in value. A recursive references is not "
-                                                + "allowed.",
-                                        t));
-                            }
-                            return Config.Key.escapeName(v);
-                        })));
+                .collect(Collectors.toMap(Function.identity(), t -> {
+                                              // t is the reference we need to resolve
+                                              // we cannot use compute, as that modifies the map we are currently navigating
+                                              String value = flattenValueNodes.get(Config.Key.unescapeName(t));
+                                              if (value == null) {
+                                                  value = "";
+                                              } else {
+                                                  if (value.startsWith("$")) {
+                                                      throw new ConfigException(String.format(
+                                                              "Key token '%s' references to a reference in value. A recursive"
+                                                                      + " references is not allowed.",
+                                                              t));
+                                                  }
+                                                  value = Config.Key.escapeName(value);
+                                              }
+                                              // either null (not found), or escaped value
+                                              return value;
+                                          }));
     }
 
     private Stream<String> tokensFromKey(String s) {
@@ -247,6 +270,14 @@ class ProviderImpl implements Config.Context {
         chain.filterProviders.stream()
                 .map(providerFunction -> providerFunction.apply(config))
                 .forEachOrdered(filter -> filter.init(config));
+    }
+
+    private boolean getBoolean(Map<String, String> valueNodes, String key, boolean defaultValue) {
+        String value = valueNodes.get(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        return Boolean.parseBoolean(value);
     }
 
     /**
