@@ -71,6 +71,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @HelidonTest(resetPerTest = true)
 @AddBean(OciMetricsCdiExtensionTest.MockMonitoring.class)
@@ -93,7 +94,7 @@ import static org.hamcrest.Matchers.is;
 @AddConfig(key = "ocimetrics.delay", value = "2")
 class OciMetricsCdiExtensionTest {
     private static volatile int testMetricCount = 0;
-    private static CountDownLatch countDownLatch1 = new CountDownLatch(1);
+    private static CountDownLatch countDownLatch = new CountDownLatch(1);
     private static PostMetricDataDetails postMetricDataDetails;
     private static boolean activateOciMetricsSupportIsInvoked;
     private final RegistryFactory rf = RegistryFactory.getInstance();
@@ -105,7 +106,7 @@ class OciMetricsCdiExtensionTest {
     void resetState() {
         postMetricDataDetails = null;
         activateOciMetricsSupportIsInvoked = false;
-        countDownLatch1 = new CountDownLatch(1);
+        countDownLatch = new CountDownLatch(1);
     }
 
     @Test
@@ -130,7 +131,12 @@ class OciMetricsCdiExtensionTest {
         vendorMetricRegistry.counter("vendorDummyCounter").inc();
         appMetricRegistry.counter("appDummyCounter").inc();
         // Wait for signal from metric update that testMetricCount has been retrieved
-        countDownLatch1.await(3, TimeUnit.SECONDS);
+        if (!countDownLatch.await(3, TimeUnit.SECONDS)) {
+            // If Oci Metrics is enabled, this means that countdown() of CountDownLatch was never triggered, and hence should fail
+            if (enabled) {
+                fail("CountDownLatch timed out");
+            }
+        }
 
         if (enabled) {
             assertThat(activateOciMetricsSupportIsInvoked, is(true));
@@ -222,7 +228,7 @@ class OciMetricsCdiExtensionTest {
             postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
             testMetricCount = postMetricDataDetails.getMetricData().size();
             // Give signal that testMetricCount was retrieved
-            countDownLatch1.countDown();
+            countDownLatch.countDown();
             return PostMetricDataResponse.builder()
                     .__httpStatusCode__(200)
                     .build();
