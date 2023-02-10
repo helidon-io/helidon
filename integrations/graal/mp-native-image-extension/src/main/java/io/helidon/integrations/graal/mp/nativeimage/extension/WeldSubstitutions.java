@@ -94,12 +94,4 @@ public class WeldSubstitutions {
 
         }
     }
-
-    @TargetClass(className = "org.jboss.weld.util.bytecode.ClassFileUtils")
-    static final class ClassFileUtils {
-        @Substitute
-        public static Class<?> toClass(ClassFile ct, ClassLoader loader, ProtectionDomain domain) {
-            throw new IllegalStateException("Cannot load " + ct.getName());
-        }
-    }
 }
