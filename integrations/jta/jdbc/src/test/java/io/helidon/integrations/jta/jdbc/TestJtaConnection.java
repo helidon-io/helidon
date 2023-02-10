@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,7 @@ import io.helidon.integrations.jta.jdbc.LocalXAResource.Association.BranchState;
 
 import jakarta.transaction.HeuristicMixedException;
 import jakarta.transaction.HeuristicRollbackException;
-<<<<<<< HEAD
-=======
 import jakarta.transaction.InvalidTransactionException;
->>>>>>> 221682280f (Squashable commit; interim work)
 import jakarta.transaction.NotSupportedException;
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.Status;
@@ -116,11 +113,7 @@ final class TestJtaConnection {
             break;
         }
         this.tm.setTransactionTimeout(0);
-<<<<<<< HEAD
-        assertThat(ASSOCIATIONS.size(), is(0));
-=======
         // assertThat(ASSOCIATIONS.size(), is(0));
->>>>>>> 221682280f (Squashable commit; interim work)
     }
 
     @DisplayName("Spike")
@@ -216,11 +209,7 @@ final class TestJtaConnection {
             // TransactionSynchronizationRegistry, so the enlisted() method thinks we're already enlisted, so
             // getHoldability() skips enlistment, so everything stays as it was.
             assertThat(ASSOCIATIONS.get(xid).branchState(), is(IDLE));
-<<<<<<< HEAD
-            
-=======
 
->>>>>>> 221682280f (Squashable commit; interim work)
             // Commit (we didn't actually do any work) AND DISASSOCIATE the transaction, which can only happen with a
             // call to TransactionManager.commit(), not just Transaction.commit().
             tm.commit();
@@ -260,18 +249,12 @@ final class TestJtaConnection {
 
                 }
                 public void afterCompletion(int status) {
-<<<<<<< HEAD
-                    assertThat(status, is(Status.STATUS_ROLLEDBACK));
-                    assertThat(Thread.currentThread(), not(mainThread));
-                    latch.countDown();
-=======
                     try {
                         assertThat(status, is(Status.STATUS_ROLLEDBACK));
                         assertThat(Thread.currentThread(), not(mainThread));
                     } finally {
                         latch.countDown();
                     }
->>>>>>> 221682280f (Squashable commit; interim work)
                 }
             });
 
@@ -311,8 +294,6 @@ final class TestJtaConnection {
         LOGGER.info("Ending testTimeout()");
     }
 
-<<<<<<< HEAD
-=======
     @Test
     final void testBeginSuspendBeginCommitResumeCommit()
         throws HeuristicMixedException,
@@ -423,5 +404,4 @@ final class TestJtaConnection {
         LOGGER.info("Ending testBeginSuspendBeginCommitResumeCommit()");
     }
 
->>>>>>> 221682280f (Squashable commit; interim work)
 }
