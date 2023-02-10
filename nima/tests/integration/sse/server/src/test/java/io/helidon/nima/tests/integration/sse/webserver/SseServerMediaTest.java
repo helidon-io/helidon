@@ -29,7 +29,7 @@ import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.StringSupportProvider;
-import io.helidon.nima.sse.webserver.SseEvent;
+import io.helidon.nima.sse.common.SseEvent;
 import io.helidon.nima.sse.webserver.SseSink;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;

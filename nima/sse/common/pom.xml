@@ -15,8 +15,8 @@
     limitations under the License.
   -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.nima.sse</groupId>
@@ -24,21 +24,17 @@
         <version>4.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-nima-sse-webserver</artifactId>
-    <name>Helidon Níma SSE WebServer</name>
+    <artifactId>helidon-nima-sse-common</artifactId>
+    <name>Helidon Níma SSE Common</name>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.sse</groupId>
-            <artifactId>helidon-nima-sse-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.features</groupId>
-            <artifactId>helidon-common-features-api</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-media-type</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -55,7 +51,6 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -86,4 +81,3 @@
         </plugins>
     </build>
 </project>
-

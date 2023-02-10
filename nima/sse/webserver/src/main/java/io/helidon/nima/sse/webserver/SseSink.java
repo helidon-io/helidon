@@ -28,6 +28,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.nima.sse.common.SseEvent;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.spi.Sink;
 

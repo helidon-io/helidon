@@ -14,28 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
-import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.nima.sse.webserver.SseSinkProvider;
-import io.helidon.nima.webserver.http.spi.SinkProvider;
+import io.helidon.nima.sse.webclient.SseSourceHandler;
+import io.helidon.nima.webclient.http.spi.SourceHandler;
 
-/**
- * SSE WebServer.
- */
-@Feature(value = "SSE",
-         description = "SSE WebServer",
-         in = HelidonFlavor.NIMA,
-         invalidIn = HelidonFlavor.SE,
-         path = {"WebServer", "SSE"}
-)
-module io.helidon.nima.sse.webserver {
-    requires static io.helidon.common.features.api;
-
+module io.helidon.nima.sse.webclient {
     requires transitive io.helidon.common;
-    requires transitive io.helidon.nima.webserver;
+    requires transitive io.helidon.common.media.type;
     requires transitive io.helidon.nima.sse.common;
+    requires io.helidon.nima.webclient;
 
-    exports io.helidon.nima.sse.webserver;
+    provides SourceHandler with SseSourceHandler;
 
-    provides SinkProvider with SseSinkProvider;
+    exports io.helidon.nima.sse.webclient;
 }

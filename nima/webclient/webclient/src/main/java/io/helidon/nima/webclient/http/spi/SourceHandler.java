@@ -14,39 +14,33 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver.http.spi;
-
-import java.util.function.BiConsumer;
+package io.helidon.nima.webclient.http.spi;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.media.type.MediaType;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.nima.webclient.ClientResponse;
 
 /**
- * {@link java.util.ServiceLoader} provider interface for {@link Sink} providers.
+ * {@link java.util.ServiceLoader} provider interface for {@link Source} handlers.
  *
  * @param <T> event type
- * @param <X> sink subtype
+ * @param <X> type of source
  */
-public interface SinkProvider<T, X extends Sink<T>> {
+public interface SourceHandler<T, X extends Source<T>> {
 
     /**
      * Checks if a provider supports the type.
      *
-     * @param type the type
-     * @param request the current request
+     * @param type the source type
+     * @param response the HTTP response
      * @return outcome of test
      */
-    boolean supports(GenericType<X> type, ServerRequest request);
+    boolean supports(GenericType<X> type, ClientResponse response);
 
     /**
-     * Creates a sink using this provider.
+     * Handles a source.
      *
+     * @param source the source
      * @param response the HTTP response
-     * @param eventConsumer an event consumer
-     * @param closeRunnable a runnable to call on close
-     * @return newly created sink
      */
-    X create(ServerResponse response, BiConsumer<Object, MediaType> eventConsumer, Runnable closeRunnable);
+    void handle(X source, ClientResponse response);
 }

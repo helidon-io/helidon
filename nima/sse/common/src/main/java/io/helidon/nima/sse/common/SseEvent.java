@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.sse.webserver;
+package io.helidon.nima.sse.common;
 
 import java.util.Optional;
 

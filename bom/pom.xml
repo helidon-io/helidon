@@ -1305,6 +1305,16 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.nima.sse</groupId>
+                <artifactId>helidon-nima-sse-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.sse</groupId>
+                <artifactId>helidon-nima-sse-webclient</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.sse</groupId>
                 <artifactId>helidon-nima-sse-webserver</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
