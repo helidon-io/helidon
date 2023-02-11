@@ -51,26 +51,23 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
-public class OciMetricsSupportTest {
-    private final OciMetricsSupport.NameFormatter nameFormatter = new OciMetricsSupport.NameFormatter() { };
+class OciMetricsSupportTest {
     private static final Monitoring monitoringClient = mock(Monitoring.class);
-    private final Type[] types = {Type.BASE, Type.VENDOR, Type.APPLICATION};
-
     private static volatile Double[] testMetricUpdateCounterValue = new Double[2];
     private static volatile int testMetricCount = 0;
-    // Use CountDownLatch to signal when to start testing, for example, test only after results has been retrieved.
-    private static CountDownLatch countDownLatch1;
     private static int noOfExecutions;
     private static int noOfMetrics;
-
+    private static String endPoint = "https://telemetry.DummyEndpoint.com";
+    private static String postingEndPoint;
+    private final Type[] types = {Type.BASE, Type.VENDOR, Type.APPLICATION};
     private final RegistryFactory rf = RegistryFactory.getInstance();
     private final MetricRegistry baseMetricRegistry = rf.getRegistry(Type.BASE);
     private final MetricRegistry vendorMetricRegistry = rf.getRegistry(Type.VENDOR);
     private final MetricRegistry appMetricRegistry = rf.getRegistry(Type.APPLICATION);
-    private static String endPoint = "https://telemetry.DummyEndpoint.com";
-    private static String postingEndPoint;
 
     @BeforeAll
     static void mockSetGetEndpoints() {
@@ -84,9 +81,9 @@ public class OciMetricsSupportTest {
     }
 
     @BeforeEach
-    private void beforeEach() {
+    void resetState() {
         // clear all registry
-        for (Type type: types) {
+        for (Type type : types) {
             MetricRegistry metricRegistry = rf.getRegistry(type);
             metricRegistry.removeMatching(new MetricFilter() {
                 @Override
@@ -95,13 +92,14 @@ public class OciMetricsSupportTest {
                 }
             });
         }
+        endPoint = "https://telemetry.DummyEndpoint.com";
     }
 
     @Test
-    public void testMetricUpdate() throws InterruptedException {
+    void testMetricUpdate() throws InterruptedException {
         Counter counter = baseMetricRegistry.counter("DummyCounter");
 
-        countDownLatch1 = new CountDownLatch(1);
+        CountDownLatch countDownLatch = new CountDownLatch(1);
         noOfExecutions = 0;
 
         doAnswer(invocationOnMock -> {
@@ -118,7 +116,7 @@ public class OciMetricsSupportTest {
                 counter.inc();
             } else {
                 // Give signal that multiple metric updates have been triggered
-                countDownLatch1.countDown();
+                countDownLatch.countDown();
             }
             return PostMetricDataResponse.builder()
                     .__httpStatusCode__(200)
@@ -141,7 +139,7 @@ public class OciMetricsSupportTest {
         WebServer webServer = createWebServer(routing);
 
         // Wait for metric updates to complete
-        countDownLatch1.await(10, java.util.concurrent.TimeUnit.SECONDS);
+        countDownLatchWait(countDownLatch);
 
         // Test the 1st and 2nd metric counter updates
         assertThat(ociMetricsSupportBuilder.enabled(), is(true));
@@ -152,14 +150,14 @@ public class OciMetricsSupportTest {
     }
 
     @Test
-    public void testEndpoint() throws InterruptedException {
+    void testEndpoint() throws InterruptedException {
         String originalEndPoint = endPoint;
 
         baseMetricRegistry.counter("baseDummyCounter1").inc();
         vendorMetricRegistry.counter("vendorDummyCounter1").inc();
         appMetricRegistry.counter("appDummyCounter1").inc();
 
-        countDownLatch1 = new CountDownLatch(1);
+        CountDownLatch countDownLatch = new CountDownLatch(1);
         noOfExecutions = 0;
 
         doAnswer(invocationOnMock -> {
@@ -167,7 +165,7 @@ public class OciMetricsSupportTest {
             PostMetricDataDetails postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
             postingEndPoint = monitoringClient.getEndpoint();
             // Give signal that metrics has been posted
-            countDownLatch1.countDown();
+            countDownLatch.countDown();
             return PostMetricDataResponse.builder()
                     .__httpStatusCode__(200)
                     .build();
@@ -187,19 +185,34 @@ public class OciMetricsSupportTest {
         WebServer webServer = createWebServer(routing);
 
         // Wait for metrics to be posted
-        countDownLatch1.await(10, java.util.concurrent.TimeUnit.SECONDS);
+        countDownLatchWait(countDownLatch);
 
         assertThat(ociMetricsSupportBuilder.enabled(), is(true));
         // Verify that telemetry-ingestion endpoint is properly set during postin
         assertThat(postingEndPoint, startsWith("https://telemetry-ingestion."));
-        // Verify that original endpoint is restored after metric posting
-        assertThat(monitoringClient.getEndpoint(), is(equalTo(originalEndPoint)));
+        // In a span of 10 seconds, verify that original endpoint is restored after metric posting
+        long start = System.currentTimeMillis();
+        long end = start + 10 * 1000;
+        boolean endPointIsRestored = false;
+        while (System.currentTimeMillis() < end) {
+            if (monitoringClient.getEndpoint().equals(originalEndPoint)) {
+                endPointIsRestored = true;
+                break;
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                fail("Failed with " + ie);
+            }
+        }
+        assertThat(endPointIsRestored, is(true));
+        // assertThat(monitoringClient.getEndpoint(), is(equalTo(originalEndPoint)));
 
         webServer.stop();
     }
 
     @Test
-    public void testBatchSize() throws InterruptedException {
+    void testBatchSize() throws InterruptedException {
         baseMetricRegistry.counter("baseDummyCounter1").inc();
         baseMetricRegistry.counter("baseDummyCounter2").inc();
         baseMetricRegistry.counter("baseDummyCounter3").inc();
@@ -226,7 +239,7 @@ public class OciMetricsSupportTest {
         // Should be 4
         int noOfBatches = Math.round(totalMetrics / batchSize) + (remainder > 0 ? 1 : 0);
 
-        countDownLatch1 = new CountDownLatch(1);
+        CountDownLatch countDownLatch = new CountDownLatch(1);
         noOfExecutions = 0;
         noOfMetrics = 0;
 
@@ -238,7 +251,7 @@ public class OciMetricsSupportTest {
             noOfMetrics += metricSizeToPost;
             // Give signal that the last remaining metric in the last batch has been posted
             if (metricSizeToPost == remainder) {
-                countDownLatch1.countDown();
+                countDownLatch.countDown();
             }
             return PostMetricDataResponse.builder()
                     .__httpStatusCode__(200)
@@ -257,7 +270,6 @@ public class OciMetricsSupportTest {
                 .batchSize(batchSize)
                 .monitoringClient(monitoringClient);
 
-
         Instant start = Instant.now();
 
         HttpRouting routing = createRouting(ociMetricsSupportBuilder);
@@ -265,7 +277,7 @@ public class OciMetricsSupportTest {
         WebServer webServer = createWebServer(routing);
 
         // Wait for last batch to be completed
-        countDownLatch1.await(10, java.util.concurrent.TimeUnit.SECONDS);
+        countDownLatchWait(countDownLatch);
         Instant finish = Instant.now();
 
         // Batch size of 3 for 10 metrics should yield 4 batches to post
@@ -283,9 +295,7 @@ public class OciMetricsSupportTest {
     }
 
     @Test
-    public void testConfigSources() {
-        mockPostMetricDataAndGetTestMetricCount();
-
+    void testConfigSources() {
         baseMetricRegistry.counter("baseDummyCounter1").inc();
 
         vendorMetricRegistry.counter("vendorDummyCounter1").inc();
@@ -303,9 +313,7 @@ public class OciMetricsSupportTest {
     }
 
     @Test
-    public void testMetricScope() {
-        mockPostMetricDataAndGetTestMetricCount();
-
+    void testMetricScope() {
         baseMetricRegistry.counter("baseDummyCounter1").inc();
 
         vendorMetricRegistry.counter("vendorDummyCounter1").inc();
@@ -315,21 +323,19 @@ public class OciMetricsSupportTest {
         appMetricRegistry.counter("appDummyCounter2").inc();
         appMetricRegistry.counter("appDummyCounter3").inc();
 
-        validateMetricCount(new String[]{}, 6);
-        validateMetricCount(new String[]{Type.BASE.getName(), Type.VENDOR.getName(), Type.APPLICATION.getName()}, 6);
-        validateMetricCount(new String[]{Type.BASE.getName()}, 1);
-        validateMetricCount(new String[]{Type.VENDOR.getName()}, 2);
-        validateMetricCount(new String[]{Type.APPLICATION.getName()}, 3);
-        validateMetricCount(new String[]{"base", "vendor", "application"}, 6);
-        validateMetricCount(new String[]{"base"}, 1);
-        validateMetricCount(new String[]{"vendor"}, 2);
-        validateMetricCount(new String[]{"application"}, 3);
+        validateMetricCount(new String[] {}, 6);
+        validateMetricCount(new String[] {Type.BASE.getName(), Type.VENDOR.getName(), Type.APPLICATION.getName()}, 6);
+        validateMetricCount(new String[] {Type.BASE.getName()}, 1);
+        validateMetricCount(new String[] {Type.VENDOR.getName()}, 2);
+        validateMetricCount(new String[] {Type.APPLICATION.getName()}, 3);
+        validateMetricCount(new String[] {"base", "vendor", "application"}, 6);
+        validateMetricCount(new String[] {"base"}, 1);
+        validateMetricCount(new String[] {"vendor"}, 2);
+        validateMetricCount(new String[] {"application"}, 3);
     }
 
     @Test
-    public void testDisableMetrics() {
-        mockPostMetricDataAndGetTestMetricCount();
-
+    void testDisableMetrics() {
         baseMetricRegistry.counter("baseDummyCounter1").inc();
         vendorMetricRegistry.counter("vendorDummyCounter1").inc();
         appMetricRegistry.counter("appDummyCounter1").inc();
@@ -357,14 +363,14 @@ public class OciMetricsSupportTest {
         assertThat(testMetricCount, is(equalTo(0)));
     }
 
-    private void mockPostMetricDataAndGetTestMetricCount() {
+    private void mockPostMetricDataAndGetTestMetricCount(CountDownLatch countDownLatch) {
         // mock monitoringClient.postMetricData()
         doAnswer(invocationOnMock -> {
             PostMetricDataRequest postMetricDataRequest = invocationOnMock.getArgument(0);
             PostMetricDataDetails postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
             testMetricCount = postMetricDataDetails.getMetricData().size();
             // Give signal that testMetricCount was retrieved
-            countDownLatch1.countDown();
+            countDownLatch.countDown();
             return PostMetricDataResponse.builder()
                     .__httpStatusCode__(200)
                     .build();
@@ -374,7 +380,6 @@ public class OciMetricsSupportTest {
     private WebServer createWebServer(HttpRouting routing) {
         WebServer webServer = WebServer.builder()
                 .host("localhost")
-                .port(8888)
                 .addRouting(routing)
                 .build();
         webServer.start();
@@ -425,21 +430,28 @@ public class OciMetricsSupportTest {
 
     private void validateMetricCount(OciMetricsSupport.Builder ociMetricsSupportBuilder, int expectedMetricCount) {
         testMetricCount = 0;
-        countDownLatch1 = new CountDownLatch(1);
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        mockPostMetricDataAndGetTestMetricCount(countDownLatch);
         HttpRouting routing = createRouting(ociMetricsSupportBuilder);
         WebServer webServer = createWebServer(routing);
 
         try {
             // Wait for signal from metric update that testMetricCount has been retrieved
-            countDownLatch1.await(10, TimeUnit.SECONDS);
-        } catch(InterruptedException e) {
+            countDownLatchWait(countDownLatch);
+        } catch (InterruptedException e) {
             fail("Error while waiting for testMetricCount: " + e.getMessage());
         }
         webServer.stop();
         assertThat(testMetricCount, is(equalTo(expectedMetricCount)));
     }
 
-    private static void delay(long millis) {
+    private void countDownLatchWait(CountDownLatch countDownLatch) throws InterruptedException {
+        if (!countDownLatch.await(10, TimeUnit.SECONDS)) {
+            fail("CountDownLatch timed out");
+        }
+    }
+
+    private void delay(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException ie) {
