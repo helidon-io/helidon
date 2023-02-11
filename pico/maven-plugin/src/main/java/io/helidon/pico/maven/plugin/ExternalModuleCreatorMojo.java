@@ -155,16 +155,14 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
     }
 
     @Override
-    public void execute() throws MojoExecutionException {
-        getLog().info("Started " + getClass().getName() + " for " + getProject());
-
+    protected void innerExecute() throws MojoExecutionException {
         if (packageNames == null || packageNames.isEmpty()) {
             throw new MojoExecutionException("packageNames are required to be specified");
         }
 
-        final ClassLoader prev = Thread.currentThread().getContextClassLoader();
-        final Set<Path> classpath = getDependencies("compile");
-        final URLClassLoader loader = ExecutableClassLoader.create(classpath, prev);
+        ClassLoader prev = Thread.currentThread().getContextClassLoader();
+        Set<Path> classpath = getDependencies("compile");
+        URLClassLoader loader = ExecutableClassLoader.create(classpath, prev);
 
         try {
             Thread.currentThread().setContextClassLoader(loader);
@@ -211,12 +209,9 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
             } else {
                 getLog().error("failed to process", res.error().orElse(null));
             }
-        } catch (Throwable t) {
-            getLog().error("creator failed", t);
-            throw new MojoExecutionException("creator failed", t);
         } finally {
             Thread.currentThread().setContextClassLoader(prev);
-            getLog().info("Finished " + getClass().getName() + " for " + getProject());
         }
     }
+
 }

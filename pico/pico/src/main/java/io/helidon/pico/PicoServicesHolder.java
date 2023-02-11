@@ -27,7 +27,7 @@ import io.helidon.pico.spi.PicoServicesProvider;
 import io.helidon.pico.spi.Resetable;
 
 import static io.helidon.pico.spi.CallingContext.DEBUG_HINT;
-import static io.helidon.pico.spi.CallingContext.stackTraceOf;
+import static io.helidon.pico.spi.CallingContext.prettyPrintStackTraceOf;
 
 /**
  * The holder for the globally active {@link PicoServices} singleton instance, as well as its associated
@@ -87,7 +87,7 @@ public abstract class PicoServicesHolder {
             StackTraceElement[] trace = (callingContext == null) ? new StackTraceElement[] {} : callingContext.trace();
             if (trace != null && trace.length > 0) {
                 throw new IllegalStateException(
-                        "bootstrap was previously set from this code path:\n" + stackTraceOf(trace)
+                        "bootstrap was previously set from this code path:\n" + prettyPrintStackTraceOf(trace)
                 + "; module name is '" + callingContext.moduleName().orElse("undefined") + "'");
             }
             throw new IllegalStateException("bootstrap already set - " + DEBUG_HINT);

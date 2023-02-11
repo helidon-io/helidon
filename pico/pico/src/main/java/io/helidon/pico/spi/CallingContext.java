@@ -22,8 +22,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.Builder;
-import io.helidon.pico.PicoServices;
 
+import static io.helidon.pico.PicoServices.isDebugEnabled;
 import static io.helidon.pico.PicoServicesConfig.TAG_DEBUG;
 
 /**
@@ -50,7 +50,8 @@ public abstract class CallingContext {
 
     @Override
     public String toString() {
-        return "module name: " + moduleName() + "; thread name: " + threadName() + "; trace:\n" + stackTraceOf(trace());
+        return "module name: " + moduleName() + "; thread name: " + threadName()
+                + "; trace:\n" + prettyPrintStackTraceOf(trace());
     }
 
     /**
@@ -84,9 +85,20 @@ public abstract class CallingContext {
             StackTraceElement[] trace) {
         List<String> result = new ArrayList<>();
         for (StackTraceElement e : trace) {
-            result.add(e.toString() + "\n");
+            result.add(e.toString());
         }
         return result;
+    }
+
+    /**
+     * Returns a stack trace as a CRLF joined string.
+     *
+     * @param trace the trace
+     * @return the stringified stack trace
+     */
+    public static String prettyPrintStackTraceOf(
+            StackTraceElement[] trace) {
+        return String.join("\n", stackTraceOf(trace));
     }
 
     /**
@@ -100,7 +112,7 @@ public abstract class CallingContext {
     public static Optional<CallingContext> maybeCreate(
             Optional<String> moduleName,
             Optional<Boolean> isDebugEnabled) {
-        boolean debug = isDebugEnabled.orElseGet(() -> PicoServices.isDebugEnabled());
+        boolean debug = isDebugEnabled.orElseGet(() -> isDebugEnabled());
         if (!debug) {
             return Optional.empty();
         }

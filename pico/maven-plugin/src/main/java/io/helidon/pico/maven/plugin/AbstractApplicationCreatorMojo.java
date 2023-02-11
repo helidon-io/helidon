@@ -66,7 +66,6 @@ import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.ToolsException;
 
 import org.apache.maven.model.Build;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
@@ -324,13 +323,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     @Override
-    // special note: we are adding synchronized to this since it would appear maven is being invoked in parallel on the same
-    // module in the same jvm -- very strange. note to self: investigate further.
-    // note 2: it is very likely that maven is calling this in parallel on two different instances, so the synchronized will have
-    // no benefit -- we might need to consider changing this to be static Semaphore based to serialize access.
-    public synchronized void execute() throws MojoExecutionException {
-        getLog().info("Started " + getClass().getName() + " for " + getProject());
-
+    protected void innerExecute() {
         this.permittedProviderType = PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
 
         Optional<CallingContext> ignoreCallingContext =
@@ -437,16 +430,8 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             } else {
                 getLog().error("failed to process", res.error().orElse(null));
             }
-        } catch (Throwable t) {
-            getLog().error("creator failed", t);
-            throw new MojoExecutionException("creator failed", t);
         } finally {
             Thread.currentThread().setContextClassLoader(prev);
-            // special note: we are adding reset here since it would appear maven is being invoked in parallel on the same
-            // module in the same jvm -- very strange. note to self: investigate further. Also see notes at the top of the method.
-            Utils.resetAll();
-
-            getLog().info("Finished " + getClass().getName() + " for " + getProject());
         }
     }
 

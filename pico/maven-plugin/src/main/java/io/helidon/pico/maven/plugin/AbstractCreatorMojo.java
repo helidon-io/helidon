@@ -30,6 +30,7 @@ import io.helidon.pico.tools.TemplateHelper;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
@@ -42,6 +43,8 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
 
     static final String DEFAULT_SOURCE = AbstractCreator.DEFAULT_SOURCE;
     static final String DEFAULT_TARGET = AbstractCreator.DEFAULT_TARGET;
+
+    static final TrafficCop TRAFFIC_COP = new TrafficCop();
 
     /**
      * Tag controlling whether we fail on error.
@@ -164,6 +167,29 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     List<String> getCompilerArgs() {
         return compilerArgs;
     }
+
+    @Override
+    public void execute() throws MojoExecutionException {
+        try (TrafficCop.GreenLight greenLight = TRAFFIC_COP.waitForGreenLight()) {
+            getLog().info("Started " + getClass().getName() + " for " + getProject());
+            innerExecute();
+            getLog().info("Finishing " + getClass().getName() + " for " + getProject());
+            Utils.resetAll();
+        } catch (Throwable t) {
+            MojoExecutionException me = new MojoExecutionException("creator failed", t);
+            getLog().error(me.getMessage(), t);
+            throw me;
+        } finally {
+            getLog().info("Finished " + getClass().getName() + " for " + getProject());
+        }
+    }
+
+    /**
+     * Gated/controlled by the {@link io.helidon.pico.maven.plugin.TrafficCop}.
+     *
+     * @throws MojoExecutionException if any mojo problems occur
+     */
+    protected abstract void innerExecute() throws MojoExecutionException;
 
     LinkedHashSet<Path> getDependencies(
             String optionalScopeFilter) {
