@@ -117,22 +117,22 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         parent.asNodeList().ifPresent(it -> {
             for (Config child : it) {
                 switch (child.type()) {
-                case OBJECT -> {
-                    Builder childBuilder = ObjectNode.builder();
-                    addObjectNode(childBuilder, child);
-                    parentBuilder.addObject(child.name(), childBuilder.build());
-                }
-                case LIST -> {
-                    ListNode.Builder childBuilder = ListNode.builder();
-                    addListNode(childBuilder, child);
-                    parentBuilder.addList(child.name(), childBuilder.build());
-                }
-                case VALUE -> {
-                    parentBuilder.addValue(child.name(), child.asString().get());
-                }
-                default -> {
-                    // do nothing
-                }
+                    case OBJECT:
+                        Builder objectChildBuilder = ObjectNode.builder();
+                        addObjectNode(objectChildBuilder, child);
+                        parentBuilder.addObject(child.name(), objectChildBuilder.build());
+                        break;
+                    case LIST:
+                        ListNode.Builder listChildBuilder = ListNode.builder();
+                        addListNode(listChildBuilder, child);
+                        parentBuilder.addList(child.name(), listChildBuilder.build());
+                        break;
+                    case VALUE:
+                        parentBuilder.addValue(child.name(), child.asString().get());
+                        break;
+                    default:
+                        // do nothing
+                        break;
                 }
             }
         });
@@ -142,22 +142,22 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         parent.asNodeList().ifPresent(it -> {
             for (Config child : it) {
                 switch (child.type()) {
-                case OBJECT -> {
-                    Builder childBuilder = ObjectNode.builder();
-                    addObjectNode(childBuilder, child);
-                    parentBuilder.addObject(childBuilder.build());
-                }
-                case LIST -> {
-                    ListNode.Builder childBuilder = ListNode.builder();
-                    addListNode(childBuilder, child);
-                    parentBuilder.addList(childBuilder.build());
-                }
-                case VALUE -> {
-                    parentBuilder.addValue(child.asString().get());
-                }
-                default -> {
-                    // do nothing
-                }
+                    case OBJECT:
+                        Builder objectChildBuilder = ObjectNode.builder();
+                        addObjectNode(objectChildBuilder, child);
+                        parentBuilder.addObject(objectChildBuilder.build());
+                        break;
+                    case LIST:
+                        ListNode.Builder listChildBuilder = ListNode.builder();
+                        addListNode(listChildBuilder, child);
+                        parentBuilder.addList(listChildBuilder.build());
+                        break;
+                    case VALUE:
+                        parentBuilder.addValue(child.asString().get());
+                        break;
+                    default:
+                        // do nothing
+                        break;
                 }
             }
         });
