@@ -57,19 +57,19 @@ backend:
           source: "about/introduction.adoc"
           glyph:
             type: "icon"
-            value: "widgets"
+            value: "lightbulb"
         - type: "PAGE"
           title: "Get Started"
           source: "about/prerequisites.adoc"
           glyph:
             type: "icon"
-            value: "widgets"
+            value: "rocket_launch"
         - type: "PAGE"
           title: "Helidon CLI"
           source: "about/cli.adoc"
           glyph:
             type: "icon"
-            value: "widgets"
+            value: "terminal"
         - type: "GROUPS"
           items:
           - type: "GROUP"
@@ -81,7 +81,7 @@ backend:
                 source: "introduction.adoc"
                 glyph:
                   type: "icon"
-                  value: "widgets"
+                  value: "lightbulb"
               - type: "MENU"
                 title: "Guides"
                 dir: "guides"
@@ -259,7 +259,7 @@ backend:
                 source: "introduction.adoc"
                 glyph:
                   type: "icon"
-                  value: "assistant"
+                  value: "lightbulb"
               - type: "MENU"
                 title: "Guides"
                 dir: "guides"
