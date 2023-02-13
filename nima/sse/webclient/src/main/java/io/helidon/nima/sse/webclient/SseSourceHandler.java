@@ -48,10 +48,8 @@ public class SseSourceHandler implements SourceHandler<SseEvent, SseSource> {
 
     @Override
     public void handle(SseSource source, ClientResponse response) {
-        try {
-            InputStream is = response.inputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-
+        InputStream is = response.inputStream();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line;
             boolean emit = false;
             boolean first = true;
