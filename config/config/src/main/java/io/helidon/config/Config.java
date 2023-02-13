@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,9 @@ import io.helidon.config.spi.MergingStrategy;
 import io.helidon.config.spi.OverrideSource;
 
 /**
- * <h1>Configuration</h1>
+ * <h2>Configuration</h2>
  * Immutable tree-structured configuration.
- * <h2>Loading Configuration</h2>
+ * <h3>Loading Configuration</h3>
  * Load the default configuration using the {@link Config#create} method.
  * <pre>{@code
  * Config config = Config.create();
@@ -95,7 +95,7 @@ import io.helidon.config.spi.OverrideSource;
  * </tr>
  * </table>
  *
- * <h2>Navigating in a Configuration Tree</h2>
+ * <h3>Navigating in a Configuration Tree</h3>
  * Each loaded configuration is a tree of {@code Config} objects. The
  * application can access an arbitrary node in the tree by passing its
  * fully-qualified name to {@link Config#get}:
@@ -146,8 +146,8 @@ import io.helidon.config.spi.OverrideSource;
  * <p>
  * To get node value, use {@link #as(Class)} to access this config node as a {@link ConfigValue}
  *
- * <h2>Converting Configuration Values to Types</h2>
- * <h3>Explicit Conversion by the Application</h3>
+ * <h3>Converting Configuration Values to Types</h3>
+ * <h4>Explicit Conversion by the Application</h4>
  * The interpretation of a configuration node, including what datatype to use,
  * is up to the application. To interpret a node's value as a type other than
  * {@code String} the application can invoke one of these convenience methods:
@@ -231,14 +231,19 @@ import io.helidon.config.spi.OverrideSource;
  * that can handle classes that fulfill some requirements (see documentation), such as a public constructor,
  * static "create(Config)" method etc.
  *
- * <h2><a id="multipleSources">Handling Multiple Configuration
- * Sources</a></h2>
+ * <h3><a id="multipleSources">Handling Multiple Configuration
+ * Sources</a></h3>
  * A {@code Config} instance, including the default {@code Config} returned by
  * {@link Config#create}, might be associated with multiple {@link ConfigSource}s. The
  * config system merges these together so that values from config sources with higher priority have
  * precedence over values from config sources with lower priority.
  */
 public interface Config {
+    /**
+     * Generic type of configuration.
+     */
+    GenericType<Config> GENERIC_TYPE = GenericType.create(Config.class);
+
     /**
      * Returns empty instance of {@code Config}.
      *
@@ -922,6 +927,12 @@ public interface Config {
         @Override
         String toString();
 
+        /**
+         * Create a child key to the current key.
+         *
+         * @param key child key (relative to current key)
+         * @return a new resolved key
+         */
         Key child(Key key);
 
         /**
@@ -1138,7 +1149,7 @@ public interface Config {
      * @see ConfigParser
      * @see ConfigFilter
      */
-    interface Builder {
+    interface Builder extends io.helidon.common.Builder<Config> {
         /**
          * Sets ordered list of {@link ConfigSource} instance to be used as single source of configuration
          * to be wrapped into {@link Config} API.
@@ -1298,6 +1309,16 @@ public interface Config {
         Builder disableKeyResolving();
 
         /**
+         * When key resolving is enabled and a reference cannot be resolved, should we fail, or use the key verbatim.
+         * Defaults to {@code false}, so key resolving does not fail when a reference is missing.
+         *
+         * @param shouldFail whether to fail when key reference cannot be resolved
+         * @return updated builder
+         * @see #disableKeyResolving()
+         */
+        Builder failOnMissingKeyReference(boolean shouldFail);
+
+        /**
          * Disables an usage of resolving value tokens.
          * <p>
          * A value can contain tokens enclosed in {@code ${}} (i.e. ${name}), that are resolved by default and tokens are replaced
@@ -1308,6 +1329,16 @@ public interface Config {
          * @return an updated builder instance
          */
         Builder disableValueResolving();
+
+        /**
+         * When value resolving is enabled and a reference cannot be resolved, should we fail, or use the value verbatim.
+         * Defaults to {@code false}, so value resolving does not fail when a reference is missing.
+         *
+         * @param shouldFail whether to fail when value reference cannot be resolved
+         * @return updated builder
+         * @see #disableValueResolving()
+         */
+        Builder failOnMissingValueReference(boolean shouldFail);
 
         /**
          * Disables use of {@link ConfigSources#environmentVariables() environment variables config source}.

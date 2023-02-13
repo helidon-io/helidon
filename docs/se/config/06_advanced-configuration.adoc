@@ -687,6 +687,18 @@ Config config = Config.builder()
 <3> A default configuration containing token references that are resolved
 using the environment-specific override.
 
+You can disable key and value token replacement separately as the following example shows.
+
+[source,java]
+.Disabling Key and Value Token Replacement
+----
+Config config = Config.builder()
+        .disableKeyResolving()
+        .disableValueResolving()
+        // other Config builder settings
+        .build();
+----
+
 == Executors for Asynchronous Config Activity
 Various parts of the config system work asychronously:
 
