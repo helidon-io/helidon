@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,19 +57,19 @@ backend:
           source: "about/introduction.adoc"
           glyph:
             type: "icon"
-            value: "widgets"
+            value: "lightbulb"
         - type: "PAGE"
           title: "Get Started"
           source: "about/prerequisites.adoc"
           glyph:
             type: "icon"
-            value: "widgets"
+            value: "rocket_launch"
         - type: "PAGE"
           title: "Helidon CLI"
           source: "about/cli.adoc"
           glyph:
             type: "icon"
-            value: "widgets"
+            value: "terminal"
         - type: "GROUPS"
           items:
           - type: "GROUP"
@@ -81,7 +81,7 @@ backend:
                 source: "introduction.adoc"
                 glyph:
                   type: "icon"
-                  value: "widgets"
+                  value: "lightbulb"
               - type: "MENU"
                 title: "Guides"
                 dir: "guides"
@@ -259,7 +259,7 @@ backend:
                 source: "introduction.adoc"
                 glyph:
                   type: "icon"
-                  value: "assistant"
+                  value: "lightbulb"
               - type: "MENU"
                 title: "Guides"
                 dir: "guides"
