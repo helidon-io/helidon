@@ -41,6 +41,7 @@ public class SseSink implements Sink<SseEvent> {
     private static final byte[] SSE_NL = "\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_ID = "id:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_DATA = "data:".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] SSE_EVENT = "event:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_COMMENT = ":".getBytes(StandardCharsets.UTF_8);
 
     /**
@@ -88,6 +89,12 @@ public class SseSink implements Sink<SseEvent> {
             if (id.isPresent()) {
                 outputStream.write(SSE_ID);
                 outputStream.write(id.get().getBytes(StandardCharsets.UTF_8));
+                outputStream.write(SSE_NL);
+            }
+            Optional<String> name = sseEvent.name();
+            if (name.isPresent()) {
+                outputStream.write(SSE_EVENT);
+                outputStream.write(name.get().getBytes(StandardCharsets.UTF_8));
                 outputStream.write(SSE_NL);
             }
             Object data = sseEvent.data();

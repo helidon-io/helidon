@@ -32,8 +32,8 @@ import io.helidon.nima.webserver.http.ServerResponse;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.HeaderValues.ACCEPT_EVENT_STREAM;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class SseClientTest {
@@ -51,7 +51,11 @@ class SseClientTest {
 
     private static void sseString1(ServerRequest req, ServerResponse res) {
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
-            sseSink.emit(SseEvent.create("hello"))
+            sseSink.emit(SseEvent.builder()
+                            .comment("first line")
+                            .name("first")
+                            .data("hello")
+                            .build())
                     .emit(SseEvent.create("world"));
         }
     }
@@ -66,7 +70,13 @@ class SseClientTest {
                 @Override
                 public void onEvent(SseEvent event) {
                     switch (state) {
-                        case 0 -> assertThat(event.data(), is("hello"));
+                        case 0 -> {
+                            assertThat(event.comment().isPresent(), is(true));
+                            assertThat(event.comment().get(), is("first line"));
+                            assertThat(event.name().isPresent(), is(true));
+                            assertThat(event.name().get(), is("first"));
+                            assertThat(event.data(), is("hello"));
+                        }
                         case 1 -> assertThat(event.data(), is("world"));
                     }
                     state++;

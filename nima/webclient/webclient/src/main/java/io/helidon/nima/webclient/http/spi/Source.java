@@ -25,6 +25,12 @@ package io.helidon.nima.webclient.http.spi;
 public interface Source<T> {
 
     /**
+     * Handler for event stream creation.
+     */
+    default void onOpen() {
+    }
+
+    /**
      * Handler for a newly received event.
      *
      * @param event the event
@@ -32,7 +38,7 @@ public interface Source<T> {
     void onEvent(T event);
 
     /**
-     * Handler for connection termination.
+     * Handler for event stream termination.
      */
     default void onClose() {
     }

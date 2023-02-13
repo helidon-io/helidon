@@ -202,8 +202,6 @@
         <module>cors</module>
         <module>pico</module>
         <module>builder</module>
-        <module>nima/sse/webclient</module>
-        <module>nima/sse/common</module>
     </modules>
 
 

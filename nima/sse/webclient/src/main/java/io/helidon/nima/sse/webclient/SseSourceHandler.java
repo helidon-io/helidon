@@ -34,6 +34,12 @@ import io.helidon.nima.webclient.http.spi.SourceHandler;
  */
 public class SseSourceHandler implements SourceHandler<SseEvent, SseSource> {
 
+    private static final char BOM = 0xFEFF;
+    private static final String ID = "id:";
+    private static final String DATA = "data:";
+    private static final String RETRY = "retry:";
+    private static final String EVENT = "event:";
+
     @Override
     public boolean supports(GenericType<SseSource> type, ClientResponse response) {
         return type == SseSource.TYPE && response.headers().contentType()
@@ -47,28 +53,79 @@ public class SseSourceHandler implements SourceHandler<SseEvent, SseSource> {
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
 
             String line;
-            StringBuilder data = new StringBuilder();
             boolean emit = false;
+            boolean first = true;
+            StringBuilder data = new StringBuilder();
+            SseEvent.Builder sseBuilder = SseEvent.builder();
+
+            source.onOpen();
 
             while ((line = reader.readLine()) != null) {
+                if (first && line.charAt(0) == BOM) {       // optional BOM
+                    line = line.substring(1);
+                }
+                first = false;
                 if (line.isBlank()) {
                     if (emit) {
-                        source.onEvent(SseEvent.create(data.toString()));
+                        sseBuilder.data(data.toString());
+                        source.onEvent(sseBuilder.build());
                         data.setLength(0);
+                        sseBuilder = SseEvent.builder();
                         emit = false;
                     }
                     continue;
                 }
-                if (line.startsWith("data:")) {
-                    data.append(line.length() > 5 ? line.substring(5) : "");
-                    emit = true;
+                emit = true;
+                if (line.startsWith(DATA)) {
+                    data.append(skipPrefix(line));
+                } else if (line.startsWith(EVENT)) {
+                    sseBuilder.name(skipPrefix(line));
+                } else if (line.startsWith(ID)) {
+                    sseBuilder.id(skipPrefix(line));
+                } else if (line.startsWith(RETRY)) {
+                    sseBuilder.reconnectDelay(Long.parseLong(skipPrefix(line)));
+                } else if (line.startsWith(":")) {
+                    sseBuilder.comment(line.length() > 1 ? line.substring(1) : "");
+                } else {
+                    // todo log extraneous line
+                    emit = false;
                 }
-                // todo other type of lines
             }
+
             source.onClose();
         } catch (IOException e) {
             source.onError(e);
             throw new UncheckedIOException(e);
+        } catch (NumberFormatException e) {
+            source.onError(e);
+            throw e;
         }
+    }
+
+    private static String skipPrefix(String line) {
+        StringBuilder builder = new StringBuilder(line.length());
+        int state = 0;
+        for (int i = 0; i < line.length(); i++) {
+            switch (state) {
+                case 0:
+                    if (line.charAt(i) == ':') {
+                        state = 1;      // found delimiter
+                    }
+                    break;
+                case 1:
+                    char ch = line.charAt(i);
+                    if (ch != ' ') {
+                        builder.append(ch);
+                        state = 2;      // stop skipping spaces
+                    }
+                    break;
+                case 2:
+                    builder.append(line.charAt(i));
+                    break;
+                default:
+                    throw new IllegalStateException("Illegal SSE parser state for text/event-stream");
+            }
+        }
+        return builder.toString();
     }
 }
