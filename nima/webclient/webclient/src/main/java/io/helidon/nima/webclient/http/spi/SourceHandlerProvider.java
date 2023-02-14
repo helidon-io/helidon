@@ -40,6 +40,7 @@ public interface SourceHandlerProvider<T> {
      *
      * @param source the source
      * @param response the HTTP response
+     * @param <X> type of source
      */
     <X extends Source<T>> void handle(X source, ClientResponse response);
 }

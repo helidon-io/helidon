@@ -45,6 +45,7 @@ public interface SinkProvider<T> {
      * @param response the HTTP response
      * @param eventConsumer an event consumer
      * @param closeRunnable a runnable to call on close
+     * @param <X> type of sink
      * @return newly created sink
      */
     <X extends Sink<T>> X create(ServerResponse response, BiConsumer<Object, MediaType> eventConsumer,
