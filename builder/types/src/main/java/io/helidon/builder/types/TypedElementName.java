@@ -26,7 +26,8 @@ import java.util.Set;
 public interface TypedElementName {
 
     /**
-     * The type name for the element (e.g., java.util.List).
+     * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
+     * the method.
      *
      * @return the type name of the element
      */

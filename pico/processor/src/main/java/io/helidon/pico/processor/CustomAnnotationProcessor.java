@@ -80,21 +80,29 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     static List<CustomAnnotationTemplateCreator> initialize() {
         // note: it is important to use this class' CL since maven will not give us the "right" one.
-        List<CustomAnnotationTemplateCreator> producers = HelidonServiceLoader.create(ServiceLoader.load(
+        List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(ServiceLoader.load(
                         CustomAnnotationTemplateCreator.class, CustomAnnotationTemplateCreator.class.getClassLoader())).asList();
-        producers.forEach(producer -> {
-            producer.annoTypes().forEach(annoType -> {
-                PRODUCERS_BY_ANNOTATION.compute(DefaultTypeName.create(annoType), (k, v) -> {
-                    if (v == null) {
-                        v = new LinkedHashSet<>();
-                    }
-                    v.add(producer);
-                    return v;
+        creators.forEach(creator -> {
+            try {
+                Set<Class<? extends Annotation>> annoTypes = creator.annoTypes();
+                annoTypes.forEach(annoType -> {
+                    PRODUCERS_BY_ANNOTATION.compute(DefaultTypeName.create(annoType), (k, v) -> {
+                        if (v == null) {
+                            v = new LinkedHashSet<>();
+                        }
+                        v.add(creator);
+                        return v;
+                    });
                 });
-            });
+                ALL_ANNO_TYPES_HANDLED.addAll(annoTypes);
+            } catch (Throwable t) {
+                System.Logger logger = System.getLogger(CustomAnnotationProcessor.class.getName());
+                ToolsException te = new ToolsException("failed to initialize creator: " + creator, t);
+                logger.log(System.Logger.Level.ERROR, te.getMessage(), te);
+                throw te;
+            }
         });
-        producers.forEach(p -> ALL_ANNO_TYPES_HANDLED.addAll(p.annoTypes()));
-        return producers;
+        return creators;
     }
 
     @Override
@@ -163,7 +171,9 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 for (CustomAnnotationTemplateCreator producer : producers) {
                     req.templateHelperTools(new DefaultTemplateHelperTools(producer.getClass(), this));
                     CustomAnnotationTemplateResponse producerResponse = process(producer, req);
-                    res = CustomAnnotationTemplateResponse.aggregate(req, res, producerResponse);
+                    if (producerResponse != null) {
+                        res = CustomAnnotationTemplateResponse.aggregate(req, res, producerResponse);
+                    }
                 }
                 CustomAnnotationTemplateResponse response = res.build();
                 if (req.isFilerEnabled()) {
@@ -261,7 +271,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     List<TypedElementName> toArgs(
             Element typeToProcess) {
         if (!(typeToProcess instanceof ExecutableElement)) {
-            return null;
+            return List.of();
         }
 
         Elements elements = processingEnv.getElementUtils();

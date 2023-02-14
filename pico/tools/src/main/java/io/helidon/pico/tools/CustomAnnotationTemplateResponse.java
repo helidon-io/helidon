@@ -64,9 +64,13 @@ public interface CustomAnnotationTemplateResponse {
             CustomAnnotationTemplateResponse... responses) {
         DefaultCustomAnnotationTemplateResponse.Builder response = DefaultCustomAnnotationTemplateResponse.builder()
                 .request(request);
-        for (CustomAnnotationTemplateResponse r : responses) {
-            response.addGeneratedSourceCode(r.generatedSourceCode());
-            response.addGeneratedResources(r.generatedResources());
+        for (CustomAnnotationTemplateResponse res : responses) {
+            if (res == null) {
+                continue;
+            }
+
+            response.addGeneratedSourceCode(res.generatedSourceCode());
+            response.addGeneratedResources(res.generatedResources());
         }
         return response;
     }
