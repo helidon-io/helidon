@@ -47,4 +47,13 @@ public class Nima {
     public static Config config() {
         return CONFIG_INSTANCE.get();
     }
+
+    /**
+     * Set global configuration. Once method {@link #config()} is invoked, the configuration cannot be modified.
+     *
+     * @param config configuration to use
+     */
+    public static void config(Config config) {
+        NIMA_CONFIG.set(config);
+    }
 }
