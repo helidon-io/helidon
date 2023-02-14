@@ -17,6 +17,6 @@
 /**
  * WebClient HTTP source SPI.
  *
- * @see io.helidon.nima.webclient.http.spi.SourceHandler
+ * @see io.helidon.nima.webclient.http.spi.SourceHandlerProvider
  */
 package io.helidon.nima.webclient.http.spi;

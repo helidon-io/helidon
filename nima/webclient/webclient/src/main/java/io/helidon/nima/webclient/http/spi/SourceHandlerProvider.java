@@ -23,9 +23,8 @@ import io.helidon.nima.webclient.ClientResponse;
  * {@link java.util.ServiceLoader} provider interface for {@link Source} handlers.
  *
  * @param <T> event type
- * @param <X> type of source
  */
-public interface SourceHandler<T, X extends Source<T>> {
+public interface SourceHandlerProvider<T> {
 
     /**
      * Checks if a provider supports the type.
@@ -34,7 +33,7 @@ public interface SourceHandler<T, X extends Source<T>> {
      * @param response the HTTP response
      * @return outcome of test
      */
-    boolean supports(GenericType<X> type, ClientResponse response);
+    boolean supports(GenericType<? extends Source<?>> type, ClientResponse response);
 
     /**
      * Handles a source.
@@ -42,5 +41,5 @@ public interface SourceHandler<T, X extends Source<T>> {
      * @param source the source
      * @param response the HTTP response
      */
-    void handle(X source, ClientResponse response);
+    <X extends Source<T>> void handle(X source, ClientResponse response);
 }

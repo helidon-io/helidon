@@ -20,7 +20,7 @@ import io.helidon.nima.webclient.DefaultDnsResolverProvider;
 import io.helidon.nima.webclient.RoundRobinDnsResolverProvider;
 import io.helidon.nima.webclient.NoDnsResolverProvider;
 import io.helidon.nima.webclient.spi.DnsResolverProvider;
-import io.helidon.nima.webclient.http.spi.SourceHandler;
+import io.helidon.nima.webclient.http.spi.SourceHandlerProvider;
 
 /**
  * WebClient API and HTTP/1.1 implementation.
@@ -53,6 +53,6 @@ module io.helidon.nima.webclient {
     exports io.helidon.nima.webclient.http1;
 
     uses DnsResolverProvider;
-    uses SourceHandler;
+    uses SourceHandlerProvider;
     provides DnsResolverProvider with RoundRobinDnsResolverProvider, DefaultDnsResolverProvider, NoDnsResolverProvider;
 }

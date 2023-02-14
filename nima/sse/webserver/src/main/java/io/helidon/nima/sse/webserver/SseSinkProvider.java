@@ -24,20 +24,23 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.nima.webserver.http.spi.Sink;
 import io.helidon.nima.webserver.http.spi.SinkProvider;
 
 /**
  * Sink provider for SSE type.
  */
-public class SseSinkProvider implements SinkProvider<SseEvent, SseSink> {
+public class SseSinkProvider implements SinkProvider<SseEvent> {
 
     @Override
-    public boolean supports(GenericType<SseSink> type, ServerRequest request) {
+    public boolean supports(GenericType<? extends Sink<?>> type, ServerRequest request) {
         return type == SseSink.TYPE && request.headers().isAccepted(MediaTypes.TEXT_EVENT_STREAM);
     }
 
     @Override
-    public SseSink create(ServerResponse response, BiConsumer<Object, MediaType> eventConsumer, Runnable closeRunnable) {
-        return new SseSink(response, eventConsumer, closeRunnable);
+    @SuppressWarnings("unchecked")
+    public <X extends Sink<SseEvent>> X create(ServerResponse response, BiConsumer<Object, MediaType> eventConsumer,
+                                        Runnable closeRunnable) {
+        return (X) new SseSink(response, eventConsumer, closeRunnable);
     }
 }

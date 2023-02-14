@@ -41,7 +41,7 @@ import io.helidon.nima.http.media.ReadableEntityBase;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ClientResponseEntity;
 import io.helidon.nima.webclient.http.spi.Source;
-import io.helidon.nima.webclient.http.spi.SourceHandler;
+import io.helidon.nima.webclient.http.spi.SourceHandlerProvider;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -50,8 +50,8 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 class ClientResponseImpl implements Http1ClientResponse {
     private static final System.Logger LOGGER = System.getLogger(ClientResponseImpl.class.getName());
 
-    private static final List<SourceHandler> SOURCE_HANDLERS
-            = HelidonServiceLoader.builder(ServiceLoader.load(SourceHandler.class)).build().asList();
+    private static final List<SourceHandlerProvider> SOURCE_HANDLERS
+            = HelidonServiceLoader.builder(ServiceLoader.load(SourceHandlerProvider.class)).build().asList();
 
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -133,7 +133,7 @@ class ClientResponseImpl implements Http1ClientResponse {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Source<?>> void source(GenericType<T> sourceType, T source) {
-        for (SourceHandler p : SOURCE_HANDLERS) {
+        for (SourceHandlerProvider p : SOURCE_HANDLERS) {
             if (p.supports(sourceType, this)) {
                 p.handle(source, this);
                 return;

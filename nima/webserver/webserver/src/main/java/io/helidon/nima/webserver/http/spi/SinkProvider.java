@@ -27,9 +27,8 @@ import io.helidon.nima.webserver.http.ServerResponse;
  * {@link java.util.ServiceLoader} provider interface for {@link Sink} providers.
  *
  * @param <T> event type
- * @param <X> sink subtype
  */
-public interface SinkProvider<T, X extends Sink<T>> {
+public interface SinkProvider<T> {
 
     /**
      * Checks if a provider supports the type.
@@ -38,7 +37,7 @@ public interface SinkProvider<T, X extends Sink<T>> {
      * @param request the current request
      * @return outcome of test
      */
-    boolean supports(GenericType<X> type, ServerRequest request);
+    boolean supports(GenericType<? extends Sink<?>> type, ServerRequest request);
 
     /**
      * Creates a sink using this provider.
@@ -48,5 +47,6 @@ public interface SinkProvider<T, X extends Sink<T>> {
      * @param closeRunnable a runnable to call on close
      * @return newly created sink
      */
-    X create(ServerResponse response, BiConsumer<Object, MediaType> eventConsumer, Runnable closeRunnable);
+    <X extends Sink<T>> X create(ServerResponse response, BiConsumer<Object, MediaType> eventConsumer,
+                                 Runnable closeRunnable);
 }
