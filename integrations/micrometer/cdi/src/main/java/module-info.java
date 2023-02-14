@@ -32,7 +32,6 @@ module io.helidon.integrations.micrometer.cdi {
 
     requires static jakarta.annotation;
 
-    requires static jakarta.activation;
     requires static jakarta.cdi;
     requires static jakarta.inject;
 
