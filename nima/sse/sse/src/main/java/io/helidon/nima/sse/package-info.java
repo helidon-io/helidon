@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-module io.helidon.nima.sse.common {
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.media.type;
-
-    exports io.helidon.nima.sse.common;
-}
+/**
+ * Nima SSE common package. Shares types between webclient and webserver modules.
+ */
+package io.helidon.nima.sse;

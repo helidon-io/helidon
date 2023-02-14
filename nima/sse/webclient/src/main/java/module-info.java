@@ -17,10 +17,13 @@
 import io.helidon.nima.sse.webclient.SseSourceHandler;
 import io.helidon.nima.webclient.http.spi.SourceHandler;
 
+/**
+ * Nima SSE webclient package.
+ */
 module io.helidon.nima.sse.webclient {
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.media.type;
-    requires transitive io.helidon.nima.sse.common;
+    requires transitive io.helidon.nima.sse;
     requires io.helidon.nima.webclient;
 
     provides SourceHandler with SseSourceHandler;

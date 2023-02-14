@@ -17,7 +17,7 @@
 package io.helidon.nima.tests.integration.sse.webserver;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.sse.common.SseEvent;
+import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.sse.webserver.SseSink;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;

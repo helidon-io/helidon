@@ -61,8 +61,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             Http.Header.create(Http.Header.TRAILER, STREAM_STATUS_NAME.defaultCase()
                     + "," + STREAM_RESULT_NAME.defaultCase());
 
-    private static final HelidonServiceLoader<SinkProvider> SINK_PROVIDER_LOADER
-            = HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build();
+    private static final List<SinkProvider> SINK_PROVIDERS
+            = HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
     private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     private final ConnectionContext ctx;
@@ -230,8 +230,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     @Override
     @SuppressWarnings("unchecked")
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
-        List<SinkProvider> providers = SINK_PROVIDER_LOADER.asList();
-        for (SinkProvider p : providers) {
+        for (SinkProvider p : SINK_PROVIDERS) {
             if (p.supports(sinkType, request)) {
                 return (X) p.create(this,
                         (e, m) -> handleSinkData(e, (MediaType) m),

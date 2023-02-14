@@ -17,7 +17,7 @@
 package io.helidon.nima.sse.webclient;
 
 import io.helidon.common.GenericType;
-import io.helidon.nima.sse.common.SseEvent;
+import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.webclient.http.spi.Source;
 
 /**

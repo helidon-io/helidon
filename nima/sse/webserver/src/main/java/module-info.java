@@ -20,7 +20,7 @@ import io.helidon.nima.sse.webserver.SseSinkProvider;
 import io.helidon.nima.webserver.http.spi.SinkProvider;
 
 /**
- * SSE WebServer.
+ * Nima SSE WebServer.
  */
 @Feature(value = "SSE",
          description = "SSE WebServer",
@@ -33,7 +33,7 @@ module io.helidon.nima.sse.webserver {
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.nima.webserver;
-    requires transitive io.helidon.nima.sse.common;
+    requires transitive io.helidon.nima.sse;
 
     exports io.helidon.nima.sse.webserver;
 

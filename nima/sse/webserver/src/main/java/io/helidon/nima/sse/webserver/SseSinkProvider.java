@@ -21,7 +21,7 @@ import java.util.function.BiConsumer;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.sse.common.SseEvent;
+import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.spi.SinkProvider;

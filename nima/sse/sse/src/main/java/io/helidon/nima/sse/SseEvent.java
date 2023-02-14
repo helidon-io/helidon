@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.sse.common;
+package io.helidon.nima.sse;
 
+import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
@@ -31,7 +33,7 @@ public class SseEvent {
     private final Object data;
     private final String comment;
     private final MediaType mediaType;
-    private final long reconnectMillis;
+    private final Duration reconnectMillis;
 
     private SseEvent(Builder builder) {
         this.id = builder.id;
@@ -122,7 +124,7 @@ public class SseEvent {
      *
      * @return optional reconnect
      */
-    public Optional<Long> reconnectMillis() {
+    public Optional<Duration> reconnectMillis() {
         return Optional.of(reconnectMillis);
     }
 
@@ -136,13 +138,16 @@ public class SseEvent {
         private Object data;
         private String comment;
         private MediaType mediaType = MediaTypes.TEXT_PLAIN;
-        private long reconnectMillis;
+        private Duration reconnectMillis;
 
         private Builder() {
         }
 
         @Override
         public SseEvent build() {
+            if (data == null) {
+                throw new IllegalArgumentException("Event must include some data");
+            }
             return new SseEvent(this);
         }
 
@@ -153,6 +158,7 @@ public class SseEvent {
          * @return updated builder instance
          */
         public Builder id(String id) {
+            Objects.requireNonNull(id);
             this.id = id;
             return this;
         }
@@ -164,6 +170,7 @@ public class SseEvent {
          * @return updated builder instance
          */
         public Builder name(String name) {
+            Objects.requireNonNull(name);
             this.name = name;
             return this;
         }
@@ -176,6 +183,7 @@ public class SseEvent {
          * @return updated builder instance
          */
         public Builder comment(String comment) {
+            Objects.requireNonNull(comment);
             this.comment = comment;
             return this;
         }
@@ -187,6 +195,7 @@ public class SseEvent {
          * @return updated builder instance
          */
         public Builder mediaType(MediaType mediaType) {
+            Objects.requireNonNull(mediaType);
             this.mediaType = mediaType;
             return this;
         }
@@ -198,18 +207,20 @@ public class SseEvent {
          * @return updated builder instance
          */
         public Builder data(Object data) {
+            Objects.requireNonNull(data);
             this.data = data;
             return this;
         }
 
         /**
-         * Set reconnection delay (in milliseconds) that indicates how long the event receiver
-         * should wait before attempting to reconnect in case a connection is lost. Optional.
+         * Set reconnection delay that indicates how long the event receiver should
+         * wait before attempting to reconnect in case a connection is lost. Optional.
          *
-         * @param reconnectMillis reconnection delay in milliseconds
+         * @param reconnectMillis reconnection delay
          * @return updated builder instance
          */
-        public Builder reconnectDelay(long reconnectMillis) {
+        public Builder reconnectDelay(Duration reconnectMillis) {
+            Objects.requireNonNull(reconnectMillis);
             this.reconnectMillis = reconnectMillis;
             return this;
         }

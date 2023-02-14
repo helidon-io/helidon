@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
@@ -28,7 +27,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.nima.sse.common.SseEvent;
+import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.spi.Sink;
 
@@ -38,21 +37,21 @@ import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_EVENT_STREAM
  * Implementation of an SSE sink. Emits {@link SseEvent}s.
  */
 public class SseSink implements Sink<SseEvent> {
-    private static final byte[] SSE_NL = "\n".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] SSE_ID = "id:".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] SSE_DATA = "data:".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] SSE_EVENT = "event:".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] SSE_COMMENT = ":".getBytes(StandardCharsets.UTF_8);
 
     /**
      * Type of SSE event sinks.
      */
     public static final GenericType<SseSink> TYPE = GenericType.create(SseSink.class);
 
-    private final ServerResponse serverResponse;
+    private static final byte[] SSE_NL = "\n".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] SSE_ID = "id:".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] SSE_DATA = "data:".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] SSE_EVENT = "event:".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] SSE_COMMENT = ":".getBytes(StandardCharsets.UTF_8);
+
     private final BiConsumer<Object, MediaType> eventConsumer;
     private final Runnable closeRunnable;
-    private OutputStream outputStream;
+    private final OutputStream outputStream;
 
     SseSink(ServerResponse serverResponse, BiConsumer<Object, MediaType> eventConsumer, Runnable closeRunnable) {
         // Verify response has no status or content type
@@ -67,17 +66,13 @@ public class SseSink implements Sink<SseEvent> {
             serverResponse.headers().add(CONTENT_TYPE_EVENT_STREAM);
         }
 
-        this.serverResponse = serverResponse;
+        this.outputStream = serverResponse.outputStream();
         this.eventConsumer = eventConsumer;
         this.closeRunnable = closeRunnable;
     }
 
     @Override
     public SseSink emit(SseEvent sseEvent) {
-        if (outputStream == null) {
-            outputStream = serverResponse.outputStream();
-            Objects.requireNonNull(outputStream);
-        }
         try {
             Optional<String> comment = sseEvent.comment();
             if (comment.isPresent()) {

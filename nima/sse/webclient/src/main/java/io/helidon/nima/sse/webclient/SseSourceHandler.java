@@ -22,10 +22,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.sse.common.SseEvent;
+import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.webclient.ClientResponse;
 import io.helidon.nima.webclient.http.spi.SourceHandler;
 
@@ -81,7 +82,8 @@ public class SseSourceHandler implements SourceHandler<SseEvent, SseSource> {
                 } else if (line.startsWith(ID)) {
                     sseBuilder.id(skipPrefix(line));
                 } else if (line.startsWith(RETRY)) {
-                    sseBuilder.reconnectDelay(Long.parseLong(skipPrefix(line)));
+                    long delay = Long.parseLong(skipPrefix(line));
+                    sseBuilder.reconnectDelay(Duration.ofMillis(delay));
                 } else if (line.startsWith(":")) {
                     sseBuilder.comment(line.length() > 1 ? line.substring(1) : "");
                 } else {

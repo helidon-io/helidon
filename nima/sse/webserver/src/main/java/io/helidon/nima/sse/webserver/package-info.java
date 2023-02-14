@@ -15,6 +15,6 @@
  */
 
 /**
- * Nima SSE package.
+ * Nima SSE webserver.
  */
 package io.helidon.nima.sse.webserver;

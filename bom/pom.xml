@@ -1305,7 +1305,7 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.nima.sse</groupId>
-                <artifactId>helidon-nima-sse-common</artifactId>
+                <artifactId>helidon-nima-sse</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

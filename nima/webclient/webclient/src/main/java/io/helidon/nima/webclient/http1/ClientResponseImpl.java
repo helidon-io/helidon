@@ -50,8 +50,8 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 class ClientResponseImpl implements Http1ClientResponse {
     private static final System.Logger LOGGER = System.getLogger(ClientResponseImpl.class.getName());
 
-    private static final HelidonServiceLoader<SourceHandler> SOURCE_HANDLER_LOADER
-            = HelidonServiceLoader.builder(ServiceLoader.load(SourceHandler.class)).build();
+    private static final List<SourceHandler> SOURCE_HANDLERS
+            = HelidonServiceLoader.builder(ServiceLoader.load(SourceHandler.class)).build().asList();
 
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -133,8 +133,7 @@ class ClientResponseImpl implements Http1ClientResponse {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Source<?>> void source(GenericType<T> sourceType, T source) {
-        List<SourceHandler> providers = SOURCE_HANDLER_LOADER.asList();
-        for (SourceHandler p : providers) {
+        for (SourceHandler p : SOURCE_HANDLERS) {
             if (p.supports(sourceType, this)) {
                 p.handle(source, this);
                 return;

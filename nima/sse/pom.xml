@@ -36,7 +36,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>common</module>
+        <module>sse</module>
         <module>webclient</module>
         <module>webserver</module>
     </modules>
