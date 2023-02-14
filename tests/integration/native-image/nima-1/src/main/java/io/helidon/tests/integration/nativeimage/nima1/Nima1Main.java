@@ -28,7 +28,7 @@ import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.observe.health.HealthObserveProvider;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.staticcontent.StaticContentSupport;
+import io.helidon.nima.webserver.staticcontent.StaticContentService;
 import io.helidon.nima.websocket.webserver.WsRouting;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -111,9 +111,9 @@ public final class Nima1Main {
 
         return HttpRouting.builder()
                 .addFeature(observe)
-                .register("/static/path", StaticContentSupport.create(Paths.get("web")))
-                .register("/static/classpath", StaticContentSupport.create("web"))
-                .register("/static/jar", StaticContentSupport.create("web-jar"))
+                .register("/static/path", StaticContentService.create(Paths.get("web")))
+                .register("/static/classpath", StaticContentService.create("web"))
+                .register("/static/jar", StaticContentService.create("web-jar"))
                 .register("/greet", greetService)
                 .register("/wc", webClientService)
                 .register("/zipkin", zipkinService)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import io.helidon.common.http.RoutedPath;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
@@ -279,13 +278,13 @@ class StaticContentHandlerTest {
         final boolean returnValue;
         Path path;
 
-        TestContentHandler(StaticContentSupport.FileSystemBuilder builder, boolean returnValue) {
+        TestContentHandler(StaticContentService.FileSystemBuilder builder, boolean returnValue) {
             super(builder);
             this.returnValue = returnValue;
         }
 
         static TestContentHandler create(boolean returnValue) {
-            return new TestContentHandler(StaticContentSupport.builder(Paths.get(".")), returnValue);
+            return new TestContentHandler(StaticContentService.builder(Paths.get(".")), returnValue);
         }
 
         @Override
@@ -307,13 +306,13 @@ class StaticContentHandlerTest {
         final AtomicInteger counter = new AtomicInteger(0);
         final boolean returnValue;
 
-        TestClassPathContentHandler(StaticContentSupport.ClassPathBuilder builder, boolean returnValue) {
+        TestClassPathContentHandler(StaticContentService.ClassPathBuilder builder, boolean returnValue) {
             super(builder);
             this.returnValue = returnValue;
         }
 
         static TestClassPathContentHandler create() {
-            return new TestClassPathContentHandler(StaticContentSupport.builder("/root"), true);
+            return new TestClassPathContentHandler(StaticContentService.builder("/root"), true);
         }
 
         @Override

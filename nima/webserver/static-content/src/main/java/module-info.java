@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,13 @@ import io.helidon.common.features.api.HelidonFlavor;
  * Helidon Níma WebServer static content support.
  */
 @Feature(value = "Nima Static Content",
-        description = "Static content support for WebServer",
-        in = HelidonFlavor.NIMA,
-        invalidIn = HelidonFlavor.SE,
-        path = {"WebServer", "Static Content"}
+         description = "Static content support for WebServer",
+         in = HelidonFlavor.NIMA,
+         invalidIn = HelidonFlavor.SE,
+         path = {"WebServer", "Static Content"}
 )
 module io.helidon.nima.webserver.staticcontent {
     requires static io.helidon.common.features.api;
-
-    requires java.logging;
 
     requires transitive io.helidon.nima.webserver;
     requires transitive io.helidon.common.configurable;

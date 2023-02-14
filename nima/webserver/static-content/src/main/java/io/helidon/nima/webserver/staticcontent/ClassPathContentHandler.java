@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     // URL's hash code and equal are not suitable for map or set
     private final Map<String, ExtractedJarEntry> extracted = new ConcurrentHashMap<>();
 
-    ClassPathContentHandler(StaticContentSupport.ClassPathBuilder builder) {
+    ClassPathContentHandler(StaticContentService.ClassPathBuilder builder) {
         super(builder);
 
         this.classLoader = builder.classLoader();

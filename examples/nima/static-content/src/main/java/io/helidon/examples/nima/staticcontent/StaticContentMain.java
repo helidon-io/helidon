@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.examples.nima.staticcontent;
 
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.staticcontent.StaticContentSupport;
+import io.helidon.nima.webserver.staticcontent.StaticContentService;
 
 /**
  * Static content example.
@@ -45,7 +45,7 @@ public class StaticContentMain {
     static void routing(HttpRouting.Builder routing) {
         // register static content on root path of the server
         // use classpath /web to look for resources
-        routing.register("/", StaticContentSupport.builder("web"))
+        routing.register("/", StaticContentService.builder("web"))
                 .get("/api/greet", (req, res) -> res.send("Hello World!"));
     }
 }
