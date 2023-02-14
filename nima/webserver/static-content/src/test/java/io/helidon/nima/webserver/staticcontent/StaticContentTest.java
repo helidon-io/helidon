@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.helidon.nima.webserver.staticcontent;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
@@ -26,12 +29,16 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @RoutingTest
 class StaticContentTest {
+    @TempDir
+    static Path tempDir;
+
     private final DirectClient testClient;
 
     StaticContentTest(DirectClient testClient) {
@@ -39,17 +46,84 @@ class StaticContentTest {
     }
 
     @SetUpRoute
-    static void setupRouting(HttpRouting.Builder builder) {
-        builder.register("/classpath", StaticContentSupport.builder("web"));
+    static void setupRouting(HttpRouting.Builder builder) throws Exception {
+        Path nested = tempDir.resolve("nested");
+        Files.createDirectories(nested);
+
+        Path resource = tempDir.resolve("resource.txt");
+        Path favicon = tempDir.resolve("favicon.ico");
+
+        Files.writeString(resource, "Content");
+        Files.writeString(favicon, "Wrong icon text");
+        Files.writeString(nested.resolve("resource.txt"), "Nested content");
+
+        builder.register("/classpath", StaticContentService.builder("web"))
+                .register("/singleclasspath", StaticContentService.builder("web/resource.txt"))
+                .register("/path", StaticContentService.builder(tempDir))
+                .register("/singlepath", StaticContentService.builder(resource));
     }
 
     @Test
-    void testFavicon() {
+    void testClasspathFavicon() {
         try (Http1ClientResponse response = testClient.get("/classpath/favicon.ico")
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "image/x-icon"));
+        }
+    }
+
+    @Test
+    void testClasspathNested() {
+        try (Http1ClientResponse response = testClient.get("/classpath/nested/resource.txt")
+                .request()) {
+
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Nested content"));
+        }
+    }
+
+    @Test
+    void testClasspathSingleFile() {
+        try (Http1ClientResponse response = testClient.get("/singleclasspath")
+                .request()) {
+
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testFileSystemFavicon() {
+        try (Http1ClientResponse response = testClient.get("/path/favicon.ico")
+                .request()) {
+
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "image/x-icon"));
+        }
+    }
+
+    @Test
+    void testFileSystemNested() {
+        try (Http1ClientResponse response = testClient.get("/path/nested/resource.txt")
+                .request()) {
+
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Nested content"));
+        }
+    }
+
+    @Test
+    void testFileSystemSingleFile() {
+        try (Http1ClientResponse response = testClient.get("/singlepath")
+                .request()) {
+
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Content"));
         }
     }
 }

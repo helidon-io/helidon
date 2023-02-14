@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import io.helidon.nima.webserver.http.HttpService;
  * <p>
  * Content is served ONLY on HTTP {@code GET} method.
  */
-public interface StaticContentSupport extends HttpService {
+public interface StaticContentService extends HttpService {
     /**
      * Creates new builder with defined static content root as a class-loader resource. Builder provides ability to define
      * more advanced configuration.
@@ -98,7 +98,7 @@ public interface StaticContentSupport extends HttpService {
      * @return created instance
      * @throws NullPointerException if {@code resourceRoot} attribute is {@code null}
      */
-    static StaticContentSupport create(String resourceRoot) {
+    static StaticContentService create(String resourceRoot) {
         return create(resourceRoot, Thread.currentThread().getContextClassLoader());
     }
 
@@ -110,7 +110,7 @@ public interface StaticContentSupport extends HttpService {
      * @return created instance
      * @throws NullPointerException if {@code resourceRoot} attribute is {@code null}
      */
-    static StaticContentSupport create(String resourceRoot, ClassLoader classLoader) {
+    static StaticContentService create(String resourceRoot, ClassLoader classLoader) {
         return builder(resourceRoot, classLoader).build();
     }
 
@@ -121,7 +121,7 @@ public interface StaticContentSupport extends HttpService {
      * @return created instance
      * @throws NullPointerException if {@code root} attribute is {@code null}
      */
-    static StaticContentSupport create(Path root) {
+    static StaticContentService create(Path root) {
         return builder(root).build();
     }
 
@@ -130,8 +130,7 @@ public interface StaticContentSupport extends HttpService {
      *
      * @param <B> type of a subclass of a concrete builder
      */
-    @SuppressWarnings("unchecked")
-    abstract class Builder<B extends Builder<B>> implements io.helidon.common.Builder<B, StaticContentSupport> {
+    abstract class Builder<B extends Builder<B>> implements io.helidon.common.Builder<B, StaticContentService> {
         private String welcomeFileName;
         private Function<String, String> resolvePathFunction = Function.identity();
         private Set<String> cacheInMemory = new HashSet<>();
@@ -145,7 +144,7 @@ public interface StaticContentSupport extends HttpService {
         }
 
         @Override
-        public final StaticContentSupport build() {
+        public final StaticContentService build() {
             return doBuild();
         }
 
@@ -218,7 +217,7 @@ public interface StaticContentSupport extends HttpService {
          *
          * @return static content support
          */
-        protected abstract StaticContentSupport doBuild();
+        protected abstract StaticContentService doBuild();
 
         String welcomeFileName() {
             return welcomeFileName;
@@ -311,7 +310,7 @@ public interface StaticContentSupport extends HttpService {
         }
 
         @Override
-        protected StaticContentSupport doBuild() {
+        protected StaticContentService doBuild() {
             return new ClassPathContentHandler(this);
         }
 
@@ -365,21 +364,25 @@ public interface StaticContentSupport extends HttpService {
         }
 
         @Override
-        protected StaticContentSupport doBuild() {
+        protected StaticContentService doBuild() {
             if (root == null) {
                 throw new NullPointerException("Root path must be defined");
             }
-            return new FileSystemContentHandler(this);
+            if (Files.isDirectory(root)) {
+                return new FileSystemContentHandler(this);
+            } else {
+                return new SingleFileContentHandler(this);
+            }
         }
 
         FileSystemBuilder root(Path root) {
             Objects.requireNonNull(root, "Attribute root is null!");
             this.root = root.toAbsolutePath().normalize();
 
-            if (!(Files.exists(this.root) && Files.isDirectory(this.root))) {
+            if (!(Files.exists(this.root))) {
                 throw new IllegalArgumentException("Cannot create file system static content, path "
                                                            + this.root
-                                                           + " does not exist or is not a directory");
+                                                           + " does not exist.");
             }
             return this;
         }

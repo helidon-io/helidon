@@ -43,7 +43,7 @@ import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.staticcontent.StaticContentSupport;
+import io.helidon.nima.webserver.staticcontent.StaticContentService;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -421,14 +421,14 @@ public class ServerCdiExtension implements Extension {
 
     private void registerPathStaticContent(Config config) {
         Config context = config.get("context");
-        StaticContentSupport.FileSystemBuilder pBuilder = StaticContentSupport.builder(config.get("location")
+        StaticContentService.FileSystemBuilder pBuilder = StaticContentService.builder(config.get("location")
                                                                                                .as(Path.class)
                                                                                                .get());
         pBuilder.welcomeFileName(config.get("welcome")
                                           .asString()
                                           .orElse("index.html"));
 
-        StaticContentSupport staticContent = pBuilder.build();
+        StaticContentService staticContent = pBuilder.build();
 
         if (context.exists()) {
             routingBuilder.register(context.asString().get(), staticContent);
@@ -441,7 +441,7 @@ public class ServerCdiExtension implements Extension {
     private void registerClasspathStaticContent(Config config) {
         Config context = config.get("context");
 
-        StaticContentSupport.ClassPathBuilder cpBuilder = StaticContentSupport.builder(config.get("location").asString().get());
+        StaticContentService.ClassPathBuilder cpBuilder = StaticContentService.builder(config.get("location").asString().get());
         cpBuilder.welcomeFileName(config.get("welcome")
                                           .asString()
                                           .orElse("index.html"));
@@ -455,7 +455,7 @@ public class ServerCdiExtension implements Extension {
                 .flatMap(List::stream)
                 .forEach(cpBuilder::addCacheInMemory);
 
-        StaticContentSupport staticContent = cpBuilder.build();
+        StaticContentService staticContent = cpBuilder.build();
 
         if (context.exists()) {
             routingBuilder.register(context.asString().get(), staticContent);
