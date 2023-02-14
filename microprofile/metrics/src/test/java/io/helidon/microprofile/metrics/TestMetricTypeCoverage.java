@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,10 +41,8 @@ public class TestMetricTypeCoverage {
 
 
         for (MetricType type : typesToCheck) {
-            for (MetricAnnotationInfo<?, ?> info : MetricAnnotationInfo.ANNOTATION_TYPE_TO_INFO.values()) {
-                if (info.metricType().equals(type)) {
-                    found.add(type);
-                }
+            if (MetricAnnotationInfo.info(type) != null) {
+                found.add(type);
             }
         }
         typesToCheck.removeAll(found);

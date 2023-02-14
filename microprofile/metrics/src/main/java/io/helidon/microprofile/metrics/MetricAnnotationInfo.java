@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,11 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Member;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import io.helidon.microprofile.metrics.MetricUtil.MatchingType;
-
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -47,98 +41,28 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
  */
 class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
 
-    /**
-     * Encapulates information for preparing for a metric registration based on an annotation and an annotated element.
-     */
-    static class RegistrationPrep {
-        private final String metricName;
-        private final Metadata metadata;
-        private final Tag[] tags;
-        private final Registration<?> registration;
-        private final Executable executable;
-        private final Class<? extends Annotation> annotationType;
-
-
-        static <A extends Annotation, E extends Member & AnnotatedElement, T extends Metric>
-        RegistrationPrep create(A annotation,
-                E annotatedElement,
-                Class<?> clazz,
-                MatchingType matchingType,
-                Executable executable) {
-            MetricAnnotationInfo<?, ?> info = ANNOTATION_TYPE_TO_INFO.get(annotation.annotationType());
-            if (info == null || !info.annotationClass().isInstance(annotation)) {
-                return null;
-            }
-
-            String metricName = MetricUtil.getMetricName(annotatedElement, clazz, matchingType, info.name(annotation),
-                    info.absolute(annotation));
-            MetadataBuilder metadataBuilder = Metadata.builder()
-                    .withName(metricName)
-                    .withType(ANNOTATION_TYPE_TO_METRIC_TYPE.get(annotation.annotationType()))
-                    .withUnit(info.unit(annotation)
-                            .trim())
-                    .reusable(info.reusable(annotation));
-
-            String candidateDescription = info.description(annotation);
-            if (candidateDescription != null && !candidateDescription.trim().isEmpty()) {
-                metadataBuilder.withDescription(candidateDescription.trim());
-            }
-            String candidateDisplayName = info.displayName(annotation);
-            if (candidateDisplayName != null && !candidateDisplayName.trim().isEmpty()) {
-                metadataBuilder.withDisplayName(candidateDisplayName.trim());
-            }
-            return new RegistrationPrep(metricName,
-                                          metadataBuilder.build(),
-                                          info.tags(annotation),
-                                          info.registerFunction,
-                                          executable,
-                                          annotation.annotationType());
-        }
-
-        private RegistrationPrep(String metricName,
-                                 Metadata metadata,
-                                 Tag[] tags,
-                                 Registration<?> registration,
-                                 Executable executable,
-                                 Class<? extends Annotation> annotationType) {
-            this.metricName = metricName;
-            this.metadata = metadata;
-            this.tags = tags;
-            this.registration = registration;
-            this.executable = executable;
-            this.annotationType = annotationType;
-        }
-
-        String metricName() {
-            return metricName;
-        }
-
-        Tag[] tags() {
-            return tags;
-        }
-
-        Executable executable() {
-            return executable;
-        }
-
-        Class<? extends Annotation> annotationType() {
-            return annotationType;
-        }
-
-        Metric register(MetricRegistry registry) {
-            return registration.register(registry, metadata, tags);
-        }
+    static MetricAnnotationInfo<?, ?> info(MetricType metricType) {
+        return METRIC_TYPE_TO_INFO.get(metricType);
     }
 
-    static final Map<Class<? extends Annotation>, MetricType> ANNOTATION_TYPE_TO_METRIC_TYPE =
-            Map.of(ConcurrentGauge.class, MetricType.CONCURRENT_GAUGE,
-                Counted.class, MetricType.COUNTER,
-                Metered.class, MetricType.METERED,
-                SimplyTimed.class, MetricType.SIMPLE_TIMER,
-                Timed.class, MetricType.TIMER);
+    static MetricAnnotationInfo<?, ?> info(Class<?> metricClass) {
+        return info(MetricType.from(metricClass));
+    }
 
-    static final Map<Class<? extends Annotation>, MetricAnnotationInfo<?, ?>> ANNOTATION_TYPE_TO_INFO = Map.of(
-            Counted.class, new MetricAnnotationInfo<>(
+    static MetricAnnotationInfo<?, ?> infoFromAnnotationType(Class<? extends Annotation> annotationClass) {
+        return METRIC_TYPE_TO_INFO.get(ANNOTATION_TYPE_TO_METRIC_TYPE.get(annotationClass));
+    }
+
+    private static final Map<Class<? extends Annotation>, MetricType> ANNOTATION_TYPE_TO_METRIC_TYPE =
+            Map.of(ConcurrentGauge.class, MetricType.CONCURRENT_GAUGE,
+                   Counted.class, MetricType.COUNTER,
+                   Metered.class, MetricType.METERED,
+                   SimplyTimed.class, MetricType.SIMPLE_TIMER,
+                   Timed.class, MetricType.TIMER);
+
+    private static final EnumMap<MetricType, MetricAnnotationInfo<?, ?>> METRIC_TYPE_TO_INFO = new EnumMap<>(MetricType.class) {
+        {
+            put(MetricType.COUNTER, new MetricAnnotationInfo<>(
                     Counted.class,
                     Counted::name,
                     Counted::absolute,
@@ -148,8 +72,8 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     Counted::unit,
                     Counted::tags,
                     MetricRegistry::counter,
-                    MetricType.COUNTER),
-            Metered.class, new MetricAnnotationInfo<>(
+                    MetricType.COUNTER));
+            put(MetricType.METERED, new MetricAnnotationInfo<>(
                     Metered.class,
                     Metered::name,
                     Metered::absolute,
@@ -159,8 +83,8 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     Metered::unit,
                     Metered::tags,
                     MetricRegistry::meter,
-                    MetricType.METERED),
-            Timed.class, new MetricAnnotationInfo<>(
+                    MetricType.METERED));
+            put(MetricType.TIMER, new MetricAnnotationInfo<>(
                     Timed.class,
                     Timed::name,
                     Timed::absolute,
@@ -170,8 +94,8 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     Timed::unit,
                     Timed::tags,
                     MetricRegistry::timer,
-                    MetricType.TIMER),
-            ConcurrentGauge.class, new MetricAnnotationInfo<>(
+                    MetricType.TIMER));
+            put(MetricType.CONCURRENT_GAUGE, new MetricAnnotationInfo<>(
                     ConcurrentGauge.class,
                     ConcurrentGauge::name,
                     ConcurrentGauge::absolute,
@@ -181,8 +105,8 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     ConcurrentGauge::unit,
                     ConcurrentGauge::tags,
                     MetricRegistry::concurrentGauge,
-                    MetricType.CONCURRENT_GAUGE),
-            SimplyTimed.class, new MetricAnnotationInfo<>(
+                    MetricType.CONCURRENT_GAUGE));
+            put(MetricType.SIMPLE_TIMER, new MetricAnnotationInfo<>(
                     SimplyTimed.class,
                     SimplyTimed::name,
                     SimplyTimed::absolute,
@@ -192,8 +116,12 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     SimplyTimed::unit,
                     SimplyTimed::tags,
                     MetricRegistry::simpleTimer,
-                    MetricType.SIMPLE_TIMER)
-    );
+                    MetricType.SIMPLE_TIMER));
+            put(MetricType.HISTOGRAM, new MetricAnnotationInfo<>(
+                    MetricRegistry::histogram,
+                    MetricType.HISTOGRAM));
+        }
+    };
 
     private final Class<A> annotationClass;
     private final Function<A, String> annotationNameFunction;
@@ -206,7 +134,31 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
     private final Registration<T> registerFunction;
     private final MetricType metricType;
 
+    /**
+     * Creates a new {@code MetricAnnotationInfo} for a metric type with no annotation support (e.g., histogram).
+     *
+     * @param registerFunction function for registering a metric of the specified type
+     * @param metricType {@code MetricType} of interest
+     */
+    MetricAnnotationInfo(Registration<T> registerFunction,
+                         MetricType metricType) {
+        this(null, null, null, null, null, null, null, null, registerFunction, metricType);
+    }
 
+    /**
+     * Creates a new {@code MetricAnnotationInfo} for a metric type that has a corresponding annotation.
+     *
+     * @param annotationClass               the annotation class (e.g., {@code Counted}
+     * @param annotationNameFunction        function which returns the name from the annotation
+     * @param annotationAbsoluteFunction    function which returns whether the annotation specifies absolute naming
+     * @param annotationDescriptorFunction  function which returns the description from the annotation
+     * @param annotationDisplayNameFunction function which returns the display name from the annotation
+     * @param annotationReusableFunction    function which return whether the annotation specifies the metric should be reusable
+     * @param annotationUnitsFunction       function which returns the units specified by the annotation
+     * @param annotationTagsFunction        function which returns the tags specified by the annotation
+     * @param registerFunction              function which registers a metric of the indicated type
+     * @param metricType                    the {@code MetricType} of interest
+     */
     MetricAnnotationInfo(
             Class<A> annotationClass,
             Function<A, String> annotationNameFunction,
@@ -228,19 +180,6 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
         this.annotationTagsFunction = annotationTagsFunction;
         this.registerFunction = registerFunction;
         this.metricType = metricType;
-    }
-
-    static Tag[] tags(String[] tagStrings) {
-        final List<Tag> result = new ArrayList<>();
-        for (String tagString : tagStrings) {
-            final int eq = tagString.indexOf("=");
-            if (eq > 0) {
-                final String tagName = tagString.substring(0, eq);
-                final String tagValue = tagString.substring(eq + 1);
-                result.add(new Tag(tagName, tagValue));
-            }
-        }
-        return result.toArray(new Tag[0]);
     }
 
     Class<A> annotationClass() {
@@ -276,11 +215,15 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
     }
 
     Tag[] tags(Annotation a) {
-        return tags(annotationTagsFunction.apply(annotationClass.cast(a)));
+        return MetricUtil.tags(annotationTagsFunction.apply(annotationClass.cast(a)));
     }
 
     MetricType metricType() {
         return metricType;
+    }
+
+    Registration<T> registerFunction() {
+        return registerFunction;
     }
 
     @FunctionalInterface
