@@ -23,27 +23,32 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.nima.http.api.GET;
-import io.helidon.nima.http.api.HeaderParam;
-import io.helidon.nima.http.api.HttpMethod;
-import io.helidon.nima.http.api.POST;
-import io.helidon.nima.http.api.Path;
-import io.helidon.nima.http.api.QueryParam;
-import io.helidon.pico.processor.spi.CustomAnnotationTemplateProducer;
-import io.helidon.pico.processor.spi.CustomAnnotationTemplateProducerRequest;
-import io.helidon.pico.processor.spi.CustomAnnotationTemplateProducerResponse;
-import io.helidon.pico.processor.spi.TemplateHelperTools;
-import io.helidon.pico.tools.types.AnnotationAndValue;
-import io.helidon.pico.tools.types.TypeName;
-import io.helidon.pico.tools.types.TypedElementName;
+import javax.lang.model.element.ElementKind;
+
+import io.helidon.builder.processor.spi.TypeInfo;
+import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
+import io.helidon.builder.types.TypedElementName;
+import io.helidon.common.http.GET;
+import io.helidon.common.http.HeaderParam;
+import io.helidon.common.http.HttpMethod;
+import io.helidon.common.http.POST;
+import io.helidon.common.http.Path;
+import io.helidon.common.http.QueryParam;
+import io.helidon.pico.tools.CustomAnnotationTemplateCreator;
+import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
+import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
+import io.helidon.pico.tools.TemplateHelperTools;
 
 /**
  * Annotation processor that generates a service for each method annotated with an HTTP method annotation.
- * Service provider implementation of a {@link io.helidon.pico.processor.spi.CustomAnnotationTemplateProducer}.
+ * Service provider implementation of a {@link io.helidon.pico.tools.CustomAnnotationTemplateCreator}.
  */
-public class HttpMethodProducer implements CustomAnnotationTemplateProducer {
+public class HttpMethodProducer implements CustomAnnotationTemplateCreator {
     /**
      * Default constructor used by the {@link java.util.ServiceLoader}.
      */
@@ -51,23 +56,29 @@ public class HttpMethodProducer implements CustomAnnotationTemplateProducer {
     }
 
     @Override
-    public Set<Class<? extends Annotation>> getAnnoTypes() {
+    public Set<Class<? extends Annotation>> annoTypes() {
         return Set.of(GET.class, POST.class, HttpMethod.class);
     }
 
     @Override
-    public CustomAnnotationTemplateProducerResponse produce(CustomAnnotationTemplateProducerRequest request,
-                                                            TemplateHelperTools tools) {
+    public Optional<CustomAnnotationTemplateResponse> create(CustomAnnotationTemplateRequest request) {
+        TypeInfo enclosingType = request.enclosingTypeInfo();
 
-        String classname = request.getEnclosingClassType().getClassName() + "_"
-                + request.getAnnoType().getClassName() + "_"
-                + request.getElementName();
-        TypeName generatedType = TypeName.create(request.getEnclosingClassType().getPackageName(), classname);
+        if (!ElementKind.METHOD.name().equals(enclosingType.typeKind())) {
+            // we are only interested in methods, not in classes
+            return Optional.empty();
+        }
+
+        String classname = enclosingType.typeName().className() + "_"
+                + request.annoTypeName().className() + "_"
+                + request.targetElement().elementName();
+        TypeName generatedType = DefaultTypeName.create(enclosingType.typeName().packageName(), classname);
+
+        TemplateHelperTools tools = request.templateHelperTools();
         return tools.produceStandardCodeGenResponse(request,
                                                     generatedType,
-                                                    tools.supplyUsingLiteralTemplate(
-                                                            loadTemplate("nima", "http-method.java.hbs")),
-                                                    it -> addProperties(request, tools, it), null);
+                                                    () -> Templates.loadTemplate("nima", "http-method.java.hbs"),
+                                                    it -> addProperties(request, it));
     }
 
     String loadTemplate(String templateProfile, String name) {
@@ -85,9 +96,9 @@ public class HttpMethodProducer implements CustomAnnotationTemplateProducer {
         }
     }
 
-    private Map<String, Object> addProperties(CustomAnnotationTemplateProducerRequest request,
-                                              TemplateHelperTools tools,
+    private Map<String, Object> addProperties(CustomAnnotationTemplateRequest request,
                                               Map<String, Object> currentProperties) {
+        TypedElementName targetElement = request.targetElement();
         Map<String, Object> response = new HashMap<>(currentProperties);
 
         HttpDef http = new HttpDef();
@@ -96,23 +107,23 @@ public class HttpMethodProducer implements CustomAnnotationTemplateProducer {
            http.response.type
            http.response.isVoid
          */
-        TypeName returnType = request.getReturnType();
-        if ("void".equals(returnType.getClassName())) {
+        TypeName returnType = targetElement.typeName();
+        if ("void".equals(returnType.className())) {
             http.response = new HttpResponse();
         } else {
-            http.response = new HttpResponse(returnType.getName());
+            http.response = new HttpResponse(returnType.name());
         }
 
         // http.methodName - name of the method in source code (not HTTP Method)
-        http.methodName = request.getElementName();
+        http.methodName = targetElement.elementName();
 
         // http.params (full string)
         List<HeaderDef> headerList = new LinkedList<>();
-        List<TypedElementName> elementArgs = request.getElementArgs();
+        List<TypedElementName> elementArgs = request.targetElementArgs();
         LinkedList<String> parameters = new LinkedList<>();
         int headerCount = 1;
         for (TypedElementName elementArg : elementArgs) {
-            String type = elementArg.getTypeName().getName();
+            String type = elementArg.typeName().name();
 
             switch (type) {
             case "io.helidon.nima.webserver.http.ServerRequest" -> parameters.add("req,");
@@ -138,17 +149,17 @@ public class HttpMethodProducer implements CustomAnnotationTemplateProducer {
             HTTP Method
             http.method
          */
-        if (request.getElementName().equals(HttpMethod.class.getSimpleName())) {
-            http.method = findAnnotValue(request.getElementAnnotations(), HttpMethod.class.getName(), null);
+        if (request.annoTypeName().className().equals(HttpMethod.class)) {
+            http.method = findAnnotValue(targetElement.annotations(), HttpMethod.class.getName(), null);
             if (http.method == null) {
                 throw new IllegalStateException("HTTP method producer called without HTTP Method annotation (such as @GET)");
             }
         } else {
-            http.method = request.getAnnoType().getClassName();
+            http.method = request.annoTypeName().className();
         }
 
         // HTTP Path (if defined)
-        http.path = findAnnotValue(request.getElementAnnotations(), Path.class.getName(), "");
+        http.path = findAnnotValue(targetElement.annotations(), Path.class.getName(), "");
 
         response.put("http", http);
         return response;
@@ -160,23 +171,23 @@ public class HttpMethodProducer implements CustomAnnotationTemplateProducer {
                                   String type,
                                   TypedElementName elementArg) {
         // depending on annotations
-        List<AnnotationAndValue> annotations = elementArg.getAnnotations();
+        List<AnnotationAndValue> annotations = elementArg.annotations();
         if (annotations.size() == 0) {
             throw new IllegalStateException("Parameters must be annotated with one of @Entity, @PathParam, @HeaderParam, "
                                                     + "@QueryParam - parameter "
-                                                    + elementArg.getElementName() + " is not annotated at all.");
+                                                    + elementArg.elementName() + " is not annotated at all.");
         }
 
         AnnotationAndValue httpAnnotation = null;
 
         for (AnnotationAndValue annotation : annotations) {
-            if (annotation.getTypeName().getPackageName().equals(HeaderParam.class.getPackageName())) {
+            if (annotation.typeName().packageName().equals(HeaderParam.class.getPackageName())) {
                 if (httpAnnotation == null) {
                     httpAnnotation = annotation;
                 } else {
                     throw new IllegalStateException("Parameters must be annotated with one of @Entity, @PathParam, @HeaderParam, "
                                                             + "@QueryParam - parameter "
-                                                            + elementArg.getElementName() + " has more than one annotation.");
+                                                            + elementArg.elementName() + " has more than one annotation.");
                 }
             }
         }
@@ -184,38 +195,39 @@ public class HttpMethodProducer implements CustomAnnotationTemplateProducer {
         if (httpAnnotation == null) {
             throw new IllegalStateException("Parameters must be annotated with one of @Entity, @PathParam, @HeaderParam, "
                                                     + "@QueryParam - parameter "
-                                                    + elementArg.getElementName() + " has neither of these.");
+                                                    + elementArg.elementName() + " has neither of these.");
         }
 
         // todo now we only support String for query, path and header -> add conversions
-        switch (httpAnnotation.getTypeName().getClassName()) {
-        case ("PathParam") -> parameters.add("req.path().templateParameters().first(\"" + httpAnnotation.getValue() + "\"),");
+        switch (httpAnnotation.typeName().className()) {
+        case ("PathParam") -> parameters.add("req.path().templateParameters().first(\"" + httpAnnotation.value().orElseThrow()
+                                                     + "\"),");
         case ("Entity") -> parameters.add("req.content().as(" + type + ".class),");
         case ("HeaderParam") -> {
             String headerName = "HEADER_" + (headerList.size() + 1);
-            headerList.add(new HeaderDef(headerName, httpAnnotation.getValue()));
+            headerList.add(new HeaderDef(headerName, httpAnnotation.value().orElseThrow()));
             parameters.add("req.headers().get(" + headerName + ").value(),");
         }
         case ("QueryParam") -> {
             httpDef.hasQueryParams = true;
-            String defaultValue = httpAnnotation.getValue("defaultValue");
+            String defaultValue = httpAnnotation.value("defaultValue").orElse(null);
             if (defaultValue == null || QueryParam.NO_DEFAULT_VALUE.equals(defaultValue)) {
                 defaultValue = "null";
             } else {
                 defaultValue = "\"" + defaultValue + "\"";
             }
-            String queryParam = httpAnnotation.getValue();
+            String queryParam = httpAnnotation.value().get();
             // TODO string is hardcoded, we need to add support for mapping
             parameters.add("query(req, res, \"" + queryParam + "\", " + defaultValue + ", String.class),");
         }
-        default -> throw new IllegalStateException("Invalid annotation on HTTP parameter: " + elementArg.getElementName());
+        default -> throw new IllegalStateException("Invalid annotation on HTTP parameter: " + elementArg.elementName());
         }
     }
 
     private String findAnnotValue(List<AnnotationAndValue> elementAnnotations, String name, String defaultValue) {
         for (AnnotationAndValue elementAnnotation : elementAnnotations) {
-            if (name.equals(elementAnnotation.getTypeName().getName())) {
-                return elementAnnotation.getValue();
+            if (name.equals(elementAnnotation.typeName().name())) {
+                return elementAnnotation.value().orElseThrow();
             }
         }
         return defaultValue;

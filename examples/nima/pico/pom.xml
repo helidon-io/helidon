@@ -47,8 +47,16 @@
             <artifactId>helidon-nima-webclient</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.pico</groupId>
             <artifactId>helidon-pico</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-services</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -93,6 +101,10 @@
                     </annotationProcessorPaths>
                     <compilerArgs>
                         <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>
+                        <arg>-Apico.debug=true</arg>
+                        <arg>-XprintProcessorInfo</arg>
+                        <arg>-XprintRounds</arg>
+                        <arg>-verbose</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

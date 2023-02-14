@@ -36,6 +36,7 @@
         <version.plexus.utils>3.3.0</version.plexus.utils>
         <version.plugin.api>3.8.5</version.plugin.api>
         <version.plugin.annotations>3.6.4</version.plugin.annotations>
+        <version.plugin.plugin>3.7.1</version.plugin.plugin>
         <version.plugin.project>2.2.1</version.plugin.project>
 
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
@@ -157,7 +158,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
-                    <version>${version.plugin.annotations}</version>
+                    <version>${version.plugin.plugin}</version>
                     <configuration>
                         <mojoDependencies>
                             <!-- we need this since 19ea is not really supported -->

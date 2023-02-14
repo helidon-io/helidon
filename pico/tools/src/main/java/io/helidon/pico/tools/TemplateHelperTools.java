@@ -66,8 +66,8 @@ public interface TemplateHelperTools {
     Optional<CustomAnnotationTemplateResponse> produceStandardCodeGenResponse(
             CustomAnnotationTemplateRequest request,
             TypeName generatedType,
-            Supplier<CharSequence> codeGenTemplateSupplier,
-            Optional<Function<Map<String, Object>, Map<String, Object>>> propertiesFn);
+            Supplier<? extends CharSequence> codeGenTemplateSupplier,
+            Function<Map<String, Object>, Map<String, Object>> propertiesFn);
 
 //    /**
 //     * Convenience method for generating a simple before-and-after interceptor/decorator.

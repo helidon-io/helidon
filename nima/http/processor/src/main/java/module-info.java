@@ -26,9 +26,10 @@ module io.helidon.nima.http.processor {
     requires io.helidon.pico.tools;
     requires io.helidon.pico.processor;
     requires java.compiler;
+    requires io.helidon.builder.processor.spi;
 
     exports io.helidon.nima.http.processor;
 
-    provides io.helidon.pico.processor.spi.CustomAnnotationTemplateProducer
+    provides io.helidon.pico.tools.CustomAnnotationTemplateCreator
             with HttpEndpointProducer, HttpMethodProducer;
 }

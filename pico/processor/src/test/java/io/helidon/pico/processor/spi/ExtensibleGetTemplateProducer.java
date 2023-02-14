@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.processor.spi.TypeInfo;
@@ -62,7 +63,7 @@ public class ExtensibleGetTemplateProducer implements CustomAnnotationTemplateCr
         TypeName generatedType = DefaultTypeName.create(enclosingTypeInfo.typeName().packageName(), classname);
         TemplateHelperTools tools = Objects.requireNonNull(request.templateHelperTools());
         Supplier<CharSequence> resourceSupplier = tools.supplyFromResources("nima", "extensible-get.hbs");
-        return tools.produceStandardCodeGenResponse(request, generatedType, resourceSupplier, Optional.empty());
+        return tools.produceStandardCodeGenResponse(request, generatedType, resourceSupplier, Function.identity());
     }
 
 }

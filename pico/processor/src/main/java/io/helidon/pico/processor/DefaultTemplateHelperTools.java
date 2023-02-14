@@ -69,8 +69,8 @@ class DefaultTemplateHelperTools implements TemplateHelperTools {
     public Optional<CustomAnnotationTemplateResponse> produceStandardCodeGenResponse(
             CustomAnnotationTemplateRequest req,
             TypeName generatedType,
-            Supplier<CharSequence> templateSupplier,
-            Optional<Function<Map<String, Object>, Map<String, Object>>> propertiesFn) {
+            Supplier<? extends CharSequence> templateSupplier,
+            Function<Map<String, Object>, Map<String, Object>> propertiesFn) {
         Objects.requireNonNull(req);
         if (!DefaultTypeName.isFQN(generatedType)
                 || (templateSupplier == null)
@@ -81,7 +81,7 @@ class DefaultTemplateHelperTools implements TemplateHelperTools {
 
         TemplateHelper templateHelper = TemplateHelper.create();
 
-        Map<String, Object> substitutions = gatherSubstitutions(req, templateHelper, generatedType, propertiesFn.orElse(null));
+        Map<String, Object> substitutions = gatherSubstitutions(req, templateHelper, generatedType, propertiesFn);
         String template = Objects.requireNonNull(templateSupplier.get()).toString();
         messager.debug("applying template: " + template);
 
