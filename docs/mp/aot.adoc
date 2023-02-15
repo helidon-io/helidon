@@ -29,8 +29,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Supported Modules, Supported Modules>>
 
 == Overview
-Helidon applications can be compiled into a native executable using the GraalVM
-native image.
+Helidon applications can be compiled into a native executable using the GraalVM native-image command.
 
 When using applications created using the CLI, or when you configure Helidon
 application pom as a parent of your module, you can use the following steps to
