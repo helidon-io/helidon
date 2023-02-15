@@ -19,7 +19,7 @@ package io.helidon.pico.tools;
 import java.util.Optional;
 
 import io.helidon.builder.Builder;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.TypeName;
 
 /**
  * Generically describes the source code generated.

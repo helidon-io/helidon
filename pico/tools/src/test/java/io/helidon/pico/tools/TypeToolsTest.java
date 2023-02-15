@@ -29,7 +29,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.builder.types.DefaultTypeName.create;
+import static io.helidon.common.types.DefaultTypeName.create;
 import static io.helidon.pico.tools.TypeTools.extractInjectionPointTypeInfo;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;

@@ -20,8 +20,8 @@ import java.util.List;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.processor.spi.TypeInfo;
-import io.helidon.builder.types.TypeName;
-import io.helidon.builder.types.TypedElementName;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementName;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.ServiceInfoBasics;

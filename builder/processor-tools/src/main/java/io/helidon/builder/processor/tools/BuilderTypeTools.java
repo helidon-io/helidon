@@ -47,14 +47,14 @@ import javax.tools.Diagnostic;
 import io.helidon.builder.processor.spi.DefaultTypeInfo;
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
-import io.helidon.builder.types.AnnotationAndValue;
-import io.helidon.builder.types.DefaultAnnotationAndValue;
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.DefaultTypedElementName;
-import io.helidon.builder.types.TypeName;
-import io.helidon.builder.types.TypedElementName;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.DefaultTypedElementName;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementName;
 
 /**
  * The default implementation for {@link io.helidon.builder.processor.spi.TypeInfoCreatorProvider}. This also contains an abundance of
@@ -137,7 +137,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     }
 
     /**
-     * Translation the arguments to a collection of {@link io.helidon.builder.types.TypedElementName}'s.
+     * Translation the arguments to a collection of {@link io.helidon.common.types.TypedElementName}'s.
      *
      * @param element               the typed element (i.e., class)
      * @param processingEnv         the processing env
@@ -421,7 +421,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     }
 
     /**
-     * Creates an instance of a {@link io.helidon.builder.types.TypedElementName} given its type and variable element from
+     * Creates an instance of a {@link io.helidon.common.types.TypedElementName} given its type and variable element from
      * annotation processing.
      *
      * @param v        the element (from annotation processing)

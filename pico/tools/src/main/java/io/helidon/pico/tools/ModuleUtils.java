@@ -32,8 +32,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.lang.model.element.TypeElement;
 
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.Application;
 import io.helidon.pico.PicoServicesConfig;
 

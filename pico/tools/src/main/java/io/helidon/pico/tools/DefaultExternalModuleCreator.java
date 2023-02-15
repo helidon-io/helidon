@@ -26,10 +26,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.builder.types.TypeName;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.QualifierAndValue;
@@ -48,7 +48,7 @@ import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
-import static io.helidon.builder.types.DefaultTypeName.createFromTypeName;
+import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
 import static io.helidon.pico.tools.TypeTools.createInjectionPointInfo;
 import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromClassInfo;

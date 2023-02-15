@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
-import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.pico.ServiceInfoBasics;
 
 /**

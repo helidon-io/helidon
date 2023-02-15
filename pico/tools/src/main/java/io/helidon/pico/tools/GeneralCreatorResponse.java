@@ -22,7 +22,7 @@ import java.util.Optional;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**

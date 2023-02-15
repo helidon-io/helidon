@@ -23,9 +23,9 @@ import java.util.ServiceLoader;
 
 import javax.lang.model.element.TypeElement;
 
-import io.helidon.builder.types.TypeName;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.common.types.TypeName;
 
 /**
  * Conditionally based upon classpath, will handle {@code javax.inject} and {@code javax.annotation}. If class support is not on

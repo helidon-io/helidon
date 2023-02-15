@@ -23,9 +23,9 @@ import javax.lang.model.element.ElementKind;
 
 import io.helidon.builder.processor.spi.DefaultTypeInfo;
 import io.helidon.builder.processor.spi.TypeInfo;
-import io.helidon.builder.types.AnnotationAndValue;
-import io.helidon.builder.types.DefaultTypedElementName;
-import io.helidon.builder.types.TypedElementName;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultTypedElementName;
+import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.DefaultServiceInfo;
 import io.helidon.pico.ElementInfo;
 import io.helidon.pico.ServiceInfoBasics;
@@ -39,7 +39,7 @@ import io.helidon.pico.tools.DefaultCustomAnnotationTemplateRequest;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.builder.types.DefaultTypeName.create;
+import static io.helidon.common.types.DefaultTypeName.create;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromAnnotations;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;

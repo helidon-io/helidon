@@ -26,10 +26,10 @@ import java.util.Set;
 import javax.lang.model.element.ElementKind;
 
 import io.helidon.builder.processor.spi.TypeInfo;
-import io.helidon.builder.types.AnnotationAndValue;
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
-import io.helidon.builder.types.TypedElementName;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.tools.CustomAnnotationTemplateCreator;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;

@@ -42,7 +42,6 @@
     </properties>
 
     <modules>
-        <module>types</module>
         <module>builder</module>
         <module>processor-spi</module>
         <module>processor-tools</module>

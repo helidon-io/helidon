@@ -25,7 +25,7 @@ module io.helidon.pico.config.services {
 
     requires transitive io.helidon.builder;
     requires transitive io.helidon.builder.config;
-    requires transitive io.helidon.builder.types;
+    requires transitive io.helidon.common.types;
     requires transitive io.helidon.config;
     requires transitive io.helidon.pico;
     requires transitive io.helidon.pico.services;

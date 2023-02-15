@@ -49,5 +49,6 @@
         <module>testing</module>
         <module>features</module>
         <module>task</module>
+        <module>types</module>
     </modules>
 </project>

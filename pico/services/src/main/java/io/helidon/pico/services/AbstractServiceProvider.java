@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.common.types.DefaultTypeName;
 import io.helidon.pico.ActivationLog;
 import io.helidon.pico.ActivationPhaseReceiver;
 import io.helidon.pico.ActivationRequest;

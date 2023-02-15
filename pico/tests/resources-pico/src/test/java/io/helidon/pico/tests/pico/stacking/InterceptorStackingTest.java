@@ -19,7 +19,7 @@ package io.helidon.pico.tests.pico.stacking;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.common.types.DefaultTypeName;
 import io.helidon.config.Config;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceProvider;

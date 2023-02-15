@@ -20,7 +20,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import io.helidon.builder.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.pico.InterceptedTrigger;
 
 import jakarta.inject.Named;

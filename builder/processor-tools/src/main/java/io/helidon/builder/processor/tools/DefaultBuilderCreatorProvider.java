@@ -41,13 +41,13 @@ import io.helidon.builder.processor.spi.BuilderCreatorProvider;
 import io.helidon.builder.processor.spi.DefaultTypeAndBody;
 import io.helidon.builder.processor.spi.TypeAndBody;
 import io.helidon.builder.processor.spi.TypeInfo;
-import io.helidon.builder.types.AnnotationAndValue;
-import io.helidon.builder.types.DefaultAnnotationAndValue;
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
-import io.helidon.builder.types.TypedElementName;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementName;
 import io.helidon.config.metadata.ConfiguredOption;
 
 import static io.helidon.builder.processor.tools.BodyContext.TAG_META_PROPS;

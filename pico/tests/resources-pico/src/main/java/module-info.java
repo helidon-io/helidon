@@ -21,7 +21,7 @@ module io.helidon.pico.tests.pico {
     requires static jakarta.inject;
     requires static jakarta.annotation;
 
-    requires io.helidon.builder.types;
+    requires io.helidon.common.types;
     requires io.helidon.common;
     requires io.helidon.pico;
     requires io.helidon.pico.services;

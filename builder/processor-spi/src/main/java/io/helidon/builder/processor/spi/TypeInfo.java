@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.builder.types.AnnotationAndValue;
-import io.helidon.builder.types.TypeName;
-import io.helidon.builder.types.TypedElementName;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementName;
 
 /**
  * Represents the model object for an interface or an abstract type (i.e., one that was annotated with

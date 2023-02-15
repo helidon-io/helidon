@@ -21,6 +21,8 @@ import java.util.Optional;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
 
+import io.helidon.common.types.TypeName;
+
 /**
  * Java {@link java.util.ServiceLoader} provider interface used to discover type info creators.
  * <p>

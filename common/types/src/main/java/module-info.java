@@ -17,8 +17,8 @@
 /**
  * Builder (minimal) types support.
  */
-module io.helidon.builder.types {
+module io.helidon.common.types {
     requires io.helidon.common;
 
-    exports io.helidon.builder.types;
+    exports io.helidon.common.types;
 }

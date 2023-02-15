@@ -19,7 +19,7 @@
  */
 module io.helidon.pico {
     requires jakarta.inject;
-    requires io.helidon.builder.types;
+    requires io.helidon.common.types;
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires static io.helidon.builder;

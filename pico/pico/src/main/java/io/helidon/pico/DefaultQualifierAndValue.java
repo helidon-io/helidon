@@ -20,10 +20,10 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Objects;
 
-import io.helidon.builder.types.AnnotationAndValue;
-import io.helidon.builder.types.DefaultAnnotationAndValue;
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
 
 import jakarta.inject.Named;
 

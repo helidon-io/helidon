@@ -32,7 +32,7 @@ module io.helidon.pico.tools {
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.builder.processor.spi;
-    requires transitive io.helidon.builder.types;
+    requires transitive io.helidon.common.types;
     requires transitive io.helidon.pico.services;
     requires transitive io.helidon.builder.processor.tools;
 

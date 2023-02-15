@@ -21,8 +21,8 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.pico.DefaultQualifierAndValue;

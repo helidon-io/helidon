@@ -23,7 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;

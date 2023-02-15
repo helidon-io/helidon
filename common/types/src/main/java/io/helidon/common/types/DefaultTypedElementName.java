@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.types;
+package io.helidon.common.types;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Default implementation for {@link io.helidon.builder.types.TypedElementName}.
+ * Default implementation for {@link io.helidon.common.types.TypedElementName}.
  */
 public class DefaultTypedElementName implements TypedElementName {
     private final TypeName typeName;
@@ -128,7 +128,7 @@ public class DefaultTypedElementName implements TypedElementName {
 
 
     /**
-     * Creates a builder for {@link io.helidon.builder.types.TypedElementName}.
+     * Creates a builder for {@link io.helidon.common.types.TypedElementName}.
      *
      * @return a fluent builder
      */

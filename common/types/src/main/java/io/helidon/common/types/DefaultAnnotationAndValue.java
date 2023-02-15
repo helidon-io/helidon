@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.types;
+package io.helidon.common.types;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
@@ -187,7 +187,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
 
 
     /**
-     * Creates a builder for {@link io.helidon.builder.types.AnnotationAndValue}.
+     * Creates a builder for {@link AnnotationAndValue}.
      *
      * @return a fluent builder
      */
@@ -197,7 +197,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
 
 
     /**
-     * Fluent API builder for {@link io.helidon.builder.types.DefaultAnnotationAndValue}.
+     * Fluent API builder for {@link DefaultAnnotationAndValue}.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, DefaultAnnotationAndValue> {
         private final Map<String, String> values = new LinkedHashMap<>();

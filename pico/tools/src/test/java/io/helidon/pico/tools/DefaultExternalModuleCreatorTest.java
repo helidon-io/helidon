@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.types.TypeName;
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.DefaultQualifierAndValue;
 
 import org.atinject.tck.auto.Drivers;

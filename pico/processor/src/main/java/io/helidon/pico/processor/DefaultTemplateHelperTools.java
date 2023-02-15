@@ -23,8 +23,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.tools.CommonUtils;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;

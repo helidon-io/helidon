@@ -42,12 +42,12 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
 import io.helidon.builder.processor.tools.BuilderTypeTools;
-import io.helidon.builder.types.AnnotationAndValue;
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.DefaultInvocationContext;
 import io.helidon.pico.ElementInfo;
 import io.helidon.pico.InjectionPointInfo;
@@ -61,7 +61,7 @@ import io.github.classgraph.MethodInfo;
 import io.github.classgraph.ScanResult;
 import jakarta.inject.Singleton;
 
-import static io.helidon.builder.types.DefaultAnnotationAndValue.create;
+import static io.helidon.common.types.DefaultAnnotationAndValue.create;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueFromMirror;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromAnnotations;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;

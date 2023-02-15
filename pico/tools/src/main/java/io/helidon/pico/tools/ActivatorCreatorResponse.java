@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.TypeName;
 
 /**
  * The result of calling {@link ActivatorCreator} assuming no errors are thrown.

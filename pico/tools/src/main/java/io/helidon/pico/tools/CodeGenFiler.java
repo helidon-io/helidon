@@ -47,8 +47,8 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.PicoServicesConfig;
 
 /**

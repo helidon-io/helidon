@@ -19,8 +19,8 @@ package io.helidon.pico.maven.plugin;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.QualifierAndValue;
 
 /**

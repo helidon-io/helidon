@@ -20,8 +20,8 @@ import java.util.Map;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.builder.types.TypeName;
-import io.helidon.builder.types.TypedElementName;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementName;
 
 /**
  * The response from {@link CustomAnnotationTemplateCreator#create(CustomAnnotationTemplateRequest)}.

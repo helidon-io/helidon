@@ -18,7 +18,7 @@ package io.helidon.pico.tools;
 
 import java.util.Map;
 
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.Contract;
 
 /**

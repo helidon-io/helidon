@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.types;
+package io.helidon.common.types;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.builder.types.DefaultTypeName.create;
+import static io.helidon.common.types.DefaultTypeName.create;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

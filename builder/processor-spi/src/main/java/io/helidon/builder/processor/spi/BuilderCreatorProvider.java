@@ -20,7 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.common.types.AnnotationAndValue;
 
 /**
  * Java {@link java.util.ServiceLoader} provider interface used to discover builder creators.

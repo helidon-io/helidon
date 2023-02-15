@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.TypeElement;
 
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.PicoServicesConfig;

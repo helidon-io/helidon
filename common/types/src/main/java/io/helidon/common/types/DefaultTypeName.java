@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.types;
+package io.helidon.common.types;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Default implementation for {@link io.helidon.builder.types.TypeName}.
+ * Default implementation for {@link TypeName}.
  */
 public class DefaultTypeName implements TypeName {
     private final String packageName;
@@ -179,7 +179,7 @@ public class DefaultTypeName implements TypeName {
      * Throws an exception if the provided type name is not fully qualified, having a package and class name representation.
      *
      * @param name the type name to check
-     * @throws java.lang.IllegalStateException if the name is invalid
+     * @throws IllegalStateException if the name is invalid
      */
     public static void ensureIsFQN(TypeName name) {
         if (!isFQN(name)) {
@@ -293,7 +293,7 @@ public class DefaultTypeName implements TypeName {
 
 
     /**
-     * Creates a builder for {@link io.helidon.builder.types.TypeName}.
+     * Creates a builder for {@link TypeName}.
      *
      * @return a fluent builder
      */

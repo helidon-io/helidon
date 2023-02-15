@@ -50,12 +50,12 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 
 import io.helidon.builder.processor.tools.BuilderTypeTools;
-import io.helidon.builder.types.AnnotationAndValue;
-import io.helidon.builder.types.DefaultAnnotationAndValue;
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.DefaultTypedElementName;
-import io.helidon.builder.types.TypeName;
-import io.helidon.builder.types.TypedElementName;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.DefaultTypedElementName;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.DefaultElementInfo;
 import io.helidon.pico.DefaultInjectionPointInfo;
 import io.helidon.pico.DefaultQualifierAndValue;

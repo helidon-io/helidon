@@ -35,8 +35,8 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**

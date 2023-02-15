@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.types;
+package io.helidon.common.types;
 
 import java.util.List;
 
@@ -22,11 +22,11 @@ import java.util.List;
  * TypeName is similar to {@link java.lang.reflect.Type} in its most basic use case. The {@link #name()} returns the package +
  * class name tuple for the given type (i.e., the canonical type name).
  * <p>
- * This class also provides a number of methods that are typically found in {@link java.lang.Class} that can be used to avoid
+ * This class also provides a number of methods that are typically found in {@link Class} that can be used to avoid
  * classloading resolution:
  * <ul>
  * <li>{@link #packageName()} and {@link #className()} - access to the package and simple class names.</li>
- * <li>{@link #primitive()} and {@link #array()} - access to flags that is typically found in {@link java.lang.Class}.</li>
+ * <li>{@link #primitive()} and {@link #array()} - access to flags that is typically found in {@link Class}.</li>
  * </ul>
  * Additionally, this class offers a number of additional methods that are useful for handling generics:
  * <ul>

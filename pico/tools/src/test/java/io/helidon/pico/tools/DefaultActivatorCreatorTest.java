@@ -19,7 +19,7 @@ package io.helidon.pico.tools;
 import java.util.Collections;
 import java.util.List;
 
-import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.common.types.DefaultTypeName;
 import io.helidon.pico.tools.testsubjects.HelloPicoWorldImpl;
 
 import org.junit.jupiter.api.Test;

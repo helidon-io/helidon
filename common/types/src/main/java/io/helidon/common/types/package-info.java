@@ -18,4 +18,4 @@
  * Subset of Builder's SPI types that are useful for runtime. Used in the ConfigBean builder, etc., that require a minimal set of
  * types present at runtime.
  */
-package io.helidon.builder.types;
+package io.helidon.common.types;

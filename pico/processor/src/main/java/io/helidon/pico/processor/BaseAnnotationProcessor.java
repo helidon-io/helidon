@@ -50,11 +50,11 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 
-import io.helidon.builder.types.AnnotationAndValue;
-import io.helidon.builder.types.DefaultAnnotationAndValue;
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
 import io.helidon.common.Weight;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.Contract;
 import io.helidon.pico.DefaultServiceInfo;
 import io.helidon.pico.ExternalContracts;

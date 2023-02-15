@@ -16,7 +16,7 @@
 
 package io.helidon.builder.processor.spi;
 
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.TypeName;
 
 /**
  * Represents the generated source as a model object.

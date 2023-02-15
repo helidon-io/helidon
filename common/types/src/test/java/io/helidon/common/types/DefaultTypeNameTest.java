@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.types;
+package io.helidon.common.types;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -25,8 +25,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.builder.types.DefaultTypeName.create;
-import static io.helidon.builder.types.DefaultTypeName.createFromTypeName;
+import static io.helidon.common.types.DefaultTypeName.create;
+import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

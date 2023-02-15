@@ -25,7 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.Application;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceProvider;

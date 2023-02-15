@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.common.types.AnnotationAndValue;
 
 /**
  * Describes a managed service or injection point.

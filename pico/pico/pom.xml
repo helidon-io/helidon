@@ -36,8 +36,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-types</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-types</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>

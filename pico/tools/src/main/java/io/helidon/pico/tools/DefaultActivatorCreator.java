@@ -33,10 +33,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.processor.tools.BuilderTypeTools;
-import io.helidon.builder.types.TypeName;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.Application;
 import io.helidon.pico.DefaultInjectionPointInfo;
 import io.helidon.pico.DefaultQualifierAndValue;
@@ -62,8 +62,8 @@ import io.github.classgraph.ScanResult;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
-import static io.helidon.builder.types.DefaultTypeName.create;
-import static io.helidon.builder.types.DefaultTypeName.createFromTypeName;
+import static io.helidon.common.types.DefaultTypeName.create;
+import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
 import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
 import static io.helidon.pico.tools.CommonUtils.toFlatName;

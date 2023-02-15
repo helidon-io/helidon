@@ -682,6 +682,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-types</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.common.testing</groupId>
                 <artifactId>helidon-common-testing-junit5</artifactId>
                 <version>${helidon.version}</version>
@@ -1385,11 +1390,6 @@
             </dependency>
 
             <!-- Builder -->
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-types</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <dependency>
                 <groupId>io.helidon.builder</groupId>
                 <artifactId>helidon-builder</artifactId>

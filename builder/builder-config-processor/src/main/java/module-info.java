@@ -22,7 +22,7 @@ module io.helidon.builder.config.processor {
     requires jakarta.inject;
     requires io.helidon.builder.config;
     requires io.helidon.builder.processor.tools;
-    requires io.helidon.builder.types;
+    requires io.helidon.common.types;
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.config.metadata;

@@ -28,7 +28,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.DependencyInfo;
 import io.helidon.pico.InjectionPointInfo;

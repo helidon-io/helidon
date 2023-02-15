@@ -35,10 +35,10 @@ import io.helidon.builder.AttributeVisitor;
 import io.helidon.builder.Builder;
 import io.helidon.builder.config.ConfigBean;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
-import io.helidon.builder.types.AnnotationAndValue;
-import io.helidon.builder.types.DefaultAnnotationAndValue;
-import io.helidon.builder.types.TypeName;
 import io.helidon.common.config.Config;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.configdriven.ConfiguredBy;
 import io.helidon.pico.configdriven.services.AbstractConfiguredServiceProvider;
 import io.helidon.pico.processor.ServiceAnnotationProcessor;
@@ -51,10 +51,10 @@ import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeName
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.toTypeElement;
-import static io.helidon.builder.types.DefaultTypeName.create;
-import static io.helidon.builder.types.DefaultTypeName.createFromGenericDeclaration;
-import static io.helidon.builder.types.DefaultTypeName.createFromTypeName;
-import static io.helidon.builder.types.DefaultTypeName.toBuilder;
+import static io.helidon.common.types.DefaultTypeName.create;
+import static io.helidon.common.types.DefaultTypeName.createFromGenericDeclaration;
+import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
+import static io.helidon.common.types.DefaultTypeName.toBuilder;
 
 /**
  * Processor for @{@link io.helidon.pico.configdriven.ConfiguredBy} type annotations.

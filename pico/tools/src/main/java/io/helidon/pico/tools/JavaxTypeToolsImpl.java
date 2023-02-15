@@ -26,7 +26,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.TypeName;
 
 /**
  * This class will load only if supporting (javax) types are on the classpath.

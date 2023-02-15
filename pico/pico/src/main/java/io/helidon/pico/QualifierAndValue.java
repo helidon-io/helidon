@@ -16,7 +16,7 @@
 
 package io.helidon.pico;
 
-import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.common.types.AnnotationAndValue;
 
 /**
  * Represents a tuple of the Qualifier and optionally any value.

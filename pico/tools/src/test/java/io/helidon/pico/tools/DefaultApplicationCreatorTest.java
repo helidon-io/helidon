@@ -19,8 +19,8 @@ package io.helidon.pico.tools;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.types.DefaultTypeName;
-import io.helidon.builder.types.TypeName;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceInfoCriteria;

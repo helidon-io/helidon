@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.types;
+package io.helidon.common.types;
 
+import java.lang.annotation.Target;
 import java.util.Map;
 
-import jakarta.inject.Named;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -38,9 +38,9 @@ class DefaultAnnotationAndValueTest {
         assertThat(val2, equalTo(val1));
         assertThat(val2.compareTo(val1), is(0));
 
-        DefaultAnnotationAndValue val3 = DefaultAnnotationAndValue.create(Named.class, "name");
+        DefaultAnnotationAndValue val3 = DefaultAnnotationAndValue.create(Target.class, "name");
         assertThat(val3.toString(),
-                   equalTo("DefaultAnnotationAndValue(typeName=jakarta.inject.Named, value=name)"));
+                   equalTo("DefaultAnnotationAndValue(typeName=java.lang.annotation.Target, value=name)"));
 
         DefaultAnnotationAndValue val4 = DefaultAnnotationAndValue.create(Test.class, Map.of("a", "1"));
         assertThat(val4.toString(),

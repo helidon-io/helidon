@@ -24,7 +24,7 @@ module io.helidon.pico.builder.config.processor {
     requires io.helidon.common.config;
     requires io.helidon.config.metadata;
     requires io.helidon.builder.processor.tools;
-    requires io.helidon.builder.types;
+    requires io.helidon.common.types;
     requires io.helidon.pico;
     requires io.helidon.pico.configdriven;
     requires io.helidon.pico.config.services;

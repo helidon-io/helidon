@@ -20,7 +20,7 @@
 module io.helidon.builder.processor.spi {
     requires java.compiler;
     requires io.helidon.builder;
-    requires io.helidon.builder.types;
+    requires io.helidon.common.types;
     requires io.helidon.common;
 
     exports io.helidon.builder.processor.spi;
