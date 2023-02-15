@@ -26,12 +26,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.ClientRequestHeaders;
@@ -72,12 +71,15 @@ class ClientRequestImpl implements Http1ClientRequest {
     private final boolean defaultKeepAlive = true;
     private final SocketOptions channelOptions;
     private final BufferData writeBuffer = BufferData.growing(128);
-    // todo configurable
-    private MediaContext mediaContext = MediaContext.create();
 
     private Tls tls;
     private String uriTemplate;
     private ClientConnection connection;
+    private MediaContext mediaContext;
+    private int maxHeaderSize;
+    private int maxStatusLineLength;
+    private boolean sendExpect100Continue;
+    private boolean validateHeaders;
 
     ClientRequestImpl(Http1ClientImpl client,
                       Http.Method method,
@@ -90,6 +92,12 @@ class ClientRequestImpl implements Http1ClientRequest {
         this.tls = client.tls();
         this.channelOptions = client.socketOptions();
         this.query = query;
+
+        this.mediaContext = client.builder.mediaContext();
+        this.maxHeaderSize = client.builder.maxHeaderSize();
+        this.maxStatusLineLength = client.builder.maxStatusLineLength();
+        this.sendExpect100Continue = client.builder.sendExpect100Continue();
+        this.validateHeaders = client.builder.validateHeaders();
     }
 
     @Override
@@ -199,22 +207,9 @@ class ClientRequestImpl implements Http1ClientRequest {
         prologue(writeBuffer);
 
         headers.setIfAbsent(Header.create(Header.HOST, uri.authority()));
-        // hardcoded chunked encoding, as we have an output stream
-        // todo we may optimize small amounts
-        boolean chunked = false;
-        if (!headers.contains(Header.CONTENT_LENGTH)) {
-            chunked = true;
-            headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
-        }
 
-        writeHeaders(headers, writeBuffer);
-        writer.writeNow(writeBuffer);
-
-        // todo use 100 continue, so we know the endpoint exists before we start sending
-        // entity
-
-        // we have written the prologue and headers, now it is time to handle the output stream
-        ClientConnectionOutputStream cos = new ClientConnectionOutputStream(connection, writer, chunked);
+        ClientConnectionOutputStream cos = new ClientConnectionOutputStream(writer, reader, headers, writeBuffer,
+                                                                            maxStatusLineLength, sendExpect100Continue);
 
         try {
             streamHandler.handle(cos);
@@ -224,6 +219,11 @@ class ClientRequestImpl implements Http1ClientRequest {
 
         if (!cos.closed()) {
             throw new IllegalStateException("Output stream was not closed in handler");
+        }
+
+        // TODO: This is a temporary workaround to remove garbage data or until https://github.com/helidon-io/helidon/issues/6121 is resolved
+        if (cos.chunked) {
+            System.out.println("Garbage data from reader:" + reader.readBuffer().debugDataHex(true));
         }
 
         return readResponse(ClientRequestHeaders.create(headers), connection, reader);
@@ -247,12 +247,11 @@ class ClientRequestImpl implements Http1ClientRequest {
         return this;
     }
 
-    void writeHeaders(Headers headers, BufferData bufferData) {
+    static void writeHeaders(Headers headers, BufferData bufferData) {
         for (HeaderValue header : headers) {
             header.writeHttp1Header(bufferData);
         }
-        bufferData.write(Bytes.CR_BYTE);
-        bufferData.write(Bytes.LF_BYTE);
+        bufferData.write(CRLF_BYTES);
     }
 
     UriHelper uriHelper() {
@@ -281,18 +280,13 @@ class ClientRequestImpl implements Http1ClientRequest {
     }
 
     private Http1ClientResponse readResponse(ClientRequestHeaders usedHeaders, ClientConnection connection, DataReader reader) {
-        // todo configurable max status line length
-        Http.Status responseStatus = Http1StatusParser.readStatus(reader, 256);
+        Http.Status responseStatus = Http1StatusParser.readStatus(reader, maxStatusLineLength);
         ClientResponseHeaders responseHeaders = readHeaders(reader);
 
         return new ClientResponseImpl(responseStatus, usedHeaders, responseHeaders, connection, reader);
     }
 
     private ClientResponseHeaders readHeaders(DataReader reader) {
-        // todo configurable max headers and validate headers
-        int maxHeaderSize = 16384;
-        boolean validateHeaders = true;
-
         WritableHeaders<?> writable = Http1HeadersParser.readHeaders(reader, maxHeaderSize, validateHeaders);
 
         return ClientResponseHeaders.create(writable);
@@ -330,9 +324,10 @@ class ClientRequestImpl implements Http1ClientRequest {
             // todo add timeouts, proxy and tls to the key
             KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(), uri.authority(), tls);
             var connectionQueue = CHANNEL_CACHE.computeIfAbsent(keepAliveKey,
-                                                                it -> new ConcurrentLinkedDeque<>());
+                                                                it -> new LinkedBlockingDeque<>(5));
 
             // TODO we must limit the queue in size
+            // Note: Can we use LinkedBlockingQueue  instead of ConcurrentLinkedDeque which is an optionally bounded blocking queue?
             while ((connection = connectionQueue.poll()) != null && !connection.isConnected()) {
             }
 
@@ -381,27 +376,64 @@ class ClientRequestImpl implements Http1ClientRequest {
     }
 
     private static class ClientConnectionOutputStream extends OutputStream {
-        private final ClientConnection connection;
         private final DataWriter writer;
-        private final boolean chunked;
+        private final DataReader reader;
+        private boolean chunked;
+        private WritableHeaders<?> headers;
+        private BufferData firstPacket;
+        private BufferData writeBuffer;
+        private int maxStatusLineLength;
+        private boolean sendExpect100Continue;
+        private long bytesWritten;
+        private long contentLength;
+        private boolean noData = true;
 
         private boolean closed;
 
-        private ClientConnectionOutputStream(ClientConnection connection, DataWriter writer, boolean chunked) {
-            this.connection = connection;
+        private ClientConnectionOutputStream(DataWriter writer, DataReader reader, WritableHeaders<?> headers,
+                                             BufferData writeBuffer, int maxStatusLineLength, boolean sendExpect100Continue) {
             this.writer = writer;
-            this.chunked = chunked;
+            this.reader = reader;
+            this.headers = headers;
+            this.writeBuffer = writeBuffer;
+            this.maxStatusLineLength = maxStatusLineLength;
+            this.sendExpect100Continue = sendExpect100Continue;
+            this.contentLength = headers.contentLength().orElse(-1);
+            this.chunked = contentLength == -1 || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
         }
 
         @Override
         public void write(int b) throws IOException {
             // this method should not be called, as we are wrapped with a buffered stream
-            chunk(0, 1, (byte) b);
+            byte data[] = {(byte) b};
+            write(data, 0, 1);
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            chunk(off, len, b);
+            if (closed) {
+                throw new IOException("Output stream already closed");
+            }
+
+            BufferData data = BufferData.create(b, off, len);
+
+            if (!chunked) {
+                if (firstPacket == null) {
+                    firstPacket = data;
+                } else {
+                    chunked = true;
+                    sendFirstChunk();
+                }
+                noData = false;
+            }
+
+            if (chunked) {
+                if (noData) {
+                    noData = false;
+                    sendHeader();
+                }
+                writeChunked(data);
+            }
         }
 
         @Override
@@ -411,7 +443,22 @@ class ClientRequestImpl implements Http1ClientRequest {
             }
             this.closed = true;
             if (chunked) {
+                if (firstPacket != null) {
+                    sendFirstChunk();
+                }
                 writer.write(BufferData.create(TERMINATING_CHUNK));
+            } else {
+                headers.remove(Http.Header.TRANSFER_ENCODING);
+                if (noData) {
+                    headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+                    contentLength = 0;
+                }
+                if (noData || firstPacket != null) {
+                    sendHeader();
+                }
+                if (firstPacket != null) {
+                    writeContent(firstPacket);
+                }
             }
             super.close();
         }
@@ -420,19 +467,64 @@ class ClientRequestImpl implements Http1ClientRequest {
             return closed;
         }
 
-        private void chunk(int offset, int length, byte... bytes) {
-            if (chunked) {
-                byte[] hexLen = Integer.toHexString(length).getBytes(StandardCharsets.UTF_8);
-                // cheaper to copy in memory than to write twice to channel
-                byte[] buffer = new byte[hexLen.length + length + 4]; // add CRLF after each
-                System.arraycopy(hexLen, 0, buffer, 0, hexLen.length);
-                System.arraycopy(CRLF_BYTES, 0, buffer, hexLen.length, 2);
-                System.arraycopy(bytes, offset, buffer, hexLen.length + 2, length);
-                System.arraycopy(CRLF_BYTES, 0, buffer, hexLen.length + 2 + length, 2);
-                writer.writeNow(BufferData.create(buffer));
-            } else {
-                writer.writeNow(BufferData.create(bytes, offset, length));
+        private void writeChunked(BufferData buffer) {
+            int available = buffer.available();
+            byte[] hex = Integer.toHexString(available).getBytes(StandardCharsets.UTF_8);
+
+            BufferData toWrite = BufferData.create(available + hex.length + 4); // \r\n after size, another after chunk
+            toWrite.write(hex);
+            toWrite.write(CRLF_BYTES);
+            toWrite.write(buffer);
+            toWrite.write(CRLF_BYTES);
+
+            writer.writeNow(toWrite);
+        }
+
+        private void writeContent(BufferData buffer) throws IOException {
+            bytesWritten += buffer.available();
+            if (contentLength != -1 && bytesWritten > contentLength) {
+                throw new IOException("Content length was set to " + contentLength
+                                              + ", but you are writing additional " + (bytesWritten - contentLength) + " "
+                                              + "bytes");
             }
+
+            writer.writeNow(buffer);
+        }
+
+        private void sendHeader() {
+            boolean expects100Continue = sendExpect100Continue && chunked && !noData;
+            if (expects100Continue) {
+                headers.add(HeaderValues.EXPECT_100);
+            }
+
+            if (chunked) {
+                // Add chunked encoding, if there is no other transfer-encoding headers
+                if (!headers.contains(Http.Header.TRANSFER_ENCODING)) {
+                    headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                } else {
+                    // Add chunked encoding, if it's not part of existing transfer-encoding headers
+                    if (!headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                    }
+                }
+                headers.remove(Header.CONTENT_LENGTH);
+            }
+            writeHeaders(headers, writeBuffer);
+            writer.writeNow(writeBuffer);
+
+            if (expects100Continue) {
+                Http.Status responseStatus = Http1StatusParser.readStatus(reader, maxStatusLineLength);
+                if (responseStatus != Http.Status.CONTINUE_100) {
+                    throw new IllegalStateException("Expected a status of '100 Continue' but received a '" +
+                                                            responseStatus + "' instead");
+                }
+            }
+        }
+
+        private void sendFirstChunk() {
+            sendHeader();
+            writeChunked(firstPacket);
+            firstPacket = null;
         }
     }
 }

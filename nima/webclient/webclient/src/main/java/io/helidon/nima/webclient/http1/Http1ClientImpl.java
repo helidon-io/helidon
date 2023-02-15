@@ -22,9 +22,11 @@ import io.helidon.nima.webclient.LoomClient;
 import io.helidon.nima.webclient.UriHelper;
 
 class Http1ClientImpl extends LoomClient implements Http1Client {
+    Http1ClientBuilder builder;
 
     Http1ClientImpl(Http1ClientBuilder builder) {
         super(builder);
+        this.builder = builder;
     }
 
     @Override
