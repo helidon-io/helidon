@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,38 +24,10 @@
 include::{rootdir}/includes/mp.adoc[]
 
 == Contents
-
 * <<Overview, Overview>>
 * <<DS, Named Data Source Integration>>
-** <<DS-Setup, Project Setup>>
-*** <<DS-CP-Project-Setup, Setting Up a Connection Pool>>
-**** <<DS-HikariCP-Project-Setup, Setting Up the HikariCP Connection Pool>>
-***** <<DS-HikariCP-Maven-Coordinates, Maven Coordinates (HikariCP)>>
-**** <<DS-UCP-Project-Setup, Setting Up the Oracle Universal Connection Pool>>
-***** <<DS-UCP-Maven-Coordinates, Maven Coordinates (Oracle Universal Connection Pool)>>
-*** <<DS-Driver-Project-Setup, Setting Up a Database Driver>>
-**** <<DS-H2-Driver-Project-Setup, Setting Up H2>>
-***** <<DS-H2-Driver-Maven-Coordinates, Maven Coordinates (H2)>>
-**** <<DS-Oracle-Driver-Project-Setup, Setting Up Oracle JDBC>>
-***** <<DS-Oracle-Driver-Maven-Coordinates, Maven Coordinates (Oracle JDBC)>>
-** <<DS-Configuration, Configuration>>
-*** <<DS-Configuration-Examples, Examples>>
-** <<DS-Usage, Usage>>
-* <<JTA, Jakarta Transactions (JTA) Integration>>
-** <<JTA-Maven-Coordinates, Maven Coordinates>>
-** <<JTA-Configuration, Configuration>>
-** <<JTA-Usage, Usage>>
-* <<JPA, Jakarta Persistence (JPA) Integration>>
-** <<JPA-Setup, Project Setup>>
-*** <<JPA-Maven-Coordinates, Common Maven Coordinates>>
-*** <<JPA-MetaModel, Setting Up Static Metamodel Generation>>
-*** <<JPA-Hibernate-Maven-Coordinates, Maven Coordinates (Hibernate ORM)>>
-*** <<JPA-Hibernate-Weaving, Setting Up Static Weaving (Hibernate ORM)>>
-*** <<JPA-Eclipselink-Maven-Coordinates, Maven Coordinates (Eclipselink)>>
-*** <<JPA-Eclipselink-Weaving, Setting Up Static Weaving (Eclipselink)>>
-** <<JPA-Configuration, Configuration>>
-** <<JPA-Usage, Usage>>
-** <<JPA-Examples, Examples>>
+* <<JTA, Jakarta Transactions (JTA)>>
+* <<JPA, Jakarta Persistence (JPA)>>
 * <<References, References>>
 
 == Overview [[Overview]]
@@ -64,16 +36,23 @@ Helidon MP comes with deep integration for three
 specification-defined, broadly persistence-related technologies that
 can be used together or separately:
 
-* <<DS, Named data sources>>
-* <<JTA, Jakarta Transactions (JTA)>>
-* <<JPA, Jakarta Persistence (JPA)>>
-
 Each integration's setup, configuration, and usage are described
 below.
 
 == Named Data Source Integration [[DS]]
 
-=== Overview
+* <<DS-Overview, Overview>>
+* <<DS-Setup, Project Setup>>
+** <<Setting Up a Connection Pool, Setting Up a Connection Pool>>
+** <<Setting Up a Database Driver, Setting Up a Database Driver>>
+* <<DS-Configuration, Configuration>>
+** <<DS-Configuration-Overview, Overview>>
+** <<Configuration Prefixes, Configuration Prefixes>>
+** <<DS-Configuration-Examples, Examples>>
+* <<DS-Usage, Usage>>
+
+
+=== Overview [[DS-Overview]]    
 
 Helidon MP's named data source integration allows you to safely inject
 managed
@@ -101,7 +80,12 @@ not exhaustive.
 
 ==== Setting Up a Connection Pool [[DS-CP-Project-Setup]]
 
-===== Overview
+* <<DS-CP-Overview, Overview>>
+* <<Setting Up the HikariCP Connection Pool, Setting Up the HikariCP Connection Pool>>
+* <<Setting Up the Oracle Universal Connection Pool, Setting Up the Oracle Universal Connection Pool>>
+
+
+===== Overview [[DS-CP-Overview]]
 
 Helidon MP's named data source integration requires a connection pool
 implementation.
@@ -142,7 +126,7 @@ managed]
 <1> The `scope` is `runtime`, indicating that the HikariCP integration
     will be available on the runtime classpath.
 
-===== Setting up the Oracle Universal Connection Pool [[DS-UCP-Project-Setup]]
+===== Setting Up the Oracle Universal Connection Pool [[DS-UCP-Project-Setup]]
 
 ====== Maven Coordinates (Oracle Universal Connection Pool) [[DS-UCP-Maven-Coordinates]]
 
@@ -169,7 +153,12 @@ managed]
 
 ==== Setting Up a Database Driver [[DS-Driver-Project-Setup]]
 
-===== Overview
+* <<DS-Driver-Project-Setup-Overview, Overview>>
+* <<DS-H2-Driver-Project-Setup, Setting Up H2>>
+* <<DS-Oracle-Driver-Project-Setup, Setting Up the Oracle JDBC Drivers>>
+
+
+===== Overview [[DS-Driver-Project-Setup-Overview]]
 
 Regardless of which connection pool you use, at the lowest level JDBC
 database driver classes are responsible for making any connections to
@@ -216,7 +205,7 @@ managed]
 <1> The `scope` is `runtime`, indicating that the H2
     JDBC driver classes will be available on the runtime classpath.
 
-===== Setting Up Oracle JDBC [[DS-Oracle-Driver-Project-Setup]]
+===== Setting Up the Oracle JDBC Drivers [[DS-Oracle-Driver-Project-Setup]]
 
 ====== Maven Coordinates (Oracle JDBC) [[DS-Oracle-Driver-Maven-Coordinates]]
 
@@ -257,7 +246,7 @@ managed]
 
 === Configuration [[DS-Configuration]]
 
-==== Overview
+==== Overview [[DS-Configuration-Overview]]
 
 Each connection pool supported by Helidon's named data source
 integration support is, itself, a `DataSource` that wraps a
@@ -427,9 +416,9 @@ javax:
 
 This example presumes you have:
 
-* <<DS-UCP-Project-Setup,set up the Oracle Universal Connection Pool>>
+* <<DS-UCP-Project-Setup,Set up the Oracle Universal Connection Pool>>
 
-* <<DS-Oracle-Driver-Project-Setup,set up Oracle JDBC>>
+* <<DS-Oracle-Driver-Project-Setup,Set up Oracle JDBC>>
 
 This example, in Java properties file format, configures an Oracle
 Universal Connection Pool-managed data source named `main` to
@@ -484,9 +473,9 @@ vendor-supplied `DataSource` it manages].
 
 This example presumes you have:
 
-* <<DS-HikariCP-Project-Setup,set up the HikariCP connection pool>>
+* <<DS-HikariCP-Project-Setup,Set up the HikariCP connection pool>>
 
-* <<DS-H2-Driver-Project-Setup,set up H2>>
+* <<DS-H2-Driver-Project-Setup,Set up H2>>
 
 This example, in Java properties file format, configures a
 HikariCP-managed data source named `test` to connect to an in-memory
@@ -525,7 +514,7 @@ found in
 https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[its
 javadoc].
 
-==== Usage [[DS-Usage]]
+=== Usage [[DS-Usage]]
 
 You use Helidon MP's named data source integration in the same way,
 regardless of your choices of vendor-supplied `DataSource` and
@@ -602,9 +591,45 @@ public SomeObject(@Named("test") DataSource ds) { // <3>
 
 <4> The injected argument will never be `null`.
 
+=== References [[DS-References]]
+
+* link:{jdk-javadoc-url}/java.sql/java/sql/package-summary.html[JDBC
+  4.3 Specification]
+
+* link:{hikaricp-base-url}#readme[HikariCP {version-lib-hikaricp}
+  documentation]
+
+* https://www.oracle.com/database/technologies/maven-central-guide.html[Developers
+  Guide For Oracle JDBC 21c on Maven Central]
+
+* link:{oracle-ucp-doc-base-url}/index.html[Oracle® Universal
+  Connection Pool Developer's Guide, Release 21c]
+
+* link:{oracle-ucp-javadoc-base-url}/index.html#[Oracle® Universal
+  Connection Pool Java API Reference, Release 21c]
+
+* link:{oracle-jdbc-doc-base-url}/index.html[Oracle® Database JDBC
+  Developer's Guide and Reference, Release 21c]
+
+* link:{oracle-jdbc-javadoc-base-url}/index.html[Oracle® Database JDBC
+  Java API Reference, Release 21c]
+
+* https://www.h2database.com/html/main.html[H2 Database Engine documentation]
+  
+
+
 == Jakarta Transactions (JTA) Integration [[JTA]]
 
-=== Overview
+* <<JTA-Overview, Overview>>
+* <<JTA-Maven-Coordinates, Maven Coordinates>>
+* <<JTA-Configuration, Configuration>>
+** <<JTA-Configuration-Overview, Overview>>
+** <<Configuring the Object Store Directory, Configuring the Object Store Directory>>
+** <<Configuring the Default Transaction Manager Timeout, Configuring the Default Transaction Manager Timeout>>
+* <<JTA-Usage, Usage>>
+* <<JTA-References, References>>
+
+=== Overview [[JTA-Overview]]
 
 Helidon MP's Jakarta Transactions integration integrates the
 https://www.narayana.io/[Naryana transaction engine], an
@@ -644,7 +669,7 @@ managed]
 
 === Configuration [[JTA-Configuration]]
 
-==== Overview
+==== Overview [[JTA-Configuration-Overview]]
 
 Helidon MP's Jakarta Transactions integration does not require
 configuration, but configuration is possible.  Because configuration
@@ -725,9 +750,25 @@ public String getGreeting(Integer id) {
     Persistence] object like a managed
     link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/entitymanager[`EntityManager`]).
 
+=== References [[JTA-References]]
+* link:{jakarta-transactions-spec-url}[Jakarta Transactions
+  {version-lib-jakarta-transaction-api} Specification]
+
+* link:{jakarta-transactions-javadoc-url}/[Jakarta Transactions
+  {version-lib-jakarta-transaction-api} API Reference]
+
 == Jakarta Persistence (JPA) [[JPA]]
 
-=== Overview
+* <<JPA-Overview, Overview>>
+* <<JPA-Setup, Project Setup>>
+** <<Setting Up a JPA Provider, Setting Up a JPA Provider>>
+* <<JPA-Configuration, Configuration>>
+** <<Persistence Unit, Persistence Unit>>
+* <<JPA-Usage, Usage>>
+* <<JPA-Examples, Examples>>
+* <<JPA-References, References>>
+
+=== Overview [[JPA-Overview]]
 
 Helidon MP's link:{jakarta-persistence-base-url}/[Jakarta Persistence]
 integration allows you to interact with Jakarta Persistence (JPA)
@@ -742,7 +783,7 @@ link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/p
 annotation.
 
 Jakarta Persistence is a Jakarta EE specification that describes,
-among other things, how its implementations:
+among other things, how it is implemented:
 
 1. Map Java objects to relational database tables
 
@@ -788,7 +829,16 @@ will need to understand:
 
 ==== Setting Up a JPA Provider
 
-===== Overview
+* <<JPA-Setup-Overview, Overview>>
+* <<Maven Coordinates (Common), Maven Coordinates (Common)>>
+* <<Setting Up Static Metamodel Generation, Setting Up Static Metamodel Generation>>
+* <<Maven Coordinates (Hibernate ORM), Maven Coordinates (Hibernate ORM)>>
+* <<Setting Up Static Weaving (Hibernate ORM), Setting Up Static Weaving (Hibernate ORM)>>
+* <<Maven Coordinates (Eclipselink), Maven Coordinates (Eclipselink)>>
+* <<Setting Up Static Weaving (Eclipselink), Setting Up Static Weaving (Eclipselink)>>
+
+
+===== Overview [[JPA-Setup-Overview]]
 
 While the Jakarta Persistence specification standardizes many aspects
 around programming and usage, it deliberately leaves many required
@@ -1118,6 +1168,9 @@ Your `src/main/resources/META-INF/persistence.xml` file must begin
 
 ==== Persistence Unit
 
+* <<Example: Persistence Unit Skeleton, Example: Persistence Unit Skeleton>>
+* <<JTA Data Source, JTA Data Source>>
+
 You list your application's persistence units as
 `<persistence-unit>` child elements of the enclosing `<persistence>`
 element.  Each `<persistence-unit>` element identifies a named
@@ -1355,45 +1408,8 @@ relational database tables, and how to perform other related tasks.
 
 * link:{helidon-github-tree-url}/examples/integrations/cdi/pokemons[JPA
   Pokemons Example]
-
-== References [[References]]
-
-* xref:../about/managing-dependencies.adoc[Managing Dependencies in Helidon MP]
-
-* xref:config/introduction.adoc[MicroProfile Config in Helidon MP]
-
-* link:{jdk-javadoc-url}/java.sql/java/sql/package-summary.html[JDBC
-  4.3 Specification]
-
-* link:{hikaricp-base-url}#readme[HikariCP {version-lib-hikaricp}
-  documentation]
-
-* https://www.oracle.com/database/technologies/maven-central-guide.html[Developers
-  Guide For Oracle JDBC 21c on Maven Central]
-
-* link:{oracle-ucp-doc-base-url}/index.html[Oracle® Universal
-  Connection Pool Developer's Guide, Release 21c]
-
-* link:{oracle-ucp-javadoc-base-url}/index.html#[Oracle® Universal
-  Connection Pool Java API Reference, Release 21c]
-
-* link:{oracle-jdbc-doc-base-url}/index.html[Oracle® Database JDBC
-  Developer's Guide and Reference, Release 21c]
-
-* link:{oracle-jdbc-javadoc-base-url}/index.html[Oracle® Database JDBC
-  Java API Reference, Release 21c]
-
-* https://www.h2database.com/html/main.html[H2 Database Engine documentation]
-
-* link:{jakarta-transactions-spec-url}[Jakarta Transactions
-  {version-lib-jakarta-transaction-api} Specification]
-
-* link:{jakarta-transactions-javadoc-url}/[Jakarta Transactions
-  {version-lib-jakarta-transaction-api} API Reference]
-
-* https://www.narayana.io/docs/project/index.html[Narayana Project Documentation]
-
-* https://www.narayana.io/docs/api/index.html[Narayana API Reference]
+  
+=== References [[JPA-References]]
 
 * link:{jakarta-persistence-spec-url}[Jakarta Persistence
   {persistence-lib-jakarta-persistence-api} Specification]
@@ -1405,3 +1421,14 @@ relational database tables, and how to perform other related tasks.
   ORM User Guide]
 
 * https://www.eclipse.org/eclipselink/documentation/[Eclipselink documentation]
+
+
+== References [[References]]
+
+* xref:../about/managing-dependencies.adoc[Managing Dependencies in Helidon MP]
+
+* xref:config/introduction.adoc[MicroProfile Config in Helidon MP]
+
+* https://www.narayana.io/docs/project/index.html[Narayana Project Documentation]
+
+* https://www.narayana.io/docs/api/index.html[Narayana API Reference]

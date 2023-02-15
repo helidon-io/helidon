@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,11 +26,10 @@ include::{rootdir}/includes/mp.adoc[]
 == Contents
 
 - <<Overview, Overview>>
-- <<AOT Supported Modules, AOT Supported Modules>>
+- <<Supported Modules, Supported Modules>>
 
 == Overview
-Helidon applications can be compiled into a native executable using GraalVM
-native image.
+Helidon applications can be compiled into a native executable using the GraalVM native-image command.
 
 When using applications created using the CLI, or when you configure Helidon
 application pom as a parent of your module, you can use the following steps to
@@ -38,14 +37,14 @@ build a native image from your application:
 
 1. Create an environment variable `GRAALVM_HOME` pointing to your installation of
     GraalVM with `native-image` installed
-2. Run Maven command `mvn clean package -Pnative-image`
-3. Execute the native executable created in `target` directory of your project
+2. Run the Maven command `mvn clean package -Pnative-image`
+3. Execute the native executable created in the `target` directory of your project
 
-== AOT Supported Modules
+== Supported Modules
 
-Some Helidon components are not (yet) supported in native image, some have
+Some Helidon components are not (yet) supported in the native image, some have
 restrictions. The following table lists all Helidon features and their support
-for native image.
+for the native image.
 
 .Helidon MP features in AOT
 [cols="^1,^2s,<6,<6"]
