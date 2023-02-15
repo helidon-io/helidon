@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -320,6 +321,39 @@ class DefaultTypeNameTest {
         assertThat(extendsName.fqName(), equalTo("? extends java.util.Map"));
         assertThat(extendsName.declaredName(), equalTo("java.util.Map"));
         assertThat(extendsName.name(), equalTo("java.util.Map"));
+    }
+
+    @Test
+    void testDefaultMethods() {
+        TypeName typeName = DefaultTypeName.create(Optional.class);
+        assertThat("isOptional() for: " + typeName.name(), typeName.isOptional(), is(true));
+        assertThat("isList() for: " + typeName.name(), typeName.isList(), is(false));
+        assertThat("isMap() for: " + typeName.name(), typeName.isMap(), is(false));
+        assertThat("isSet() for: " + typeName.name(), typeName.isSet(), is(false));
+
+        typeName = DefaultTypeName.create(Set.class);
+        assertThat("isOptional() for: " + typeName.name(), typeName.isOptional(), is(false));
+        assertThat("isList() for: " + typeName.name(), typeName.isList(), is(false));
+        assertThat("isMap() for: " + typeName.name(), typeName.isMap(), is(false));
+        assertThat("isSet() for: " + typeName.name(), typeName.isSet(), is(true));
+
+        typeName = DefaultTypeName.create(List.class);
+        assertThat("isOptional() for: " + typeName.name(), typeName.isOptional(), is(false));
+        assertThat("isList() for: " + typeName.name(), typeName.isList(), is(true));
+        assertThat("isMap() for: " + typeName.name(), typeName.isMap(), is(false));
+        assertThat("isSet() for: " + typeName.name(), typeName.isSet(), is(false));
+
+        typeName = DefaultTypeName.create(Map.class);
+        assertThat("isOptional() for: " + typeName.name(), typeName.isOptional(), is(false));
+        assertThat("isList() for: " + typeName.name(), typeName.isList(), is(false));
+        assertThat("isMap() for: " + typeName.name(), typeName.isMap(), is(true));
+        assertThat("isSet() for: " + typeName.name(), typeName.isSet(), is(false));
+
+        typeName = DefaultTypeName.create(String.class);
+        assertThat("isOptional() for: " + typeName.name(), typeName.isOptional(), is(false));
+        assertThat("isList() for: " + typeName.name(), typeName.isList(), is(false));
+        assertThat("isMap() for: " + typeName.name(), typeName.isMap(), is(false));
+        assertThat("isSet() for: " + typeName.name(), typeName.isSet(), is(false));
     }
 
 }

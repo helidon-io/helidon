@@ -46,57 +46,6 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
         this.values = Map.copyOf(map);
     }
 
-    @Override
-    public String toString() {
-        String result = getClass().getSimpleName() + "(typeName=" + typeName();
-        Optional<String> value = value();
-        if (!values.isEmpty() && value.isEmpty()) {
-            result += ", values=" + values();
-        } else if (value.isPresent()) {
-            result += ", value=" + value.orElse(null);
-        }
-        return result + ")";
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(typeName());
-    }
-
-    @Override
-    public boolean equals(Object another) {
-        if (!(another instanceof AnnotationAndValue)) {
-            return false;
-        }
-        if (!Objects.equals(typeName(), ((AnnotationAndValue) another).typeName())) {
-            return false;
-        }
-        if (!Objects.equals(values, ((DefaultAnnotationAndValue) another).values())) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public TypeName typeName() {
-        return typeName;
-    }
-
-    @Override
-    public Optional<String> value() {
-        return value("value");
-    }
-
-    @Override
-    public Optional<String> value(String name) {
-        return Optional.ofNullable(values.get(name));
-    }
-
-    @Override
-    public Map<String, String> values() {
-        return values;
-    }
-
     /**
      * Creates an instance for an annotation with no value.
      *
@@ -173,18 +122,12 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @return the result of the find
      */
     public static Optional<? extends AnnotationAndValue> findFirst(String annoTypeName,
-                                                         Collection<? extends AnnotationAndValue> coll) {
+                                                                   Collection<? extends AnnotationAndValue> coll) {
         assert (!annoTypeName.isBlank());
         return coll.stream()
                 .filter(it -> it.typeName().name().equals(annoTypeName))
                 .findFirst();
     }
-
-    @Override
-    public int compareTo(AnnotationAndValue other) {
-        return typeName().compareTo(other.typeName());
-    }
-
 
     /**
      * Creates a builder for {@link AnnotationAndValue}.
@@ -195,6 +138,61 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
         return new Builder();
     }
 
+    @Override
+    public String toString() {
+        String result = getClass().getSimpleName() + "(typeName=" + typeName();
+        Optional<String> value = value();
+        if (!values.isEmpty() && value.isEmpty()) {
+            result += ", values=" + values();
+        } else if (value.isPresent()) {
+            result += ", value=" + value.orElse(null);
+        }
+        return result + ")";
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(typeName(), values);
+    }
+
+    @Override
+    public boolean equals(Object another) {
+        if (!(another instanceof AnnotationAndValue)) {
+            return false;
+        }
+        if (!Objects.equals(typeName(), ((AnnotationAndValue) another).typeName())) {
+            return false;
+        }
+        if (!Objects.equals(values, ((DefaultAnnotationAndValue) another).values())) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public TypeName typeName() {
+        return typeName;
+    }
+
+    @Override
+    public Optional<String> value() {
+        return value("value");
+    }
+
+    @Override
+    public Optional<String> value(String name) {
+        return Optional.ofNullable(values.get(name));
+    }
+
+    @Override
+    public Map<String, String> values() {
+        return values;
+    }
+
+    @Override
+    public int compareTo(AnnotationAndValue other) {
+        return typeName().compareTo(other.typeName());
+    }
 
     /**
      * Fluent API builder for {@link DefaultAnnotationAndValue}.

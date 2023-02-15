@@ -63,6 +63,7 @@ public class DefaultTypeName implements TypeName {
         return Objects.hashCode(name());
     }
 
+    // TODO equals, hashCode and compareTo are not correct
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof TypeName)) {

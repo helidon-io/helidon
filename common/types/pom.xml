@@ -32,6 +32,12 @@
         Abstraction of language types, that can be used during annotation processing and at runtime instead of reflection.
     </description>
 
+    <properties>
+        <!-- Used by modules that are backward compatible with Java 11 -->
+        <version.java>11</version.java>
+    </properties>
+
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>

@@ -59,8 +59,8 @@ public interface AnnotationAndValue {
      * @return true if our value is present and non-blank
      */
     default boolean hasNonBlankValue() {
-        Optional<String> val = value();
-        return val.isPresent() && !val.get().isBlank();
+        return value()
+                .map(it -> !it.isBlank())
+                .orElse(false);
     }
-
 }

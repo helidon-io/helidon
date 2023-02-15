@@ -96,7 +96,7 @@ public class DefaultTypedElementName implements TypedElementName {
 
     @Override
     public int hashCode() {
-        return System.identityHashCode(typeName());
+        return Objects.hash(typeName(), elementName(), elementKind(), annotations());
     }
 
     @Override

@@ -134,7 +134,8 @@ public interface TypeName extends Comparable<TypeName> {
     String declaredName();
 
     /**
-     * The fully qualified type name. This will include the generic portion of the declaration, as well as any array declaration, etc.
+     * The fully qualified type name. This will include the generic portion of the declaration, as well as any array
+     * declaration, etc.
      *
      * @return the fully qualified name which includes the use of generics/parameterized types, arrays, etc.
      */
