@@ -16,6 +16,9 @@
 
 package io.helidon.nima.webclient.http1;
 
+import java.util.Objects;
+
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.HttpClient;
 import io.helidon.nima.webclient.WebClient;
@@ -47,57 +50,113 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
         }
 
         /**
-         * Maximum Header Size.
+         * Configure the maximum allowed header size of the response.
          *
-         * @param maxHeaderSize Maximum Header Size
+         * @param maxHeaderSize maximum header size
          * @return updated builder
          */
+        @ConfiguredOption("16384")
         public Http1ClientBuilder maxHeaderSize(int maxHeaderSize) {
             this.maxHeaderSize = maxHeaderSize;
             return this;
         }
 
+        /**
+         * Configure the maximum allowed length of the status line from the response.
+         *
+         * @param  maxStatusLineLength maximum status line length
+         * @return updated builder
+         */
+        @ConfiguredOption("256")
         public Http1ClientBuilder maxStatusLineLength(int maxStatusLineLength) {
             this.maxStatusLineLength = maxStatusLineLength;
             return this;
         }
 
+        /**
+         * Sets whether Expect-100-Continue header is sent to verify server availability for a chunked transfer.
+         * <p>
+         *     Defaults to {@code true}.
+         * </p>
+         *
+         * @param  sendExpect100Continue whether Expect:100-Continue header should be sent on chunked transfers
+         * @return updated builder
+         */
+        @ConfiguredOption("true")
         public Http1ClientBuilder sendExpect100Continue(boolean sendExpect100Continue) {
             this.sendExpect100Continue = sendExpect100Continue;
             return this;
         }
 
+        /**
+         * Sets whether the header format is validated or not.
+         * <p>
+         *     Defaults to {@code true}.
+         * </p>
+         *
+         * @param validateHeaders whether header validation should be enabled
+         * @return updated builder
+         */
+        @ConfiguredOption("true")
         public Http1ClientBuilder validateHeaders(boolean validateHeaders) {
             this.validateHeaders = validateHeaders;
             return this;
         }
 
+        /**
+         * Configure the default {@link MediaContext}.
+         *
+         * @param mediaContext media context for this client
+         * @return updated builder
+         */
+        @ConfiguredOption("io.helidon.nima.http.media.MediaContext")
         public Http1ClientBuilder mediaContext(MediaContext mediaContext) {
+            Objects.requireNonNull(mediaContext);
             this.mediaContext = mediaContext;
             return this;
         }
 
         /**
-         * Configured Max Header Size.
+         * Maximum allowed header size of the response.
          *
-         * @return maxHeaderSize Maximum Header Size
+         * @return maximum header size
          */
         public int maxHeaderSize() {
             return maxHeaderSize;
         }
 
+        /**
+         * Maximum allowed length of the status line from the response.
+         *
+         * @return maximum status line length
+         */
         public int maxStatusLineLength() {
             return maxStatusLineLength;
         }
 
+        /**
+         * Indicates whether Expect:100-Continue header will be sent to verify server availability for chunked transfers.
+         *
+         * @return whether to send Expect:100-Continue header for chunked transfers
+         */
         public boolean sendExpect100Continue() {
             return sendExpect100Continue;
         }
 
+        /**
+         * Indicates whether the header format is validated or not.
+         *
+         * @return whether to validate headers
+         */
         public boolean validateHeaders() {
             return validateHeaders;
         }
 
+        /**
+         * Media context of this client.
+         *
+         * @return media context, never {@code null}
+         */
         public MediaContext mediaContext() {
             return mediaContext;
         }

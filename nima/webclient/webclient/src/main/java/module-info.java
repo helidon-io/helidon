@@ -32,6 +32,7 @@ import io.helidon.nima.webclient.spi.DnsResolverProvider;
 )
 module io.helidon.nima.webclient {
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.uri;
     requires transitive io.helidon.nima.common.tls;
