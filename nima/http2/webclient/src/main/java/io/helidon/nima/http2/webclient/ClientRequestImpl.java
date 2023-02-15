@@ -39,7 +39,9 @@ import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ClientRequest;
 import io.helidon.nima.webclient.ConnectionKey;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.UriHelper;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
 
 class ClientRequestImpl implements Http2ClientRequest {
     private static final Map<ConnectionKey, Http2ClientConnectionHandler> CHANNEL_CACHE = new ConcurrentHashMap<>();
@@ -190,6 +192,11 @@ class ClientRequestImpl implements Http2ClientRequest {
         return this;
     }
 
+    @Override
+    public Http2ClientRequest proxy(Proxy proxy) {
+        throw new UnsupportedOperationException("Proxy is not supported");
+    }
+
     UriHelper uriHelper() {
         return uri;
     }
@@ -231,7 +238,7 @@ class ClientRequestImpl implements Http2ClientRequest {
                                                             uri.port(),
                                                             tls,
                                                             client.dnsResolver(),
-                                                            client.dnsAddressLookup());
+                                                            client.dnsAddressLookup(), null);
 
             // this statement locks all threads - must not do anything complicated (just create a new instance)
             return CHANNEL_CACHE.computeIfAbsent(connectionKey,

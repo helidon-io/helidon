@@ -51,6 +51,7 @@ import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ConnectionKey;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.UriHelper;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -78,6 +79,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private Tls tls;
     private String uriTemplate;
     private ClientConnection connection;
+    private Proxy proxy;
 
     ClientRequestImpl(Http1ClientImpl client,
                       Http.Method method,
@@ -327,8 +329,8 @@ class ClientRequestImpl implements Http1ClientRequest {
         }
 
         if (keepAlive) {
-            // todo add timeouts, proxy and tls to the key
-            KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(), uri.authority(), tls);
+            // todo add timeouts and tls to the key
+            KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(), uri.authority(), tls, proxy);
             var connectionQueue = CHANNEL_CACHE.computeIfAbsent(keepAliveKey,
                                                                 it -> new ConcurrentLinkedDeque<>());
 
@@ -344,7 +346,8 @@ class ClientRequestImpl implements Http1ClientRequest {
                                                                          uri.port(),
                                                                          tls,
                                                                          client.dnsResolver(),
-                                                                         client.dnsAddressLookup())).connect();
+                                                                         client.dnsAddressLookup(),
+                                                                         proxy)).connect();
             } else {
                 if (LOGGER.isLoggable(DEBUG)) {
                     LOGGER.log(DEBUG, String.format("[%s] client connection obtained %s",
@@ -358,7 +361,8 @@ class ClientRequestImpl implements Http1ClientRequest {
                                                                                      uri.port(),
                                                                                      tls,
                                                                                      client.dnsResolver(),
-                                                                                     client.dnsAddressLookup())).connect();
+                                                                                     client.dnsAddressLookup(),
+                                                                                     proxy)).connect();
         }
         return connection;
     }
@@ -377,7 +381,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         return bos.toByteArray();
     }
 
-    private record KeepAliveKey(String scheme, String authority, Tls tlsConfig) {
+    private record KeepAliveKey(String scheme, String authority, Tls tlsConfig, Proxy proxy) {
     }
 
     private static class ClientConnectionOutputStream extends OutputStream {
@@ -434,5 +438,11 @@ class ClientRequestImpl implements Http1ClientRequest {
                 writer.writeNow(BufferData.create(bytes, offset, length));
             }
         }
+    }
+
+    @Override
+    public Http1ClientRequest proxy(Proxy proxy) {
+        this.proxy = proxy;
+        return this;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Queue;
 
@@ -103,33 +104,66 @@ class Http1ClientConnection implements ClientConnection {
         return socket != null && socket.isConnected();
     }
 
+    private InetSocketAddress inetSocketAddress() {
+        DnsResolver dnsResolver = connectionKey.dnsResolver();
+        if (dnsResolver.useDefaultJavaResolver()) {
+            return new InetSocketAddress(connectionKey.host(), connectionKey.port());
+        } else {
+            InetAddress address = dnsResolver.resolveAddress(connectionKey.host(), connectionKey.dnsAddressLookup());
+            return new InetSocketAddress(address, connectionKey.port());
+        }
+    }
+
+    private int proxyTunneling(InetSocketAddress remoteAddress) throws IOException {
+        StringBuilder httpConnect = new StringBuilder();
+        httpConnect.append("CONNECT ").append(remoteAddress.getHostName())
+        .append(":").append(remoteAddress.getPort()).append(" HTTP/1.1").append("\r\n");
+        httpConnect.append("Host: ").append(remoteAddress.getHostName())
+        .append(":").append(remoteAddress.getPort()).append("\r\n");
+//        httpConnect.append("Proxy-Connection: Keep-Alive").append("\r\n");
+        httpConnect.append("Accept: */*").append("\r\n");
+        if (connectionKey.proxy().username().isPresent()
+                && connectionKey.proxy().password().isPresent()) {
+            byte[] bytes = new StringBuilder().append(connectionKey.proxy().username().get())
+                    .append(":").append(connectionKey.proxy().password().get()).toString().getBytes();
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+            httpConnect.append("Authorization: Basic ").append(base64).append("\r\n");
+        }
+        httpConnect.append("\r\n");
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG, String.format("Proxy client connected %s %s",
+                                            connectionKey.proxy().address(),
+                                            Thread.currentThread().getName()));
+        }
+        socket.getOutputStream().write(httpConnect.toString().getBytes());
+        socket.getOutputStream().flush();
+        int read;
+        byte[] buffer = new byte[1024];
+        StringBuilder response = new StringBuilder();
+        String firstLine = null;
+        int responseCode = -1;
+        while ((read = socket.getInputStream().read(buffer)) != -1) {
+            String resp = new String(buffer, 0, read);
+            if (firstLine == null) {
+                firstLine = resp.split("\r\n")[0];
+                responseCode = Integer.parseInt(firstLine.split(" ")[1]);
+            }
+            response.append(resp);
+            if (resp.endsWith("\r\n\r\n")) {
+                break;
+            }
+        }
+        return responseCode;
+    }
+
     Http1ClientConnection connect() {
         try {
-            SSLSocket sslSocket = connectionKey.tls() == null ? null : connectionKey.tls().createSocket("http/1.1");
-
-            socket = sslSocket == null ? new Socket() : sslSocket;
+            socket = new Socket();
             socket.setSoTimeout((int) options.readTimeout().toMillis());
             options.configureSocket(socket);
-            DnsResolver dnsResolver = connectionKey.dnsResolver();
-            if (dnsResolver.useDefaultJavaResolver()) {
-                socket.connect(new InetSocketAddress(connectionKey.host(), connectionKey.port()),
-                               (int) options.connectTimeout().toMillis());
-            } else {
-                InetAddress address = dnsResolver.resolveAddress(connectionKey.host(), connectionKey.dnsAddressLookup());
-                socket.connect(new InetSocketAddress(address, connectionKey.port()), (int) options.connectTimeout().toMillis());
-            }
-
+            InetSocketAddress remoteAddress = inetSocketAddress();
+            EstablishConnection.configure(this, remoteAddress);
             channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
-
-            if (sslSocket == null) {
-                helidonSocket = PlainSocket.client(socket, channelId);
-            } else {
-                sslSocket.startHandshake();
-                helidonSocket = TlsSocket.client(sslSocket, channelId);
-                if (LOGGER.isLoggable(TRACE)) {
-                    debugTls(sslSocket);
-                }
-            }
         } catch (IOException e) {
             throw new UncheckedIOException("Could not connect to " + connectionKey.host() + ":" + connectionKey.port(), e);
         }
@@ -231,5 +265,68 @@ class Http1ClientConnection implements ClientConnection {
         }
 
         return String.join(", ", certs);
+    }
+
+    private static enum EstablishConnection {
+        PLAIN {
+            @Override
+            protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
+                connection.socket.connect(remoteAddress, (int) connection.options.connectTimeout().toMillis());
+                connection.helidonSocket = PlainSocket.client(connection.socket, connection.channelId);
+            }
+        },
+        HTTPS {
+            @Override
+            protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
+                SSLSocket sslSocket = connection.connectionKey.tls().createSocket("http/1.1");
+                connection.socket = sslSocket;
+                connection.socket.connect(remoteAddress, (int) connection.options.connectTimeout().toMillis());
+                sslSocket.startHandshake();
+                connection.helidonSocket = TlsSocket.client(sslSocket, connection.channelId);
+                if (LOGGER.isLoggable(TRACE)) {
+                    connection.debugTls(sslSocket);
+                }
+            }
+        },
+        PROXY_PLAIN {
+            @Override
+            protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
+                connection.socket.connect(connection.connectionKey.proxy().address(), (int) connection.options.connectTimeout().toMillis());
+                int responseCode = connection.proxyTunneling(remoteAddress);
+                if (responseCode != 200) {
+                    throw new IllegalStateException("Proxy sent wrong HTTP response code: " + responseCode);
+                }
+                connection.helidonSocket = PlainSocket.client(connection.socket, connection.channelId);
+            }
+        },
+        PROXY_HTTPS {
+            @Override
+            protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
+                connection.socket.connect(connection.connectionKey.proxy().address(), (int) connection.options.connectTimeout().toMillis());
+                int responseCode = connection.proxyTunneling(remoteAddress);
+                if (responseCode != 200) {
+                    throw new IllegalStateException("Proxy sent wrong HTTP response code: " + responseCode);
+                }
+                SSLSocket sslSocket = connection.connectionKey.tls().createSocket("http/1.1", connection.socket, remoteAddress);
+                connection.socket = sslSocket;
+                sslSocket.startHandshake();
+                connection.helidonSocket = TlsSocket.client(sslSocket, connection.channelId);
+                if (LOGGER.isLoggable(TRACE)) {
+                    connection.debugTls(sslSocket);
+                }
+            }
+        };
+
+        protected abstract void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException;
+
+        static void configure(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
+            EstablishConnection connector = null;
+            if (connection.connectionKey.proxy() != null) {
+                connector = connection.connectionKey.tls() != null ? PROXY_HTTPS : PROXY_PLAIN;
+            } else {
+                connector = connection.connectionKey.tls() != null ? HTTPS : PLAIN;
+            }
+            connector.connect(connection, remoteAddress);
+        }
     }
 }

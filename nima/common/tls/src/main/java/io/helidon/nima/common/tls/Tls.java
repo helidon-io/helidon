@@ -18,6 +18,8 @@ package io.helidon.nima.common.tls;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -169,6 +171,26 @@ public abstract sealed class Tls permits Tls.ExplicitContextTlsConfig, Tls.TlsCo
             sslParameters.setApplicationProtocols(new String[] {alpnProtocol});
             socket.setSSLParameters(sslParameters);
             return socket;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Create a SSLSocket for the chosen protocol and the given socket.
+     *
+     * @param alpnProtocol protocol to use
+     * @param socket existing socket
+     * @param address where SSL socket will connect
+     * @return a new socket ready for TLS communication
+     */
+    public SSLSocket createSocket(String alpnProtocol, Socket socket, InetSocketAddress address) {
+        try {
+            SSLSocket sslSocket = (SSLSocket) sslSocketFactory
+                    .createSocket(socket, address.getHostName(), address.getPort(), true);
+            sslParameters.setApplicationProtocols(new String[] {alpnProtocol});
+            sslSocket.setSSLParameters(sslParameters);
+            return sslSocket;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
