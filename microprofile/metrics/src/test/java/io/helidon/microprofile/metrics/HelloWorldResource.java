@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,10 @@ import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
@@ -52,6 +54,9 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 @Counted
 public class HelloWorldResource {
 
+    static final String CLASS_INJECTED_METRIC_NAME = "class-injected";
+    static final String PARAMETER_INJECTED_METRIC_NAME = "param-injected";
+    static final String PARAMETER_INJECTED_METRIC_NAME_2 = "param-injected-2";
     private static final Logger LOGGER = Logger.getLogger(HelloWorldResource.class.getName());
 
     static final String SLOW_RESPONSE = "At last";
@@ -106,6 +111,25 @@ public class HelloWorldResource {
     @Inject
     @RegistryType(type = MetricRegistry.Type.VENDOR)
     private MetricRegistry vendorRegistry;
+
+    @Inject
+    @Metric(name = CLASS_INJECTED_METRIC_NAME,
+            description = "explicitly-named absolute class-injected metric",
+            displayName = "class-injected metric",
+            absolute = true)
+    Counter classInjectedCounter;
+
+    @Inject
+    @Metric(description = "automatically-named absolute class-injected metric",
+            absolute = true)
+    Counter autoNamedAbsoluteClassInjectedCounter;
+
+    @Inject
+    @Metric(description = "automatically-named relative class-injected metric")
+    Counter autoNamedRelativeClassInjectedCounter;
+
+    @Inject
+    private Counter bareCounter;
 
     public HelloWorldResource() {
 
@@ -234,6 +258,18 @@ public class HelloWorldResource {
     public static class HelloWorldMappedException extends Exception {}
 
     public static class HelloWorldUnmappedException extends Exception {}
+
+    @Inject
+    public void useInjectedParameter(@Metric(name = PARAMETER_INJECTED_METRIC_NAME,
+                                             absolute = true,
+                                             description = "explicitly-named absolute parameter-injected metric")
+                                     Counter explicitParamInjectedCounter,
+                                     @Metric(name = PARAMETER_INJECTED_METRIC_NAME_2,
+                                             description = "automatically-named relative parameter-injected metric",
+                                             tags = {"t1=v1", "t2=v2"})
+                                     Counter autoNamedParamInjectedCounter) {
+
+    }
 
 
     private long inflightRequestsCount() {

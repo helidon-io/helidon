@@ -17,7 +17,6 @@
 package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
@@ -26,15 +25,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.enterprise.inject.spi.Annotated;
+import jakarta.enterprise.inject.spi.AnnotatedField;
 import jakarta.enterprise.inject.spi.AnnotatedMember;
+import jakarta.enterprise.inject.spi.AnnotatedParameter;
 import jakarta.enterprise.inject.spi.AnnotatedType;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import jakarta.enterprise.inject.spi.InjectionPoint;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.annotation.Metric;
 
 /**
  * Class MetricUtil.
@@ -103,12 +109,14 @@ final class MetricUtil {
      * @param matchingType type to match
      * @param explicitName name
      * @param absolute if absolute
-     * @param <E> type of element
      *
      * @return name of the metric
      */
-    static <E extends Member & AnnotatedElement>
-    String getMetricName(Member element, Class<?> clazz, MatchingType matchingType, String explicitName, boolean absolute) {
+    static String getMetricName(Member element,
+                                Class<?> clazz,
+                                MatchingType matchingType,
+                                String explicitName,
+                                boolean absolute) {
         String result;
         if (matchingType == MatchingType.METHOD) {
             result = explicitName == null || explicitName.isEmpty()
@@ -145,25 +153,90 @@ final class MetricUtil {
         return result;
     }
 
-    private static MetricRegistry getMetricRegistry() {
-        return RegistryProducer.getDefaultRegistry();
+    /**
+     * Computes the proper metric name for an annotated parameter, accounting for any {@code Metric} annotation that might be
+     * present on the parameter.
+     *
+     * @param annotatedParameter annotated parameter
+     * @return metric name
+     */
+    static String metricName(AnnotatedParameter<?> annotatedParameter) {
+        Member member = annotatedParameter.getDeclaringCallable().getJavaMember();
+        return metricName(member.getDeclaringClass().getName() + ".",
+                          annotatedParameter.getJavaParameter().getName(),
+                          annotatedParameter);
     }
 
+    /**
+     * Computes the proper metric name for an annotated field, accounting for any {@code Metric} annotation that might be
+     * present on the field.
+     *
+     * @param annotatedField annoated field
+     * @return metric name
+     */
+    static String metricName(AnnotatedField<?> annotatedField) {
+        return metricName(annotatedField.getJavaMember().getDeclaringClass().getName() + ".",
+                          annotatedField.getJavaMember().getName(),
+                          annotatedField);
+    }
+
+    static String metricName(Metric metricAnno, InjectionPoint ip) {
+        return prefix(metricAnno, ip) + shortName(metricAnno, ip) + ctorSuffix(ip);
+    }
+
+    private static String metricName(String prefixFromDeclaration, String suffixFromDeclaration, Annotated annotated) {
+        String prefix = prefixFromDeclaration;
+        String suffix = suffixFromDeclaration;
+        if (annotated.isAnnotationPresent(Metric.class)) {
+            Metric metricAnno = annotated.getAnnotation(Metric.class);
+            if (metricAnno.absolute()) {
+                prefix = "";
+            }
+            if (!metricAnno.name().isEmpty()) {
+                suffix = metricAnno.name();
+            }
+        }
+        return prefix + suffix;
+    }
     static String getElementName(Member element, Class<?> clazz) {
         return element instanceof Constructor ? clazz.getSimpleName() : element.getName();
     }
 
+    static Tag[] tags(Metric metricAnno) {
+        return metricAnno != null ? tags(metricAnno.tags()) : new Tag[0];
+    }
+
     static Tag[] tags(String[] tagStrings) {
+        if (tagStrings == null) {
+            return new Tag[0];
+        }
         final List<Tag> result = new ArrayList<>();
-        for (int i = 0; i < tagStrings.length; i++) {
-            final int eq = tagStrings[i].indexOf("=");
+        for (String tagString : tagStrings) {
+            final int eq = tagString.indexOf("=");
             if (eq > 0) {
-                final String tagName = tagStrings[i].substring(0, eq);
-                final String tagValue = tagStrings[i].substring(eq + 1);
+                final String tagName = tagString.substring(0, eq);
+                final String tagValue = tagString.substring(eq + 1);
                 result.add(new Tag(tagName, tagValue));
             }
         }
-        return result.toArray(new Tag[result.size()]);
+        return result.toArray(new Tag[0]);
+    }
+
+    static String normalize(Metric metricAnno, Function<Metric, String> fn) {
+        return metricAnno != null ? normalize(fn.apply(metricAnno)) : null;
+    }
+
+    static String normalize(String value) {
+        return value == null || value.isEmpty() ? null : value.trim();
+    }
+
+    static String chooseDefaultUnit(MetricType metricType) {
+        return switch (metricType) {
+            case METERED -> MetricUnits.PER_SECOND;
+            case TIMER -> MetricUnits.NANOSECONDS;
+            case SIMPLE_TIMER -> MetricUnits.SECONDS;
+            default -> MetricUnits.NONE;
+        };
     }
 
     enum MatchingType {
@@ -174,14 +247,65 @@ final class MetricUtil {
         /**
          * Class.
          */
-        CLASS
+        CLASS,
+        /**
+         * Field.
+         */
+        FIELD,
+        /**
+         * Parameter.
+         */
+        PARAMETER
     }
 
+    static boolean checkConsistentMetadata(
+            String metricName,
+            Metadata existingMetadata,
+            MetricType metricType,
+            Metric metricAnnotation) {
+
+        return isConsistent(existingMetadata.getName(), metricName)
+               && existingMetadata.getTypeRaw().equals(metricType)
+               && (metricAnnotation == null
+                   || isConsistent(existingMetadata.getDescription(), metricAnnotation.description())
+                      && isConsistent(existingMetadata.getDisplayName(), metricAnnotation.displayName())
+                      && isConsistentUnit(existingMetadata.getUnit(), metricAnnotation.unit()));
+    }
+
+    private static boolean isConsistent(String existingValue, String metricAnnoValue) {
+        // Treat empty (defaulted) @Metric String values as "match-anything."
+        return metricAnnoValue.isEmpty() || existingValue.equals(metricAnnoValue);
+    }
+
+    private static boolean isConsistentUnit(String existingValue, String metricAnnoValue) {
+        return metricAnnoValue.equals(MetricUnits.NONE) || existingValue.equals(metricAnnoValue);
+    }
+
+    private static String prefix(Metric metricAnno, InjectionPoint ip) {
+        boolean isAbsolute = metricAnno != null && metricAnno.absolute();
+
+        return isAbsolute ? "" : ip.getMember().getDeclaringClass().getName() + ".";
+    }
+
+    private static String shortName(Metric metricAnno, InjectionPoint ip) {
+        if (metricAnno != null && !metricAnno.name().isEmpty()) {
+            return metricAnno.name();
+        }
+        return ip.getAnnotated() instanceof AnnotatedParameter
+                ? ((AnnotatedParameter<?>) ip.getAnnotated()).getJavaParameter().getName()
+                : ip.getMember().getName();
+    }
+
+    private static String ctorSuffix(InjectionPoint ip) {
+        return ip.getMember() instanceof Constructor ? ".new" : "";
+    }
     private static MatchingType matchingType(Annotated annotated) {
         return annotated instanceof AnnotatedMember
-                ? (((AnnotatedMember) annotated).getJavaMember() instanceof Executable
+                ? (((AnnotatedMember<?>) annotated).getJavaMember() instanceof Executable
                     ? MatchingType.METHOD : MatchingType.CLASS)
-                : MatchingType.CLASS;
+                : annotated instanceof AnnotatedParameter
+                        ? MatchingType.PARAMETER
+                        : MatchingType.CLASS;
     }
 
     static class LookupResult<A extends Annotation> {
