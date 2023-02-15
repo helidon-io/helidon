@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
@@ -39,12 +40,17 @@ import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static io.helidon.microprofile.metrics.HelloWorldResource.MESSAGE_SIMPLE_TIMER;
+import static io.helidon.microprofile.metrics.HelloWorldResource.PARAMETER_INJECTED_METRIC_NAME;
+import static io.helidon.microprofile.metrics.HelloWorldResource.PARAMETER_INJECTED_METRIC_NAME_2;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
@@ -95,6 +101,112 @@ class HelloWorldTest {
     @BeforeEach
     public void registerCounter() {
         MetricsMpServiceTest.registerCounter(registry, "helloCounter");
+    }
+
+    @Test
+    @Order(1)
+    void checkExplicitlyNamedAbsoluteClassInjection() {
+        checkInjectedRegistration(HelloWorldResource.CLASS_INJECTED_METRIC_NAME,
+                                  null,
+                                  "explicitly-named absolute class-injected");
+    }
+
+    @Test
+    @Order(1)
+    void checkAutomaticallylNamedAbsoluteClassInjection() throws NoSuchFieldException {
+        checkInjectedRegistration("autoNamedAbsoluteClassInjectedCounter",
+                                  null,
+                                  "automatically-named absolute class-injected");
+    }
+
+    @Test
+    @Order(1)
+    void checkAutomaticallyNamedRelativeClassInjection() {
+        checkInjectedRegistration(HelloWorldResource.class.getName() + ".autoNamedRelativeClassInjectedCounter",
+                                  null,
+                                  "automatically-named relative class-injected");
+    }
+
+    @Test
+    @Order(1)
+    void checkExplicitlyNamedAbsoluteParameterInjection() {
+        checkInjectedRegistration(PARAMETER_INJECTED_METRIC_NAME,
+                                  null,
+                                  "explicitly-named absolute parameter-injected");
+    }
+
+    @Test
+    @Order(1)
+    void checkAutomaticallyNamedRelativeParameterInjection() {
+        checkInjectedRegistration(HelloWorldResource.class.getName()
+                                          + "."
+                                          + PARAMETER_INJECTED_METRIC_NAME_2,
+                                  new Tag[] {new Tag("t1", "v1"), new Tag("t2", "v2")},
+                                  "automatically-named relative parameter-injected");
+    }
+
+    @Test
+    @Order(1) // Run before all others so no resource classes are realized (which can trigger metrics registration from producers)
+    void checkInjectedMetricRegistration() {
+
+        checkInjectedRegistration(HelloWorldResource.CLASS_INJECTED_METRIC_NAME,
+                                  null,
+                                  "explicitly-named absolute class-injected");
+    }
+
+    @Test
+    @Order(1)
+    void checkInjectedMetricRegistrationWithoutMetricAnno() {
+        checkInjectedRegistration(HelloWorldResource.class.getName() + ".bareCounter",
+                                  null,
+                                  null);
+    }
+
+    private Counter checkInjectedRegistration(String metricName,
+                                              Tag[] tags,
+                                              String expectedDesc) {
+        return checkInjectedRegistration(metricName, tags, expectedDesc, 0);
+    }
+
+    private Counter checkInjectedRegistration(String metricName,
+                                              Tag[] tags,
+                                              String expectedDesc,
+                                              long expectedValue) {
+
+        if (tags == null) {
+            tags = new Tag[0];
+        }
+
+        Metadata metadataForClassInjectedExplicitlyNamedCounter = registry.getMetadata()
+                .get(metricName);
+        assertThat("Metadata for " + metricName,
+                   metadataForClassInjectedExplicitlyNamedCounter, is(notNullValue()));
+        if (expectedDesc != null) {
+            assertThat("Description for " + metricName,
+                       metadataForClassInjectedExplicitlyNamedCounter.getDescription(),
+                       containsString(expectedDesc));
+        } else {
+            assertThat("Description for " + metricName,
+                       metadataForClassInjectedExplicitlyNamedCounter.getDescription(),
+                       isEmptyString());
+        }
+        // Look for the counter based on only the name. Save matching metric IDs to make sure
+        // they (it) match the expected tags.
+
+        Map<MetricID, Counter> sameNamedCounters = registry.getCounters((id, metric) ->
+                                                                                id.getName().equals(metricName));
+        // We expect only one match because of the way we set up the test annotations, and
+        // its tags should match what we expect.
+        assertThat("Number of counters matching " + metricName,
+                   sameNamedCounters.size(), is(1));
+        Map.Entry<MetricID, Counter> matchedEntry = sameNamedCounters.entrySet().iterator().next();
+        assertThat("Tags for " + metricName,
+                   matchedEntry.getKey().getTagsAsArray(),
+                   is(tags));
+        assertThat("Value for " + metricName,
+                   matchedEntry.getValue().getCount(),
+                   is(expectedValue));
+        return matchedEntry.getValue();
     }
 
     @Test

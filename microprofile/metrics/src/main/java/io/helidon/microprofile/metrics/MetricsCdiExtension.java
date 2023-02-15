@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,7 +47,6 @@ import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
 import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
@@ -59,11 +60,14 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.Stereotype;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.AnnotatedCallable;
+import jakarta.enterprise.inject.spi.AnnotatedField;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedParameter;
 import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
@@ -98,6 +102,7 @@ import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.Metric;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
@@ -180,7 +185,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     private boolean restEndpointsMetricsEnabled = REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE;
 
     private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();
-    private final List<RegistrationPrep> annotatedSites = new ArrayList<>();
+    private final List<RegistrationPrep.InterceptRegistrationPrep<?, ?>> interceptSites = new ArrayList<>();
+    private final List<RegistrationPrep.InjectRegistrationPrep> injectSites = new ArrayList<>();
 
     private Errors.Collector errors = Errors.collector();
 
@@ -194,8 +200,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     private final List<MetricRegistrationObserver> metricRegistrationObservers = new ArrayList<>();
 
     private final Map<Executable, List<MetricAnnotationDiscovery>> metricAnnotationDiscoveriesByExecutable = new HashMap<>();
-
-    @SuppressWarnings("unchecked")
 
     // records stereotype annotations which have metrics annotations inside them
     private final Map<Class<?>, StereotypeMetricsInfo> stereotypeMetricsInfo = new HashMap<>();
@@ -238,22 +242,32 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         metricRegistrationObservers.add(metricRegistrationObserver);
     }
 
-    private static <E extends Member & AnnotatedElement> void recordAnnotatedSite(
-            List<RegistrationPrep> sites,
+    private static <E extends Member & AnnotatedElement> void recordInterceptSite(
+            List<RegistrationPrep.InterceptRegistrationPrep<?, ?>> sites,
             E element,
             Class<?> annotatedClass,
             LookupResult<? extends Annotation> lookupResult,
             Executable executable) {
 
         Annotation annotation = lookupResult.getAnnotation();
-        RegistrationPrep registrationPrep = RegistrationPrep
+        var registrationPrep = RegistrationPrep
                 .create(annotation, element, annotatedClass, lookupResult.getType(), executable);
         sites.add(registrationPrep);
     }
 
-    private void registerMetricsForAnnotatedSites() {
+    private void recordInjectedField(AnnotatedField<?> annotatedField) {
+        RegistrationPrep.create(annotatedField, MetricsCdiExtension::getMetricRegistry)
+                .ifPresent(injectSites::add);
+    }
+
+    private void recordInjectedParameter(AnnotatedParameter<?> annotatedParameter) {
+        RegistrationPrep.create(annotatedParameter, MetricsCdiExtension::getMetricRegistry)
+                .ifPresent(injectSites::add);
+    }
+
+    private void registerMetricsForInterceptSites() {
         MetricRegistry registry = getMetricRegistry();
-        for (RegistrationPrep registrationPrep : annotatedSites) {
+        for (var registrationPrep : interceptSites) {
             metricAnnotationDiscoveriesByExecutable.get(registrationPrep.executable())
                     .forEach(discovery -> {
                         if (discovery.isActive()) { // All annotation discovery observers agreed to preserve the discovery.
@@ -269,7 +283,13 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                         }
                     });
         }
-        annotatedSites.clear();
+        interceptSites.clear();
+    }
+
+    private void registerMetricsForInjectSites() {
+        MetricRegistry registry = getMetricRegistry();
+        injectSites.forEach(registrationPrep -> registrationPrep.register(registry));
+        injectSites.clear();
     }
 
     @Override
@@ -286,10 +306,18 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
             return;
         }
 
+        // Record annotated executables and injected parameters on those executables, both of which imply certain metrics
+        // we will need to register.
+        Errors.Collector errors = Errors.collector();
+
         Stream.concat(type.getMethods().stream(), type.getConstructors().stream())
                 .filter(annotatedCallable -> !Modifier.isPrivate(annotatedCallable.getJavaMember().getModifiers()))
                 .filter(annotatedCallable -> type.equals(annotatedCallable.getDeclaringType()))
-                .forEach(annotatedCallable ->
+                // Annotated elements with @Metric might be producers which we record in recordProducer* methods, not here.
+                .filter(Predicate.not(MetricsCdiExtension::isMetricProducer))
+                .forEach(annotatedCallable -> {
+                                 // Process specific metrics annotations {@Counted, etc.} on each constructor or method.
+                                 // Intercept sites tell what metrics to register and what interceptors we'll need.
                                  METRIC_ANNOTATIONS_ON_ANY_ELEMENT // all except gauges; they are handled elsewhere
                                          .forEach(annotation ->
                                                           MetricUtil.lookupAnnotations(type,
@@ -299,26 +327,69 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                                                                   .forEach(lookupResult -> {
                                                                       Executable executable = (Executable) annotatedCallable
                                                                               .getJavaMember();
-                                                                      recordAnnotatedSite(annotatedSites,
+                                                                      recordInterceptSite(interceptSites,
                                                                                           executable,
                                                                                           clazz,
                                                                                           lookupResult,
                                                                                           executable);
-                                                                  })));
+                                                                  }));
+                    // Process metric injections on any parameters passed to constructors or methods. We don't need
+                    // interceptors around executables simply because they contain injected parameters, but we will want to
+                    // register the corresponding metrics.
+                    annotatedCallable.getParameters().stream()
+                            .filter(p -> isMetricJavaType(p.getJavaParameter().getType()))
+                            .forEach(p -> {
+                                // For now at least, insist that @Metric appears and specifies a name for injected parameters.
+                                Metric metricAnno = p.getAnnotation(Metric.class);
+                                if (metricAnno == null || metricAnno.name().isBlank()) {
+                                    errors.fatal(String.format(
+                                            "Metric injection for parameter does not specify @Metric(name = \"...\"); %s",
+                                            p));
+                                } else {
+                                    recordInjectedParameter(p);
+                                }
+                            });
+                });
 
+        errors.collect().checkValid();
+
+        // Record where field injections of metrics occur.
+        type.getFields().stream()
+                .filter(field -> !Modifier.isPrivate(field.getJavaMember().getModifiers())
+                        && type.equals(field.getDeclaringType())
+                        && !isMetricProducer(field) // Handle metric producer fields in recordProducerFields, not here.
+                        && isMetricJavaType(field.getJavaMember().getType()))
+                .forEach(this::recordInjectedField);
     }
 
-    private static Tag[] tags(String[] tagStrings) {
-        final List<Tag> result = new ArrayList<>();
-        for (int i = 0; i < tagStrings.length; i++) {
-            final int eq = tagStrings[i].indexOf("=");
-            if (eq > 0) {
-                final String tagName = tagStrings[i].substring(0, eq);
-                final String tagValue = tagStrings[i].substring(eq + 1);
-                result.add(new Tag(tagName, tagValue));
-            }
+    private static boolean isMetricProducer(AnnotatedCallable<?> annotatedCallable) {
+        return annotatedCallable instanceof AnnotatedMethod
+                && isMetricProducer(annotatedCallable,
+                                    () -> ((AnnotatedMethod<?>) annotatedCallable).getJavaMember()
+                                            .getReturnType());
+    }
+
+    private static boolean isMetricProducer(AnnotatedField<?> annotatedField) {
+        return isMetricProducer(annotatedField, () -> annotatedField.getJavaMember()
+                .getType());
+    }
+
+    private static boolean isMetricProducer(Annotated annotated, Supplier<Class<?>> fieldOrReturnType) {
+        if (annotated.isAnnotationPresent(Produces.class)) {
+            Class<?> typeToCheck = fieldOrReturnType.get();
+            return org.eclipse.microprofile.metrics.Metric.class.isAssignableFrom(typeToCheck)
+                    && !org.eclipse.microprofile.metrics.Gauge.class.isAssignableFrom(typeToCheck);
         }
-        return result.toArray(new Tag[0]);
+        return false;
+    }
+
+    private static boolean isMetricJavaType(Class<?> injectedType) {
+        try {
+            MetricType.from(injectedType);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     Iterable<MetricWorkItem> workItems(Executable executable, Class<? extends Annotation> annotationType) {
@@ -511,23 +582,14 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     private Iterable<LookupResult<?>> metricsLookupResults(AnnotatedType<?> annotatedType,
                                                            AnnotatedCallable<?> annotatedMember) {
         List<LookupResult<?>> result = new ArrayList<>();
-        INTERCEPTED_METRIC_ANNOTATIONS.keySet().forEach(metricAnnotationClass -> {
-            result.addAll(MetricUtil.lookupAnnotations(annotatedType,
-                                                       annotatedMember,
-                                                       metricAnnotationClass,
-                                                       stereotypeMetricsInfo));
-        });
+        INTERCEPTED_METRIC_ANNOTATIONS.keySet()
+                .forEach(metricAnnotationClass ->
+                                 result.addAll(MetricUtil.lookupAnnotations(annotatedType,
+                                                                            annotatedMember,
+                                                                            metricAnnotationClass,
+                                                                            stereotypeMetricsInfo)));
         return result;
     }
-
-//    private Set<Class<? extends Annotation>> metricsAnnotationClasses(Annotated annotated) {
-//        return annotated
-//                .getAnnotations()
-//                .stream()
-//                .map(Annotation::annotationType)
-//                .filter(METRIC_ANNOTATIONS::containsKey)
-//                .collect(Collectors.toSet());
-//    }
 
     /**
      * Checks to make sure the annotated type is not abstract and is not an interceptor.
@@ -594,7 +656,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                                 if (clazz.equals(m.getDeclaringClass())) {
 
                                     LOGGER.log(Level.DEBUG, () -> String.format("Adding @SyntheticRestRequest to %s",
-                                            m.toString()));
+                                                                                m));
                                     annotatedMethodConfigurator.add(SyntheticRestRequest.Literal.getInstance());
                                     methodsToRecord.add(m);
                                 }
@@ -708,7 +770,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
             if (!syntheticSimpleTimerAnnotatedClassesIgnored.isEmpty()) {
                 LOGGER.log(Level.DEBUG, () ->
                         "Classes with synthetic SimplyTimer annotations added that were not processed, probably "
-                                + "because they were vetoed:" + syntheticSimpleTimerAnnotatedClassesIgnored.toString());
+                                + "because they were vetoed:" + syntheticSimpleTimerAnnotatedClassesIgnored);
             }
         }
         restRequestMetricsClassesProcessed.clear();
@@ -733,21 +795,22 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                                                Object adv,
                                                BeanManager bm,
                                                ServerCdiExtension server) {
-        Errors problems = errors.collect();
-        errors = null;
-        if (problems.hasFatal()) {
-            throw new DeploymentException("Metrics module found issues with deployment: " + problems.toString());
-        }
-
         HttpRules defaultRouting = super.registerService(adv, bm, server);
         MetricsFeature metricsSupport = serviceSupport();
 
         // Initialize our implementation
         RegistryProducer.clearApplicationRegistry();
 
-        registerMetricsForAnnotatedSites();
+        registerMetricsForInterceptSites();
         registerAnnotatedGauges(bm);
         registerRestRequestMetrics();
+        registerMetricsForInjectSites();
+
+        Errors problems = errors.collect();
+        errors = null;
+        if (problems.hasFatal()) {
+            throw new DeploymentException("Metrics module found issues with deployment: " + problems.toString());
+        }
 
         Set<String> vendorMetricsAdded = new HashSet<>();
         vendorMetricsAdded.add("@default");
@@ -858,7 +921,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 String gaugeName = (
                         gaugeAnnotation.absolute() ? gaugeNameSuffix
                                 : String.format("%s.%s", clazz.getName(), gaugeNameSuffix));
-                annotatedGaugeSites.put(new MetricID(gaugeName, tags(gaugeAnnotation.tags())), method);
+                annotatedGaugeSites.put(new MetricID(gaugeName, MetricUtil.tags(gaugeAnnotation.tags())), method);
                 LOGGER.log(Level.DEBUG, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
             });
         }
