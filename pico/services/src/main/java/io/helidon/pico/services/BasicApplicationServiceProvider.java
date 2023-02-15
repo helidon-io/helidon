@@ -28,16 +28,13 @@ import io.helidon.pico.ServiceInfo;
  */
 class BasicApplicationServiceProvider extends AbstractServiceProvider<Application> {
 
-    BasicApplicationServiceProvider(
-            Application app,
-            PicoServices picoServices) {
+    BasicApplicationServiceProvider(Application app, PicoServices picoServices) {
         super(app, Phase.ACTIVE, createServiceInfo(app), picoServices);
         serviceRef(app);
     }
 
     @SuppressWarnings("rawtypes")
-    static ServiceInfo createServiceInfo(
-            Application app) {
+    static ServiceInfo createServiceInfo(Application app) {
         DefaultServiceInfo.Builder builder = DefaultServiceInfo.builder()
                 .serviceTypeName(app.getClass().getName())
                 .addContractsImplemented(Application.class.getName());

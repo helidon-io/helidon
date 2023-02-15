@@ -17,10 +17,8 @@
 package io.helidon.pico.processor;
 
 import java.io.File;
-import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -30,19 +28,11 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
-import io.helidon.pico.ExternalContracts;
-import io.helidon.pico.Intercepted;
 import io.helidon.pico.tools.CommonUtils;
-import io.helidon.pico.tools.JakartaEnterpriseTypeTools;
-import io.helidon.pico.tools.JavaxTypeTools;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.ModuleUtils;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ToolsException;
-
-import jakarta.inject.Singleton;
-
-import static io.helidon.pico.tools.TypeTools.oppositeOf;
 
 /**
  * Processor for @{@link jakarta.inject.Singleton} type annotations.
@@ -50,15 +40,17 @@ import static io.helidon.pico.tools.TypeTools.oppositeOf;
  * @deprecated
  */
 public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
-    private static final Set<Class<? extends Annotation>> SUPPORTED_TARGETS;
-    private static Class<? extends Annotation> javaxSingletonType;
-    static {
-        SUPPORTED_TARGETS = new HashSet<>();
-        SUPPORTED_TARGETS.add(Singleton.class);
-        SUPPORTED_TARGETS.add(ExternalContracts.class);
-        SUPPORTED_TARGETS.add(Intercepted.class);
-        addJavaxAndJakartaTypes(SUPPORTED_TARGETS);
-    }
+    private static final String SINGLETON = "jakarta.inject.Singleton";
+    private static final String SINGLETON_JAVAX = "javax.inject.Singleton";
+    private static final String EXTERNAL_CONTRACTS = "io.helidon.pico.ExternalContracts";
+    private static final String INTERCEPTED = "io.helidon.pico.Intercepted";
+
+    private static final Set<String> SUPPORTED_TARGETS = Set.of(
+            SINGLETON,
+            EXTERNAL_CONTRACTS,
+            INTERCEPTED,
+            SINGLETON_JAVAX
+    );
 
     /**
      * Service loader based constructor.
@@ -68,35 +60,9 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     public ServiceAnnotationProcessor() {
     }
 
-    private static void addJavaxAndJakartaTypes(
-            Set<Class<? extends Annotation>> supportedTargets) {
-        JavaxTypeTools javaxTools = JavaxTypeTools.INSTANCE.get();
-        if (javaxTools != null) {
-            javaxSingletonType = javaxTools.loadAnnotationClass(oppositeOf(Singleton.class.getName())).orElse(null);
-            if (javaxSingletonType != null) {
-                supportedTargets.add(javaxSingletonType);
-            }
-
-            Class<? extends Annotation> applicationScoped = javaxTools
-                    .loadAnnotationClass(UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAVAX).orElse(null);
-            if (applicationScoped != null) {
-                supportedTargets.add(applicationScoped);
-            }
-        }
-
-        JakartaEnterpriseTypeTools jakartaTools = JakartaEnterpriseTypeTools.INSTANCE.get();
-        if (jakartaTools != null) {
-            Class<? extends Annotation> applicationScoped = jakartaTools
-                    .loadAnnotationClass(UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAKARTA).orElse(null);
-            if (applicationScoped != null) {
-                supportedTargets.add(applicationScoped);
-            }
-        }
-    }
-
     @Override
-    protected Set<Class<? extends Annotation>> annoTypes() {
-        return Set.copyOf(SUPPORTED_TARGETS);
+    protected Set<String> annoTypes() {
+        return SUPPORTED_TARGETS;
     }
 
     @Override

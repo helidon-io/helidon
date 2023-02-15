@@ -20,8 +20,6 @@ import io.helidon.nima.http.processor.HttpMethodProducer;
  * Annotation processor that generates HTTP Endpoints.
  */
 module io.helidon.nima.http.processor {
-    requires io.helidon.common.http;
-
     requires io.helidon.pico;
     requires io.helidon.pico.tools;
     requires io.helidon.pico.processor;

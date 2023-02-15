@@ -27,6 +27,7 @@ import jakarta.inject.Singleton;
 
 @Singleton
 @Path("/plaintext")
+
 class PlaintextEndpoint {
     static final Http.HeaderValue CONTENT_TYPE = Http.Header.createCached(Http.Header.CONTENT_TYPE,
                                                                           "text/plain; charset=UTF-8");

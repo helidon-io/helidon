@@ -16,7 +16,6 @@
 
 package io.helidon.pico.tools;
 
-import java.lang.annotation.Annotation;
 import java.util.Optional;
 import java.util.Set;
 
@@ -32,7 +31,7 @@ public interface CustomAnnotationTemplateCreator {
      *
      * @return the supported annotation types for this producer
      */
-    Set<Class<? extends Annotation>> annoTypes();
+    Set<String> annoTypes();
 
     /**
      * The implementor should return empty if the request should not be handled.

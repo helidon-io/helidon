@@ -16,12 +16,10 @@
 
 package io.helidon.pico.processor;
 
-import java.lang.annotation.Annotation;
 import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
-import io.helidon.pico.Contract;
 
 /**
  * Handles {@code @Contract} annotations.
@@ -39,8 +37,8 @@ public class ContractAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     }
 
     @Override
-    public Set<Class<? extends Annotation>> annoTypes() {
-        return Set.of(Contract.class);
+    public Set<String> annoTypes() {
+        return Set.of("io.helidon.pico.Contract");
     }
 
     @Override

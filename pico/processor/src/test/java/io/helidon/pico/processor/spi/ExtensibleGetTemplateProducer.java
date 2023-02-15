@@ -16,7 +16,6 @@
 
 package io.helidon.pico.processor.spi;
 
-import java.lang.annotation.Annotation;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -26,7 +25,6 @@ import java.util.function.Supplier;
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.types.DefaultTypeName;
 import io.helidon.builder.types.TypeName;
-import io.helidon.pico.processor.testsubjects.ExtensibleGET;
 import io.helidon.pico.tools.CustomAnnotationTemplateCreator;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
@@ -49,8 +47,8 @@ public class ExtensibleGetTemplateProducer implements CustomAnnotationTemplateCr
     }
 
     @Override
-    public Set<Class<? extends Annotation>> annoTypes() {
-        return Set.of(ExtensibleGET.class);
+    public Set<String> annoTypes() {
+        return Set.of("io.helidon.pico.processor.testsubjects.ExtensibleGET");
     }
 
     @Override

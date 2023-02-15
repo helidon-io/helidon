@@ -19,38 +19,40 @@ package {{packageName}};
 import java.util.List;
 
 import io.helidon.common.Weight;
-import io.helidon.nima.http.api.GeneratedMethod;
-import io.helidon.nima.http.api.GeneratedService;
+import io.helidon.nima.webserver.http.GeneratedHandler;
 import io.helidon.nima.webserver.http.Handler;
+import io.helidon.nima.webserver.http.HttpFeature;
+import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
+
+import io.helidon.pico.ExternalContracts;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-@javax.annotation.processing.Generated({{{generatedSticker}}})
+@jakarta.annotation.Generated({{{generatedSticker}}})
 @Singleton
 @Named("{{enclosingClassTypeName.name}}")
 @Weight({{weight}})
-public class {{className}} implements HttpService, GeneratedService {
-    private final List<GeneratedMethod> myMethods;
+@ExternalContracts(HttpFeature.class)
+public class {{className}} implements HttpFeature {
+    private final List<GeneratedHandler> myMethods;
+    private final String path = "{{http.path}}";
 
     @Inject
-    {{className}}(@Named("{{enclosingClassTypeName.name}}") List<GeneratedMethod> myMethods) {
+    {{className}}(@Named("{{enclosingClassTypeName.name}}") List<GeneratedHandler> myMethods) {
         this.myMethods = myMethods;
     }
 
     @Override
-    public void routing(HttpRules rules) {
-        for (GeneratedMethod myMethod : myMethods) {
-            rules.route(myMethod.method(), myMethod.path(), (Handler) myMethod);
-        }
-    }
-
-    @Override
-    public String path() {
-        return "{{http.path}}";
+    public void setup(HttpRouting.Builder routing) {
+        routing.register(path, (HttpService) rules -> {
+            for (GeneratedHandler handler : myMethods) {
+                rules.route(handler.method(), handler.path(), (Handler) handler);
+            }
+        });
     }
 }

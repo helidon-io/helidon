@@ -16,24 +16,20 @@
 
 package io.helidon.pico.processor;
 
-import java.lang.annotation.Annotation;
-import java.util.HashSet;
-import java.util.Objects;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 
 import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.tools.JavaxTypeTools;
 import io.helidon.pico.tools.ToolsException;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-
+import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
-import static io.helidon.pico.tools.TypeTools.oppositeOf;
 
 /**
  * Handling for {@link jakarta.annotation.PostConstruct} and {@link jakarta.annotation.PreDestroy}.
@@ -41,15 +37,15 @@ import static io.helidon.pico.tools.TypeTools.oppositeOf;
  * @deprecated
  */
 public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationProcessor<Void> {
-    private static final Set<Class<? extends Annotation>> SUPPORTED_TARGETS;
-    private static Class<? extends Annotation> javaxPreDestroyType;
-    private static Class<? extends Annotation> javaxPostConstructType;
-    static {
-        SUPPORTED_TARGETS = new HashSet<>();
-        SUPPORTED_TARGETS.add(PreDestroy.class);
-        SUPPORTED_TARGETS.add(PostConstruct.class);
-        addJavaxTypes(SUPPORTED_TARGETS);
-    }
+    private static final String PRE_DESTROY = "jakarta.annotation.PreDestroy";
+    private static final String POST_CONSTRUCT = "jakarta.annotation.PostConstruct";
+    private static final String PRE_DESTROY_JAVAX = "javax.annotation.PreDestroy";
+    private static final String POST_CONSTRUCT_JAVAX = "javax.annotation.PostConstruct";
+
+    private static final Set<String> SUPPORTED_TARGETS = Set.of(PRE_DESTROY,
+                                   POST_CONSTRUCT,
+                                   PRE_DESTROY_JAVAX,
+                                   POST_CONSTRUCT_JAVAX);
 
     /**
      * Service loader based constructor.
@@ -59,29 +55,9 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
     public PostConstructPreDestroyAnnotationProcessor() {
     }
 
-    private static void addJavaxTypes(
-            Set<Class<? extends Annotation>> supportedTargets) {
-        if (javaxPreDestroyType != null && javaxPostConstructType != null) {
-            return;
-        }
-
-        try {
-            javaxPreDestroyType = JavaxTypeTools.INSTANCE.get()
-                        .loadAnnotationClass(oppositeOf(PreDestroy.class.getName())).orElse(null);
-            if (javaxPreDestroyType != null) {
-                supportedTargets.add(javaxPreDestroyType);
-                javaxPostConstructType = JavaxTypeTools.INSTANCE.get()
-                        .loadAnnotationClass(oppositeOf(PostConstruct.class.getName())).orElseThrow();
-                supportedTargets.add(javaxPostConstructType);
-            }
-        } catch (Throwable t) {
-            // normal
-        }
-    }
-
     @Override
-    protected Set<Class<? extends Annotation>> annoTypes() {
-        return Set.copyOf(SUPPORTED_TARGETS);
+    protected Set<String> annoTypes() {
+        return SUPPORTED_TARGETS;
     }
 
     @Override
@@ -124,20 +100,36 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
                                              + method.getEnclosingElement() + "." + method);
         }
 
-        if (method.getAnnotation(PreDestroy.class) != null) {
+        List<? extends AnnotationMirror> annotations = method.getAnnotationMirrors();
+
+        /*
+         * Either Jakarta or javax pre-destroy
+         */
+        Optional<? extends AnnotationMirror> mirror = findAnnotationMirror(PRE_DESTROY, annotations);
+        if (mirror.isPresent()) {
             servicesToProcess().addPreDestroyMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
-                                         method.getSimpleName().toString());
-        } else if (javaxPreDestroyType != null && Objects.nonNull(method.getAnnotation(javaxPreDestroyType))) {
-            servicesToProcess().addPreDestroyMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
-                                         method.getSimpleName().toString());
+                                                    method.getSimpleName().toString());
+        } else {
+            mirror = findAnnotationMirror(PRE_DESTROY_JAVAX, annotations);
+            if (mirror.isPresent()) {
+                servicesToProcess().addPreDestroyMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
+                                                        method.getSimpleName().toString());
+            }
         }
 
-        if (method.getAnnotation(PostConstruct.class) != null) {
+        /*
+         * Either Jakarta or javax post-construct
+         */
+        mirror = findAnnotationMirror(POST_CONSTRUCT, annotations);
+        if (mirror.isPresent()) {
             servicesToProcess().addPostConstructMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
-                                            method.getSimpleName().toString());
-        } else if (javaxPostConstructType != null && Objects.nonNull(method.getAnnotation(javaxPostConstructType))) {
-            servicesToProcess().addPostConstructMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
-                                            method.getSimpleName().toString());
+                                                       method.getSimpleName().toString());
+        } else {
+            mirror = findAnnotationMirror(POST_CONSTRUCT_JAVAX, annotations);
+            if (mirror.isPresent()) {
+                servicesToProcess().addPostConstructMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
+                                                           method.getSimpleName().toString());
+            }
         }
     }
 

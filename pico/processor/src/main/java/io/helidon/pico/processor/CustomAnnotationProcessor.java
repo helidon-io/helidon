@@ -16,11 +16,9 @@
 
 package io.helidon.pico.processor;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +26,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -36,7 +33,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
-import javax.tools.Diagnostic;
 
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
@@ -70,7 +66,7 @@ import static io.helidon.pico.tools.TypeTools.toFilePath;
  */
 public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     private static final Map<TypeName, Set<CustomAnnotationTemplateCreator>> PRODUCERS_BY_ANNOTATION = new ConcurrentHashMap<>();
-    private static final Set<Class<? extends Annotation>> ALL_ANNO_TYPES_HANDLED = new CopyOnWriteArraySet<>();
+    private static final Set<String> ALL_ANNO_TYPES_HANDLED = new CopyOnWriteArraySet<>();
     private static final List<CustomAnnotationTemplateCreator> PRODUCERS = initialize();
 
     /**
@@ -87,9 +83,9 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                         CustomAnnotationTemplateCreator.class, CustomAnnotationTemplateCreator.class.getClassLoader())).asList();
         creators.forEach(creator -> {
             try {
-                Set<Class<? extends Annotation>> annoTypes = creator.annoTypes();
+                Set<String> annoTypes = creator.annoTypes();
                 annoTypes.forEach(annoType -> {
-                    PRODUCERS_BY_ANNOTATION.compute(DefaultTypeName.create(annoType), (k, v) -> {
+                    PRODUCERS_BY_ANNOTATION.compute(DefaultTypeName.createFromTypeName(annoType), (k, v) -> {
                         if (v == null) {
                             v = new LinkedHashSet<>();
                         }
@@ -116,7 +112,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     }
 
     @Override
-    protected Set<Class<? extends Annotation>> annoTypes() {
+    protected Set<String> annoTypes() {
         return Set.copyOf(ALL_ANNO_TYPES_HANDLED);
     }
 
@@ -132,9 +128,11 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             RoundEnvironment roundEnv) {
         try {
             if (!roundEnv.processingOver()) {
-                for (Class<? extends Annotation> annoType : annoTypes()) {
-                    Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoType);
-                    doInner(annoType, typesToProcess, roundEnv);
+                for (String annoType : annoTypes()) {
+                    TypeName annoName = DefaultTypeName.createFromTypeName(annoType);
+                    TypeElement annoElement = toTypeElement(annoName);
+                    Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoElement);
+                    doInner(annoName, typesToProcess, roundEnv);
                 }
             }
 
@@ -149,14 +147,13 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     }
 
     void doInner(
-            Class<? extends Annotation> annoType,
+            TypeName annoTypeName,
             Set<? extends Element> typesToProcess,
             RoundEnvironment roundEnv) {
         if (typesToProcess.isEmpty()) {
             return;
         }
 
-        TypeName annoTypeName = DefaultTypeName.create(annoType);
         Collection<CustomAnnotationTemplateCreator> producers = producersForType(annoTypeName);
         if (producers.isEmpty()) {
             return;

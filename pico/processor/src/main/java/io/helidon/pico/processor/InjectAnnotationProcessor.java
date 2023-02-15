@@ -16,8 +16,6 @@
 
 package io.helidon.pico.processor;
 
-import java.lang.annotation.Annotation;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -36,16 +34,12 @@ import io.helidon.pico.DependencyInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.services.Dependencies;
-import io.helidon.pico.tools.JavaxTypeTools;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeTools;
-
-import jakarta.inject.Inject;
 
 import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
 import static io.helidon.pico.tools.TypeTools.isStatic;
-import static io.helidon.pico.tools.TypeTools.oppositeOf;
 import static io.helidon.pico.tools.TypeTools.toAccess;
 
 /**
@@ -54,13 +48,10 @@ import static io.helidon.pico.tools.TypeTools.toAccess;
  * @deprecated
  */
 public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependencies.BuilderContinuation> {
-    private static final Set<Class<? extends Annotation>> SUPPORTED_TARGETS;
-    private static Class<? extends Annotation> javaxInjectType;
-    static {
-        SUPPORTED_TARGETS = new HashSet<>();
-        SUPPORTED_TARGETS.add(Inject.class);
-        addJavaxTypes(SUPPORTED_TARGETS);
-    }
+    private static final String INJECT = "jakarta.inject.Inject";
+    private static final String INJECT_JAVAX = "javax.inject.Inject";
+    private static final Set<String> SUPPORTED_TARGETS = Set.of(INJECT,
+                                                                INJECT_JAVAX);
 
     /**
      * Service loader based constructor.
@@ -70,26 +61,9 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
     public InjectAnnotationProcessor() {
     }
 
-    private static void addJavaxTypes(
-            Set<Class<? extends Annotation>> supportedTargets) {
-        if (javaxInjectType != null) {
-            return;
-        }
-
-        try {
-            javaxInjectType = JavaxTypeTools.INSTANCE.get()
-                    .loadAnnotationClass(oppositeOf(Inject.class.getName())).orElse(null);
-            if (javaxInjectType != null) {
-                supportedTargets.add(javaxInjectType);
-            }
-        } catch (Throwable t) {
-            // normal
-        }
-    }
-
     @Override
-    protected Set<Class<? extends Annotation>> annoTypes() {
-        return Set.copyOf(SUPPORTED_TARGETS);
+    protected Set<String> annoTypes() {
+        return SUPPORTED_TARGETS;
     }
 
     @Override

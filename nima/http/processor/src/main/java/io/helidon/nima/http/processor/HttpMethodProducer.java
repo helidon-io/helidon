@@ -16,9 +16,6 @@
 
 package io.helidon.nima.http.processor;
 
-import java.io.InputStream;
-import java.lang.annotation.Annotation;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,12 +30,6 @@ import io.helidon.builder.types.AnnotationAndValue;
 import io.helidon.builder.types.DefaultTypeName;
 import io.helidon.builder.types.TypeName;
 import io.helidon.builder.types.TypedElementName;
-import io.helidon.common.http.GET;
-import io.helidon.common.http.HeaderParam;
-import io.helidon.common.http.HttpMethod;
-import io.helidon.common.http.POST;
-import io.helidon.common.http.Path;
-import io.helidon.common.http.QueryParam;
 import io.helidon.pico.tools.CustomAnnotationTemplateCreator;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
@@ -49,6 +40,23 @@ import io.helidon.pico.tools.TemplateHelperTools;
  * Service provider implementation of a {@link io.helidon.pico.tools.CustomAnnotationTemplateCreator}.
  */
 public class HttpMethodProducer implements CustomAnnotationTemplateCreator {
+    private static final String PATH_ANNOTATION = "io.helidon.common.http.Path";
+    private static final String GET_ANNOTATION = "io.helidon.common.http.GET";
+    private static final String HTTP_METHOD_ANNOTATION = "io.helidon.common.http.HttpMethod";
+    private static final String POST_ANNOTATION = "io.helidon.common.http.POST";
+    private static final String PATH_PARAM_ANNOTATION = "io.helidon.common.http.PathParam";
+    private static final String HEADER_PARAM_ANNOTATION = "io.helidon.common.http.HeaderParam";
+    private static final String QUERY_PARAM_ANNOTATION = "io.helidon.common.http.QueryParam";
+    private static final String ENTITY_PARAM_ANNOTATION = "io.helidon.common.http.Entity";
+    private static final String QUERY_NO_DEFAULT = "io.helidon.nima.htp.api.QueryParam_NO_DEFAULT_VALUE";
+
+    private static final Set<String> PARAM_ANNOTATIONS = Set.of(
+            HEADER_PARAM_ANNOTATION,
+            QUERY_PARAM_ANNOTATION,
+            PATH_PARAM_ANNOTATION,
+            ENTITY_PARAM_ANNOTATION
+    );
+
     /**
      * Default constructor used by the {@link java.util.ServiceLoader}.
      */
@@ -56,15 +64,20 @@ public class HttpMethodProducer implements CustomAnnotationTemplateCreator {
     }
 
     @Override
-    public Set<Class<? extends Annotation>> annoTypes() {
-        return Set.of(GET.class, POST.class, HttpMethod.class);
+    public Set<String> annoTypes() {
+        return Set.of(GET_ANNOTATION,
+                      HEADER_PARAM_ANNOTATION,
+                      HTTP_METHOD_ANNOTATION,
+                      POST_ANNOTATION,
+                      PATH_ANNOTATION,
+                      QUERY_PARAM_ANNOTATION);
     }
 
     @Override
     public Optional<CustomAnnotationTemplateResponse> create(CustomAnnotationTemplateRequest request) {
         TypeInfo enclosingType = request.enclosingTypeInfo();
 
-        if (!ElementKind.METHOD.name().equals(enclosingType.typeKind())) {
+        if (!ElementKind.METHOD.name().equals(request.targetElement().elementKind())) {
             // we are only interested in methods, not in classes
             return Optional.empty();
         }
@@ -79,21 +92,6 @@ public class HttpMethodProducer implements CustomAnnotationTemplateCreator {
                                                     generatedType,
                                                     () -> Templates.loadTemplate("nima", "http-method.java.hbs"),
                                                     it -> addProperties(request, it));
-    }
-
-    String loadTemplate(String templateProfile, String name) {
-        String path = "templates/pico/" + templateProfile + "/" + name;
-        try {
-            InputStream in = getClass().getClassLoader().getResourceAsStream(path);
-            if (in == null) {
-                return null;
-            }
-            try (in) {
-                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private Map<String, Object> addProperties(CustomAnnotationTemplateRequest request,
@@ -149,8 +147,8 @@ public class HttpMethodProducer implements CustomAnnotationTemplateCreator {
             HTTP Method
             http.method
          */
-        if (request.annoTypeName().className().equals(HttpMethod.class)) {
-            http.method = findAnnotValue(targetElement.annotations(), HttpMethod.class.getName(), null);
+        if (request.annoTypeName().className().equals(HTTP_METHOD_ANNOTATION)) {
+            http.method = findAnnotValue(targetElement.annotations(), HTTP_METHOD_ANNOTATION, null);
             if (http.method == null) {
                 throw new IllegalStateException("HTTP method producer called without HTTP Method annotation (such as @GET)");
             }
@@ -159,7 +157,7 @@ public class HttpMethodProducer implements CustomAnnotationTemplateCreator {
         }
 
         // HTTP Path (if defined)
-        http.path = findAnnotValue(targetElement.annotations(), Path.class.getName(), "");
+        http.path = findAnnotValue(targetElement.annotations(), PATH_ANNOTATION, "");
 
         response.put("http", http);
         return response;
@@ -181,26 +179,26 @@ public class HttpMethodProducer implements CustomAnnotationTemplateCreator {
         AnnotationAndValue httpAnnotation = null;
 
         for (AnnotationAndValue annotation : annotations) {
-            if (annotation.typeName().packageName().equals(HeaderParam.class.getPackageName())) {
+            if (PARAM_ANNOTATIONS.contains(annotation.typeName().name())) {
                 if (httpAnnotation == null) {
                     httpAnnotation = annotation;
                 } else {
-                    throw new IllegalStateException("Parameters must be annotated with one of @Entity, @PathParam, @HeaderParam, "
-                                                            + "@QueryParam - parameter "
+                    throw new IllegalStateException("Parameters must be annotated with one of " + PARAM_ANNOTATIONS
+                                                            + ", - parameter "
                                                             + elementArg.elementName() + " has more than one annotation.");
                 }
             }
         }
 
         if (httpAnnotation == null) {
-            throw new IllegalStateException("Parameters must be annotated with one of @Entity, @PathParam, @HeaderParam, "
-                                                    + "@QueryParam - parameter "
+            throw new IllegalStateException("Parameters must be annotated with one of " + PARAM_ANNOTATIONS
+                                                    + ", - parameter "
                                                     + elementArg.elementName() + " has neither of these.");
         }
 
         // todo now we only support String for query, path and header -> add conversions
         switch (httpAnnotation.typeName().className()) {
-        case ("PathParam") -> parameters.add("req.path().templateParameters().first(\"" + httpAnnotation.value().orElseThrow()
+        case ("PathParam") -> parameters.add("req.path().pathParameters().value(\"" + httpAnnotation.value().orElseThrow()
                                                      + "\"),");
         case ("Entity") -> parameters.add("req.content().as(" + type + ".class),");
         case ("HeaderParam") -> {
@@ -211,7 +209,7 @@ public class HttpMethodProducer implements CustomAnnotationTemplateCreator {
         case ("QueryParam") -> {
             httpDef.hasQueryParams = true;
             String defaultValue = httpAnnotation.value("defaultValue").orElse(null);
-            if (defaultValue == null || QueryParam.NO_DEFAULT_VALUE.equals(defaultValue)) {
+            if (defaultValue == null || QUERY_NO_DEFAULT.equals(defaultValue)) {
                 defaultValue = "null";
             } else {
                 defaultValue = "\"" + defaultValue + "\"";

@@ -101,10 +101,6 @@
                     </annotationProcessorPaths>
                     <compilerArgs>
                         <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>
-                        <arg>-Apico.debug=true</arg>
-                        <arg>-XprintProcessorInfo</arg>
-                        <arg>-XprintRounds</arg>
-                        <arg>-verbose</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

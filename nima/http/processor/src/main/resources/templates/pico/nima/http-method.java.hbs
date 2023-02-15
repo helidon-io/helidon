@@ -18,25 +18,29 @@ package {{packageName}};
 
 import io.helidon.common.Weight;
 import io.helidon.common.http.Http;
-{{#if http.hasQueryParams}}import io.helidon.common.uri.UriQuery;
-import io.helidon.nima.webserver.SimpleHandler;
-import io.helidon.nima.webserver.http.HttpException;
+
+{{#if http.hasQueryParams}}import io.helidon.common.http.HttpException;
+
+import io.helidon.common.uri.UriQuery;
 {{/if}}
-import io.helidon.nima.http.api.GeneratedMethod;
+import io.helidon.nima.webserver.http.GeneratedHandler;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+
+import io.helidon.pico.ExternalContracts;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-@javax.annotation.processing.Generated({{{generatedSticker}}})
+@jakarta.annotation.Generated({{{generatedSticker}}})
 @Singleton
 @Named("{{enclosingClassTypeName.name}}")
 @Weight({{weight}})
-public class {{className}} implements Handler, GeneratedMethod {
+@ExternalContracts(GeneratedHandler.class)
+public class {{className}} implements GeneratedHandler {
 {{#each http.headers}}private static final Http.HeaderName {{this.field}} = Http.Header.create("{{this.name}}");
 {{/each}}
     private static final Http.Method METHOD = Http.Method.create("{{http.method}}");
@@ -88,17 +92,13 @@ public class {{className}} implements Handler, GeneratedMethod {
     private <T> T query(ServerRequest req, ServerResponse res, String name, String defaultValue, Class<T> type) {
         UriQuery query = req.query();
         if (query.contains(name)) {
-            // todo hardcoded
-            return (T) query.first(name);
+            // todo hardcoded type
+            return (T) query.value(name);
         }
         if (defaultValue == null) {
-            throw HttpException.builder()
-                .request(req)
-                .response(res)
-                .message("Query parameter \"" + name + "\" is required")
-                .type(SimpleHandler.EventType.BAD_REQUEST)
-                .build();
+            throw new HttpException("Query parameter \"" + name + "\" is required", Http.Status.BAD_REQUEST_400, true);
         }
+        // todo also hardcoded type
         return (T) defaultValue;
     }
 {{/if}}

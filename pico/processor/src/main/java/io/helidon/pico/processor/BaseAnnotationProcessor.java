@@ -156,7 +156,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return annoTypes().stream().map(Class::getName).collect(Collectors.toSet());
+        return annoTypes();
     }
 
     ServicesToProcess servicesToProcess() {
@@ -168,7 +168,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
      *
      * @return annotation types we handle
      */
-    protected abstract Set<Class<? extends Annotation>> annoTypes();
+    protected abstract Set<String> annoTypes();
 
     /**
      * If these annotation type names are found on the target then do not process.
@@ -189,18 +189,23 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             ServicesToProcess.onBeginProcessing(this, annotations, roundEnv);
 
             if (!roundEnv.processingOver()) {
-                for (Class<? extends Annotation> annoType : annoTypes()) {
-                    Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoType);
+                for (String annoType : annoTypes()) {
+                    // annotation may not be on the classpath, in such a case just ignore it
+                    DefaultTypeName annoName = DefaultTypeName.createFromTypeName(annoType);
 
-                    Set<String> contraAnnotations = contraAnnotations();
-                    if (!contraAnnotations.isEmpty()) {
-                        // filter out the ones we will not do...
-                        typesToProcess = typesToProcess.stream()
-                                .filter(it -> !containsAnyAnnotation(it, contraAnnotations))
-                                .collect(Collectors.toSet());
+                    if (available(annoName)) {
+                        Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(toTypeElement(annoName));
+
+                        Set<String> contraAnnotations = contraAnnotations();
+                        if (!contraAnnotations.isEmpty()) {
+                            // filter out the ones we will not do...
+                            typesToProcess = typesToProcess.stream()
+                                    .filter(it -> !containsAnyAnnotation(it, contraAnnotations))
+                                    .collect(Collectors.toSet());
+                        }
+
+                        doBulkInner(typesToProcess, null, null);
                     }
-
-                    doBulkInner(typesToProcess, null, null);
                 }
             }
 
@@ -774,6 +779,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     TypeElement toTypeElement(
             TypeName typeName) {
         return Objects.requireNonNull(processingEnv.getElementUtils().getTypeElement(typeName.name()));
+    }
+
+    boolean available(TypeName typeName) {
+        return processingEnv.getElementUtils().getTypeElement(typeName.name()) != null;
     }
 
     System.Logger logger() {

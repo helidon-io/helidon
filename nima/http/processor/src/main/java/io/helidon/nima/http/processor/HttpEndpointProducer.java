@@ -16,7 +16,6 @@
 
 package io.helidon.nima.http.processor;
 
-import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -28,17 +27,17 @@ import javax.lang.model.element.ElementKind;
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.types.DefaultTypeName;
 import io.helidon.builder.types.TypeName;
-import io.helidon.common.http.Path;
-import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.tools.CustomAnnotationTemplateCreator;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 
 /**
- * Annotation processor that generates a service for each class annotated with {@link io.helidon.common.http.Path} annotation.
+ * Annotation processor that generates a service for each class annotated with {@value #PATH_ANNOTATION} annotation.
  * Service provider implementation of a {@link io.helidon.pico.tools.CustomAnnotationTemplateCreator}.
  */
 public class HttpEndpointProducer implements CustomAnnotationTemplateCreator {
+    private static final String PATH_ANNOTATION = "io.helidon.common.http.Path";
+
     /**
      * Default constructor used by the {@link java.util.ServiceLoader}.
      */
@@ -46,8 +45,8 @@ public class HttpEndpointProducer implements CustomAnnotationTemplateCreator {
     }
 
     @Override
-    public Set<Class<? extends Annotation>> annoTypes() {
-        return Set.of(Path.class);
+    public Set<String> annoTypes() {
+        return Set.of(PATH_ANNOTATION);
     }
 
     @Override
@@ -73,22 +72,14 @@ public class HttpEndpointProducer implements CustomAnnotationTemplateCreator {
                                               Map<String, Object> currentProperties) {
         Map<String, Object> response = new HashMap<>(currentProperties);
 
-        Set<QualifierAndValue> qualifiers = request.serviceInfo().qualifiers();
-        for (QualifierAndValue qualifier : qualifiers) {
-            if (qualifier.qualifierTypeName().equals(Path.class.getName())) {
-                response.put("http", new HttpDef(qualifier.value().orElse("/")));
+        var annots = request.enclosingTypeInfo().annotations();
+        for (var annot : annots) {
+            if (annot.typeName().name().equals(PATH_ANNOTATION)) {
+                response.put("http", Map.of("path", annot.value().orElse("/")));
                 break;
             }
         }
 
         return response;
-    }
-
-    /**
-     * Needed for template processing.
-     * Do not use.
-     */
-    @Deprecated(since = "4.0.0")
-    public record HttpDef(String path) {
     }
 }
