@@ -24,8 +24,8 @@ import java.util.function.Supplier;
 
 import javax.lang.model.element.ElementKind;
 
-import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.tools.CustomAnnotationTemplateCreator;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;

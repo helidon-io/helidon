@@ -26,10 +26,10 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.builder.Builder;
-import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 

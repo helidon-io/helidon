@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.processor.spi;
+package io.helidon.common.types;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
-
 /**
- * Represents the model object for an interface or an abstract type (i.e., one that was annotated with
- * {@link io.helidon.builder.Builder}).
+ * Represents the model object for an interface or an abstract type.
  */
 public interface TypeInfo {
 
@@ -59,7 +54,8 @@ public interface TypeInfo {
     List<TypedElementName> elementInfo();
 
     /**
-     * The elements that make up this type that are considered "other", or being skipped because they are irrelevant to processing.
+     * The elements that make up this type that are considered "other", or being skipped because they are irrelevant to
+     * processing.
      *
      * @return the elements that still make up the type, but are otherwise deemed irrelevant for processing
      */

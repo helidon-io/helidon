@@ -21,10 +21,10 @@ import java.util.Set;
 
 import javax.lang.model.element.ElementKind;
 
-import io.helidon.builder.processor.spi.DefaultTypeInfo;
-import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultTypeInfo;
 import io.helidon.common.types.DefaultTypedElementName;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.DefaultServiceInfo;
 import io.helidon.pico.ElementInfo;

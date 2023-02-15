@@ -34,10 +34,10 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
-import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.ServiceInfoBasics;

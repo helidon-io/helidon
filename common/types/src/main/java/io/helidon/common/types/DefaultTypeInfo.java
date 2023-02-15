@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.processor.spi;
+package io.helidon.common.types;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,10 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-
-import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
 
 /**
  * Default implementation for {@link TypeInfo}.

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.TypeInfo;
 
 /**
  * Java {@link java.util.ServiceLoader} provider interface used to discover builder creators.

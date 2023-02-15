@@ -44,15 +44,15 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 
-import io.helidon.builder.processor.spi.DefaultTypeInfo;
-import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.DefaultTypeInfo;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.DefaultTypedElementName;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 

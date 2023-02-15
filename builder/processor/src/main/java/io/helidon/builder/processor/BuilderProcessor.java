@@ -47,6 +47,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weights;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
 /**
