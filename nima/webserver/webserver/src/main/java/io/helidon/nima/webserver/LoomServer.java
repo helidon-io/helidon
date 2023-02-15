@@ -39,6 +39,8 @@ import java.util.logging.Logger;
 
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
+import io.helidon.common.features.HelidonFeatures;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
@@ -119,6 +121,9 @@ class LoomServer implements WebServer {
 
     @Override
     public WebServer start() {
+        HelidonFeatures.flavor(HelidonFlavor.NIMA);
+        HelidonFeatures.print(HelidonFlavor.NIMA, Version.VERSION, false);
+
         try {
             lifecycleLock.lockInterruptibly();
         } catch (InterruptedException e) {
@@ -224,11 +229,11 @@ class LoomServer implements WebServer {
         now = System.currentTimeMillis() - now;
         long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
 
-        LOGGER.log(System.Logger.Level.INFO, "Helidon Níma " + Version.VERSION);
         LOGGER.log(System.Logger.Level.INFO, "Started all channels in "
                 + now + " milliseconds. "
                 + uptime + " milliseconds since JVM startup. "
                 + "Java " + Runtime.version());
+
 
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
             LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));

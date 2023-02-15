@@ -498,7 +498,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
             LOGGER.log(System.Logger.Level.WARNING,
                        "there is typically only 1 application instance; app instances = " + apps);
         } else if (apps.isEmpty()) {
-            LOGGER.log(System.Logger.Level.INFO, "no " + Application.class.getName() + " was found.");
+            LOGGER.log(System.Logger.Level.TRACE, "no " + Application.class.getName() + " was found.");
             return;
         }
 

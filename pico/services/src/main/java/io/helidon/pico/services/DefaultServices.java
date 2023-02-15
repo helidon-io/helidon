@@ -375,15 +375,15 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
             Module module,
             boolean initializing) {
         String moduleName = module.named().orElse(module.getClass().getName());
-        boolean isLoggable = DefaultPicoServices.LOGGER.isLoggable(System.Logger.Level.INFO);
+        boolean isLoggable = DefaultPicoServices.LOGGER.isLoggable(System.Logger.Level.TRACE);
         if (isLoggable) {
-            DefaultPicoServices.LOGGER.log(System.Logger.Level.INFO, "starting binding module: " + moduleName);
+            DefaultPicoServices.LOGGER.log(System.Logger.Level.TRACE, "starting binding module: " + moduleName);
         }
         ServiceBinder moduleServiceBinder = createServiceBinder(picoServices, this, moduleName, initializing);
         module.configure(moduleServiceBinder);
         bind(createServiceProvider(module, moduleName, picoServices));
         if (isLoggable) {
-            DefaultPicoServices.LOGGER.log(System.Logger.Level.INFO, "finished binding module: " + moduleName);
+            DefaultPicoServices.LOGGER.log(System.Logger.Level.TRACE, "finished binding module: " + moduleName);
         }
     }
 
