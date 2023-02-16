@@ -29,7 +29,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.http.SetCookie;
-import io.helidon.common.reactive.Single;
 
 /**
  * Handler of cookies used in OIDC.

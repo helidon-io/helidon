@@ -24,7 +24,6 @@ import java.util.Optional;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -111,31 +110,18 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
 
         Optional<List<Grant>> grants = roleCache.computeValue(username, Optional::empty);
         if (grants.isPresent()) {
-            return addAdditionalGrants(subject, grants.get())
-                    .map(it -> {
-                        List<Grant> allGrants = new LinkedList<>(grants.get());
-                        allGrants.addAll(it);
-                        return buildSubject(subject, allGrants);
-                    });
+            List<Grant> allGrants = new LinkedList<>(grants.get());
+            allGrants.addAll(addAdditionalGrants(subject, grants.get()));
+            return buildSubject(subject, allGrants);
         }
         // we do not have a cached value, we must request it from remote server
         // this may trigger multiple times in parallel - rather than creating a map of future for each user
         // we leave this be (as the map of futures may be unlimited)
-        List<Grant> result = new LinkedList<>();
-        return computeGrants(subject)
-                .map(it -> {
-                    result.addAll(it);
-                    return result;
-                })
-                .map(newGrants -> roleCache.computeValue(username, () -> Optional.of(List.copyOf(newGrants)))
-                        .orElseGet(List::of))
-                // additional grants may not be cached (leave this decision to overriding class)
-                .flatMapSingle(it -> addAdditionalGrants(subject, it))
-                .map(newGrants -> {
-                    result.addAll(newGrants);
-                    return result;
-                })
-                .map(it -> buildSubject(subject, it));
+        List<Grant> result = new LinkedList<>(computeGrants(subject));
+        List<Grant> fromCache = roleCache.computeValue(username, () -> Optional.of(List.copyOf(result)))
+                .orElseGet(List::of);
+        result.addAll(addAdditionalGrants(subject, fromCache));
+        return buildSubject(subject, result);
     }
 
     /**
@@ -145,7 +131,7 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
      * @param subject to retrieve roles (or in general {@link io.helidon.security.Grant grants})
      * @return future with grants to be added to the subject
      */
-    protected Single<List<? extends Grant>> computeGrants(Subject subject) {
+    protected List<? extends Grant> computeGrants(Subject subject) {
         return getGrantsFromServer(subject);
     }
 
@@ -156,9 +142,8 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
      * @param idcsGrants grants obtained from IDCS
      * @return grants to add to the subject
      */
-    protected Single<List<? extends Grant>> addAdditionalGrants(Subject subject,
-                                                                List<Grant> idcsGrants) {
-        return Single.just(List.of());
+    protected List<? extends Grant> addAdditionalGrants(Subject subject, List<Grant> idcsGrants) {
+        return List.of();
     }
 
     /**
@@ -167,52 +152,58 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
      * @param subject to get grants for
      * @return optional list of grants to be added
      */
-    protected Single<List<? extends Grant>> getGrantsFromServer(Subject subject) {
+    protected List<? extends Grant> getGrantsFromServer(Subject subject) {
         String subjectName = subject.principal().getName();
         String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse(defaultIdcsSubjectType());
 
         RoleMapTracing tracing = SecurityTracing.get().roleMapTracing("idcs");
 
-        return Single.create(appToken.getToken(tracing))
-                .flatMapSingle(maybeAppToken -> {
-                    if (maybeAppToken.isEmpty()) {
-                        return Single.error(new SecurityException("Application token not available"));
-                    }
-                    String appToken = maybeAppToken.get();
-                    JsonObjectBuilder requestBuilder = JSON.createObjectBuilder()
-                            .add("mappingAttributeValue", subjectName)
-                            .add("subjectType", subjectType)
-                            .add("includeMemberships", true);
+        try {
+            List<? extends Grant> grants = appToken.getToken(tracing)
+                    .map(appToken -> obtainGrantsFromServer(subjectName, subjectType, tracing))
+                    .orElseThrow(() -> new SecurityException("Application token not available"));
 
-                    JsonArrayBuilder arrayBuilder = JSON.createArrayBuilder();
-                    arrayBuilder.add("urn:ietf:params:scim:schemas:oracle:idcs:Asserter");
-                    requestBuilder.add("schemas", arrayBuilder);
+            tracing.finish();
 
-                    // use current span context as a parent for client outbound
-                    // using a custom child context, so we do not replace the parent in the current context
-                    Context parentContext = Contexts.context().orElseGet(Contexts::globalContext);
-                    Context childContext = Context.builder()
-                            .parent(parentContext)
-                            .build();
+            return grants;
+        }catch (Exception e) {
+            tracing.error(e);
+            throw e;
+        }
+    }
 
-                    tracing.findParent()
-                            .ifPresent(childContext::register);
+    private List<? extends Grant> obtainGrantsFromServer(String subjectName, String subjectType, RoleMapTracing tracing) {
+        JsonObjectBuilder requestBuilder = JSON.createObjectBuilder()
+                .add("mappingAttributeValue", subjectName)
+                .add("subjectType", subjectType)
+                .add("includeMemberships", true);
 
-                    WebClientRequestBuilder request = oidcConfig().generalWebClient()
-                            .post()
-                            .uri(asserterUri)
-                            .context(childContext)
-                            .headers(it -> {
-                                it.add(Http.Header.AUTHORIZATION, "Bearer " + appToken);
-                                return it;
-                            });
+        JsonArrayBuilder arrayBuilder = JSON.createArrayBuilder();
+        arrayBuilder.add("urn:ietf:params:scim:schemas:oracle:idcs:Asserter");
+        requestBuilder.add("schemas", arrayBuilder);
 
-                    return processRoleRequest(request,
-                                              requestBuilder.build(),
-                                              subjectName);
-                })
-                .peek(ignored -> tracing.finish())
-                .onError(tracing::error);
+        // use current span context as a parent for client outbound
+        // using a custom child context, so we do not replace the parent in the current context
+        Context parentContext = Contexts.context().orElseGet(Contexts::globalContext);
+        Context childContext = Context.builder()
+                .parent(parentContext)
+                .build();
+
+        tracing.findParent()
+                .ifPresent(childContext::register);
+
+        WebClientRequestBuilder request = oidcConfig().generalWebClient()
+                .post()
+                .uri(asserterUri)
+                .context(childContext)
+                .headers(it -> {
+                    it.add(Http.Header.AUTHORIZATION, "Bearer " + appToken);
+                    return it;
+                });
+
+        return processRoleRequest(request,
+                                  requestBuilder.build(),
+                                  subjectName);
     }
 
     /**

@@ -26,13 +26,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.configurable.LruCache;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
@@ -209,9 +206,9 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     @Override
-    public CompletionStage<OutboundSecurityResponse> outboundSecurity(ProviderRequest providerRequest,
-                                                                      SecurityEnvironment outboundEnv,
-                                                                      EndpointConfig outboundEndpointConfig) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundEndpointConfig) {
         Optional<Subject> user = providerRequest.securityContext().user();
 
         if (user.isPresent()) {
@@ -228,12 +225,12 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 if (enabled) {
                     Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
                     target.tokenHandler.header(headers, tokenContent);
-                    return CompletableFuture.completedFuture(OutboundSecurityResponse.withHeaders(headers));
+                    return OutboundSecurityResponse.withHeaders(headers);
                 }
             }
         }
 
-        return CompletableFuture.completedFuture(OutboundSecurityResponse.empty());
+        return OutboundSecurityResponse.empty();
     }
 
     /**

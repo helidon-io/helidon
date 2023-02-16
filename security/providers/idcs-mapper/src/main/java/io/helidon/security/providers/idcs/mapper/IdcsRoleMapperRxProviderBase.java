@@ -25,24 +25,25 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
+import io.helidon.security.SecurityException;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
 import io.helidon.security.integration.common.RoleMapTracing;
@@ -113,14 +114,13 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
     }
 
     @Override
-    public Single<AuthenticationResponse> map(ProviderRequest authenticatedRequest,
-                                              AuthenticationResponse previousResponse) {
+    public AuthenticationResponse map(ProviderRequest authenticatedRequest, AuthenticationResponse previousResponse) {
 
         Optional<Subject> maybeUser = previousResponse.user();
         Optional<Subject> maybeService = previousResponse.service();
 
         if (maybeService.isEmpty() && maybeUser.isEmpty()) {
-            return Single.just(previousResponse);
+            return previousResponse;
         }
 
         // create a new response
@@ -128,30 +128,25 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                 .requestHeaders(previousResponse.requestHeaders());
         previousResponse.description().ifPresent(builder::description);
 
-        Single<AuthenticationResponse.Builder> result = Single.just(builder);
-
         if (maybeUser.isPresent()) {
             if (supportedTypes.contains(SubjectType.USER)) {
-                // service will be done after use
-                result = result.flatMapSingle(it -> enhance(authenticatedRequest, previousResponse, maybeUser.get())
-                        .peek(it::user)
-                        .map(ignored -> it));
+                Subject subject = enhance(authenticatedRequest, previousResponse, maybeUser.get());
+                builder.user(subject);
             } else {
-                result = result.peek(it -> it.service(maybeUser.get()));
+                builder.service(maybeUser.get());
             }
         }
 
         if (maybeService.isPresent()) {
             if (supportedTypes.contains(SubjectType.SERVICE)) {
-                result = result.flatMapSingle(it -> enhance(authenticatedRequest, previousResponse, maybeService.get())
-                        .peek(it::user)
-                        .map(ignored -> it));
+                Subject subject = enhance(authenticatedRequest, previousResponse, maybeService.get());
+                builder.user(subject);
             } else {
-                result = result.peek(it -> it.service(maybeService.get()));
+                builder.service(maybeService.get());
             }
         }
 
-        return result.map(AuthenticationResponse.Builder::build);
+        return builder.build();
     }
 
     /**
@@ -381,7 +376,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
     protected static class AppTokenRx {
         private static final List<Validator<Jwt>> TIME_VALIDATORS = Jwt.defaultTimeValidators();
 
-        private final AtomicReference<CompletableFuture<AppTokenData>> token = new AtomicReference<>();
+        private final AtomicReference<LazyValue<AppTokenData>> token = new AtomicReference<>();
         private final WebClient webClient;
         private final URI tokenEndpointUri;
         private final Duration tokenRefreshSkew;
@@ -392,39 +387,37 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
             this.tokenRefreshSkew = tokenRefreshSkew;
         }
 
-        protected Single<Optional<String>> getToken(RoleMapTracing tracing) {
-            final CompletableFuture<AppTokenData> currentTokenData = token.get();
+        protected Optional<String> getToken(RoleMapTracing tracing) {
+            LazyValue<AppTokenData> currentTokenData = token.get();
             if (currentTokenData == null) {
-                CompletableFuture<AppTokenData> future = new CompletableFuture<>();
-                if (token.compareAndSet(null, future)) {
-                    fromServer(tracing, future);
+                LazyValue<AppTokenData> newLazyValue = LazyValue.create(() -> fromServer(tracing));
+                if (token.compareAndSet(null, newLazyValue)) {
+                    currentTokenData = newLazyValue;
                 } else {
                     // another thread "stole" the data, return its future
-                    future = token.get();
+                    currentTokenData = token.get();
                 }
-                return Single.create(future).map(AppTokenData::tokenContent);
+                return currentTokenData.get().tokenContent();
             }
-            // there is an existing value
-            return Single.create(currentTokenData)
-                    .flatMapSingle(tokenData -> {
-                        Jwt jwt = tokenData.appJwt();
-                        if (jwt == null
-                                || !jwt.validate(TIME_VALIDATORS).isValid()
-                                || isNearExpiration(jwt)) {
-                            // it is not valid or is very close to expiration - we must get a new value
-                            CompletableFuture<AppTokenData> future = new CompletableFuture<>();
-                            if (token.compareAndSet(currentTokenData, future)) {
-                                fromServer(tracing, future);
-                            } else {
-                                future = token.get();
-                            }
-                            return Single.create(future)
-                                    .map(AppTokenData::tokenContent);
-                        } else {
-                            // present and valid
-                            return Single.just(tokenData.tokenContent());
-                        }
-                    });
+
+            AppTokenData tokenData = currentTokenData.get();
+            Jwt jwt = tokenData.appJwt();
+            if (jwt == null
+                    || !jwt.validate(TIME_VALIDATORS).isValid()
+                    || isNearExpiration(jwt)) {
+                // it is not valid or is very close to expiration - we must get a new value
+                LazyValue<AppTokenData> newLazyValue = LazyValue.create(() -> fromServer(tracing));
+                if (token.compareAndSet(currentTokenData, newLazyValue)) {
+                    currentTokenData = newLazyValue;
+                } else {
+                    // another thread "stole" the data, return its future
+                    currentTokenData = token.get();
+                }
+                return currentTokenData.get().tokenContent();
+            } else {
+                // present and valid
+                return tokenData.tokenContent();
+            }
         }
 
         private boolean isNearExpiration(Jwt jwt) {
@@ -433,7 +426,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                     .orElse(false);
         }
 
-        private void fromServer(RoleMapTracing tracing, CompletableFuture<AppTokenData> future) {
+        private AppTokenData fromServer(RoleMapTracing tracing) {
             Parameters params = Parameters.builder("idcs-form-params")
                     .add("grant_type", "client_credentials")
                     .add("scope", "urn:opc:idm:__myscopes__")
@@ -454,7 +447,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                     .context(childContext)
                     .accept(HttpMediaType.APPLICATION_JSON);
 
-            postJsonResponse(request,
+            return postJsonResponse(request,
                              params,
                              json -> {
                                  String accessToken = json.getString(ACCESS_TOKEN_KEY);
@@ -471,8 +464,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                                  LOGGER.log(Level.ERROR, "Failed to obtain access token for application to read "
                                          + "groups from IDCS. Failed with exception: " + message, t);
                                  return Optional.of(new AppTokenData());
-                             })
-                    .forSingle(future::complete);
+                             });
         }
     }
 

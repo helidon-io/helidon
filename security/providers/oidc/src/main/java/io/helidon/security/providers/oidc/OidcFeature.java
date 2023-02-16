@@ -40,7 +40,6 @@ import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.nima.webserver.cors.CorsSupport;
@@ -235,11 +234,11 @@ public final class OidcFeature implements HttpFeature {
     }
 
     private void processLogout(ServerRequest req, ServerResponse res) {
-        findTenantName(req)
-                .forSingle(tenantName -> processTenantLogout(req, res, tenantName));
+        String tenantName = findTenantName(req);
+        processTenantLogout(req, res, tenantName);
     }
 
-    private Single<String> findTenantName(ServerRequest request) {
+    private String findTenantName(ServerRequest request) {
         List<String> missingLocations = new LinkedList<>();
         Optional<String> tenantId = Optional.empty();
         if (oidcConfig.useParam()) {
@@ -250,7 +249,7 @@ public final class OidcFeature implements HttpFeature {
             }
         }
         if (oidcConfig.useCookie() && tenantId.isEmpty()) {
-            Optional<Single<String>> cookie = oidcConfig.tenantCookieHandler()
+            Optional<String> cookie = oidcConfig.tenantCookieHandler()
                     .findCookie(request.headers().toMap());
 
             if (cookie.isPresent()) {
@@ -259,13 +258,13 @@ public final class OidcFeature implements HttpFeature {
             missingLocations.add("cookie");
         }
         if (tenantId.isPresent()) {
-            return Single.just(tenantId.get());
+            return tenantId.get();
         } else {
             if (LOGGER.isLoggable(Level.TRACE)) {
                 LOGGER.log(Level.TRACE, "Missing tenant id, could not find in either of: " + missingLocations
                                       + "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
             }
-            return Single.just(DEFAULT_TENANT_ID);
+            return DEFAULT_TENANT_ID;
         }
     }
 
@@ -304,26 +303,27 @@ public final class OidcFeature implements HttpFeature {
 
         String encryptedIdToken = idTokenCookie.get();
 
-        idTokenCookieHandler.decrypt(encryptedIdToken)
-                .forSingle(idToken -> {
-                    StringBuilder sb = new StringBuilder(tenant.logoutEndpointUri()
-                                                                 + "?id_token_hint="
-                                                                 + idToken
-                                                                 + "&post_logout_redirect_uri=" + postLogoutUri(req));
+        try {
+            String idToken = idTokenCookieHandler.decrypt(encryptedIdToken);
+            StringBuilder sb = new StringBuilder(tenant.logoutEndpointUri()
+                                                         + "?id_token_hint="
+                                                         + idToken
+                                                         + "&post_logout_redirect_uri=" + postLogoutUri(req));
 
-                    req.query().first("state")
-                            .ifPresent(it -> sb.append("&state=").append(it));
+            req.query().first("state")
+                    .ifPresent(it -> sb.append("&state=").append(it));
 
-                    ServerResponseHeaders headers = res.headers();
-                    headers.addCookie(tokenCookieHandler.removeCookie().build());
-                    headers.addCookie(idTokenCookieHandler.removeCookie().build());
-                    headers.addCookie(tenantCookieHandler.removeCookie().build());
+            ServerResponseHeaders headers = res.headers();
+            headers.addCookie(tokenCookieHandler.removeCookie().build());
+            headers.addCookie(idTokenCookieHandler.removeCookie().build());
+            headers.addCookie(tenantCookieHandler.removeCookie().build());
 
-                    res.status(Http.Status.TEMPORARY_REDIRECT_307)
-                            .header(Http.Header.LOCATION, sb.toString())
-                            .send();
-                })
-                .exceptionallyAccept(t -> sendError(res, t));
+            res.status(Http.Status.TEMPORARY_REDIRECT_307)
+                    .header(Http.Header.LOCATION, sb.toString())
+                    .send();
+        } catch (Exception e) {
+            sendError(res, e);
+        }
     }
 
     private void addRequestAsHeader(ServerRequest req, ServerResponse res) {
@@ -386,8 +386,7 @@ public final class OidcFeature implements HttpFeature {
                                     form.build(),
                                     json -> processJsonResponse(req, res, json, tenantName),
                                     (status, errorEntity) -> processError(res, status, errorEntity),
-                                    (t, message) -> processError(res, t, message))
-                .await();
+                                    (t, message) -> processError(res, t, message));
 
     }
 
@@ -445,28 +444,22 @@ public final class OidcFeature implements HttpFeature {
         res.headers().add(Http.Header.LOCATION, state);
 
         if (oidcConfig.useCookie()) {
-            ServerResponseHeaders headers = res.headers();
+            try {
+                ServerResponseHeaders headers = res.headers();
 
-            OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
-            tenantCookieHandler.createCookie(tenantName)
-                    .forSingle(builder -> headers.addCookie(builder.build()))
-                    .exceptionallyAccept(t -> sendError(res, t));
+                OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
 
-            tokenCookieHandler.createCookie(tokenValue)
-                    .forSingle(builder -> {
-                        headers.addCookie(builder.build());
-                        if (idToken != null && oidcConfig.logoutEnabled()) {
-                            idTokenCookieHandler.createCookie(idToken)
-                                    .forSingle(it -> {
-                                        headers.addCookie(it.build());
-                                        res.send();
-                                    })
-                                    .exceptionallyAccept(t -> sendError(res, t));
-                        } else {
-                            res.send();
-                        }
-                    })
-                    .exceptionallyAccept(t -> sendError(res, t));
+                headers.addCookie(tenantCookieHandler.createCookie(tenantName).build()); //Add tenant name cookie
+                headers.addCookie(tokenCookieHandler.createCookie(tokenValue).build());  //Add token cookie
+
+                if (idToken != null && oidcConfig.logoutEnabled()) {
+                    headers.addCookie(idTokenCookieHandler.createCookie(tokenValue).build());  //Add token id cookie
+                }
+                res.send();
+
+            } catch (Exception e) {
+                sendError(res, e);
+            }
         } else {
             res.send();
         }

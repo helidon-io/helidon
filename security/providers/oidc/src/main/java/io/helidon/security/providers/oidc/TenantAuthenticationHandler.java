@@ -26,8 +26,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.regex.Matcher;
@@ -38,7 +36,6 @@ import io.helidon.common.Errors;
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.common.reactive.Single;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -78,7 +75,7 @@ class TenantAuthenticationHandler {
     private final TenantConfig tenantConfig;
     private final Tenant tenant;
     private final boolean useJwtGroups;
-    private final BiFunction<SignedJwt, Errors.Collector, Single<Errors.Collector>> jwtValidator;
+    private final BiFunction<SignedJwt, Errors.Collector, Errors.Collector> jwtValidator;
     private final BiConsumer<StringBuilder, String> scopeAppender;
     private final Pattern attemptPattern;
 
@@ -108,7 +105,7 @@ class TenantAuthenticationHandler {
                         break;
                     }
                 });
-                return Single.just(collector);
+                return collector;
             };
         } else {
             this.jwtValidator = (signedJwt, collector) -> {
@@ -193,23 +190,24 @@ class TenantAuthenticationHandler {
             if (oidcConfig.useCookie()) {
                 if (token.isEmpty()) {
                     // only do this for cookies
-                    Optional<Single<String>> cookie = oidcConfig.tokenCookieHandler()
+                    Optional<String> cookie = oidcConfig.tokenCookieHandler()
                             .findCookie(providerRequest.env().headers());
                     if (cookie.isEmpty()) {
                         missingLocations.add("cookie");
                     } else {
-                        return cookie.get()
-                                .flatMapSingle(it -> validateToken(tenantId, providerRequest, it))
-                                .onErrorResumeWithSingle(throwable -> {
-                                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                                        LOGGER.log(System.Logger.Level.DEBUG, "Invalid token in cookie", throwable);
-                                    }
-                                    return Single.just(errorResponse(providerRequest,
-                                                                     Http.Status.UNAUTHORIZED_401,
-                                                                     null,
-                                                                     "Invalid token",
-                                                                     tenantId));
-                                });
+                        try {
+                            String tokenValue = cookie.get();
+                            return validateToken(tenantId, providerRequest, tokenValue);
+                        } catch (Exception e) {
+                            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                                LOGGER.log(System.Logger.Level.DEBUG, "Invalid token in cookie", e);
+                            }
+                            return errorResponse(providerRequest,
+                                                 Http.Status.UNAUTHORIZED_401,
+                                                 null,
+                                                 "Invalid token",
+                                                 tenantId);
+                        }
                     }
                 }
             }
@@ -222,12 +220,12 @@ class TenantAuthenticationHandler {
             return validateToken(tenantId, providerRequest, token.get());
         } else {
             LOGGER.log(System.Logger.Level.DEBUG, () -> "Missing token, could not find in either of: " + missingLocations);
-            return CompletableFuture.completedFuture(errorResponse(providerRequest,
-                                                                   Http.Status.UNAUTHORIZED_401,
-                                                                   null,
-                                                                   "Missing token, could not find in either of: "
-                                                                           + missingLocations,
-                                                                   tenantId));
+            return errorResponse(providerRequest,
+                                 Http.Status.UNAUTHORIZED_401,
+                                 null,
+                                 "Missing token, could not find in either of: "
+                                         + missingLocations,
+                                 tenantId);
         }
     }
 
@@ -334,17 +332,17 @@ class TenantAuthenticationHandler {
         return oidcConfig.redirectUriWithHost();
     }
 
-    private CompletionStage<AuthenticationResponse> failOrAbstain(String message) {
+    private AuthenticationResponse failOrAbstain(String message) {
         if (optional) {
-            return CompletableFuture.completedFuture(AuthenticationResponse.builder()
-                                                             .status(SecurityResponse.SecurityStatus.ABSTAIN)
-                                                             .description(message)
-                                                             .build());
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(message)
+                    .build();
         } else {
-            return CompletableFuture.completedFuture(AuthenticationResponse.builder()
-                                                             .status(AuthenticationResponse.SecurityStatus.FAILURE)
-                                                             .description(message)
-                                                             .build());
+            return AuthenticationResponse.builder()
+                    .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                    .description(message)
+                    .build();
         }
     }
 
@@ -403,27 +401,27 @@ class TenantAuthenticationHandler {
         return URLEncoder.encode(state, StandardCharsets.UTF_8);
     }
 
-    private Single<AuthenticationResponse> validateToken(String tenantId,
-                                                         ProviderRequest providerRequest,
-                                                         String token) {
+    private AuthenticationResponse validateToken(String tenantId, ProviderRequest providerRequest, String token) {
         SignedJwt signedJwt;
         try {
             signedJwt = SignedJwt.parseToken(token);
         } catch (Exception e) {
             //invalid token
-            LOGGER.log(System.Logger.Level.DEBUG, "Could not parse inbound token", e);
-            return Single.just(AuthenticationResponse.failed("Invalid token", e));
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG, "Could not parse inbound token", e);
+            }
+            return AuthenticationResponse.failed("Invalid token", e);
         }
 
-        return jwtValidator.apply(signedJwt, Errors.collector())
-                .map(it -> processValidationResult(providerRequest,
-                                                   signedJwt,
-                                                   tenantId,
-                                                   it))
-                .onErrorResume(t -> {
-                    LOGGER.log(System.Logger.Level.DEBUG, "Failed to validate request", t);
-                    return AuthenticationResponse.failed("Failed to validate JWT", t);
-                });
+        try {
+            Errors.Collector collector = jwtValidator.apply(signedJwt, Errors.collector());
+            return processValidationResult(providerRequest, signedJwt, tenantId, collector);
+        } catch (Exception e) {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG, "Failed to validate request", e);
+            }
+            return AuthenticationResponse.failed("Failed to validate JWT", e);
+        }
     }
 
     private AuthenticationResponse processValidationResult(ProviderRequest providerRequest,

@@ -71,9 +71,7 @@ class IdcsRoleMapperRxProviderTest {
                                                            .user(Subject.builder()
                                                                          .principal(Principal.create(username))
                                                                          .build())
-                                                           .build())
-                .toCompletableFuture()
-                .join();
+                                                           .build());
 
         Subject subject = response.user()
                 .get();
@@ -89,9 +87,7 @@ class IdcsRoleMapperRxProviderTest {
                                         .user(Subject.builder()
                                                       .principal(Principal.create(username))
                                                       .build())
-                                        .build())
-                .toCompletableFuture()
-                .join();
+                                        .build());
         grants = response.user().get().grants(Role.class);
         assertThat(grants, iterableWithSize(5));
         Role counted2 = findCounted(grants);
@@ -127,17 +123,17 @@ class IdcsRoleMapperRxProviderTest {
         }
 
         @Override
-        protected Single<List<? extends Grant>> getGrantsFromServer(Subject subject) {
+        protected List<? extends Grant> getGrantsFromServer(Subject subject) {
             String id = subject.principal().id();
-            return Single.just(List.of(Role.create("counted_"+ COUNTER.incrementAndGet()),
-                                       Role.create("fixed"),
-                                       Role.create(id)));
+            return List.of(Role.create("counted_"+ COUNTER.incrementAndGet()),
+                           Role.create("fixed"),
+                           Role.create(id));
         }
 
         @Override
-        protected Single<List<? extends Grant>> addAdditionalGrants(Subject subject, List<Grant> idcsGrants) {
-            return Single.just(List.of(Role.create("additional_"+ COUNTER.incrementAndGet()),
-                                       Role.create("additional-fixed")));
+        protected List<? extends Grant> addAdditionalGrants(Subject subject, List<Grant> idcsGrants) {
+            return List.of(Role.create("additional_"+ COUNTER.incrementAndGet()),
+                           Role.create("additional-fixed"));
         }
     }
 }

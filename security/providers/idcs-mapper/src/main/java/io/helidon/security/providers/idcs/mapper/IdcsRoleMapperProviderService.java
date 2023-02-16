@@ -34,7 +34,7 @@ public class IdcsRoleMapperProviderService implements SecurityProviderService {
     // This is for backward compatibility only. This will be changed in 3.x
     @Override
     public Class<? extends SecurityProvider> providerClass() {
-        return IdcsRoleMapperProvider.class;
+        return IdcsMtRoleMapperRxProvider.class;
     }
 
     @Override
