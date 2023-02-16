@@ -21,9 +21,62 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Represents the model object for an interface or an abstract type.
+ * Represents the model object for a type.
  */
 public interface TypeInfo {
+    /**
+     * The {@code public} modifier.
+     */
+    String MODIFIER_PUBLIC = "PUBLIC";
+    /**
+     * The {@code protected} modifier.
+     */
+    String MODIFIER_PROTECTED = "PROTECTED";
+    /**
+     * The {@code private} modifier.
+     */
+    String MODIFIER_PRIVATE = "PRIVATE";
+    /**
+     * The {@code abstract} modifier.
+     */
+    String MODIFIER_ABSTRACT = "ABSTRACT";
+    /**
+     * The {@code default} modifier.
+     */
+    String MODIFIER_DEFAULT = "DEFAULT";
+    /**
+     * The {@code static} modifier.
+     */
+    String MODIFIER_STATIC = "STATIC";
+    /**
+     * The {@code sealed} modifier.
+     */
+    String MODIFIER_SEALED = "SEALED";
+    /**
+     * The {@code final} modifier.
+     */
+    String MODIFIER_FINAL = "FINAL";
+
+    /**
+     * Enum class.
+     */
+    String TYPE_ENUM = "ENUM";
+    /**
+     * Class, unless more specific type is more relevant, such as {@link #TYPE_ENUM}.
+     */
+    String TYPE_CLASS = "CLASS";
+    /**
+     * Annotation interface.
+     */
+    String TYPE_ANNOTATION = "ANNOTATION_TYPE";
+    /**
+     * Interface.
+     */
+    String TYPE_INTERFACE = "INTERFACE";
+    /**
+     * Record type (sing Java 16).
+     */
+    String TYPE_RECORD = "RECORD";
 
     /**
      * The type name.
@@ -35,7 +88,8 @@ public interface TypeInfo {
     /**
      * The type element kind.
      *
-     * @return the type element kind (e.g., "INTERFACE", "ANNOTATION_TYPE", etc.)
+     * @return the type element kind (e.g., "{@value #TYPE_INTERFACE}", "{@value #TYPE_ANNOTATION}", etc.)
+     * @see #TYPE_CLASS and other constants on this class prefixed with {@code TYPE}
      */
     String typeKind();
 
@@ -72,6 +126,7 @@ public interface TypeInfo {
      * Element modifiers.
      *
      * @return element modifiers
+     * @see #MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
      */
     Set<String> modifierNames();
 

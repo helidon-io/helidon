@@ -22,8 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import javax.lang.model.element.ElementKind;
-
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -52,7 +50,7 @@ public class HttpEndpointProducer implements CustomAnnotationTemplateCreator {
     @Override
     public Optional<CustomAnnotationTemplateResponse> create(CustomAnnotationTemplateRequest request) {
         TypeInfo enclosingType = request.enclosingTypeInfo();
-        if (!ElementKind.CLASS.name().equals(enclosingType.typeKind())) {
+        if (!enclosingType.typeKind().equals(TypeInfo.TYPE_CLASS)) {
             // we are only interested in classes, not in methods
             return Optional.empty();
         }
