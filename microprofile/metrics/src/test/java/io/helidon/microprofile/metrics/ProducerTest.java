@@ -22,7 +22,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -43,7 +43,8 @@ public class ProducerTest extends MetricsBaseTest {
     public void testFieldProducer() {
         ProducerBean bean = newBean(ProducerBean.class);
         assertThat(getMetricRegistry().getCounters().containsKey(counter1), is(true));
-        assertThat(getMetricRegistry().getCounters().get(counter1).getCount(), is(0L));
+        Counter counter = getMetricRegistry().getCounters().get(counter1);
+        assertThat(counter.getCount(), is(ProducerBean.FIELD_PRODUCED_EXPECTED_VALUE));
     }
 
     @Test

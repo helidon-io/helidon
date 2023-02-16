@@ -31,11 +31,12 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
 @Dependent
 public class ProducerBean {
 
+    static final long FIELD_PRODUCED_EXPECTED_VALUE = 3L;
     @Inject
     private MetricRegistry metricRegistry;
 
     @Produces @Red
-    final Counter counter1 = new LongCounter();
+    final Counter counter1 = new LongCounter(FIELD_PRODUCED_EXPECTED_VALUE);
 
     @PostConstruct
     private void init() {
@@ -50,7 +51,14 @@ public class ProducerBean {
         return counter;
     }
 
-    class LongCounter implements Counter {
+    static class LongCounter implements Counter {
+
+        LongCounter(long initialValue) {
+            count = initialValue;
+        }
+
+        LongCounter() {
+        }
 
         private long count;
 
