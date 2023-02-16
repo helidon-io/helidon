@@ -58,7 +58,7 @@ public class AbacProviderTest {
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
         when(request.endpointConfig()).thenReturn(ec);
 
-        AuthorizationResponse response = provider.syncAuthorize(request);
+        AuthorizationResponse response = provider.authorize(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.description(), not(Optional.empty()));
@@ -86,7 +86,7 @@ public class AbacProviderTest {
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
         when(request.endpointConfig()).thenReturn(ec);
 
-        AuthorizationResponse response = provider.syncAuthorize(request);
+        AuthorizationResponse response = provider.authorize(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.description(), not(Optional.empty()));
@@ -115,7 +115,7 @@ public class AbacProviderTest {
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
         when(request.endpointConfig()).thenReturn(ec);
 
-        AuthorizationResponse response = provider.syncAuthorize(request);
+        AuthorizationResponse response = provider.authorize(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.description(), not(Optional.empty()));
@@ -144,7 +144,7 @@ public class AbacProviderTest {
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
         when(request.endpointConfig()).thenReturn(ec);
 
-        AuthorizationResponse response = provider.syncAuthorize(request);
+        AuthorizationResponse response = provider.authorize(request);
 
         assertThat(response.description().orElse("Attrib1 value is true, so the authorization should succeed"),
                    response.status(),

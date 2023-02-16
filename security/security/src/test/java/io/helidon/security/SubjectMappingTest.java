@@ -118,9 +118,8 @@ public class SubjectMappingTest {
 
     private static class Mapper implements SubjectMappingProvider {
         @Override
-        public CompletionStage<AuthenticationResponse> map(ProviderRequest providerRequest,
-                                                           AuthenticationResponse previousResponse) {
-            return CompletableFuture.completedFuture(buildResponse(providerRequest, previousResponse));
+        public AuthenticationResponse map(ProviderRequest providerRequest, AuthenticationResponse previousResponse) {
+            return buildResponse(providerRequest, previousResponse);
         }
 
         private AuthenticationResponse buildResponse(ProviderRequest providerRequest,

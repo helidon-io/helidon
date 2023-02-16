@@ -58,7 +58,7 @@ public class ProviderForTesting implements AuthenticationProvider, Authorization
     }
 
     @Override
-    protected AuthorizationResponse syncAuthorize(ProviderRequest providerRequest) {
+    public AuthorizationResponse authorize(ProviderRequest providerRequest) {
         String resource = providerRequest.env().abacAttribute("resourceType")
                 .map(String::valueOf)
                 .orElseThrow(() -> new IllegalArgumentException("Resource type is required"));

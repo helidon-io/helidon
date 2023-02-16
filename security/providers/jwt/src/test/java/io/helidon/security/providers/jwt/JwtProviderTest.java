@@ -85,7 +85,7 @@ public class JwtProviderTest {
 
         when(atnRequest.env()).thenReturn(se);
 
-        AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
+        AuthenticationResponse authenticationResponse = provider.authenticate(atnRequest);
 
         assertThat(authenticationResponse.service(), is(Optional.empty()));
         assertThat(authenticationResponse.user(), is(Optional.empty()));
@@ -132,7 +132,7 @@ public class JwtProviderTest {
 
         assertThat(provider.isOutboundSupported(request, outboundEnv, outboundEp), is(true));
 
-        OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
+        OutboundSecurityResponse response = provider.outboundSecurity(request, outboundEnv, outboundEp);
 
         String signedToken = response.requestHeaders().get("Authorization").get(0);
         signedToken = signedToken.substring("bearer ".length());
@@ -168,7 +168,7 @@ public class JwtProviderTest {
 
         when(atnRequest.env()).thenReturn(se);
 
-        AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
+        AuthenticationResponse authenticationResponse = provider.authenticate(atnRequest);
         authenticationResponse.user()
                 .map(Subject::principal)
                 .ifPresentOrElse(atnPrincipal -> {
@@ -224,7 +224,7 @@ public class JwtProviderTest {
 
         assertThat(provider.isOutboundSupported(request, outboundEnv, outboundEp), is(true));
 
-        OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
+        OutboundSecurityResponse response = provider.outboundSecurity(request, outboundEnv, outboundEp);
 
         String signedToken = response.requestHeaders().get("Authorization").get(0);
         signedToken = signedToken.substring("bearer ".length());
@@ -242,7 +242,7 @@ public class JwtProviderTest {
                 .build();
         when(atnRequest.env()).thenReturn(se);
 
-        AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
+        AuthenticationResponse authenticationResponse = provider.authenticate(atnRequest);
         authenticationResponse.user()
                 .map(Subject::principal)
                 .ifPresentOrElse(atnPrincipal -> {
@@ -298,7 +298,7 @@ public class JwtProviderTest {
 
         assertThat(provider.isOutboundSupported(request, outboundEnv, outboundEp), is(true));
 
-        OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
+        OutboundSecurityResponse response = provider.outboundSecurity(request, outboundEnv, outboundEp);
 
         String signedToken = response.requestHeaders().get("Authorization").get(0);
         signedToken = signedToken.substring("bearer ".length());
@@ -316,7 +316,7 @@ public class JwtProviderTest {
                 .build();
         when(atnRequest.env()).thenReturn(se);
 
-        AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
+        AuthenticationResponse authenticationResponse = provider.authenticate(atnRequest);
         assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
     }
 
@@ -344,7 +344,7 @@ public class JwtProviderTest {
 
         assertThat(provider.isOutboundSupported(request, outboundEnv, outboundEp), is(true));
 
-        OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
+        OutboundSecurityResponse response = provider.outboundSecurity(request, outboundEnv, outboundEp);
 
         String signedToken = response.requestHeaders().get("Authorization").get(0);
         signedToken = signedToken.substring("bearer ".length());
@@ -380,7 +380,7 @@ public class JwtProviderTest {
                 .build();
         when(atnRequest.env()).thenReturn(se);
 
-        AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
+        AuthenticationResponse authenticationResponse = provider.authenticate(atnRequest);
         authenticationResponse.user()
                 .map(Subject::principal)
                 .ifPresentOrElse(atnPrincipal -> {
@@ -436,7 +436,7 @@ public class JwtProviderTest {
 
         assertThat(provider.isOutboundSupported(request, outboundEnv, outboundEp), is(true));
 
-        OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
+        OutboundSecurityResponse response = provider.outboundSecurity(request, outboundEnv, outboundEp);
 
         String signedToken = response.requestHeaders().get("Authorization").get(0);
         signedToken = signedToken.substring("bearer ".length());
@@ -475,7 +475,7 @@ public class JwtProviderTest {
                 .build();
         when(atnRequest.env()).thenReturn(se);
 
-        AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
+        AuthenticationResponse authenticationResponse = provider.authenticate(atnRequest);
         authenticationResponse.user()
                 .map(Subject::principal)
                 .ifPresentOrElse(atnPrincipal -> {
