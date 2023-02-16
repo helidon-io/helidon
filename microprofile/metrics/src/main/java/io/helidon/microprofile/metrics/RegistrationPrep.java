@@ -271,29 +271,6 @@ abstract class RegistrationPrep {
          * @param beanManager bean manager to use for fetching injected metrics to force their registration
          */
         void register(MetricRegistry registry, BeanManager beanManager, InjectionPoint injectionPoint) {
-            // For injected registrations, the consistency check between a previously-registered metric with the same name and
-            // tags vs. this new registration is "softer" than for intercept registrations.
-            //
-            // That is, if the field or parameter bears a @Metric annotation, then any non-default string element (name, tags,
-            // (etc.) must match the previously-registered metadata but any empty string matches any previous value.
-
-            org.eclipse.microprofile.metrics.annotation.Metric metricAnno =
-                    annotated.getAnnotation(org.eclipse.microprofile.metrics.annotation.Metric.class);
-
-            Metadata previouslyRegisteredMetadata = registry.getMetadata().get(metricName());
-            if (previouslyRegisteredMetadata != null) {
-                if (!MetricUtil.checkConsistentMetadata(metricName(),
-                                                        previouslyRegisteredMetadata,
-                                                        info().metricType(),
-                                                        metricAnno)) {
-                    throw new IllegalArgumentException(String.format(
-                            "Attempt to inject previously-registered metric %s with metadata %s using "
-                            + "inconsistent settings %s",
-                            metricName(),
-                            previouslyRegisteredMetadata,
-                            annotated.getAnnotation(org.eclipse.microprofile.metrics.annotation.Metric.class)));
-                }
-            }
 
             // Have CDI use producers to warm up the injected metrics to use developer-provided producers, if any.
             Bean<?> bean = injectionPoint.getBean();
