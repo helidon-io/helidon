@@ -49,7 +49,9 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             SINGLETON,
             EXTERNAL_CONTRACTS,
             INTERCEPTED,
-            SINGLETON_JAVAX
+            SINGLETON_JAVAX,
+            UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAKARTA,
+            UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAVAX
     );
 
     /**

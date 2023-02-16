@@ -33,7 +33,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 class PerRequestProviderTest {
 
-    Config config = PicoTestingSupport.basicTesableConfig();
+    Config config = PicoTestingSupport.basicTestableConfig();
     PicoServices picoServices;
     Services services;
 

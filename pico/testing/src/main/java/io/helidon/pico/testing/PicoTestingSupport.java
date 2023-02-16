@@ -39,7 +39,7 @@ import io.helidon.pico.spi.Resetable;
  * Supporting helper utilities unit-testing Pico services.
  */
 public class PicoTestingSupport {
-    private static LazyValue<PicoServices> instance = lazyCreate(basicTesableConfig());
+    private static LazyValue<PicoServices> instance = lazyCreate(basicTestableConfig());
 
     private PicoTestingSupport() {
     }
@@ -91,7 +91,7 @@ public class PicoTestingSupport {
      *
      * @return testable config
      */
-    public static Config basicTesableConfig() {
+    public static Config basicTestableConfig() {
         return Config.create(
                     ConfigSources.create(
                             Map.of(
@@ -132,7 +132,7 @@ public class PicoTestingSupport {
     private static class Internal extends PicoServicesHolder {
         public static void reset() {
             PicoServicesHolder.reset();
-            instance = lazyCreate(basicTesableConfig());
+            instance = lazyCreate(basicTestableConfig());
 
             BasicConfigBeanRegistry registry = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
             if (registry instanceof Resetable) {

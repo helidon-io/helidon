@@ -99,7 +99,7 @@ public @interface ConfigBean {
     boolean repeatable() default true;
 
     /**
-     * An instance of this bean will be created iff there are no instances discovered by the configuration provider(s) post
+     * An instance of this bean will be created if there are no instances discovered by the configuration provider(s) post
      * startup, and will use all default values annotated on the bean interface.
      *
      * @return use the default config instance

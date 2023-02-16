@@ -46,7 +46,7 @@ import static io.helidon.pico.PicoServicesConfig.KEY_PERMITS_DYNAMIC;
 import static io.helidon.pico.PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS;
 import static io.helidon.pico.PicoServicesConfig.KEY_USES_COMPILE_TIME_MODULES;
 import static io.helidon.pico.PicoServicesConfig.NAME;
-import static io.helidon.pico.testing.PicoTestingSupport.basicTesableConfig;
+import static io.helidon.pico.testing.PicoTestingSupport.basicTestableConfig;
 import static io.helidon.pico.testing.PicoTestingSupport.bind;
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
 import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ComplexInterceptorTest {
 
-    Config config = basicTesableConfig();
+    Config config = basicTestableConfig();
     PicoServices picoServices;
     Services services;
 

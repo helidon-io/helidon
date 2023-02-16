@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class ToolBoxTest {
 
-    Config config = PicoTestingSupport.basicTesableConfig();
+    Config config = PicoTestingSupport.basicTestableConfig();
     PicoServices picoServices;
     Services services;
 

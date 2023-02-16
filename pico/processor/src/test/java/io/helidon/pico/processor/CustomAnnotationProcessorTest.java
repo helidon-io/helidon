@@ -53,7 +53,7 @@ class CustomAnnotationProcessorTest {
     void annotationSupported() {
         CustomAnnotationProcessor processor = new CustomAnnotationProcessor();
         assertThat(processor.annoTypes(),
-                   containsInAnyOrder(ExtensibleGET.class));
+                   containsInAnyOrder(ExtensibleGET.class.getName()));
     }
 
     @Test

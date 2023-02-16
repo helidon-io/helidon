@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.contains;
 
 class InterceptorStackingTest {
 
-    Config config = PicoTestingSupport.basicTesableConfig();
+    Config config = PicoTestingSupport.basicTestableConfig();
     PicoServices picoServices;
     Services services;
 
