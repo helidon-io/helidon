@@ -21,6 +21,8 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 
@@ -241,6 +243,8 @@ abstract class RegistrationPrep {
      */
     static class InjectRegistrationPrep extends RegistrationPrep {
 
+        private static final Logger LOGGER = Logger.getLogger(InjectRegistrationPrep.class.getName());
+
         private final Annotated annotated;
 
         /**
@@ -294,7 +298,10 @@ abstract class RegistrationPrep {
             // Have CDI use producers to warm up the injected metrics to use developer-provided producers, if any.
             Bean<?> bean = injectionPoint.getBean();
             CreationalContext<?> cc = beanManager.createCreationalContext(bean);
-            beanManager.getInjectableReference(injectionPoint, cc);
+            String force = beanManager.getInjectableReference(injectionPoint, cc).toString();
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.log(Level.FINER, "Pre-fetched injected metric " + force);
+            }
         }
     }
 }
