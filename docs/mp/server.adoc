@@ -39,7 +39,7 @@ include::{rootdir}/includes/mp.adoc[]
 ** <<Configuring TLS, TLS>>
 ** <<Configuring additional ports, Additional Ports>>
 ** <<Configuring A Reactive Route, Reactive Route>>
-** <<Customizing the MP Server at Startup, Customize Server at Startup>>
+** <<Customizing MP Server at Startup, Customize Server at Startup>>
 ** <<Serving Static Content, Serving Static Content>>
 - <<Reference, Reference>>
 
