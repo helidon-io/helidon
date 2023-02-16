@@ -45,9 +45,6 @@ import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 import io.helidon.security.util.TokenHandler;
 
 import jakarta.json.JsonObject;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.WebTarget;
 
 /**
  * Configuration of OIDC usable from all resources that utilize OIDC specification, such as security provider, web server
@@ -360,11 +357,8 @@ public final class OidcConfig extends TenantConfigImpl {
     private final boolean forceHttpsRedirects;
     private final Duration tokenRefreshSkew;
     private final boolean relativeUris;
-    private final Client generalClient;
     private final WebClient webClient;
-    private final LazyValue<Optional<WebTarget>> introspectEndpoint;
     private final Supplier<WebClient.Builder> webClientBuilderSupplier;
-    private final Supplier<ClientBuilder> jaxrsClientBuilderSupplier;
     private final LazyValue<Tenant> defaultTenant;
     private final boolean useParam;
     private final String paramName;
@@ -391,7 +385,6 @@ public final class OidcConfig extends TenantConfigImpl {
         this.tokenRefreshSkew = builder.tokenRefreshSkew;
         this.tenantConfigurations = Map.copyOf(builder.tenantConfigurations);
         this.webClient = builder.webClient;
-        this.generalClient = builder.generalClient;
         this.relativeUris = builder.relativeUris;
 
         this.useParam = builder.useParam;
@@ -404,14 +397,7 @@ public final class OidcConfig extends TenantConfigImpl {
         this.idTokenCookieHandler = builder.idTokenCookieBuilder.build();
         this.tenantCookieHandler = builder.tenantCookieBuilder.build();
 
-        if (builder.validateJwtWithJwk()) {
-            this.introspectEndpoint = LazyValue.create(Optional.empty());
-        } else {
-            this.introspectEndpoint = LazyValue.create(() -> Optional.of(appClient().target(builder.introspectUri())));
-        }
-
         this.webClientBuilderSupplier = builder.webClientBuilderSupplier;
-        this.jaxrsClientBuilderSupplier = builder.jaxrsClientBuilderSupplier;
         this.defaultTenant = LazyValue.create(() -> Tenant.create(this, this));
 
         LOGGER.log(Level.TRACE, () -> "Redirect URI with host: " + frontendUri + redirectUri);
@@ -750,31 +736,9 @@ public final class OidcConfig extends TenantConfigImpl {
      * Client with configured proxy with no security.
      *
      * @return client for general use.
-     * @deprecated Use {@link #generalWebClient()} instead
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public Client generalClient() {
-        return generalClient;
-    }
-
-    /**
-     * Client with configured proxy with no security.
-     *
-     * @return client for general use.
      */
     public WebClient generalWebClient() {
         return webClient;
-    }
-
-    /**
-     * Client with configured proxy and security of this OIDC client.
-     *
-     * @return client for communication with OIDC server
-     * @deprecated Use {@link #appWebClient()}
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public Client appClient() {
-        return defaultTenant.get().appClient();
     }
 
     /**
@@ -784,32 +748,6 @@ public final class OidcConfig extends TenantConfigImpl {
      */
     public WebClient appWebClient() {
         return defaultTenant.get().appWebClient();
-    }
-
-    /**
-     * Token endpoint of the OIDC server.
-     *
-     * @return target the endpoint is on
-     * @see OidcConfig.Builder#tokenEndpointUri(URI)
-     * @deprecated Please use {@link #appWebClient()} and {@link #tokenEndpointUri()} instead; result of moving to
-     * reactive webclient from JAX-RS client
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public WebTarget tokenEndpoint() {
-        return defaultTenant.get().tokenEndpoint();
-    }
-
-    /**
-     * Token introspection endpoint.
-     *
-     * @return introspection endpoint
-     * @see OidcConfig.Builder#introspectEndpointUri(URI)
-     * @deprecated Please use {@link #appWebClient()} and {@link #introspectUri()} instead; result of moving to
-     * reactive webclient from JAX-RS client
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public WebTarget introspectEndpoint() {
-        return introspectEndpoint.get().orElse(null);
     }
 
     /**
@@ -886,10 +824,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
     Supplier<WebClient.Builder> webClientBuilderSupplier() {
         return webClientBuilderSupplier;
-    }
-
-    Supplier<ClientBuilder> jaxrsClientBuilderSupplier() {
-        return jaxrsClientBuilderSupplier;
     }
 
     /**
@@ -987,11 +921,8 @@ public final class OidcConfig extends TenantConfigImpl {
         private String proxyHost;
         private String proxyProtocol = DEFAULT_PROXY_PROTOCOL;
         private int proxyPort = DEFAULT_PROXY_PORT;
-        @Deprecated
-        private Client generalClient;
         private WebClient webClient;
         private Supplier<WebClient.Builder> webClientBuilderSupplier;
-        private Supplier<ClientBuilder> jaxrsClientBuilderSupplier;
         private String paramName = DEFAULT_PARAM_NAME;
         private String tenantParamName = DEFAULT_TENANT_PARAM_NAME;
         private boolean useHeader = DEFAULT_HEADER_USE;
@@ -1055,9 +986,6 @@ public final class OidcConfig extends TenantConfigImpl {
                                                                                 proxyPort,
                                                                                 relativeUris,
                                                                                 clientTimeout());
-            this.jaxrsClientBuilderSupplier = () -> OidcUtil.clientBaseBuilder(proxyProtocol, proxyHost, proxyPort);
-
-            this.generalClient = jaxrsClientBuilderSupplier.get().build();
             this.webClient = webClientBuilderSupplier.get().build();
 
             return new OidcConfig(this);
@@ -1655,10 +1583,6 @@ public final class OidcConfig extends TenantConfigImpl {
         public Builder addTenantConfig(TenantConfig tenantConfig) {
             tenantConfigurations.put(tenantConfig.name(), tenantConfig);
             return this;
-        }
-
-        private void clientTimeoutMillis(long millis) {
-            this.clientTimeout(Duration.ofMillis(millis));
         }
     }
 }

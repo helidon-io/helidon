@@ -27,8 +27,6 @@ import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.tracing.WebClientTracing;
 import io.helidon.security.providers.common.OutboundConfig;
 
-import jakarta.ws.rs.client.ClientBuilder;
-import org.glassfish.jersey.client.ClientProperties;
 
 final class OidcUtil {
     private static final System.Logger LOGGER = System.getLogger(OidcUtil.class.getName());
@@ -48,22 +46,6 @@ final class OidcUtil {
             return OidcConfig.Builder.DEFAULT_SERVER_TYPE;
         }
         return serverType;
-    }
-
-    static ClientBuilder clientBaseBuilder(String proxyProtocol, String proxyHost, int proxyPort) {
-        ClientBuilder clientBuilder = ClientBuilder.newBuilder();
-
-        clientBuilder.property(OutboundConfig.PROPERTY_DISABLE_OUTBOUND, Boolean.TRUE);
-
-        if (proxyHost != null) {
-            clientBuilder.property(ClientProperties.PROXY_URI, proxyProtocol
-                    + "://"
-                    + proxyHost
-                    + ":"
-                    + proxyPort);
-        }
-
-        return clientBuilder;
     }
 
     static WebClient.Builder webClientBaseBuilder(String proxyHost,

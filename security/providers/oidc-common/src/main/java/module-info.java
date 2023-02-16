@@ -37,10 +37,6 @@ module io.helidon.security.providers.oidc.common {
     requires static io.helidon.config.metadata;
     requires io.helidon.cors;
 
-    // these are deprecated and will be removed in 3.x
-    requires jersey.client;
-    requires jakarta.ws.rs;
-
     exports io.helidon.security.providers.oidc.common;
     exports io.helidon.security.providers.oidc.common.spi;
 }

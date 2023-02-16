@@ -41,13 +41,13 @@ abstract class OidcConfigAbstractTest {
                   () -> assertThat("Client ID", config.clientId(), is("client-id-value")),
                   () -> assertThat("Validate JWT with JWK", config.validateJwtWithJwk(), is(false)),
                   () -> assertThat("Token endpoint",
-                                   config.tokenEndpoint().getUri(),
+                                   config.tokenEndpointUri(),
                                    is(URI.create("http://identity.oracle.com/tokens"))),
                   () -> assertThat("Authorization endpoint",
                                    config.authorizationEndpointUri(),
                                    is("http://identity.oracle.com/authorization")),
                   () -> assertThat("Introspect endpoint",
-                                   config.introspectEndpoint().getUri(),
+                                   config.introspectUri(),
                                    is(URI.create("http://identity.oracle.com/introspect"))),
                   () -> assertThat("Validate relativeUris flag",
                                   config.relativeUris(),
@@ -71,8 +71,8 @@ abstract class OidcConfigAbstractTest {
                   () -> assertThat("Audience", config.audience(), is("https://identity.oracle.com")),
                   () -> assertThat("Parameter name", config.paramName(), is("accessToken")),
                   () -> assertThat("Issuer", config.issuer(), nullValue()),
-                  () -> assertThat("Client without authentication", config.generalClient(), notNullValue()),
-                  () -> assertThat("Client with authentication", config.appClient(), notNullValue()),
+                  () -> assertThat("Client without authentication", config.generalWebClient(), notNullValue()),
+                  () -> assertThat("Client with authentication", config.appWebClient(), notNullValue()),
                   () -> assertThat("JWK Keys", config.signJwk(), notNullValue())
         );
     }
