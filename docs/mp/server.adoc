@@ -351,7 +351,7 @@ private void thisIsAnExampleMethodFromTheHelidonMPFAQ(@Observes @Initialized(App
 }
 ----
 
-You can combine the the observer method with `ServerCdiExtension` customize the underlying WebServer without configuration.
+You can combine the the observer method with `ServerCdiExtension` to customize the underlying WebServer without configuration.
 
 You can also use  `ServerCdiExtension` to handle bad requests for illegal characters in URI as shown in the example below:
 
