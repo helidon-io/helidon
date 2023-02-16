@@ -60,10 +60,9 @@ public class DefaultTypeName implements TypeName {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(name());
+        return Objects.hash(name(), primitive, array);
     }
 
-    // TODO equals, hashCode and compareTo are not correct
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof TypeName)) {
@@ -77,7 +76,16 @@ public class DefaultTypeName implements TypeName {
 
     @Override
     public int compareTo(TypeName o) {
-        return name().compareTo(o.name());
+        int diff = name().compareTo(o.name());
+        if (diff != 0) {
+            // different name
+            return diff;
+        }
+        diff = Boolean.compare(primitive, o.primitive());
+        if (diff != 0) {
+            return diff;
+        }
+        return Boolean.compare(array, o.array());
     }
 
     /**

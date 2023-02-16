@@ -23,14 +23,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import static io.helidon.common.types.DefaultTypeName.builder;
 import static io.helidon.common.types.DefaultTypeName.create;
 import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.lessThan;
 
 class DefaultTypeNameTest {
 
@@ -199,22 +205,22 @@ class DefaultTypeNameTest {
         assertThat(typeName.fqName(),
                    is("java.util.List<java.lang.String>"));
         assertThat(typeName.toString(),
-                                 is("java.util.List<java.lang.String>"));
+                   is("java.util.List<java.lang.String>"));
         assertThat(typeName.name(),
-                                 is("java.util.List"));
+                   is("java.util.List"));
 
         typeName = DefaultTypeName.createFromTypeName("? extends pkg.Something");
         assertThat(typeName.wildcard(), is(true));
         assertThat(typeName.fqName(),
                    is("? extends pkg.Something"));
         assertThat(typeName.toString(),
-                                 is("? extends pkg.Something"));
+                   is("? extends pkg.Something"));
         assertThat(typeName.name(),
-                                 is("pkg.Something"));
+                   is("pkg.Something"));
         assertThat(typeName.packageName(),
-                                 is("pkg"));
+                   is("pkg"));
         assertThat(typeName.className(),
-                                 is("Something"));
+                   is("Something"));
 
         typeName = DefaultTypeName.createFromTypeName("?");
         assertThat(typeName.wildcard(), is(true));
@@ -234,11 +240,11 @@ class DefaultTypeNameTest {
                 .typeArguments(Collections.singletonList(DefaultTypeName.createFromTypeName("? extends pkg.Something")))
                 .build();
         assertThat(typeName.fqName(),
-                                 is("java.util.List<? extends pkg.Something>"));
+                   is("java.util.List<? extends pkg.Something>"));
         assertThat(typeName.toString(),
-                                 is("java.util.List<? extends pkg.Something>"));
+                   is("java.util.List<? extends pkg.Something>"));
         assertThat(typeName.name(),
-                                 is("java.util.List"));
+                   is("java.util.List"));
     }
 
     @SuppressWarnings("unchecked")
@@ -356,4 +362,84 @@ class DefaultTypeNameTest {
         assertThat("isSet() for: " + typeName.name(), typeName.isSet(), is(false));
     }
 
+    @ParameterizedTest
+    @MethodSource("equalsAndCompareSource")
+    void hashEqualsAndCompare(EqualsData data) {
+        if (data.equal) {
+            assertThat("equals", data.first, equalTo(data.second));
+            assertThat("equals", data.second, equalTo(data.first));
+            assertThat("has", data.first.hashCode(), is(data.second.hashCode()));
+            if (data.canCompare) {
+                assertThat("compare", data.first.compareTo(data.second), is(0));
+                assertThat("compare", data.second.compareTo(data.first), is(0));
+            }
+        } else {
+            assertThat("equals", data.first, not(equalTo(data.second)));
+            assertThat("equals", data.second, not(equalTo(data.first)));
+            assertThat("has", data.first.hashCode(), not(data.second.hashCode()));
+            if (data.canCompare) {
+                int compareOne = data.first.compareTo(data.second);
+                int compareTwo = data.second.compareTo(data.first);
+                assertThat("compare", compareOne, not(0));
+                assertThat("compare", compareTwo, not(0));
+                assertThat("compare", compareOne, not(compareTwo));
+                // also make sure one is negative and one positive
+                assertThat("compare has negative and positive", (compareOne * compareTwo), lessThan(0));
+            }
+        }
+    }
+
+    private static Stream<EqualsData> equalsAndCompareSource() {
+        return Stream.of(
+                new EqualsData(create(DefaultTypeNameTest.class), create(DefaultTypeNameTest.class), true),
+                new EqualsData(create(DefaultTypeNameTest.class),
+                               builder().type(DefaultTypeNameTest.class).array(true).build(),
+                               false),
+                new EqualsData(create(DefaultTypeNameTest.class),
+                               builder().type(DefaultTypeNameTest.class).primitive(true).build(),
+                               false),
+                new EqualsData(create(DefaultTypeNameTest.class),
+                               builder().type(DefaultTypeNameTest.class).primitive(true).array(true).build(),
+                               false),
+                new EqualsData(builder().type(DefaultTypeNameTest.class).array(true).build(),
+                               builder().type(DefaultTypeNameTest.class).array(true).build(),
+                               true),
+                new EqualsData(builder().type(DefaultTypeNameTest.class).array(true).build(),
+                               builder().type(DefaultTypeNameTest.class).array(true).primitive(true).build(),
+                               false),
+                new EqualsData(builder().type(DefaultTypeNameTest.class).primitive(true).build(),
+                               builder().type(DefaultTypeNameTest.class).primitive(true).build(),
+                               true),
+                new EqualsData(builder().type(DefaultTypeNameTest.class).primitive(true).build(),
+                               builder().type(DefaultTypeNameTest.class).array(true).primitive(true).build(),
+                               false),
+                new EqualsData(create(long.class),
+                               builder().className("long").primitive(false).build(),
+                               false),
+                new EqualsData(create(DefaultTypeNameTest.class), "Some string", false, false)
+                );
+    }
+
+    private final static class EqualsData {
+        private final Comparable first;
+        private final Comparable second;
+        private final boolean equal;
+        private final boolean canCompare;
+
+        private EqualsData(Comparable<?> first, Comparable<?> second, boolean equal) {
+            this(first, second, equal, true);
+        }
+
+        private EqualsData(Comparable<?> first, Comparable<?> second, boolean equal, boolean canCompare) {
+            this.first = first;
+            this.second = second;
+            this.equal = equal;
+            this.canCompare = canCompare;
+        }
+
+        @Override
+        public String toString() {
+            return first + ", " + second + ", equals: " + equal;
+        }
+    }
 }
