@@ -24,14 +24,16 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 
+import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.AnnotatedField;
 import jakarta.enterprise.inject.spi.AnnotatedParameter;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 
 /**
@@ -157,15 +159,6 @@ abstract class RegistrationPrep {
     }
 
     /**
-     * Returns the previously-registered metric with the same name and tags or a new metric derived from the injected
-     * or annotated site.
-     *
-     * @param registry the metric registry in which to register the metric
-     * @return the registered or pre-existing metric
-     */
-    abstract Metric register(MetricRegistry registry);
-
-    /**
      * Deferred registration for metrics inferred from metrics annotations (e.g., {@code Counted}).
      *
      * @param <A> type of the annotation
@@ -217,7 +210,13 @@ abstract class RegistrationPrep {
             return annotation.annotationType();
         }
 
-        @Override
+        /**
+         * Returns the previously-registered metric with the same name and tags or a new metric derived from the injected
+         * or annotated site.
+         *
+         * @param registry the metric registry in which to register the metric
+         * @return the registered or pre-existing metric
+         */
         Metric register(MetricRegistry registry) {
             // Registrations via annotated sites must be fully compatible with any prior registration of the same metric,
             // including consistency of metadata including reuse settings. All that checking occurs in the registry's logic,
@@ -263,8 +262,14 @@ abstract class RegistrationPrep {
             this.registry = LazyValue.create(registry);
         }
 
-        @Override
-        Metric register(MetricRegistry registry) {
+        /**
+         * Returns the previously-registered metric with the same name and tags or a new metric derived from the injected
+         * or annotated site.
+         *
+         * @param registry the metric registry in which to register the metric
+         * @param beanManager bean manager to use for fetching injected metrics to force their registration
+         */
+        void register(MetricRegistry registry, BeanManager beanManager, InjectionPoint injectionPoint) {
             // For injected registrations, the consistency check between a previously-registered metric with the same name and
             // tags vs. this new registration is "softer" than for intercept registrations.
             //
@@ -289,38 +294,10 @@ abstract class RegistrationPrep {
                 }
             }
 
-            return info().registerFunction().register(registry, buildMetadata(), tags());
-        }
-
-        private Metadata buildMetadata() {
-            org.eclipse.microprofile.metrics.annotation.Metric metricAnno =
-                    annotated.getAnnotation(org.eclipse.microprofile.metrics.annotation.Metric.class);
-
-            MetadataBuilder metadataBuilder = Metadata.builder()
-                    .withName(metricName())
-                    .withType(info().metricType());
-            if (metricAnno != null) {
-                metadataBuilder.withDisplayName(metricAnno.displayName());
-                metadataBuilder.withDescription(metricAnno.description());
-                if (metricAnno.unit() != null) {
-                    Metadata previouslyRegisteredMetadata = registry.get().getMetadata().get(metricName());
-
-                    // If the @Metric annotation 'unit' setting is NONE, then that's the default so use
-                    // the value from the existing metadata.
-                    String annoUnit = metricAnno.unit();
-                    Optional<String> previouslyRegisteredUnit = previouslyRegisteredMetadata != null
-                            ? Optional.of(previouslyRegisteredMetadata.getUnit())
-                            : Optional.empty();
-                    if (!annoUnit.equals(MetricUnits.NONE)) {
-                        metadataBuilder.withUnit(annoUnit);
-                    } else {
-                        metadataBuilder.withUnit(previouslyRegisteredUnit.orElse(annoUnit));
-                    }
-                } else {
-                    metadataBuilder.withUnit(MetricUtil.chooseDefaultUnit(info().metricType()));
-                }
-            }
-            return metadataBuilder.build();
+            // Have CDI use producers to warm up the injected metrics to use developer-provided producers, if any.
+            Bean<?> bean = injectionPoint.getBean();
+            CreationalContext<?> cc = beanManager.createCreationalContext(bean);
+            beanManager.getInjectableReference(injectionPoint, cc);
         }
     }
 }

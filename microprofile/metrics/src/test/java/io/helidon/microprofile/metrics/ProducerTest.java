@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -43,7 +43,7 @@ public class ProducerTest extends MetricsBaseTest {
     public void testFieldProducer() {
         ProducerBean bean = newBean(ProducerBean.class);
         assertThat(getMetricRegistry().getCounters().containsKey(counter1), is(true));
-        assertThat(getMetricRegistry().getCounters().get(counter1).getCount(), is(0L));
+        assertThat(getMetricRegistry().getCounters().get(counter1).getCount(), is(ProducerBean.FIELD_PRODUCED_EXPECTED_VALUE));
     }
 
     @Test

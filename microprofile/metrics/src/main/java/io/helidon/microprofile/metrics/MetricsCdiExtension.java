@@ -48,6 +48,8 @@ import io.helidon.config.mp.MpConfig;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
+import io.helidon.microprofile.metrics.RegistrationPrep.InjectRegistrationPrep;
+import io.helidon.microprofile.metrics.RegistrationPrep.InterceptRegistrationPrep;
 import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
 import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -73,7 +75,9 @@ import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.DeploymentException;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedConstructorConfigurator;
@@ -185,9 +189,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     private boolean restEndpointsMetricsEnabled = REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE;
 
     private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();
-    private final List<RegistrationPrep.InterceptRegistrationPrep<?, ?>> interceptSites = new ArrayList<>();
-    private final List<RegistrationPrep.InjectRegistrationPrep> injectSites = new ArrayList<>();
-
+    private final List<InterceptRegistrationPrep<?, ?>> interceptSites = new ArrayList<>();
+    private final Map<Annotated, InjectRegistrationPrep> injectSites = new HashMap<>();
+    private final Map<Annotated, InjectionPoint> injectionPoints = new HashMap<>();
     private Errors.Collector errors = Errors.collector();
 
     private final Map<Class<?>, Set<Method>> methodsWithRestRequestMetrics = new HashMap<>();
@@ -243,7 +247,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     }
 
     private static <E extends Member & AnnotatedElement> void recordInterceptSite(
-            List<RegistrationPrep.InterceptRegistrationPrep<?, ?>> sites,
+            List<InterceptRegistrationPrep<?, ?>> sites,
             E element,
             Class<?> annotatedClass,
             LookupResult<? extends Annotation> lookupResult,
@@ -257,12 +261,12 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
 
     private void recordInjectedField(AnnotatedField<?> annotatedField) {
         RegistrationPrep.create(annotatedField, MetricsCdiExtension::getMetricRegistry)
-                .ifPresent(injectSites::add);
+                .ifPresent(prep -> injectSites.put(annotatedField, prep));
     }
 
     private void recordInjectedParameter(AnnotatedParameter<?> annotatedParameter) {
         RegistrationPrep.create(annotatedParameter, MetricsCdiExtension::getMetricRegistry)
-                .ifPresent(injectSites::add);
+                .ifPresent(prep -> injectSites.put(annotatedParameter, prep));
     }
 
     private void registerMetricsForInterceptSites() {
@@ -286,10 +290,18 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         interceptSites.clear();
     }
 
-    private void registerMetricsForInjectSites() {
+    private void registerMetricsForInjectSites(BeanManager bm) {
         MetricRegistry registry = getMetricRegistry();
-        injectSites.forEach(registrationPrep -> registrationPrep.register(registry));
+        injectSites.forEach((annotated, registrationPrep) ->
+                                    registrationPrep.register(registry,
+                                                              bm,
+                                                              injectionPoints.get(annotated)));
         injectSites.clear();
+        injectionPoints.clear();
+    }
+
+    private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> pip) {
+        injectionPoints.put(pip.getInjectionPoint().getAnnotated(), pip.getInjectionPoint());
     }
 
     @Override
@@ -804,7 +816,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         registerMetricsForInterceptSites();
         registerAnnotatedGauges(bm);
         registerRestRequestMetrics();
-        registerMetricsForInjectSites();
+        registerMetricsForInjectSites(bm);
 
         Errors problems = errors.collect();
         errors = null;
