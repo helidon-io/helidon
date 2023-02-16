@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.media.multipart;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
 
 import org.junit.jupiter.api.Test;
@@ -242,7 +244,7 @@ public class MultiPartDecoderTest {
     }
 
     @Test
-    public void testMulitiplePartsWithOneByOneSubscriber() {
+    public void testMultiplePartsWithOneByOneSubscriber() {
         String boundary = "boundary";
         final byte[] chunk1 = ("--" + boundary + "\n"
                 + "Content-Id: part1\n"
@@ -379,7 +381,7 @@ public class MultiPartDecoderTest {
             if (latch.getCount() == 2) {
                 assertThat(part.headers().values("Content-Id"), hasItems("part1"));
             }
-            part.content().subscribe(new Subscriber<DataChunk>() {
+            part.content().subscribe(new Subscriber<>() {
 
                 @Override
                 public void onSubscribe(Subscription subscription) {
@@ -409,14 +411,14 @@ public class MultiPartDecoderTest {
             throw new IllegalStateException("Not expecting to make progress, unless the part is consumed");
         } catch(CompletionException e) {
             Throwable error = e.getCause();
-            // This is the expected outcome - the testSubcriber is not making progress
+            // This is the expected outcome - the testSubscriber is not making progress
             assertThat(error.getClass(), is(equalTo(TimeoutException.class)));
         }
     }
 
     @Test
     public void testUpstreamError() {
-        MultiPartDecoder decoder = MultiPartDecoder.create("boundary", BodyPartTest.MEDIA_CONTEXT.readerContext());
+        MultiPartDecoder decoder = decoder("boundary");
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.INFINITE, null);
         decoder.subscribe(testSubscriber);
         Multi.<DataChunk>error(new IllegalStateException("oops")).subscribe(decoder);
@@ -431,14 +433,41 @@ public class MultiPartDecoderTest {
     }
 
     @Test
-    public void testSubcribingMoreThanOnce() {
-        MultiPartDecoder decoder = MultiPartDecoder.create("boundary", BodyPartTest.MEDIA_CONTEXT.readerContext());
+    public void testSubscribingMoreThanOnce() {
+        MultiPartDecoder decoder = decoder("boundary");
         chunksPublisher("foo".getBytes()).subscribe(decoder);
         try {
             chunksPublisher("bar".getBytes()).subscribe(decoder);
             fail("exception should be thrown");
         } catch(IllegalStateException ex) {
             assertThat(ex.getMessage(), is(equalTo("Flow.Subscription already set.")));
+        }
+    }
+
+    @Test
+    public void testLateSubscriber() {
+        String boundary = "boundary";
+        byte[] chunk1 = ("--" + boundary + "\n"
+                + "Content-Id: part1\n"
+                + "\n"
+                + "body 1\n"
+                + "--" + boundary + "--").getBytes();
+
+        // setup the decoder in an initialized state (upstream and downstream)
+        MultiPartDecoder decoder = decoder(boundary);
+        List<ReadableBodyPart> parts = new ArrayList<>();
+        Multi.create(decoder).subscribe(parts::add);
+        BufferedEmittingPublisher<DataChunk> emitter = BufferedEmittingPublisher.create();
+        emitter.subscribe(decoder);
+
+        // emit one chunk and complete
+        emitter.emit(DataChunk.create(chunk1));
+        emitter.complete();
+        try {
+            // subscribe for part chunks
+            parts.forEach(ReadableBodyPart::drain);
+        } catch (Throwable ex) {
+            fail(ex);
         }
     }
 
@@ -503,6 +532,16 @@ public class MultiPartDecoderTest {
     }
 
     /**
+     * Create a new decoder.
+     *
+     * @param boundary boundary delimiter
+     * @return decoder
+     */
+    static MultiPartDecoder decoder(String boundary) {
+        return MultiPartDecoder.create(boundary, BodyPartTest.MEDIA_CONTEXT.readerContext());
+    }
+
+    /**
      * Create the parts publisher for the specified boundary and request chunk.
      * @param boundary multipart boundary string
      * @param data data for the chunk
@@ -519,7 +558,7 @@ public class MultiPartDecoderTest {
      * @return publisher of body parts
      */
     static Publisher<? extends BodyPart> partsPublisher(String boundary, List<byte[]> data) {
-        MultiPartDecoder decoder = MultiPartDecoder.create(boundary, BodyPartTest.MEDIA_CONTEXT.readerContext());
+        MultiPartDecoder decoder = decoder(boundary);
         chunksPublisher(data).subscribe(decoder);
         return decoder;
     }
@@ -602,6 +641,7 @@ public class MultiPartDecoderTest {
                try {
                   Thread.sleep(10);
                } catch(Exception e) {
+                   e.printStackTrace();
                }
                subscription.request(1);
                return 0;
