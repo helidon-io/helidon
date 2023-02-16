@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.lang.System.Logger;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Executable;
@@ -241,6 +242,8 @@ abstract class RegistrationPrep {
      */
     static class InjectRegistrationPrep extends RegistrationPrep {
 
+        private static final Logger LOGGER = System.getLogger(InjectRegistrationPrep.class.getName());
+
         private final Annotated annotated;
 
         private final LazyValue<MetricRegistry> registry;
@@ -297,7 +300,10 @@ abstract class RegistrationPrep {
             // Have CDI use producers to warm up the injected metrics to use developer-provided producers, if any.
             Bean<?> bean = injectionPoint.getBean();
             CreationalContext<?> cc = beanManager.createCreationalContext(bean);
-            beanManager.getInjectableReference(injectionPoint, cc);
+            String force = beanManager.getInjectableReference(injectionPoint, cc).toString();
+            if (LOGGER.isLoggable(Logger.Level.DEBUG)) {
+                LOGGER.log(Logger.Level.DEBUG, "Pre-fetched injected metric " + force);
+            }
         }
     }
 }
