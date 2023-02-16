@@ -16,7 +16,6 @@
 
 package io.helidon.examples.nima.pico;
 
-
 import io.helidon.common.http.Entity;
 import io.helidon.common.http.GET;
 import io.helidon.common.http.HeaderParam;

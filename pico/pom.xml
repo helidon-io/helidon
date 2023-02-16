@@ -37,11 +37,7 @@
 
     <properties>
         <!-- all pico modules should be backward compatible with 11 -->
-        <version.java>19</version.java>
-
-        <!-- pico supports legacy javax.inject and javax.annotations in tooling -->
-        <javax.injection.version>1</javax.injection.version>
-        <javax.annotations.version>1.3.2</javax.annotations.version>
+        <version.java>11</version.java>
 
         <!-- pico supports a universal debug flag -->
         <pico.debug>true</pico.debug>

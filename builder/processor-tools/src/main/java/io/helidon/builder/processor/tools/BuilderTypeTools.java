@@ -464,16 +464,20 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
         }
         componentTypeNames = (componentTypeNames == null) ? List.of() : componentTypeNames;
 
-        return DefaultTypedElementName.builder()
+        DefaultTypedElementName.Builder builder = DefaultTypedElementName.builder()
                 .typeName(type)
                 .componentTypeNames(componentTypeNames)
                 .elementName(v.getSimpleName().toString())
                 .elementKind(v.getKind().name())
-                .defaultValue(defaultValue)
                 .annotations(createAnnotationAndValueListFromElement(v, elements))
                 .elementTypeAnnotations(elementTypeAnnotations)
-                .modifierNames(modifierNames)
-                .build();
+                .modifierNames(modifierNames);
+
+        if (defaultValue != null) {
+            builder.defaultValue(defaultValue);
+        }
+
+        return builder.build();
     }
 
     /**

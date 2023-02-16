@@ -83,7 +83,6 @@ import io.github.classgraph.TypeArgument;
 import io.github.classgraph.TypeSignature;
 import jakarta.inject.Provider;
 import jakarta.inject.Qualifier;
-import jakarta.inject.Scope;
 
 import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
@@ -387,7 +386,8 @@ public class TypeTools extends BuilderTypeTools {
      */
     static Set<QualifierAndValue> createQualifierAndValueSet(
             AnnotationInfoList annotationInfoList) {
-        Set<AnnotationAndValue> set = createAnnotationAndValueSetFromMetaAnnotation(annotationInfoList, Qualifier.class);
+        Set<AnnotationAndValue> set = createAnnotationAndValueSetFromMetaAnnotation(annotationInfoList,
+                                                                                    "jakarta.inject.Qualifier");
         if (set.isEmpty()) {
             return Set.of();
         }
@@ -437,26 +437,23 @@ public class TypeTools extends BuilderTypeTools {
         }
 
         if (result.isEmpty()) {
-            try {
-                Class<? extends Annotation> javaxQualifier = JavaxTypeTools.INSTANCE.get()
-                        .loadAnnotationClass("javax.inject.Qualifier").orElse(null);
-                if (javaxQualifier != null) {
-                    for (AnnotationMirror annoMirror : annoMirrors) {
-                        if (annoMirror.getAnnotationType().asElement().getAnnotation(javaxQualifier) != null) {
-                            String val = null;
-                            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e
-                                    : annoMirror.getElementValues().entrySet()) {
-                                if (e.getKey().toString().equals("value()")) {
-                                    val = String.valueOf(e.getValue().getValue());
-                                    break;
-                                }
-                            }
-                            result.add(DefaultQualifierAndValue.create(annoMirror.getAnnotationType().toString(), val));
-                        }
-                    }
+            for (AnnotationMirror annoMirror : annoMirrors) {
+                Optional<? extends AnnotationMirror> mirror = findAnnotationMirror("javax.inject.Qualifier",
+                                                                                   annoMirror.getAnnotationType().asElement()
+                                                                                           .getAnnotationMirrors());
+
+                if (mirror.isPresent()) {
+                    // there is an annotation meta-annotated with @javax.inject.Qualifier, let's add it to the list
+                    Map<? extends ExecutableElement, ? extends AnnotationValue> annoValues = annoMirror.getElementValues();
+
+                    Map<String, String> values = new HashMap<>();
+                    annoValues.forEach((method, value) -> {
+                        values.put(method.getSimpleName().toString(), String.valueOf(value.getValue()));
+                    });
+
+                    TypeName annot = DefaultTypeName.createFromTypeName(annoMirror.getAnnotationType().toString());
+                    result.add(DefaultQualifierAndValue.create(annot, values));
                 }
-            } catch (Throwable t) {
-                // normal
             }
         }
 
@@ -599,28 +596,13 @@ public class TypeTools extends BuilderTypeTools {
      * @param metaAnnoType the meta-annotation type
      * @return the qualifiers
      */
-    static Set<AnnotationAndValue> createAnnotationAndValueSetFromMetaAnnotation(
-            AnnotationInfoList annotationInfoList,
-            Class<? extends Annotation> metaAnnoType) {
+    static Set<AnnotationAndValue> createAnnotationAndValueSetFromMetaAnnotation(AnnotationInfoList annotationInfoList,
+                                                                                 String metaAnnoType) {
+
+        // resolve meta annotations uses the opposite of already
         AnnotationInfoList list = resolveMetaAnnotations(annotationInfoList, metaAnnoType);
         if (list == null) {
-            if (metaAnnoType.getName().startsWith("jakarta.")) {
-                try {
-                    Class<? extends Annotation> javaxType = JavaxTypeTools.INSTANCE.get()
-                            .loadAnnotationClass(oppositeOf(metaAnnoType.getName())).orElse(null);
-                    if (javaxType != null) {
-                        list = resolveMetaAnnotations(annotationInfoList, javaxType);
-                    }
-                } catch (Throwable t) {
-                    // expected
-                }
-
-                if (list == null) {
-                    return Set.of();
-                }
-            } else {
-                return Set.of();
-            }
+            return Set.of();
         }
 
         Set<AnnotationAndValue> result = new LinkedHashSet<>();
@@ -652,7 +634,7 @@ public class TypeTools extends BuilderTypeTools {
      */
     static String extractScopeTypeName(
             ClassInfo classInfo) {
-        AnnotationInfoList list = resolveMetaAnnotations(classInfo.getAnnotationInfo(), Scope.class);
+        AnnotationInfoList list = resolveMetaAnnotations(classInfo.getAnnotationInfo(), "jakarta.inject.Scope");
         if (list == null) {
             return null;
         }
@@ -714,17 +696,16 @@ public class TypeTools extends BuilderTypeTools {
      */
     static AnnotationInfoList resolveMetaAnnotations(
             AnnotationInfoList annoList,
-            Class<? extends Annotation> metaAnnoType) {
+            String metaAnnoType) {
         if (annoList == null) {
             return null;
         }
 
         AnnotationInfoList result = null;
-        String metaName1 = metaAnnoType.getName();
-        String metaName2 = oppositeOf(metaName1);
+        String metaName2 = oppositeOf(metaAnnoType);
         for (AnnotationInfo ai : annoList) {
             ClassInfo aiClassInfo = ai.getClassInfo();
-            if (aiClassInfo.hasAnnotation(metaName1) || aiClassInfo.hasAnnotation(metaName2)) {
+            if (aiClassInfo.hasAnnotation(metaAnnoType) || aiClassInfo.hasAnnotation(metaName2)) {
                 if (result == null) {
                     result = new AnnotationInfoList();
                 }

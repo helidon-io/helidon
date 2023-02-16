@@ -20,10 +20,7 @@
 module io.helidon.pico.tools {
     requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
-    // see JavaxTypeTools
-    requires static java.annotation;
-    // see JakartaEnterpriseTypeTools
-    requires static jakarta.cdi;
+
     requires java.compiler;
     requires jakarta.inject;
     requires handlebars;
@@ -44,8 +41,6 @@ module io.helidon.pico.tools {
     uses io.helidon.pico.tools.CustomAnnotationTemplateCreator;
     uses io.helidon.pico.tools.ExternalModuleCreator;
     uses io.helidon.pico.tools.InterceptorCreator;
-    uses io.helidon.pico.tools.JakartaEnterpriseTypeTools;
-    uses io.helidon.pico.tools.JavaxTypeTools;
 
     provides io.helidon.pico.tools.ActivatorCreator
             with io.helidon.pico.tools.DefaultActivatorCreator;
@@ -55,8 +50,4 @@ module io.helidon.pico.tools {
             with io.helidon.pico.tools.DefaultExternalModuleCreator;
     provides io.helidon.pico.tools.InterceptorCreator
             with io.helidon.pico.tools.DefaultInterceptorCreator;
-    provides io.helidon.pico.tools.JakartaEnterpriseTypeTools
-            with io.helidon.pico.tools.JakartaEnterpriseTypeToolsImpl;
-    provides io.helidon.pico.tools.JavaxTypeTools
-            with io.helidon.pico.tools.JavaxTypeToolsImpl;
 }

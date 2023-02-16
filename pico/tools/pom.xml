@@ -102,29 +102,6 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- see JavaXTypeTools -->
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>${javax.injection.version}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <!-- see JavaXTypeTools -->
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>${javax.annotations.version}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <!-- see JakartaEnterpriseTypeTools -->
-        <dependency>
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>

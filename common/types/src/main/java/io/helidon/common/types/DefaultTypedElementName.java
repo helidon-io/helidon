@@ -164,6 +164,7 @@ public class DefaultTypedElementName implements TypedElementName {
          * @return this fluent builder
          */
         public Builder typeName(TypeName val) {
+            Objects.requireNonNull(val);
             this.typeName = val;
             return this;
         }
@@ -198,6 +199,7 @@ public class DefaultTypedElementName implements TypedElementName {
          * @return this fluent builder
          */
         public Builder elementName(String val) {
+            Objects.requireNonNull(val);
             this.elementName = val;
             return this;
         }
@@ -209,6 +211,7 @@ public class DefaultTypedElementName implements TypedElementName {
          * @return this fluent builder
          */
         public Builder elementKind(String val) {
+            Objects.requireNonNull(val);
             this.elementKind = val;
             return this;
         }
@@ -220,6 +223,7 @@ public class DefaultTypedElementName implements TypedElementName {
          * @return this fluent builder
          */
         public Builder defaultValue(String val) {
+            Objects.requireNonNull(val);
             this.defaultValue = val;
             return this;
         }

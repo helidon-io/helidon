@@ -18,7 +18,6 @@ package io.helidon.pico.processor;
 
 import java.io.IOException;
 import java.lang.System.Logger.Level;
-import java.lang.annotation.Annotation;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -39,6 +38,7 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -75,7 +75,6 @@ import io.helidon.pico.tools.DefaultGeneralCreatorRequest;
 import io.helidon.pico.tools.GeneralCreatorRequest;
 import io.helidon.pico.tools.InterceptionPlan;
 import io.helidon.pico.tools.InterceptorCreator;
-import io.helidon.pico.tools.JavaxTypeTools;
 import io.helidon.pico.tools.ModuleUtils;
 import io.helidon.pico.tools.Msgr;
 import io.helidon.pico.tools.Options;
@@ -87,12 +86,12 @@ import io.helidon.pico.tools.spi.InterceptorCreatorProvider;
 
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
-import jakarta.annotation.Priority;
 import jakarta.inject.Provider;
-import jakarta.inject.Scope;
 import jakarta.inject.Singleton;
 
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
+import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;
+import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
 import static io.helidon.pico.processor.Utils.nonNull;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromElement;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
@@ -407,7 +406,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             services.addDeclaredRunLevel(serviceTypeName, runLevel.value());
         }
 
-        List<String> scopeAnnotations = annotationsWithAnnotationOf(type, Scope.class);
+        List<String> scopeAnnotations = annotationsWithAnnotationOf(type, "jakarta.inject.Scope");
+        if (scopeAnnotations.isEmpty()) {
+            scopeAnnotations = annotationsWithAnnotationOf(type, "jakarta.enterprise.context.NormalScope");
+        }
         scopeAnnotations.forEach(scope -> services.addScopeTypeName(serviceTypeName, scope));
         if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)
                 && (scopeAnnotations.contains(UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAVAX)
@@ -431,18 +433,25 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     boolean processPriority(
             TypeName serviceTypeName,
             TypeElement type) {
-        Priority priority = type.getAnnotation(Priority.class);
-        if (priority != null) {
-            services.addDeclaredWeight(serviceTypeName, (double) priority.value());
-            return true;
-        } else if (JavaxTypeTools.INSTANCE.get() != null) {
-            Integer priorityVal = JavaxTypeTools.INSTANCE.get().priorityOf(serviceTypeName, type).orElse(null);
-            if (priorityVal != null) {
-                services.addDeclaredWeight(serviceTypeName, (double) priorityVal);
-                return true;
-            }
+        Optional<? extends AnnotationMirror> mirror = findAnnotationMirror("jakarta.annotation.Priority",
+                                                                           type.getAnnotationMirrors());
+        if (mirror.isEmpty()) {
+            mirror = findAnnotationMirror("javax.annotation.Priority", type.getAnnotationMirrors());
         }
-        return false;
+
+        if (mirror.isEmpty()) {
+            // no priority defined
+            return false;
+        }
+
+
+        String priorityString = extractValues(mirror.get().getElementValues()).get("value");
+        if (priorityString == null) {
+            return false;
+        }
+        int priority = Integer.parseInt(priorityString);
+        services.addDeclaredWeight(serviceTypeName, (double) priority);
+        return true;
     }
 
     List<TypeName> toServiceTypeHierarchy(
@@ -526,25 +535,22 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return false;
     }
 
-    List<String> annotationsWithAnnotationOf(
-            TypeElement type,
-            Class<? extends Annotation> annotation) {
-        List<String> list = new ArrayList<>();
-        type.getAnnotationMirrors()
-                .forEach(am -> {
-                    if (Objects.nonNull(am.getAnnotationType().asElement().getAnnotation(annotation))) {
-                        list.add(am.getAnnotationType().asElement().toString());
-                    }
-                });
-
-        if (list.isEmpty() && Objects.nonNull(JavaxTypeTools.INSTANCE.get())) {
-            List<String> list2 = JavaxTypeTools.INSTANCE.get()
-                    .annotationsWithAnnotationOf(type, oppositeOf(annotation.getName()));
-            if (!list2.isEmpty()) {
-                return list2;
-            }
+    List<String> annotationsWithAnnotationOf(TypeElement type, String annotation) {
+        List<String> list = annotationsWithAnnotationsOfNoOpposite(type, annotation);
+        if (list.isEmpty()) {
+            return annotationsWithAnnotationsOfNoOpposite(type, oppositeOf(annotation));
         }
 
+        return list;
+    }
+
+    private List<String> annotationsWithAnnotationsOfNoOpposite(TypeElement type, String annotation) {
+        List<String> list = new ArrayList<>();
+        type.getAnnotationMirrors()
+                .forEach(am -> findAnnotationMirror(annotation,
+                                                    am.getAnnotationType().asElement()
+                                                            .getAnnotationMirrors())
+                        .ifPresent(it -> list.add(am.getAnnotationType().asElement().toString())));
         return list;
     }
 
@@ -781,6 +787,12 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return Objects.requireNonNull(processingEnv.getElementUtils().getTypeElement(typeName.name()));
     }
 
+    /**
+     * Check if a type is available on application classpath.
+     *
+     * @param typeName type name
+     * @return {@code true} if the type is available
+     */
     boolean available(TypeName typeName) {
         return processingEnv.getElementUtils().getTypeElement(typeName.name()) != null;
     }

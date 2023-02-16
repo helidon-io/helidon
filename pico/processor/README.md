@@ -17,17 +17,6 @@ In your pom.xml, add this plugin to be run as part of the compilation phase:
                     <artifactId>helidon-pico-processor</artifactId>
                     <version>${helidon.version}</version>
                 </path>
-                <!-- optionally handle javax also (the default is jakarta.*) -->
-                <path>
-                    <groupId>javax.inject</groupId>
-                    <artifactId>javax.inject</artifactId>
-                    <version>${javax.injection.version}</version>
-                </path>
-                <path>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>javax.annotation-api</artifactId>
-                    <version>${javax.annotations.version}</version>
-                </path>
             </annotationProcessorPaths>
         </configuration>
     </plugin>

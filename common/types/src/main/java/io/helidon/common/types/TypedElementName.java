@@ -24,7 +24,13 @@ import java.util.Set;
  * Provides a way to describe method, field, or annotation attribute.
  */
 public interface TypedElementName {
+    /**
+     * Field element kind.
+     */
     String KIND_FIELD = "FIELD";
+    /**
+     * Parameter element kind.
+     */
     String KIND_PARAMETER = "PARAMETER";
 
     /**
