@@ -80,14 +80,13 @@ import io.helidon.pico.tools.Msgr;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ServicesToProcess;
 import io.helidon.pico.tools.ToolsException;
+import io.helidon.pico.tools.TypeNames;
 import io.helidon.pico.tools.TypeTools;
 import io.helidon.pico.tools.spi.ActivatorCreatorProvider;
 import io.helidon.pico.tools.spi.InterceptorCreatorProvider;
 
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
 
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;
@@ -403,15 +402,15 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             services.addDeclaredRunLevel(serviceTypeName, runLevel.value());
         }
 
-        List<String> scopeAnnotations = annotationsWithAnnotationOf(type, Utils.JAKARTA_SCOPE);
+        List<String> scopeAnnotations = annotationsWithAnnotationOf(type, TypeNames.JAKARTA_SCOPE);
         if (scopeAnnotations.isEmpty()) {
-            scopeAnnotations = annotationsWithAnnotationOf(type, Utils.JAKARTA_CDI_NORMAL_SCOPE);
+            scopeAnnotations = annotationsWithAnnotationOf(type, TypeNames.JAKARTA_CDI_NORMAL_SCOPE);
         }
         scopeAnnotations.forEach(scope -> services.addScopeTypeName(serviceTypeName, scope));
         if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)
-                && (scopeAnnotations.contains(Utils.JAVAX_APPLICATION_SCOPED)
-                    || scopeAnnotations.contains(Utils.JAKARTA_APPLICATION_SCOPED))) {
-            services.addScopeTypeName(serviceTypeName, Singleton.class.getName());
+                && (scopeAnnotations.contains(TypeNames.JAVAX_APPLICATION_SCOPED)
+                    || scopeAnnotations.contains(TypeNames.JAKARTA_APPLICATION_SCOPED))) {
+            services.addScopeTypeName(serviceTypeName, TypeNames.JAKARTA_SINGLETON);
         }
 
         Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(type);
@@ -430,10 +429,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     boolean processPriority(
             TypeName serviceTypeName,
             TypeElement type) {
-        Optional<? extends AnnotationMirror> mirror = findAnnotationMirror(Utils.JAKARTA_PRIORITY,
+        Optional<? extends AnnotationMirror> mirror = findAnnotationMirror(TypeNames.JAKARTA_PRIORITY,
                                                                            type.getAnnotationMirrors());
         if (mirror.isEmpty()) {
-            mirror = findAnnotationMirror(Utils.JAVAX_PRIORITY, type.getAnnotationMirrors());
+            mirror = findAnnotationMirror(TypeNames.JAVAX_PRIORITY, type.getAnnotationMirrors());
         }
 
         if (mirror.isEmpty()) {
@@ -686,7 +685,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             TypeName teContractName = createTypeNameFromElement(teContract).orElseThrow();
             result.add(teContractName);
             if (isProviderType(teContractName.name())) {
-                result.add(DefaultTypeName.create(Provider.class));
+                result.add(DefaultTypeName.createFromTypeName(TypeNames.JAKARTA_PROVIDER));
             }
             providerForSet.add(gTypeName);
         }

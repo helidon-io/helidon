@@ -35,6 +35,7 @@ import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.services.Dependencies;
 import io.helidon.pico.tools.ToolsException;
+import io.helidon.pico.tools.TypeNames;
 import io.helidon.pico.tools.TypeTools;
 
 import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
@@ -48,8 +49,8 @@ import static io.helidon.pico.tools.TypeTools.toAccess;
  * @deprecated
  */
 public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependencies.BuilderContinuation> {
-    private static final Set<String> SUPPORTED_TARGETS = Set.of(Utils.JAKARTA_INJECT,
-                                                                Utils.JAVAX_INJECT);
+    private static final Set<String> SUPPORTED_TARGETS = Set.of(TypeNames.JAKARTA_INJECT,
+                                                                TypeNames.JAVAX_INJECT);
 
     /**
      * Service loader based constructor.
@@ -66,7 +67,7 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
 
     @Override
     protected Set<String> contraAnnotations() {
-        return Set.of(Utils.PICO_CONFIGURED_BY);
+        return Set.of(TypeNames.PICO_CONFIGURED_BY);
     }
 
     @Override

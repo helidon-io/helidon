@@ -20,6 +20,7 @@ import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
+import io.helidon.pico.tools.TypeNames;
 
 /**
  * Handles {@code @Contract} annotations.
@@ -38,7 +39,7 @@ public class ContractAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     @Override
     public Set<String> annoTypes() {
-        return Set.of(Utils.PICO_CONTRACT);
+        return Set.of(TypeNames.PICO_CONTRACT);
     }
 
     @Override

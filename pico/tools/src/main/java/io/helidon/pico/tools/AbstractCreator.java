@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.Application;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.services.AbstractServiceProvider;
@@ -40,12 +39,6 @@ import static io.helidon.pico.tools.TypeTools.needToDeclarePackageUsage;
  * Abstract base for any codegen creator.
  */
 public abstract class AbstractCreator {
-
-    /**
-     * Logger.
-     */
-    private final System.Logger logger = System.getLogger(getClass().getName());
-
     /**
      * The default java source version (this can be explicitly overridden using the builder or maven plugin).
      */
@@ -59,6 +52,10 @@ public abstract class AbstractCreator {
     static final String NAME = PicoServicesConfig.NAME;
     static final String MODULE_NAME = PicoServicesConfig.FQN;
 
+    /**
+     * Logger.
+     */
+    private final System.Logger logger = System.getLogger(getClass().getName());
     private final TemplateHelper templateHelper;
     private final String templateName;
 
@@ -198,10 +195,10 @@ public abstract class AbstractCreator {
                                                          .exports(true)
                                                          .target(moduleTypeName.packageName()));
             }
-            ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, io.helidon.pico.Module.class.getName(),
+            ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, TypeNames.PICO_MODULE,
                                              DefaultModuleInfoItem.builder()
                                                      .provides(true)
-                                                     .target(io.helidon.pico.Module.class.getName())
+                                                     .target(TypeNames.PICO_MODULE)
                                                      .addWithOrTo(moduleTypeName.name())
                                                      .addPrecomment("    // "
                                                                             + PicoServicesConfig.NAME
@@ -215,10 +212,10 @@ public abstract class AbstractCreator {
                                                          .exports(true)
                                                          .target(applicationTypeName.packageName()));
             }
-            ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, Application.class.getName(),
+            ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, TypeNames.PICO_APPLICATION,
                                              DefaultModuleInfoItem.builder()
                                                      .provides(true)
-                                                     .target(Application.class.getName())
+                                                     .target(TypeNames.PICO_APPLICATION)
                                                      .addWithOrTo(applicationTypeName.name())
                                                      .addPrecomment("    // "
                                                                             + PicoServicesConfig.NAME

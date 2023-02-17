@@ -82,7 +82,6 @@ import io.github.classgraph.MethodParameterInfo;
 import io.github.classgraph.TypeArgument;
 import io.github.classgraph.TypeSignature;
 import jakarta.inject.Provider;
-import jakarta.inject.Qualifier;
 
 import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
@@ -387,7 +386,7 @@ public class TypeTools extends BuilderTypeTools {
     static Set<QualifierAndValue> createQualifierAndValueSet(
             AnnotationInfoList annotationInfoList) {
         Set<AnnotationAndValue> set = createAnnotationAndValueSetFromMetaAnnotation(annotationInfoList,
-                                                                                    "jakarta.inject.Qualifier");
+                                                                                    TypeNames.JAKARTA_QUALIFIER);
         if (set.isEmpty()) {
             return Set.of();
         }
@@ -418,7 +417,11 @@ public class TypeTools extends BuilderTypeTools {
         Set<QualifierAndValue> result = new LinkedHashSet<>();
 
         for (AnnotationMirror annoMirror : annoMirrors) {
-            if (annoMirror.getAnnotationType().asElement().getAnnotation(Qualifier.class) != null) {
+            if (findAnnotationMirror(TypeNames.JAKARTA_QUALIFIER, annoMirror.getAnnotationType()
+                    .asElement()
+                    .getAnnotationMirrors())
+                    .isPresent()) {
+
                 String val = null;
                 for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : annoMirror.getElementValues()
                         .entrySet()) {
@@ -438,7 +441,7 @@ public class TypeTools extends BuilderTypeTools {
 
         if (result.isEmpty()) {
             for (AnnotationMirror annoMirror : annoMirrors) {
-                Optional<? extends AnnotationMirror> mirror = findAnnotationMirror("javax.inject.Qualifier",
+                Optional<? extends AnnotationMirror> mirror = findAnnotationMirror(TypeNames.JAVAX_QUALIFIER,
                                                                                    annoMirror.getAnnotationType().asElement()
                                                                                            .getAnnotationMirrors());
 
@@ -634,7 +637,7 @@ public class TypeTools extends BuilderTypeTools {
      */
     static String extractScopeTypeName(
             ClassInfo classInfo) {
-        AnnotationInfoList list = resolveMetaAnnotations(classInfo.getAnnotationInfo(), "jakarta.inject.Scope");
+        AnnotationInfoList list = resolveMetaAnnotations(classInfo.getAnnotationInfo(), TypeNames.JAKARTA_SCOPE);
         if (list == null) {
             return null;
         }
@@ -651,9 +654,10 @@ public class TypeTools extends BuilderTypeTools {
      */
     static MethodInfoList methodsAnnotatedWith(
             ClassInfo classInfo,
-            Class<? extends Annotation> annoType) {
+            String annoType) {
         MethodInfoList result = new MethodInfoList();
-        classInfo.getMethodInfo().stream()
+        classInfo.getMethodInfo()
+                .stream()
                 .filter((methodInfo) -> hasAnnotation(methodInfo, annoType))
                 .forEach(result::add);
         return result;
@@ -663,13 +667,12 @@ public class TypeTools extends BuilderTypeTools {
      * Returns true if the method has an annotation.
      *
      * @param methodInfo the method info
-     * @param annoType the annotation to check
+     * @param annoTypeName the annotation to check
      * @return true if the method has the annotation
      */
     static boolean hasAnnotation(
             MethodInfo methodInfo,
-            Class<? extends Annotation> annoType) {
-        String annoTypeName = annoType.getName();
+            String annoTypeName) {
         return methodInfo.hasAnnotation(annoTypeName) || methodInfo.hasAnnotation(oppositeOf(annoTypeName));
     }
 
@@ -677,13 +680,12 @@ public class TypeTools extends BuilderTypeTools {
      * Returns true if the method has an annotation.
      *
      * @param fieldInfo the field info
-     * @param annoType the annotation to check
+     * @param annoTypeName the annotation to check
      * @return true if the method has the annotation
      */
     static boolean hasAnnotation(
             FieldInfo fieldInfo,
-            Class<? extends Annotation> annoType) {
-        String annoTypeName = annoType.getName();
+            String annoTypeName) {
         return fieldInfo.hasAnnotation(annoTypeName) || fieldInfo.hasAnnotation(oppositeOf(annoTypeName));
     }
 
@@ -1357,7 +1359,7 @@ public class TypeTools extends BuilderTypeTools {
             String typeName) {
         String type = translate(componentTypeNameOf(typeName));
         return (Provider.class.getName().equals(type)
-                        || "javax.inject.Provider".equals(type)
+                        || TypeNames.JAVAX_PROVIDER.equals(type)
                         || InjectionPointProvider.class.getName().equals(type));
     }
 
@@ -1411,22 +1413,22 @@ public class TypeTools extends BuilderTypeTools {
     }
 
     /**
-     * Transposes "jakarta.*" from and/or to "javax.*".
+     * Transposes {@value TypeNames#PREFIX_JAKARTA} from and/or to {@value TypeNames#PREFIX_JAVAX}.
      *
      * @param typeName the type name to transpose
      * @return the transposed value, or the same if not able to be transposed
      */
     public static String oppositeOf(
             String typeName) {
-        boolean startsWithJakarta = typeName.startsWith("jakarta.");
-        boolean startsWithJavax = !startsWithJakarta && typeName.startsWith("javax.");
+        boolean startsWithJakarta = typeName.startsWith(TypeNames.PREFIX_JAKARTA);
+        boolean startsWithJavax = !startsWithJakarta && typeName.startsWith(TypeNames.PREFIX_JAVAX);
 
         assert (startsWithJakarta || startsWithJavax);
 
         if (startsWithJakarta) {
-            return typeName.replace("jakarta.", "javax.");
+            return typeName.replace(TypeNames.PREFIX_JAKARTA, TypeNames.PREFIX_JAVAX);
         } else {
-            return typeName.replace("javax.", "jakarta.");
+            return typeName.replace(TypeNames.PREFIX_JAVAX, TypeNames.PREFIX_JAKARTA);
         }
     }
 
@@ -1438,11 +1440,11 @@ public class TypeTools extends BuilderTypeTools {
      */
     static String translate(
             String typeName) {
-        if (typeName == null || typeName.startsWith("jakarta.")) {
+        if (typeName == null || typeName.startsWith(TypeNames.PREFIX_JAKARTA)) {
             return typeName;
         }
 
-        return typeName.replace("javax.", "jakarta.");
+        return typeName.replace(TypeNames.PREFIX_JAVAX, TypeNames.PREFIX_JAKARTA);
     }
 
     /**

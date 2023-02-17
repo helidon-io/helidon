@@ -33,6 +33,7 @@ import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.ModuleUtils;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ToolsException;
+import io.helidon.pico.tools.TypeNames;
 
 /**
  * Processor for @{@link jakarta.inject.Singleton} type annotations.
@@ -42,12 +43,12 @@ import io.helidon.pico.tools.ToolsException;
 public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     private static final Set<String> SUPPORTED_TARGETS = Set.of(
-            Utils.JAKARTA_SINGLETON,
-            Utils.PICO_EXTERNAL_CONTRACTS,
-            Utils.PICO_INTERCEPTED,
-            Utils.JAVAX_SINGLETON,
-            Utils.JAKARTA_APPLICATION_SCOPED,
-            Utils.JAVAX_APPLICATION_SCOPED
+            TypeNames.JAKARTA_SINGLETON,
+            TypeNames.PICO_EXTERNAL_CONTRACTS,
+            TypeNames.PICO_INTERCEPTED,
+            TypeNames.JAVAX_SINGLETON,
+            TypeNames.JAKARTA_APPLICATION_SCOPED,
+            TypeNames.JAVAX_APPLICATION_SCOPED
     );
 
     /**
@@ -65,7 +66,7 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     @Override
     protected Set<String> contraAnnotations() {
-        return Set.of(Utils.PICO_CONFIGURED_BY);
+        return Set.of(TypeNames.PICO_CONFIGURED_BY);
     }
 
     @Override

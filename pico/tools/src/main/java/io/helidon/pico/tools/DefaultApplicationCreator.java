@@ -34,7 +34,6 @@ import io.helidon.common.Weighted;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.Application;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.InjectionPointInfo;
@@ -376,7 +375,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             // setup meta-inf services
             codegenMetaInfServices(filer,
                                    req.codeGenPaths(),
-                                   Map.of(Application.class.getName(), List.of(applicationTypeName.name())));
+                                   Map.of(TypeNames.PICO_APPLICATION, List.of(applicationTypeName.name())));
 
             // setup module-info
             codegenModuleInfoDescriptor(filer, picoServices, req, applicationTypeName);

@@ -43,9 +43,6 @@ import io.github.classgraph.MethodParameterInfo;
 import io.github.classgraph.ModuleInfo;
 import io.github.classgraph.PackageInfo;
 import io.github.classgraph.ScanResult;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
@@ -226,13 +223,13 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
     private void processPostConstructAndPreDestroy(
             ClassInfo classInfo,
             TypeName serviceTypeName) {
-        MethodInfo postConstructMethod = methodsAnnotatedWith(classInfo, PostConstruct.class)
+        MethodInfo postConstructMethod = methodsAnnotatedWith(classInfo, TypeNames.JAKARTA_POST_CONSTRUCT)
                 .stream().findFirst().orElse(null);
         if (postConstructMethod != null) {
             services.addPostConstructMethod(serviceTypeName, postConstructMethod.getName());
         }
 
-        MethodInfo preDestroyMethods = methodsAnnotatedWith(classInfo, PreDestroy.class)
+        MethodInfo preDestroyMethods = methodsAnnotatedWith(classInfo, TypeNames.JAKARTA_PRE_DESTROY)
                 .stream().findFirst().orElse(null);
         if (preDestroyMethods != null) {
             services.addPreDestroyMethod(serviceTypeName, preDestroyMethods.getName());
@@ -265,7 +262,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
             TypeName serviceTypeName,
             Dependencies.BuilderContinuation continuation,
             FieldInfo fieldInfo) {
-        if (hasAnnotation(fieldInfo, Inject.class)) {
+        if (hasAnnotation(fieldInfo, TypeNames.JAKARTA_INJECT)) {
             if (!PicoSupported.isSupportedInjectionPoint(logger(),
                                                          serviceTypeName, fieldInfo.toString(),
                                                          isPrivate(fieldInfo.getModifiers()), fieldInfo.isStatic())) {
@@ -284,7 +281,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
             Dependencies.BuilderContinuation continuation,
             InjectionPointInfo.ElementKind kind,
             MethodInfo methodInfo) {
-        if (hasAnnotation(methodInfo, Inject.class)) {
+        if (hasAnnotation(methodInfo, TypeNames.JAKARTA_INJECT)) {
             if (!isPicoSupported(serviceTypeName, methodInfo, logger())) {
                 return continuation;
             }

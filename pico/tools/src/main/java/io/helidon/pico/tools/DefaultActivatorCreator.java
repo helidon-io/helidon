@@ -37,7 +37,6 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.Application;
 import io.helidon.pico.DefaultInjectionPointInfo;
 import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.DefaultServiceInfo;
@@ -59,7 +58,6 @@ import io.github.classgraph.ClassInfo;
 import io.github.classgraph.MethodInfo;
 import io.github.classgraph.MethodInfoList;
 import io.github.classgraph.ScanResult;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import static io.helidon.common.types.DefaultTypeName.create;
@@ -282,11 +280,11 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             boolean isModuleCreated) {
         Map<String, List<String>> metaInfServices = new LinkedHashMap<>();
         if (isApplicationCreated && applicationTypeName != null) {
-            metaInfServices.put(Application.class.getName(),
+            metaInfServices.put(TypeNames.PICO_APPLICATION,
                                 List.of(applicationTypeName.name()));
         }
         if (isModuleCreated && moduleDetail != null) {
-            metaInfServices.put(Module.class.getName(),
+            metaInfServices.put(TypeNames.PICO_MODULE,
                                 List.of(moduleDetail.moduleTypeName().name()));
         }
         return metaInfServices;
@@ -482,8 +480,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         // do not generate activators for modules or applications...
         List<TypeName> serviceTypeNames = services.serviceTypeNames();
         if (!serviceTypeNames.isEmpty()) {
-            TypeName applicationTypeName = create(Application.class);
-            TypeName moduleTypeName = create(Application.class);
+            TypeName applicationTypeName = createFromTypeName(TypeNames.PICO_APPLICATION);
+            TypeName moduleTypeName = createFromTypeName(TypeNames.PICO_MODULE);
             serviceTypeNames = serviceTypeNames.stream()
                     .filter(typeName -> {
                         Set<TypeName> contracts = services.contracts().get(typeName);
@@ -1044,7 +1042,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         ClassInfo parentClassInfo = toClassInfo(parentTypeName, scan);
         MethodInfoList parentMethods = parentClassInfo.getDeclaredMethodInfo();
         Map<IdAndToString, MethodInfo> injectedParentMethods = parentMethods.stream()
-                .filter((m) -> Objects.nonNull(m.getAnnotationInfo(Inject.class.getName())))
+                .filter((m) -> Objects.nonNull(m.getAnnotationInfo(TypeNames.JAKARTA_INJECT)))
                 .filter((m) -> DefaultExternalModuleCreator.isPicoSupported(parentTypeName, m, logger()))
                 .collect(Collectors.toMap(DefaultActivatorCreator::toBaseIdTag, Function.identity()));
         if (injectedParentMethods.isEmpty()) {
@@ -1061,7 +1059,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         for (Map.Entry<IdAndToString, MethodInfo> e : injectedParentMethods.entrySet()) {
             MethodInfo method = allSupportedMethodsOnServiceType.get(e.getKey());
             if (method != null) {
-                AnnotationInfo annotationInfo = method.getAnnotationInfo(Inject.class.getName());
+                AnnotationInfo annotationInfo = method.getAnnotationInfo(TypeNames.JAKARTA_INJECT);
                 if (annotationInfo != null) {
                     continue;
                 }
