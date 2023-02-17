@@ -50,7 +50,7 @@ class Utils {
 
     static String validatedConfigKey(
             MetaConfigBeanInfo metaConfigBeanInfo) {
-        return validatedConfigKey(metaConfigBeanInfo.key());
+        return validatedConfigKey(metaConfigBeanInfo.value());
     }
 
     static Config safeDowncastOf(

@@ -69,9 +69,9 @@ public interface ConfigBeanInfo extends ConfigBean {
         Objects.requireNonNull(val);
         Objects.requireNonNull(cfgBeanType);
         MetaConfigBeanInfo.Builder builder = MetaConfigBeanInfo.toBuilder(val);
-        String key = val.key();
+        String key = val.value();
         if (!key.isBlank()) {
-            builder.key(toConfigKey(cfgBeanType.getSimpleName()));
+            builder.value(toConfigKey(cfgBeanType.getSimpleName()));
         }
         return builder.build();
     }
@@ -85,7 +85,7 @@ public interface ConfigBeanInfo extends ConfigBean {
      */
     static MetaConfigBeanInfo toMetaConfigBeanInfo(Map<String, Object> meta) {
         return MetaConfigBeanInfo.builder()
-                .key((String) meta.get("key"))
+                .value((String) meta.get("key"))
                 .repeatable(Boolean.valueOf((String) meta.get("repeatable")))
                 .drivesActivation(Boolean.valueOf((String) meta.get("drivesActivation")))
                 .atLeastOne(Boolean.valueOf((String) meta.get("atLeastOne")))

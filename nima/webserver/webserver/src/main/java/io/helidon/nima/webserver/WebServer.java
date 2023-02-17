@@ -165,6 +165,8 @@ public interface WebServer {
         private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders
                 = HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
 
+        private final DefaultWebServerConfig.Builder configBuilder = DefaultWebServerConfig.builder();
+
         private Config providersConfig = Config.empty();
         // MediaContext should be updated with config processing or during final build if not set.
         private MediaContext mediaContext;

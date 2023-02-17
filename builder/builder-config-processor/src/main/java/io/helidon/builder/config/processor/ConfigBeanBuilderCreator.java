@@ -335,7 +335,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
             AnnotationAndValue configBeanAnno) {
         String configKey = configBeanAnno.value(ConfigBeanInfo.TAG_KEY).orElse(null);
         configKey = Objects.requireNonNull(normalizeConfiguredOptionKey(configKey, typeInfo.typeName().className()));
-        builder.append("\t\t\t\t\t\t.key(\"")
+        builder.append("\t\t\t\t\t\t.value(\"")
                 .append(configKey).append("\")\n");
         builder.append("\t\t\t\t\t\t.repeatable(")
                 .append(configBeanAnno.value(ConfigBeanInfo.TAG_REPEATABLE).orElseThrow()).append(")\n");

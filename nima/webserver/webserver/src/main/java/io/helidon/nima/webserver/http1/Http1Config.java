@@ -27,7 +27,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * HTTP/1.1 server configuration.
  */
 @Builder(interceptor = Http1BuilderInterceptor.class)
-@ConfigBean(key = "server.connection-providers.http_1_1")
+@ConfigBean("server.connection-providers.http_1_1")
 public interface Http1Config {
     /**
      * Maximal size of received HTTP prologue (GET /path HTTP/1.1).

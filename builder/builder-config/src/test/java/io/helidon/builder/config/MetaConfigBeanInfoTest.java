@@ -41,7 +41,7 @@ class MetaConfigBeanInfoTest {
         assertThat(metaCfg.drivesActivation(), is(true));
         assertThat(metaCfg.atLeastOne(), is(false));
         assertThat(metaCfg.wantDefaultConfigBean(), is(false));
-        assertThat(metaCfg.key(), is(""));
+        assertThat(metaCfg.value(), is(""));
     }
 
     @Test
@@ -57,7 +57,7 @@ class MetaConfigBeanInfoTest {
         assertThat(metaCfg.drivesActivation(), is(true));
         assertThat(metaCfg.atLeastOne(), is(true));
         assertThat(metaCfg.wantDefaultConfigBean(), is(true));
-        assertThat(metaCfg.key(), is("fake-config"));
+        assertThat(metaCfg.value(), is("fake-config"));
     }
 
     @Test

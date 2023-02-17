@@ -67,7 +67,7 @@ public @interface ConfigBean {
      *
      * @return the overriding key to use
      */
-    String key() default "";
+    String value() default "";
 
     /**
      * Determines whether an instance of this config bean in the bean registry will result in the backing service

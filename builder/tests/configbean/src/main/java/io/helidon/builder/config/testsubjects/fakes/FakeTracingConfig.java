@@ -27,7 +27,7 @@ import io.helidon.builder.config.ConfigBean;
  * Tracing configuration that contains traced components (such as WebServer, Security) and their traced spans and span logs.
  * Spans can be renamed through configuration, components, spans and span logs may be disabled through this configuration.
  */
-@ConfigBean(key = "tracing")
+@ConfigBean("tracing")
 public interface FakeTracingConfig extends FakeTraceableConfig {
 
     @Singular("component")  // Builder::addComponent(String component); Impl::getComponent(String component);

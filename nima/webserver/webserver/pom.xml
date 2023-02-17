@@ -83,13 +83,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <!-- this is to force reactor order -->
-            <groupId>io.helidon.pico.configdriven</groupId>
-            <artifactId>helidon-pico-configdriven-processor</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
             <scope>test</scope>
