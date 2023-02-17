@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -77,6 +77,7 @@ include::{metrics-common}[tag=built-in-metrics-discussion]
 
 include::{metrics-common}[tag=controlling-intro-part-1]
 * <<controlling-rest-request-metrics,Control `REST.request` metrics.>>
+* <<controlling-registration-of-injected-metrics,Control Registration of Injected Metrics>>
 include::{metrics-common}[tag=controlling-intro-part-2]
 [[controlling-rest-request-metrics]]
 
@@ -95,6 +96,32 @@ Enable it by editing your application configuration to set `metrics.rest-request
 Note that the applications you generate using the full Helidon archetype _do_ enable this feature in the
 generated config file.
 You can see the results in the sample output shown in earlier example runs.
+
+[[controlling-registration-of-injected-metrics]]
+==== Controlling Registration of Injected Metrics
+Normally, the Helidon MP metrics subsystem relies on CDI to trigger the registration of metrics which are injected into beans.
+For example, your JAX-RS resource class might inject a metric into a field or method parameter declared by that class.
+Because you typically declare a JAX-RS resource classe as `@Dependent` scoped, CDI does not create an instance of the JAX-RS resource class until a client accesses an endpoint served by that resource class.
+At that time CDI also processes any injections into the resource class, including metrics.
+If your code only injects a metric and does not otherwise declare it, then only when a client first accesses that resource will CDI resolve the injection and thereby trigger the registration of the injected metric.
+
+One side effect of this behavior is that, after your service starts but before any client accesses a resource, the output from the `/metrics` endpoint will _not_ include metrics which are only injected, even though Helidon does register such metrics correctly--just in time--and updates them appropriately.
+
+[CAUTION]
+====
+_Do not_ use this feature if your application includes any CDI `@Produces` fields or methods for any of the injected metrics. To register injected-only metrics during start-up, Helidon MP 2 must bypass CDI producers and register the metrics directly itself.
+====
+You can configure the Helidon MP metrics system so it _does_ register injected-only metrics during start-up as follows:
+
+[source,properties]
+.Configuration properties file to select start-up (instead of just-in-time) injected-only metrics registration
+----
+mp.metrics.startup-registration.enabled = true
+----
+
+
+
+
 
 include::{metrics-common}[tags=controlling-by-component;controlling-by-registry]
 

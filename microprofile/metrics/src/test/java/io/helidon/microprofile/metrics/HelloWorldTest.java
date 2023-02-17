@@ -62,6 +62,7 @@ import static org.hamcrest.Matchers.nullValue;
  */
 @HelidonTest
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
+@AddConfig(key = "metrics." + MetricsCdiExtension.STARTUP_REGISTRATION_OF_INJECTED_ENABLED, value = "true")
 public class HelloWorldTest {
 
     @Inject

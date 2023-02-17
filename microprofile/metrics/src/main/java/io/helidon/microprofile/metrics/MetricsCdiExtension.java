@@ -133,6 +133,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
 
     static final String SYNTHETIC_SIMPLE_TIMER_METRIC_NAME = "REST.request";
 
+    static final String STARTUP_REGISTRATION_OF_INJECTED_ENABLED = "startup-registration.enabled";
     static final Metadata SYNTHETIC_SIMPLE_TIMER_METADATA = Metadata.builder()
             .withName(SYNTHETIC_SIMPLE_TIMER_METRIC_NAME)
             .withDisplayName(SYNTHETIC_SIMPLE_TIMER_METRIC_NAME + " for all REST endpoints")
@@ -711,12 +712,16 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         }
 
         registerProducers(bm);
-        registerMetricsForInjectSites();
+
+        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsSettings.Builder.METRICS_CONFIG_KEY);
+        if (config.get(STARTUP_REGISTRATION_OF_INJECTED_ENABLED)
+                .asBoolean()
+                .isPresent()) {
+            registerMetricsForInjectSites();
+        }
 
         Set<String> vendorMetricsAdded = new HashSet<>();
         vendorMetricsAdded.add("@default");
-
-        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsSettings.Builder.METRICS_CONFIG_KEY);
 
         // now we may have additional sockets we want to add vendor metrics to
         config.get("vendor-metrics-routings")
