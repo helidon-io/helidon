@@ -22,8 +22,8 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Fault Tolerance",
         description = "Fault Tolerance",
-        in = HelidonFlavor.NIMA,
-        invalidIn = HelidonFlavor.SE,
+        in = HelidonFlavor.SE,
+        invalidIn = HelidonFlavor.NIMA,
         path = "Fault Tolerance"
 )
 module io.helidon.reactive.faulttolerance {
