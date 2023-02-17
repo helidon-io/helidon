@@ -24,7 +24,7 @@
     <output>
         <model>
             <value key="mainClass">${package}.Main</value>
-            <value key="parent-artifactId">helidon-se</value>
+            <value key="parent-artifactId">helidon-nima</value>
             <list key="dependencies">
                 <map order="999">
                     <value key="groupId">io.helidon.nima.webserver</value>
