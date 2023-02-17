@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.nima.webclient.http1;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
@@ -48,6 +50,7 @@ class ClientRequestImplTest {
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
     private final static long NO_CONTENT_LENGTH = -1L;
     private static WebServer webServer;
+    private static int port;
 
     @BeforeAll
     static void beforeAll() {
@@ -58,6 +61,7 @@ class ClientRequestImplTest {
                 )
                 .build()
                 .start();
+        port = webServer.port();
     }
 
     @AfterAll
@@ -109,7 +113,7 @@ class ClientRequestImplTest {
 
     @Test
     void testChunk() {
-        String requestEntityParts[] = {"First", "Second", "Third"};
+        String[] requestEntityParts = {"First", "Second", "Third"};
 
         Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
@@ -119,7 +123,7 @@ class ClientRequestImplTest {
 
     @Test
     void testChunkAndChunkResponse() {
-        String requestEntityParts[] = {"First", "Second", "Third"};
+        String[] requestEntityParts = {"First", "Second", "Third"};
 
         Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/chunkresponse");
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
@@ -130,7 +134,7 @@ class ClientRequestImplTest {
 
     @Test
     void testNoChunk() {
-        String requestEntityParts[] = {"First"};
+        String[] requestEntityParts = {"First"};
         long contentLength = requestEntityParts[0].length();
 
         Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
@@ -142,7 +146,7 @@ class ClientRequestImplTest {
 
     @Test
     void testForcedChunkNoContentLength() {
-        String requestEntityParts[] = {"First"};
+        String[] requestEntityParts = {"First"};
 
         Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
@@ -152,7 +156,7 @@ class ClientRequestImplTest {
 
     @Test
     void testForcedChunkTransferEncodingChunked() {
-        String requestEntityParts[] = {"First"};
+        String[] requestEntityParts = {"First"};
 
         Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
                 .header(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
@@ -163,8 +167,7 @@ class ClientRequestImplTest {
 
     @Test
     void testExpect100() {
-        String requestEntityParts[] = {"First", "Second", "Third"};
-        int port = webServer.port();
+        String[] requestEntityParts = {"First", "Second", "Third"};
 
         Http1Client client = WebClient.builder()
                 .sendExpect100Continue(true)
@@ -178,9 +181,27 @@ class ClientRequestImplTest {
         assertThat(response.headers().contains(REQ_EXPECT_100_HEADER_NAME), is(true));
     }
 
+    // validates that methods with no entity payload will not work with submit() and outputStream(), but only with request()
+    @Test
+    void testNoEntityMethods() {
+        List<Http.Method> noEntityMethods = Arrays.asList(Http.Method.GET, Http.Method.DELETE, Http.Method.HEAD);
+        Http1Client client = WebClient.builder().build();
+        String url = "http://localhost:" + port + "/test";
+        for (Http.Method method : noEntityMethods) {
+            assertThrows(IllegalArgumentException.class, () ->
+                    client.method(method).uri(url).submit("Foo Bar"));
+            assertThrows(IllegalArgumentException.class, () ->
+                    client.method(method).uri(url).outputStream(it -> {
+                        it.write("Foo Bar".getBytes(StandardCharsets.UTF_8));
+                        it.close();
+                    }));
+            client.method(method).uri(url).request();
+        }
+    }
+
     private static void validateSuccessfulResponse(Http1Client client) {
         String requestEntity = "Sending Something";
-        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + webServer.port() + "/test");
+        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
         Http1ClientResponse response = request.submit(requestEntity);
 
         assertThat(response.status(), is(Http.Status.OK_200));
@@ -189,7 +210,7 @@ class ClientRequestImplTest {
 
     private static void validateFailedResponse(Http1Client client, String errorMessage) {
         String requestEntity = "Sending Something";
-        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + webServer.port() + "/test");
+        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
         final IllegalStateException ie =
                 assertThrows(IllegalStateException.class, () -> request.submit(requestEntity));
         assertThat(ie.getMessage().contains(errorMessage), is(true));
@@ -240,7 +261,7 @@ class ClientRequestImplTest {
                 .sendExpect100Continue(true)
                 .build();
         Http1ClientRequest request = client.method(method)
-                .uri("http://localhost:" + webServer.port() + uriPath);
+                .uri("http://localhost:" + port + uriPath);
         return request;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,10 @@ import static java.lang.System.Logger.Level.TRACE;
 
 class Http1ClientConnection implements ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientConnection.class.getName());
+    private static final int UNBOUNDED_QUEUE_SIZE = -1;
 
     private final Queue<Http1ClientConnection> connectionQueue;
+    private final int queueSize;
     private final ConnectionKey connectionKey;
     private final io.helidon.common.socket.SocketOptions options;
     private final boolean keepAlive;
@@ -64,8 +66,16 @@ class Http1ClientConnection implements ClientConnection {
     Http1ClientConnection(SocketOptions options,
                           Queue<Http1ClientConnection> connectionQueue,
                           ConnectionKey connectionKey) {
+        this(options, connectionQueue, UNBOUNDED_QUEUE_SIZE, connectionKey);
+    }
+
+    Http1ClientConnection(SocketOptions options,
+                          Queue<Http1ClientConnection> connectionQueue,
+                          int queueSize,
+                          ConnectionKey connectionKey) {
         this.options = options;
         this.connectionQueue = connectionQueue;
+        this.queueSize = queueSize;
         this.keepAlive = (connectionQueue != null);
         this.connectionKey = connectionKey;
     }
@@ -170,7 +180,8 @@ class Http1ClientConnection implements ClientConnection {
     }
 
     void finishRequest() {
-        if (keepAlive && connectionQueue != null && socket.isConnected()) {
+        if (keepAlive && connectionQueue != null && socket.isConnected()
+                && (queueSize == UNBOUNDED_QUEUE_SIZE || queueSize > connectionQueue.size())) {
             if (connectionQueue.offer(this)) {
                 if (LOGGER.isLoggable(DEBUG)) {
                     LOGGER.log(DEBUG, String.format("[%s] client connection returned %s",
@@ -180,7 +191,8 @@ class Http1ClientConnection implements ClientConnection {
                 return;
             }
         }
-        this.release();
+        // Close if unable to add to queue
+        this.close();
     }
 
     private void debugTls(SSLSocket sslSocket) {

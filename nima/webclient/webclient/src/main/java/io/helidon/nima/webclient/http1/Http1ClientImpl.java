@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import io.helidon.nima.webclient.LoomClient;
 import io.helidon.nima.webclient.UriHelper;
 
 class Http1ClientImpl extends LoomClient implements Http1Client {
-    Http1ClientBuilder builder;
+    private Http1ClientBuilder builder;
 
     Http1ClientImpl(Http1ClientBuilder builder) {
         super(builder);
@@ -35,5 +35,10 @@ class Http1ClientImpl extends LoomClient implements Http1Client {
         UriHelper helper = (uri() == null) ? UriHelper.create() : UriHelper.create(uri(), query);
 
         return new ClientRequestImpl(this, method, helper, query);
+    }
+
+    // package local only as ClientRequestImpl needs this
+    Http1ClientBuilder getBuilder() {
+        return builder;
     }
 }
