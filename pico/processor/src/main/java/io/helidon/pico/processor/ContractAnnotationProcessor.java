@@ -38,7 +38,7 @@ public class ContractAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     @Override
     public Set<String> annoTypes() {
-        return Set.of("io.helidon.pico.Contract");
+        return Set.of(Utils.PICO_CONTRACT);
     }
 
     @Override

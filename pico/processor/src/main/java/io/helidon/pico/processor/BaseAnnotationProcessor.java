@@ -111,15 +111,12 @@ import static javax.tools.Diagnostic.Kind;
  *
  * @deprecated
  */
-//@SuppressWarnings("checkstyle:VisibilityModifier")
 abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements Msgr {
-    private final System.Logger logger = System.getLogger(getClass().getName());
-
     static final boolean MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR = false;
-    static final String CONFIGURED_BY_TYPENAME = "io.helidon.pico.config.api.ConfiguredBy";
     static final String TARGET_DIR = "/target/";
     static final String SRC_MAIN_JAVA_DIR = "/src/main/java";
 
+    private final System.Logger logger = System.getLogger(getClass().getName());
     private final ServicesToProcess services;
     private final InterceptorCreator interceptorCreator;
     private RoundEnvironment roundEnv;
@@ -406,14 +403,14 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             services.addDeclaredRunLevel(serviceTypeName, runLevel.value());
         }
 
-        List<String> scopeAnnotations = annotationsWithAnnotationOf(type, "jakarta.inject.Scope");
+        List<String> scopeAnnotations = annotationsWithAnnotationOf(type, Utils.JAKARTA_SCOPE);
         if (scopeAnnotations.isEmpty()) {
-            scopeAnnotations = annotationsWithAnnotationOf(type, "jakarta.enterprise.context.NormalScope");
+            scopeAnnotations = annotationsWithAnnotationOf(type, Utils.JAKARTA_CDI_NORMAL_SCOPE);
         }
         scopeAnnotations.forEach(scope -> services.addScopeTypeName(serviceTypeName, scope));
         if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)
-                && (scopeAnnotations.contains(UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAVAX)
-                    || scopeAnnotations.contains(UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAKARTA))) {
+                && (scopeAnnotations.contains(Utils.JAVAX_APPLICATION_SCOPED)
+                    || scopeAnnotations.contains(Utils.JAKARTA_APPLICATION_SCOPED))) {
             services.addScopeTypeName(serviceTypeName, Singleton.class.getName());
         }
 
@@ -433,10 +430,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     boolean processPriority(
             TypeName serviceTypeName,
             TypeElement type) {
-        Optional<? extends AnnotationMirror> mirror = findAnnotationMirror("jakarta.annotation.Priority",
+        Optional<? extends AnnotationMirror> mirror = findAnnotationMirror(Utils.JAKARTA_PRIORITY,
                                                                            type.getAnnotationMirrors());
         if (mirror.isEmpty()) {
-            mirror = findAnnotationMirror("javax.annotation.Priority", type.getAnnotationMirrors());
+            mirror = findAnnotationMirror(Utils.JAVAX_PRIORITY, type.getAnnotationMirrors());
         }
 
         if (mirror.isEmpty()) {

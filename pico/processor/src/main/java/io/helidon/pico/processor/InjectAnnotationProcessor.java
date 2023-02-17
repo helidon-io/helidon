@@ -48,10 +48,8 @@ import static io.helidon.pico.tools.TypeTools.toAccess;
  * @deprecated
  */
 public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependencies.BuilderContinuation> {
-    private static final String INJECT = "jakarta.inject.Inject";
-    private static final String INJECT_JAVAX = "javax.inject.Inject";
-    private static final Set<String> SUPPORTED_TARGETS = Set.of(INJECT,
-                                                                INJECT_JAVAX);
+    private static final Set<String> SUPPORTED_TARGETS = Set.of(Utils.JAKARTA_INJECT,
+                                                                Utils.JAVAX_INJECT);
 
     /**
      * Service loader based constructor.
@@ -68,7 +66,7 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
 
     @Override
     protected Set<String> contraAnnotations() {
-        return Set.of(CONFIGURED_BY_TYPENAME);
+        return Set.of(Utils.PICO_CONFIGURED_BY);
     }
 
     @Override

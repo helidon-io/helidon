@@ -39,7 +39,7 @@ import io.helidon.pico.tools.TemplateHelperTools;
  * Annotation processor that generates a service for each method annotated with an HTTP method annotation.
  * Service provider implementation of a {@link io.helidon.pico.tools.CustomAnnotationTemplateCreator}.
  */
-public class HttpMethodProducer implements CustomAnnotationTemplateCreator {
+public class HttpMethodCreator implements CustomAnnotationTemplateCreator {
     private static final String PATH_ANNOTATION = "io.helidon.common.http.Path";
     private static final String GET_ANNOTATION = "io.helidon.common.http.GET";
     private static final String HTTP_METHOD_ANNOTATION = "io.helidon.common.http.HttpMethod";
@@ -60,7 +60,7 @@ public class HttpMethodProducer implements CustomAnnotationTemplateCreator {
     /**
      * Default constructor used by the {@link java.util.ServiceLoader}.
      */
-    public HttpMethodProducer() {
+    public HttpMethodCreator() {
     }
 
     @Override

@@ -40,18 +40,14 @@ import io.helidon.pico.tools.ToolsException;
  * @deprecated
  */
 public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
-    private static final String SINGLETON = "jakarta.inject.Singleton";
-    private static final String SINGLETON_JAVAX = "javax.inject.Singleton";
-    private static final String EXTERNAL_CONTRACTS = "io.helidon.pico.ExternalContracts";
-    private static final String INTERCEPTED = "io.helidon.pico.Intercepted";
 
     private static final Set<String> SUPPORTED_TARGETS = Set.of(
-            SINGLETON,
-            EXTERNAL_CONTRACTS,
-            INTERCEPTED,
-            SINGLETON_JAVAX,
-            UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAKARTA,
-            UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAVAX
+            Utils.JAKARTA_SINGLETON,
+            Utils.PICO_EXTERNAL_CONTRACTS,
+            Utils.PICO_INTERCEPTED,
+            Utils.JAVAX_SINGLETON,
+            Utils.JAKARTA_APPLICATION_SCOPED,
+            Utils.JAVAX_APPLICATION_SCOPED
     );
 
     /**
@@ -69,7 +65,7 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     @Override
     protected Set<String> contraAnnotations() {
-        return Set.of(CONFIGURED_BY_TYPENAME);
+        return Set.of(Utils.PICO_CONFIGURED_BY);
     }
 
     @Override

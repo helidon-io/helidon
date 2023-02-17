@@ -37,15 +37,11 @@ import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
  * @deprecated
  */
 public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationProcessor<Void> {
-    private static final String PRE_DESTROY = "jakarta.annotation.PreDestroy";
-    private static final String POST_CONSTRUCT = "jakarta.annotation.PostConstruct";
-    private static final String PRE_DESTROY_JAVAX = "javax.annotation.PreDestroy";
-    private static final String POST_CONSTRUCT_JAVAX = "javax.annotation.PostConstruct";
 
-    private static final Set<String> SUPPORTED_TARGETS = Set.of(PRE_DESTROY,
-                                   POST_CONSTRUCT,
-                                   PRE_DESTROY_JAVAX,
-                                   POST_CONSTRUCT_JAVAX);
+    private static final Set<String> SUPPORTED_TARGETS = Set.of(Utils.JAKARTA_PRE_DESTROY,
+                                                                Utils.JAKARTA_POST_CONSTRUCT,
+                                                                Utils.JAVAX_PRE_DESTROY,
+                                                                Utils.JAVAX_POST_CONSTRUCT);
 
     /**
      * Service loader based constructor.
@@ -62,7 +58,7 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
 
     @Override
     protected Set<String> contraAnnotations() {
-        return Set.of(CONFIGURED_BY_TYPENAME);
+        return Set.of(Utils.PICO_CONFIGURED_BY);
     }
 
     @Override
@@ -105,12 +101,12 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
         /*
          * Either Jakarta or javax pre-destroy
          */
-        Optional<? extends AnnotationMirror> mirror = findAnnotationMirror(PRE_DESTROY, annotations);
+        Optional<? extends AnnotationMirror> mirror = findAnnotationMirror(Utils.JAKARTA_PRE_DESTROY, annotations);
         if (mirror.isPresent()) {
             servicesToProcess().addPreDestroyMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
                                                     method.getSimpleName().toString());
         } else {
-            mirror = findAnnotationMirror(PRE_DESTROY_JAVAX, annotations);
+            mirror = findAnnotationMirror(Utils.JAVAX_PRE_DESTROY, annotations);
             if (mirror.isPresent()) {
                 servicesToProcess().addPreDestroyMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
                                                         method.getSimpleName().toString());
@@ -120,12 +116,12 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
         /*
          * Either Jakarta or javax post-construct
          */
-        mirror = findAnnotationMirror(POST_CONSTRUCT, annotations);
+        mirror = findAnnotationMirror(Utils.JAKARTA_POST_CONSTRUCT, annotations);
         if (mirror.isPresent()) {
             servicesToProcess().addPostConstructMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
                                                        method.getSimpleName().toString());
         } else {
-            mirror = findAnnotationMirror(POST_CONSTRUCT_JAVAX, annotations);
+            mirror = findAnnotationMirror(Utils.JAVAX_POST_CONSTRUCT, annotations);
             if (mirror.isPresent()) {
                 servicesToProcess().addPostConstructMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
                                                            method.getSimpleName().toString());

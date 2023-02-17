@@ -33,7 +33,6 @@ import io.helidon.pico.tools.Options;
 import jakarta.annotation.ManagedBean;
 import jakarta.annotation.Resource;
 import jakarta.annotation.Resources;
-import jakarta.inject.Singleton;
 
 /**
  * When used will recognize constructs that are explicitly known to be unsupported in Pico's reference implementation.
@@ -51,39 +50,36 @@ import jakarta.inject.Singleton;
 public class UnsupportedConstructsProcessor extends AbstractProcessor {
     private static final System.Logger LOGGER = System.getLogger(UnsupportedConstructsProcessor.class.getName());
 
-    static final String APPLICATION_SCOPED_TYPE_NAME_JAKARTA = "jakarta.enterprise.context.ApplicationScoped";
-    static final String APPLICATION_SCOPED_TYPE_NAME_JAVAX = "javax.enterprise.context.ApplicationScoped";
-
     private static final Set<String> UNSUPPORTED_TARGETS;
     static {
         UNSUPPORTED_TARGETS = new HashSet<>();
         UNSUPPORTED_TARGETS.add(ManagedBean.class.getName());
         UNSUPPORTED_TARGETS.add(Resource.class.getName());
         UNSUPPORTED_TARGETS.add(Resources.class.getName());
-        UNSUPPORTED_TARGETS.add(APPLICATION_SCOPED_TYPE_NAME_JAKARTA);
-        UNSUPPORTED_TARGETS.add(APPLICATION_SCOPED_TYPE_NAME_JAVAX);
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.BeforeDestroyed");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.ConversationScoped");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.Dependent");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.Destroyed");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.Initialized");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.NormalScope");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.RequestScoped");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.SessionScoped");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.control.ActivateRequestContext");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.event.Observes");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.event.ObservesAsync");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.inject.Alternative");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.inject.Disposes");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.inject.Intercepted");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.inject.Model");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.inject.Produces");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.inject.Specializes");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.inject.Stereotype");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.inject.TransientReference");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.inject.Typed");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.inject.Vetoed");
-        UNSUPPORTED_TARGETS.add("jakarta.enterprise.util.Nonbinding");
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_APPLICATION_SCOPED);
+        UNSUPPORTED_TARGETS.add(Utils.JAVAX_APPLICATION_SCOPED);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_BEFORE_DESTROYED);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_CONVERSATION_SCOPED);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_DEPENDENT);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_DESTROYED);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_INITIALIZED);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_NORMAL_SCOPE);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_REQUEST_SCOPED);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_SESSION_SCOPED);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_ACTIVATE_REQUEST_CONTEXT);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_OBSERVES);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_OBSERVES_ASYNC);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_ALTERNATIVE);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_DISPOSES);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_INTERCEPTED);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_MODEL);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_PRODUCES);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_SPECIALIZES);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_STEREOTYPE);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_TRANSIENT_REFERENCE);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_TYPED);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_VETOED);
+        UNSUPPORTED_TARGETS.add(Utils.JAKARTA_CDI_NONBINDING);
     }
 
     /**
@@ -118,8 +114,8 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
         if (!annotations.isEmpty()) {
             Set<String> annotationTypeNames = annotations.stream().map(Object::toString).collect(Collectors.toSet());
             if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
-                annotationTypeNames.remove(APPLICATION_SCOPED_TYPE_NAME_JAKARTA);
-                annotationTypeNames.remove(APPLICATION_SCOPED_TYPE_NAME_JAVAX);
+                annotationTypeNames.remove(Utils.JAKARTA_APPLICATION_SCOPED);
+                annotationTypeNames.remove(Utils.JAVAX_APPLICATION_SCOPED);
             }
 
             if (!annotationTypeNames.isEmpty()) {
@@ -132,10 +128,10 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
 
                 String msg = "This module contains unsupported annotations for " + PicoServicesConfig.NAME
                                 + " to process: " + annotationTypeNames + ".\n";
-                if (annotationTypeNames.contains(APPLICATION_SCOPED_TYPE_NAME_JAKARTA)
-                        || annotationTypeNames.contains(APPLICATION_SCOPED_TYPE_NAME_JAVAX)) {
-                    msg += "'" + APPLICATION_SCOPED_TYPE_NAME_JAKARTA + "' can be optionally mapped to '"
-                            + Singleton.class.getName()
+                if (annotationTypeNames.contains(Utils.JAKARTA_APPLICATION_SCOPED)
+                        || annotationTypeNames.contains(Utils.JAVAX_APPLICATION_SCOPED)) {
+                    msg += "'" + Utils.JAKARTA_APPLICATION_SCOPED + "' can be optionally mapped to '"
+                            + Utils.JAKARTA_SINGLETON
                                 + "' scope by passing -A" + Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE + "=true.\n";
                 }
                 msg += "Use -A" + Options.TAG_IGNORE_UNSUPPORTED_ANNOTATIONS + "=true to ignore all unsupported annotations.";

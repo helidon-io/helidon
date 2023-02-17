@@ -33,13 +33,13 @@ import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
  * Annotation processor that generates a service for each class annotated with {@value #PATH_ANNOTATION} annotation.
  * Service provider implementation of a {@link io.helidon.pico.tools.CustomAnnotationTemplateCreator}.
  */
-public class HttpEndpointProducer implements CustomAnnotationTemplateCreator {
+public class HttpEndpointCreator implements CustomAnnotationTemplateCreator {
     private static final String PATH_ANNOTATION = "io.helidon.common.http.Path";
 
     /**
      * Default constructor used by the {@link java.util.ServiceLoader}.
      */
-    public HttpEndpointProducer() {
+    public HttpEndpointCreator() {
     }
 
     @Override
