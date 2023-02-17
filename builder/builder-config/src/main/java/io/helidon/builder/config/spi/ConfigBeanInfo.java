@@ -30,9 +30,9 @@ import io.helidon.builder.config.ConfigBean;
 public interface ConfigBeanInfo extends ConfigBean {
 
     /**
-     * The attribute name for {@link #key()}.
+     * The attribute name for {@link #value()} ()}.
      */
-    String TAG_KEY = "key";
+    String TAG_KEY = "value";
 
     /**
      * The attribute name for {@link #drivesActivation()}.
@@ -85,7 +85,7 @@ public interface ConfigBeanInfo extends ConfigBean {
      */
     static MetaConfigBeanInfo toMetaConfigBeanInfo(Map<String, Object> meta) {
         return MetaConfigBeanInfo.builder()
-                .value((String) meta.get("key"))
+                .value((String) meta.get("value"))
                 .repeatable(Boolean.valueOf((String) meta.get("repeatable")))
                 .drivesActivation(Boolean.valueOf((String) meta.get("drivesActivation")))
                 .atLeastOne(Boolean.valueOf((String) meta.get("atLeastOne")))

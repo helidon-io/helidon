@@ -59,6 +59,10 @@
             <artifactId>helidon-pico-services</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.pico.configdriven</groupId>
+            <artifactId>helidon-pico-configdriven-services</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>

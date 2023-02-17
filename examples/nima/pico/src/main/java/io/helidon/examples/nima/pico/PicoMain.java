@@ -19,6 +19,7 @@ package io.helidon.examples.nima.pico;
 import java.util.Optional;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.pico.Bootstrap;
 import io.helidon.pico.DefaultBootstrap;
@@ -42,58 +43,19 @@ public final class PicoMain {
 
         Optional<Bootstrap> existingBootstrap = PicoServices.globalBootstrap();
         if (existingBootstrap.isEmpty()) {
+            Config config = Config.builder()
+                    .addSource(ConfigSources.classpath("application.yaml"))
+                    .disableSystemPropertiesSource()
+                    .disableEnvironmentVariablesSource()
+                    .build();
             Bootstrap bootstrap = DefaultBootstrap.builder()
-                    .config(Config.create())
+                    .config(config)
                     .build();
             PicoServices.globalBootstrap(bootstrap);
         }
 
         PicoServices picoServices = PicoServices.picoServices().get();
-        // now everything is started from config driven
-
-        //        Services services = picoServices.services();
-
-        /*
-        @ConfigBean("server")
-        public interface WebServerConfig {
-        }
-
-        @ConfiguredBy(WebServerConfig.class)
-        public class LoomWebServer {
-            @Inject
-            LoomWebServer(WebServerConfig config) {
-            }
-
-            @PostConstruct
-            void start() {
-            }
-        }
-         */
-
-        // resolve configuration
-        //        Config config = services.lookup(Config.class).get();
-
-        //
-        //        Nima.config(config);
-        //
-        //        List<ServiceProvider<Bootstrap>> bootstrappers = services.lookupAll(Bootstrap.class);
-        //        for (ServiceProvider<Bootstrap> bootstrapper : bootstrappers) {
-        //            bootstrapper.get();
-        //        }
-        //
-        //        List<ServiceProvider<HttpFeature>> features = services.lookupAll(HttpFeature.class);
-        //
-        //        HelidonFeatures.flavor(HelidonFlavor.NIMA);
-        //        HelidonFeatures.print(HelidonFlavor.NIMA, Version.VERSION, true);
-        //
-        //        WebServer.builder()
-        //                .config(config.get("server"))
-        //                .routing(it -> {
-        //                    features.stream()
-        //                            .map(ServiceProvider::get)
-        //                            .forEach(it::addFeature);
-        //                })
-        //                .start();
-
+        // this line is needed!
+        picoServices.services();
     }
 }

@@ -38,10 +38,12 @@ import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+import io.helidon.pico.Contract;
 
 /**
  * Server that opens server sockets and handles requests through routing.
  */
+@Contract
 public interface WebServer {
     /**
      * The default server socket configuration name. All the default server socket
@@ -165,7 +167,7 @@ public interface WebServer {
         private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders
                 = HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
 
-        private final DefaultWebServerConfig.Builder configBuilder = DefaultWebServerConfig.builder();
+        private final DefaultServerConfig.Builder configBuilder = DefaultServerConfig.builder();
 
         private Config providersConfig = Config.empty();
         // MediaContext should be updated with config processing or during final build if not set.
@@ -199,7 +201,7 @@ public interface WebServer {
                 mediaContext(MediaContext.create());
             }
 
-            return new LoomServer(this, directHandlers.build());
+            return new LoomServer(this, configBuilder.build(), directHandlers.build());
         }
 
         /**
@@ -335,6 +337,7 @@ public interface WebServer {
          */
         public Builder port(int port) {
             socket(DEFAULT_SOCKET_NAME).port(port);
+            configBuilder.port(port);
             return this;
         }
 
@@ -346,6 +349,7 @@ public interface WebServer {
          */
         public Builder host(String host) {
             socket(DEFAULT_SOCKET_NAME).host(host);
+            configBuilder.host(host);
             return this;
         }
 

@@ -77,6 +77,22 @@
             <artifactId>helidon-common-features</artifactId>
         </dependency>
         <dependency>
+            <!-- @ConfiguredBy -->
+            <groupId>io.helidon.pico.configdriven</groupId>
+            <artifactId>helidon-pico-configdriven-services</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-services</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-metadata</artifactId>
             <scope>provided</scope>
@@ -151,6 +167,11 @@
                         <path>
                             <groupId>io.helidon.config</groupId>
                             <artifactId>helidon-config-metadata-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.pico.configdriven</groupId>
+                            <artifactId>helidon-pico-configdriven-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>

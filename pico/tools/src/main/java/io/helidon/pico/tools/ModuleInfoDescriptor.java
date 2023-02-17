@@ -302,6 +302,9 @@ public interface ModuleInfoDescriptor {
             clean = moduleInfo.replaceAll("/\\*[^*]*(?:\\*(?!/)[^*]*)*\\*/|//.*", "");
         }
 
+        // remove annotations
+        clean = cleanModuleAnnotations(clean);
+
         boolean firstLine = true;
         Map<String, TypeName> importAliases = new LinkedHashMap<>();
         String line = null;
@@ -379,6 +382,7 @@ public interface ModuleInfoDescriptor {
 
         return descriptor.build();
     }
+
 
     /**
      * Saves the descriptor source to the provided path.
@@ -660,4 +664,40 @@ public interface ModuleInfoDescriptor {
         return line.trim();
     }
 
+    private static String cleanModuleAnnotations(String moduleText) {
+        StringBuilder response = new StringBuilder();
+
+        try (BufferedReader br = new BufferedReader(new StringReader(moduleText))) {
+            boolean inModule = false;
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (inModule) {
+                    response.append(line).append("\n");
+                    continue;
+                }
+                String trimmed = line.trim();
+                if (trimmed.startsWith("/*")) {
+                    // beginning of comments
+                    response.append(line).append("\n");
+                } else if (trimmed.startsWith("*")) {
+                    // comment line
+                    response.append(line).append("\n");
+                } else if (trimmed.startsWith("import ")) {
+                    // import line
+                    response.append(line).append("\n");
+                } else if (trimmed.startsWith("module")) {
+                    // now just add the rest (we do not cover annotations within module text)
+                    inModule = true;
+                    response.append(line).append("\n");
+                } else if (trimmed.isBlank()) {
+                    // empty line
+                    response.append("\n");
+                }
+            }
+        } catch (IOException ignored) {
+            // ignored, we cannot get an exception when closing string reader
+        }
+
+        return response.toString();
+    }
 }

@@ -17,12 +17,13 @@
 /**
  * Pico Config-Driven Services Module.
  */
-module io.helidon.pico.config.services {
+module io.helidon.pico.configdriven.services {
     requires static jakarta.inject;
     requires static jakarta.annotation;
     requires static io.helidon.config.metadata;
-    requires static io.helidon.pico.configdriven;
 
+    // required for compilation of generated types
+    requires transitive io.helidon.pico.configdriven;
     requires transitive io.helidon.builder;
     requires transitive io.helidon.builder.config;
     requires transitive io.helidon.common.types;
