@@ -33,6 +33,7 @@
     <description>Maven boilerplate for Helidon applications</description>
 
     <modules>
+        <module>nima</module>
         <module>se</module>
         <module>mp</module>
     </modules>
