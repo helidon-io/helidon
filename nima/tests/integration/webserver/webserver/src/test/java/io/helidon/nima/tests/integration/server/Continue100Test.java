@@ -24,7 +24,11 @@ import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.HttpRouting;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -90,6 +94,13 @@ class Continue100Test {
                 )
                 .route(Http.Method.predicate(Http.Method.PUT, Http.Method.POST),
                         PathMatchers.exact("/"), anyHandler)
+                .route(Http.Method.predicate(Http.Method.PUT),
+                       PathMatchers.exact("/chunked"), (req, res) -> {
+                            try (InputStream is = req.content().inputStream();
+                                    OutputStream os = res.outputStream()) {
+                                new ByteArrayInputStream(is.readAllBytes()).transferTo(os);
+                            }
+                        })
                 .route(Http.Method.predicate(Http.Method.GET),
                         PathMatchers.exact("/"), (req, res) -> res.status(Http.Status.OK_200).send("GET TEST"));
     }
@@ -98,6 +109,32 @@ class Continue100Test {
         defaultPort = server.port();
     }
 
+    @Test
+    void continue100ChunkedPut() throws Exception {
+        try (SocketHttpClient socketHttpClient = SocketHttpClient.create(defaultPort)) {
+            socketHttpClient
+                    .manualRequest("""                            
+                            PUT /chunked HTTP/1.1
+                            Host: localhost:%d
+                            Expect: 100-continue
+                            Accept: */*
+                            Transfer-Encoding: chunked
+                            Content-Type: text/plain
+                                                             
+                            """, defaultPort)
+                    .awaitResponse("HTTP/1.1 100 Continue", "\n\n")
+                    .sendChunk("This ")
+                    .sendChunk("is ")
+                    .sendChunk("chunked!")
+                    .sendChunk("");
+
+            String received = socketHttpClient.receive();
+            assertThat(received, startsWith("HTTP/1.1 200 OK"));
+            assertThat(received, endsWith("This is chunked!"));
+
+            checkKeepAlive(socketHttpClient);
+        }
+    }
     @Test
     void continue100Post() throws Exception {
         try (SocketHttpClient socketHttpClient = SocketHttpClient.create(defaultPort)) {
