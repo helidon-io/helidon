@@ -98,11 +98,7 @@ public class Forwarded {
      */
     public static List<Forwarded> create(Headers headers) {
         List<String> values = headers.values(FORWARDED);
-        if (values == null || values.isEmpty()) {
-            return List.of();
-        }
-
-        return values.stream()
+        return values.isEmpty() ? List.of() : values.stream()
                     .flatMap(it -> Arrays.stream(it.split(",")))
                     .map(String::trim)
                     .map(Forwarded::create)
