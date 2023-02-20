@@ -57,7 +57,7 @@ public class RequestedUriDiscovery {
         int port = -1;
         String path = null;
 
-        // Note: requestedUriDiscoveryEnabled() returns true if discovery is explicitly enabled or if either
+        // Note: enabled() returns true if discovery is explicitly enabled or if either
         // requestedUriDiscoveryTypes or trustedProxies is set.
         if (discoveryContext.enabled()) {
             if (discoveryContext.trustedProxies().test(hostPart(remoteAddress))) {
@@ -87,9 +87,13 @@ public class RequestedUriDiscovery {
                             break nextDiscoveryType;
                         }
                     }
+                    case HOST -> {
+                        authority = headers.first(Http.Header.HOST).orElse(null);
+                        break nextDiscoveryType;
+                    }
+
                     default -> {
                         authority = headers.first(Http.Header.HOST).orElse(null);
-
                         break nextDiscoveryType;
                     }
                     }
