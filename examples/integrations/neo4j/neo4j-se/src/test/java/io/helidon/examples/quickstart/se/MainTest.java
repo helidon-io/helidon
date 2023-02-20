@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@ import org.junit.jupiter.api.Test;
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Main test class for Neo4j Helidon SE quickstarter.
@@ -81,7 +82,7 @@ public class MainTest {
                 .request(JsonArray.class)
                 .await();
 
-        assertEquals("The Matrix Reloaded", result.getJsonObject(0).getString("title"));
+        assertThat(result.getJsonObject(0).getString("title"), is("The Matrix Reloaded"));
     }
 
     @Test
@@ -92,7 +93,7 @@ public class MainTest {
                 .request()
                 .await();
 
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
     }
 
     @Test
@@ -102,7 +103,7 @@ public class MainTest {
                 .request()
                 .await();
 
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
     }
 
     static final String FIXTURE = ""
