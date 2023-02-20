@@ -151,8 +151,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
         streamingEntity = true;
 
-        request.reset();
-
         this.outputStream = new BlockingOutputStream(headers,
                                                      trailers,
                                                      this::status,
@@ -161,6 +159,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                                      () -> {
                                                          this.isSent = true;
                                                          afterSend();
+                                                         request.reset();
                                                      },
                                                      ctx,
                                                      sendListener,
