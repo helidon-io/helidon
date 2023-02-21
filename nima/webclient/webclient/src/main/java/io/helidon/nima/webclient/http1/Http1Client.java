@@ -18,6 +18,7 @@ package io.helidon.nima.webclient.http1;
 
 import java.util.Objects;
 
+import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.HttpClient;
@@ -39,12 +40,14 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
     /**
      * Builder for {@link io.helidon.nima.webclient.http1.Http1Client}.
      */
+    @Configured
     class Http1ClientBuilder extends WebClient.Builder<Http1ClientBuilder, Http1Client> {
         private int maxHeaderSize = 16384;
         private int maxStatusLineLength = 256;
         private boolean sendExpect100Continue = true;
         private boolean validateHeaders = true;
         private MediaContext mediaContext = MediaContext.create();
+        private int connectionQueueSize = 10;
 
         private Http1ClientBuilder() {
         }
@@ -64,7 +67,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
         /**
          * Configure the maximum allowed length of the status line from the response.
          *
-         * @param  maxStatusLineLength maximum status line length
+         * @param maxStatusLineLength maximum status line length
          * @return updated builder
          */
         @ConfiguredOption("256")
@@ -79,7 +82,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          *     Defaults to {@code true}.
          * </p>
          *
-         * @param  sendExpect100Continue whether Expect:100-Continue header should be sent on chunked transfers
+         * @param sendExpect100Continue whether Expect:100-Continue header should be sent on chunked transfers
          * @return updated builder
          */
         @ConfiguredOption("true")
@@ -113,6 +116,18 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
         public Http1ClientBuilder mediaContext(MediaContext mediaContext) {
             Objects.requireNonNull(mediaContext);
             this.mediaContext = mediaContext;
+            return this;
+        }
+
+        /**
+         * Configure the maximum allowed size of the connection queue.
+         *
+         * @param connectionQueueSize maximum connection queue size
+         * @return updated builder
+         */
+        @ConfiguredOption("10")
+        public Http1ClientBuilder connectionQueueSize(int connectionQueueSize) {
+            this.connectionQueueSize = connectionQueueSize;
             return this;
         }
 
@@ -159,6 +174,15 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          */
         public MediaContext mediaContext() {
             return mediaContext;
+        }
+
+        /**
+         * Maximum allowed size of the connection queue.
+         *
+         * @return maximum queue size
+         */
+        public int connectionQueueSize() {
+            return connectionQueueSize;
         }
 
         @Override

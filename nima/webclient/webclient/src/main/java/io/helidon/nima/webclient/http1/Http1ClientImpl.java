@@ -18,15 +18,26 @@ package io.helidon.nima.webclient.http1;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.LoomClient;
 import io.helidon.nima.webclient.UriHelper;
 
 class Http1ClientImpl extends LoomClient implements Http1Client {
-    private Http1ClientBuilder builder;
+    private final int maxHeaderSize;
+    private final int maxStatusLineLength;
+    private final boolean sendExpect100Continue;
+    private final boolean validateHeaders;
+    private final MediaContext mediaContext;
+    private final int connectionQueueSize;
 
     Http1ClientImpl(Http1ClientBuilder builder) {
         super(builder);
-        this.builder = builder;
+        this.maxHeaderSize = builder.maxHeaderSize();
+        this.maxStatusLineLength = builder.maxStatusLineLength();
+        this.sendExpect100Continue = builder.sendExpect100Continue();
+        this.validateHeaders = builder.validateHeaders();
+        this.mediaContext = builder.mediaContext();
+        this.connectionQueueSize = builder.connectionQueueSize();
     }
 
     @Override
@@ -37,8 +48,27 @@ class Http1ClientImpl extends LoomClient implements Http1Client {
         return new ClientRequestImpl(this, method, helper, query);
     }
 
-    // package local only as ClientRequestImpl needs this
-    Http1ClientBuilder getBuilder() {
-        return builder;
+    int maxHeaderSize() {
+        return this.maxHeaderSize;
+    }
+
+    int maxStatusLineLength() {
+        return this.maxStatusLineLength;
+    }
+
+    boolean sendExpect100Continue() {
+        return this.sendExpect100Continue;
+    }
+
+    boolean validateHeaders() {
+        return this.validateHeaders;
+    }
+
+    MediaContext mediaContext() {
+        return this.mediaContext;
+    }
+
+    int connectionQueueSize() {
+        return this.connectionQueueSize;
     }
 }

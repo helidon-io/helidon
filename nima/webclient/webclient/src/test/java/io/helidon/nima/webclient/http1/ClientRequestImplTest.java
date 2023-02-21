@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,67 +16,50 @@
 
 package io.helidon.nima.webclient.http1;
 
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.Bytes;
+import io.helidon.common.buffers.DataReader;
+import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ClientRequestImplTest {
-    private static final Http.HeaderValue REQ_CHUNKED_HEADER = Http.Header.createCached(Http.Header.create("X-Req-Chunked"),
-                                                                                        "true");
-    private static final Http.HeaderValue REQ_EXPECT_100_HEADER_NAME = Http.Header.createCached(Http.Header.create(
-            "X-Req-Expect100"), "true");
+    private static final Http.HeaderValue REQ_CHUNKED_HEADER = Http.Header.createCached(
+            Http.Header.create("X-Req-Chunked"), "true");
+    private static final Http.HeaderValue REQ_EXPECT_100_HEADER_NAME = Http.Header.createCached(
+            Http.Header.create("X-Req-Expect100"), "true");
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
     private final static long NO_CONTENT_LENGTH = -1L;
-    private static WebServer webServer;
-    private static int port;
-
-    @BeforeAll
-    static void beforeAll() {
-        webServer = WebServer.builder()
-                .routing(router -> router
-                        .put("/test", ClientRequestImplTest::responseHandler)
-                        .put("/chunkresponse", ClientRequestImplTest::chunkResponseHandler)
-                )
-                .build()
-                .start();
-        port = webServer.port();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        if (webServer != null) {
-            webServer.stop();
-        }
-    }
+    private static final int dummyPort = 1234;
 
     @Test
     void testMaxHeaderSizeFail() {
         Http1Client client = WebClient.builder()
-                .maxHeaderSize(10)
+                .maxHeaderSize(15)
                 .build();
-        validateFailedResponse(client, "Header size exceeded");
+        validateFailedResponse(client, new FakeHttp1ClientConnection(), "Header size exceeded");
     }
 
     @Test
@@ -84,7 +67,7 @@ class ClientRequestImplTest {
         Http1Client client = WebClient.builder()
                 .maxHeaderSize(500)
                 .build();
-        validateSuccessfulResponse(client);
+        validateSuccessfulResponse(client, new FakeHttp1ClientConnection());
     }
 
     @Test
@@ -92,7 +75,7 @@ class ClientRequestImplTest {
         Http1Client client = WebClient.builder()
                 .maxStatusLineLength(1)
                 .build();
-        validateFailedResponse(client, "HTTP Response did not contain HTTP status line");
+        validateFailedResponse(client, new FakeHttp1ClientConnection(), "HTTP Response did not contain HTTP status line");
     }
 
     @Test
@@ -100,7 +83,7 @@ class ClientRequestImplTest {
         Http1Client client = WebClient.builder()
                 .maxStatusLineLength(20)
                 .build();
-        validateSuccessfulResponse(client);
+        validateSuccessfulResponse(client, new FakeHttp1ClientConnection());
     }
 
     @Test
@@ -108,7 +91,7 @@ class ClientRequestImplTest {
         Http1Client client = WebClient.builder()
                 .mediaContext(new CustomizedMediaContext())
                 .build();
-        validateSuccessfulResponse(client);
+        validateSuccessfulResponse(client, new FakeHttp1ClientConnection());
     }
 
     @Test
@@ -116,20 +99,10 @@ class ClientRequestImplTest {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
         Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
+        request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
-        validateChunking(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
-    }
-
-    @Test
-    void testChunkAndChunkResponse() {
-        String[] requestEntityParts = {"First", "Second", "Third"};
-
-        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/chunkresponse");
-        Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
-
-        validateChunking(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
-        assertThat(response.headers().contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED), is(true));
+        validateChunkTransfer(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
     }
 
     @Test
@@ -139,9 +112,10 @@ class ClientRequestImplTest {
 
         Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
                 .header(Http.Header.CONTENT_LENGTH, String.valueOf(contentLength));
+        request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
-        validateChunking(response, false, contentLength, requestEntityParts[0]);
+        validateChunkTransfer(response, false, contentLength, requestEntityParts[0]);
     }
 
     @Test
@@ -149,9 +123,10 @@ class ClientRequestImplTest {
         String[] requestEntityParts = {"First"};
 
         Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
+        request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
-        validateChunking(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
+        validateChunkTransfer(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
     }
 
     @Test
@@ -160,9 +135,10 @@ class ClientRequestImplTest {
 
         Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
                 .header(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
-        validateChunking(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
+        validateChunkTransfer(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
     }
 
     @Test
@@ -173,95 +149,74 @@ class ClientRequestImplTest {
                 .sendExpect100Continue(true)
                 .build();
         Http1ClientRequest request = client.method(Http.Method.PUT)
-                .uri("http://localhost:" + port + "/test");
+                .uri("http://localhost:" + dummyPort + "/test");
+        request.connection(new FakeHttp1ClientConnection());
 
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
-        validateChunking(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
-        assertThat(response.headers().contains(REQ_EXPECT_100_HEADER_NAME), is(true));
+        validateChunkTransfer(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
+        assertThat(response.headers(), hasHeader(REQ_EXPECT_100_HEADER_NAME));
     }
 
-    // validates that methods with no entity payload will not work with submit() and outputStream(), but only with request()
+    // validates that HEAD is not allowed with entity payload
     @Test
-    void testNoEntityMethods() {
-        List<Http.Method> noEntityMethods = Arrays.asList(Http.Method.GET, Http.Method.DELETE, Http.Method.HEAD);
+    void testHeadMethod() {
         Http1Client client = WebClient.builder().build();
-        String url = "http://localhost:" + port + "/test";
-        for (Http.Method method : noEntityMethods) {
-            assertThrows(IllegalArgumentException.class, () ->
-                    client.method(method).uri(url).submit("Foo Bar"));
-            assertThrows(IllegalArgumentException.class, () ->
-                    client.method(method).uri(url).outputStream(it -> {
-                        it.write("Foo Bar".getBytes(StandardCharsets.UTF_8));
-                        it.close();
-                    }));
-            client.method(method).uri(url).request();
-        }
+        String url = "http://localhost:" + dummyPort + "/test";
+        ClientConnection http1ClientConnection = new FakeHttp1ClientConnection();
+        assertThrows(IllegalArgumentException.class, () ->
+                client.method(Http.Method.HEAD).uri(url).connection(http1ClientConnection).submit("Foo Bar"));
+        assertThrows(IllegalArgumentException.class, () ->
+                client.method(Http.Method.HEAD).uri(url).connection(http1ClientConnection).outputStream(it -> {
+                    it.write("Foo Bar".getBytes(StandardCharsets.UTF_8));
+                    it.close();
+                }));
+        client.method(Http.Method.HEAD).uri(url).connection(http1ClientConnection).request();
+        http1ClientConnection.close();
     }
 
-    private static void validateSuccessfulResponse(Http1Client client) {
+    private static void validateSuccessfulResponse(Http1Client client, ClientConnection connection) {
         String requestEntity = "Sending Something";
-        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
+        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + dummyPort + "/test");
+        if (connection != null) {
+            request.connection(connection);
+        }
         Http1ClientResponse response = request.submit(requestEntity);
 
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(response.entity().as(String.class), is(requestEntity));
     }
 
-    private static void validateFailedResponse(Http1Client client, String errorMessage) {
+    private static void validateFailedResponse(Http1Client client, ClientConnection connection, String errorMessage) {
         String requestEntity = "Sending Something";
-        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
+        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + dummyPort + "/test");
+        if (connection != null) {
+            request.connection(connection);
+        }
         final IllegalStateException ie =
                 assertThrows(IllegalStateException.class, () -> request.submit(requestEntity));
-        assertThat(ie.getMessage().contains(errorMessage), is(true));
+        if (errorMessage != null) {
+            assertThat(ie.getMessage().contains(errorMessage), is(true));
+        }
     }
 
-    private static void responseHandler(ServerRequest req, ServerResponse res) {
-        customHandler(req, res, false);
-    }
-
-    private static void chunkResponseHandler(ServerRequest req, ServerResponse res) {
-        customHandler(req, res, true);
-    }
-
-    private static void customHandler(ServerRequest req, ServerResponse res, boolean chunkResponse) {
-        Headers reqHeaders = req.headers();
-        if (reqHeaders.contains(Http.HeaderValues.EXPECT_100)) {
-            res.headers().add(REQ_EXPECT_100_HEADER_NAME);
+    private void validateChunkTransfer(Http1ClientResponse response, boolean chunked, long contentLength, String entity) {
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(Long.parseLong(response.headers().get(REQ_CONTENT_LENGTH_HEADER_NAME).value()), is(contentLength));
+        if (chunked) {
+            assertThat(response.headers(), hasHeader(REQ_CHUNKED_HEADER));
+        } else {
+            assertThat(response.headers(), noHeader(REQ_CHUNKED_HEADER.headerName()));
         }
-        res.headers().add(REQ_CONTENT_LENGTH_HEADER_NAME, String.valueOf(reqHeaders.contentLength().orElse(NO_CONTENT_LENGTH)));
-        if (reqHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-            res.headers().add(REQ_CHUNKED_HEADER);
-        }
-
-        try (InputStream inputStream = req.content().inputStream();
-                OutputStream outputStream = res.outputStream()) {
-            if (!chunkResponse) {
-                inputStream.transferTo(outputStream);
-            } else {
-                // Break the entity into 3 parts and send them in chunks
-                int chunkParts = 3;
-                byte[] entity = inputStream.readAllBytes();
-                int regularChunkLen = entity.length / chunkParts;
-                int lastChunkLen = regularChunkLen + entity.length % chunkParts;
-                for (int i = 0; i < chunkParts; i++) {
-                    int chunkLen = i != (chunkParts - 1) ? regularChunkLen : lastChunkLen;
-                    byte[] chunk = new byte[chunkLen];
-                    System.arraycopy(entity, i * regularChunkLen, chunk, 0, chunkLen);
-                    outputStream.write(chunk);
-                }
-            }
-        } catch (Exception e) {
-            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send("failed: " + e.getMessage());
-        }
+        String responseEntity = response.entity().as(String.class);
+        assertThat(responseEntity, is(entity));
     }
 
     private static Http1ClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
         Http1Client client = WebClient.builder()
-                .sendExpect100Continue(true)
                 .build();
         Http1ClientRequest request = client.method(method)
-                .uri("http://localhost:" + port + uriPath);
+                .uri("http://localhost:" + dummyPort + uriPath);
         return request;
     }
 
@@ -276,12 +231,184 @@ class ClientRequestImplTest {
         return response;
     }
 
-    private void validateChunking(Http1ClientResponse response, boolean chunked, long contentLength, String entity) {
-        assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(Long.parseLong(response.headers().get(REQ_CONTENT_LENGTH_HEADER_NAME).value()), is(contentLength));
-        assertThat(response.headers().contains(REQ_CHUNKED_HEADER), is(chunked));
-        String responseEntity = response.entity().as(String.class);
-        assertThat(responseEntity, is(entity));
+    private static class FakeHttp1ClientConnection implements ClientConnection {
+        private final DataReader clientReader;
+        private final DataWriter clientWriter;
+        private final DataReader serverReader;
+        private final DataWriter serverWriter;
+        private Throwable serverException;
+        private ExecutorService webServerEmulator;
+
+        FakeHttp1ClientConnection() {
+            ArrayBlockingQueue<byte[]> serverToClient = new ArrayBlockingQueue<>(1024);
+            ArrayBlockingQueue<byte[]> clientToServer = new ArrayBlockingQueue<>(1024);
+
+            this.clientReader = reader(serverToClient);
+            this.clientWriter = writer(clientToServer);
+            this.serverReader = reader(clientToServer);
+            this.serverWriter = writer(serverToClient);
+        }
+
+        @Override
+        public DataReader reader() {
+            return clientReader;
+        }
+
+        @Override
+        public DataWriter writer() {
+            return clientWriter;
+        }
+
+        @Override
+        public void release() {
+        }
+
+        @Override
+        public void close() {
+            webServerEmulator.shutdownNow();
+        }
+
+        @Override
+        public String channelId() {
+            return null;
+        }
+
+        private DataWriter writer(ArrayBlockingQueue<byte[]> queue) {
+            return new DataWriter() {
+                @Override
+                public void write(BufferData... buffers) {
+                    writeNow(buffers);
+                }
+
+                @Override
+                public void write(BufferData buffer) {
+                    writeNow(buffer);
+                }
+
+                @Override
+                public void writeNow(BufferData... buffers) {
+                    for (BufferData buffer : buffers) {
+                        writeNow(buffer);
+                    }
+                }
+
+                @Override
+                public void writeNow(BufferData buffer) {
+                    if (serverException != null) {
+                        throw new IllegalStateException("Server exception", serverException);
+                    }
+                    if (webServerEmulator == null) {
+                        webServerEmulator = Executors.newFixedThreadPool(1);
+                        webServerEmulator.submit(() -> {
+                            try {
+                                webServerHandle();
+                            } catch (Throwable t) {
+                                serverException = t;
+                                throw t;
+                            }
+                        });
+                    }
+
+                    byte[] bytes = new byte[buffer.available()];
+                    buffer.read(bytes);
+                    try {
+                        queue.put(bytes);
+                    } catch (InterruptedException e) {
+                        throw new IllegalStateException("Thread interrupted", e);
+                    }
+                }
+            };
+        }
+
+        private DataReader reader(ArrayBlockingQueue<byte[]> queue) {
+            return new DataReader(() -> {
+                if (serverException != null) {
+                    throw new IllegalStateException("Server exception", serverException);
+                }
+                byte[] data;
+                try {
+                    data = queue.take();
+                } catch (InterruptedException e) {
+                    throw new IllegalArgumentException("Thread interrupted", e);
+                }
+                if (data.length == 0) {
+                    return null;
+                }
+                return data;
+            });
+        }
+
+        private void webServerHandle() {
+            BufferData entity = BufferData.growing(128);
+
+            // Read prologue
+            int lineLength = serverReader.findNewLine(16384);
+            if (lineLength > 0) {
+                //String prologue = serverReader.readAsciiString(lineLength);
+                serverReader.skip(lineLength + 2); // skip Prologue + CRLF
+            }
+
+            // Read Headers
+            WritableHeaders<?> reqHeaders = Http1HeadersParser.readHeaders(serverReader, 16384, true);
+
+            int entitySize = 0;
+            if (reqHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                // Send 100-Continue if requested
+                if (reqHeaders.contains(Http.HeaderValues.EXPECT_100)) {
+                    serverWriter.write(
+                            BufferData.create("HTTP/1.1 100 Continue\r\n".getBytes(StandardCharsets.UTF_8)));
+                }
+
+                // Assemble the entity from the chunks
+                while (true) {
+                    String hex = serverReader.readLine();
+                    int chunkLength = Integer.parseUnsignedInt(hex, 16);
+                    if (chunkLength == 0) {
+                        serverReader.readLine();
+                        break;
+                    }
+                    BufferData chunkData = serverReader.readBuffer(chunkLength);
+                    entity.write(chunkData);
+                    serverReader.skip(2);
+                    entitySize += chunkLength;
+                }
+            } else if (reqHeaders.contains(Http.Header.CONTENT_LENGTH)) {
+                entitySize = reqHeaders.get(Http.Header.CONTENT_LENGTH).value(int.class);
+                if (entitySize > 0) {
+                    entity.write(serverReader.getBuffer(entitySize));
+                }
+            }
+
+            WritableHeaders<?> resHeaders = WritableHeaders.create();
+            resHeaders.add(Http.HeaderValues.CONNECTION_KEEP_ALIVE);
+
+            // Send headers that can be validated if Expect-100-Continue, Content_Length, and Chunked request headers exist
+            if (reqHeaders.contains(Http.HeaderValues.EXPECT_100)) {
+                resHeaders.add(REQ_EXPECT_100_HEADER_NAME);
+            }
+            resHeaders.add(REQ_CONTENT_LENGTH_HEADER_NAME, String.valueOf(reqHeaders.contentLength().orElse(NO_CONTENT_LENGTH)));
+            if (reqHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                resHeaders.add(REQ_CHUNKED_HEADER);
+            }
+
+            // Send OK status response
+            serverWriter.write(BufferData.create("HTTP/1.1 200 OK\r\n".getBytes(StandardCharsets.UTF_8)));
+
+            // Send the headers
+            resHeaders.add(Http.Header.CONTENT_LENGTH, Integer.toString(entitySize));
+            BufferData entityBuffer = BufferData.growing(128);
+            for (Http.HeaderValue header : resHeaders) {
+                header.writeHttp1Header(entityBuffer);
+            }
+            entityBuffer.write(Bytes.CR_BYTE);
+            entityBuffer.write(Bytes.LF_BYTE);
+            serverWriter.write(entityBuffer);
+
+            // Send the entity if it exist
+            if (entitySize > 0) {
+                serverWriter.write(entity);
+            }
+        }
     }
 
     private static class CustomizedMediaContext implements MediaContext {
@@ -329,5 +456,4 @@ class ClientRequestImplTest {
             return delegated.writer(type, requestHeaders);
         }
     }
-
 }

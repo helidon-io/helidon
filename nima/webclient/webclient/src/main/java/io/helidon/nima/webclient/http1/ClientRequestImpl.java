@@ -23,17 +23,15 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.ClientRequestHeaders;
@@ -60,10 +58,8 @@ import static java.lang.System.Logger.Level.DEBUG;
 class ClientRequestImpl implements Http1ClientRequest {
     private static final System.Logger LOGGER = System.getLogger(ClientRequestImpl.class.getName());
     private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] CRLF_BYTES = "\r\n".getBytes(StandardCharsets.UTF_8);
     private static final String HTTPS = "https";
-    private static final int CONNECTION_QUEUE_SIZE = 10;
-    private static final Map<KeepAliveKey, Queue<Http1ClientConnection>> CHANNEL_CACHE = new ConcurrentHashMap<>();
+    private static final Map<KeepAliveKey, LinkedBlockingDeque<Http1ClientConnection>> CHANNEL_CACHE = new ConcurrentHashMap<>();
     private final UriQueryWriteable query;
     private final Map<String, String> pathParams = new HashMap<>();
     private final Http1ClientImpl client;
@@ -72,15 +68,16 @@ class ClientRequestImpl implements Http1ClientRequest {
     private final boolean defaultKeepAlive = true;
     private final SocketOptions channelOptions;
     private final BufferData writeBuffer = BufferData.growing(128);
+    private final int maxHeaderSize;
+    private final int maxStatusLineLength;
+    private final boolean sendExpect100Continue;
+    private final boolean validateHeaders;
+    private final MediaContext mediaContext;
+    private final int connectionQueueSize;
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private Tls tls;
     private String uriTemplate;
     private ClientConnection connection;
-    private MediaContext mediaContext;
-    private int maxHeaderSize;
-    private int maxStatusLineLength;
-    private boolean sendExpect100Continue;
-    private boolean validateHeaders;
 
     ClientRequestImpl(Http1ClientImpl client,
                       Http.Method method,
@@ -94,11 +91,20 @@ class ClientRequestImpl implements Http1ClientRequest {
         this.channelOptions = client.socketOptions();
         this.query = query;
 
-        this.mediaContext = client.getBuilder().mediaContext();
-        this.maxHeaderSize = client.getBuilder().maxHeaderSize();
-        this.maxStatusLineLength = client.getBuilder().maxStatusLineLength();
-        this.sendExpect100Continue = client.getBuilder().sendExpect100Continue();
-        this.validateHeaders = client.getBuilder().validateHeaders();
+        this.maxHeaderSize = client.maxHeaderSize();
+        this.maxStatusLineLength = client.maxStatusLineLength();
+        this.sendExpect100Continue = client.sendExpect100Continue();
+        this.validateHeaders = client.validateHeaders();
+        this.mediaContext = client.mediaContext();
+        this.connectionQueueSize = client.connectionQueueSize();
+    }
+
+    static void writeHeaders(Headers headers, BufferData bufferData) {
+        for (HeaderValue header : headers) {
+            header.writeHttp1Header(bufferData);
+        }
+        bufferData.write(Bytes.CR_BYTE);
+        bufferData.write(Bytes.LF_BYTE);
     }
 
     @Override
@@ -157,10 +163,8 @@ class ClientRequestImpl implements Http1ClientRequest {
     @Override
     public Http1ClientResponse submit(Object entity) {
         if (entity != BufferData.EMPTY_BYTES) {
-            rejectNoEntityMethods();
+            rejectHeadWithEntity();
         }
-
-        // todo validate request headers ala Netty
 
         if (uriTemplate != null) {
             String resolved = resolvePathParams(uriTemplate);
@@ -188,6 +192,7 @@ class ClientRequestImpl implements Http1ClientRequest {
 
         headers.set(Header.create(Header.CONTENT_LENGTH, entityBytes.length));
 
+        // todo validate request headers
         writeHeaders(headers, writeBuffer);
         if (entityBytes.length > 0) {
             writeBuffer.write(entityBytes);
@@ -199,9 +204,7 @@ class ClientRequestImpl implements Http1ClientRequest {
 
     @Override
     public Http1ClientResponse outputStream(OutputStreamHandler streamHandler) {
-        rejectNoEntityMethods();
-
-        // todo validate request headers ala Netty
+        rejectHeadWithEntity();
 
         WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);
         boolean keepAlive = handleKeepAlive(headers);
@@ -229,12 +232,6 @@ class ClientRequestImpl implements Http1ClientRequest {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
 
-        // todo This is a temporary workaround to remove garbage data or
-        //  until https://github.com/helidon-io/helidon/issues/6121 is resolved
-        if (cos.chunked) {
-            System.out.println("Garbage data from reader:" + reader.readBuffer().debugDataHex(true));
-        }
-
         return readResponse(ClientRequestHeaders.create(headers), connection, reader);
     }
 
@@ -254,13 +251,6 @@ class ClientRequestImpl implements Http1ClientRequest {
     public Http1ClientRequest connection(ClientConnection connection) {
         this.connection = connection;
         return this;
-    }
-
-    static void writeHeaders(Headers headers, BufferData bufferData) {
-        for (HeaderValue header : headers) {
-            header.writeHttp1Header(bufferData);
-        }
-        bufferData.write(CRLF_BYTES);
     }
 
     UriHelper uriHelper() {
@@ -316,7 +306,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         return false;
     }
 
-    private ClientConnection getConnection(boolean keepAlive) {
+    ClientConnection getConnection(boolean keepAlive) {
         if (this.connection != null) {
             return this.connection;
         }
@@ -334,16 +324,14 @@ class ClientRequestImpl implements Http1ClientRequest {
             KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(), uri.authority(), tls,
                                                          channelOptions.connectTimeout(), channelOptions.readTimeout());
             var connectionQueue = CHANNEL_CACHE.computeIfAbsent(keepAliveKey,
-                                                                it -> new ConcurrentLinkedDeque<>());
+                                                                it -> new LinkedBlockingDeque<>(connectionQueueSize));
 
-            // TODO we must limit the queue in size
             while ((connection = connectionQueue.poll()) != null && !connection.isConnected()) {
             }
 
             if (connection == null) {
                 connection = new Http1ClientConnection(channelOptions,
                                                        connectionQueue,
-                                                       CONNECTION_QUEUE_SIZE,
                                                        new ConnectionKey(uri.scheme(),
                                                                          uri.host(),
                                                                          uri.port(),
@@ -368,13 +356,10 @@ class ClientRequestImpl implements Http1ClientRequest {
         return connection;
     }
 
-    // https://www.rfc-editor.org/rfc/rfc7231 defines these methods has no defined semantics for a payload
-    private void rejectNoEntityMethods() {
-        List<Http.Method> noEntityMethods = Arrays.asList(Http.Method.GET, Http.Method.DELETE, Http.Method.HEAD);
-        if (noEntityMethods.contains(this.method)) {
-            throw new IllegalArgumentException("Payload in method '" + this.method + "' has no defined semantics");
+    private void rejectHeadWithEntity() {
+        if (this.method.equals(Http.Method.HEAD)) {
+            throw new IllegalArgumentException("Payload in method '" + Http.Method.HEAD + "' has no defined semantics");
         }
-
     }
 
     private byte[] entityBytes(Object entity, ClientRequestHeaders headers) {
@@ -492,9 +477,11 @@ class ClientRequestImpl implements Http1ClientRequest {
 
             BufferData toWrite = BufferData.create(available + hex.length + 4); // \r\n after size, another after chunk
             toWrite.write(hex);
-            toWrite.write(CRLF_BYTES);
+            toWrite.write(Bytes.CR_BYTE);
+            toWrite.write(Bytes.LF_BYTE);
             toWrite.write(buffer);
-            toWrite.write(CRLF_BYTES);
+            toWrite.write(Bytes.CR_BYTE);
+            toWrite.write(Bytes.LF_BYTE);
 
             writer.writeNow(toWrite);
         }
@@ -528,6 +515,8 @@ class ClientRequestImpl implements Http1ClientRequest {
                 }
                 headers.remove(Header.CONTENT_LENGTH);
             }
+
+            // todo validate request headers
             writeHeaders(headers, writeBuffer);
             writer.writeNow(writeBuffer);
 
@@ -537,6 +526,8 @@ class ClientRequestImpl implements Http1ClientRequest {
                     throw new IllegalStateException("Expected a status of '100 Continue' but received a '"
                                                             + responseStatus + "' instead");
                 }
+                // Discard any remaining data from the response
+                reader.skip(reader.available());
             }
         }
 
