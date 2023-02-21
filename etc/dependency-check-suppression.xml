@@ -125,4 +125,14 @@
    <cve>CVE-2022-45129</cve>
 </suppress>
 
+<!-- Falise Positive. CVE-2023-25194 is against Kafka Connect, not the client -->
+<!-- See https://github.com/jeremylong/DependencyCheck/issues/5469 -->
+<suppress>
+   <notes><![CDATA[
+   file name: kafka-clients-2.8.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
+   <cve>CVE-2023-25194</cve>
+</suppress>
+
 </suppressions>
