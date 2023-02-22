@@ -16,9 +16,13 @@
 
 package io.helidon.tracing.jaeger;
 
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Span;
@@ -28,11 +32,13 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 
 class JaegerScopeManagerTest {
 
+    private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
+
     private final JaegerTracer tracer;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     JaegerScopeManagerTest() {
         JaegerTracer.Builder builder = new JaegerTracer.Builder("test-scopes");
@@ -68,7 +74,7 @@ class JaegerScopeManagerTest {
         JaegerScopeManager.ThreadScope scope = (JaegerScopeManager.ThreadScope) scopeManager.activate(span);
         assertThat(scope.isClosed(), is(false));
         assertThat(scopeManager.activeSpan(), is(span));
-        executor.submit(scope::close).get(100, TimeUnit.MILLISECONDS);      // different thread
+        EXECUTOR_SERVICE.submit(scope::close).get(100, TimeUnit.MILLISECONDS);      // different thread
         assertThat(scopeManager.activeSpan(), nullValue());
         assertThat(scope.isClosed(), is(true));
         assertThat(JaegerScopeManager.SCOPES.size(), is(0));
@@ -137,6 +143,24 @@ class JaegerScopeManagerTest {
         assertThat(scope2.isClosed(), is(true));
         assertThat(scope3.isClosed(), is(true));
         assertThat(scopeManager.activeSpan(), nullValue());
+        assertThat(JaegerScopeManager.SCOPES.size(), is(0));
+    }
+
+    @Test
+    void testScopeManagerConcurrent() throws InterruptedException {
+        int nscopes = 256;
+        JaegerScopeManager scopeManager = (JaegerScopeManager) tracer.scopeManager();
+        Set<JaegerScopeManager.ThreadScope> scopes = new CopyOnWriteArraySet<>();
+        CountDownLatch latch = new CountDownLatch(nscopes);
+        IntStream.range(0, nscopes).parallel().forEach(i -> {
+            Span span = tracer.buildSpan("test-span").start();
+            JaegerScopeManager.ThreadScope scope = (JaegerScopeManager.ThreadScope) scopeManager.activate(span);
+            scopes.add(scope);
+            latch.countDown();
+        });
+        assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
+        assertThat(JaegerScopeManager.SCOPES.size(), is(greaterThan(0)));
+        scopes.stream().parallel().forEach(JaegerScopeManager.ThreadScope::close);
         assertThat(JaegerScopeManager.SCOPES.size(), is(0));
     }
 }
