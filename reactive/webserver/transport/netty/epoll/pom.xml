@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.reactive.webserver.transport.netty</groupId>
         <artifactId>helidon-reactive-webserver-transport-netty-project</artifactId>
-        <version>4.0.0-ALPHA5-SNAPSHOT</version>
+        <version>4.0.0-ALPHA5</version>
     </parent>
     <artifactId>helidon-reactive-webserver-transport-netty-epoll</artifactId>
     <name>Helidon Reactive WebServer Transport Netty Epoll</name>

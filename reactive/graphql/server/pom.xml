@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.reactive.graphql</groupId>
         <artifactId>helidon-reactive-graphql-project</artifactId>
-        <version>4.0.0-ALPHA5-SNAPSHOT</version>
+        <version>4.0.0-ALPHA5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>

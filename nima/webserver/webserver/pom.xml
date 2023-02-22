@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.nima.webserver</groupId>
         <artifactId>helidon-nima-webserver-project</artifactId>
-        <version>4.0.0-ALPHA5-SNAPSHOT</version>
+        <version>4.0.0-ALPHA5</version>
     </parent>
 
     <artifactId>helidon-nima-webserver</artifactId>
