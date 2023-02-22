@@ -74,13 +74,14 @@ class JaegerScopeManager implements ScopeManager {
                     if (innermost == this) {
                         if (previousScope == null) {
                             SCOPES.remove(creatingThreadId);
+                            closed = true;
                         } else {
                             SCOPES.put(creatingThreadId, previousScope);
+                            closed = true;
                             if (closePreviousScope) {
                                 previousScope.close();
                             }
                         }
-                        closed = true;
                     } else {
                         // Delay closing to after we close all inner scopes
                         innermost.delayClose(this);
