@@ -29,12 +29,12 @@
     </Match>
     <Match>
         <!-- Path comes from config or code -->
-        <Class name="io.helidon.pico.tools.AbstractFilerMsgr$DirectFilerMsgr"/>
+        <Class name="io.helidon.pico.tools.AbstractFilerMessager$DirectFilerMessager"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>
         <!-- Path comes from config or code -->
-        <Class name="io.helidon.pico.tools.AbstractFilerMsgr$DirectFileObject"/>
+        <Class name="io.helidon.pico.tools.AbstractFilerMessager$DirectFileObject"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>

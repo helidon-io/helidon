@@ -62,7 +62,7 @@ import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.RunLevel;
 import io.helidon.pico.ServiceInfoBasics;
-import io.helidon.pico.tools.AbstractFilerMsgr;
+import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreator;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
@@ -75,8 +75,8 @@ import io.helidon.pico.tools.DefaultGeneralCreatorRequest;
 import io.helidon.pico.tools.GeneralCreatorRequest;
 import io.helidon.pico.tools.InterceptionPlan;
 import io.helidon.pico.tools.InterceptorCreator;
+import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.ModuleUtils;
-import io.helidon.pico.tools.Msgr;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ServicesToProcess;
 import io.helidon.pico.tools.ToolsException;
@@ -110,7 +110,7 @@ import static javax.tools.Diagnostic.Kind;
  *
  * @deprecated
  */
-abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements Msgr {
+abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements Messager {
     static final boolean MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR = false;
     static final String TARGET_DIR = "/target/";
     static final String SRC_MAIN_JAVA_DIR = "/src/main/java";
@@ -118,8 +118,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     private final System.Logger logger = System.getLogger(getClass().getName());
     private final ServicesToProcess services;
     private final InterceptorCreator interceptorCreator;
+    private final Map<Path, Path> deferredMoves = new LinkedHashMap<>();
     private RoundEnvironment roundEnv;
-    private Map<Path, Path> deferredMoves = new LinkedHashMap<>();
 
     /**
      * Constructor.
@@ -290,10 +290,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     void doInner(
             TypeElement type,
             B builder) {
-        TypeName serviceTypeName = createTypeNameFromElement(type).orElse(null);
-        if (serviceTypeName != null) {
-            processServiceType(serviceTypeName, type);
-        }
+        createTypeNameFromElement(type).ifPresent(serviceTypeName -> processServiceType(serviceTypeName, type));
     }
 
     /**
@@ -551,7 +548,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     }
 
     CodeGenFiler createCodeGenFiler() {
-        AbstractFilerMsgr filer = AbstractFilerMsgr.createAnnotationBasedFiler(processingEnv, this);
+        AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, this);
         return CodeGenFiler.create(filer);
     }
 

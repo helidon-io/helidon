@@ -19,7 +19,7 @@ package io.helidon.pico.tools;
 /**
  * Abstraction for logging messages.
  */
-public interface Msgr {
+public interface Messager {
 
     /**
      * Log a debug message.

@@ -16,9 +16,9 @@
 
 package io.helidon.pico.processor;
 
-import io.helidon.pico.tools.Msgr;
+import io.helidon.pico.tools.Messager;
 
-class MessagerToLogAdapter implements Msgr {
+class MessagerToLogAdapter implements Messager {
 
     private final System.Logger logger;
 

@@ -50,22 +50,22 @@ import io.helidon.common.types.TypeName;
 /**
  * Used to abstract processor based filer from direct filer (the later used via maven plugin and other tooling).
  */
-public abstract class AbstractFilerMsgr implements Filer, Msgr {
-    private static final System.Logger LOGGER = System.getLogger(AbstractFilerMsgr.class.getName());
+public abstract class AbstractFilerMessager implements Filer, Messager {
+    private static final System.Logger LOGGER = System.getLogger(AbstractFilerMessager.class.getName());
 
     private final Filer filerDelegate;
-    private final Msgr msgrDelegate;
+    private final Messager msgrDelegate;
     private final System.Logger logger;
 
-    AbstractFilerMsgr(
+    AbstractFilerMessager(
             Filer filerDelegate,
-            Msgr msgr) {
+            Messager msgr) {
         this.filerDelegate = filerDelegate;
         this.msgrDelegate = msgr;
         this.logger = LOGGER;
     }
 
-    AbstractFilerMsgr(
+    AbstractFilerMessager(
             System.Logger logger) {
         this.filerDelegate = null;
         this.msgrDelegate = null;
@@ -79,10 +79,10 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
      * @param msgr          the messager and error handler
      * @return the filer facade
      */
-    public static AbstractFilerMsgr createAnnotationBasedFiler(
+    public static AbstractFilerMessager createAnnotationBasedFiler(
             ProcessingEnvironment processingEnv,
-            Msgr msgr) {
-        return new AbstractFilerMsgr(Objects.requireNonNull(processingEnv.getFiler()), msgr) {};
+            Messager msgr) {
+        return new AbstractFilerMessager(Objects.requireNonNull(processingEnv.getFiler()), msgr) {};
     }
 
     /**
@@ -92,10 +92,10 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
      * @param logger    the logger for messaging
      * @return the filer facade
      */
-    public static AbstractFilerMsgr createDirectFiler(
+    public static AbstractFilerMessager createDirectFiler(
             CodeGenPaths paths,
             System.Logger logger) {
-        return new DirectFilerMsgr(Objects.requireNonNull(paths), logger) {};
+        return new DirectFilerMessager(Objects.requireNonNull(paths), logger) {};
     }
 
     @Override
@@ -211,10 +211,10 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
     }
 
 
-    static class DirectFilerMsgr extends AbstractFilerMsgr {
+    static class DirectFilerMessager extends AbstractFilerMessager {
         private final CodeGenPaths paths;
 
-        DirectFilerMsgr(
+        DirectFilerMessager(
                 CodeGenPaths paths,
                 System.Logger logger) {
             super(logger);

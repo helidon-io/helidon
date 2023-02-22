@@ -44,7 +44,7 @@ class JavaC {
     private String target = AbstractCreator.DEFAULT_TARGET;
     private File outputDirectory;
     private System.Logger logger = LOGGER;
-    private Msgr messager;
+    private Messager messager;
 
     /**
      * @return The fluent builder for eventual compilation.
@@ -144,7 +144,7 @@ class JavaC {
             return this;
         }
 
-        Builder messager(Msgr messager) {
+        Builder messager(Messager messager) {
             assert (!closed);
             JavaC.this.messager = messager;
             return this;

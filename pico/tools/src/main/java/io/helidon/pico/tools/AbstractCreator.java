@@ -88,7 +88,7 @@ public abstract class AbstractCreator {
     CodeGenFiler createDirectCodeGenFiler(
             CodeGenPaths paths,
             boolean isAnalysisOnly) {
-        AbstractFilerMsgr filer = AbstractFilerMsgr.createDirectFiler(paths, logger);
+        AbstractFilerMessager filer = AbstractFilerMessager.createDirectFiler(paths, logger);
         return new CodeGenFiler(filer, !isAnalysisOnly);
     }
 

@@ -67,7 +67,7 @@ class DefaultApplicationCreatorTest extends AbstractBaseCreator {
                 .generatedSourcesPath("target/pico/generated-sources")
                 .outputPath("target/pico/generated-classes")
                 .build();
-        AbstractFilerMsgr directFiler = AbstractFilerMsgr
+        AbstractFilerMessager directFiler = AbstractFilerMessager
                 .createDirectFiler(codeGenPaths, System.getLogger(getClass().getName()));
         CodeGenFiler filer = CodeGenFiler.create(directFiler);
 

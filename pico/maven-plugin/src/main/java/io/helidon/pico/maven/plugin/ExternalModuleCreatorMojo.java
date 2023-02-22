@@ -29,7 +29,7 @@ import java.util.Set;
 
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.tools.AbstractFilerMsgr;
+import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreator;
 import io.helidon.pico.tools.ActivatorCreatorConfigOptions;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
@@ -180,7 +180,7 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
                     .outputPath(getOutputDirectory().getPath())
                     .metaInfServicesPath(new File(getOutputDirectory(), "META-INF/services").getPath())
                     .build();
-            AbstractFilerMsgr directFiler = AbstractFilerMsgr.createDirectFiler(codeGenPaths, getLogger());
+            AbstractFilerMessager directFiler = AbstractFilerMessager.createDirectFiler(codeGenPaths, getLogger());
             CodeGenFiler codeGenFiler = CodeGenFiler.create(directFiler);
             ExternalModuleCreatorRequest request = DefaultExternalModuleCreatorRequest.builder()
                     .packageNamesToScan(getPackageNames())

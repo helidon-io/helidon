@@ -861,7 +861,7 @@ public class ServicesToProcess implements Resetable {
      * @param roundEnv the round env
      */
     public static void onBeginProcessing(
-            Msgr processor,
+            Messager processor,
             Set<? extends TypeElement> annotations,
             RoundEnvironment roundEnv) {
         boolean reallyStarted = !annotations.isEmpty();
@@ -880,7 +880,7 @@ public class ServicesToProcess implements Resetable {
      * @param roundEnv the round env
      */
     public static void onEndProcessing(
-            Msgr processor,
+            Messager processor,
             Set<? extends TypeElement> annotations,
             RoundEnvironment roundEnv) {
         boolean done = annotations.isEmpty();

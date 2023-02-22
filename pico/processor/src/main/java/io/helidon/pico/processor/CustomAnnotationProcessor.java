@@ -41,7 +41,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.ServiceInfoBasics;
-import io.helidon.pico.tools.AbstractFilerMsgr;
+import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CommonUtils;
@@ -187,7 +187,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     void doFiler(
             CustomAnnotationTemplateResponse response) {
-        AbstractFilerMsgr filer = AbstractFilerMsgr.createAnnotationBasedFiler(processingEnv, this);
+        AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, this);
         CodeGenFiler codegen = CodeGenFiler.create(filer);
         response.generatedSourceCode().forEach((typeName, codeBody) -> {
             codegen.codegenJavaFilerOut(typeName, codeBody);

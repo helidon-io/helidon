@@ -28,7 +28,7 @@ package io.helidon.pico;
  * @see Module
  */
 @Contract
-public interface Application extends OptNamed {
+public interface Application extends OptionallyNamed {
 
     /**
      * Called by the provider implementation at bootstrapping time to bind all injection plans to each and every service provider.

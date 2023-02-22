@@ -23,7 +23,7 @@ import java.util.Optional;
  *
  * @see jakarta.inject.Named
  */
-public interface OptNamed {
+public interface OptionallyNamed {
 
     /**
      * The optional name for this instance.

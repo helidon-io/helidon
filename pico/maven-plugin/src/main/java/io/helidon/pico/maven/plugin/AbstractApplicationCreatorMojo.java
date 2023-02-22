@@ -42,7 +42,7 @@ import io.helidon.pico.ServiceProviderProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.services.DefaultServiceBinder;
 import io.helidon.pico.spi.CallingContext;
-import io.helidon.pico.tools.AbstractFilerMsgr;
+import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ApplicationCreator;
 import io.helidon.pico.tools.ApplicationCreatorCodeGen;
@@ -305,7 +305,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     .permittedProviderQualifierTypeNames(toTypeNames(permittedProviderQualifierTypeNames))
                     .build();
             String moduleName = getModuleName();
-            AbstractFilerMsgr directFiler = AbstractFilerMsgr.createDirectFiler(codeGenPaths, getLogger());
+            AbstractFilerMessager directFiler = AbstractFilerMessager.createDirectFiler(codeGenPaths, getLogger());
             CodeGenFiler codeGenFiler = CodeGenFiler.create(directFiler);
             DefaultApplicationCreatorRequest.Builder reqBuilder = DefaultApplicationCreatorRequest.builder()
                     .codeGen(applicationCodeGen)

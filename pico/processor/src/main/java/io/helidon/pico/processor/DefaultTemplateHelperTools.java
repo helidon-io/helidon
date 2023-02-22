@@ -29,7 +29,7 @@ import io.helidon.pico.tools.CommonUtils;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.DefaultCustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.Msgr;
+import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.TemplateHelper;
 import io.helidon.pico.tools.TemplateHelperTools;
 import io.helidon.pico.tools.ToolsException;
@@ -40,7 +40,7 @@ import io.helidon.pico.tools.ToolsException;
 class DefaultTemplateHelperTools implements TemplateHelperTools {
 
     private final Class<?> generator;
-    private final Msgr messager;
+    private final Messager messager;
 
     /**
      * Constructor.
@@ -60,7 +60,7 @@ class DefaultTemplateHelperTools implements TemplateHelperTools {
      */
     DefaultTemplateHelperTools(
             Class<?> generator,
-            Msgr messager) {
+            Messager messager) {
         this.generator = Objects.requireNonNull(generator);
         this.messager = messager;
     }

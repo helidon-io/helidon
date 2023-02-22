@@ -364,6 +364,7 @@ class DefaultTypeNameTest {
 
     @ParameterizedTest
     @MethodSource("equalsAndCompareSource")
+    @SuppressWarnings("unchecked")
     void hashEqualsAndCompare(EqualsData data) {
         if (data.equal) {
             assertThat("equals", data.first, equalTo(data.second));
@@ -420,6 +421,7 @@ class DefaultTypeNameTest {
                 );
     }
 
+    @SuppressWarnings("rawtypes")
     private final static class EqualsData {
         private final Comparable first;
         private final Comparable second;

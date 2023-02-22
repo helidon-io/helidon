@@ -67,7 +67,7 @@ public class CodeGenFiler {
     private static final Set<TypeName> FILER_TYPES_FILED = new LinkedHashSet<>();
     private static boolean filerWriteIsDisabled;
 
-    private final AbstractFilerMsgr filer;
+    private final AbstractFilerMessager filer;
     private final Boolean enabled;
     private final Map<Path, Path> deferredMoves = new LinkedHashMap<>();
     private Path targetOutputPath;
@@ -79,7 +79,7 @@ public class CodeGenFiler {
      * @param filer the filer to use for creating resources
      */
     CodeGenFiler(
-            AbstractFilerMsgr filer) {
+            AbstractFilerMessager filer) {
         this(filer, null);
     }
 
@@ -90,7 +90,7 @@ public class CodeGenFiler {
      * @param enabled true if forcing enablement, false if forcing disablement, null for using defaults
      */
     CodeGenFiler(
-            AbstractFilerMsgr filer,
+            AbstractFilerMessager filer,
             Boolean enabled) {
         this.filer = Objects.requireNonNull(filer);
         this.enabled = enabled;
@@ -103,7 +103,7 @@ public class CodeGenFiler {
      * @return a newly created code gen filer
      */
     public static CodeGenFiler create(
-            AbstractFilerMsgr filer) {
+            AbstractFilerMessager filer) {
         return new CodeGenFiler(filer);
     }
 
@@ -125,11 +125,11 @@ public class CodeGenFiler {
         return (enabled != null) ? enabled : !filerWriteIsDisabled;
     }
 
-    AbstractFilerMsgr filer() {
+    AbstractFilerMessager filer() {
         return filer;
     }
 
-    Msgr messager() {
+    Messager messager() {
         return filer;
     }
 
@@ -157,7 +157,7 @@ public class CodeGenFiler {
         }
 
         Filer filer = filer();
-        Msgr messager = messager();
+        Messager messager = messager();
         Map<String, Set<String>> mergedMap = new LinkedHashMap<>();
         // load up any existing values, since this compilation may be partial and be run again...
         for (Map.Entry<String, List<String>> e : metaInfServices.entrySet()) {
@@ -235,7 +235,7 @@ public class CodeGenFiler {
             String outPath,
             String body,
             Optional<Function<InputStream, String>> optFnUpdater) {
-        Msgr messager = messager();
+        Messager messager = messager();
         if (!isFilerWriteEnabled()) {
             messager.log("(disabled) Writing " + outPath + " with:\n" + body);
             return Optional.empty();
@@ -316,7 +316,7 @@ public class CodeGenFiler {
     boolean tryToEnsureSameContents(
             Exception e,
             String expected,
-            Msgr messager,
+            Messager messager,
             AtomicReference<File> fileRef) {
         if (!(e instanceof FilerException)) {
             return false;
@@ -413,7 +413,7 @@ public class CodeGenFiler {
     public Optional<Path> codegenJavaFilerOut(
             TypeName typeName,
             String body) {
-        Msgr messager = messager();
+        Messager messager = messager();
         if (!isFilerWriteEnabled()) {
             messager.log("(disabled) Writing " + typeName + " with:\n" + body);
             return Optional.empty();
@@ -454,7 +454,7 @@ public class CodeGenFiler {
             boolean overwriteTargetIfExists) {
         Objects.requireNonNull(newDeltaDescriptor);
 
-        Msgr messager = messager();
+        Messager messager = messager();
         String typeName = PICO_MODULE_INFO_JAVA_NAME;
         if (!isFilerWriteEnabled()) {
             messager.log("(disabled) Writing " + typeName + " with:\n" + newDeltaDescriptor);
@@ -561,9 +561,9 @@ public class CodeGenFiler {
      */
     Optional<Path> toSourceLocation(
             String name) {
-        if (filer instanceof AbstractFilerMsgr.DirectFilerMsgr) {
+        if (filer instanceof AbstractFilerMessager.DirectFilerMessager) {
             TypeName typeName = DefaultTypeName.createFromTypeName(name);
-            Optional<Path> path = Optional.ofNullable(((AbstractFilerMsgr.DirectFilerMsgr) filer)
+            Optional<Path> path = Optional.ofNullable(((AbstractFilerMessager.DirectFilerMessager) filer)
                                                .toSourcePath(StandardLocation.SOURCE_PATH, typeName));
             if (path.isPresent()) {
                 return path;

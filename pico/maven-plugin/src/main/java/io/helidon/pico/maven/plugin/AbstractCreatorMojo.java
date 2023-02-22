@@ -30,9 +30,9 @@ import io.helidon.pico.Module;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.tools.AbstractCreator;
+import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.ModuleUtils;
-import io.helidon.pico.tools.Msgr;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.TemplateHelper;
 
@@ -354,7 +354,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     abstract File getGeneratedSourceDirectory();
 
 
-    class Messager2LogAdapter implements Msgr {
+    class Messager2LogAdapter implements Messager {
         @Override
         public void debug(String message) {
             getLog().debug(message);

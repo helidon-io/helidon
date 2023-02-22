@@ -45,6 +45,6 @@ public interface ApplicationCreatorRequest extends GeneralCreatorRequest {
      *
      * @return messager
      */
-    Optional<Msgr> messager();
+    Optional<Messager> messager();
 
 }
