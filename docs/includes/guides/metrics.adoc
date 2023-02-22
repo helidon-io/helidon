@@ -283,7 +283,7 @@ metrics:
     - type: base
       enabled: false
     - type: vendor
-      enables: false
+      enabled: false
 ----
 
 ===== Controlling Metrics by Metric Name
