@@ -821,7 +821,7 @@ public interface WebServer {
         /**
          * Sets the requested URI discovery context for use by the web server's default socket.
          *
-         * @param discoveryContextBuilder {@link io.helidon.common.configurable.RequestedUriDiscoveryContext.Builder} to use
+         * @param discoveryContextBuilder {@link io.helidon.common.http.RequestedUriDiscoveryContext.Builder} to use
          * @return updated builder
          */
 

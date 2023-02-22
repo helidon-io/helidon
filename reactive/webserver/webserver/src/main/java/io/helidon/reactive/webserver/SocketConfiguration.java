@@ -457,6 +457,7 @@ public interface SocketConfiguration {
         /**
          * Requested URI discovery settings.
          *
+         * @param requestedUriDiscoveryContextBuilder builder for discovery context
          * @return current settings
          */
         @ConfiguredOption(key = RequestedUriDiscoveryContext.Builder.REQUESTED_URI_DISCOVERY_CONFIG_KEY,
