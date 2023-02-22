@@ -25,6 +25,7 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 The following section lists all configurable types in Helidon.
 
 - xref:{rootdir}/config/io_helidon_security_providers_abac_AbacProvider.adoc[AbacProvider (security.providers.abac)]
+- xref:{rootdir}/config/io_helidon_common_configurable_AllowList.adoc[AllowList (common.configurable)]
 - xref:{rootdir}/config/io_helidon_metrics_api_BaseMetricsSettings.adoc[BaseMetricsSettings (metrics.api)]
 - xref:{rootdir}/config/io_helidon_reactive_faulttolerance_Bulkhead.adoc[Bulkhead (faulttolerance)]
 - xref:{rootdir}/config/io_helidon_reactive_faulttolerance_CircuitBreaker.adoc[CircuitBreaker (faulttolerance)]
@@ -69,6 +70,7 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_reactive_webclient_Proxy.adoc[Proxy (webclient)]
 - xref:{rootdir}/config/io_helidon_metrics_api_RegistryFilterSettings.adoc[RegistryFilterSettings (metrics.api)]
 - xref:{rootdir}/config/io_helidon_metrics_api_RegistrySettings.adoc[RegistrySettings (metrics.api)]
+- xref:{rootdir}/config/io_helidon_common_http_RequestedUriDiscoveryContext.adoc[RequestedUriDiscoveryContext (common.http)]
 - xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource (common.configurable)]
 - xref:{rootdir}/config/io_helidon_servicecommon_rest_RestServiceSettings.adoc[RestServiceSettings (servicecommon.rest)]
 - xref:{rootdir}/config/io_helidon_reactive_faulttolerance_Retry.adoc[Retry (faulttolerance)]
