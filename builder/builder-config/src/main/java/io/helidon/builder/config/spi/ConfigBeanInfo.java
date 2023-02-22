@@ -56,7 +56,7 @@ public interface ConfigBeanInfo extends ConfigBean {
 
     /**
      * Builds meta information appropriate for config integration from a
-     * {@link io.helidon.builder.config.ConfigBean} instance. This will use the key if {@link #key()} is present, and
+     * {@link io.helidon.builder.config.ConfigBean} instance. This will use the key if {@link #value()} is present, and
      * if not present will default to the simple class name of the bean type.
      *
      * @param val           the config bean instance
