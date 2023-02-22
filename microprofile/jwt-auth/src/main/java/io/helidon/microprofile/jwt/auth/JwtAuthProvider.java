@@ -32,6 +32,7 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
@@ -116,6 +117,8 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
      * Configuration key for expected audiences of incoming tokens. Used for validation of JWT.
      */
     public static final String CONFIG_EXPECTED_AUDIENCES = "mp.jwt.verify.audiences";
+    private static final String CONFIG_EXPECTED_MAX_TOKEN_AGE = "mp.jwt.verify.token.age";
+    private static final String CONFIG_CLOCK_SKEW = "mp.jwt.verify.clock.skew";
     /**
      * Configuration of Cookie property name which contains JWT token.
      *
@@ -147,7 +150,10 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     private final Map<OutboundTarget, JwtOutboundTarget> targetToJwtConfig = new IdentityHashMap<>();
     private final String expectedIssuer;
     private final String cookiePrefix;
+    private final String decryptionKeyAlgorithm;
     private final boolean useCookie;
+    private final Duration expectedMaxTokenAge;
+    private final Duration clockSkew;
 
     private JwtAuthProvider(Builder builder) {
         this.optional = builder.optional;
@@ -167,6 +173,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         this.useCookie = builder.useCookie;
         this.decryptionKeys = builder.decryptionKeys;
         this.defaultDecryptionJwk = builder.defaultDecryptionJwk;
+        this.decryptionKeyAlgorithm = builder.decryptionKeyAlgorithm;
+        this.expectedMaxTokenAge = builder.expectedMaxTokenAge;
+        this.clockSkew = builder.clockSkew;
 
         if (null == atnTokenHandler) {
             defaultTokenHandler = TokenHandler.builder()
@@ -252,7 +261,14 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                                 throw new JwtException("Header \"cty\" (content type) must be set to \"JWT\" "
                                                                + "for encrypted tokens");
                             }
-                            signedJwt = encryptedJwt.decrypt(decryptionKeys.get(), defaultDecryptionJwk.get());
+                            List<Validator<EncryptedJwt>> validators = new LinkedList<>();
+                            EncryptedJwt.addKekValidator(validators, decryptionKeyAlgorithm, true);
+                            Errors errors = encryptedJwt.validate(validators);
+                            if (errors.isValid()) {
+                                signedJwt = encryptedJwt.decrypt(decryptionKeys.get(), defaultDecryptionJwk.get());
+                            } else {
+                                return AuthenticationResponse.failed(errors.toString());
+                            }
                         } else {
                             signedJwt = SignedJwt.parseToken(token);
                         }
@@ -278,7 +294,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                         }
                         // validate user principal is present
                         Jwt.addUserPrincipalValidator(validators);
-                        validators.add(Jwt.ExpirationValidator.create(true));
+                        validators.add(Jwt.ExpirationValidator.create(Instant.now(),
+                                                                      (int) clockSkew.getSeconds(),
+                                                                      ChronoUnit.SECONDS,
+                                                                      true));
+                        if (expectedMaxTokenAge != null) {
+                            Jwt.addMaxTokenAgeValidator(validators, expectedMaxTokenAge, clockSkew,true);
+                        }
 
                         Errors validate = jwt.validate(validators);
 
@@ -579,6 +601,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private static final String CONFIG_PUBLIC_KEY = "mp.jwt.verify.publickey";
         private static final String CONFIG_PUBLIC_KEY_PATH = "mp.jwt.verify.publickey.location";
         private static final String CONFIG_JWT_DECRYPT_KEY_LOCATION = "mp.jwt.decrypt.key.location";
+        private static final String CONFIG_JWT_DECRYPT_KEY_ALGORITHM = "mp.jwt.decrypt.key.algorithm";
         private static final String JSON_START_MARK = "{";
         private static final Pattern PUBLIC_KEY_PATTERN = Pattern.compile(
                 "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" // Header
@@ -615,8 +638,11 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private String publicKey;
         private String cookieProperty = "Bearer";
         private String decryptKeyLocation;
+        private String decryptionKeyAlgorithm;
         private boolean useCookie = false;
         private boolean loadOnStartup = false;
+        private Duration expectedMaxTokenAge = null;
+        private Duration clockSkew = Duration.ofSeconds(5);
 
         private Builder() {
         }
@@ -1101,9 +1127,12 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY_PATH, String.class).ifPresent(this::publicKeyPath);
             mpConfig.getOptionalValue(CONFIG_EXPECTED_ISSUER, String.class).ifPresent(this::expectedIssuer);
             mpConfig.getOptionalValue(CONFIG_EXPECTED_AUDIENCES, String[].class).map(List::of).ifPresent(this::expectedAudiences);
+            mpConfig.getOptionalValue(CONFIG_EXPECTED_MAX_TOKEN_AGE, int.class).ifPresent(this::expectedMaxTokenAge);
             mpConfig.getOptionalValue(CONFIG_COOKIE_PROPERTY_NAME, String.class).ifPresent(this::cookieProperty);
             mpConfig.getOptionalValue(CONFIG_JWT_HEADER, String.class).ifPresent(this::jwtHeader);
             mpConfig.getOptionalValue(CONFIG_JWT_DECRYPT_KEY_LOCATION, String.class).ifPresent(this::decryptKeyLocation);
+            mpConfig.getOptionalValue(CONFIG_JWT_DECRYPT_KEY_ALGORITHM, String.class).ifPresent(this::decryptKeyAlgorithm);
+            mpConfig.getOptionalValue(CONFIG_CLOCK_SKEW, int.class).ifPresent(this::clockSkew);
 
             if (null == publicKey && null == publicKeyPath) {
                 // this is a fix for incomplete TCK tests
@@ -1195,6 +1224,17 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         /**
+         * Maximal expected token age. If this value is set, {@code iat} claim needs to be present in the JWT.
+         *
+         * @param expectedMaxTokenAge expected maximal token age in seconds
+         * @return updated builder instance
+         */
+        public Builder expectedMaxTokenAge(int expectedMaxTokenAge) {
+            this.expectedMaxTokenAge = Duration.ofSeconds(expectedMaxTokenAge);
+            return this;
+        }
+
+        /**
          * Private key to decryption of encrypted claims.
          *
          * @param decryptKeyLocation private key location
@@ -1202,6 +1242,17 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
          */
         public Builder decryptKeyLocation(String decryptKeyLocation) {
             this.decryptKeyLocation = decryptKeyLocation;
+            return this;
+        }
+
+        /**
+         * Required decryption key algorithm.
+         *
+         * @param decryptionKeyAlgorithm required decryption key algorithm
+         * @return updated builder instance
+         */
+        public Builder decryptKeyAlgorithm(String decryptionKeyAlgorithm) {
+            this.decryptionKeyAlgorithm = decryptionKeyAlgorithm;
             return this;
         }
 
@@ -1214,6 +1265,17 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
          */
         public Builder loadOnStartup(boolean loadOnStartup) {
             this.loadOnStartup = loadOnStartup;
+            return this;
+        }
+
+        /**
+         * Clock skew to be accounted for in token expiration and max age validations.
+         *
+         * @param clockSkew clock skew
+         * @return updated builder instance
+         */
+        public Builder clockSkew(int clockSkew) {
+            this.clockSkew = Duration.ofSeconds(clockSkew);
             return this;
         }
 
