@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<Protecting Helidon Endpoints, Protecting Helidon Endpoints>>
+- <<Configuring Endpoint Protection, Configuring Endpoint Protection>>
 
 == Overview
 To add security, such as protecting
@@ -67,6 +68,6 @@ public String adminResource(@Context io.helidon.security.SecurityContext securit
 ----
 
 Security in Helidon MicroProfile is built on top of Jersey's and can be enabled/disabled
-using the property `security.jersey.enabled=[true|false]`.
+using the `security.jersey.enabled=[true|false]`property.
 
 include::{rootdir}/includes/security/helidon-endpoints.adoc[]

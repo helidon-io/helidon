@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,18 +18,27 @@
 
 ifndef::rootdir[:rootdir: {docdir}/../../..]
 
-=== ABAC Provider
+== ABAC Provider [[ABAC-Provider]]
 :description: Helidon Security ABAC Provider
 :keywords: helidon, security, authorization, abac
 :feature-name: ABAC Security Provider
 
+* <<ABAC-Provider-Overview, Overview>>
+* <<ABAC-Provider-Maven, Maven Dependency>>
+* <<ABAC-Provider-Examples, Examples>>
+* <<ABAC-Provider-Configuration, Configuration Options>>
+* <<ABAC-Provider-Usage, Usage>>
+* <<ABAC-Provider-Validator, Role Validator>>
+* <<ABAC-Provider-Scope, Scope Validator>>
+* <<ABAC-Provider-Expression, Expression Language Policy Validator>>
+
 Attribute-based Access Control (ABAC) authorization provider provides security and authorization service implementations. 
 
-==== Overview
+=== Overview [[ABAC-Provider-Overview]]
 
 include::{rootdir}/config/io_helidon_security_providers_abac_AbacProvider.adoc[leveloffset=+2,tag=config]
 
-==== Maven Dependency
+=== Maven Dependency [[ABAC-Provider-Maven]]
 
 [source,xml]
 .Maven dependency
@@ -40,9 +49,7 @@ include::{rootdir}/config/io_helidon_security_providers_abac_AbacProvider.adoc[l
 </dependency>
 ----
 
-
-
-==== Examples
+=== Examples [[ABAC-Provider-Examples]]
 
 See the link:{helidon-github-tree-url}/examples/security/attribute-based-access-control[example] on GitHub.
 
@@ -54,7 +61,7 @@ security:
     - abac:
 ----
 
-==== Configuration Options
+=== Configuration Options [[ABAC-Provider-Configuration]]
 The following table shows all configuration options of the provider and their default values
 
 [cols="2,2,5"]
@@ -66,7 +73,7 @@ The following table shows all configuration options of the provider and their de
 |`fail-if-none-validated` |`true` |"None validated" means: there was not a single attribute that was validated
 |===
 
-==== Usage
+=== Usage [[ABAC-Provider-Usage]]
 ABAC uses available validators and validates them against attributes of the authenticated
  user.
 
@@ -128,7 +135,7 @@ public class AbacResource {
 * <<Scope Validator,Scopes>>
 * <<Expression Language Policy Validator,EL Policy>>
 
-==== Role Validator
+=== Role Validator [[ABAC-Provider-Validator]]
 Checks whether user/service is in either of the required role(s).
 
 Configuration Key: `role-validator`
@@ -155,7 +162,7 @@ public class AbacResource {
 }
 ----
 
-===== Interaction with JAX-RS Sub-Resource Locators
+==== Interaction with JAX-RS Sub-Resource Locators
 When using sub-resource locators in JAX-RS, the roles allowed are collected from each "level" of
 execution:
 - Application class annotations
@@ -174,7 +181,7 @@ There is a `RolesAllowed("admin")` defined on a sub-resource locator resource cl
 a `RolesAllowed("user")` defined on the method of the sub-resource that provides the response.
 In this case the required role is `user`.
 
-==== Scope Validator
+=== Scope Validator [[ABAC-Provider-Scope]]
 Checks whether user has all the required scopes.
 
 Configuration Key: `scope-validator`
@@ -202,7 +209,7 @@ public class AbacResource {
 }
 ----
 
-==== Expression Language Policy Validator
+=== Expression Language Policy Validator [[ABAC-Provider-Expression]]
 Policy executor using Java EE policy expression language (EL)
 
 Configuration Key: `policy-javax-el`

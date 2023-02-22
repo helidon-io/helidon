@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,14 +18,19 @@
 
 ifndef::rootdir[:rootdir: {docdir}/../../..]
 
-=== JWT Provider
+== JWT Provider [[JWT-Provider]]
 :description: Helidon Security JWT Provider
 :keywords: helidon, security, jwt
 :feature-name: JWT Security Provider
 
-JWT token authentication and outbound security provider.
+* <<JWT-Provider-Setup, Setup>>
+* <<JWT-Provider-Overview, Overview>>
+* <<JWT-Provider-Example, Example Code>>
+* <<JWT-Provider-HDIW, How Does It Work?>>
 
-==== Setup
+JWT token authentication and outbound security provider
+
+=== Setup [[JWT-Provider-Setup]]
 
 [source,xml]
 .Maven dependency
@@ -36,11 +41,11 @@ JWT token authentication and outbound security provider.
 </dependency>
 ----
 
-==== Overview
+=== Overview [[JWT-Provider-Overview]]
 
 include::{rootdir}/config/io_helidon_security_providers_jwt_JwtProvider.adoc[leveloffset=+2,tag=config]
 
-==== Example code
+=== Example Code [[JWT-Provider-Example]]
 
 See the link:{helidon-github-tree-url}/examples/security/outbound-override[example] on GitHub.
 
@@ -66,7 +71,7 @@ security:
             jwt-audience: "http://1.partner-service"
 ----
 
-==== How does it work?
+==== How Does It Work? [[JWT-Provider-HDIW]]
 JSON Web Token (JWT) provider has support for authentication and outbound security.
 
 Authentication is based on validating the token (signature, valid before etc.) and on asserting the subject

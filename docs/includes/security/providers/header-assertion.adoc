@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,14 +18,21 @@
 
 ifndef::rootdir[:rootdir: {docdir}/../../..]
 
-=== Header Authentication Provider
+== Header Authentication Provider
+[[Header-Auth-Provider]]
+
 :description: Helidon Security Header Provider
 :keywords: helidon, security, header
 :feature-name: Header Authentication Security Provider
 
+* <<Header-Auth-Provider-Setup, Setup>>
+* <<Header-Auth-Provider-Overview, Overview>>
+* <<Header-Auth-Provider-Example, Example Code>>
+* <<Header-Auth-Provider-HDIW, How Does It Work?>>
+
 Asserts user or service identity based on a value of a header.
 
-==== Setup
+=== Setup [[Header-Auth-Provider-Setup]]
 
 [source,xml]
 .Maven dependency
@@ -36,11 +43,11 @@ Asserts user or service identity based on a value of a header.
 </dependency>
 ----
 
-==== Overview
+=== Overview [[Header-Auth-Provider-Overview]]
 
 include::{rootdir}/config/io_helidon_security_providers_header_HeaderAtnProvider.adoc[leveloffset=+2,tag=config]
 
-==== Example code
+=== Example Code [[Header-Auth-Provider-Example]]
 
 [source,yaml]
 .Configuration example
@@ -62,14 +69,14 @@ security:
             header: "X-Service-Auth"
 ----
 
-==== How does it work?
+=== How Does It Work? [[Header-Auth-Provider-HDIW]]
 This provider inspects a specified request header and extracts the username/service name from it and
 asserts it as current subject's principal.
 
 This can be used when we use perimeter authentication (e.g. there is a gateway that takes
 care of authentication and propagates the user in a header).
 
-*Identity propagation*
+*Identity Propagation*
 
 Identity is propagated only if an outbound target matches the target service.
 

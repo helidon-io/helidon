@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,6 +22,19 @@
 :keywords: helidon, security
 
 include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+* <<Implemented Security Providers, Implemented Security Providers>>
+* <<OIDC Provider, OIDC Provider>>
+* <<HTTP Basic Authentication Provider, HTTP Basic Authentication Provider>>
+* <<HTTP Digest Authentication Provider, HTTP Digest Authentication Provider>>
+* <<Header Authentication Provider, Header Authentication Provider>>
+* <<HTTP Signatures Provider, HTTP Signatures Provider>>
+* <<IDCS Role Mapper, IDCS Role Mapper>>
+* <<ABAC Provider, ABAC Provider>>
+* <<Google Login Provider, Google Login Provider>>
+* <<JWT Provider, JWT Provider>>
+
 
 == Implemented Security Providers
 
@@ -59,10 +72,16 @@ security:
 If set to `true`, an exception is thrown. However, in a production environment, you would set this value to `true` so that any attempt to pass a clear-text password throws an exception.
 
 
-=== OIDC Provider [[OIDC-Provider]]
+== OIDC Provider [[OIDC-Provider]]
+* <<OIDC-Provider-Setup, Setup>>
+* <<Configuration options, Configuration options>>
+* <<OIDC-Provider-Example, Example Code>>
+* <<OIDC-Provider-HDIW, How Does It Work>>
+* <<CORS Settings, CORS Settings>>
+
 Open ID Connect security provider.
 
-==== Setup
+=== Setup [[OIDC-Provider-Setup]]
 [source,xml]
 .Maven dependency
 ----
