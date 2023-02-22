@@ -40,6 +40,9 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 import static io.helidon.pico.maven.plugin.Utils.picoServices;
+import static io.helidon.pico.tools.DefaultApplicationCreator.APPLICATION_NAME_SUFFIX;
+import static io.helidon.pico.tools.DefaultApplicationCreator.NAME_PREFIX;
+import static io.helidon.pico.tools.DefaultApplicationCreator.upperFirstChar;
 import static io.helidon.pico.tools.ModuleUtils.toBasePath;
 import static io.helidon.pico.tools.ModuleUtils.toSuggestedModuleName;
 
@@ -55,8 +58,10 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
      * The classname to use for the Pico {@link io.helidon.pico.Application} test class.
      * If not found the classname will be inferred.
      */
-    @Parameter(property = PicoServicesConfig.FQN + ".application.class.name", readonly = true,
-               defaultValue = PicoServicesConfig.NAME + "testApplication")
+    @Parameter(property = PicoServicesConfig.FQN + ".application.class.name", readonly = true
+               // note: the default value handling doesn't work here for "$$"!!
+               //               defaultValue = DefaultApplicationCreator.APPLICATION_NAME
+               )
     private String className;
 
     /**
@@ -114,12 +119,12 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     @Override
     String getGeneratedClassName() {
-        return className;
+        return (className == null) ? NAME_PREFIX + "Test" + APPLICATION_NAME_SUFFIX : className;
     }
 
     @Override
     String getClassPrefixName() {
-        return ActivatorCreatorCodeGen.DEFAULT_TEST_CLASS_PREFIX_NAME;
+        return upperFirstChar(ActivatorCreatorCodeGen.DEFAULT_TEST_CLASS_PREFIX_NAME);
     }
 
     /**

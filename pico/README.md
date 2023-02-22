@@ -110,12 +110,12 @@ Compile-time dependency:
 
 * The Pico annotation [processor](./processor) will look for standard jakarta/javax inject and jakarta/javax annotation types. When these types are found in a class that is being compiled by javac, Pico will trigger the creation of an <i>Activator</i> for that service class/type.  For example, if you have a FooImpl class implementing Foo interface, and the FooImpl either contains "@Inject" or "@Singleton" then the presence of either of these annotations will trigger the creation of a FooImpl$$picoActivator to be created. The Activator is used to (a) describe the service in terms of what service contracts (i.e., interfaces) are advertised by FooImpl - in this case <i>Foo</> (if Foo is annotated with @Contract or if "-Aio.helidon.pico.autoAddNonContractInterfaces=true" is used at compile-time), (b) lifecycle of services including creation, calling injection-based setters, and any <i>PostConstruct or PreDestroy</i> methods.
 
-* If one or more activators are created at compile-time, then a <i>picoModule</i> is also created to aggregate the services for the given module. Below is an example if a <i>picoModule</i> from [examples/logger](./examples/logger). At initialization time of Pico, all <i>Module</i>s will be located using the ServiceLocator and each service will be binded into the Pico service registry.
+* If one or more activators are created at compile-time, then a <i>Pico$$Module</i> is also created to aggregate the services for the given module. Below is an example if a <i>picoModule</i> from [examples/logger](./examples/logger). At initialization time of Pico, all <i>Module</i>s will be located using the ServiceLocator and each service will be binded into the Pico service registry.
 
 ```java
 @Generated({"provider=oracle", "generator=io.helidon.pico.tools.creator.impl.DefaultActivatorCreator", "ver=1.0-SNAPSHOT"})
-@Singleton @Named(picoModule.NAME)
-public class picoModule implements Module {
+@Singleton @Named(Pico$$Module.NAME)
+public class Pico$$Module implements Module {
     static final String NAME = "pico.examples.logger.common";
     
     @Override
@@ -143,12 +143,12 @@ public class picoModule implements Module {
 
 * If an annotation in your service is meta-annotated with <i>InterceptedTrigger</i>, then an extra service type is created. For example, if FooImpl was found to have one such annotation then FooImpl$$picoInterceptor would also be created along with an activator for that interceptor. The interceptor would be created with a higher weight than your FooImpl, and would therefore be "preferred" when a single <i>@Inject</i> is used for Foo or FooImpl.  If a list is injected then it would appear towards the head of the list.  Once again, all reflection is avoided in these generated classes.  Any calls to Foo/FooImpl will be interceptable for any <i>Interceptor</i> that is <i>@Named</i> to handle that type name. Search the test code and Nima code for such examples as this is an advanced feature.
 
-* The [maven-plugin](./maven-plugin) can optionally be used to avoid Pico lookup resolutions at runtime within each service activation. At startup Pico will attempt to first use the <i>Application</i> to avoid lookups. The best practice is to apply the <i>maven-plugin</i> to <i>create-application</i> on your maven assembly - this is usually your "final" application module that depends upon every other service / module in your entire deployed application. Here is the <i>picoApplication</i> from [examples/logger](./examples/logger):
+* The [maven-plugin](./maven-plugin) can optionally be used to avoid Pico lookup resolutions at runtime within each service activation. At startup Pico will attempt to first use the <i>Application</i> to avoid lookups. The best practice is to apply the <i>maven-plugin</i> to <i>create-application</i> on your maven assembly - this is usually your "final" application module that depends upon every other service / module in your entire deployed application. Here is the <i>Pico$$Application</i> from [examples/logger](./examples/logger):
 
 ```java
 @Generated({"provider=oracle", "generator=io.helidon.pico.maven.plugin.ApplicationCreatorMojo", "ver=1.0-SNAPSHOT"})
-@Singleton @Named(picoApplication.NAME)
-public class picoApplication implements Application {
+@Singleton @Named(Pico$$Application.NAME)
+public class Pico$$Application implements Application {
   static final String NAME = "unnamed";
 
   @Override

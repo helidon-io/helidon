@@ -179,7 +179,7 @@ class ToolBoxTest {
         List<String> desc = allModules.stream().map(ServiceProvider::description).collect(Collectors.toList());
         // note that order matters here
         assertThat("ensure that Annotation Processors are enabled in the tools module meta-inf/services",
-                   desc, contains("picoModule:ACTIVE", "picotestModule:ACTIVE"));
+                   desc, contains("Pico$$Module:ACTIVE", "Pico$$TestModule:ACTIVE"));
         List<String> names = allModules.stream()
                 .sorted()
                 .map(m -> m.get().named().orElse(m.get().getClass().getSimpleName() + ":null")).collect(Collectors.toList());
@@ -193,7 +193,7 @@ class ToolBoxTest {
     @Test
     void moduleInfo() {
         assertThat(loadStringFromFile("target/pico/classes/module-info.java.pico"),
-                   equalTo(loadStringFromResource("expected/tests-module-info.java.pico")));
+                   equalTo(loadStringFromResource("expected/module-info.java._pico_")));
     }
 
     /**
@@ -202,25 +202,7 @@ class ToolBoxTest {
     @Test
     void testModuleInfo() {
         assertThat(loadStringFromFile("target/pico/test-classes/module-info.java.pico"),
-                   equalTo("// @Generated(value = \"io.helidon.pico.tools.DefaultActivatorCreator\", comments = "
-                                   + "\"version=1\")\n"
-                                   + "module io.helidon.pico.tests.pico/test {\n"
-                                   + "    requires transitive io.helidon.pico.tests.pico;\n"
-                                   + "    // pico module - Generated(value = \"io.helidon.pico.tools"
-                                   + ".DefaultActivatorCreator\", comments = \"version=1\")\n"
-                                   + "    provides io.helidon.pico.Module with io.helidon.pico.tests.pico.picotestModule;\n"
-                                   + "    // pico application - Generated(value = \"io.helidon.pico.tools"
-                                   + ".DefaultActivatorCreator\", comments = \"version=1\")\n"
-                                   + "    provides io.helidon.pico.Application with io.helidon.pico.tests.pico"
-                                   + ".picotestApplication;\n"
-                                   + "    // pico external contract usage - Generated(value = \"io.helidon.pico.tools"
-                                   + ".DefaultActivatorCreator\", comments = \"version=1\")\n"
-                                   + "    uses io.helidon.pico.spi.Resetable;\n"
-                                   + "    uses io.helidon.pico.tests.pico.stacking.Intercepted;\n"
-                                   + "    // pico services - Generated(value = \"io.helidon.pico.tools"
-                                   + ".DefaultActivatorCreator\", comments = \"version=1\")\n"
-                                   + "    requires transitive io.helidon.pico;\n"
-                                   + "}"));
+                   equalTo(loadStringFromResource("expected/tests-module-info.java._pico_")));
     }
 
     @Test
@@ -306,10 +288,10 @@ class ToolBoxTest {
                 .collect(Collectors.toMap(Map.Entry::getKey,
                                           e -> e.getValue().startingActivationPhase().toString()
                                                   + "->" + e.getValue().finishingActivationPhase()));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.picoApplication", "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.picoModule", "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.picotestApplication", "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.picotestModule", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.Pico$$Application", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.Pico$$Module", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.Pico$$TestApplication", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.Pico$$TestModule", "ACTIVE->DESTROYED"));
         assertThat(report, hasEntry("io.helidon.pico.tests.pico.stacking.MostOuterInterceptedImpl", "ACTIVE->DESTROYED"));
         assertThat(report, hasEntry("io.helidon.pico.tests.pico.stacking.OuterInterceptedImpl", "ACTIVE->DESTROYED"));
         assertThat(report, hasEntry("io.helidon.pico.tests.pico.stacking.InterceptedImpl", "ACTIVE->DESTROYED"));

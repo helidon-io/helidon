@@ -52,7 +52,6 @@ import io.helidon.pico.DefaultInvocationContext;
 import io.helidon.pico.ElementInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.InterceptedTrigger;
-import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.spi.Resetable;
 
@@ -81,7 +80,8 @@ import static io.helidon.pico.tools.TypeTools.toObjectTypeName;
 public class DefaultInterceptorCreator extends AbstractCreator implements InterceptorCreator, Resetable {
     private static final LazyValue<ScanResult> SCAN = LazyValue.create(ReflectionHandler.INSTANCE::scan);
 
-    private static final String INNER_INTERCEPTOR_CLASS_NAME = "$$" + PicoServicesConfig.NAME + "Interceptor";
+    private static final String INTERCEPTOR_NAME_SUFFIX = "Interceptor";
+    private static final String INNER_INTERCEPTOR_CLASS_NAME = "$$" + NAME_PREFIX + INTERCEPTOR_NAME_SUFFIX;
     private static final String COMPLEX_INTERCEPTOR_HBS = "complex-interceptor.hbs";
     private static final double INTERCEPTOR_PRIORITY_DELTA = 0.001;
     private static final String CTOR_ALIAS = "ctor";

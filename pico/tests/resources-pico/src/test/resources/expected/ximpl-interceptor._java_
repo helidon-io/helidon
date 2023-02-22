@@ -33,7 +33,7 @@ import static io.helidon.pico.services.Invocation.mergeAndCollapse;
 @Singleton
 @SuppressWarnings("ALL")
 @jakarta.annotation.Generated(value = "io.helidon.pico.tools.DefaultInterceptorCreator", comments = "version=1")
-public class XImpl$$picoInterceptor extends io.helidon.pico.tests.pico.interceptor.XImpl {
+public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interceptor.XImpl {
     private static final List<AnnotationAndValue> __serviceLevelAnnotations = List.of(
             DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class),
             DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")));
@@ -132,7 +132,7 @@ public class XImpl$$picoInterceptor extends io.helidon.pico.tests.pico.intercept
     private final List<Provider<Interceptor>> __throwRuntimeException__interceptors;
 
     @Inject
-    XImpl$$picoInterceptor(
+    XImpl$$Pico$$Interceptor(
                 @Named("io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno") List<Provider<Interceptor>> io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno,
                 @Named("jakarta.inject.Named") List<Provider<Interceptor>> jakarta_inject_Named,
                 Provider<io.helidon.pico.tests.pico.interceptor.XImpl> provider) {

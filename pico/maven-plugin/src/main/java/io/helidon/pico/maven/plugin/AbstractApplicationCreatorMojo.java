@@ -79,7 +79,7 @@ import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 
 /**
- * Abstract base for pico maven plugins responsible for creating application and test application's.
+ * Abstract base for the {@code Pico maven-plugin} responsible for creating {@code Application} and Test {@code Application}'s.
  *
  * @see io.helidon.pico.Application
  * @see io.helidon.pico.tools.ApplicationCreatorConfigOptions
@@ -91,7 +91,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
      * The approach for handling providers.
      * See {@link io.helidon.pico.tools.ApplicationCreatorConfigOptions#permittedProviderTypes()}.
      */
-    @Parameter(property = PicoServicesConfig.FQN + ".permitted.provider.types", readonly = true)
+    @Parameter(property = PicoServicesConfig.NAME + ".permitted.provider.types", readonly = true)
     private String permittedProviderTypes;
     private PermittedProviderType permittedProviderType;
 
@@ -99,14 +99,14 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
      * Sets the named types permitted for providers, assuming use of
      * {@link PermittedProviderType#NAMED}.
      */
-    @Parameter(property = PicoServicesConfig.FQN + ".permitted.provider.type.names", readonly = true)
+    @Parameter(property = PicoServicesConfig.NAME + ".permitted.provider.type.names", readonly = true)
     private List<String> permittedProviderTypeNames;
 
     /**
      * Sets the named qualifier types permitted for providers, assuming use of
      * {@link PermittedProviderType#NAMED}.
      */
-    @Parameter(property = PicoServicesConfig.FQN + ".permitted.provider.qualifier.type.names", readonly = true)
+    @Parameter(property = PicoServicesConfig.NAME + ".permitted.provider.qualifier.type.names", readonly = true)
     private List<String> permittedProviderQualifierTypeNames;
 
     /**
@@ -133,7 +133,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             // try to recover it from a previous tooling step
             String appPackageName = loadAppPackageName().orElse(null);
             if (appPackageName == null) {
-                //            throw noModuleFoundError();
+                // throw noModuleFoundError();
                 getLog().warn(noModuleFoundError().getMessage());
             } else {
                 moduleName = appPackageName;
@@ -270,7 +270,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             Set<TypeName> serviceTypeNames = toNames(allServices);
             serviceTypeNames.removeAll(serviceNamesForExclusion);
 
-            String typeSuffix = getClassPrefixName();
+            String classPrefixName = getClassPrefixName();
             AtomicReference<File> moduleInfoPathRef = new AtomicReference<>();
             ModuleInfoDescriptor descriptor = getAnyModuleInfo(moduleInfoPathRef);
             String moduleInfoPath = (moduleInfoPathRef.get() != null)
@@ -288,7 +288,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             ApplicationCreatorCodeGen applicationCodeGen = DefaultApplicationCreatorCodeGen.builder()
                     .packageName(packageName)
                     .className(getGeneratedClassName())
-                    .classPrefixName(typeSuffix)
+                    .classPrefixName(classPrefixName)
                     .build();
             List<String> compilerArgs = getCompilerArgs();
             CompilerOptions compilerOptions = DefaultCompilerOptions.builder()

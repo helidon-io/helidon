@@ -19,7 +19,7 @@ package io.helidon.pico;
 import java.util.Optional;
 
 /**
- * An extension to {@link ServiceProvider} that allows for startup binding from a picoApplication,
+ * An extension to {@link ServiceProvider} that allows for startup binding from a {@code Pico$$Application},
  * and thereby works in conjunction with the {@link ServiceBinder} during pico service registry
  * initialization.
  * <p>

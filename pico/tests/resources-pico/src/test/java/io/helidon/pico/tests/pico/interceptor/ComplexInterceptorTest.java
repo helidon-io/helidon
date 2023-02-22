@@ -83,7 +83,7 @@ class ComplexInterceptorTest {
 
     @Test
     void createInterceptorSource() throws Exception {
-        TypeName interceptorTypeName = DefaultTypeName.create(XImpl$$picoInterceptor.class);
+        TypeName interceptorTypeName = DefaultTypeName.create(XImpl$$Pico$$Interceptor.class);
         String path = toFilePath(interceptorTypeName);
         File file = new File("./target/generated-sources/annotations", path);
         assertThat(file.exists(), is(true));
@@ -96,7 +96,7 @@ class ComplexInterceptorTest {
     void runtimeWithNoInterception() throws Exception {
         List<ServiceProvider<IA>> iaProviders = services.lookupAll(IA.class);
         assertThat(toDescriptions(iaProviders),
-                   contains("XImpl$$picoInterceptor:INIT", "XImpl:INIT"));
+                   contains("XImpl$$Pico$$Interceptor:INIT", "XImpl:INIT"));
 
         List<ServiceProvider<IB>> ibProviders = services.lookupAll(IB.class);
         assertThat(iaProviders, equalTo(ibProviders));
@@ -141,7 +141,7 @@ class ComplexInterceptorTest {
 
         List<ServiceProvider<IA>> iaProviders = picoServices.services().lookupAll(IA.class);
         assertThat(toDescriptions(iaProviders),
-                   contains("XImpl$$picoInterceptor:INIT", "XImpl:INIT"));
+                   contains("XImpl$$Pico$$Interceptor:INIT", "XImpl:INIT"));
 
         List<ServiceProvider<IB>> ibProviders = services.lookupAll(IB.class);
         assertThat(iaProviders, equalTo(ibProviders));

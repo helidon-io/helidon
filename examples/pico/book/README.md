@@ -137,7 +137,7 @@ library: Library(books=[MobyDickInBlue$$picoActivator@50134894:io.helidon.pico.e
 module io.helidon.examples.pico.book {
     exports io.helidon.examples.pico.book;
     // pico module - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
-    provides io.helidon.pico.Module with io.helidon.examples.pico.book.picoModule;
+    provides io.helidon.pico.Module with io.helidon.examples.pico.book.Pico$$Module;
     // pico services - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
     requires transitive io.helidon.pico;
 }

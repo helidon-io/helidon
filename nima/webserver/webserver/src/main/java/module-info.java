@@ -73,5 +73,5 @@ module io.helidon.nima.webserver {
     uses SinkProvider;
 
     provides io.helidon.nima.webserver.spi.ServerConnectionProvider with io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-    provides io.helidon.pico.Module with io.helidon.nima.webserver.picoModule;
+    provides io.helidon.pico.Module with io.helidon.nima.webserver.Pico$$Module;
 }

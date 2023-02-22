@@ -60,7 +60,21 @@ import static io.helidon.pico.services.Utils.isQualifiedInjectionTarget;
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class DefaultApplicationCreator extends AbstractCreator implements ApplicationCreator {
-    static final String NAME = PicoServicesConfig.NAME;
+    /**
+     * The prefix to add before the generated "Application" class name (i.e., "Pico$$" in the "Pico$$Application").
+     */
+    public static final String NAME_PREFIX = /* PicoServicesConfig.NAME */ DefaultActivatorCreator.NAME_PREFIX;
+
+    /**
+     * The "Application" part of the name.
+     */
+    public static final String APPLICATION_NAME_SUFFIX = "Application";
+
+    /**
+     * The FQN "Pico$$Application" name.
+     */
+    public static final String APPLICATION_NAME = NAME_PREFIX + APPLICATION_NAME_SUFFIX;
+
     static final String SERVICE_PROVIDER_APPLICATION_SERVICETYPEBINDING_HBS
             = "service-provider-application-servicetypebinding.hbs";
     static final String SERVICE_PROVIDER_APPLICATION_EMPTY_SERVICETYPEBINDING_HBS
@@ -250,7 +264,21 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
     static String toApplicationClassName(
             String modulePrefix) {
         modulePrefix = (modulePrefix == null) ? ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME : modulePrefix;
-        return NAME + modulePrefix + "Application";
+        return NAME_PREFIX + upperFirstChar(modulePrefix) + APPLICATION_NAME_SUFFIX;
+    }
+
+    /**
+     * Will uppercase the first letter of the provided name.
+     *
+     * @param name the name
+     * @return the mame with the first letter capitalized
+     */
+    public static String upperFirstChar(
+            String name) {
+        if (name.isEmpty()) {
+            return name;
+        }
+        return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
     static TypeName toApplicationTypeName(
@@ -445,7 +473,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             Path realModuleInfoPath = filer.toSourceLocation(ModuleUtils.REAL_MODULE_INFO_JAVA_NAME).orElse(null);
             if (realModuleInfoPath != null && !realModuleInfoPath.toFile().exists()) {
                 throw new ToolsException("expected to find " + realModuleInfoPath
-                                                 + ". did the " + NAME + " annotation processor run?");
+                                                 + ". did the " + PicoServicesConfig.NAME + " annotation processor run?");
             }
         }
     }

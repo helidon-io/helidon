@@ -138,12 +138,12 @@ Here is the main difference:
 
 * Pico attempts to model each service in terms of the contracts/interfaces each service offers, as well as the dependencies (other contracts/interfaces) that it requires. A more elaborate dependency model would additionally include the qualifiers (such as @Named), whether the services are optional, list-based, etc. This model extends down to mention each element (for methods or constructors for example). All of this is generated at compile-time.  In this way the Pico <i>Services</i> registry has knowledge of every available service and what it offers and what it requires.  These services are left to be lazily activated on-demand.
 
-4. Pico provides the ability (as demonstrated in the [pom.xml](./pico/pom.xml)) to take the injection model, analyze and validate it, and ultimately bind to the <b>final</b> injection model at assembly time. Using this option provides several key benefits including deterministic behavior, speed & performance enhancements, and helps to ensure the completeness & validity of the entire application's dependency graph at compile time.  When this option is applied the <i>picoApplication</i> is generated. Here is what it looks like for this example:
+4. Pico provides the ability (as demonstrated in the [pom.xml](./pico/pom.xml)) to take the injection model, analyze and validate it, and ultimately bind to the <b>final</b> injection model at assembly time. Using this option provides several key benefits including deterministic behavior, speed & performance enhancements, and helps to ensure the completeness & validity of the entire application's dependency graph at compile time.  When this option is applied the <i>Pico$$Application</i> is generated. Here is what it looks like for this example:
 
 ```java
 @Generated(value = "io.helidon.pico.maven.plugin.ApplicationCreatorMojo", comments = "version=1")
-@Singleton @Named(picoApplication.NAME)
-public class picoApplication implements Application {
+@Singleton @Named(Pico$$Application.NAME)
+public class Pico$$Application implements Application {
    static final String NAME = "io.helidon.examples.pico.car.pico";
 
    @Override
@@ -205,7 +205,7 @@ On the topic of extensibility - Pico is centered around extensibility of its too
 module io.helidon.examples.pico.car.pico {
     exports io.helidon.examples.pico.car.pico;
     // pico module - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
-    provides io.helidon.pico.Module with io.helidon.examples.pico.car.pico.picoModule;
+    provides io.helidon.pico.Module with io.helidon.examples.pico.car.pico.Pico$$Module;
     // pico external contract usage - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
     uses jakarta.inject.Provider;
     uses io.helidon.pico.InjectionPointProvider;

@@ -92,7 +92,7 @@ class DefaultApplicationCreatorTest extends AbstractBaseCreator {
         assertThat(res.error(), optionalEmpty());
         assertThat(res.success(), is(true));
         assertThat(res.serviceTypeNames().stream().map(TypeName::name).collect(Collectors.toList()),
-                   contains("pico.picotestApplication"));
+                   contains("pico.Pico$$TestApplication"));
         assertThat(res.templateName(), equalTo("default"));
         assertThat(res.moduleName(), optionalEmpty());
     }

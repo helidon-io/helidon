@@ -19,6 +19,7 @@ package io.helidon.pico.maven.plugin;
 import java.io.File;
 
 import io.helidon.pico.PicoServicesConfig;
+import io.helidon.pico.tools.DefaultApplicationCreator;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -37,8 +38,10 @@ public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
      * The classname to use for the Pico {@link io.helidon.pico.Application} class.
      * If not found the classname will be inferred.
      */
-    @Parameter(property = PicoServicesConfig.FQN + ".application.class.name", readonly = true,
-               defaultValue = PicoServicesConfig.NAME + "Application")
+    @Parameter(property = PicoServicesConfig.NAME + ".application.class.name", readonly = true
+               // note: the default value handling doesn't work here for "$$"!!
+//               defaultValue = DefaultApplicationCreator.APPLICATION_NAME
+    )
     private String className;
 
     /**
@@ -61,7 +64,7 @@ public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     @Override
     String getGeneratedClassName() {
-        return className;
+        return (className == null) ? DefaultApplicationCreator.APPLICATION_NAME : className;
     }
 
     @Override

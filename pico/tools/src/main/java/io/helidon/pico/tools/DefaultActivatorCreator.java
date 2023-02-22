@@ -91,7 +91,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     /**
      * The suffix name for the service type activator class.
      */
-    static final String INNER_ACTIVATOR_CLASS_NAME = "$$" + NAME + "Activator";
+    static final String ACTIVATOR_NAME_SUFFIX = "Activator";
+    static final String INNER_ACTIVATOR_CLASS_NAME = "$$" + NAME_PREFIX + ACTIVATOR_NAME_SUFFIX;
     private static final String SERVICE_PROVIDER_ACTIVATOR_HBS = "service-provider-activator.hbs";
     private static final String SERVICE_PROVIDER_APPLICATION_STUB_HBS = "service-provider-application-stub.hbs";
     private static final String SERVICE_PROVIDER_MODULE_HBS = "service-provider-module.hbs";
@@ -260,7 +261,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             if (activatorTypeNames == null || activatorTypeNames.isEmpty()) {
                 return null;
             }
-            packageName = activatorTypeNames.get(0).packageName() + "." + NAME;
+            packageName = activatorTypeNames.get(0).packageName() + "." + NAME_PREFIX;
         }
 
         String className = toModuleClassName(req.codeGen().classPrefixName());
@@ -270,7 +271,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     static String toModuleClassName(
             String modulePrefix) {
         modulePrefix = (modulePrefix == null) ? "" : modulePrefix;
-        return NAME + modulePrefix + "Module";
+        return NAME_PREFIX + modulePrefix + MODULE_NAME_SUFFIX;
     }
 
     static Map<String, List<String>> toMetaInfServices(
@@ -514,7 +515,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                 .serviceTypeQualifiers(services.qualifiers())
                 .modulesRequired(services.requiredModules())
                 .classPrefixName((services.lastKnownTypeSuffix() != null)
-                                         ? services.lastKnownTypeSuffix() : ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME)
+                                         ? DefaultApplicationCreator.upperFirstChar(services.lastKnownTypeSuffix())
+                                         : ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME)
                 .serviceTypeInterceptionPlan(services.interceptorPlans())
                 .extraCodeGen(services.extraCodeGen())
                 .build());

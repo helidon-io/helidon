@@ -76,7 +76,7 @@ TODO: replace this
 module helidon.examples.pico.logger.common {
     exports io.helidon.examples.pico.logger.common;
     // pico module - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
-    provides io.helidon.pico.Module with io.helidon.examples.pico.logger.common.picoModule;
+    provides io.helidon.pico.Module with io.helidon.examples.pico.logger.common.Pico$$Module;
     // pico external contract usage - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
     requires helidon.examples.pico.logger.common;
     uses io.helidon.examples.pico.logger.common.CommunicationMode;

@@ -59,12 +59,12 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     /**
      * Tag controlling whether we fail on error.
      */
-    static final String TAG_FAIL_ON_ERROR = PicoServicesConfig.FQN + ".failOnError";
+    static final String TAG_FAIL_ON_ERROR = PicoServicesConfig.NAME + ".failOnError";
 
     /**
      * Tag controlling whether we fail on warnings.
      */
-    static final String TAG_FAIL_ON_WARNING = PicoServicesConfig.FQN + ".failOnWarning";
+    static final String TAG_FAIL_ON_WARNING = PicoServicesConfig.NAME + ".failOnWarning";
 
     /**
      * The file name written to ./target/pico/ to track the last package name generated for this application.
@@ -126,13 +126,16 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     @Parameter(property = "maven.compiler.target", defaultValue = DEFAULT_TARGET)
     private String target;
 
+    /**
+     * The target directory where to place output.
+     */
     @Parameter(defaultValue = "${project.build.directory}", readonly = true)
     private String targetDir;
 
     /**
      * The package name to apply. If not found the package name will be inferred.
      */
-    @Parameter(property = PicoServicesConfig.FQN + ".package.name", readonly = true)
+    @Parameter(property = PicoServicesConfig.NAME + ".package.name", readonly = true)
     private String packageName;
 
     /**
