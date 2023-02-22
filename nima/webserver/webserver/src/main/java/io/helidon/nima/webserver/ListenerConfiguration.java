@@ -28,9 +28,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;

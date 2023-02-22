@@ -556,11 +556,11 @@ public interface RequestedUriDiscoveryContext {
                                             boolean areDiscoveryTypesDefaulted) {
 
             super(String.format("""
-                Settings which control requested URI discovery for socket %s are unsafe:
-                discovery is enabled with types %s to %s but no trusted proxies were set to protect against forgery of headers.
-                Server start-up will not continue.
-                Please prepare the trusted-proxies allow-list for this socket using 'allow' and/or 'deny' settings.
-                If you choose to start unsafely (not recommended), set trusted-proxies.allow.all to 'true'.
+                Settings which control requested URI discovery for socket %s are unsafe: \
+                discovery is enabled with types %s to %s but no trusted proxies were set to protect against forgery of headers. \
+                Server start-up will not continue. \
+                Please prepare the trusted-proxies allow-list for this socket using 'allow' and/or 'deny' settings. \
+                If you choose to start unsafely (not recommended), set trusted-proxies.allow.all to 'true'. \
                 """,
                                 requestedUriDiscoveryContextBuilder.socketId,
                                 areDiscoveryTypesDefaulted ? "defaulted" : "set",

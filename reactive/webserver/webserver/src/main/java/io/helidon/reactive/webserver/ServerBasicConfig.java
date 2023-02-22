@@ -23,8 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.common.context.Context;
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.tracing.Tracer;
 
 /**
