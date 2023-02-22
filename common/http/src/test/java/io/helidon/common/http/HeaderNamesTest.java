@@ -61,6 +61,10 @@ class HeaderNamesTest {
         // this is to test correct initialization (there may be an issue when the constants
         // are defined on the interface and implemented by enum outside of it)
         for (String constant : constants) {
+            if (!Http.HeaderName.class.equals(clazz.getField(constant).getType())) {
+                continue;
+            }
+
             Http.HeaderName value = (Http.HeaderName) clazz.getField(constant)
                     .get(null);
 
