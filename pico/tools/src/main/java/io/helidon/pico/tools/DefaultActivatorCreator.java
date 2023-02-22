@@ -472,7 +472,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     /**
      * Creates a payload given the batch of services to process.
      *
-     * @param services  the services to process
+     * @param services the services to process
      * @return the payload, or empty if unable or nothing to process
      */
     public static Optional<ActivatorCreatorCodeGen> createActivatorCreatorCodeGen(
@@ -536,8 +536,12 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             ActivatorCreatorConfigOptions configOptions,
             CodeGenFiler filer,
             boolean throwIfError) {
-        String moduleName = servicesToProcess.determineGeneratedModuleName();
         String packageName = servicesToProcess.determineGeneratedPackageName();
+        String moduleName = servicesToProcess.determineGeneratedModuleName();
+        if (ModuleInfoDescriptor.DEFAULT_MODULE_NAME.equals(moduleName)) {
+            // last resort is using the application name as the module name
+            moduleName = packageName;
+        }
 
         CodeGenPaths codeGenPaths = createCodeGenPaths(servicesToProcess);
         return DefaultActivatorCreatorRequest.builder()

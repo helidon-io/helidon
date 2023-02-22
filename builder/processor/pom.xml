@@ -44,6 +44,11 @@
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-processor-tools</artifactId>
         </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <scope>compile</scope> <!-- to support the Generated annotation -->
+        </dependency>
     </dependencies>
 
     <build>

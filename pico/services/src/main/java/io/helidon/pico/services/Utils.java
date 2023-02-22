@@ -16,7 +16,11 @@
 
 package io.helidon.pico.services;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.pico.Application;
 import io.helidon.pico.DependenciesInfo;
@@ -46,6 +50,37 @@ public class Utils {
                 || (!contractsImplemented.isEmpty()
                     && !contractsImplemented.contains(io.helidon.pico.Module.class.getName())
                     && !contractsImplemented.contains(Application.class.getName()));
+    }
+
+    /**
+     * Provides a {@link io.helidon.pico.ServiceProvider#description()}, falling back to {@link #toString()} on the passed
+     * provider argument.
+     *
+     * @param provider the provider
+     * @return the description
+     */
+    public static String toDescription(
+            Object provider) {
+        if (provider instanceof Optional) {
+            provider = ((Optional<?>) provider).orElse(null);
+        }
+
+        if (provider instanceof ServiceProvider) {
+            return ((ServiceProvider<?>) provider).description();
+        }
+        return String.valueOf(provider);
+    }
+
+    /**
+     * Provides a {@link io.helidon.pico.ServiceProvider#description()}, falling back to {@link #toString()} on the passed
+     * provider argument.
+     *
+     * @param coll the collection of providers
+     * @return the description
+     */
+    public static List<String> toDescriptions(
+            Collection<?> coll) {
+        return coll.stream().map(Utils::toDescription).collect(Collectors.toList());
     }
 
 }

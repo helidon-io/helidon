@@ -32,6 +32,7 @@ import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.tools.AbstractFilerMsgr;
 import io.helidon.pico.tools.ActivatorCreator;
 import io.helidon.pico.tools.ActivatorCreatorConfigOptions;
+import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CodeGenPaths;
@@ -173,6 +174,7 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
                     .supportsJsr330InStrictMode(isSupportsJsr330InStrictMode())
                     .build();
             String generatedSourceDir = getGeneratedSourceDirectory().getPath();
+
             CodeGenPaths codeGenPaths = DefaultCodeGenPaths.builder()
                     .generatedSourcesPath(generatedSourceDir)
                     .outputPath(getOutputDirectory().getPath())
@@ -196,10 +198,11 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
                     getLog().debug("response: " + res);
                 }
 
-                // now proceed to creating the activators
+                // now proceed to creating the activators (we get this from the external module creation)
+                ActivatorCreatorRequest activatorCreatorRequest = res.activatorCreatorRequest();
                 ActivatorCreator activatorCreator = activatorCreator();
                 ActivatorCreatorResponse activatorCreatorResponse =
-                        activatorCreator.createModuleActivators(res.activatorCreatorRequest());
+                        activatorCreator.createModuleActivators(activatorCreatorRequest);
                 if (activatorCreatorResponse.success()) {
                     getProject().addCompileSourceRoot(generatedSourceDir);
                     getLog().info("successfully processed: " + activatorCreatorResponse.serviceTypeNames());

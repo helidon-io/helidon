@@ -17,19 +17,14 @@
 package io.helidon.pico.maven.plugin;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URLClassLoader;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -79,7 +74,6 @@ import static io.helidon.pico.tools.ApplicationCreatorConfigOptions.PermittedPro
 import static io.helidon.pico.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
 import static io.helidon.pico.tools.ModuleUtils.isUnnamedModuleName;
 import static io.helidon.pico.tools.ModuleUtils.toBasePath;
-import static io.helidon.pico.tools.ModuleUtils.toSuggestedGeneratedPackageName;
 import static io.helidon.pico.tools.ModuleUtils.toSuggestedModuleName;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
@@ -92,20 +86,6 @@ import static java.util.Optional.ofNullable;
  */
 @SuppressWarnings("unused")
 public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
-
-    /**
-     * The file name written to ./target/pico/ to track the last package name generated for this application.
-     */
-    protected static final String APPLICATION_PACKAGE_FILE_NAME = "pico-app-package-name.txt";
-
-    @Parameter(defaultValue = "${project.build.directory}", readonly = true)
-    private String targetDir;
-
-    /**
-     * The package name to apply. If not found the package name will be inferred.
-     */
-    @Parameter(property = PicoServicesConfig.FQN + ".package.name", readonly = true)
-    private String packageName;
 
     /**
      * The approach for handling providers.
@@ -130,92 +110,9 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     private List<String> permittedProviderQualifierTypeNames;
 
     /**
-     * Sets the debug flag.
-     * See {@link io.helidon.pico.PicoServicesConfig#TAG_DEBUG}.
-     */
-    @Parameter(property = PicoServicesConfig.TAG_DEBUG, readonly = true)
-    private boolean isDebugEnabled;
-
-    /**
      * Default constructor.
      */
     protected AbstractApplicationCreatorMojo() {
-    }
-
-    /**
-     * Returns true if debug is enabled.
-     *
-     * @return true if in debug mode
-     */
-    protected boolean isDebugEnabled() {
-        return isDebugEnabled;
-    }
-
-    /**
-     * The project build directory.
-     *
-     * @return the project build directory
-     */
-    protected File getProjectBuildTargetDir() {
-        return new File(targetDir);
-    }
-
-    /**
-     * The scratch directory.
-     *
-     * @return the scratch directory
-     */
-    protected File getPicoScratchDir() {
-        return new File(getProjectBuildTargetDir(), PicoServicesConfig.NAME);
-    }
-
-    /**
-     * The target package name.
-     *
-     * @return the target package name
-     */
-    protected String getPackageName() {
-        return packageName;
-    }
-
-    String determinePackageName(
-            ServiceProvider<Module> moduleSp,
-            Collection<TypeName> typeNames,
-            ModuleInfoDescriptor descriptor) {
-        File packageFileName = new File(getPicoScratchDir(), APPLICATION_PACKAGE_FILE_NAME);
-
-        String packageName = getPackageName();
-        if (packageName == null) {
-            // check for the existence of the file...
-
-            if (packageFileName.exists()) {
-                try {
-                    packageName = Files.readString(packageFileName.toPath(), Charset.defaultCharset());
-                } catch (IOException e) {
-                    throw new ToolsException("unable to load: " + packageFileName, e);
-                }
-
-                if (hasValue(packageName)) {
-                    return packageName;
-                }
-            }
-
-            if (moduleSp != null) {
-                packageName = DefaultTypeName.createFromTypeName(moduleSp.serviceInfo().serviceTypeName()).packageName();
-            } else {
-                packageName = toSuggestedGeneratedPackageName(descriptor, typeNames, PicoServicesConfig.NAME);
-            }
-        }
-
-        // record it to scratch file for later consumption (during test build for example)
-        try {
-            Files.createDirectories(packageFileName.getParentFile().toPath());
-            Files.writeString(packageFileName.toPath(), packageName);
-        } catch (IOException e) {
-            throw new ToolsException("unable to save: " + packageFileName, e);
-        }
-
-        return Objects.requireNonNull(packageName);
     }
 
     static ToolsException noModuleFoundError() {
@@ -233,8 +130,14 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         Path basePath = toBasePath(build.getSourceDirectory());
         String moduleName = toSuggestedModuleName(basePath, Path.of(build.getSourceDirectory()), true).orElseThrow();
         if (isUnnamedModuleName(moduleName)) {
-//            throw noModuleFoundError();
-            getLog().warn(noModuleFoundError().getMessage());
+            // try to recover it from a previous tooling step
+            String appPackageName = loadAppPackageName().orElse(null);
+            if (appPackageName == null) {
+                //            throw noModuleFoundError();
+                getLog().warn(noModuleFoundError().getMessage());
+            } else {
+                moduleName = appPackageName;
+            }
         }
         return moduleName;
     }
@@ -327,7 +230,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         this.permittedProviderType = PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
 
         Optional<CallingContext> ignoreCallingContext =
-                maybeCreate(false, ofNullable(getThisModuleName()), of(isDebugEnabled), true, true);
+                maybeCreate(false, ofNullable(getThisModuleName()), of(isDebugEnabled()), true, true);
 
         // we MUST get the exclusion list prior to building the next loader, since it will reset the service registry
         Set<TypeName> serviceNamesForExclusion = getServiceTypeNamesForExclusion();
@@ -367,15 +270,15 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             Set<TypeName> serviceTypeNames = toNames(allServices);
             serviceTypeNames.removeAll(serviceNamesForExclusion);
 
-            String moduleInfoModuleName = getThisModuleName();
-            ServiceProvider<Module> moduleSp = lookupThisModule(moduleInfoModuleName, services);
             String typeSuffix = getClassPrefixName();
             AtomicReference<File> moduleInfoPathRef = new AtomicReference<>();
             ModuleInfoDescriptor descriptor = getAnyModuleInfo(moduleInfoPathRef);
             String moduleInfoPath = (moduleInfoPathRef.get() != null)
                     ? moduleInfoPathRef.get().getPath()
                     : null;
-            String packageName = determinePackageName(moduleSp, serviceTypeNames, descriptor);
+            String moduleInfoModuleName = getThisModuleName();
+            ServiceProvider<Module> moduleSp = lookupThisModule(moduleInfoModuleName, services);
+            String packageName = determinePackageName(Optional.ofNullable(moduleSp), serviceTypeNames, descriptor, true);
 
             CodeGenPaths codeGenPaths = DefaultCodeGenPaths.builder()
                     .generatedSourcesPath(getGeneratedSourceDirectory().getPath())

@@ -283,7 +283,7 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
             }
 
             if (sourcePath == null) {
-                LOGGER.log(System.Logger.Level.WARNING, "sourcepath is not defined in " + paths);
+                LOGGER.log(System.Logger.Level.DEBUG, "sourcepath is not defined in " + paths);
                 return null;
             }
 

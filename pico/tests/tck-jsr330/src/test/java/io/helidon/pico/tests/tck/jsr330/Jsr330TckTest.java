@@ -56,7 +56,7 @@ class Jsr330TckTest {
         TestResult result = new TestResult();
         jsrTest.run(result);
         assertThat(result.runCount(), greaterThan(0));
-        assertThat(toFailureReport(result), is(result.wasSuccessful()));
+        assertThat(toFailureReport(result), result.wasSuccessful(), is(true));
     }
 
     String toFailureReport(

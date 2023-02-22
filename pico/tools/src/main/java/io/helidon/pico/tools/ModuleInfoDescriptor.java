@@ -100,15 +100,6 @@ public interface ModuleInfoDescriptor {
     String name();
 
     /**
-     * Returns true if the name currently set is the same as the {@link #DEFAULT_MODULE_NAME}.
-     *
-     * @return true if the current name is the default name
-     */
-    default boolean isDefaultName() {
-        return DEFAULT_MODULE_NAME.equals(name());
-    }
-
-    /**
      * The template name to apply. The default is {@link io.helidon.pico.tools.TemplateHelper#DEFAULT_TEMPLATE_NAME}.
      *
      * @return the template name
@@ -147,9 +138,9 @@ public interface ModuleInfoDescriptor {
     List<ModuleInfoItem> items();
 
     /**
-     * Returns true if this module info is unnamed.
+     * Returns true if the name currently set is the same as the {@link #DEFAULT_MODULE_NAME}.
      *
-     * @return true if this module is unnamed
+     * @return true if the current name is the default name
      */
     default boolean isUnnamed() {
         return DEFAULT_MODULE_NAME.equals(name());

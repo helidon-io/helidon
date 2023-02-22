@@ -51,6 +51,11 @@ import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.PicoServicesConfig;
 
+import static io.helidon.pico.tools.ModuleUtils.PICO_MODULE_INFO_JAVA_NAME;
+import static io.helidon.pico.tools.ModuleUtils.normalizedBaseModuleName;
+import static io.helidon.pico.tools.ModuleUtils.saveAppPackageName;
+import static io.helidon.pico.tools.ModuleUtils.toPath;
+
 /**
  * This class is used to generate the source and resources originating from either annotation processing or maven-plugin
  * invocation. It also provides a circuit breaker in case the filer should be disabled from actually writing out source
@@ -210,10 +215,12 @@ public class CodeGenFiler {
         }
     }
 
-    private Path toScratchPath() {
+    private Path toScratchPath(
+            boolean wantClassesOrTestClassesRelative) {
         Objects.requireNonNull(targetOutputPath);
         Objects.requireNonNull(scratchPathName);
-        return targetOutputPath.resolve(PicoServicesConfig.NAME).resolve(scratchPathName);
+        Path base = targetOutputPath.resolve(PicoServicesConfig.NAME);
+        return (wantClassesOrTestClassesRelative) ? base.resolve(scratchPathName) : base;
     }
 
     /**
@@ -258,18 +265,18 @@ public class CodeGenFiler {
                 }
             }
 
-            // write it...
+            // write it
             FileObject f = filer.createResource(StandardLocation.CLASS_OUTPUT, "", outPath);
             try (Writer os = f.openWriter()) {
                 os.write(body);
             }
             targetOutputPath(f);
 
-            if (FORCE_MODULE_INFO_PICO_INTO_SCRATCH_DIR && outPath.equals(ModuleUtils.PICO_MODULE_INFO_JAVA_NAME)
+            if (FORCE_MODULE_INFO_PICO_INTO_SCRATCH_DIR && outPath.equals(PICO_MODULE_INFO_JAVA_NAME)
                     && targetOutputPath != null) {
                 // hack: physically relocate it elsewhere
                 Path originalPath = Path.of(f.toUri());
-                Path newPath = toScratchPath().resolve(ModuleUtils.PICO_MODULE_INFO_JAVA_NAME);
+                Path newPath = toScratchPath(true).resolve(PICO_MODULE_INFO_JAVA_NAME);
                 if (originalPath.toFile().exists()) {
                     Path parent = newPath.getParent();
                     if (parent != null) {
@@ -282,7 +289,7 @@ public class CodeGenFiler {
                 }
             }
 
-            return ModuleUtils.toPath(f.toUri());
+            return toPath(f.toUri());
         } catch (FilerException x) {
             // messager.debug(getClass().getSimpleName() + ":" + x.getMessage(), null);
             if (!contentsAlreadyVerified) {
@@ -425,7 +432,7 @@ public class CodeGenFiler {
             try (Writer os = javaSrc.openWriter()) {
                 os.write(body);
             }
-            return ModuleUtils.toPath(javaSrc.toUri());
+            return toPath(javaSrc.toUri());
         } catch (FilerException x) {
             messager.log("Failed to write java file: " + x);
         } catch (Exception x) {
@@ -436,7 +443,7 @@ public class CodeGenFiler {
     }
 
     /**
-     * Code generate the module-info.java.
+     * Code generate the module-info.java.pico file.
      *
      * @param newDeltaDescriptor      the descriptor
      * @param overwriteTargetIfExists should the file be overwritten if it already exists
@@ -448,7 +455,7 @@ public class CodeGenFiler {
         Objects.requireNonNull(newDeltaDescriptor);
 
         Msgr messager = messager();
-        String typeName = ModuleUtils.PICO_MODULE_INFO_JAVA_NAME;
+        String typeName = PICO_MODULE_INFO_JAVA_NAME;
         if (!isFilerWriteEnabled()) {
             messager.log("(disabled) Writing " + typeName + " with:\n" + newDeltaDescriptor);
             return Optional.empty();
@@ -467,6 +474,11 @@ public class CodeGenFiler {
             messager.debug("Wrote module-info: " + filePath.get());
         } else if (overwriteTargetIfExists) {
             messager.warn("Expected to have written module-info, but failed to write it");
+        }
+
+        if (!newDeltaDescriptor.isUnnamed()) {
+            saveAppPackageName(toScratchPath(false),
+                                           normalizedBaseModuleName(newDeltaDescriptor.name()));
         }
 
         return filePath;
@@ -503,7 +515,7 @@ public class CodeGenFiler {
             targetOutputPath(f);
             return f.getCharContent(true);
         } catch (IOException e) {
-            if (FORCE_MODULE_INFO_PICO_INTO_SCRATCH_DIR && name.equals(ModuleUtils.PICO_MODULE_INFO_JAVA_NAME)
+            if (FORCE_MODULE_INFO_PICO_INTO_SCRATCH_DIR && name.equals(PICO_MODULE_INFO_JAVA_NAME)
                     && targetOutputPath != null) {
                 // hack: physically read it from its relocated location
                 File newPath = new File(targetOutputPath.toFile().getAbsolutePath(), name);
@@ -532,7 +544,7 @@ public class CodeGenFiler {
         try {
             FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", name);
             targetOutputPath(f);
-            return ModuleUtils.toPath(f.toUri());
+            return toPath(f.toUri());
         } catch (IOException e) {
             messager().debug("unable to load resource: " + name);
         }

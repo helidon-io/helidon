@@ -172,7 +172,7 @@ public abstract class AbstractServiceProvider<T>
 
     @Override
     public ServiceInfo serviceInfo() {
-        return Objects.requireNonNull(serviceInfo);
+        return Objects.requireNonNull(serviceInfo, getClass().getName() + " should have been initialized.");
     }
 
     /**
@@ -183,7 +183,7 @@ public abstract class AbstractServiceProvider<T>
     protected void serviceInfo(
             ServiceInfo serviceInfo) {
         Objects.requireNonNull(serviceInfo);
-        if (this.picoServices != null) {
+        if (this.picoServices != null && this.serviceInfo != null) {
             throw alreadyInitialized();
         }
         this.serviceInfo = serviceInfo;
@@ -399,6 +399,7 @@ public abstract class AbstractServiceProvider<T>
         } catch (InjectionException ie) {
             throw ie;
         } catch (Throwable t) {
+            logger().log(System.Logger.Level.ERROR, "unable to activate: " + getClass().getName(), t);
             throw unableToActivate(t);
         }
 
@@ -1241,7 +1242,7 @@ public abstract class AbstractServiceProvider<T>
 
     private PicoServiceProviderException unableToActivate(
             Throwable cause) {
-        return new PicoServiceProviderException("unable to activate: " + this, cause, this);
+        return new PicoServiceProviderException("unable to activate: " + getClass().getName(), cause, this);
     }
 
     private PicoServiceProviderException alreadyInitialized() {

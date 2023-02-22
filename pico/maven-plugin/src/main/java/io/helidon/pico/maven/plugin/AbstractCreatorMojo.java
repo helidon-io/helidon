@@ -18,12 +18,20 @@ package io.helidon.pico.maven.plugin;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
+import io.helidon.pico.Module;
 import io.helidon.pico.PicoServicesConfig;
+import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.tools.AbstractCreator;
+import io.helidon.pico.tools.ModuleInfoDescriptor;
+import io.helidon.pico.tools.ModuleUtils;
 import io.helidon.pico.tools.Msgr;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.TemplateHelper;
@@ -33,6 +41,8 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+
+import static io.helidon.pico.tools.ModuleUtils.toSuggestedGeneratedPackageName;
 
 /**
  * Abstract base for all pico creator mojo's.
@@ -50,11 +60,18 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
      * Tag controlling whether we fail on error.
      */
     static final String TAG_FAIL_ON_ERROR = PicoServicesConfig.FQN + ".failOnError";
+
     /**
      * Tag controlling whether we fail on warnings.
      */
     static final String TAG_FAIL_ON_WARNING = PicoServicesConfig.FQN + ".failOnWarning";
 
+    /**
+     * The file name written to ./target/pico/ to track the last package name generated for this application.
+     * This application package name is what we fall back to for the application name and the module name if not otherwise
+     * specified directly.
+     */
+    protected static final String APPLICATION_PACKAGE_FILE_NAME = ModuleUtils.APPLICATION_PACKAGE_FILE_NAME;
 
     // ----------------------------------------------------------------------
     // Pico Configurables
@@ -63,8 +80,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     /**
      * The template name to use for codegen.
      */
-    @Parameter(property = TemplateHelper.TAG_TEMPLATE_NAME, readonly = true, defaultValue =
-            TemplateHelper.DEFAULT_TEMPLATE_NAME)
+    @Parameter(property = TemplateHelper.TAG_TEMPLATE_NAME, readonly = true, defaultValue = TemplateHelper.DEFAULT_TEMPLATE_NAME)
     private String templateName;
 
     /**
@@ -110,6 +126,15 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     @Parameter(property = "maven.compiler.target", defaultValue = DEFAULT_TARGET)
     private String target;
 
+    @Parameter(defaultValue = "${project.build.directory}", readonly = true)
+    private String targetDir;
+
+    /**
+     * The package name to apply. If not found the package name will be inferred.
+     */
+    @Parameter(property = PicoServicesConfig.FQN + ".package.name", readonly = true)
+    private String packageName;
+
     /**
      * Sets the arguments to be passed to the compiler.
      * <p>
@@ -127,9 +152,52 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     private List<String> compilerArgs;
 
     /**
+     * Sets the debug flag.
+     * See {@link io.helidon.pico.PicoServicesConfig#TAG_DEBUG}.
+     */
+    @Parameter(property = PicoServicesConfig.TAG_DEBUG, readonly = true)
+    private boolean isDebugEnabled;
+
+    /**
      * Default constructor.
      */
     protected AbstractCreatorMojo() {
+    }
+
+    /**
+     * Returns true if debug is enabled.
+     *
+     * @return true if in debug mode
+     */
+    protected boolean isDebugEnabled() {
+        return isDebugEnabled;
+    }
+
+    /**
+     * The project build directory.
+     *
+     * @return the project build directory
+     */
+    protected File getProjectBuildTargetDir() {
+        return new File(targetDir);
+    }
+
+    /**
+     * The scratch directory.
+     *
+     * @return the scratch directory
+     */
+    protected File getPicoScratchDir() {
+        return new File(getProjectBuildTargetDir(), PicoServicesConfig.NAME);
+    }
+
+    /**
+     * The target package name.
+     *
+     * @return the target package name
+     */
+    protected String getPackageName() {
+        return packageName;
     }
 
     System.Logger getLogger() {
@@ -182,6 +250,65 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
         } finally {
             getLog().info("Finished " + getClass().getName() + " for " + getProject());
         }
+    }
+
+    /**
+     * Determines the primary package name (which also typically doubles as the application name).
+     *
+     * @param optModuleSp the module service provider
+     * @param typeNames   the type names
+     * @param descriptor  the descriptor
+     * @param persistIt   pass true to write it to scratch, so that we can use it in the future for this module
+     * @return the package name (which also typically doubles as the application name)
+     */
+    protected String determinePackageName(
+            Optional<ServiceProvider<Module>> optModuleSp,
+            Collection<TypeName> typeNames,
+            ModuleInfoDescriptor descriptor,
+            boolean persistIt) {
+        String packageName = getPackageName();
+        if (packageName == null) {
+            // check for the existence of the file
+            packageName = loadAppPackageName().orElse(null);
+            if (packageName != null) {
+                return packageName;
+            }
+
+            ServiceProvider<Module> moduleSp = optModuleSp.orElse(null);
+            if (moduleSp != null) {
+                packageName = DefaultTypeName.createFromTypeName(moduleSp.serviceInfo().serviceTypeName()).packageName();
+            } else {
+                packageName = toSuggestedGeneratedPackageName(descriptor, typeNames, PicoServicesConfig.NAME);
+            }
+        }
+
+        Objects.requireNonNull(packageName, "unable to determine package name");
+
+        if (persistIt) {
+            // record it to scratch file for later consumption (during test build for example)
+            saveAppPackageName(packageName);
+        }
+
+        return packageName;
+    }
+
+    /**
+     * Attempts to load the app package name from what was previously recorded.
+     *
+     * @return the app package name that was loaded
+     */
+    protected Optional<String> loadAppPackageName() {
+        return ModuleUtils.loadAppPackageName(getPicoScratchDir().toPath());
+    }
+
+    /**
+     * Persist the package name into scratch for later usage.
+     *
+     * @param packageName the package name
+     */
+    protected void saveAppPackageName(
+            String packageName) {
+        ModuleUtils.saveAppPackageName(getPicoScratchDir().toPath(), packageName);
     }
 
     /**

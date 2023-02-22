@@ -84,10 +84,10 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     private static final QualifierAndValue EMPTY_CONFIGURED_BY = DefaultQualifierAndValue.create(ConfiguredBy.class);
     private static final CBInstanceComparator BEAN_INSTANCE_ID_COMPARATOR = new CBInstanceComparator();
     private static final System.Logger LOGGER = System.getLogger(AbstractConfiguredServiceProvider.class.getName());
+    private static final LazyValue<InternalConfigBeanRegistry> CONFIG_BEAN_REGISTRY
+            = LazyValue.create(() -> resolveConfigBeanRegistry());
 
-    private final LazyValue<InternalConfigBeanRegistry> configBeanRegistry = LazyValue.create(() -> resolveConfigBeanRegistry());
-
-    private final AtomicReference<Boolean> isRootProvider = new AtomicReference<>();    // this one indicates intention
+    private final AtomicReference<Boolean> isRootProvider = new AtomicReference<>();
     private final AtomicReference<ConfiguredServiceProvider<T, CB>> rootProvider = new AtomicReference<>();
     private final AtomicBoolean initialized = new AtomicBoolean();
     private final AtomicReference<CallingContext> initializationCallingContext
@@ -314,7 +314,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             }
 
             // bind to the config bean registry ...  but, don't yet resolve!
-            InternalConfigBeanRegistry cbr = configBeanRegistry.get();
+            InternalConfigBeanRegistry cbr = CONFIG_BEAN_REGISTRY.get();
             if (cbr != null) {
                 Optional<QualifierAndValue> configuredByQualifier = serviceInfo.qualifiers().stream()
                         .filter(q -> q.typeName().name().equals(ConfiguredBy.class.getName()))
@@ -340,7 +340,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             }
 
             // one of the configured services need to "tickle" the bean registry to initialize
-            InternalConfigBeanRegistry cbr = configBeanRegistry.get();
+            InternalConfigBeanRegistry cbr = CONFIG_BEAN_REGISTRY.get();
             if (cbr != null) {
                 cbr.initialize(picoServices);
 
@@ -839,13 +839,13 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         }
     }
 
-    InternalConfigBeanRegistry resolveConfigBeanRegistry() {
+    static InternalConfigBeanRegistry resolveConfigBeanRegistry() {
         BasicConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
         if (cbr == null) {
             LOGGER.log(System.Logger.Level.INFO, "Config-Driven Services disabled (config bean registry not found");
         } else if (!(cbr instanceof InternalConfigBeanRegistry)) {
-            throw new PicoServiceProviderException(
-                    toErrorMessage(maybeCreate(), "Config-Driven Services disabled (unsupported implementation): " + cbr), this);
+            throw new PicoException(
+                    toErrorMessage(maybeCreate(), "Config-Driven Services disabled (unsupported implementation): " + cbr));
         }
 
         return (InternalConfigBeanRegistry) cbr;

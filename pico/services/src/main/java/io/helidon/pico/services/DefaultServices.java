@@ -390,7 +390,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     @Override
     public void bind(
             ServiceProvider<?> serviceProvider) {
-        if (Phase.ACTIVATION_STARTING != currentPhase()) {
+        if (currentPhase().ordinal() > Phase.GATHERING_DEPENDENCIES.ordinal()) {
             assertPermitsDynamic(cfg);
         }
 
@@ -499,23 +499,6 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     static InjectionException resolutionBasedInjectionError(
             String serviceTypeName) {
         return resolutionBasedInjectionError(DefaultServiceInfoCriteria.builder().serviceTypeName(serviceTypeName).build());
-    }
-
-    static String toDescription(
-            Object provider) {
-        if (provider instanceof Optional) {
-            provider = ((Optional<?>) provider).orElse(null);
-        }
-
-        if (provider instanceof ServiceProvider) {
-            return ((ServiceProvider<?>) provider).description();
-        }
-        return String.valueOf(provider);
-    }
-
-    static List<String> toDescriptions(
-            Collection<?> coll) {
-        return coll.stream().map(DefaultServices::toDescription).collect(Collectors.toList());
     }
 
 }

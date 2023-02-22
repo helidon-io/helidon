@@ -17,7 +17,9 @@
 package io.helidon.pico.tools;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,9 +60,17 @@ public class ModuleUtils {
      */
     public static final String PICO_MODULE_INFO_JAVA_NAME = REAL_MODULE_INFO_JAVA_NAME + "." + PicoServicesConfig.NAME;
 
+    /**
+     * The file name written to ./target/pico/ to track the last package name generated for this application.
+     * This application package name is what we fall back to for the application name and the module name if not otherwise
+     * specified directly.
+     */
+    public static final String APPLICATION_PACKAGE_FILE_NAME = PicoServicesConfig.NAME + "-app-package-name.txt";
+
     static final String SERVICE_PROVIDER_MODULE_INFO_HBS = "module-info.hbs";
     static final String SRC_MAIN_JAVA_DIR = "/src/main/java";
     static final String SRC_TEST_JAVA_DIR = "/src/test/java";
+    static final String TARGET_DIR = "/target/";
 
     private ModuleUtils() {
     }
@@ -332,6 +342,28 @@ public class ModuleUtils {
     }
 
     /**
+     * Returns the target output path.
+     *
+     * @param sourcePath the source path
+     * @return the target output path
+     */
+    public static Path toTargetPath(
+            String sourcePath) {
+        return toBasePath(sourcePath).resolve(TARGET_DIR);
+    }
+
+    /**
+     * Returns the target output path (i.e., ./target/pico).
+     *
+     * @param sourcePath the source path
+     * @return the scratch path
+     */
+    public static Path toPicoScratchPath(
+            String sourcePath) {
+        return toTargetPath(sourcePath).resolve(PicoServicesConfig.NAME);
+    }
+
+    /**
      * Will return non-empty File if the uri represents a local file on the fs.
      *
      * @param uri the uri of the artifact
@@ -411,6 +443,50 @@ public class ModuleUtils {
         }
 
         return result;
+    }
+
+    /**
+     * Attempts to load the app package name from what was previously recorded.
+     *
+     * @param scratchPath the scratch directory path
+     * @return the app package name that was loaded
+     */
+    public static Optional<String> loadAppPackageName(
+            Path scratchPath) {
+        File scratchDir = scratchPath.toFile();
+        File packageFileName = new File(scratchDir, APPLICATION_PACKAGE_FILE_NAME);
+        if (packageFileName.exists()) {
+            String packageName;
+            try {
+                packageName = Files.readString(packageFileName.toPath(), Charset.defaultCharset());
+            } catch (IOException e) {
+                throw new ToolsException("unable to load: " + packageFileName, e);
+            }
+
+            if (hasValue(packageName)) {
+                return Optional.of(packageName);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Persist the package name into scratch for later usage.
+     *
+     * @param scratchPath the scratch directory path
+     * @param packageName the package name
+     */
+    public static void saveAppPackageName(
+            Path scratchPath,
+            String packageName) {
+        File scratchDir = scratchPath.toFile();
+        File packageFileName = new File(scratchDir, APPLICATION_PACKAGE_FILE_NAME);
+        try {
+            Files.createDirectories(packageFileName.getParentFile().toPath());
+            Files.writeString(packageFileName.toPath(), packageName);
+        } catch (IOException e) {
+            throw new ToolsException("unable to save: " + packageFileName, e);
+        }
     }
 
 }

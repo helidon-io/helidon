@@ -30,39 +30,41 @@ import io.helidon.pico.Phase;
  * @param <T> the type of the service this provider manages
  */
 class NonSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
+    private final AbstractServiceProvider<T> delegate;
 
     private NonSingletonServiceProvider(
-            AbstractServiceProvider<T> parent) {
-        picoServices(Optional.of(parent.picoServices()));
-        serviceInfo(parent.serviceInfo());
-        dependencies(parent.dependencies());
+            AbstractServiceProvider<T> delegate) {
+        this.delegate = delegate;
+        picoServices(Optional.of(delegate.picoServices()));
+        serviceInfo(delegate.serviceInfo());
+        dependencies(delegate.dependencies());
     }
 
     static <T> T createAndActivate(
-            AbstractServiceProvider<T> parent) {
-        NonSingletonServiceProvider<T> serviceProvider = new NonSingletonServiceProvider<>(parent);
+            AbstractServiceProvider<T> delegate) {
+        NonSingletonServiceProvider<T> serviceProvider = new NonSingletonServiceProvider<>(delegate);
 
         LogEntryAndResult logEntryAndResult = serviceProvider.createLogEntryAndResult(Phase.ACTIVE);
         serviceProvider.startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVATION_STARTING);
 
         serviceProvider.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.GATHERING_DEPENDENCIES);
-        Map<String, InjectionPlan> plans = parent.getOrCreateInjectionPlan(false);
+        Map<String, InjectionPlan> plans = delegate.getOrCreateInjectionPlan(false);
         logEntryAndResult.activationResult().injectionPlans(plans);
-        Map<String, Object> deps = parent.resolveDependencies(plans);
+        Map<String, Object> deps = delegate.resolveDependencies(plans);
         logEntryAndResult.activationResult().resolvedDependencies(deps);
         serviceProvider.finishedTransitionCurrentActivationPhase(logEntryAndResult);
 
         serviceProvider.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.CONSTRUCTING);
-        T instance = parent.createServiceProvider(deps);
+        T instance = delegate.createServiceProvider(deps);
         serviceProvider.finishedTransitionCurrentActivationPhase(logEntryAndResult);
 
         if (instance != null) {
             serviceProvider.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
-            List<String> serviceTypeOrdering = Objects.requireNonNull(parent.serviceTypeInjectionOrder());
+            List<String> serviceTypeOrdering = Objects.requireNonNull(delegate.serviceTypeInjectionOrder());
             LinkedHashSet<String> injections = new LinkedHashSet<>();
             serviceTypeOrdering.forEach((forServiceType) -> {
-                parent.doInjectingFields(instance, deps, injections, forServiceType);
-                parent.doInjectingMethods(instance, deps, injections, forServiceType);
+                delegate.doInjectingFields(instance, deps, injections, forServiceType);
+                delegate.doInjectingMethods(instance, deps, injections, forServiceType);
             });
             serviceProvider.finishedTransitionCurrentActivationPhase(logEntryAndResult);
 

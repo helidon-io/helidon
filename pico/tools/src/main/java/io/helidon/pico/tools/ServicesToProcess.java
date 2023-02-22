@@ -815,14 +815,14 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Fetches the last generated package name.
+     * Fetches the last generated package name.
      */
     String lastGeneratedPackageName() {
         return lastGeneratedPackageName;
     }
 
     /**
-     * @return Attempts to determine the generated module name based upon the batch of services being processed.
+     * Attempts to determine the generated module name based upon the batch of services being processed.
      */
     String determineGeneratedModuleName() {
         String moduleName = moduleName();
@@ -833,7 +833,7 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Attempts to determine the generated package name based upon the batch of services being processed.
+     * Attempts to determine the generated package name based upon the batch of services being processed.
      */
     String determineGeneratedPackageName() {
         String export = lastGeneratedPackageName();
@@ -842,13 +842,12 @@ public class ServicesToProcess implements Resetable {
         }
 
         ModuleInfoDescriptor descriptor = lastKnownModuleInfoDescriptor();
-        String packageName = Objects.requireNonNull(
-                ModuleUtils.toSuggestedGeneratedPackageName(descriptor, serviceTypeNames(), PicoServicesConfig.NAME));
-        return packageName;
+        String packageName = ModuleUtils.toSuggestedGeneratedPackageName(descriptor, serviceTypeNames(), PicoServicesConfig.NAME);
+        return Objects.requireNonNull(packageName);
     }
 
     /**
-     * @return Fetches the last known module name.
+     * Fetches the last known module name.
      */
     String lastKnownModuleName() {
         return lastKnownModuleName;
