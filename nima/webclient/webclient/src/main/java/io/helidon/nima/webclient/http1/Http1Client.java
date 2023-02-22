@@ -47,7 +47,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
         private boolean sendExpect100Continue = true;
         private boolean validateHeaders = true;
         private MediaContext mediaContext = MediaContext.create();
-        private int connectionQueueSize = 10;
+        private int connectionQueueSize = 16384;
 
         private Http1ClientBuilder() {
         }

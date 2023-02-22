@@ -199,8 +199,7 @@ class Http1ClientConnection implements ClientConnection {
             }
         }
         // Close if unable to add to queue
-        // this.close();
-        this.release();
+        this.close();
     }
 
     private void debugTls(SSLSocket sslSocket) {
