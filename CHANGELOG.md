@@ -11,6 +11,93 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.0-ALPHA5]
+
+This is the fifth Alpha build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.
+
+The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom virtual threads](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088). 
+
+Helidon 4.0.0 is a major release that includes significant new features and fixes. As a major release it also includes some backward incompatible API changes.
+
+Java 19 or newer is required to use Heldon 4.0.0-ALPHA5.
+
+### CHANGES
+
+- Config: Configuration fixes [6145](https://github.com/helidon-io/helidon/pull/6145)
+- Config: Describe disabling config token replacement [6170](https://github.com/helidon-io/helidon/pull/6170)
+- FaultTolerance: Reactive FT Module Info fix [6238](https://github.com/helidon-io/helidon/pull/6238)
+- HTTP2: Issue 5425:  Added configurable validate-path and max-concurrent-streams to HTTP 2. [5981](https://github.com/helidon-io/helidon/pull/5981)
+- Media: Reactive Media Common deprecated cleanup [6098](https://github.com/helidon-io/helidon/pull/6098)
+- Messaging: AQ connector @ConnectorAttribute [6038](https://github.com/helidon-io/helidon/pull/6038)
+- OCI: Register OciMetricsSupport service only when enable flag is set to true [6053](https://github.com/helidon-io/helidon/pull/6053)
+- Security: Nima and Reactive implementation of OIDC provider separated [6055](https://github.com/helidon-io/helidon/pull/6055)
+- Security: OIDC logout functionality fixed [6131](https://github.com/helidon-io/helidon/pull/6131)
+- Security: Reloadable server TLS KeyStore [5964](https://github.com/helidon-io/helidon/pull/5964)
+- Tracing: Fix order of initialization of tracing and security. (#5987) [6034](https://github.com/helidon-io/helidon/pull/6034)
+- Tracing: Fix parent handling in OpenTelemetry [6092](https://github.com/helidon-io/helidon/pull/6092)
+- WebClient: Need to use a ConcurrentHashMap in DefaultDnsResolver [6207](https://github.com/helidon-io/helidon/pull/6207)
+- WebServer: 100 continue request reset fix [6251](https://github.com/helidon-io/helidon/pull/6251)
+- WebServer: 100 continue triggered by content request [5965](https://github.com/helidon-io/helidon/pull/5965)
+- WebServer: ContentEncodingContext Builder and passing ContentEncodingContext instance from WebServer to Http1Connection. [5921](https://github.com/helidon-io/helidon/pull/5921)
+- WebServer: Port to Nima of enhancement to allow WebSocket applications on different ports [6004](https://github.com/helidon-io/helidon/pull/6004)
+- WebServer: Proposal to implement a more efficient webserver shutdown strategy [5876](https://github.com/helidon-io/helidon/pull/5876)
+- WebServer: Refactor Níma connection context [6109](https://github.com/helidon-io/helidon/pull/6109)
+- WebServer: Static content update [6195](https://github.com/helidon-io/helidon/pull/6195)
+- WebServer: Switch default back-pressure strategy to AUTO_FLUSH from LINEAR. [5983](https://github.com/helidon-io/helidon/pull/5983)
+- WebServer: Update BodyPart to return Optional instead of a nullable String [6101](https://github.com/helidon-io/helidon/pull/6101)
+- Webserver: Support for interruption of HTTP/2 connections for efficient shutdowns [6041](https://github.com/helidon-io/helidon/pull/6041)
+- Build: Configure helidon-mave-plugin jlink-image to use --enable-preview [6048](https://github.com/helidon-io/helidon/pull/6048)
+- Build: Correct arrangement of fields, methods and inner types. [6114](https://github.com/helidon-io/helidon/pull/6114)
+- Build: Fix duplicate maven-failsafe-plugin declaration in dbclient integration test [6241](https://github.com/helidon-io/helidon/pull/6241)
+- Build: Idea code style [6111](https://github.com/helidon-io/helidon/pull/6111)
+- Build: Remove user specific package from the code style. [6144](https://github.com/helidon-io/helidon/pull/6144)
+- Build: Use https in pom.xml schemaLocation - iteration 1 (#5657) [6043](https://github.com/helidon-io/helidon/pull/6043) and others
+- Dependencies: Cleanup Helidon BOM by removing artifacts that are not deployed [6047](https://github.com/helidon-io/helidon/pull/6047)
+- Dependencies: Upgrade Jersey 3.1.1 [6171](https://github.com/helidon-io/helidon/pull/6171)
+- Dependencies: Upgrade Weld to 5.x #5815 [5830](https://github.com/helidon-io/helidon/pull/5830)
+- Dependencies: jakarta.activation cleanup [6138](https://github.com/helidon-io/helidon/pull/6138)
+- Docs: Restore navbar glyphs [6179](https://github.com/helidon-io/helidon/pull/6179)
+- Examples: Add application parent pom for Nima applications. Use in nima examples. [6232](https://github.com/helidon-io/helidon/pull/6232)
+- Examples: Nima Quickstart Archetype [6229](https://github.com/helidon-io/helidon/pull/6229)
+- Tests: Use Hamcrest assertions instead of JUnit [6160](https://github.com/helidon-io/helidon/pull/6160) and others
+- Tests: LRA TCK failing randomly #6106 [6107](https://github.com/helidon-io/helidon/pull/6107)
+- Tests: intermittent issue on OciMetricsSupportTest [6151](https://github.com/helidon-io/helidon/pull/6151)
+
+
+## [4.0.0-ALPHA4]
+
+This is the fourth Alpha build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.
+
+The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom virtual threads](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088). 
+
+Helidon 4.0.0 is a major release that includes significant new features and fixes. As a major release it also includes some backward incompatible API changes.
+
+Java 19 or newer is required to use Heldon 4.0.0-ALPHA4.
+
+### MicroProfile Support
+
+4.0.0-ALPHA4 now supports MicroProfile 5 running on Nima WebServer. Please give it a try! If you are upgrading an existing Helidon 3.x MicroProfile application and run into an error concerning `io.common.HelidonConsoleHandler` then change `logging.properties` to use `io.helidon.logging.jul.HelidonConsoleHandler` instead.
+
+### CHANGES
+
+- Logging: Change JUL to System.Logger in most modules  [5936](https://github.com/helidon-io/helidon/pull/5936)
+- Messaging: WLS JMS Object-Based Security [5852](https://github.com/helidon-io/helidon/pull/5852)
+- MicroProfile: Deprecate MicroProfile Tracing [5909](https://github.com/helidon-io/helidon/pull/5909)
+- OCI: Replace OCI Java SDK shaded jar with v3 for OCI integration [5908](https://github.com/helidon-io/helidon/pull/5908)
+- OCI: helidon metrics to oci integration [5945](https://github.com/helidon-io/helidon/pull/5945)
+- Pico:  Builder updates, fixes and enhancements [5977](https://github.com/helidon-io/helidon/pull/5977)
+- Security: Default tenant is not included for propagation [5900](https://github.com/helidon-io/helidon/pull/5900)
+- Security: Oidc tenant name now properly escaped [5873](https://github.com/helidon-io/helidon/pull/5873)
+- Tests: Dbclient Integration Tests Fixed [4860](https://github.com/helidon-io/helidon/pull/4860)
+- WebServer: implement a more efficient webserver shutdown strategy [5876](https://github.com/helidon-io/helidon/pull/5876/)
+- WebServer: Shutdown hook alignment Níma and MP. [5913](https://github.com/helidon-io/helidon/pull/5913)
+- WebSocket: UriQuery should not support null parameters. [5950](https://github.com/helidon-io/helidon/pull/5950)
+- WebSocket: client and testing update [5831](https://github.com/helidon-io/helidon/pull/5831)
+- Dependencies: Upgrade OCI SDK to 3.2.1 [5956](https://github.com/helidon-io/helidon/pull/5956)
+- Docs: Documentation updates to correct wrong instructions for HOCON config parsing [5975](https://github.com/helidon-io/helidon/pull/5975)
+- Examples: examples missing helidon-config-yaml dependency [5919](https://github.com/helidon-io/helidon/pull/5919)
+- HTTP/2: Configurable protocols [5883](https://github.com/helidon-io/helidon/pull/5883)
+
 ## [4.0.0-ALPHA3]
 
 This is the third Alpha build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.
@@ -242,6 +329,8 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
 
+[4.0.0-ALPHA5]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA4...4.0.0-ALPHA5
+[4.0.0-ALPHA4]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA3...4.0.0-ALPHA4
 [4.0.0-ALPHA3]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA2...4.0.0-ALPHA3
 [4.0.0-ALPHA2]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA1...4.0.0-ALPHA2
 [4.0.0-ALPHA1]: https://github.com/oracle/helidon/compare/main...4.0.0-ALPHA1
