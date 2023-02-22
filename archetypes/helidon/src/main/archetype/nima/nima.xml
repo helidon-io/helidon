@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,36 +20,24 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <step name="Helidon Flavor" optional="true">
+    <step name="Application Type" optional="true">
         <inputs>
-            <enum id="flavor"
-                  name="Select a Flavor"
-                  default="se"
+            <enum id="app-type"
+                  name="Select an Application Type"
+                  default="quickstart"
                   global="true"
                   optional="true">
-                <option value="se"
-                        name="Helidon SE"
-                        description="Programmatic, reactive &amp; non blocking">
-                    <exec src="se/se.xml"/>
-                </option>
-                <option value="mp"
-                        name="Helidon MP"
-                        description="Declarative, MicroProfile compliant">
-                    <exec src="mp/mp.xml"/>
-                </option>
-                <option value="nima"
-                        name="Helidon Níma"
-                        description="WebSever based on Virtual Threads">
-                    <exec src="nima/nima.xml"/>
+                <option value="quickstart"
+                        name="Quickstart"
+                        description="Sample Helidon Nima project that includes multiple REST operations">
+                    <exec src="quickstart/quickstart-nima.xml"/>
                 </option>
             </enum>
         </inputs>
     </step>
-    <exec src="common/customize-project.xml"/>
     <output>
         <model>
-            <value key="helidon-version">${helidon-version}</value>
-            <value key="flavor">${flavor}</value>
+            <value key="app-type">${app-type}</value>
         </model>
     </output>
 </archetype-script>

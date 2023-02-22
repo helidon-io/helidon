@@ -8,10 +8,10 @@
 {{.}}
 {{/run-comment}}
 
-With JDK17+
+With JDK19+
 ```bash
 mvn package
-java -jar target/{{artifactId}}.jar
+java --enable-preview -jar target/{{artifactId}}.jar
 ```
 
 ## Exercise the application
