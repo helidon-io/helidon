@@ -299,7 +299,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                                                                       ChronoUnit.SECONDS,
                                                                       true));
                         if (expectedMaxTokenAge != null) {
-                            Jwt.addMaxTokenAgeValidator(validators, expectedMaxTokenAge, clockSkew,true);
+                            Jwt.addMaxTokenAgeValidator(validators, expectedMaxTokenAge, clockSkew, true);
                         }
 
                         Errors validate = jwt.validate(validators);

@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -448,6 +447,12 @@ public final class EncryptedJwt {
         return Arrays.copyOf(encryptedPayload, encryptedPayload.length);
     }
 
+    /**
+     * Validate this Encrypted JWT against provided validators.
+     *
+     * @param validators Validators to validate with.
+     * @return errors instance to check if valid and access error messages
+     */
     public Errors validate(List<Validator<EncryptedJwt>> validators) {
         Errors.Collector collector = Errors.collector();
         validators.forEach(it -> it.validate(this, collector));
