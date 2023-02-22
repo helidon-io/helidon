@@ -238,17 +238,21 @@ public final class EncryptedJwt {
         return new EncryptedJwt(token, header, iv, encryptedKey, authTag, encryptedPayload);
     }
 
-    private static byte[] encryptRsa(String algorithm, PublicKey publicKey, byte[] unencryptedKey) {
+    private static byte[] wrapRsa(SupportedAlgorithm supportedAlgorithm, PublicKey publicKey, byte[] unencryptedKey) {
         try {
-            Cipher rsaCipher = Cipher.getInstance(algorithm);
-            rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey);
-            return rsaCipher.doFinal(unencryptedKey);
+            Cipher rsaCipher = Cipher.getInstance(supportedAlgorithm.cipherName());
+            if (supportedAlgorithm.parameterSpec() == null) {
+                rsaCipher.init(Cipher.WRAP_MODE, publicKey);
+            } else {
+                rsaCipher.init(Cipher.WRAP_MODE, publicKey, supportedAlgorithm.parameterSpec());
+            }
+            return rsaCipher.wrap(new SecretKeySpec(unencryptedKey, "AES"));
         } catch (Exception e) {
             throw new JwtException("Exception during rsa key decryption occurred.", e);
         }
     }
 
-    private static byte[] decryptRsa(SupportedAlgorithm supportedAlgorithm, PrivateKey privateKey, byte[] encryptedKey) {
+    private static byte[] unwrapRsa(SupportedAlgorithm supportedAlgorithm, PrivateKey privateKey, byte[] encryptedKey) {
         try {
             Cipher rsaCipher = Cipher.getInstance(supportedAlgorithm.cipherName());
             if (supportedAlgorithm.parameterSpec() == null) {
@@ -375,7 +379,7 @@ public final class EncryptedJwt {
 
         errors.collect().checkValid();
 
-        byte[] decryptedKey = decryptRsa(supportedAlgorithm, privateKey, encryptedKey);
+        byte[] decryptedKey = unwrapRsa(supportedAlgorithm, privateKey, encryptedKey);
         //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
         EncryptionParts encryptionParts = new EncryptionParts(decryptedKey,
                                                               iv,
@@ -553,14 +557,13 @@ public final class EncryptedJwt {
             JwtHeaders headers = headersBuilder.build();
             StringBuilder tokenBuilder = new StringBuilder();
             String headersBase64 = encode(headers.headerJson().toString());
-            String rsaCipherType = algorithm.cipherName();
             AesAlgorithm contentEncryption = CONTENT_ENCRYPTION.get(encryption);
             //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
             EncryptionParts encryptionParts = contentEncryption.encrypt(jwt.tokenContent().getBytes(StandardCharsets.UTF_8),
                                                                         headersBase64.getBytes(StandardCharsets.US_ASCII));
             byte[] aesKey = encryptionParts.key();
 
-            byte[] encryptedAesKey = encryptRsa(rsaCipherType, publicKey, aesKey);
+            byte[] encryptedAesKey = wrapRsa(algorithm, publicKey, aesKey);
             String token = tokenBuilder.append(headersBase64).append(".")
                     .append(encode(encryptedAesKey)).append(".")
                     .append(encode(encryptionParts.iv())).append(".")
