@@ -35,6 +35,7 @@ module io.helidon.security.integration.webserver {
     requires transitive io.helidon.security.util;
     requires io.helidon.reactive.webserver;
     requires io.helidon.security.integration.common;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.security.integration.webserver;
 }

@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -69,7 +68,6 @@ final class SecurityImpl implements Security {
     private final ProviderSelectionPolicy providerSelectionPolicy;
     private final LazyValue<Tracer> securityTracer;
     private final SecurityTime serverTime;
-    private final Supplier<ExecutorService> executorService;
     private final Config securityConfig;
     private final boolean enabled;
 
@@ -82,7 +80,6 @@ final class SecurityImpl implements Security {
         this.enabled = builder.enabled();
         this.instanceUuid = UUID.randomUUID().toString();
         this.serverTime = builder.serverTime();
-        this.executorService = builder.executorService();
         this.annotations.addAll(SecurityUtil.getAnnotations(builder.allProviders()));
         this.securityTracer = LazyValue.create(() -> SecurityUtil.getTracer(builder.tracingEnabled(), builder.tracer()));
         this.subjectMappingProvider = Optional.ofNullable(builder.subjectMappingProvider());
@@ -172,7 +169,6 @@ final class SecurityImpl implements Security {
         String newId = ((null == id) || id.isEmpty()) ? (instanceUuid + ":?") : (instanceUuid + ":" + id);
         return new SecurityContext.Builder(this)
                 .id(newId)
-                .executorService(executorService)
                 .tracingTracer(securityTracer.get())
                 .serverTime(serverTime);
     }
@@ -304,11 +300,6 @@ final class SecurityImpl implements Security {
     @Override
     public ProviderSelectionPolicy providerSelectionPolicy() {
         return providerSelectionPolicy;
-    }
-
-    @Override
-    public Supplier<ExecutorService> executorService() {
-        return executorService;
     }
 
     @Override

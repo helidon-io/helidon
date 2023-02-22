@@ -30,14 +30,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
@@ -311,13 +309,6 @@ public interface Security {
     ProviderSelectionPolicy providerSelectionPolicy();
 
     /**
-     * Executor service to handle possible blocking tasks in security.
-     *
-     * @return executor service supplier (may be backed by a lazy implementation)
-     */
-    Supplier<ExecutorService> executorService();
-
-    /**
      * Find an authentication provider by name, or use the default if the name is not available.
      *
      * @param providerName name of the provider
@@ -371,7 +362,6 @@ public interface Security {
         private Tracer tracer;
         private boolean tracingEnabled = true;
         private SecurityTime serverTime = SecurityTime.builder().build();
-        private Supplier<ExecutorService> executorService = ThreadPoolSupplier.create("security-thread-pool");
         private boolean enabled = true;
 
         private Builder() {
@@ -974,7 +964,6 @@ public interface Security {
             }
 
             config.get("environment.server-time").as(SecurityTime::create).ifPresent(this::serverTime);
-            executorService(ThreadPoolSupplier.create(config.get("environment.executor-service"), "security-thread-pool"));
 
             Map<String, SecurityProviderService> configKeyToService = new HashMap<>();
             Map<String, SecurityProviderService> classNameToService = new HashMap<>();
@@ -1159,18 +1148,6 @@ public interface Security {
             if (provider instanceof DigestProvider) {
                 addDigestProvider((DigestProvider<?>) provider, name);
             }
-        }
-
-        /**
-         * Configure executor service to be used for blocking operations within security.
-         *
-         * @param supplier supplier of an executor service, as as {@link io.helidon.common.configurable.ThreadPoolSupplier}
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "environment.executor-service", type = ThreadPoolSupplier.class)
-        public Builder executorService(Supplier<ExecutorService> supplier) {
-            this.executorService = supplier;
-            return this;
         }
 
         private String resolveProviderName(Config pConf,
@@ -1444,10 +1421,6 @@ public interface Security {
 
         SecurityTime serverTime() {
             return serverTime;
-        }
-
-        Supplier<ExecutorService> executorService() {
-            return executorService;
         }
 
         boolean enabled() {

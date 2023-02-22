@@ -21,13 +21,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
@@ -36,6 +40,7 @@ import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityTime;
 
 /**
  * Integration of security into Web Server.
@@ -99,15 +104,13 @@ public final class WebSecurity implements Service {
     private final Security security;
     private final Config config;
     private final SecurityHandler defaultHandler;
+    private final Supplier<ExecutorService> executorService;
 
-    private WebSecurity(Security security, Config config) {
-        this(security, config, SecurityHandler.create());
-    }
-
-    private WebSecurity(Security security, Config config, SecurityHandler defaultHandler) {
-        this.security = security;
-        this.config = config;
-        this.defaultHandler = defaultHandler;
+    private WebSecurity(Builder builder) {
+        this.security = builder.security;
+        this.config = builder.config;
+        this.defaultHandler = builder.securityHandler;
+        this.executorService = builder.executorService;
     }
 
     /**
@@ -124,7 +127,7 @@ public final class WebSecurity implements Service {
      * @return routing config consumer
      */
     public static WebSecurity create(Security security) {
-        return new WebSecurity(security, null);
+        return builder().security(security).build();
     }
 
     /**
@@ -136,8 +139,7 @@ public final class WebSecurity implements Service {
      * @return routing config consumer
      */
     public static WebSecurity create(Config config) {
-        Security security = Security.create(config);
-        return create(security, config);
+        return builder().config(config).build();
     }
 
     /**
@@ -150,7 +152,14 @@ public final class WebSecurity implements Service {
      * @return routing config consumer
      */
     public static WebSecurity create(Security security, Config config) {
-        return new WebSecurity(security, config);
+        return builder()
+                .security(security)
+                .config(config)
+                .build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -315,7 +324,11 @@ public final class WebSecurity implements Service {
      */
     public WebSecurity securityDefaults(SecurityHandler defaultHandler) {
         Objects.requireNonNull(defaultHandler, "Default security handler must not be null");
-        return new WebSecurity(security, config, defaultHandler);
+        return builder()
+                .config(config)
+                .security(security)
+                .securityHandler(defaultHandler)
+                .build();
     }
 
     @Override
@@ -363,6 +376,7 @@ public final class WebSecurity implements Service {
             SecurityContext context = contextBuilder.build();
 
             req.context().register(context);
+            req.context().register(SecurityHandler.class, executorService);
             req.context().register(defaultHandler);
         }
 
@@ -384,8 +398,8 @@ public final class WebSecurity implements Service {
 
                 String path = pathConfig.get("path")
                         .asString()
-                        .orElseThrow(() -> new SecurityException(pathConfig
-                                                                         .key() + " must contain path key with a path to "
+                        .orElseThrow(() -> new SecurityException(pathConfig.key()
+                                                                         + " must contain path key with a path to "
                                                                          + "register to web server"));
                 if (methods.isEmpty()) {
                     routing.any(path, SecurityHandler.create(pathConfig, defaults));
@@ -395,4 +409,57 @@ public final class WebSecurity implements Service {
             }
         });
     }
+
+    public static final class Builder implements io.helidon.common.Builder<Builder, WebSecurity> {
+
+        private Config config;
+        private Security security;
+        private SecurityHandler securityHandler = SecurityHandler.create();
+        private Supplier<ExecutorService> executorService = ThreadPoolSupplier.builder()
+                .name("security-thread-pool")
+                .virtualThreads(true)
+                .build();
+
+        private Builder() {
+        }
+
+        @Override
+        public WebSecurity build() {
+            if (security == null && config != null) {
+                security = Security.create(config);
+            }
+            return new WebSecurity(this);
+        }
+
+        public Builder config(Config config) {
+            this.config = config;
+            executorService(ThreadPoolSupplier.create(config.get("environment.executor-service"), "security-thread-pool"));
+            return this;
+        }
+
+        /**
+         * Configure executor service to be used for blocking operations within security.
+         *
+         * @param supplier supplier of an executor service, as as {@link io.helidon.common.configurable.ThreadPoolSupplier}
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "environment.executor-service", type = ThreadPoolSupplier.class)
+        public Builder executorService(Supplier<ExecutorService> supplier) {
+            this.executorService = supplier;
+            return this;
+        }
+
+        public Builder security(Security security) {
+            this.security = security;
+            return this;
+        }
+
+        public Builder securityHandler(SecurityHandler securityHandler) {
+            Objects.requireNonNull(securityHandler, "Default security handler must not be null");
+            this.securityHandler = securityHandler;
+            return this;
+        }
+
+    }
+
 }

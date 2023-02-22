@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.vault.secrets.transit;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -50,12 +51,14 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
         Function<byte[], String> encrypt = bytes -> transit.encrypt(providerConfig.encryptionRequest()
                                                                                     .data(Base64Value.create(bytes)))
                 .map(Encrypt.Response::encrypted)
-                .map(Encrypt.Encrypted::cipherText);
+                .map(Encrypt.Encrypted::cipherText)
+                .await(Duration.ofSeconds(10));
 
         Function<String, byte[]> decrypt = encrypted -> transit.decrypt(providerConfig.decryptionRequest()
                                                                                         .cipherText(encrypted))
                 .map(Decrypt.Response::decrypted)
-                .map(Base64Value::toBytes);
+                .map(Base64Value::toBytes)
+                .await(Duration.ofSeconds(10));
 
         return EncryptionSupport.create(encrypt, decrypt);
     }
@@ -81,7 +84,8 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
                     .preHashed(preHashed);
 
             return transit.sign(request)
-                    .map(Sign.Response::signature);
+                    .map(Sign.Response::signature)
+                    .await(Duration.ofSeconds(10));
         };
 
         VerifyFunction verifyFunction = (data, preHashed, digest) -> {
@@ -91,7 +95,8 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
                     .signature(digest);
 
             return transit.verify(verifyRequest)
-                    .map(Verify.Response::isValid);
+                    .map(Verify.Response::isValid)
+                    .await(Duration.ofSeconds(10));
         };
 
         return DigestSupport.create(digestFunction, verifyFunction);
@@ -103,7 +108,8 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
                     .data(Base64Value.create(data));
 
             return transit.hmac(request)
-                    .map(Hmac.Response::hmac);
+                    .map(Hmac.Response::hmac)
+                    .await(Duration.ofSeconds(10));
         };
 
         VerifyFunction verifyFunction = (data, preHashed, digest) -> {
@@ -113,7 +119,8 @@ public class TransitSecurityProvider implements EncryptionProvider<TransitSecuri
                     .hmac(digest);
 
             return transit.verify(verifyRequest)
-                    .map(Verify.Response::isValid);
+                    .map(Verify.Response::isValid)
+                    .await(Duration.ofSeconds(10));
         };
 
         return DigestSupport.create(digestFunction, verifyFunction);

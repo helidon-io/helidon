@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.vault.secrets.kv1;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -48,7 +49,8 @@ public class Kv1SecurityProvider implements SecretsProvider<Kv1SecurityProvider.
 
         return () -> secrets.get(providerConfig.request())
                 .map(VaultOptionalResponse::entity)
-                .map(it -> it.flatMap(response -> response.value(key)));
+                .map(it -> it.flatMap(response -> response.value(key)))
+                .await(Duration.ofSeconds(10));
     }
 
     /**
