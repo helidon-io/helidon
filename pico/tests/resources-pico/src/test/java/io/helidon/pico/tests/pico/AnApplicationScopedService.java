@@ -22,8 +22,6 @@ import jakarta.enterprise.inject.Default;
 /**
  * {@link jakarta.enterprise.context.ApplicationScoped} is normally unsupported, and as such needs a -A entry in pom.xml
  * to get it to map to {@link jakarta.inject.Singleton scope.}
- *
- * @deprecated
  */
 @ApplicationScoped
 @Default

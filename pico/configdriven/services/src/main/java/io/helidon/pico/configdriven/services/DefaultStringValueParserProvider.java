@@ -24,16 +24,17 @@ import io.helidon.common.Weighted;
 
 /**
  * Service-loaded provider for {@link StringValueParserProvider}.
- *
- * @deprecated
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class DefaultStringValueParserProvider implements StringValueParserProvider {
     static final LazyValue<StringValueParser> INSTANCE = LazyValue.create(DefaultStringValueParser::new);
 
     /**
-     * Service loaded constructor.
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public DefaultStringValueParserProvider() {
     }
 

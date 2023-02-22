@@ -70,9 +70,7 @@ import static io.helidon.pico.tools.TypeTools.toKind;
 import static io.helidon.pico.tools.TypeTools.toObjectTypeName;
 
 /**
- * The default interceptor creator strategy in use.
- *
- * @deprecated
+ * The default {@link io.helidon.pico.tools.InterceptorCreator} provider in use.
  */
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)
@@ -92,8 +90,9 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public DefaultInterceptorCreator() {
         super(TemplateHelper.DEFAULT_TEMPLATE_NAME);
     }

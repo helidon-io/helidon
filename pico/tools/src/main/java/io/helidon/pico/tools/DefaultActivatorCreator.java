@@ -82,8 +82,6 @@ import static io.helidon.pico.tools.TypeTools.isPackagePrivate;
  *
  * This API can also be used to only produce meta-information describing the model without the codegen option - see
  * {@link ActivatorCreatorRequest#codeGenPaths()} for details.
- *
- * @deprecated
  */
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)
@@ -100,8 +98,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public DefaultActivatorCreator() {
         super(TemplateHelper.DEFAULT_TEMPLATE_NAME);
     }

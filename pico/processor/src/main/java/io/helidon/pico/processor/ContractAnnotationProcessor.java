@@ -24,16 +24,15 @@ import io.helidon.pico.tools.TypeNames;
 
 /**
  * Handles {@code @Contract} annotations.
- *
- * @deprecated
  */
 public class ContractAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public ContractAnnotationProcessor() {
     }
 

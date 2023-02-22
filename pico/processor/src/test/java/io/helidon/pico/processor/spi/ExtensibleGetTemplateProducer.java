@@ -32,16 +32,17 @@ import io.helidon.pico.tools.TemplateHelperTools;
 
 /**
  * For Testing (service loaded).
- *
- * @deprecated
  */
 // Note: if we uncomment this @Singleton, a compile-time activator will be built - we want to avoid that here
 //@Singleton
 public class ExtensibleGetTemplateProducer implements CustomAnnotationTemplateCreator {
 
     /**
-     * For testing.
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public ExtensibleGetTemplateProducer() {
         int debugMe = 1;
     }

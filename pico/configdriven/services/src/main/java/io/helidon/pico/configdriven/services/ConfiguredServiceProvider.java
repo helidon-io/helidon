@@ -61,7 +61,6 @@ public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, Co
      * Generally this method is for internal use only. Most should use {@link #visitAttributes} instead of this method.
      *
      * @return the config bean attributes
-     * @deprecated
      */
     Map<String, Map<String, Object>> configBeanAttributes();
 

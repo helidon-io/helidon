@@ -32,9 +32,6 @@ import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-/**
- * @deprecated
- */
 @RunLevel(RunLevel.STARTUP)
 @Singleton
 @Named("testing")

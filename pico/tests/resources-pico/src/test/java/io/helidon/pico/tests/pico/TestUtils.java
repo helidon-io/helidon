@@ -26,21 +26,21 @@ import io.helidon.pico.tools.CommonUtils;
 import io.helidon.pico.tools.ToolsException;
 
 /**
- * Test utilities.
- *
- * @deprecated
+ * Testing utilities.
  */
 public class TestUtils {
+
+    private TestUtils() {
+    }
 
     /**
      * Load string from resource.
      *
      * @param resourceNamePath the resource path
-     * @return the loaded string.
+     * @return the loaded string
      */
     // same as from CommonUtils.
-    public static String loadStringFromResource(
-            String resourceNamePath) {
+    public static String loadStringFromResource(String resourceNamePath) {
         try {
             try (InputStream in = CommonUtils.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
@@ -57,9 +57,8 @@ public class TestUtils {
      * @return the contents of the file
      * @throws io.helidon.pico.tools.ToolsException if there were any exceptions encountered
      */
-    // same as from CommonUtils.
-        public static String loadStringFromFile(
-            String fileName) {
+     // same as from CommonUtils.
+     public static String loadStringFromFile(String fileName) {
         try {
             Path filePath = Path.of(fileName);
             String content = Files.readString(filePath);

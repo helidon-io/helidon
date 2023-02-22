@@ -94,10 +94,6 @@ public interface ActivationLogEntry {
      */
     class Interceptor implements BuilderInterceptor<DefaultActivationLogEntry.Builder> {
 
-        /**
-         * Default Constructor.
-         * @deprecated
-         */
         Interceptor() {
         }
 

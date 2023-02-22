@@ -42,10 +42,11 @@ public class DefaultPicoServicesProvider implements PicoServicesProvider, Reseta
     private static final AtomicReference<DefaultPicoServices> INSTANCE = new AtomicReference<>();
 
     /**
-     * Service loaded.
+     * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public DefaultPicoServicesProvider() {
         int debugMe = 0;
     }

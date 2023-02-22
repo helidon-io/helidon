@@ -24,16 +24,17 @@ import io.helidon.common.Weighted;
 
 /**
  * Service-loaded provider for {@link io.helidon.builder.config.spi.ConfigResolverProvider}.
- *
- * @deprecated
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class DefaultConfigBeanBuilderValidatorProvider implements ConfigBeanBuilderValidatorProvider {
     static final LazyValue<ConfigBeanBuilderValidator<?>> INSTANCE = LazyValue.create(DefaultConfigBuilderValidator::new);
 
     /**
-     * Service loaded constructor.
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public DefaultConfigBeanBuilderValidatorProvider() {
     }
 

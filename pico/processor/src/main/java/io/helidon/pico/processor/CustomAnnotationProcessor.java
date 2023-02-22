@@ -61,8 +61,6 @@ import static io.helidon.pico.tools.TypeTools.toFilePath;
 
 /**
  * Processor for all {@link io.helidon.pico.tools.CustomAnnotationTemplateCreator}'s.
- *
- * @deprecated
  */
 public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     private static final Map<TypeName, Set<CustomAnnotationTemplateCreator>> PRODUCERS_BY_ANNOTATION = new ConcurrentHashMap<>();
@@ -72,8 +70,9 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public CustomAnnotationProcessor() {
     }
 

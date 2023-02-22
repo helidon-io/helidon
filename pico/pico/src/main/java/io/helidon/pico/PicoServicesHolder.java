@@ -32,8 +32,6 @@ import static io.helidon.pico.spi.CallingContext.prettyPrintStackTraceOf;
 /**
  * The holder for the globally active {@link PicoServices} singleton instance, as well as its associated
  * {@link io.helidon.pico.Bootstrap} primordial configuration.
- *
- * @deprecated use {@link PicoServices#picoServices()} or {@link PicoServices#globalBootstrap()}.
  */
 // exposed in the testing module as non deprecated
 public abstract class PicoServicesHolder {
@@ -42,8 +40,11 @@ public abstract class PicoServicesHolder {
 
     /**
      * Default Constructor.
+     *
+     * @deprecated use {@link PicoServices#picoServices()} or {@link PicoServices#globalBootstrap()}.
      */
     // exposed in the testing module as non deprecated
+    @Deprecated
     protected PicoServicesHolder() {
     }
 
@@ -88,7 +89,7 @@ public abstract class PicoServicesHolder {
             if (trace != null && trace.length > 0) {
                 throw new IllegalStateException(
                         "bootstrap was previously set from this code path:\n" + prettyPrintStackTraceOf(trace)
-                + "; module name is '" + callingContext.moduleName().orElse("undefined") + "'");
+                                + "; module name is '" + callingContext.moduleName().orElse("undefined") + "'");
             }
             throw new IllegalStateException("bootstrap already set - " + DEBUG_HINT);
         }

@@ -54,8 +54,6 @@ import static io.helidon.pico.services.Utils.isQualifiedInjectionTarget;
 
 /**
  * The default implementation for {@link ApplicationCreator}.
- *
- * @deprecated
  */
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)
@@ -85,8 +83,9 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public DefaultApplicationCreator() {
         super(TemplateHelper.DEFAULT_TEMPLATE_NAME);
     }

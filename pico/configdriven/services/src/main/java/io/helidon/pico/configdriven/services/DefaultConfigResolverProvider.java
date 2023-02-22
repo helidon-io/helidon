@@ -24,16 +24,17 @@ import io.helidon.common.Weighted;
 
 /**
  * Service-loaded provider for {@link ConfigResolverProvider}.
- *
- * @deprecated
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class DefaultConfigResolverProvider implements ConfigResolverProvider {
     static final LazyValue<ConfigResolver> INSTANCE = LazyValue.create(DefaultConfigResolver::new);
 
     /**
-     * Service loaded constructor.
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public DefaultConfigResolverProvider() {
     }
 

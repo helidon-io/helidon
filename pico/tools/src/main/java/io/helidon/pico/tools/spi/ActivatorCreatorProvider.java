@@ -35,8 +35,9 @@ public class ActivatorCreatorProvider implements Provider<ActivatorCreator> {
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public ActivatorCreatorProvider() {
     }
 

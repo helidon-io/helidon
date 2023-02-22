@@ -24,16 +24,17 @@ import io.helidon.common.Weighted;
 
 /**
  * Service-loaded provider for {@link ConfigBeanRegistry}.
- *
- * @deprecated
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class DefaultConfigBeanRegistryProvider implements ConfigBeanRegistryProvider {
     static final LazyValue<ConfigBeanRegistry> INSTANCE = LazyValue.create(DefaultConfigBeanRegistry::new);
 
     /**
-     * Service loaded constructor.
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public DefaultConfigBeanRegistryProvider() {
     }
 

@@ -44,8 +44,6 @@ import static io.helidon.pico.tools.CommonUtils.hasValue;
 
 /**
  * Module specific utils.
- *
- * @deprecated
  */
 public class ModuleUtils {
     static final System.Logger LOGGER = System.getLogger(ModuleUtils.class.getName());

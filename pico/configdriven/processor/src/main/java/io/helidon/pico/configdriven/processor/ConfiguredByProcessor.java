@@ -58,8 +58,6 @@ import static io.helidon.common.types.DefaultTypeName.toBuilder;
 
 /**
  * Processor for @{@link io.helidon.pico.configdriven.ConfiguredBy} type annotations.
- *
- * @deprecated
  */
 public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     private final System.Logger logger = System.getLogger(getClass().getName());
@@ -70,8 +68,9 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public ConfiguredByProcessor() {
     }
 

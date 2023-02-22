@@ -35,8 +35,9 @@ public class ExternalModuleCreatorProvider implements Provider<ExternalModuleCre
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public ExternalModuleCreatorProvider() {
     }
 

@@ -34,8 +34,6 @@ import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
 
 /**
  * Handling for {@link jakarta.annotation.PostConstruct} and {@link jakarta.annotation.PreDestroy}.
- *
- * @deprecated
  */
 public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
@@ -47,8 +45,9 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public PostConstructPreDestroyAnnotationProcessor() {
     }
 

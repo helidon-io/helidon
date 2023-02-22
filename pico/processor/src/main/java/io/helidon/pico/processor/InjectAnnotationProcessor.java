@@ -45,8 +45,6 @@ import static io.helidon.pico.tools.TypeTools.toAccess;
 
 /**
  * Handles {@code @Inject} annotations on fields and methods.
- *
- * @deprecated
  */
 public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependencies.BuilderContinuation> {
     private static final Set<String> SUPPORTED_TARGETS = Set.of(TypeNames.JAKARTA_INJECT,
@@ -55,8 +53,9 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public InjectAnnotationProcessor() {
     }
 

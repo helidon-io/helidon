@@ -107,8 +107,6 @@ import static javax.tools.Diagnostic.Kind;
  * Abstract base for all Helidon Pico annotation processing.
  *
  * @param <B> the type handled by this anno processor
- *
- * @deprecated
  */
 abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements Messager {
     static final boolean MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR = false;
@@ -122,10 +120,11 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     private RoundEnvironment roundEnv;
 
     /**
-     * Constructor.
+     * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     protected BaseAnnotationProcessor() {
         try {
             this.services = ServicesToProcess.servicesInstance();

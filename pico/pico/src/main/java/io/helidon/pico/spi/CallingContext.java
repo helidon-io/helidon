@@ -28,11 +28,8 @@ import static io.helidon.pico.PicoServicesConfig.TAG_DEBUG;
 
 /**
  * For internal use only to Helidon. Applicable when {@link io.helidon.pico.PicoServicesConfig#TAG_DEBUG} is enabled.
- *
- * @deprecated for internal use only to helidon.
  */
 @Builder(interceptor = CallingContext.BuilderInterceptor.class)
-@Deprecated
 public abstract class CallingContext {
 
     /**

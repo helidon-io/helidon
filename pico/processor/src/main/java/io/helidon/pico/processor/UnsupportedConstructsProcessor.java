@@ -40,8 +40,6 @@ import io.helidon.pico.tools.TypeNames;
  *  <li>Any scopes from jakarta.enterprise api module(s) other than ApplicationScoped, which can optionally be mapped to
  *      Singleton scope.
  * </ul>
- *
- * @deprecated
  */
 public class UnsupportedConstructsProcessor extends AbstractProcessor {
     private static final System.Logger LOGGER = System.getLogger(UnsupportedConstructsProcessor.class.getName());
@@ -78,8 +76,9 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public UnsupportedConstructsProcessor() {
     }
 

@@ -37,8 +37,6 @@ import io.helidon.pico.tools.TypeNames;
 
 /**
  * Processor for @{@link jakarta.inject.Singleton} type annotations.
- *
- * @deprecated
  */
 public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
@@ -54,8 +52,9 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public ServiceAnnotationProcessor() {
     }
 

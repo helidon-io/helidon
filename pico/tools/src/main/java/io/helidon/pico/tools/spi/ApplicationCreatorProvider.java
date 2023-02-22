@@ -35,8 +35,9 @@ public class ApplicationCreatorProvider implements Provider<ApplicationCreator> 
     /**
      * Service loader based constructor.
      *
-     * @deprecated
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
+    @Deprecated
     public ApplicationCreatorProvider() {
     }
 
