@@ -21,7 +21,7 @@
     <parent>
         <artifactId>helidon-reactive-webserver-project</artifactId>
         <groupId>io.helidon.reactive.webserver</groupId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.0-ALPHA5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
