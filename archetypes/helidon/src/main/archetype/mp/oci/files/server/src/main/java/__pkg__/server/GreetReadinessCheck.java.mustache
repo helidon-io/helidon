@@ -33,7 +33,7 @@ public class GreetReadinessCheck implements HealthCheck {
     /**
      * Become ready after 5 seconds
      *
-     * @return true if application ready
+     * @return true if application is ready
      */
     private boolean isReady() {
         return Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 5;
