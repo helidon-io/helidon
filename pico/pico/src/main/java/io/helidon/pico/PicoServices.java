@@ -120,6 +120,22 @@ public interface PicoServices {
     }
 
     /**
+     * Short-cut for the following code block. During the first invocation the {@link io.helidon.pico.Services} registry
+     * will be initialized.
+     *
+     * <pre>
+     * {@code
+     *   return picoServices().orElseThrow().services();
+     * }
+     * </pre>
+     *
+     * @return the services instance
+     */
+    static Services realizedServices() {
+        return picoServices().orElseThrow().services();
+    }
+
+    /**
      * The service registry.
      *
      * @return the services registry

@@ -28,7 +28,7 @@ public class Main {
         if (args.length > 0) {
             BrandProvider.BRAND_NAME = args[0];
         }
-        ServiceProvider<Car> carSp = PicoServices.picoServices().get().services().lookupFirst(Car.class);
+        ServiceProvider<Car> carSp = PicoServices.realizedServices().lookupFirst(Car.class);
         System.out.println("found a car provider: " + carSp.description());
         Car car = carSp.get();
         System.out.println("found a car: " + car);

@@ -26,7 +26,7 @@ public class MainPico {
         final long memStart = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         final long start = System.currentTimeMillis();
 
-        Services services = PicoServices.picoServices().orElseThrow().services();
+        Services services = PicoServices.realizedServices();
 
         ServiceProvider<Library> librarySp = services.lookupFirst(Library.class);
         System.out.println("found a library provider: " + librarySp.description());

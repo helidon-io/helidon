@@ -85,8 +85,7 @@ class HelloPicoWorldSanityTest {
 
     @Test
     void sanity() {
-        Optional<PicoServices> picoServices = PicoServices.picoServices();
-        Services services = picoServices.orElseThrow().services();
+        Services services = PicoServices.realizedServices();
 
         List<ServiceProvider<io.helidon.pico.Module>> moduleProviders = services.lookupAll(io.helidon.pico.Module.class);
         assertThat(moduleProviders.size(),
@@ -113,8 +112,7 @@ class HelloPicoWorldSanityTest {
 
     @Test
     void standardActivation() {
-        Optional<PicoServices> picoServices = PicoServices.picoServices();
-        Services services = picoServices.orElseThrow().services();
+        Services services = PicoServices.realizedServices();
 
         ServiceProvider<HelloPicoWorld> helloProvider1 = services.lookup(HelloPicoWorld.class);
         assertThat(helloProvider1, notNullValue());
