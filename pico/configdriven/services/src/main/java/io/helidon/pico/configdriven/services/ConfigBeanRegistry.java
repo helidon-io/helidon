@@ -62,7 +62,7 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
      * that this list might be incomplete until ready state is reached (see {@link #ready()}.
      *
      * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
-     *                      key used by {@link io.helidon.builder.config.ConfigBean#key()}.
+     *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
      * @param fullConfigKey optionally, the full config key for the config - if not passed will return the list of all matches
      *                      using just the key
      * @param <CB>          the config bean type
@@ -77,7 +77,7 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
      * where the key of the map is the config key.
      *
      * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
-     *                      key used by {@link io.helidon.builder.config.ConfigBean#key()}.
+     *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
      * @param fullConfigKey optionally, the full config key for the config - if not passed will return the list of all matches
      *                      using just the key
      * @param <CB>          the config bean type

@@ -88,6 +88,18 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-config-processor</artifactId>
+            <scope>provided</scope> <!-- force reactor ordering -->
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.pico.configdriven</groupId>
+            <artifactId>helidon-pico-configdriven-processor</artifactId>
+            <scope>provided</scope> <!-- force reactor ordering -->
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
             <optional>true</optional>
