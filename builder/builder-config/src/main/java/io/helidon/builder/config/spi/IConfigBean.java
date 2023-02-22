@@ -18,8 +18,6 @@ package io.helidon.builder.config.spi;
 
 /**
  * Every {@link io.helidon.builder.config.ConfigBean}-annotated type will also implement this contract.
- *
- * @deprecated this is for internal use only
  */
 public interface IConfigBean extends IConfigBeanCommon {
 

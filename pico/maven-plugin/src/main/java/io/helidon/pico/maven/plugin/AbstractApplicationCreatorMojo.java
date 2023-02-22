@@ -84,7 +84,7 @@ import static java.util.Optional.ofNullable;
  * @see io.helidon.pico.Application
  * @see io.helidon.pico.tools.ApplicationCreatorConfigOptions
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "FieldCanBeLocal"})
 public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo {
 
     /**

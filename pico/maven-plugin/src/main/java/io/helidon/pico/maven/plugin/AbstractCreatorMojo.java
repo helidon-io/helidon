@@ -47,7 +47,7 @@ import static io.helidon.pico.tools.ModuleUtils.toSuggestedGeneratedPackageName;
 /**
  * Abstract base for all pico creator mojo's.
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 public abstract class AbstractCreatorMojo extends AbstractMojo {
     private final System.Logger logger = System.getLogger(getClass().getName());
 

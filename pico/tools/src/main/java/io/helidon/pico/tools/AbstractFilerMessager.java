@@ -48,7 +48,7 @@ import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
 
 /**
- * Used to abstract processor based filer from direct filer (the later used via maven plugin and other tooling).
+ * Used to abstract processor based filer from direct filer (the latter used via maven plugin and other tooling).
  */
 public abstract class AbstractFilerMessager implements Filer, Messager {
     private static final System.Logger LOGGER = System.getLogger(AbstractFilerMessager.class.getName());

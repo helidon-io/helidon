@@ -50,12 +50,11 @@ public class TemplateHelper {
 
     private static final System.Logger LOGGER = System.getLogger(TemplateHelper.class.getName());
 
-    private final String providerName;
     private final String versionId;
 
     private TemplateHelper(
             PicoServicesConfig cfg) {
-        this.providerName = Objects.requireNonNull(cfg.providerName(), "provider name is required");
+        Objects.requireNonNull(cfg.providerName(), "provider name is required");
         this.versionId = Objects.requireNonNull(cfg.providerVersion(), "provider version is required");
     }
 
@@ -223,17 +222,5 @@ public class TemplateHelper {
 
         return target;
     }
-
-//    private static String toString(
-//            Bootstrap bootstrap,
-//            String key) {
-//        Optional<Config> cfg = bootstrap.config();
-//        if (cfg.isEmpty()) {
-//            return null;
-//        }
-//
-//        ConfigValue<String> val = cfg.get().get(key).asString();
-//        return val.orElse(null);
-//    }
 
 }

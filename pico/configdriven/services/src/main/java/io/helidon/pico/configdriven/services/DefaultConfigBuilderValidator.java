@@ -84,7 +84,7 @@ class DefaultConfigBuilderValidator<CBB> implements ConfigBeanBuilderValidator<C
             }
 
             Object val = valueSupplier.get();
-            if (Objects.isNull(val)) {
+            if (val == null) {
                 return this;
             }
 

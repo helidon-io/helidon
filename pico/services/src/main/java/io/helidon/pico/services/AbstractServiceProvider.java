@@ -1371,12 +1371,6 @@ public abstract class AbstractServiceProvider<T>
             this.activationResult = activationResult;
         }
 
-//        public LogEntryAndResult clone() {
-//            return new LogEntryAndResult(
-//                    DefaultActivationLogEntry.toBuilder(logEntry),
-//                    DefaultActivationResult.toBuilder(activationResult));
-//        }
-
         DefaultActivationResult.Builder activationResult() {
             return activationResult;
         }

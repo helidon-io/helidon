@@ -59,7 +59,7 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
 
     /**
      * Returns all the know config beans in order of rank given the short config key / alias. Callers should understand
-     * that this list might be incomplete until ready state is reached (see {@link #ready()}.
+     * that this list might be incomplete until ready state is reached (see {@link #ready()}).
      *
      * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
      *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.

@@ -22,8 +22,6 @@ import io.helidon.common.config.Config;
 
 /**
  * Minimal implementation for the {@link IConfigBeanCommon}. This is the base for generated config beans.
- *
- * @deprecated this is for internal use only
  */
 public abstract class IConfigBeanBase implements IConfigBeanCommon {
     private final Config config;

@@ -48,6 +48,8 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
 
     /**
      * Default constructor, service loader invoked.
+     *
+     * @deprecated needed for Java service loader
      */
     @Deprecated
     public BasicConfigResolver() {

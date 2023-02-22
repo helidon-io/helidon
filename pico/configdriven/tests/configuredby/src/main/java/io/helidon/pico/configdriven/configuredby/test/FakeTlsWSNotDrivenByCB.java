@@ -30,7 +30,7 @@ import jakarta.inject.Named;
 @Named("jimmy")
 public class FakeTlsWSNotDrivenByCB {
 
-    private FakeWebServerTlsConfig cfg;
+    private final FakeWebServerTlsConfig cfg;
     private boolean running;
 
     @Inject

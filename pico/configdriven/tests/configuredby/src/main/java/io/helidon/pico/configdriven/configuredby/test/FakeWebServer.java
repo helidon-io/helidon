@@ -33,7 +33,7 @@ import jakarta.inject.Inject;
 @ConfiguredBy(FakeServerConfig.class)
 public class FakeWebServer implements FakeWebServerContract {
 
-    private FakeServerConfig cfg;
+    private final FakeServerConfig cfg;
     private boolean running;
 
     @Inject

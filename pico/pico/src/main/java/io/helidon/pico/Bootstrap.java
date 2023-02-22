@@ -41,7 +41,7 @@ public interface Bootstrap {
 
     /**
      * In certain conditions Pico services should be initialized but not started (i.e., avoiding calls to {@code PostConstruct}
-     * etc). This can be used in special cases where the normal Pico startup should limit lifecycle up to a given phase. Normally
+     * etc.). This can be used in special cases where the normal Pico startup should limit lifecycle up to a given phase. Normally
      * one should not use this feature - it is mainly used in Pico tooling (e.g., the pico-maven-plugin).
      *
      * @return the phase to stop at during lifecycle

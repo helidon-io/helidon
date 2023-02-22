@@ -42,7 +42,7 @@ public class MainToolBox implements ToolBox {
     @Preferred
     Provider<Hammer> preferredHammer;
 
-    private Screwdriver screwdriver;
+    private final Screwdriver screwdriver;
 
     public int postConstructCallCount;
     public int preDestroyCallCount;

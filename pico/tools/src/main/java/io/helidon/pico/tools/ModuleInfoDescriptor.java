@@ -542,7 +542,7 @@ public interface ModuleInfoDescriptor {
     }
 
     /**
-     * Creates a new item {@code exports} on a a package from this module descriptor.
+     * Creates a new item {@code exports} on a package from this module descriptor.
      *
      * @param typeName the type name exported
      * @return the item created
@@ -553,7 +553,7 @@ public interface ModuleInfoDescriptor {
     }
 
     /**
-     * Creates a new item {@code exports} on a a package from this module descriptor.
+     * Creates a new item {@code exports} on a package from this module descriptor.
      *
      * @param pkg the package name exported
      * @return the item created
@@ -564,7 +564,7 @@ public interface ModuleInfoDescriptor {
     }
 
     /**
-     * Creates a new item {@code exports} on a a package from this module descriptor, along with
+     * Creates a new item {@code exports} on a package from this module descriptor, along with
      * a {@code 'to'} declaration.
      *
      * @param contract  the contract definition being exported

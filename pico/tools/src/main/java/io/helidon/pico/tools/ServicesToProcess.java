@@ -200,7 +200,7 @@ public class ServicesToProcess implements Resetable {
 
     /**
      * Introduce the activator generic portion of the declaration (e.g., the "CB extends MySingletonConfig" portion of
-     * {@code MyService$$picoActivator<CB extends MySingletonConfig>)}.
+     * {@code MyService$$picoActivator<CB extends MySingletonConfig>}).
      *
      * @param serviceTypeName the service type name
      * @param activatorGenericDecl the generics portion of the class decl

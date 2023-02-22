@@ -21,8 +21,6 @@ import io.helidon.builder.AttributeVisitor;
 /**
  * These methods are common between generated {@link io.helidon.builder.config.ConfigBean}-annotated type, as well
  * as the associated builder for the same.
- *
- * @deprecated this is for internal use only
  */
 public interface IConfigBeanCommon extends ConfigProvider {
 

@@ -56,7 +56,7 @@ class DefaultActivationLog implements ActivationLog, ActivationLogQuery {
     }
 
     /**
-     * Create a unretained activation log that simply logs to the provided logger. An unretained log is not capable of
+     * Create an unretained activation log that simply logs to the provided logger. An unretained log is not capable of
      * supporting {@link io.helidon.pico.ActivationLogQuery}.
      *
      * @param logger the logger to use

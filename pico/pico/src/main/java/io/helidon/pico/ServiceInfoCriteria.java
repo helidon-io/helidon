@@ -126,7 +126,7 @@ public interface ServiceInfoCriteria {
     }
 
     /**
-     * Determines whether the provided criteria matches just the contracts portion of the provided criteria. Note that
+     * Determines whether the provided criteria match just the contracts portion of the provided criteria. Note that
      * it is expected any external contracts have been consolidated into the regular contract section.
      *
      * @param criteria the criteria to compare against

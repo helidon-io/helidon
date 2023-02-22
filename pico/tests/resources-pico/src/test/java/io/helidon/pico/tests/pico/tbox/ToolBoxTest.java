@@ -244,7 +244,7 @@ class ToolBoxTest {
         List<String> desc = runLevelServices.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat(desc, contains("TestingSingleton:INIT"));
 
-        runLevelServices.forEach(sp -> Objects.requireNonNull(sp.get(), sp.toString() + " failed on get()"));
+        runLevelServices.forEach(sp -> Objects.requireNonNull(sp.get(), sp + " failed on get()"));
         assertThat("activation should not have triggered any new lookups other than the startup we just did",
                    picoServices.metrics().orElseThrow().lookupCount().orElseThrow(), equalTo(2));
         desc = runLevelServices.stream().map(ServiceProvider::description).collect(Collectors.toList());

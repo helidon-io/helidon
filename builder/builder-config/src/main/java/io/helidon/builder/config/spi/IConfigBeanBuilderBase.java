@@ -23,15 +23,10 @@ import io.helidon.common.config.Config;
 
 /**
  * Minimal implementation for the {@link IConfigBeanBuilder}.
- *
- * @deprecated this is for internal use only
  */
 public abstract class IConfigBeanBuilderBase implements IConfigBeanBuilder {
     private Config cfg;
 
-    /**
-     * Default constructor. Reserved for internal use.
-     */
     protected IConfigBeanBuilderBase() {
     }
 

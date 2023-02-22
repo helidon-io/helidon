@@ -102,6 +102,7 @@ public class HandSaw extends AbstractSaw {
     }
 
     @Inject
+    @SuppressWarnings("unchecked")
     void setAllBlades(
             @Named("*") List<Provider<AbstractBlade>> blades) {
         setterInjectedAllProviderListInSubClass = (List) blades;

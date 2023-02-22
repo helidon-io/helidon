@@ -67,9 +67,8 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     /**
      * Default constructor. Service loaded.
      *
-     * @deprecated
+     * @deprecated needed for service loader
      */
-    // note: this needs to remain public since it will be resolved via service loader ...
     @Deprecated
     public BuilderTypeTools() {
     }

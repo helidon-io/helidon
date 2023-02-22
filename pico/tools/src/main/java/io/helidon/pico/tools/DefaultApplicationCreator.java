@@ -158,10 +158,9 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             return true;
         } else if (ApplicationCreatorConfigOptions.PermittedProviderType.NONE == opt) {
             return false;
-        } else if (configOptions.permittedProviderNames().contains(typeName.name())) {
-            return true;
+        } else {
+            return configOptions.permittedProviderNames().contains(typeName.name());
         }
-        return false;
     }
 
     static ServiceInfoCriteria toServiceInfoCriteria(

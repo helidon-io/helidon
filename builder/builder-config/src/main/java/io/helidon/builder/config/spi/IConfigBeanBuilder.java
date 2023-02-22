@@ -20,8 +20,6 @@ import io.helidon.common.config.Config;
 
 /**
  * Every {@link io.helidon.builder.config.ConfigBean}-annotated *builder* type will implement this contract.
- *
- * @deprecated
  */
 public interface IConfigBeanBuilder extends IConfigBeanCommon {
 

@@ -146,7 +146,7 @@ public interface ActivatorCreatorCodeGen {
     Map<TypeName, Set<QualifierAndValue>> serviceTypeQualifiers();
 
     /**
-     * The set of type names that the service type acts as a "is provider" for (i.e., {@link jakarta.inject.Provider}).
+     * The set of type names that the service type acts as an "is provider" for (i.e., {@link jakarta.inject.Provider}).
      *
      * @return the map of service type names to "is provider" flag values
      */

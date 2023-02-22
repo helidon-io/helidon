@@ -1118,7 +1118,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param paramInfo         the method info
      * @param isProviderWrapped set to indicate that the ip is a provided type
      * @param isListWrapped     set to indicate that the ip is a list type
-     * @param isOptionalWrapped set to indicate that the ip is a optional type
+     * @param isOptionalWrapped set to indicate that the ip is am optional type
      * @return the return type of the parameter type
      */
     static String extractInjectionPointTypeInfo(
@@ -1140,7 +1140,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param elemInfo          the field info
      * @param isProviderWrapped set to indicate that the ip is a provided type
      * @param isListWrapped     set to indicate that the ip is a list type
-     * @param isOptionalWrapped set to indicate that the ip is a optional type
+     * @param isOptionalWrapped set to indicate that the ip is an optional type
      * @return the return type of the injection point
      */
     static String extractInjectionPointTypeInfo(
@@ -1436,7 +1436,7 @@ public class TypeTools extends BuilderTypeTools {
      * Transpose the type name to "jakarta" (if javax is used).
      *
      * @param typeName the type name
-     * @return the normalized, transposed value or the original if doesn't contain javax.
+     * @return the normalized, transposed value or the original if it doesn't contain javax
      */
     static String translate(
             String typeName) {

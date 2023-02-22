@@ -46,7 +46,7 @@ abstract class InternalBootstrap {
      * See the notes in {@link io.helidon.pico.spi.CallingContext#maybeCreate(java.util.Optional, java.util.Optional)}.
      *
      * @param bootstrap      Optionally, the user-defined bootstrap - one will be created if passed as null
-     * @param callingContext Optionally, the calling context if know - defaults to {@link io.helidon.pico.spi.CallingContext}
+     * @param callingContext Optionally, the calling context if known - defaults to {@link io.helidon.pico.spi.CallingContext}
      * @return a newly created internal bootstrap instance
      */
     static InternalBootstrap create(

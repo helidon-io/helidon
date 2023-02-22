@@ -154,7 +154,7 @@ public abstract class PicoServicesConfig {
     public static final String DEFAULT_SERVICE_LOOKUP_CACHING = "false";
 
     /**
-     * Flag indicating whether service lookups (i.e., via {@link Services#lookup} are cached.
+     * Flag indicating whether service lookups (i.e., via {@link Services#lookup}) are cached.
      *
      * @return the flag indicating whether service lookups are cached
      */
@@ -176,7 +176,7 @@ public abstract class PicoServicesConfig {
 
     /**
      * Flag indicating whether the services registry permits dynamic behavior (key is {@link #KEY_PERMITS_DYNAMIC}). The default
-     * implementation of Pico supports dynamic (see {@link #supportsDynamic()}, but does not permit it by default.
+     * implementation of Pico supports dynamic (see {@link #supportsDynamic()}), but does not permit it by default.
      *
      * @return the flag indicating whether the services registry supports dynamic updates of the service registry
      */

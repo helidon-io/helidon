@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -197,7 +198,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 fileType = ".generated";
             }
             codegen.codegenResourceFilerOut(toFilePath(typedElementName.typeName(), fileType),
-                                            resourceBody, null);
+                                            resourceBody, Optional.empty());
         });
     }
 

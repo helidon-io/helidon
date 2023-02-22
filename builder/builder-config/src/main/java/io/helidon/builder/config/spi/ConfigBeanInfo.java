@@ -86,10 +86,10 @@ public interface ConfigBeanInfo extends ConfigBean {
     static MetaConfigBeanInfo toMetaConfigBeanInfo(Map<String, Object> meta) {
         return MetaConfigBeanInfo.builder()
                 .value((String) meta.get("value"))
-                .repeatable(Boolean.valueOf((String) meta.get("repeatable")))
-                .drivesActivation(Boolean.valueOf((String) meta.get("drivesActivation")))
-                .atLeastOne(Boolean.valueOf((String) meta.get("atLeastOne")))
-                .wantDefaultConfigBean(Boolean.valueOf((String) meta.get("atLeastOne")))
+                .repeatable(Boolean.parseBoolean((String) meta.get("repeatable")))
+                .drivesActivation(Boolean.parseBoolean((String) meta.get("drivesActivation")))
+                .atLeastOne(Boolean.parseBoolean((String) meta.get("atLeastOne")))
+                .wantDefaultConfigBean(Boolean.parseBoolean((String) meta.get("atLeastOne")))
                 .build();
     }
 

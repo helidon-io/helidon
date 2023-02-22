@@ -29,7 +29,7 @@ import io.helidon.common.types.TypeName;
 public interface TemplateHelperTools {
 
     /**
-     * Convenience method to help with the typical/generic case where the the request + the provided generatedType
+     * Convenience method to help with the typical/generic case where the request + the provided generatedType
      * is injected into the supplied template to produce the response.
      * <p>
      * The substitutions are as follows:
