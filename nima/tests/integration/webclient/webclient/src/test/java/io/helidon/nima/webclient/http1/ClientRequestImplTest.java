@@ -17,11 +17,13 @@
 package io.helidon.nima.webclient.http1;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;    // Testing
-import java.util.ArrayList;   // Testing
+import java.util.List;
+import java.util.ArrayList;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
@@ -30,9 +32,9 @@ import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.webclient.ClientConnection;  // Testing
+import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.ClientRequestImpl; // Testing
+import io.helidon.nima.webclient.http1.ClientRequestImpl;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
@@ -43,9 +45,10 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNot.not; // Testing
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ClientRequestImplTest {
@@ -54,7 +57,8 @@ class ClientRequestImplTest {
     private static final Http.HeaderValue REQ_EXPECT_100_HEADER_NAME = Http.Header.createCached(
             Http.Header.create("X-Req-Expect100"), "true");
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
-    private final static long NO_CONTENT_LENGTH = -1L;
+    private static final long NO_CONTENT_LENGTH = -1L;
+    private static final Http1Client client = WebClient.builder().build();
     private static WebServer webServer;
     private static int port;
 
@@ -190,7 +194,6 @@ class ClientRequestImplTest {
     // validates that HEAD is not allowed with entity payload
     @Test
     void testHeadMethod() {
-        Http1Client client = WebClient.builder().build();
         String url = "http://localhost:" + port + "/test";
         assertThrows(IllegalArgumentException.class, () ->
                 client.method(Http.Method.HEAD).uri(url).submit("Foo Bar"));
@@ -204,7 +207,6 @@ class ClientRequestImplTest {
 
     @Test
     void testConnectionQueueDequeue() {
-        Http1Client client = WebClient.builder().connectionQueueSize(20).build();
         String url = "http://localhost:" + port + "/test";
 
         ClientConnection connectionNow;
@@ -226,11 +228,7 @@ class ClientRequestImplTest {
 
     @Test
     void testConnectionQueueSizeLimit() {
-        Http1Client client = WebClient.builder()
-                .build();
-
         int connectionQueueSize = ((Http1ClientImpl) client).connectionQueueSize();
-        System.out.println("Got default connection size=" + connectionQueueSize);
         String url = "http://localhost:" + port + "/test";
 
         List<ClientConnection> connectionList = new ArrayList<ClientConnection>();
@@ -287,14 +285,17 @@ class ClientRequestImplTest {
     private static void validateFailedResponse(Http1Client client, String errorMessage) {
         String requestEntity = "Sending Something";
         Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
-        final IllegalStateException ie =
-                assertThrows(IllegalStateException.class, () -> request.submit(requestEntity));
-        assertThat(ie.getMessage().contains(errorMessage), is(true));
+        IllegalStateException ie = assertThrows(IllegalStateException.class, () -> request.submit(requestEntity));
+        assertThat(ie.getMessage(), containsString(errorMessage));
     }
 
     private void validateChunkTransfer(Http1ClientResponse response, boolean chunked, long contentLength, String entity) {
         assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(Long.parseLong(response.headers().get(REQ_CONTENT_LENGTH_HEADER_NAME).value()), is(contentLength));
+        if (contentLength == NO_CONTENT_LENGTH) {
+            assertThat(response.headers(), noHeader(REQ_CONTENT_LENGTH_HEADER_NAME));
+        } else {
+            assertThat(response.headers(), hasHeader(REQ_CONTENT_LENGTH_HEADER_NAME, String.valueOf(contentLength)));
+        }
         if (chunked) {
             assertThat(response.headers(), hasHeader(REQ_CHUNKED_HEADER));
         } else {
@@ -315,11 +316,13 @@ class ClientRequestImplTest {
     private static void customHandler(ServerRequest req, ServerResponse res, boolean chunkResponse) {
         Headers reqHeaders = req.headers();
         if (reqHeaders.contains(Http.HeaderValues.EXPECT_100)) {
-            res.headers().add(REQ_EXPECT_100_HEADER_NAME);
+            res.headers().set(REQ_EXPECT_100_HEADER_NAME);
         }
-        res.headers().add(REQ_CONTENT_LENGTH_HEADER_NAME, String.valueOf(reqHeaders.contentLength().orElse(NO_CONTENT_LENGTH)));
+        if (reqHeaders.contains(Http.Header.CONTENT_LENGTH)) {
+            res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.Header.CONTENT_LENGTH).value());
+        }
         if (reqHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-            res.headers().add(REQ_CHUNKED_HEADER);
+            res.headers().set(REQ_CHUNKED_HEADER);
         }
 
         try (InputStream inputStream = req.content().inputStream();
@@ -339,17 +342,13 @@ class ClientRequestImplTest {
                     outputStream.write(chunk);
                 }
             }
-        } catch (Exception e) {
-            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send("failed: " + e.getMessage());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
     private static Http1ClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
-        Http1Client client = WebClient.builder()
-                .build();
-        Http1ClientRequest request = client.method(method)
-                .uri("http://localhost:" + port + uriPath);
-        return request;
+        return client.method(method).uri("http://localhost:" + port + uriPath);
     }
 
     private static Http1ClientResponse getHttp1ClientResponseFromOutputStream(Http1ClientRequest request,

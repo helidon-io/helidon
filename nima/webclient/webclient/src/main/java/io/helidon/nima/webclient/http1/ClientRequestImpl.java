@@ -219,7 +219,7 @@ class ClientRequestImpl implements Http1ClientRequest {
 
         headers.setIfAbsent(Header.create(Header.HOST, uri.authority()));
 
-        ClientConnectionOutputStream cos = new ClientConnectionOutputStream(writer, reader, headers, writeBuffer,
+        ClientConnectionOutputStream cos = new ClientConnectionOutputStream(writer, reader, writeBuffer, headers,
                                                                             maxStatusLineLength, sendExpect100Continue);
 
         try {
@@ -385,21 +385,20 @@ class ClientRequestImpl implements Http1ClientRequest {
         private boolean chunked;
         private WritableHeaders<?> headers;
         private BufferData firstPacket;
-        private BufferData writeBuffer;
+        private BufferData prologue;
         private int maxStatusLineLength;
         private boolean sendExpect100Continue;
         private long bytesWritten;
         private long contentLength;
         private boolean noData = true;
-
         private boolean closed;
 
-        private ClientConnectionOutputStream(DataWriter writer, DataReader reader, WritableHeaders<?> headers,
-                                             BufferData writeBuffer, int maxStatusLineLength, boolean sendExpect100Continue) {
+        private ClientConnectionOutputStream(DataWriter writer, DataReader reader, BufferData prologue,
+                                             WritableHeaders<?> headers, int maxStatusLineLength, boolean sendExpect100Continue) {
             this.writer = writer;
             this.reader = reader;
             this.headers = headers;
-            this.writeBuffer = writeBuffer;
+            this.prologue = prologue;
             this.maxStatusLineLength = maxStatusLineLength;
             this.sendExpect100Continue = sendExpect100Continue;
             this.contentLength = headers.contentLength().orElse(-1);
@@ -434,7 +433,7 @@ class ClientRequestImpl implements Http1ClientRequest {
             if (chunked) {
                 if (noData) {
                     noData = false;
-                    sendHeader();
+                    sendPrologueAndHeader();
                 }
                 writeChunked(data);
             }
@@ -458,7 +457,7 @@ class ClientRequestImpl implements Http1ClientRequest {
                     contentLength = 0;
                 }
                 if (noData || firstPacket != null) {
-                    sendHeader();
+                    sendPrologueAndHeader();
                 }
                 if (firstPacket != null) {
                     writeContent(firstPacket);
@@ -497,7 +496,7 @@ class ClientRequestImpl implements Http1ClientRequest {
             writer.writeNow(buffer);
         }
 
-        private void sendHeader() {
+        private void sendPrologueAndHeader() {
             boolean expects100Continue = sendExpect100Continue && chunked && !noData;
             if (expects100Continue) {
                 headers.add(HeaderValues.EXPECT_100);
@@ -516,9 +515,12 @@ class ClientRequestImpl implements Http1ClientRequest {
                 headers.remove(Header.CONTENT_LENGTH);
             }
 
+            writer.writeNow(prologue);
+
             // todo validate request headers
-            writeHeaders(headers, writeBuffer);
-            writer.writeNow(writeBuffer);
+            BufferData headerBuffer = BufferData.growing(128);
+            writeHeaders(headers, headerBuffer);
+            writer.writeNow(headerBuffer);
 
             if (expects100Continue) {
                 Http.Status responseStatus = Http1StatusParser.readStatus(reader, maxStatusLineLength);
@@ -532,7 +534,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         }
 
         private void sendFirstChunk() {
-            sendHeader();
+            sendPrologueAndHeader();
             writeChunked(firstPacket);
             firstPacket = null;
         }

@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,7 +52,8 @@ class ClientRequestImplTest {
     private static final Http.HeaderValue REQ_EXPECT_100_HEADER_NAME = Http.Header.createCached(
             Http.Header.create("X-Req-Expect100"), "true");
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
-    private final static long NO_CONTENT_LENGTH = -1L;
+    private static final long NO_CONTENT_LENGTH = -1L;
+    private static final Http1Client client = WebClient.builder().build();
     private static final int dummyPort = 1234;
 
     @Test
@@ -161,7 +163,6 @@ class ClientRequestImplTest {
     // validates that HEAD is not allowed with entity payload
     @Test
     void testHeadMethod() {
-        Http1Client client = WebClient.builder().build();
         String url = "http://localhost:" + dummyPort + "/test";
         ClientConnection http1ClientConnection = new FakeHttp1ClientConnection();
         assertThrows(IllegalArgumentException.class, () ->
@@ -193,16 +194,19 @@ class ClientRequestImplTest {
         if (connection != null) {
             request.connection(connection);
         }
-        final IllegalStateException ie =
-                assertThrows(IllegalStateException.class, () -> request.submit(requestEntity));
+        IllegalStateException ie = assertThrows(IllegalStateException.class, () -> request.submit(requestEntity));
         if (errorMessage != null) {
-            assertThat(ie.getMessage().contains(errorMessage), is(true));
+            assertThat(ie.getMessage(), containsString(errorMessage));
         }
     }
 
     private void validateChunkTransfer(Http1ClientResponse response, boolean chunked, long contentLength, String entity) {
         assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(Long.parseLong(response.headers().get(REQ_CONTENT_LENGTH_HEADER_NAME).value()), is(contentLength));
+        if (contentLength == NO_CONTENT_LENGTH) {
+            assertThat(response.headers(), noHeader(REQ_CONTENT_LENGTH_HEADER_NAME));
+        } else {
+            assertThat(response.headers(), hasHeader(REQ_CONTENT_LENGTH_HEADER_NAME, String.valueOf(contentLength)));
+        }
         if (chunked) {
             assertThat(response.headers(), hasHeader(REQ_CHUNKED_HEADER));
         } else {
@@ -213,11 +217,7 @@ class ClientRequestImplTest {
     }
 
     private static Http1ClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
-        Http1Client client = WebClient.builder()
-                .build();
-        Http1ClientRequest request = client.method(method)
-                .uri("http://localhost:" + dummyPort + uriPath);
-        return request;
+        return client.method(method).uri("http://localhost:" + dummyPort + uriPath);
     }
 
     private static Http1ClientResponse getHttp1ClientResponseFromOutputStream(Http1ClientRequest request,
@@ -384,11 +384,13 @@ class ClientRequestImplTest {
 
             // Send headers that can be validated if Expect-100-Continue, Content_Length, and Chunked request headers exist
             if (reqHeaders.contains(Http.HeaderValues.EXPECT_100)) {
-                resHeaders.add(REQ_EXPECT_100_HEADER_NAME);
+                resHeaders.set(REQ_EXPECT_100_HEADER_NAME);
             }
-            resHeaders.add(REQ_CONTENT_LENGTH_HEADER_NAME, String.valueOf(reqHeaders.contentLength().orElse(NO_CONTENT_LENGTH)));
+            if (reqHeaders.contains(Http.Header.CONTENT_LENGTH)) {
+                resHeaders.set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.Header.CONTENT_LENGTH).value());
+            }
             if (reqHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-                resHeaders.add(REQ_CHUNKED_HEADER);
+                resHeaders.set(REQ_CHUNKED_HEADER);
             }
 
             // Send OK status response
