@@ -20,6 +20,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 
@@ -95,4 +96,15 @@ public interface HttpRequest {
      * @return id of this request on a connection
      */
     int id();
+
+
+    /**
+     * URI as requested by the originating client (to the best of our ability to compute it).
+     * By default, the URI is from the {@link Http.Header#HOST} header on the current request.
+     * If requested URI discovery is enabled by configuration, additional headers (such as {@link Http.Header#FORWARDED})
+     * may be used to derive the originally-requested URI.
+     *
+     * @return uri info that can be used for redirects
+     */
+    UriInfo requestedUri();
 }

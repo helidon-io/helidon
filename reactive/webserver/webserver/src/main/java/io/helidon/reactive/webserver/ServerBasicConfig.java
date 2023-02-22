@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.common.context.Context;
 import io.helidon.tracing.Tracer;
 
@@ -39,6 +40,7 @@ class ServerBasicConfig implements ServerConfiguration {
     private final Optional<Transport> transport;
     private final Context context;
     private final boolean printFeatureDetails;
+    private final RequestedUriDiscoveryContext requestedUriDiscoveryContext;
 
     /**
      * Creates new instance.
@@ -54,6 +56,7 @@ class ServerBasicConfig implements ServerConfiguration {
         this.transport = builder.transport();
         this.context = builder.context();
         this.printFeatureDetails = builder.printFeatureDetails();
+        this.requestedUriDiscoveryContext = socketConfig.requestedUriDiscoveryContext();
 
         HashMap<String, SocketConfiguration> map = new HashMap<>(builder.sockets());
         map.put(WebServer.DEFAULT_SOCKET_NAME, this.socketConfig);
@@ -160,7 +163,10 @@ class ServerBasicConfig implements ServerConfiguration {
         return socketConfig.enableCompression();
     }
 
-
+    @Override
+    public RequestedUriDiscoveryContext requestedUriDiscoveryContext() {
+        return requestedUriDiscoveryContext;
+    }
 
     static class SocketConfig implements SocketConfiguration {
 
@@ -183,6 +189,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final BackpressureStrategy backpressureStrategy;
         private final boolean continueImmediately;
         private final int maxUpgradeContentLength;
+        private final RequestedUriDiscoveryContext requestedUriDiscoveryContext;
 
         /**
          * Creates new instance.
@@ -208,6 +215,7 @@ class ServerBasicConfig implements ServerConfiguration {
             this.maxUpgradeContentLength = builder.maxUpgradeContentLength();
             WebServerTls webServerTls = builder.tlsConfig();
             this.webServerTls = webServerTls.enabled() ? webServerTls : null;
+            this.requestedUriDiscoveryContext = builder.requestedUriDiscoveryContextBuilder().build();
         }
 
         @Override
@@ -303,6 +311,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public boolean continueImmediately() {
             return continueImmediately;
+        }
+
+        @Override
+        public RequestedUriDiscoveryContext requestedUriDiscoveryContext() {
+            return requestedUriDiscoveryContext;
         }
     }
 }

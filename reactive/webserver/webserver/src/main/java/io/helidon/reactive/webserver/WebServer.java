@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.reactive.Single;
@@ -293,6 +294,7 @@ public interface WebServer {
         private ServerConfiguration explicitConfig;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
+        private RequestedUriDiscoveryContext.Builder discoveryContextBuilderForDefaultSocket;
 
         private Builder() {
             readerContext = MessageBodyReaderContext.create(DEFAULT_MEDIA_SUPPORT.readerContext());
@@ -313,6 +315,9 @@ public interface WebServer {
                 routingBuilders.put(WebServer.DEFAULT_SOCKET_NAME, RouterImpl.builder());
             }
             if (explicitConfig == null) {
+                if (discoveryContextBuilderForDefaultSocket != null) {
+                    configurationBuilder.requestedUriDiscoveryContextBuilder(discoveryContextBuilderForDefaultSocket);
+                }
                 explicitConfig = configurationBuilder.build();
             }
 
@@ -810,6 +815,23 @@ public interface WebServer {
                 directHandlers.addHandler(type, handler);
             }
 
+            return this;
+        }
+
+        /**
+         * Sets the requested URI discovery context for use by the web server's default socket.
+         *
+         * @param discoveryContextBuilder {@link io.helidon.common.configurable.RequestedUriDiscoveryContext.Builder} to use
+         * @return updated builder
+         */
+
+        // Would be nice to use the following annotation so the generated doc description explains that this applies to the
+        // server's default socket, but then the doc generator creates two entries: one from this method and one from the
+        // interface declaration of the method.
+        @ConfiguredOption(key = RequestedUriDiscoveryContext.Builder.REQUESTED_URI_DISCOVERY_CONFIG_KEY,
+                          type = RequestedUriDiscoveryContext.class)
+        public Builder requestedUriDiscoveryContextBuilder(RequestedUriDiscoveryContext.Builder discoveryContextBuilder) {
+            this.discoveryContextBuilderForDefaultSocket = discoveryContextBuilder;
             return this;
         }
     }

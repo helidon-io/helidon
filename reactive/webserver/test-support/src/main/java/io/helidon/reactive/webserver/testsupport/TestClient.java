@@ -43,6 +43,8 @@ import io.helidon.reactive.webserver.BareRequest;
 import io.helidon.reactive.webserver.BareResponse;
 import io.helidon.reactive.webserver.RequestHeaders;
 import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.SocketConfiguration;
+import io.helidon.reactive.webserver.WebServer;
 
 /**
  * Client API designed to create request directly on {@link Routing} without a network layer.
@@ -147,7 +149,8 @@ public class TestClient {
                       TestRequestHeaders headers,
                       Flow.Publisher<DataChunk> publisher) throws InterruptedException, TimeoutException {
         TestWebServer webServer = new TestWebServer(mediaContext);
-        TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher, webServer);
+        TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher, webServer,
+                                                  webServer.configuration().sockets().get(WebServer.DEFAULT_SOCKET_NAME));
         TestBareResponse res = new TestBareResponse(webServer);
         Contexts.runInContext(Context.create(webServer.context()), () -> routing.route(req, res));
         try {
@@ -169,13 +172,16 @@ public class TestClient {
         private final RequestHeaders headers;
         private final Flow.Publisher<DataChunk> publisher;
         private final TestWebServer webServer;
+        private final SocketConfiguration socketConfiguration;
+
 
         TestBareRequest(Http.Method method,
                         Http.Version version,
                         URI path,
                         TestRequestHeaders headers,
                         Flow.Publisher<DataChunk> publisher,
-                        TestWebServer webServer) {
+                        TestWebServer webServer,
+                        SocketConfiguration socketConfiguration) {
 
             this.webServer = Objects.requireNonNull(webServer, "webServer 'webServer' is null!");
             this.method = Objects.requireNonNull(method, "Parameter 'method' is null!");
@@ -187,6 +193,8 @@ public class TestClient {
             } else {
                 this.publisher = publisher;
             }
+            this.socketConfiguration = Objects.requireNonNull(socketConfiguration,
+                                                              "Parameter 'socketConfiguration' is null!");
         }
 
         @Override
@@ -252,6 +260,11 @@ public class TestClient {
         @Override
         public Single<Void> closeConnection() {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SocketConfiguration socketConfiguration() {
+            return socketConfiguration;
         }
     }
 

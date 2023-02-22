@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
@@ -816,6 +817,13 @@ public interface ServerConfiguration extends SocketConfiguration {
         @Override
         public Builder enableCompression(boolean value) {
             defaultSocketBuilder().enableCompression(value);
+            return this;
+        }
+
+        @Override
+        public Builder requestedUriDiscoveryContextBuilder(
+                RequestedUriDiscoveryContext.Builder requestedUriDiscoveryContextBuilder) {
+            defaultSocketBuilder().requestedUriDiscoveryContextBuilder(requestedUriDiscoveryContextBuilder);
             return this;
         }
     }

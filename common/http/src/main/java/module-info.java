@@ -24,6 +24,7 @@ module io.helidon.common.http {
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.media.type;
     requires transitive io.helidon.common.uri;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.common.http;
 }

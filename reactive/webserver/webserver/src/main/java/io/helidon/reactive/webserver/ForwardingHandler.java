@@ -352,6 +352,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             bareRequest = new BareRequestImpl(request,
                                               requestContextRef.publisher(),
                                               webServer,
+                                              soConfig,
                                               ctx,
                                               sslEngine,
                                               requestId);
