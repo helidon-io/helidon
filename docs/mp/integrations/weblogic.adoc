@@ -1,0 +1,79 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Oracle WebLogic Server Integration
+:description: Helidon WebLogic Integration
+:keywords: wls, weblogic
+:feature-name: WLS Integration
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Examples, Examples>>
+- <<References, References>>
+
+== Overview
+
+
+== Maven Coordinates
+
+
+== Usage
+
+Enable integration between WebLogic and Helidon in the following areas:
+
+
+=== JMS
+
+JMS client running in Helidon publishing messages to a WLS queue. Certify Helidon MP support running a WLS JMS client.
+
+=== Transaction Coordination between WLS and Helidon
+
+To support transactions across WLS and Helidon using MicroTx.  In this scenario, MicroTx would coordinate the transactions spanning WLS and Helidon and services exposed as REST APIs via SALT.  
+
+=== REST
+Enable bidirectional REST calls between Helidon and WebLogic
+
+
+=== Web Services
+Helidon calling an existing WebLogic web service 
+
+=== Security Integration
+NOTES FROM PPT: 
+
+Tomas will provide a description of simple support for SSO between WebLogic and Helidon
+In OCI, we might be able to use IDCS format using the API Gateway
+Research what would need to be used to support this integration on premise
+
+
+=== WebLogic support OIDC
+
+
+== Examples
+
+
+== References
+
+https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wsget/jax-ws-client.html[Developing WebLogic Web Service Clients]
+
+
