@@ -135,7 +135,7 @@ Compile-time dependency:
 * If one or more activators are created at compile-time, then a <i>Pico$$Module</i> is also created to aggregate the services for the given module. Below is an example if a <i>picoModule</i> from [examples/logger](./examples/logger). At initialization time of Pico, all <i>Module</i>s will be located using the ServiceLocator and each service will be binded into the Pico service registry.
 
 ```java
-@Generated({"generator=io.helidon.pico.tools.creator.impl.DefaultActivatorCreator", "ver=1"})
+@Generated(value = "io.helidon.pico.tools.creator.impl.DefaultActivatorCreator", comments = "version = 1")
 @Singleton @Named(Pico$$Module.NAME)
 public class Pico$$Module implements Module {
     static final String NAME = "pico.examples.logger.common";
@@ -160,6 +160,64 @@ public class Pico$$Module implements Module {
         binder.bind(io.helidon.pico.examples.logger.common.LoggerProvider$$picoActivator.INSTANCE);
         binder.bind(io.helidon.pico.examples.logger.common.SmsCommunicationMode$$picoActivator.INSTANCE);
     }
+}
+```
+
+And just randomly taking one of the generated <i>Activators</i>:
+```java
+@Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+public class SmsCommunicationMode$$Pico$$Activator
+            extends io.helidon.pico.services.AbstractServiceProvider<SmsCommunicationMode> {
+    private static final DefaultServiceInfo serviceInfo =
+        DefaultServiceInfo.builder()
+            .serviceTypeName(io.helidon.examples.pico.logger.common.SmsCommunicationMode.class.getName())
+            .addExternalContractsImplemented(io.helidon.examples.pico.logger.common.CommunicationMode.class.getName())
+            .activatorTypeName(SmsCommunicationMode$$Pico$$Activator.class.getName())
+            .addScopeTypeName(jakarta.inject.Singleton.class.getName())
+            .addQualifier(io.helidon.pico.DefaultQualifierAndValue.create(jakarta.inject.Named.class, "sms"))
+            .build();
+
+    /**
+     * The global singleton instance for this service provider activator.
+     */
+    public static final SmsCommunicationMode$$Pico$$Activator INSTANCE = new SmsCommunicationMode$$Pico$$Activator();
+
+    /**
+     * Default activator constructor.
+     */
+    protected SmsCommunicationMode$$Pico$$Activator() {
+        serviceInfo(serviceInfo);
+    }
+
+    /**
+     * The service type of the managed service.
+     *
+     * @return the service type of the managed service
+     */
+    public Class<?> serviceType() {
+        return io.helidon.examples.pico.logger.common.SmsCommunicationMode.class;
+    }
+
+    @Override
+    public DependenciesInfo dependencies() {
+        DependenciesInfo deps = Dependencies.builder(io.helidon.examples.pico.logger.common.SmsCommunicationMode.class.getName())
+                .add("logger", java.util.logging.Logger.class, ElementKind.FIELD, Access.PACKAGE_PRIVATE)
+                .build();
+        return Dependencies.combine(super.dependencies(), deps);
+    }
+
+    @Override
+    protected SmsCommunicationMode createServiceProvider(Map<String, Object> deps) { 
+        return new io.helidon.examples.pico.logger.common.SmsCommunicationMode();
+    }
+
+    @Override
+    protected void doInjectingFields(Object t, Map<String, Object> deps, Set<String> injections, String forServiceType) {
+        super.doInjectingFields(t, deps, injections, forServiceType);
+        SmsCommunicationMode target = (SmsCommunicationMode) t;
+        target.logger = (java.util.logging.Logger) get(deps, "io.helidon.examples.pico.logger.common.logger");
+    }
+
 }
 ```
 
