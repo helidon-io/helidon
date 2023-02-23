@@ -246,7 +246,7 @@ allRequests_total 0.0
         assertThat(response.getStatus(), is(200));
     }]]></value>
                                 </list>
-                                <list key="readme-sections" if="!(${metrics.provider} == 'microprofile')">
+                                <list key="readme-sections" if="!(${metrics.provider} == 'microprofile') &amp;&amp; ${flavor} != 'nima'">
                                     <value><![CDATA[
 ## Try metrics
 
@@ -309,7 +309,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
         assertThat(response.getStatus(), is(200));
     }]]></value>
                                     </list>
-                                <list key="readme-sections">
+                                <list key="readme-sections" if="${flavor} != 'nima'">
                                     <value><![CDATA[
 ## Try health
 

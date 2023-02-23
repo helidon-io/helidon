@@ -32,6 +32,11 @@
                         description="Sample Helidon Nima project that includes multiple REST operations">
                     <exec src="quickstart/quickstart-nima.xml"/>
                 </option>
+                <option value="custom"
+                        name="Custom"
+                        description="Custom Helidon Nima project">
+                    <exec src="custom/custom-nima.xml"/>
+                </option>
             </enum>
         </inputs>
     </step>
