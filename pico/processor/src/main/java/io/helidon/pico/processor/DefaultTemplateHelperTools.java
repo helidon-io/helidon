@@ -132,7 +132,7 @@ class DefaultTemplateHelperTools implements TemplateHelperTools {
         substitutions.put("runLevel", req.serviceInfo().realizedRunLevel());
         substitutions.put("elementAccess", req.targetElementAccess());
         substitutions.put("elementIsStatic", req.isElementStatic());
-        substitutions.put("elementKind", req.targetElement().elementKind());
+        substitutions.put("elementKind", req.targetElement().elementTypeKind());
         substitutions.put("elementName", req.targetElement().elementName());
         substitutions.put("elementAnnotations", req.targetElement().annotations());
         substitutions.put("elementEnclosingTypeName", req.targetElement().typeName());

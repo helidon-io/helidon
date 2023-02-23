@@ -112,7 +112,7 @@ public class BodyContext {
         assert (allTypeInfos.size() == allAttributeNames.size());
         this.hasParent = (parentTypeName.get() != null && hasBuilder(typeInfo.superTypeInfo(), builderTriggerAnnotation));
         this.hasAnyBuilderClashingMethodNames = determineIfHasAnyClashingMethodNames();
-        this.isExtendingAnAbstractClass = typeInfo.typeKind().equals(TypeInfo.TYPE_CLASS);
+        this.isExtendingAnAbstractClass = typeInfo.typeKind().equals(TypeInfo.KIND_CLASS);
         this.ctorBuilderAcceptTypeName = (hasParent)
                 ? typeInfo.typeName()
                 : (Objects.nonNull(parentAnnotationType.get()) && typeInfo.elementInfo().isEmpty()
@@ -127,7 +127,7 @@ public class BodyContext {
                 searchForBuilderAnnotation("interceptorCreateMethod", builderTriggerAnnotation, typeInfo);
         this.interceptorCreateMethod = (interceptorCreateMethod == null || interceptorCreateMethod.isEmpty())
                 ? null : interceptorCreateMethod;
-        this.publicOrPackagePrivateDecl = (typeInfo.typeKind().equals(TypeInfo.TYPE_INTERFACE)
+        this.publicOrPackagePrivateDecl = (typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)
                                                    || typeInfo.modifierNames().isEmpty()
                                                    || typeInfo.modifierNames().contains(TypeInfo.MODIFIER_PUBLIC))
                                                         ? "public " : "";
@@ -576,10 +576,10 @@ public class BodyContext {
             }
 
             if (Objects.isNull(ctx.parentTypeName.get())
-                    && superTypeInfo.typeKind().equals(DefaultBuilderCreatorProvider.INTERFACE)) {
+                    && superTypeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
                 ctx.parentTypeName.set(superTypeInfo.typeName());
             } else if (Objects.isNull(ctx.parentAnnotationType.get())
-                    && superTypeInfo.typeKind().equals(TypeInfo.TYPE_ANNOTATION)) {
+                    && superTypeInfo.typeKind().equals(TypeInfo.KIND_ANNOTATION)) {
                 ctx.parentAnnotationType.set(superTypeInfo.typeName());
             }
         }

@@ -25,15 +25,6 @@ import java.util.Set;
  */
 public interface TypedElementName {
     /**
-     * Field element kind.
-     */
-    String KIND_FIELD = "FIELD";
-    /**
-     * Parameter element kind.
-     */
-    String KIND_PARAMETER = "PARAMETER";
-
-    /**
      * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
      * the method.
      *
@@ -52,8 +43,9 @@ public interface TypedElementName {
      * The kind of element (e.g., method, field, etc).
      *
      * @return the element kind
+     * @see io.helidon.common.types.TypeInfo
      */
-    String elementKind();
+    String elementTypeKind();
 
     /**
      * The default value assigned to the element, represented as a string.
@@ -88,6 +80,7 @@ public interface TypedElementName {
      * Element modifiers.
      *
      * @return element modifiers
+     * @see io.helidon.common.types.TypeInfo
      */
     Set<String> modifierNames();
 

@@ -57,26 +57,66 @@ public interface TypeInfo {
      */
     String MODIFIER_FINAL = "FINAL";
 
+
     /**
-     * Enum class.
+     * Field element type kind.
+     * See javax.lang.model.element.ElementKind#FIELD
      */
-    String TYPE_ENUM = "ENUM";
+    String KIND_FIELD = "FIELD";
+
     /**
-     * Class, unless more specific type is more relevant, such as {@link #TYPE_ENUM}.
+     * Method element type kind.
+     * See javax.lang.model.element.ElementKind#METHOD
      */
-    String TYPE_CLASS = "CLASS";
+    String KIND_METHOD = "METHOD";
+
     /**
-     * Annotation interface.
+     * Constructor element type kind.
+     * See javax.lang.model.element.ElementKind#CONSTRUCTOR
      */
-    String TYPE_ANNOTATION = "ANNOTATION_TYPE";
+    String KIND_CONSTRUCTOR = "CONSTRUCTOR";
+
     /**
-     * Interface.
+     * Parameter element type kind.
+     * See javax.lang.model.element.ElementKind#PARAMETER
      */
-    String TYPE_INTERFACE = "INTERFACE";
+    String KIND_PARAMETER = "PARAMETER";
+
     /**
-     * Record type (sing Java 16).
+     * Interface element type kind.
+     * See javax.lang.model.element.ElementKind#INTERFACE
      */
-    String TYPE_RECORD = "RECORD";
+    String KIND_INTERFACE = "INTERFACE";
+
+    /**
+     * Interface element type kind.
+     * See javax.lang.model.element.ElementKind#CLASS
+     */
+    String KIND_CLASS = "CLASS";
+
+    /**
+     * Enum element type kind.
+     * See javax.lang.model.element.ElementKind#ENUM
+     */
+    String KIND_ENUM = "ENUM";
+
+    /**
+     * Annotation element type kind.
+     * See javax.lang.model.element.ElementKind#ANNOTATION_TYPE
+     */
+    String KIND_ANNOTATION = "ANNOTATION_TYPE";
+
+    /**
+     * Package element type kind.
+     * See javax.lang.model.element.ElementKind#PACKAGE
+     */
+    String KIND_PACKAGE = "PACKAGE";
+
+    /**
+     * Record element type kind (since Java 16).
+     * See javax.lang.model.element.ElementKind#RECORD
+     */
+    String KIND_RECORD = "RECORD";
 
     /**
      * The type name.
@@ -88,8 +128,8 @@ public interface TypeInfo {
     /**
      * The type element kind.
      *
-     * @return the type element kind (e.g., "{@value #TYPE_INTERFACE}", "{@value #TYPE_ANNOTATION}", etc.)
-     * @see #TYPE_CLASS and other constants on this class prefixed with {@code TYPE}
+     * @return the type element kind (e.g., "{@value #KIND_INTERFACE}", "{@value #KIND_ANNOTATION}", etc.)
+     * @see #KIND_CLASS and other constants on this class prefixed with {@code TYPE}
      */
     String typeKind();
 

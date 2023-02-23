@@ -77,7 +77,7 @@ public class HttpMethodCreator implements CustomAnnotationTemplateCreator {
     public Optional<CustomAnnotationTemplateResponse> create(CustomAnnotationTemplateRequest request) {
         TypeInfo enclosingType = request.enclosingTypeInfo();
 
-        if (!ElementKind.METHOD.name().equals(request.targetElement().elementKind())) {
+        if (!ElementKind.METHOD.name().equals(request.targetElement().elementTypeKind())) {
             // we are only interested in methods, not in classes
             return Optional.empty();
         }

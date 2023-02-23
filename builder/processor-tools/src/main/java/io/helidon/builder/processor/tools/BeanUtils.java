@@ -21,6 +21,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.helidon.common.types.TypeInfo.KIND_CLASS;
+import static io.helidon.common.types.TypeInfo.KIND_ENUM;
+import static io.helidon.common.types.TypeInfo.KIND_INTERFACE;
+import static io.helidon.common.types.TypeInfo.KIND_PACKAGE;
+import static io.helidon.common.types.TypeInfo.KIND_RECORD;
+import static io.helidon.common.types.TypeInfo.MODIFIER_ABSTRACT;
+import static io.helidon.common.types.TypeInfo.MODIFIER_FINAL;
+import static io.helidon.common.types.TypeInfo.MODIFIER_PRIVATE;
+import static io.helidon.common.types.TypeInfo.MODIFIER_PROTECTED;
+import static io.helidon.common.types.TypeInfo.MODIFIER_PUBLIC;
+import static io.helidon.common.types.TypeInfo.MODIFIER_STATIC;
+
 /**
  * Provides functions to aid with bean naming and parsing.
  */
@@ -110,10 +122,11 @@ public class BeanUtils {
      * @return true if it appears to be a reserved word
      */
     public static boolean isReservedWord(String word) {
-        word = word.toLowerCase();
-        return word.equals("class") || word.equals("interface") || word.equals("package") || word.equals("static")
-                || word.equals("final") || word.equals("public") || word.equals("protected") || word.equals("private")
-                || word.equals("abstract");
+        word = word.toUpperCase();
+        return word.equals(KIND_CLASS) || word.equals(KIND_INTERFACE) || word.equals(KIND_PACKAGE) || word.equals(KIND_ENUM)
+                || word.equals(MODIFIER_STATIC) || word.equals(MODIFIER_FINAL) || word.equals(MODIFIER_PUBLIC)
+                || word.equals(MODIFIER_PROTECTED) || word.equals(MODIFIER_PRIVATE) || word.equalsIgnoreCase(KIND_RECORD)
+                || word.equals(MODIFIER_ABSTRACT);
     }
 
     private static boolean validMethod(String name,

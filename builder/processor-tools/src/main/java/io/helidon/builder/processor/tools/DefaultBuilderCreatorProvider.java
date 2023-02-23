@@ -58,7 +58,6 @@ import static io.helidon.builder.processor.tools.BodyContext.toBeanAttributeName
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 1)   // allow all other creators to take precedence over us...
 public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
-    static final String INTERFACE = "INTERFACE";
     static final boolean DEFAULT_INCLUDE_META_ATTRIBUTES = true;
     static final boolean DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES = true;
     static final String DEFAULT_IMPL_PREFIX = Builder.DEFAULT_IMPL_PREFIX;

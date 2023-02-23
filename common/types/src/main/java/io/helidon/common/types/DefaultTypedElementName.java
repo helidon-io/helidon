@@ -65,7 +65,7 @@ public class DefaultTypedElementName implements TypedElementName {
     }
 
     @Override
-    public String elementKind() {
+    public String elementTypeKind() {
         return elementKind;
     }
 
@@ -96,7 +96,7 @@ public class DefaultTypedElementName implements TypedElementName {
 
     @Override
     public int hashCode() {
-        return Objects.hash(typeName(), elementName(), elementKind(), annotations());
+        return Objects.hash(typeName(), elementName(), elementTypeKind(), annotations());
     }
 
     @Override
@@ -108,7 +108,7 @@ public class DefaultTypedElementName implements TypedElementName {
         TypedElementName other = (TypedElementName) another;
         return Objects.equals(typeName(), other.typeName())
                 && Objects.equals(elementName(), other.elementName())
-                && Objects.equals(elementKind(), other.elementKind())
+                && Objects.equals(elementTypeKind(), other.elementTypeKind())
                 && Objects.equals(annotations(), other.annotations());
     }
 

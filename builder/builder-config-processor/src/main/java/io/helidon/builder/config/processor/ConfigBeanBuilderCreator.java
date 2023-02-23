@@ -88,7 +88,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
         assertNoAnnotation(jakarta.inject.Singleton.class.getName(), typeInfo);
         assertNoAnnotation("javax.inject.Singleton", typeInfo);
 
-        if (!typeInfo.typeKind().equals(TypeInfo.TYPE_INTERFACE)) {
+        if (!typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
             throw new IllegalStateException("@" + builderAnnotation.typeName().className()
                                                     + " is only supported on interface types: " + typeInfo.typeName());
         }

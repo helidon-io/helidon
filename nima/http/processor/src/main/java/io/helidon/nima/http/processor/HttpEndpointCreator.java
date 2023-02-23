@@ -50,7 +50,7 @@ public class HttpEndpointCreator implements CustomAnnotationTemplateCreator {
     @Override
     public Optional<CustomAnnotationTemplateResponse> create(CustomAnnotationTemplateRequest request) {
         TypeInfo enclosingType = request.enclosingTypeInfo();
-        if (!enclosingType.typeKind().equals(TypeInfo.TYPE_CLASS)) {
+        if (!enclosingType.typeKind().equals(TypeInfo.KIND_CLASS)) {
             // we are only interested in classes, not in methods
             return Optional.empty();
         }
