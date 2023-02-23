@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,14 +18,20 @@
 
 ifndef::rootdir[:rootdir: {docdir}/../../..]
 
-=== HTTP Signatures Provider
+== HTTP Signatures Provider [[Signatures-Provider]]
 :description: Helidon Security HTTP Signatures Provider
 :keywords: helidon, security
 :feature-name: HTTP Signatures Security Provider
 
-Support for HTTP Signatures.
+* <<Signatures-Provider-Setup, Setup>>
+* <<Signatures-Provider-Overview, Overview>>
+* <<Signatures-Provider-Example, Example Code>>
+* <<Signatures-Provider-Basics, Signature Basics>>
+* <<Signatures-Provider-HDIW, How Does It Work?>>
 
-==== Setup
+Support for HTTP Signatures
+
+=== Setup [[Signatures-Provider-Setup]]
 
 [source,xml]
 .Maven dependency
@@ -36,12 +42,12 @@ Support for HTTP Signatures.
 </dependency>
 ----
 
-==== Overview
+=== Overview [[Signatures-Provider-Overview]]
 
 include::{rootdir}/config/io_helidon_security_providers_httpsign_HttpSignProvider.adoc[leveloffset=+2,tag=config]
 
 
-==== Example code
+=== Example Code [[Signatures-Provider-Example]]
 
 See the link:{helidon-github-tree-url}/master/examples/security/webserver-signatures[example] on GitHub.
 
@@ -84,7 +90,7 @@ security:
                   key.alias: "myPrivateKey"
 ----
 
-==== Signature basics
+=== Signature Basics [[Signatures-Provider-Basics]]
 
 * standard: based on https://tools.ietf.org/html/draft-cavage-http-signatures-03
 * key-id: an arbitrary string used to locate signature configuration - when a
@@ -92,7 +98,7 @@ request is received the provider locates validation configuration based on this
 id (e.g. HMAC shared secret or RSA public key). Commonly used meanings are: key
 fingerprint (RSA); API Key
 
-==== How does it work?
+==== How Does It Work? [[Signatures-Provider-HDIW]]
 
 *Inbound Signatures*
 We act as a server and another party is calling us with a signed HTTP request.

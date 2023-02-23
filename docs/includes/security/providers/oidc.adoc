@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ ifndef::rootdir[:rootdir: {docdir}/../../..]
 
 include::{rootdir}/config/io_helidon_security_providers_oidc_OidcProvider.adoc[leveloffset=+2,tag=config]
 
-=== Example code
+=== Example Code [[OIDC-Provider-Example]]
 See the link:{helidon-github-tree-url}/examples/security/idcs-login[example] on GitHub.
 
 [source,yaml]
@@ -51,7 +51,7 @@ security:
             header: "X-Internal-Auth"
 ----
 
-=== How does it work?
+=== How Does It Work? [[OIDC-Provider-HDIW]]
 At Helidon startup, if OIDC provider is configured, the following will happen:
 
 1. `client-id`, `client-secret`, and `identityUri` are validated - these must provide values
@@ -82,7 +82,7 @@ introspection endpoint depending on configuration
 6. Handling is returned to security to process other security providers
 
 [[cors]]
-=== CORS Settings
+=== CORS Settings 
 As an experimental feature, you can set up cross-origin handling for the redirect and logout endpoints in an optional `cors` block inside the `oidc` configuration.
 
 include::{rootdir}/includes/cors.adoc[tag=basic-cross-origin-config-no-heading-or-intro]

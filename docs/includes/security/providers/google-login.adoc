@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,14 +18,19 @@
 
 ifndef::rootdir[:rootdir: {docdir}/../../..]
 
-=== Google Login Provider
+== Google Login Provider [[Google-Provider]]
 :description: Helidon Security Google Login Provider
 :keywords: helidon, security, google
 :feature-name: Google Login Security Provider
 
+* <<Google-Provider-Setup, Setup>>
+* <<Google-Provider-Overview, Overview>>
+* <<Google-Provider-Example, Example Code>>
+* <<Google-Provider-HDIW, How Does It Work?>>
+
 Authenticates a token from request against Google identity provider
 
-==== Setup
+=== Setup [[Google-Provider-Setup]]
 
 [source,xml]
 .Maven dependency
@@ -36,11 +41,11 @@ Authenticates a token from request against Google identity provider
 </dependency>
 ----
 
-==== Overview
+=== Overview [[Google-Provider-Overview]]
 
 include::{rootdir}/config/io_helidon_security_providers_google_login_GoogleTokenProvider.adoc[leveloffset=+2,tag=config]
 
-==== Example code
+=== Example Code [[Google-Provider-Example]]
 
 See the link:{helidon-github-tree-url}/examples/security/google-login[example] on GitHub.
 
@@ -53,19 +58,19 @@ security:
         client-id: "Google client id"
 ----
 
-==== How does it work?
+=== How Does It Work? [[Google-Provider-HDIW]]
 We expect to receive a token (with sufficient scopes) from the inbound request,
  such as when using the Google login button on a page.
 The page has access to the token in javascript and can send it to backend with
 every request in a header field (`Authorization` with `bearer ` prefix is assumed by default).
 
-Once we receive the token in Helidon, we parse it and:
+After we receive the token in Helidon, we parse it and:
 
 1. Validate if it timed out locally
 2. Return a cached response (see `EvictableCache` with default values)
 3. Otherwise verify using Google API - `GoogleIdTokenVerifier`
 
-We build a subject from the Google token with the following attributes filled (if in token):
+We build a subject from the Google token with the following attributes filled (if present in the token):
 
 - userId
 - email
@@ -76,6 +81,5 @@ We build a subject from the Google token with the following attributes filled (i
 - given_name
 - picture (URL)
 
-*Outbound security*
-The token will be propagated to outbound calls if an outbound target exists
+*Outbound Security*: The token will be propagated to outbound calls if an outbound target exists
 that matches the invoked endpoint (see `outbound` configuration above).

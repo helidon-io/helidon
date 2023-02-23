@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,14 +18,20 @@
 
 ifndef::rootdir[:rootdir: {docdir}/../../..]
 
-=== HTTP Basic Authentication Provider
+== HTTP Basic Authentication Provider [[Basic-Auth-Provider]] 
+
 :description: Helidon Security HTTP Basic Provider
 :keywords: helidon, security, basic
 :feature-name: HTTP Basic Authentication Security Provider
 
+* <<Basic-Auth-Provider-Setup, Setup>>
+* <<Basic-Auth-Provider-Overview, Overview>>
+* <<Basic-Auth-Provider-Example, Example Code>>
+* <<Basic-Auth-Provider-HDIW, How Does It Work?>>
+
 HTTP Basic authentication support
 
-==== Setup
+=== Setup [[Basic-Auth-Provider-Setup]] 
 
 [source,xml]
 .Maven dependency
@@ -36,11 +42,11 @@ HTTP Basic authentication support
 </dependency>
 ----
 
-==== Overview
+=== Overview [[Basic-Auth-Provider-Overview]] 
 
 include::{rootdir}/config/io_helidon_security_providers_httpauth_HttpBasicAuthProvider.adoc[leveloffset=+2,tag=config]
 
-==== Example code
+=== Example Code [[Basic-Auth-Provider-Example]] 
 
 See the link:{helidon-github-tree-url}/master/examples/security/outbound-override[example] on GitHub.
 
@@ -73,10 +79,10 @@ security:
           password: "${CLEAR=password}"
 ----
 
-==== How does it work?
+=== How Does It Work? [[Basic-Auth-Provider-HDIW]] 
 See https://tools.ietf.org/html/rfc7617[].
 
-*Authentication of request*
+*Authentication of Request*
 
 When a request is received without the `Authorization: basic ....` header, a challenge is returned to provide such
 authentication.
@@ -86,7 +92,7 @@ against configured users (and users obtained from custom service if any provided
 
 Subject is created based on the username and roles provided by the user store.
 
-*Identity propagation*
+*Identity Propagation*
 
 When identity propagation is configured, there are several options for identifying username and password to propagate:
 
@@ -100,7 +106,7 @@ Identity is propagated only if:
 1. There is an outbound target configured for the endpoint
 2. Or there is an explicitly configured username/password for the current request (through request property)
 
-*Custom user store*
+*Custom User Store*
 
 Java service loader service `io.helidon.security.providers.httpauth.spi.UserStoreService` can be implemented to provide
  users to the provider, such as when validated against an internal database or LDAP server.
