@@ -493,21 +493,6 @@ public interface RequestedUriDiscoveryContext {
             private record ForwardedDiscovery(String authority, String scheme) {}
             private record XForwardedDiscovery(String scheme, String host, int port, String path) {}
 
-
-            //            @Override
-//            public boolean enabled() {
-//                return enabled;
-//            }
-//
-//            @Override
-//            public List<RequestedUriDiscoveryType> discoveryTypes() {
-//                return discoveryTypes;
-//            }
-//
-//            @Override
-//            public AllowList trustedProxies() {
-//                return trustedProxies;
-//            }
         }
     }
 
