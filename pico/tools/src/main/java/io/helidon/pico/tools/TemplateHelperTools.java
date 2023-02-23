@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 import io.helidon.common.types.TypeName;
 
 /**
- * Tools to assist with {@link CustomAnnotationTemplateCreator}'s.
+ * Tools to assist with {@link io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator}'s.
  */
 public interface TemplateHelperTools {
 

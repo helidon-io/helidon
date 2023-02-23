@@ -42,10 +42,10 @@ import io.helidon.common.types.TypeName;
 import io.helidon.pico.configdriven.ConfiguredBy;
 import io.helidon.pico.configdriven.services.AbstractConfiguredServiceProvider;
 import io.helidon.pico.processor.ServiceAnnotationProcessor;
+import io.helidon.pico.tools.ActivatorCreatorProvider;
 import io.helidon.pico.tools.ServicesToProcess;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeTools;
-import io.helidon.pico.tools.spi.ActivatorCreatorProvider;
 
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;

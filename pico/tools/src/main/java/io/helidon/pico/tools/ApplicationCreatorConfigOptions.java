@@ -23,7 +23,7 @@ import io.helidon.builder.Singular;
 import io.helidon.common.types.TypeName;
 
 /**
- * Configuration directives and options optionally provided to the {@link ApplicationCreator}.
+ * Configuration directives and options optionally provided to the {@link io.helidon.pico.tools.spi.ApplicationCreator}.
  */
 @Builder
 public interface ApplicationCreatorConfigOptions {

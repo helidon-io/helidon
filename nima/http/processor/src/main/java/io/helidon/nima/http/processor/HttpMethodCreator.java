@@ -30,14 +30,14 @@ import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
-import io.helidon.pico.tools.CustomAnnotationTemplateCreator;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.TemplateHelperTools;
+import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
  * Annotation processor that generates a service for each method annotated with an HTTP method annotation.
- * Service provider implementation of a {@link io.helidon.pico.tools.CustomAnnotationTemplateCreator}.
+ * Service provider implementation of a {@link io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator}.
  */
 public class HttpMethodCreator implements CustomAnnotationTemplateCreator {
     private static final String PATH_ANNOTATION = "io.helidon.common.http.Path";

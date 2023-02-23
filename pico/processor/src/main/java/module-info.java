@@ -33,8 +33,8 @@ module io.helidon.pico.processor {
     exports io.helidon.pico.processor;
 
     uses io.helidon.builder.processor.BuilderProcessor;
-    uses io.helidon.pico.tools.InterceptorCreator;
-    uses io.helidon.pico.tools.CustomAnnotationTemplateCreator;
+    uses io.helidon.pico.tools.spi.InterceptorCreator;
+    uses io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
     uses io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 
     provides javax.annotation.processing.Processor with

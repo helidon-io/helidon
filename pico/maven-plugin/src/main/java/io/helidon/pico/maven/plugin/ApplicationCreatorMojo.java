@@ -27,7 +27,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
 /**
- * A mojo wrapper to {@link io.helidon.pico.tools.ApplicationCreator}.
+ * A mojo wrapper to {@link io.helidon.pico.tools.spi.ApplicationCreator}.
  */
 @Mojo(name = "application-create", defaultPhase = LifecyclePhase.COMPILE, threadSafe = true,
       requiresDependencyResolution = ResolutionScope.COMPILE)

@@ -52,6 +52,7 @@ import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.services.Dependencies;
+import io.helidon.pico.tools.spi.ActivatorCreator;
 
 import io.github.classgraph.AnnotationInfo;
 import io.github.classgraph.ClassInfo;

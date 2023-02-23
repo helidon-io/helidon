@@ -19,10 +19,10 @@ package io.helidon.pico.tools;
 import io.helidon.builder.Builder;
 
 /**
- * The response from {@link ExternalModuleCreator}.
+ * The response from {@link io.helidon.pico.tools.spi.ExternalModuleCreator}.
  *
  * The response, if successful, will contribute to the {@link ActivatorCreatorRequest}
- * passed to {@link ActivatorCreator} in any next phase of creation for the external Pico module.
+ * passed to {@link io.helidon.pico.tools.spi.ActivatorCreator} in any next phase of creation for the external Pico module.
  */
 @Builder
 public interface ExternalModuleCreatorResponse extends GeneralCreatorResponse {

@@ -28,9 +28,9 @@ module io.helidon.pico.maven.plugin {
     requires io.helidon.config;
     requires transitive io.helidon.pico.tools;
 
-    uses io.helidon.pico.tools.ActivatorCreator;
-    uses io.helidon.pico.tools.ApplicationCreator;
-    uses io.helidon.pico.tools.ExternalModuleCreator;
+    uses io.helidon.pico.tools.spi.ActivatorCreator;
+    uses io.helidon.pico.tools.spi.ApplicationCreator;
+    uses io.helidon.pico.tools.spi.ExternalModuleCreator;
 
     exports io.helidon.pico.maven.plugin;
 }

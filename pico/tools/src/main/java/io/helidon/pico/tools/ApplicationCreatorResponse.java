@@ -19,9 +19,9 @@ package io.helidon.pico.tools;
 import io.helidon.builder.Builder;
 
 /**
- * Response from {@link ApplicationCreator}.
+ * Response from {@link io.helidon.pico.tools.spi.ApplicationCreator}.
  *
- * @see ApplicationCreator
+ * @see io.helidon.pico.tools.spi.ApplicationCreator
  */
 @Builder
 public interface ApplicationCreatorResponse extends GeneralCreatorResponse {

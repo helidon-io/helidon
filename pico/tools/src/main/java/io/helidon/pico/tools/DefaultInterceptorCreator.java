@@ -54,6 +54,7 @@ import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.InterceptedTrigger;
 import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.spi.Resetable;
+import io.helidon.pico.tools.spi.InterceptorCreator;
 
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.MethodInfo;
@@ -70,7 +71,7 @@ import static io.helidon.pico.tools.TypeTools.toKind;
 import static io.helidon.pico.tools.TypeTools.toObjectTypeName;
 
 /**
- * The default {@link io.helidon.pico.tools.InterceptorCreator} provider in use.
+ * The default {@link io.helidon.pico.tools.spi.InterceptorCreator} provider in use.
  */
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)

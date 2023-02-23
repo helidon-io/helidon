@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tools;
+package io.helidon.pico.tools.spi;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -24,12 +24,13 @@ import javax.annotation.processing.ProcessingEnvironment;
 
 import io.helidon.pico.Contract;
 import io.helidon.pico.ServiceInfoBasics;
+import io.helidon.pico.tools.InterceptionPlan;
 
 /**
  * Provides the strategy used to determine which annotations cause interceptor creation. Only services that are pico-
  * activated may qualify for interception.
  *
- * @see io.helidon.pico.tools.spi.InterceptorCreatorProvider
+ * @see io.helidon.pico.tools.InterceptorCreatorProvider
  */
 @Contract
 public interface InterceptorCreator {

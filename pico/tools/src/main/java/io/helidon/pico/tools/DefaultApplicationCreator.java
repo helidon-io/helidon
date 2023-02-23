@@ -46,6 +46,7 @@ import io.helidon.pico.Services;
 import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.services.DefaultServiceBinder;
 import io.helidon.pico.services.InjectionPlan;
+import io.helidon.pico.tools.spi.ApplicationCreator;
 
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
@@ -53,7 +54,7 @@ import jakarta.inject.Singleton;
 import static io.helidon.pico.services.Utils.isQualifiedInjectionTarget;
 
 /**
- * The default implementation for {@link ApplicationCreator}.
+ * The default implementation for {@link io.helidon.pico.tools.spi.ApplicationCreator}.
  */
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)

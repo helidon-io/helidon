@@ -35,9 +35,9 @@ import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesHolder;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.spi.Resetable;
-import io.helidon.pico.tools.ActivatorCreator;
-import io.helidon.pico.tools.ApplicationCreator;
-import io.helidon.pico.tools.ExternalModuleCreator;
+import io.helidon.pico.tools.spi.ActivatorCreator;
+import io.helidon.pico.tools.spi.ApplicationCreator;
+import io.helidon.pico.tools.spi.ExternalModuleCreator;
 
 import static io.helidon.pico.PicoServicesConfig.KEY_PERMITS_DYNAMIC;
 import static io.helidon.pico.PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS;

@@ -28,7 +28,7 @@ import io.helidon.pico.ServiceInfoBasics;
 
 /**
  * The request will be generated internally and then passed to the appropriate
- * {@link CustomAnnotationTemplateCreator} to handle the request.
+ * {@link io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator} to handle the request.
  */
 @Builder
 public interface CustomAnnotationTemplateRequest {

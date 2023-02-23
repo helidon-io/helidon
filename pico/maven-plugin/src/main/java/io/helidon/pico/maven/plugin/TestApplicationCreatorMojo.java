@@ -47,7 +47,7 @@ import static io.helidon.pico.tools.ModuleUtils.toBasePath;
 import static io.helidon.pico.tools.ModuleUtils.toSuggestedModuleName;
 
 /**
- * A mojo wrapper to {@link io.helidon.pico.tools.ApplicationCreator} for test specific types.
+ * A mojo wrapper to {@link io.helidon.pico.tools.spi.ApplicationCreator} for test specific types.
  */
 @Mojo(name = "test-application-create", defaultPhase = LifecyclePhase.TEST_COMPILE, threadSafe = true,
       requiresDependencyResolution = ResolutionScope.TEST)

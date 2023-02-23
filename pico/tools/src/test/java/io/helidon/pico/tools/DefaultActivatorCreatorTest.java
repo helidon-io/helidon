@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.helidon.common.types.DefaultTypeName;
+import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.testsubjects.HelloPicoWorldImpl;
 
 import org.junit.jupiter.api.Test;

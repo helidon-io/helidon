@@ -26,6 +26,7 @@ import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
+import io.helidon.pico.tools.spi.ApplicationCreator;
 
 import org.junit.jupiter.api.Test;
 

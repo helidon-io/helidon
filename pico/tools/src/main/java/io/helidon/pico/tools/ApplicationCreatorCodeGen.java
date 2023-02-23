@@ -22,9 +22,9 @@ import io.helidon.builder.Builder;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
- * Codegen request options applicable for {@link ApplicationCreator}.
+ * Codegen request options applicable for {@link io.helidon.pico.tools.spi.ApplicationCreator}.
  *
- * @see ApplicationCreator
+ * @see io.helidon.pico.tools.spi.ApplicationCreator
  */
 @Builder
 public interface ApplicationCreatorCodeGen {

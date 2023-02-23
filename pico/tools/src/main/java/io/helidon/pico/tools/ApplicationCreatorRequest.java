@@ -21,7 +21,7 @@ import java.util.Optional;
 import io.helidon.builder.Builder;
 
 /**
- * Defines the request that will be passed to the {@link ApplicationCreator} in order to produce the codegen artifacts.
+ * Defines the request that will be passed to the {@link io.helidon.pico.tools.spi.ApplicationCreator} in order to produce the codegen artifacts.
  */
 @Builder
 public interface ApplicationCreatorRequest extends GeneralCreatorRequest {

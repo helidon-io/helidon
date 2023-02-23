@@ -46,13 +46,13 @@ import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CommonUtils;
-import io.helidon.pico.tools.CustomAnnotationTemplateCreator;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.DefaultActivatorCreator;
 import io.helidon.pico.tools.DefaultCustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.DefaultCustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.ToolsException;
+import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
 import static io.helidon.pico.tools.TypeTools.createTypedElementNameFromElement;
@@ -61,7 +61,7 @@ import static io.helidon.pico.tools.TypeTools.toAccess;
 import static io.helidon.pico.tools.TypeTools.toFilePath;
 
 /**
- * Processor for all {@link io.helidon.pico.tools.CustomAnnotationTemplateCreator}'s.
+ * Processor for all {@link io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator}'s.
  */
 public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     private static final Map<TypeName, Set<CustomAnnotationTemplateCreator>> PRODUCERS_BY_ANNOTATION = new ConcurrentHashMap<>();

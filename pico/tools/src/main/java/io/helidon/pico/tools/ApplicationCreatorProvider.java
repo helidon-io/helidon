@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tools.spi;
+package io.helidon.pico.tools;
 
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.pico.tools.ActivatorCreator;
+import io.helidon.pico.tools.spi.ApplicationCreator;
 
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 /**
- * Provides access to the global singleton {@link ActivatorCreator} in use.
+ * Provides access to the global singleton {@link ApplicationCreatorProvider} in use.
  */
 @Singleton
-public class ActivatorCreatorProvider implements Provider<ActivatorCreator> {
-    private static final LazyValue<ActivatorCreator> INSTANCE = LazyValue.create(ActivatorCreatorProvider::load);
+public class ApplicationCreatorProvider implements Provider<ApplicationCreator> {
+    private static final LazyValue<ApplicationCreator> INSTANCE = LazyValue.create(ApplicationCreatorProvider::load);
 
     /**
      * Service loader based constructor.
@@ -38,11 +38,12 @@ public class ActivatorCreatorProvider implements Provider<ActivatorCreator> {
      * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
     @Deprecated
-    public ActivatorCreatorProvider() {
+    public ApplicationCreatorProvider() {
     }
 
-    private static ActivatorCreator load() {
-        return HelidonServiceLoader.create(ServiceLoader.load(ActivatorCreator.class, ActivatorCreator.class.getClassLoader()))
+    private static ApplicationCreator load() {
+        return HelidonServiceLoader.create(ServiceLoader.load(ApplicationCreator.class,
+                                                              ApplicationCreator.class.getClassLoader()))
                 .asList()
                 .stream()
                 .findFirst().orElseThrow();
@@ -50,7 +51,7 @@ public class ActivatorCreatorProvider implements Provider<ActivatorCreator> {
 
     // note that this is guaranteed to succeed since the default implementation is in this module
     @Override
-    public ActivatorCreator get() {
+    public ApplicationCreator get() {
         return INSTANCE.get();
     }
 
@@ -60,7 +61,7 @@ public class ActivatorCreatorProvider implements Provider<ActivatorCreator> {
      *
      * @return the global service instance with the highest weight
      */
-    public static ActivatorCreator instance() {
+    public static ApplicationCreator instance() {
         return INSTANCE.get();
     }
 

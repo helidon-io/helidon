@@ -22,7 +22,7 @@ import io.helidon.builder.Builder;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
- * Applies only to the output paths that various {@code creators} will use (e.g., {@link ActivatorCreator}).
+ * Applies only to the output paths that various {@code creators} will use (e.g., {@link io.helidon.pico.tools.spi.ActivatorCreator}).
  */
 @Builder
 public interface CodeGenPaths {

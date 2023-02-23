@@ -24,7 +24,7 @@ import io.helidon.pico.PicoServicesConfig;
  * These options are expected to have an affinity match to "permit" properties found within
  * {@link io.helidon.pico.PicoServicesConfig}. These are used to fine tune the type of code generated.
  *
- * @see ActivatorCreator
+ * @see io.helidon.pico.tools.spi.ActivatorCreator
  */
 @Builder
 public interface ActivatorCreatorConfigOptions {

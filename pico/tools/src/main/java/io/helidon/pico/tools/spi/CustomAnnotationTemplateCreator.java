@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tools;
+package io.helidon.pico.tools.spi;
 
 import java.util.Optional;
 import java.util.Set;
+
+import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
+import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 
 /**
  * Instances of this are found via the service loader during compilation time and called by the

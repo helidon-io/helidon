@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tools;
+package io.helidon.pico.tools.spi;
 
 import io.helidon.pico.Contract;
+import io.helidon.pico.tools.ExternalModuleCreatorRequest;
+import io.helidon.pico.tools.ExternalModuleCreatorResponse;
 
 /**
- * Implementors are responsible for creating an {@link ActivatorCreatorRequest} that can be then passed to the
+ * Implementors are responsible for creating an {@link io.helidon.pico.tools.ActivatorCreatorRequest} that can be then passed to the
  * {@link ActivatorCreator} based upon the scanning and reflective introspection of a set of classes found in an external
  * jar module.
  * This involves a two-step process of first preparing to create using
- * {@link #prepareToCreateExternalModule(ExternalModuleCreatorRequest)}, followed by taking the response and proceeding
- * to call {@link ActivatorCreator#createModuleActivators(ActivatorCreatorRequest)}.
+ * {@link #prepareToCreateExternalModule(io.helidon.pico.tools.ExternalModuleCreatorRequest)}, followed by taking the response and proceeding
+ * to call {@link ActivatorCreator#createModuleActivators(io.helidon.pico.tools.ActivatorCreatorRequest)}.
  *
- * @see io.helidon.pico.tools.spi.ExternalModuleCreatorProvider
+ * @see io.helidon.pico.tools.ExternalModuleCreatorProvider
  */
 @Contract
 public interface ExternalModuleCreator {

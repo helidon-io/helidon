@@ -24,7 +24,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 
 /**
- * The response from {@link CustomAnnotationTemplateCreator#create(CustomAnnotationTemplateRequest)}.
+ * The response from {@link io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator#create(CustomAnnotationTemplateRequest)}.
  */
 @Builder
 public interface CustomAnnotationTemplateResponse {

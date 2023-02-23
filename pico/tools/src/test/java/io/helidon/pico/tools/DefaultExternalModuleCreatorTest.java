@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.DefaultQualifierAndValue;
+import io.helidon.pico.tools.spi.ActivatorCreator;
+import io.helidon.pico.tools.spi.ExternalModuleCreator;
 
 import org.atinject.tck.auto.Drivers;
 import org.atinject.tck.auto.DriversSeat;

@@ -19,7 +19,7 @@ package io.helidon.pico.tools;
 import io.helidon.builder.Builder;
 
 /**
- * Request used in conjunction with {@link ActivatorCreator} to codegen the {@link io.helidon.pico.Activator} source artifacts.
+ * Request used in conjunction with {@link io.helidon.pico.tools.spi.ActivatorCreator} to codegen the {@link io.helidon.pico.Activator} source artifacts.
  */
 @Builder
 public interface ActivatorCreatorRequest extends GeneralCreatorRequest {

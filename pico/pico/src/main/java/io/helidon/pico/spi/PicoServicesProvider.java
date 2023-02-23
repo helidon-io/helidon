@@ -29,7 +29,7 @@ public interface PicoServicesProvider {
      * configuration instance.
      *
      * @param bootstrap the primordial bootstrap configuration
-     * @return Pico services
+     * @return pico services instance configured with the provided bootstrap instance
      */
     PicoServices services(
             Bootstrap bootstrap);

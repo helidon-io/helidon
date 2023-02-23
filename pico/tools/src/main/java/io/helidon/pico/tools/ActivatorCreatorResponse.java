@@ -24,7 +24,7 @@ import io.helidon.builder.Singular;
 import io.helidon.common.types.TypeName;
 
 /**
- * The result of calling {@link ActivatorCreator} assuming no errors are thrown.
+ * The result of calling {@link io.helidon.pico.tools.spi.ActivatorCreator} assuming no errors are thrown.
  */
 @Builder
 public interface ActivatorCreatorResponse extends GeneralCreatorResponse {

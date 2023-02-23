@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tools;
+package io.helidon.pico.tools.spi;
 
 import java.util.Map;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.Contract;
+import io.helidon.pico.tools.ActivatorCreatorRequest;
+import io.helidon.pico.tools.ActivatorCreatorResponse;
+import io.helidon.pico.tools.GeneralCreatorRequest;
+import io.helidon.pico.tools.InterceptionPlan;
+import io.helidon.pico.tools.InterceptorCreatorResponse;
 
 /**
  * Implementors of this contract are responsible for code-generating the Pico
@@ -34,7 +39,7 @@ import io.helidon.pico.Contract;
  * All activators for your jar module are then aggregated and registered into a pico code-generated
  * {@link io.helidon.pico.Module} class.
  *
- * @see io.helidon.pico.tools.spi.ActivatorCreatorProvider
+ * @see io.helidon.pico.tools.ActivatorCreatorProvider
  */
 @Contract
 public interface ActivatorCreator {

@@ -44,7 +44,6 @@ import io.helidon.pico.services.DefaultServiceBinder;
 import io.helidon.pico.spi.CallingContext;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
-import io.helidon.pico.tools.ApplicationCreator;
 import io.helidon.pico.tools.ApplicationCreatorCodeGen;
 import io.helidon.pico.tools.ApplicationCreatorConfigOptions;
 import io.helidon.pico.tools.ApplicationCreatorRequest;
@@ -59,6 +58,7 @@ import io.helidon.pico.tools.DefaultCodeGenPaths;
 import io.helidon.pico.tools.DefaultCompilerOptions;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.ToolsException;
+import io.helidon.pico.tools.spi.ApplicationCreator;
 
 import org.apache.maven.model.Build;
 import org.apache.maven.plugins.annotations.Parameter;

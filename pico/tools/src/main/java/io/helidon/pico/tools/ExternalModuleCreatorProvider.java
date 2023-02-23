@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tools.spi;
+package io.helidon.pico.tools;
 
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.pico.tools.InterceptorCreator;
+import io.helidon.pico.tools.spi.ExternalModuleCreator;
 
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 /**
- * Provides access to the global singleton {@link InterceptorCreator} in use.
+ * Provides access to the global singleton {@link io.helidon.pico.tools.spi.ExternalModuleCreator} in use.
  */
 @Singleton
-public class InterceptorCreatorProvider implements Provider<InterceptorCreator> {
-    private static final LazyValue<InterceptorCreator> INSTANCE = LazyValue.create(InterceptorCreatorProvider::load);
+public class ExternalModuleCreatorProvider implements Provider<ExternalModuleCreator> {
+    private static final LazyValue<ExternalModuleCreator> INSTANCE = LazyValue.create(ExternalModuleCreatorProvider::load);
 
     /**
      * Service loader based constructor.
@@ -38,12 +38,12 @@ public class InterceptorCreatorProvider implements Provider<InterceptorCreator> 
      * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
     @Deprecated
-    public InterceptorCreatorProvider() {
+    public ExternalModuleCreatorProvider() {
     }
 
-    private static InterceptorCreator load() {
+    private static ExternalModuleCreator load() {
         return HelidonServiceLoader.create(
-                        ServiceLoader.load(InterceptorCreator.class, InterceptorCreator.class.getClassLoader()))
+                ServiceLoader.load(ExternalModuleCreator.class, ExternalModuleCreator.class.getClassLoader()))
                 .asList()
                 .stream()
                 .findFirst().orElseThrow();
@@ -51,7 +51,7 @@ public class InterceptorCreatorProvider implements Provider<InterceptorCreator> 
 
     // note that this is guaranteed to succeed since the default implementation is in this module
     @Override
-    public InterceptorCreator get() {
+    public ExternalModuleCreator get() {
         return INSTANCE.get();
     }
 
@@ -61,7 +61,7 @@ public class InterceptorCreatorProvider implements Provider<InterceptorCreator> 
      *
      * @return the global service instance with the highest weight
      */
-    public static InterceptorCreator instance() {
+    public static ExternalModuleCreator instance() {
         return INSTANCE.get();
     }
 

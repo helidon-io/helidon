@@ -32,7 +32,7 @@ import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.processor.spi.ExtensibleGetTemplateProducer;
 import io.helidon.pico.processor.testsubjects.BasicEndpoint;
 import io.helidon.pico.processor.testsubjects.ExtensibleGET;
-import io.helidon.pico.tools.CustomAnnotationTemplateCreator;
+import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.DefaultCustomAnnotationTemplateRequest;

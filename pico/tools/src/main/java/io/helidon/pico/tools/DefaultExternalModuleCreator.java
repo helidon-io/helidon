@@ -34,6 +34,7 @@ import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.services.Dependencies;
+import io.helidon.pico.tools.spi.ExternalModuleCreator;
 
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
@@ -59,7 +60,7 @@ import static io.helidon.pico.tools.TypeTools.providesContractType;
 import static io.helidon.pico.tools.TypeTools.toAccess;
 
 /**
- * The default implementation of {@link ExternalModuleCreator}.
+ * The default implementation of {@link io.helidon.pico.tools.spi.ExternalModuleCreator}.
  */
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)

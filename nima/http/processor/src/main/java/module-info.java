@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import io.helidon.nima.http.processor.HttpEndpointCreator;
 import io.helidon.nima.http.processor.HttpMethodCreator;
 
@@ -28,6 +29,6 @@ module io.helidon.nima.http.processor {
 
     exports io.helidon.nima.http.processor;
 
-    provides io.helidon.pico.tools.CustomAnnotationTemplateCreator
+    provides io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator
             with HttpEndpointCreator, HttpMethodCreator;
 }

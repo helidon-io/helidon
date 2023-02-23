@@ -22,6 +22,7 @@ import java.lang.annotation.Target;
 
 import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.pico.InterceptedTrigger;
+import io.helidon.pico.tools.spi.InterceptorCreator;
 
 import jakarta.inject.Named;
 import org.junit.jupiter.api.Test;
