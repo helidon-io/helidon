@@ -23,8 +23,6 @@ import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http1.DefaultHttp1Config;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
@@ -33,40 +31,40 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Verify that server responds with status 400 - Bad Request when:
+ * Verify that server responds with status 200 - OK when:
  * <ul>
  *     <li>Content encoding is completely disabled using custom context which does not contain even
  *         default "dentity" encoder</li>
  *     <li>Request contains Content-Encoding header and also something to trigger EntityStyle.NONE
  *         replacement, e.g it's a POST request with Content-Length > 0</li>
- *     <li>Request headers validation is enabled</li>
+ *     <li>Request headers validation is disabled</li>
  * </ul>
  */
 @ServerTest
-class ContentEncodingDisabledTest extends ContentEncodingDisabledAbstract {
+public class ContentEncodingDisabledNoValidationTest extends ContentEncodingDisabledAbstract {
 
-    ContentEncodingDisabledTest(Http1Client client) {
+    ContentEncodingDisabledNoValidationTest(Http1Client client) {
         super(client);
     }
 
     @SetUpServer
     static void server(WebServer.Builder server) {
         ServerConnectionProvider http1 = Http1ConnectionProvider.builder()
-                // Headers validation is enabled by default
-                .http1Config(DefaultHttp1Config.builder().build())
+                // Headers validation is disabled
+                .http1Config(DefaultHttp1Config.builder().validateHeaders(false).build())
                 .build();
         server.addConnectionProvider(http1)
-        // Content encoding needs to be completely disabled
+                // Content encoding needs to be completely disabled
                 .contentEncodingContext(emptyEncodingContext());
     }
 
     @Test
     void testContentEncodingHeader() {
         try (Http1ClientResponse response = client().method(Http.Method.POST)
-                        .header(Http.Header.CONTENT_ENCODING, "data")
-                        .submit("any")) {
-            assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
-            assertThat(response.as(String.class), is("Content-Encoding header present when content encoding is disabled"));
+                .header(Http.Header.CONTENT_ENCODING, "data")
+                .submit("any")) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(String.class), is("response"));
         }
     }
 
