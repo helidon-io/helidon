@@ -127,13 +127,6 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
                          String authorizerName);
 
     /**
-     * Executor service of the security module.
-     *
-     * @return executor service to use to execute asynchronous tasks related to security
-     */
-    ExecutorService executorService();
-
-    /**
      * Check if user is in specified role if supported by global authorization provider.
      *
      * This method expects global authorization provider is in use. If you explicitly use a custom provider, use {@link
@@ -327,7 +320,6 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
     class Builder implements io.helidon.common.Builder<Builder, SecurityContext> {
         private final Security security;
         private String id;
-        private Supplier<ExecutorService> executorServiceSupplier;
         private SecurityTime serverTime;
         private Tracer tracingTracer;
         private SpanContext tracingSpan;
@@ -336,7 +328,6 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
 
         Builder(Security security) {
             this.security = security;
-            this.executorServiceSupplier = security.executorService();
         }
 
         @Override
@@ -359,10 +350,6 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
 
         String id() {
             return id;
-        }
-
-        Supplier<ExecutorService> executorServiceSupplier() {
-            return executorServiceSupplier;
         }
 
         SecurityTime serverTime() {
@@ -397,36 +384,6 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
          */
         public Builder id(String id) {
             this.id = id;
-            return this;
-        }
-
-        /**
-         * Executor service to use for requests within this context.
-         * By default uses a custom executor service that is configured when building
-         * {@link Security} instance.
-         * <p>
-         * Use this method only if you need to override default behavior!
-         *
-         * @param executorServiceSupplier supplier of an executor service
-         * @return updated builder instance
-         */
-        public Builder executorService(Supplier<ExecutorService> executorServiceSupplier) {
-            this.executorServiceSupplier = executorServiceSupplier;
-            return this;
-        }
-
-        /**
-         * Executor service to use for requests within this context.
-         * By default uses a custom executor service that is configured when building
-         * {@link Security} instance.
-         * <p>
-         * Use this method only if you need to override default behavior!
-         *
-         * @param executorService executor service
-         * @return updated builder instance
-         */
-        public Builder executorService(ExecutorService executorService) {
-            this.executorServiceSupplier = () -> executorService;
             return this;
         }
 

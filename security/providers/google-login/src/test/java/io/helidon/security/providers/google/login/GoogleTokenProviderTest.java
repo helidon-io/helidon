@@ -174,7 +174,6 @@ public class GoogleTokenProviderTest {
         Span secSpan = Tracer.global().spanBuilder("security").start();
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         when(context.tracer()).thenReturn(Tracer.global());
         when(context.tracingSpan()).thenReturn(secSpan.context());
 
@@ -223,7 +222,6 @@ public class GoogleTokenProviderTest {
         when(context.user()).thenReturn(Optional.of(subject));
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.securityContext()).thenReturn(context);
-        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
 
         return request;
     }

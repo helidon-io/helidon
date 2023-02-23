@@ -43,7 +43,7 @@ class OidcCookieHandlerTest {
     @Test
     void testFindCookieMissing() {
         Map<String, List<String>> headers = Map.of();
-        Optional<Single<String>> cookie = handler.findCookie(headers);
+        Optional<String> cookie = handler.findCookie(headers);
 
         assertThat(cookie, is(Optional.empty()));
     }
@@ -53,10 +53,10 @@ class OidcCookieHandlerTest {
         String expectedValue = "cookieValue";
         Map<String, List<String>> headers = Map.of("Accept", List.of("application/json"),
                                                    "Cookie", List.of("COOKIE=" + expectedValue));
-        Optional<Single<String>> cookie = handler.findCookie(headers);
+        Optional<String> cookie = handler.findCookie(headers);
 
         assertThat(cookie, not(Optional.empty()));
-        String cookieValue = cookie.get().await();
+        String cookieValue = cookie.get();
         assertThat(cookieValue, is(expectedValue));
 
         headers = Map.of("Accept", List.of("application/json"),
@@ -64,7 +64,7 @@ class OidcCookieHandlerTest {
         cookie = handler.findCookie(headers);
 
         assertThat(cookie, not(Optional.empty()));
-        cookieValue = cookie.get().await();
+        cookieValue = cookie.get();
         assertThat(cookieValue, is(expectedValue));
 
         headers = Map.of("Accept", List.of("application/json"),
@@ -72,7 +72,7 @@ class OidcCookieHandlerTest {
         cookie = handler.findCookie(headers);
 
         assertThat(cookie, not(Optional.empty()));
-        cookieValue = cookie.get().await();
+        cookieValue = cookie.get();
         assertThat(cookieValue, is(expectedValue));
 
         headers = Map.of("Accept", List.of("application/json"),
@@ -80,7 +80,7 @@ class OidcCookieHandlerTest {
         cookie = handler.findCookie(headers);
 
         assertThat(cookie, not(Optional.empty()));
-        cookieValue = cookie.get().await();
+        cookieValue = cookie.get();
         assertThat(cookieValue, is(expectedValue));
     }
 }

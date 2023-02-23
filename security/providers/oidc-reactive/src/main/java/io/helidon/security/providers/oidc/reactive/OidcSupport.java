@@ -26,20 +26,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.configurable.LruCache;
-import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.SetCookie;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.reactive.webclient.WebClient;
@@ -140,7 +136,6 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  */
 public final class OidcSupport implements Service {
     private static final System.Logger LOGGER = System.getLogger(OidcSupport.class.getName());
-    private static final Supplier<ExecutorService> OIDC_SUPPORT_SERVICE = ThreadPoolSupplier.create("oidc-support");
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
     private static final String DEFAULT_REDIRECT = "/index.html";
@@ -231,12 +226,13 @@ public final class OidcSupport implements Service {
     }
 
     private void processLogout(ServerRequest req, ServerResponse res) {
-        findTenantName(req)
-                .forSingle(tenantName -> processTenantLogout(req, res, tenantName));
+        String tenantName = findTenantName(req);
+        processTenantLogout(req, res, tenantName);
     }
 
     private void processTenantLogout(ServerRequest req, ServerResponse res, String tenantName) {
-        obtainCurrentTenant(tenantName).forSingle(tenant -> logoutWithTenant(req, res, tenant));
+        Tenant tenant = obtainCurrentTenant(tenantName);
+        logoutWithTenant(req, res, tenant);
     }
 
     private void logoutWithTenant(ServerRequest req, ServerResponse res, Tenant tenant) {
@@ -256,30 +252,31 @@ public final class OidcSupport implements Service {
         }
 
         String encryptedIdToken = idTokenCookie.get();
+        try {
+            String idToken = idTokenCookieHandler.decrypt(encryptedIdToken);
 
-        idTokenCookieHandler.decrypt(encryptedIdToken)
-                .forSingle(idToken -> {
-                    StringBuilder sb = new StringBuilder(tenant.logoutEndpointUri()
-                                                                 + "?id_token_hint="
-                                                                 + idToken
-                                                                 + "&post_logout_redirect_uri=" + postLogoutUri(req));
+            StringBuilder sb = new StringBuilder(tenant.logoutEndpointUri()
+                                                         + "?id_token_hint="
+                                                         + idToken
+                                                         + "&post_logout_redirect_uri=" + postLogoutUri(req));
 
-                    req.queryParams().first("state")
-                            .ifPresent(it -> sb.append("&state=").append(it));
+            req.queryParams().first("state")
+                    .ifPresent(it -> sb.append("&state=").append(it));
 
-                    ResponseHeaders headers = res.headers();
-                    headers.addCookie(tokenCookieHandler.removeCookie().build());
-                    headers.addCookie(idTokenCookieHandler.removeCookie().build());
-                    headers.addCookie(tenantCookieHandler.removeCookie().build());
+            ResponseHeaders headers = res.headers();
+            headers.addCookie(tokenCookieHandler.removeCookie().build());
+            headers.addCookie(idTokenCookieHandler.removeCookie().build());
+            headers.addCookie(tenantCookieHandler.removeCookie().build());
 
-                    res.status(Http.Status.TEMPORARY_REDIRECT_307)
-                            .addHeader(Http.Header.LOCATION, sb.toString())
-                            .send();
-                })
-                .exceptionallyAccept(t -> sendError(res, t));
+            res.status(Http.Status.TEMPORARY_REDIRECT_307)
+                    .addHeader(Http.Header.LOCATION, sb.toString())
+                    .send();
+        } catch (Exception e) {
+            sendError(res, e);
+        }
     }
 
-    private Single<String> findTenantName(ServerRequest request) {
+    private String findTenantName(ServerRequest request) {
         List<String> missingLocations = new LinkedList<>();
         Optional<String> tenantId = Optional.empty();
         if (oidcConfig.useParam()) {
@@ -290,7 +287,7 @@ public final class OidcSupport implements Service {
             }
         }
         if (oidcConfig.useCookie() && tenantId.isEmpty()) {
-            Optional<Single<String>> cookie = oidcConfig.tenantCookieHandler()
+            Optional<String> cookie = oidcConfig.tenantCookieHandler()
                     .findCookie(request.headers().toMap());
 
             if (cookie.isPresent()) {
@@ -299,33 +296,28 @@ public final class OidcSupport implements Service {
             missingLocations.add("cookie");
         }
         if (tenantId.isPresent()) {
-            return Single.just(tenantId.get());
+            return tenantId.get();
         } else {
             if (LOGGER.isLoggable(Level.TRACE)) {
                 LOGGER.log(Level.TRACE, "Missing tenant id, could not find in either of: " + missingLocations
                                       + "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
             }
-            return Single.just(DEFAULT_TENANT_ID);
+            return DEFAULT_TENANT_ID;
         }
     }
 
-    private Single<Tenant> obtainCurrentTenant(String tenantName) {
+    private Tenant obtainCurrentTenant(String tenantName) {
         Optional<Tenant> maybeTenant = tenants.get(tenantName);
         if (maybeTenant.isPresent()) {
-            return Single.just(maybeTenant.get());
+            return maybeTenant.get();
         } else {
-            CompletableFuture<Tenant> tenantCompletableFuture = CompletableFuture.supplyAsync(
-                    () -> {
-                        Tenant tenant = oidcConfigFinders.stream()
-                                .map(finder -> finder.config(tenantName))
-                                .flatMap(Optional::stream)
-                                .map(tenantConfig -> Tenant.create(oidcConfig, tenantConfig))
-                                .findFirst()
-                                .orElseGet(() -> Tenant.create(oidcConfig, oidcConfig.tenantConfig(tenantName)));
-                        return tenants.computeValue(tenantName, () -> Optional.of(tenant)).get();
-                    },
-                    OIDC_SUPPORT_SERVICE.get());
-            return Single.create(tenantCompletableFuture);
+            Tenant tenant = oidcConfigFinders.stream()
+                    .map(finder -> finder.config(tenantName))
+                    .flatMap(Optional::stream)
+                    .map(tenantConfig -> Tenant.create(oidcConfig, tenantConfig))
+                    .findFirst()
+                    .orElseGet(() -> Tenant.create(oidcConfig, oidcConfig.tenantConfig(tenantName)));
+            return tenants.computeValue(tenantName, () -> Optional.of(tenant)).get();
         }
     }
 
@@ -363,7 +355,8 @@ public final class OidcSupport implements Service {
     private void processCode(String code, ServerRequest req, ServerResponse res) {
         String tenantName = req.queryParams().first(oidcConfig.tenantParamName()).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
 
-        obtainCurrentTenant(tenantName).forSingle(tenant -> processCodeWithTenant(code, req, res, tenantName, tenant));
+        Tenant tenant = obtainCurrentTenant(tenantName);
+        processCodeWithTenant(code, req, res, tenantName, tenant);
     }
 
     private void processCodeWithTenant(String code, ServerRequest req, ServerResponse res, String tenantName, Tenant tenant) {
@@ -389,8 +382,7 @@ public final class OidcSupport implements Service {
                                     form.build(),
                                     json -> processJsonResponse(req, res, json, tenantName),
                                     (status, errorEntity) -> processError(res, status, errorEntity),
-                                    (t, message) -> processError(res, t, message))
-                .ignoreElement();
+                                    (t, message) -> processError(res, t, message));
     }
 
     private Object postLogoutUri(ServerRequest req) {
@@ -449,27 +441,29 @@ public final class OidcSupport implements Service {
         if (oidcConfig.useCookie()) {
             ResponseHeaders headers = res.headers();
 
-            OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
-            tenantCookieHandler.createCookie(tenantName)
-                    .forSingle(builder -> headers.addCookie(builder.build()))
-                    .exceptionallyAccept(t -> sendError(res, t));
+            try {
+                OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
+                SetCookie tenantCookie = tenantCookieHandler.createCookie(tenantName).build();
+                headers.addCookie(tenantCookie);
 
-            OidcCookieHandler tokenCookieHandler = oidcConfig.tokenCookieHandler();
-            tokenCookieHandler.createCookie(tokenValue)
-                    .forSingle(builder -> {
-                        headers.addCookie(builder.build());
-                        if (idToken != null && oidcConfig.logoutEnabled()) {
-                            oidcConfig.idTokenCookieHandler().createCookie(idToken)
-                                    .forSingle(it -> {
-                                        headers.addCookie(it.build());
-                                        res.send();
-                                    })
-                                    .exceptionallyAccept(t -> sendError(res, t));
-                        } else {
-                            res.send();
-                        }
-                    })
-                    .exceptionallyAccept(t -> sendError(res, t));
+                tenantCookieHandler.createCookie(tenantName);
+
+                OidcCookieHandler tokenCookieHandler = oidcConfig.tokenCookieHandler();
+                SetCookie tokenCookie = tokenCookieHandler.createCookie(tokenValue).build();
+                headers.addCookie(tokenCookie);
+
+                if (idToken != null && oidcConfig.logoutEnabled()) {
+                    OidcCookieHandler idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
+                    SetCookie idTokenCookie = idTokenCookieHandler.createCookie(tenantName).build();
+                    headers.addCookie(idTokenCookie);
+                    res.send();
+                } else {
+                    res.send();
+                }
+
+            } catch (Exception e) {
+                sendError(res, e);
+            }
         } else {
             res.send();
         }

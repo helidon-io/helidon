@@ -72,7 +72,6 @@ abstract class CurrentHttpSignProviderTest {
         HttpSignProvider provider = getProvider();
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         SecurityEnvironment se = SecurityEnvironment.builder()
                 .path("/my/resource")
                 .headers(headers)
@@ -114,7 +113,6 @@ abstract class CurrentHttpSignProviderTest {
         HttpSignProvider provider = getProvider();
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         SecurityEnvironment se = SecurityEnvironment.builder()
                 .path("/my/resource")
                 .headers(headers)
@@ -150,7 +148,6 @@ abstract class CurrentHttpSignProviderTest {
         headers.put("authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.securityContext()).thenReturn(context);
         SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
@@ -193,7 +190,6 @@ abstract class CurrentHttpSignProviderTest {
         headers.put("date", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.securityContext()).thenReturn(context);
 

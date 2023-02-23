@@ -39,7 +39,6 @@ final class SecurityContextImpl implements SecurityContext {
     private final Security security;
     private final String tracingId;
     private final SpanContext requestSpan;
-    private final Supplier<ExecutorService> executorService;
     private final Tracer securityTracer;
     private final SecurityTime serverTime;
     private final ReadWriteLock envLock = new ReentrantReadWriteLock();
@@ -55,7 +54,6 @@ final class SecurityContextImpl implements SecurityContext {
         this.security = builder.security();
         this.tracingId = builder.id();
         this.requestSpan = builder.tracingSpan();
-        this.executorService = builder.executorServiceSupplier();
         this.securityTracer = builder.tracingTracer();
         this.serverTime = builder.serverTime();
         this.environment = builder.env();
@@ -128,11 +126,6 @@ final class SecurityContextImpl implements SecurityContext {
     @Override
     public void logout() {
         currentSubject = ANONYMOUS;
-    }
-
-    @Override
-    public ExecutorService executorService() {
-        return executorService.get();
     }
 
     @SuppressWarnings("unchecked")
