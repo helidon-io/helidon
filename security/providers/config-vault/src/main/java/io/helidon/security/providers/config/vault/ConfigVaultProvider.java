@@ -24,7 +24,6 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Base64Value;
 import io.helidon.common.crypto.SymmetricCipher;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.encryption.ConfigProperties;
 import io.helidon.config.metadata.Configured;

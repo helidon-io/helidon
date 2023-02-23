@@ -16,8 +16,6 @@
 
 package io.helidon.security;
 
-import java.util.concurrent.CompletableFuture;
-
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.AuthenticationProvider;
 

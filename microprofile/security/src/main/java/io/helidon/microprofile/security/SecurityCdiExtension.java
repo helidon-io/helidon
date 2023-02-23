@@ -17,8 +17,6 @@ package io.helidon.microprofile.security;
 
 import java.lang.System.Logger.Level;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.context.Contexts;

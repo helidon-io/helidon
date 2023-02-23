@@ -17,7 +17,6 @@
 package io.helidon.security;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 import io.helidon.tracing.SpanContext;

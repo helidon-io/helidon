@@ -25,7 +25,6 @@ import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.Proxy;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.tracing.WebClientTracing;
-import io.helidon.security.providers.common.OutboundConfig;
 
 
 final class OidcUtil {

@@ -166,7 +166,7 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
             tracing.finish();
 
             return grants;
-        }catch (Exception e) {
+        } catch (Exception e) {
             tracing.error(e);
             throw e;
         }

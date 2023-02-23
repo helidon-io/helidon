@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.common.Base64Value;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.security.SecurityException;

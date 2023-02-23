@@ -157,6 +157,11 @@ public final class WebSecurity implements Service {
                 .build();
     }
 
+    /**
+     * Create a new {@link Builder} instance to configure {@link WebSecurity}.
+     *
+     * @return new builder instance
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -393,6 +398,9 @@ public final class WebSecurity implements Service {
         });
     }
 
+    /**
+     * Fluent API builder for {@link WebSecurity}.
+     */
     public static final class Builder implements io.helidon.common.Builder<Builder, WebSecurity> {
 
         private Config config;
@@ -414,6 +422,12 @@ public final class WebSecurity implements Service {
             return new WebSecurity(this);
         }
 
+        /**
+         * Configures this {@link WebSecurity.Builder} from the supplied {@link Config}.
+         *
+         * @param config config instance
+         * @return updated builder
+         */
         public Builder config(Config config) {
             this.config = config;
             executorService(ThreadPoolSupplier.create(config.get("environment.executor-service"), "security-thread-pool"));
@@ -432,6 +446,12 @@ public final class WebSecurity implements Service {
             return this;
         }
 
+        /**
+         * Set new {@link Security} instance to be used.
+         *
+         * @param security security instance
+         * @return updated builder
+         */
         public Builder security(Security security) {
             this.security = security;
             return this;

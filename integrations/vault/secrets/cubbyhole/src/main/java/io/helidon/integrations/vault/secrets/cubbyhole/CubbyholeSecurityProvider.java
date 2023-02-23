@@ -21,7 +21,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultOptionalResponse;
