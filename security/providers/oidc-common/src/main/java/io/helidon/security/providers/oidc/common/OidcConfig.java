@@ -982,7 +982,8 @@ public final class OidcConfig extends TenantConfigImpl {
                 idTokenCookieBuilder.encryptionEnabled(true);
             }
 
-            this.webClientBuilderSupplier = () -> OidcUtil.webClientBaseBuilder(proxyHost,
+            this.webClientBuilderSupplier = () -> OidcUtil.webClientBaseBuilder(proxyProtocol,
+                                                                                proxyHost,
                                                                                 proxyPort,
                                                                                 relativeUris,
                                                                                 clientTimeout());
