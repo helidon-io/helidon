@@ -37,6 +37,10 @@
             <artifactId>helidon-common-media-type</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>

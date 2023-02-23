@@ -16,17 +16,29 @@
 
 package io.helidon.nima.sse;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.nima.http.media.EntityReader;
+import io.helidon.nima.http.media.MediaContext;
 
 /**
  * An SSE event.
  */
 public class SseEvent {
+
+    private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     private final String id;
     private final String name;
@@ -34,6 +46,7 @@ public class SseEvent {
     private final String comment;
     private final MediaType mediaType;
     private final Duration reconnectMillis;
+    private final MediaContext mediaContext;
 
     private SseEvent(Builder builder) {
         this.id = builder.id;
@@ -42,6 +55,7 @@ public class SseEvent {
         this.comment = builder.comment;
         this.mediaType = builder.mediaType;
         this.reconnectMillis = builder.reconnectMillis;
+        this.mediaContext = builder.mediaContext;
     }
 
     /**
@@ -81,6 +95,64 @@ public class SseEvent {
      */
     public Object data() {
         return data;
+    }
+
+    /**
+     * Get data for this event as type T. Uses Nima's media support to convert
+     * event data to type T.
+     *
+     * @param clazz the class
+     * @param mediaType media type of event data
+     * @param <T> the converted type
+     * @return the converted data
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T data(Class<T> clazz, MediaType mediaType) {
+        if (!(data instanceof String sdata)) {
+            throw new IllegalStateException("Cannot convert non-string event data");
+        }
+
+        Objects.requireNonNull(clazz);
+        Objects.requireNonNull(mediaType);
+
+        if (clazz.equals(String.class)) {
+            return (T) sdata;
+        }
+        if (clazz.equals(byte[].class)) {
+            return (T) sdata.getBytes(StandardCharsets.UTF_8);
+        }
+        try {
+            if (mediaContext == null) {
+                throw new IllegalStateException("Media context has not been set on this event");
+            }
+            GenericType<T> type = GenericType.create(clazz);
+            WritableHeaders<?> headers;
+            if (!mediaType.equals(MediaTypes.WILDCARD)) {
+                headers = WritableHeaders.create();
+                headers.set(Http.Header.CONTENT_TYPE, mediaType.text());
+            } else {
+                headers = EMPTY_HEADERS;
+            }
+            EntityReader<T> reader = mediaContext.reader(GenericType.create(clazz), headers);
+            try (InputStream is = new ByteArrayInputStream(sdata.getBytes(StandardCharsets.UTF_8))) {
+                return reader.read(type, is, headers);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Get data for this event as type T. Uses Nima's media support to convert
+     * event data to type T.
+     *
+     * @param clazz the class
+     * @param <T> the converted type
+     * @return the converted data
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T data(Class<T> clazz) {
+        return data(clazz, MediaTypes.WILDCARD);
     }
 
     /**
@@ -139,6 +211,7 @@ public class SseEvent {
         private String comment;
         private MediaType mediaType = MediaTypes.TEXT_PLAIN;
         private Duration reconnectMillis;
+        private MediaContext mediaContext;
 
         private Builder() {
         }
@@ -222,6 +295,20 @@ public class SseEvent {
         public Builder reconnectDelay(Duration reconnectMillis) {
             Objects.requireNonNull(reconnectMillis);
             this.reconnectMillis = reconnectMillis;
+            return this;
+        }
+
+        /**
+         * Set the media context for this event. This is only required when using
+         * media providers.
+         *
+         * @param mediaContext the media context
+         * @return updated builder instance
+         * @see #data(Class)
+         */
+        public Builder mediaContext(MediaContext mediaContext) {
+            Objects.requireNonNull(mediaContext);
+            this.mediaContext = mediaContext;
             return this;
         }
     }

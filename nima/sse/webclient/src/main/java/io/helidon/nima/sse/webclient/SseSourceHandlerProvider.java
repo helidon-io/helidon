@@ -26,6 +26,7 @@ import java.time.Duration;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.webclient.ClientResponse;
 import io.helidon.nima.webclient.http.spi.Source;
@@ -49,14 +50,14 @@ public class SseSourceHandlerProvider implements SourceHandlerProvider<SseEvent>
     }
 
     @Override
-    public <X extends Source<SseEvent>> void handle(X source, ClientResponse response) {
+    public <X extends Source<SseEvent>> void handle(X source, ClientResponse response, MediaContext mediaContext) {
         InputStream is = response.inputStream();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line;
             boolean emit = false;
             boolean first = true;
             StringBuilder data = new StringBuilder();
-            SseEvent.Builder sseBuilder = SseEvent.builder();
+            SseEvent.Builder sseBuilder = SseEvent.builder().mediaContext(mediaContext);
 
             source.onOpen();
 

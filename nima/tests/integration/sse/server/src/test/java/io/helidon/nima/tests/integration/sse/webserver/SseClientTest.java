@@ -19,6 +19,7 @@ package io.helidon.nima.tests.integration.sse.webserver;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.sse.webclient.SseSource;
 import io.helidon.nima.sse.webserver.SseSink;
@@ -29,6 +30,8 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.HeaderValues.ACCEPT_EVENT_STREAM;
@@ -37,7 +40,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
-class SseClientTest {
+class SseClientTest extends SseBaseTest {
 
     private final Http1Client client;
 
@@ -48,9 +51,11 @@ class SseClientTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.get("/sseString1", SseClientTest::sseString1);
+        rules.get("/sseJson1", SseClientTest::sseJson1);
+        rules.get("/sseJson2", SseServerTest::sseJson2);
     }
 
-    private static void sseString1(ServerRequest req, ServerResponse res) {
+    static void sseString1(ServerRequest req, ServerResponse res) {
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
             sseSink.emit(SseEvent.builder()
                             .comment("first line")
@@ -100,12 +105,27 @@ class SseClientTest {
     }
 
     @Test
-    void testFunctionalInterface() throws InterruptedException {
-        try (Http1ClientResponse r = client.get("/sseString1").header(ACCEPT_EVENT_STREAM).request()) {
-            CountDownLatch latch = new CountDownLatch(2);
+    void testSseJson1() throws InterruptedException {
+        try (Http1ClientResponse r = client.get("/sseJson1").header(ACCEPT_EVENT_STREAM).request()) {
+            CountDownLatch latch = new CountDownLatch(1);
             r.source(SseSource.TYPE, event -> {
-                assertThat(event.name().isPresent(), is(true));
-                assertThat(event.data(), is(notNullValue()));
+                JsonObject json = event.data(JsonObject.class);
+                assertThat(json, is(notNullValue()));
+                assertThat(json.getString("hello"), is("world"));
+                latch.countDown();
+            });
+            assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
+        }
+    }
+
+    @Test
+    void testSseJson2() throws InterruptedException {
+        try (Http1ClientResponse r = client.get("/sseJson2").header(ACCEPT_EVENT_STREAM).request()) {
+            CountDownLatch latch = new CountDownLatch(1);
+            r.source(SseSource.TYPE, event -> {
+                HelloWorld json = event.data(HelloWorld.class, MediaTypes.APPLICATION_JSON);
+                assertThat(json, is(notNullValue()));
+                assertThat(json.getHello(), is("world"));
                 latch.countDown();
             });
             assertThat(latch.await(5, TimeUnit.SECONDS), is(true));

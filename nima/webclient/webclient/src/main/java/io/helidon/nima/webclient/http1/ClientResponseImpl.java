@@ -135,7 +135,7 @@ class ClientResponseImpl implements Http1ClientResponse {
     public <T extends Source<?>> void source(GenericType<T> sourceType, T source) {
         for (SourceHandlerProvider p : SOURCE_HANDLERS) {
             if (p.supports(sourceType, this)) {
-                p.handle(source, this);
+                p.handle(source, this, mediaContext);
                 return;
             }
         }

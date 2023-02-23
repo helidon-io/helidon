@@ -17,6 +17,7 @@
 package io.helidon.nima.webclient.http.spi;
 
 import io.helidon.common.GenericType;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientResponse;
 
 /**
@@ -40,7 +41,8 @@ public interface SourceHandlerProvider<T> {
      *
      * @param source the source
      * @param response the HTTP response
+     * @param mediaContext the media context
      * @param <X> type of source
      */
-    <X extends Source<T>> void handle(X source, ClientResponse response);
+    <X extends Source<T>> void handle(X source, ClientResponse response, MediaContext mediaContext);
 }

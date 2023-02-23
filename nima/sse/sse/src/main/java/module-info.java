@@ -20,6 +20,7 @@
 module io.helidon.nima.sse {
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.media.type;
+    requires io.helidon.nima.http.media;
 
     exports io.helidon.nima.sse;
 }
