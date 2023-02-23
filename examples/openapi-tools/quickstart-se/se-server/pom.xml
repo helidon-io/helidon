@@ -24,7 +24,7 @@
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
         <version>2.5.7-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath>../../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>org.openapitools</groupId>
     <artifactId>openapi-se-server</artifactId>
