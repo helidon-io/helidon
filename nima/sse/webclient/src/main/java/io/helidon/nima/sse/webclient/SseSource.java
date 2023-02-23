@@ -23,6 +23,7 @@ import io.helidon.nima.webclient.http.spi.Source;
 /**
  * A source for {@link SseEvent}s.
  */
+@FunctionalInterface
 public interface SseSource extends Source<SseEvent> {
 
     /**
@@ -31,6 +32,5 @@ public interface SseSource extends Source<SseEvent> {
     GenericType<SseSource> TYPE = GenericType.create(SseSource.class);
 
     @Override
-    default void onEvent(SseEvent event) {
-    }
+    void onEvent(SseEvent event);
 }

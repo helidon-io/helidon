@@ -34,7 +34,7 @@ public class SseSinkProvider implements SinkProvider<SseEvent> {
 
     @Override
     public boolean supports(GenericType<? extends Sink<?>> type, ServerRequest request) {
-        return type == SseSink.TYPE && request.headers().isAccepted(MediaTypes.TEXT_EVENT_STREAM);
+        return SseSink.TYPE.equals(type) && request.headers().isAccepted(MediaTypes.TEXT_EVENT_STREAM);
     }
 
     @Override

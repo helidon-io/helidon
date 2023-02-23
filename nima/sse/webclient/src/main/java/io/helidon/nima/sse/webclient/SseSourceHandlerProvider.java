@@ -44,7 +44,7 @@ public class SseSourceHandlerProvider implements SourceHandlerProvider<SseEvent>
 
     @Override
     public boolean supports(GenericType<? extends Source<?>> type, ClientResponse response) {
-        return type == SseSource.TYPE && response.headers().contentType()
+        return SseSource.TYPE.equals(type) && response.headers().contentType()
                 .map(ct -> ct.mediaType().equals(MediaTypes.TEXT_EVENT_STREAM)).orElse(false);
     }
 

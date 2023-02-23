@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.HeaderValues.ACCEPT_EVENT_STREAM;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
@@ -56,7 +57,10 @@ class SseClientTest {
                             .name("first")
                             .data("hello")
                             .build())
-                    .emit(SseEvent.create("world"));
+                    .emit(SseEvent.builder()
+                            .name("second")
+                            .data("world")
+                            .build());
         }
     }
 
@@ -77,7 +81,11 @@ class SseClientTest {
                             assertThat(event.name().get(), is("first"));
                             assertThat(event.data(), is("hello"));
                         }
-                        case 1 -> assertThat(event.data(), is("world"));
+                        case 1 -> {
+                            assertThat(event.name().isPresent(), is(true));
+                            assertThat(event.name().get(), is("second"));
+                            assertThat(event.data(), is("world"));
+                        }
                     }
                     state++;
                 }
@@ -86,6 +94,19 @@ class SseClientTest {
                 public void onClose() {
                     latch.countDown();
                 }
+            });
+            assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
+        }
+    }
+
+    @Test
+    void testFunctionalInterface() throws InterruptedException {
+        try (Http1ClientResponse r = client.get("/sseString1").header(ACCEPT_EVENT_STREAM).request()) {
+            CountDownLatch latch = new CountDownLatch(2);
+            r.source(SseSource.TYPE, event -> {
+                assertThat(event.name().isPresent(), is(true));
+                assertThat(event.data(), is(notNullValue()));
+                latch.countDown();
             });
             assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
         }
