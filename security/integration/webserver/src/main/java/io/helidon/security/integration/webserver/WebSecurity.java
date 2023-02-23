@@ -40,7 +40,6 @@ import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
-import io.helidon.security.SecurityTime;
 
 /**
  * Integration of security into Web Server.
@@ -315,22 +314,6 @@ public final class WebSecurity implements Service {
         return SecurityHandler.create();
     }
 
-    /**
-     * Create a new web security instance using the default handler as base defaults for all handlers used.
-     * If handlers are loaded from config, than this is the least significant value.
-     *
-     * @param defaultHandler if a security handler is configured for a route, it will take its defaults from this handler
-     * @return new instance of web security with the handler default
-     */
-    public WebSecurity securityDefaults(SecurityHandler defaultHandler) {
-        Objects.requireNonNull(defaultHandler, "Default security handler must not be null");
-        return builder()
-                .config(config)
-                .security(security)
-                .securityHandler(defaultHandler)
-                .build();
-    }
-
     @Override
     public void update(Routing.Rules routing) {
         if (!security.enabled()) {
@@ -376,7 +359,7 @@ public final class WebSecurity implements Service {
             SecurityContext context = contextBuilder.build();
 
             req.context().register(context);
-            req.context().register(SecurityHandler.class, executorService);
+            req.context().register(SecurityHandler.class, executorService.get());
             req.context().register(defaultHandler);
         }
 
@@ -454,7 +437,14 @@ public final class WebSecurity implements Service {
             return this;
         }
 
-        public Builder securityHandler(SecurityHandler securityHandler) {
+        /**
+         * Set new default handler as base for all handlers used.
+         * If handlers are loaded from config, than this is the least significant value.
+         *
+         * @param securityHandler if a security handler is configured for a route, it will take its defaults from this handler
+         * @return updated builder
+         */
+        public Builder defaultSecurityHandler(SecurityHandler securityHandler) {
             Objects.requireNonNull(securityHandler, "Default security handler must not be null");
             this.securityHandler = securityHandler;
             return this;

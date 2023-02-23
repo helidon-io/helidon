@@ -64,7 +64,7 @@ public final class BasicExampleBuilderMain {
 
         Routing routing = Routing.builder()
                 // must be configured first, to protect endpoints
-                .register(buildWebSecurity().securityDefaults(WebSecurity.authenticate()))
+                .register(buildWebSecurity())
                 .any("/static[/{*}]", WebSecurity.rolesAllowed("user"))
                 .register("/static", StaticContentSupport.create("/WEB"))
                 .get("/noRoles", WebSecurity.enforce())
@@ -103,7 +103,10 @@ public final class BasicExampleBuilderMain {
                                 .userStore(buildUserStore()),
                         "http-basic-auth")
                 .build();
-        return WebSecurity.create(security);
+        return WebSecurity.builder()
+                .security(security)
+                .defaultSecurityHandler(WebSecurity.authenticate())
+                .build();
     }
 
     private static SecureUserStore buildUserStore() {

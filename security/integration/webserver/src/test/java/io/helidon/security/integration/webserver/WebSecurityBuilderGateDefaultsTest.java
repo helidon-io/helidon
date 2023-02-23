@@ -80,7 +80,10 @@ public class WebSecurityBuilderGateDefaultsTest {
                 .addAuditProvider(myAuditProvider).build();
 
         Routing routing = Routing.builder()
-                .register(WebSecurity.create(security).securityDefaults(WebSecurity.rolesAllowed("admin").audit()))
+                .register(WebSecurity.builder()
+                                  .defaultSecurityHandler(WebSecurity.rolesAllowed("admin").audit())
+                                  .security(security)
+                                  .build())
                 // will only accept admin (due to gate defaults)
                 .get("/noRoles", WebSecurity.enforce())
                 .get("/user[/{*}]", WebSecurity.rolesAllowed("user"))

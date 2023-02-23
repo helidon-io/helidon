@@ -52,8 +52,9 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                 .addAuditProvider(myAuditProvider).build();
 
         Routing routing = Routing.builder()
-                .register(WebSecurity.create(security)
-                                  .securityDefaults(
+                .register(WebSecurity.builder()
+                                  .security(security)
+                                  .defaultSecurityHandler(
                                           SecurityHandler.create()
                                                   .queryParam(
                                                           "jwt",
@@ -65,7 +66,8 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                                                           "name",
                                                           TokenHandler.builder()
                                                                   .tokenHeader("NAME_FROM_REQUEST")
-                                                                  .build())))
+                                                                  .build()))
+                                  .build())
                 .get("/noRoles", WebSecurity.secure())
                 .get("/user[/{*}]", WebSecurity.rolesAllowed("user"))
                 .get("/admin", WebSecurity.rolesAllowed("admin"))
