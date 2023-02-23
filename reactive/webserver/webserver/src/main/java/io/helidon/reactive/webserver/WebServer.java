@@ -294,7 +294,7 @@ public interface WebServer {
         private ServerConfiguration explicitConfig;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
-        private RequestedUriDiscoveryContext.Builder discoveryContextBuilderForDefaultSocket;
+        private Supplier<RequestedUriDiscoveryContext> discoveryContextSupplierForDefaultSocket;
 
         private Builder() {
             readerContext = MessageBodyReaderContext.create(DEFAULT_MEDIA_SUPPORT.readerContext());
@@ -315,8 +315,8 @@ public interface WebServer {
                 routingBuilders.put(WebServer.DEFAULT_SOCKET_NAME, RouterImpl.builder());
             }
             if (explicitConfig == null) {
-                if (discoveryContextBuilderForDefaultSocket != null) {
-                    configurationBuilder.requestedUriDiscoveryContextBuilder(discoveryContextBuilderForDefaultSocket);
+                if (discoveryContextSupplierForDefaultSocket != null) {
+                    configurationBuilder.requestedUriDiscovery(discoveryContextSupplierForDefaultSocket);
                 }
                 explicitConfig = configurationBuilder.build();
             }
@@ -819,19 +819,15 @@ public interface WebServer {
         }
 
         /**
-         * Sets the requested URI discovery context for use by the web server's default socket.
+         * Requested URI discovery for the web server's default socket.
          *
-         * @param discoveryContextBuilder {@link io.helidon.common.http.RequestedUriDiscoveryContext.Builder} to use
+         * @param discoveryContextSupplier {@link io.helidon.common.http.RequestedUriDiscoveryContext.Builder} to use
          * @return updated builder
          */
 
-        // Would be nice to use the following annotation so the generated doc description explains that this applies to the
-        // server's default socket, but then the doc generator creates two entries: one from this method and one from the
-        // interface declaration of the method.
-        @ConfiguredOption(key = RequestedUriDiscoveryContext.Builder.REQUESTED_URI_DISCOVERY_CONFIG_KEY,
-                          type = RequestedUriDiscoveryContext.class)
-        public Builder requestedUriDiscoveryContextBuilder(RequestedUriDiscoveryContext.Builder discoveryContextBuilder) {
-            this.discoveryContextBuilderForDefaultSocket = discoveryContextBuilder;
+        @ConfiguredOption(type = RequestedUriDiscoveryContext.class)
+        public Builder requestedUriDiscovery(Supplier<RequestedUriDiscoveryContext> discoveryContextSupplier) {
+            this.discoveryContextSupplierForDefaultSocket = discoveryContextSupplier;
             return this;
         }
     }

@@ -91,7 +91,7 @@ This is a standalone configuration type, prefix from configuration root: `server
  server socket.
 
  If `0` then use implementation default.
-|`requested-uri-discovery` |xref:{rootdir}/config/io_helidon_common_http_RequestedUriDiscoveryContext.adoc[RequestedUriDiscoveryContext] |{nbsp} |Sets the requested URI discovery context for use by the web server's default socket.
+|`requested-uri-discovery` |xref:{rootdir}/config/io_helidon_common_http_RequestedUriDiscoveryContext.adoc[RequestedUriDiscoveryContext] |{nbsp} |Requested URI discovery for the web server's default socket.
 |`sockets` |xref:{rootdir}/config/io_helidon_reactive_webserver_SocketConfiguration.adoc[SocketConfiguration[&#93;] |{nbsp} |Adds an additional named server socket configuration. As a result, the server will listen
  on multiple ports.
 

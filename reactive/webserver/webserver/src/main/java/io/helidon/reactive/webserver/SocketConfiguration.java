@@ -457,12 +457,11 @@ public interface SocketConfiguration {
         /**
          * Requested URI discovery settings.
          *
-         * @param requestedUriDiscoveryContextBuilder builder for discovery context
+         * @param requestedUriDiscoveryContextSupplier supplier of the requested URI discovery context
          * @return current settings
          */
-        @ConfiguredOption(key = RequestedUriDiscoveryContext.Builder.REQUESTED_URI_DISCOVERY_CONFIG_KEY,
-                          type = RequestedUriDiscoveryContext.class)
-        B requestedUriDiscoveryContextBuilder(RequestedUriDiscoveryContext.Builder requestedUriDiscoveryContextBuilder);
+        @ConfiguredOption(type = RequestedUriDiscoveryContext.class)
+        B requestedUriDiscovery(Supplier<RequestedUriDiscoveryContext> requestedUriDiscoveryContextSupplier);
 
         /**
          * Update this socket configuration from a {@link io.helidon.config.Config}.
@@ -513,7 +512,7 @@ public interface SocketConfiguration {
             // requested URI support
             config.get(RequestedUriDiscoveryContext.Builder.REQUESTED_URI_DISCOVERY_CONFIG_KEY)
                     .as(RequestedUriDiscoveryContext::builder)
-                    .ifPresent(this::requestedUriDiscoveryContextBuilder);
+                    .ifPresent(this::requestedUriDiscovery);
             return (B) this;
         }
     }
@@ -555,7 +554,7 @@ public interface SocketConfiguration {
         private boolean continueImmediately = false;
         private int maxUpgradeContentLength = 64 * 1024;
         private long maxBufferSize = 5 * 1024 * 1024;
-        private RequestedUriDiscoveryContext.Builder requestedUriDiscoveryContextBuilder;
+        private Supplier<RequestedUriDiscoveryContext> requestedUriDiscoveryContextSupplier;
 
         private Builder() {
         }
@@ -570,9 +569,9 @@ public interface SocketConfiguration {
                 throw new ConfigException("Socket name must be configured for each socket");
             }
 
-            if (null == requestedUriDiscoveryContextBuilder) {
-                requestedUriDiscoveryContextBuilder = RequestedUriDiscoveryContext.builder()
-                        .socketId(WebServer.DEFAULT_SOCKET_NAME);
+            if (null == requestedUriDiscoveryContextSupplier) {
+                requestedUriDiscoveryContextSupplier = RequestedUriDiscoveryContext.builder()
+                        .socketId(UNCONFIGURED_NAME.equals(name) ? WebServer.DEFAULT_SOCKET_NAME : name);
             }
 
             return new ServerBasicConfig.SocketConfig(this);
@@ -829,9 +828,8 @@ public interface SocketConfiguration {
         }
 
         @Override
-        public Builder requestedUriDiscoveryContextBuilder(
-                RequestedUriDiscoveryContext.Builder requestedUriDiscoveryContextBuilder) {
-            this.requestedUriDiscoveryContextBuilder = requestedUriDiscoveryContextBuilder;
+        public Builder requestedUriDiscovery(Supplier<RequestedUriDiscoveryContext> requestedUriDiscoveryContextSupplier) {
+            this.requestedUriDiscoveryContextSupplier = requestedUriDiscoveryContextSupplier;
             return this;
         }
 
@@ -851,7 +849,7 @@ public interface SocketConfiguration {
             // requested URI support
             config.get(RequestedUriDiscoveryContext.Builder.REQUESTED_URI_DISCOVERY_CONFIG_KEY)
                     .as(RequestedUriDiscoveryContext::builder)
-                    .ifPresent(this::requestedUriDiscoveryContextBuilder);
+                    .ifPresent(this::requestedUriDiscovery);
             return this;
         }
 
@@ -931,8 +929,8 @@ public interface SocketConfiguration {
             return maxUpgradeContentLength;
         }
 
-        RequestedUriDiscoveryContext.Builder requestedUriDiscoveryContextBuilder() {
-            return requestedUriDiscoveryContextBuilder;
+        Supplier<RequestedUriDiscoveryContext> requestedUriDiscoveryContextSupplier() {
+            return requestedUriDiscoveryContextSupplier;
         }
     }
 }

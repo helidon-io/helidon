@@ -439,7 +439,7 @@ public final class ListenerConfiguration {
          * @param discoveryContext the {@linkplain io.helidon.common.http.RequestedUriDiscoveryContext discovery context}
          * @return an updated builder
          */
-        public Builder requestedUriDiscoveryContext(RequestedUriDiscoveryContext discoveryContext) {
+        public Builder requestedUriDiscovery(RequestedUriDiscoveryContext discoveryContext) {
             this.discoveryContext = discoveryContext;
             return this;
         }

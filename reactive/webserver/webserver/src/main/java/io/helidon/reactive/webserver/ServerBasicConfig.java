@@ -215,7 +215,7 @@ class ServerBasicConfig implements ServerConfiguration {
             this.maxUpgradeContentLength = builder.maxUpgradeContentLength();
             WebServerTls webServerTls = builder.tlsConfig();
             this.webServerTls = webServerTls.enabled() ? webServerTls : null;
-            this.requestedUriDiscoveryContext = builder.requestedUriDiscoveryContextBuilder().build();
+            this.requestedUriDiscoveryContext = builder.requestedUriDiscoveryContextSupplier().get();
         }
 
         @Override

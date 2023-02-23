@@ -821,9 +821,8 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         @Override
-        public Builder requestedUriDiscoveryContextBuilder(
-                RequestedUriDiscoveryContext.Builder requestedUriDiscoveryContextBuilder) {
-            defaultSocketBuilder().requestedUriDiscoveryContextBuilder(requestedUriDiscoveryContextBuilder);
+        public Builder requestedUriDiscovery(Supplier<RequestedUriDiscoveryContext> requestedUriDiscoveryContextSupplier) {
+            defaultSocketBuilder().requestedUriDiscovery(requestedUriDiscoveryContextSupplier);
             return this;
         }
     }
