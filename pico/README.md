@@ -1,21 +1,39 @@
 # helidon-pico
 
-<b>Helidon Pico</b> is an optional feature in Helidon, that aims to offer the following:
+<b>Helidon Pico</b> is an optional feature in Helidon. At its core it simply provides these main features:
 
-* A minimalist, compile-time based dependency injection framework free from reflection, and compliant to the JSR-330 injection specification.
-* A service registry that provides lazy service activation and meta-information about each service in terms APIs for describing what each service provides and what are their dependencies on other services.
-* Support for Java 11+, using jakarta.inject or javax.inject, jakarta.annotations or javax.annotations.
-* Extensibility. Developers can either provide their own templates for code generation, or provide an entirely different implementation different from this reference implementation. Pico will also (eventually) provide extensibility between other frameworks (e.g., Spring, Guice, CDI, etc.).
-* Interception. Services can be intercepted using code generation at compile-time - also avoiding all use of reflection at runtime.
-* Lifecycle. Pico can function as a kernel for your application, providing graceful startup and shutdown lifecycle processing.
+1. A service registry. The service registry holds service providers and are (or otherwise can produce) services. Each service provider in the registry advertises its meta-information for what each service provides, and what it requires in the way of dependencies.
+
+2. A lifecycle engine. Each service provider in the registry remains dormant until there is a "demand for activation". This "demand for activation" is also known as "lazy activation" that can come in different ways. One way is to simply "get" a service (or services) from the registry that matches the meta-information criteria you provide programmatically. If the service (or services) need other services as part of the activation then those services are chain activated, recursively. Pico provides graceful startup and shutdown at a micro service-level as well as at a macro application level for all services in the service registry.
+
+3. Integrations and Extensibility. More will be mentioned on this later.
+
+Over the foundation of these main features of "services registry", "lifecycle", and "extensibility" there are a number of other tooling and layers that are delivered from various Pico submodules:
+
+1. A minimalist, compile-time generated dependency injection framework that is free from reflection, and compliant to the JSR-330 injection specification. Compile-time source code generation has a number of advantages, including: (a) pre-runtime validation of the DI model, (b) visibility into your application by providing "less magic", which in turn fosters understandability and debug-ability of your application, (c) deterministic behavior (instead of depending on reflection and classpath ordering, etc.) and (c) performance, since binding the model at compile-time is more efficient than computing it at runtime. Pico (through its tooling) provides you with a mix of declarative and programmatic ways to build your application. It doesn't have to be just one or the other like other popular frameworks in use today require. Inspiration for Pico, however, did come from many libraries and frameworks that came before it (e.g., Jakarta Hk2, Google Guice, Spring, CDI, and even OSGi). Foundationally, Pico provides a way to develop declarative code using standard (i.e., javax/jakarta, not Helidon specific) annotation types.
+
+2. Integrations. Blending services from different providers (e.g., Helidon services like WebServer, your application service, 3rd party service, etc.) becomes natural in the Pico framework, and enables you to build fully-integrated, feature-rich applications more easily.
+
+3. Extensibility. At the micro level developers can provide their own templates for things like code generation, or even provide an entirely different implementation from this reference implementation Helidon provides. At a macro level (and post the initial release), Pico will be providing a foundation to extend your Guice, Spring, Hk2, CDI, <fill-in the blank> application naturally into one application runtime. The Helidon team fields a number of support questions that involve this area involving "battling DI frameworks" like CDI w/ Hk2. In time, Pico aims to smooth out this area through the integrations and extensibility features that it will be providing.
+
+4. Interception. Annotations are provided, that in conjunction with Pico's code-generation annotation processors, allow services in the service registry to support interception and decoration patterns - without the use of reflection at runtime, which is conducive to native image.
+
+***
+__Pico currently support Java 11+, using jakarta.inject or javax.inject, jakarta.annotations or javax.annotations.__
+***
 
 The Helidon Team believes that the above features help developers achieve the following goals:
-* Improved developer options. With Pico... developers can choose to use an imperative coding style or now with Pico and IoC style previously only available with CDI in Helidon MP.
-* Improved determinism. With Pico... developers can decide to use compile-time code generation into their build process, thereby statically determining the injection path while still using a declarative approach for building their application. Added to this, all code-generated artifacts are in source form instead of bytecode thereby making your application more readable, understandable, consistent, and debuggable.
-* Detect errors at compile time. With Pico... developers can ferret out issues in their dependency model at compile-time instead of discovering about issues at runtime.
-* Improved performance. Pushing more into compile-time helps reduce what otherwise would need to occur (often times via reflection) to compile-time. Native code is generated that is further optimized by the compiler. Additionally, with lazy activation of services, only what is needed is activated. Anything not used may be in the classpath, but unless there is demand for these services that can be short-circuited from starting unless and until they are needed.
+* More IoC options. With Pico... developers can choose to use an imperative coding style or a declarative IoC style previously only available with CDI using Helidon MP. At the initial release (Helidon 4.0), however, Pico will only be available with Helidon Nima support.
+* Compile-time benefits. With Pico... developers can decide to use compile-time code generation into their build process, thereby statically and deterministically wiring their injection model while still enjoying the benefits of a declarative approach for writing their application. Added to this, all code-generated artifacts are in source form instead of bytecode thereby making your application more readable, understandable, consistent, and debuggable. Furthermore, DI model inconsistencies can be found during compile-time instead of at runtime.
+* Improved performance. Pushing more into compile-time helps reduce what otherwise would need to occur (often times via reflection) to built/compile-time processing. Native code is generated that is further optimized by the compiler. Additionally, with lazy activation of services, only what is needed is activated. Anything not used may be in the classpath is available, but unless and until there is demand for those services they remain dormant. You control the lifecycle in your application code.
 
-<u>Many DI frameworks start simple and over time become bloated with "bells and whistle" type features - the majority of which most developers don't need and never use; especially in today's world of microservices where the application scope is the JVM process itself. The Helidon Pico Framework is a reset back to basics, and perfect for such use cases requiring minimalism yet still be extensible.</u>
+Many DI frameworks start simple and over time become bloated with "bells and whistle" type features - the majority of which most developers don't need and will never use; especially in today's world of microservices where the application scope is the JVM process itself.
+
+***
+The <b>Helidon Pico Framework</b> is a reset back to basics, and perfect for such use cases requiring minimalism but yet still be extensible. This is why Pico intentionally chose to reset back to basics and implemented the earlier JSR-330 specification at its foundation. <i>Application Scope</i> == <i>Singleton Scope</i> in a microservices world.
+***
+
+Request and Session scopes are simply not made available in Pico. We believe that scoping is a recipe for undo complexity, confusion, and bugs for the many developers today. 
 
 ## Terminology
 * DI - Dependency Injection.
@@ -34,11 +52,11 @@ The Helidon Team believes that the above features help developers achieve the fo
 * Application - The fully realized set of modules and services/service providers that constitute your application, and code-generated using <b>Helidon Pico Tooling</b>.
 
 ## Getting Started
-As stated in the introduction above, the Pico framework aims to provide a minimalist API implementation. As a result, it might be surprising to learn how small the actual API is for Pico - see [api](./pico) and the API/annotation types at [pico api](./pico/src/main/java/io/helidon/pico).  If you are already familiar with [jakarta.inject](https://javadoc.io/doc/jakarta.inject/jakarta.inject-api/latest/index.html) and optionally, [jakarta.annotation](https://javadoc.io/doc/jakarta.annotation/jakarta.annotation-api/latest/jakarta.annotation/jakarta/annotation/package-summary.html) then basically you are ready to go. But if you've never used DI before then first review the basics of [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection).
+As stated in the introduction above, the Pico framework aims to provide a minimalist API implementation. As a result, it might be surprising to learn how small the actual API is for Pico - see [pico api](./pico) and the API/annotation types at [pico api](./pico/src/main/java/io/helidon/pico).  If you are already familiar with [jakarta.inject](https://javadoc.io/doc/jakarta.inject/jakarta.inject-api/latest/index.html) and optionally, [jakarta.annotation](https://javadoc.io/doc/jakarta.annotation/jakarta.annotation-api/latest/jakarta.annotation/jakarta/annotation/package-summary.html) then basically you are ready to go. But if you've never used DI before then first review the basics of [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection).
 
-The prerequisites are familiarity with dependency injection, Java v11+, and maven 3.8.5+.
+The prerequisites are familiarity with dependency injection, Java 11+, and maven 3.8.5+.
 
-The best way to learn Helidon Pico is by looking at [the examples](./examples/README.md) --- comming soon .  But if you want to immediately get started here are the basics steps:
+The best way to learn Helidon Pico is by looking at [the examples](../examples/pico). But if you want to immediately get started here are the basics steps:
 
 1. Put these in your pom.xml or gradle.build file:
    Annotation processor dependency / path:
@@ -51,7 +69,7 @@ Compile-time dependency:
 ```
   <dependency>
     <groupId>io.helidon.pico</groupId>
-    <artifactId>helidon-pico</artifactId>
+    <artifactId>helidon-pico-services</artifactId>
     <version>${helidon.version}</version>
   </dependency>
 ```
@@ -63,8 +81,10 @@ Compile-time dependency:
 * If you know the class you want to create then look it up directly using the <i>Services</i> SPI. Here is a sample excerpt from [the book example](./examples/book/README.md):
 
 ```
-        Services services = PicoServices.picoServices().orElseThrow().services();
+        Services services = PicoServices.realizedServices();
+        // query
         ServiceProvider<MyService> serviceProvider = services.lookupFirst(MyService.class);
+        // lazily activate
         MyService myLazyActivatedService = serviceProvider.get();
 ```
 
@@ -80,7 +100,7 @@ Compile-time dependency:
 
 ## More Advanced Features
 
-* Pico provides a means to generate "Activators" (the DI supporting types) for externally built modules as well as supporting javax annotated types. See [the logger example](./examples/logger/README.md) for use of these features.
+* Pico provides a means to generate "Activators" (the DI supporting types) for externally built modules as well as supporting javax annotated types. See [the logger example](../examples/pico/logger) for use of these features.
 
 * Pico offers services the ability to be intercepted. If your service contains any annotation that itself is annotated with <i>InterceptorTrigger</i> then the code generated for that service will support interception. The <i>Helidon Nima</i> project provides these types of examples.
 
@@ -88,32 +108,32 @@ Compile-time dependency:
 
 * Pico generates a proposed <i>module-info.java.pico</i> file for your module (look for module-info.java.pico under ./target/classes or ./target/test-classes).
 
-* Pico provides a maven plugin that allows the injection graph to be (a) validated for completeness, and (b) deterministically bound to the service implementation - at compile-time. This is demonstrated in each of the examples, the result of which leads to early detection of issues at compile-time instead of at runtime as well as a marked performance enhancement.
+* Pico provides a maven-plugin that allows the injection graph to be (a) validated for completeness, and (b) deterministically bound to the service implementation - at compile-time. This is demonstrated in each of the examples, the result of which leads to early detection of issues at compile-time instead of at runtime as well as a marked performance enhancement.
 
-* Testability. The <b>testing</b> is a module that offers a set of types in order to facility for creating fake/mock services for various testing scenarios.
+* Testability. The [testing](./testing) module offers a set of types in order to facility for creating fake/mock services for various testing scenarios.
 
 * Extensibility. The entire Pico Framework is designed to by extended either at a micro level (developers can override mustache/handlebar templates) to the macro level (developers can provide their own implementation of any SPI).
 
 ## Modules
 
 * [pico](./pico) - the Pico API and SPI; depends on jakarta-inject and jakarta-annotations. Required as a maven compile-time dependency for runtime consumption.
-* [services](./services) - contains the default implementation of the Pico API/SPI; depends on the pico api module above. Requires as a maven compile-time dependency for runtime consumption.
-* [configdriven](./configdriven) - Extensions to Pico to integrate directly with [Helidon Config](../config).
+* [services](./services) - contains the default runtime implementation of the Pico API/SPI; depends on the pico api module above. Requires as a maven compile-time dependency for runtime consumption.
+* [configdriven](./configdriven) - Extensions to Pico to integrate directly with [Helidon Config](../config) subsystem.
 * [tools](./tools) - contains the libraries and template-based codegen mustache resources as well as model validation tooling; depends on runtime services. Only required at build time and is not required for Pico at runtime.
 * [processor](./processor) - contains the libraries for annotation processing; depends on tools. Only required at build time and is not required for Pico at runtime.
 * [maven-plugin](./maven-plugin) - provides code generation Mojo wrappers for maven; depends on tools. Only required at build time and is not required for Pico at runtime. This is what would be used to create your <b>Application</b>.
 * [testing](./testing) - provides testing types useful for Pico unit & integration testing.
 * [tests](./tests) - used internally for testing Pico.
-* [examples](./examples) --- coming soon --- providing examples for how to use Pico as well as side-by-side comparisons for Pico compared to Guice, Dagger2, Hk2, etc.
+* [examples](../examples/pico) - providing examples for how to use Pico as well as side-by-side comparisons for Pico compared to Guice, Dagger2, Hk2, etc.
 
 ## How Pico Works
 
-* The Pico annotation [processor](./processor) will look for standard jakarta/javax inject and jakarta/javax annotation types. When these types are found in a class that is being compiled by javac, Pico will trigger the creation of an <i>Activator</i> for that service class/type.  For example, if you have a FooImpl class implementing Foo interface, and the FooImpl either contains "@Inject" or "@Singleton" then the presence of either of these annotations will trigger the creation of a FooImpl$$picoActivator to be created. The Activator is used to (a) describe the service in terms of what service contracts (i.e., interfaces) are advertised by FooImpl - in this case <i>Foo</> (if Foo is annotated with @Contract or if "-Aio.helidon.pico.autoAddNonContractInterfaces=true" is used at compile-time), (b) lifecycle of services including creation, calling injection-based setters, and any <i>PostConstruct or PreDestroy</i> methods.
+* The Pico annotation [processor](./processor) will look for standard jakarta/javax inject and jakarta/javax annotation types. When these types are found in a class that is being compiled by javac, Pico will trigger the creation of an <i>Activator</i> for that service class/type. For example, if you have a FooImpl class implementing Foo interface, and the FooImpl either contains "@Inject" or "@Singleton" then the presence of either of these annotations will trigger the creation of a FooImpl$$picoActivator to be created. The Activator is used to (a) describe the service in terms of what service contracts (i.e., interfaces) are advertised by FooImpl - in this case <i>Foo</i> (if Foo is annotated with @Contract or if "-Aio.helidon.pico.autoAddNonContractInterfaces=true" is used at compile-time), (b) lifecycle of services including creation, calling injection-based setters, and any <i>PostConstruct or PreDestroy</i> methods.
 
 * If one or more activators are created at compile-time, then a <i>Pico$$Module</i> is also created to aggregate the services for the given module. Below is an example if a <i>picoModule</i> from [examples/logger](./examples/logger). At initialization time of Pico, all <i>Module</i>s will be located using the ServiceLocator and each service will be binded into the Pico service registry.
 
 ```java
-@Generated({"provider=oracle", "generator=io.helidon.pico.tools.creator.impl.DefaultActivatorCreator", "ver=1.0-SNAPSHOT"})
+@Generated({"generator=io.helidon.pico.tools.creator.impl.DefaultActivatorCreator", "ver=1"})
 @Singleton @Named(Pico$$Module.NAME)
 public class Pico$$Module implements Module {
     static final String NAME = "pico.examples.logger.common";
@@ -141,12 +161,12 @@ public class Pico$$Module implements Module {
 }
 ```
 
-* If an annotation in your service is meta-annotated with <i>InterceptedTrigger</i>, then an extra service type is created. For example, if FooImpl was found to have one such annotation then FooImpl$$picoInterceptor would also be created along with an activator for that interceptor. The interceptor would be created with a higher weight than your FooImpl, and would therefore be "preferred" when a single <i>@Inject</i> is used for Foo or FooImpl.  If a list is injected then it would appear towards the head of the list.  Once again, all reflection is avoided in these generated classes.  Any calls to Foo/FooImpl will be interceptable for any <i>Interceptor</i> that is <i>@Named</i> to handle that type name. Search the test code and Nima code for such examples as this is an advanced feature.
+* If an annotation in your service is meta-annotated with <i>InterceptedTrigger</i>, then an extra service type is created that will trigger interceptor service code generation. For example, if FooImpl was found to have one such annotation then FooImpl$$Pico$$Interceptor would also be created along with an activator for that interceptor. The interceptor would be created with a higher weight than your FooImpl, and would therefore be "preferred" when a single <i>@Inject</i> is used for Foo or FooImpl. If a list is injected then it would appear towards the head of the list.  Once again, all reflection is avoided in these generated classes. Any calls to Foo/FooImpl will be interceptable for any <i>Interceptor</i> that is <i>@Named</i> to handle that type name. Search the test code and Nima code for such examples as this is an advanced feature.
 
-* The [maven-plugin](./maven-plugin) can optionally be used to avoid Pico lookup resolutions at runtime within each service activation. At startup Pico will attempt to first use the <i>Application</i> to avoid lookups. The best practice is to apply the <i>maven-plugin</i> to <i>create-application</i> on your maven assembly - this is usually your "final" application module that depends upon every other service / module in your entire deployed application. Here is the <i>Pico$$Application</i> from [examples/logger](./examples/logger):
+* The [maven-plugin](./maven-plugin) can optionally be used to avoid Pico lookup resolutions at runtime within each service activation. At startup Pico will attempt to first use the <i>Application</i> to avoid lookups. The best practice is to apply the <i>maven-plugin</i> to <i>create-application</i> on your maven assembly - this is usually your "final" application module that depends upon every other service / module in your entire deployed application. Here is the <i>Pico$$Application</i> from [examples/logger](../examples/pico/logger):
 
 ```java
-@Generated({"provider=oracle", "generator=io.helidon.pico.maven.plugin.ApplicationCreatorMojo", "ver=1.0-SNAPSHOT"})
+@Generated({"generator=io.helidon.pico.maven.plugin.ApplicationCreatorMojo", "ver=1"})
 @Singleton @Named(Pico$$Application.NAME)
 public class Pico$$Application implements Application {
   static final String NAME = "unnamed";
@@ -235,7 +255,7 @@ public class Pico$$Application implements Application {
 }
 ```
 
-* The <i>maven-plugin</i> can additionally be used to create the Pico DI supporting types (Activators, Modules, Interceptors, Applications, etc.) from introspecting an external jar - see the [examples](./examples) for details.
+* The <i>maven-plugin</i> can additionally be used to create the Pico DI supporting types (Activators, Modules, Interceptors, Applications, etc.) from introspecting an external jar - see the [examples](../examples/pico) for details.
 
 That is basically all there is to know to get started and become productive using Pico.
 
