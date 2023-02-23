@@ -126,7 +126,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Exact strings to be allowed.
+         * Exact strings to allow.
          *
          * @param exacts which allow matching
          * @return updated builder
@@ -138,7 +138,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Prefixes specifying strings to be allowed.
+         * Prefixes specifying strings to allow.
          *
          * @param prefixes which allow matching
          * @return updated builder
@@ -162,7 +162,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * List of {@link Pattern} specifying strings to be allowed.
+         * {@link Pattern}s specifying strings to allow.
          *
          * @param patterns which allow matching
          * @return updated builder
@@ -174,7 +174,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Adds an exact string to be allowed.
+         * Adds an exact string to allow.
          *
          * @param exact which allows matching
          * @return updated builder
@@ -184,7 +184,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Adds a {@link Pattern} specifying strings to be allowed.
+         * Adds a {@link Pattern} specifying strings to allow.
          *
          * @param pattern which allows matching
          * @return updated builder
@@ -194,7 +194,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Adds a prefix specifying strings to be allowed.
+         * Adds a prefix specifying strings to allow.
          *
          * @param prefix which allows matching
          * @return updated builder
@@ -204,7 +204,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Adds a suffix specifying strings to be allowed.
+         * Adds a suffix specifying strings to allow.
          *
          * @param suffix which allows matching
          * @return updated builder
@@ -214,7 +214,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Adds a predicate specifying strings to be allowed.
+         * Adds a predicate specifying strings to allow.
          *
          * @param predicate which allows matching
          * @return updated builder
@@ -225,7 +225,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Exact strings to be denied.
+         * Exact strings to deny.
          *
          * @param exacts which deny matching
          * @return updated builder
@@ -237,7 +237,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Prefixes which specify strings to be denied.
+         * Prefixes specifying strings to deny.
          *
          * @param prefixes which deny matching
          * @return updated builder
@@ -249,7 +249,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Suffixes which specify strings to be denied.
+         * Suffixes specifying strings to deny.
          *
          * @param suffixes which deny matching
          * @return updated builder
@@ -261,7 +261,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Patterns which specify strings to be denied.
+         * Patterns specifying strings to deny.
          *
          * @param patterns which deny matching
          * @return updated builder
@@ -273,7 +273,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Adds an exact string to be denied.
+         * Adds an exact string to deny.
          *
          * @param exact match to deny matching
          * @return updated builder
@@ -283,7 +283,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Adds a {@link Pattern} which specifies strings to be denied.
+         * Adds a {@link Pattern} which specifies strings to deny.
          *
          * @param pattern to deny matching
          * @return updated builder
@@ -293,7 +293,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Adds a prefix which specifies strings to be denied.
+         * Adds a prefix which specifies strings to deny.
          *
          * @param prefix to deny matching
          * @return updated builder
@@ -303,7 +303,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Adds a suffix which specifies strings to be denied.
+         * Adds a suffix which specifies strings to deny.
          *
          * @param suffix to deny matching
          * @return updated builder
@@ -313,7 +313,7 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Adds a predicate which specifies strings to be denied.
+         * Adds a predicate which specifies strings to deny.
          *
          * @param predicate to deny matching
          * @return updated builder
