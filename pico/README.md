@@ -8,7 +8,7 @@
 
 3. Integrations and Extensibility. More will be mentioned on this later.
 
-Over the foundation of these main features of "services registry", "lifecycle", and "extensibility" there are a number of other tooling and layers that are delivered from various Pico submodules:
+Over the foundation of these main features of "services registry", "lifecycle", and "extensibility" there are a number of other tooling and layers that are delivered from various Pico submodules delivering the following:
 
 1. A minimalist, compile-time generated dependency injection framework that is free from reflection, and compliant to the JSR-330 injection specification. Compile-time source code generation has a number of advantages, including: (a) pre-runtime validation of the DI model, (b) visibility into your application by providing "less magic", which in turn fosters understandability and debug-ability of your application, (c) deterministic behavior (instead of depending on reflection and classpath ordering, etc.) and (c) performance, since binding the model at compile-time is more efficient than computing it at runtime. Pico (through its tooling) provides you with a mix of declarative and programmatic ways to build your application. It doesn't have to be just one or the other like other popular frameworks in use today require. Inspiration for Pico, however, did come from many libraries and frameworks that came before it (e.g., Jakarta Hk2, Google Guice, Spring, CDI, and even OSGi). Foundationally, Pico provides a way to develop declarative code using standard (i.e., javax/jakarta, not Helidon specific) annotation types.
 
@@ -39,7 +39,7 @@ Request and Session scopes are simply not made available in Pico. We believe tha
 * DI - Dependency Injection.
 * Inject - The assignment of a <i>service</i> instance to a field or method setter that has been annotated with <i>@Inject</i> - also referred to as an injection point. In Spring this would be referred to as 'Autowired'.
 * Injection Plan - The act of determining how your application will resolve each <i>injection point</i>. In Pico this can optionally be performed at compile-time. But even when the injection plan is deferred to runtime it is resolved without using reflection, and is therefore conducive to native image restrictions and enhanced performance.
-* Service - In Spring this would be referred to as a bean with a <i>@Service</i> annotation; These are concrete class types in your application that represents some sort of business logic.
+* Service (aka Bean) - In Spring this would be referred to as a <i>bean</i> with a <i>@Service</i> annotation; These are concrete class types in your application that represents some sort of business logic.
 * Scope - This refers to the cardinality of a <i>service</i> instance in your application.
 * Singleton - jakarta.inject.Singleton or javax.inject.Singleton - This is the default scope for services in Pico just like it is in Spring.
 * Provided - jakarta.inject.Provider or javax.inject.Provider - If the <i>scope</i> of a <i>service</i> is not <i>Singleton</i> then it is considered to be a Provided scope - and the cardinality will be ascribed to the implementation of the Provider to determine its cardinality. The provider can optionally use the <i>injection point</i> context to determine the appropriate instance and/or cardinality it provides.
@@ -106,19 +106,21 @@ Compile-time dependency:
 
 * Pico provides meta-information for each service in its service registry, including such information as what contracts are provided by each service as well as describing its dependencies.
 
-* Pico generates a proposed <i>module-info.java.pico</i> file for your module (look for module-info.java.pico under ./target/classes or ./target/test-classes).
+* Java Module System support / generation. Pico generates a proposed <i>module-info.java.pico</i> file for your module (look for module-info.java.pico under ./target/pico).
 
 * Pico provides a maven-plugin that allows the injection graph to be (a) validated for completeness, and (b) deterministically bound to the service implementation - at compile-time. This is demonstrated in each of the examples, the result of which leads to early detection of issues at compile-time instead of at runtime as well as a marked performance enhancement.
 
 * Testability. The [testing](./testing) module offers a set of types in order to facility for creating fake/mock services for various testing scenarios.
 
-* Extensibility. The entire Pico Framework is designed to by extended either at a micro level (developers can override mustache/handlebar templates) to the macro level (developers can provide their own implementation of any SPI).
+* Extensibility. The entire Pico Framework is designed to by extended either at a micro level (developers can override mustache/handlebar templates) to the macro level (developers can provide their own implementation of any SPI). Another example of internal extensibility is via our [config-driven](./configdriven) services.
+
+* Determinism. Pico strives to keep your application as deterministic as possible. Dynamically adding services post-initialization will not be allowed, and will even result in a runtime exception (configurable). Any service that is "a provider" that dynamically creates a service in runtime code will issue build failures or warnings (configurable). All services are always ordered first according to <i>Weight</i> and secondarily according to type name (instead of relying on classpath ordering). Essentially, all areas of Pico attempts to keep your application as deterministic as possible at production runtime.
 
 ## Modules
 
 * [pico](./pico) - the Pico API and SPI; depends on jakarta-inject and jakarta-annotations. Required as a maven compile-time dependency for runtime consumption.
 * [services](./services) - contains the default runtime implementation of the Pico API/SPI; depends on the pico api module above. Requires as a maven compile-time dependency for runtime consumption.
-* [configdriven](./configdriven) - Extensions to Pico to integrate directly with [Helidon Config](../config) subsystem.
+* [config-driven](./configdriven) - Extensions to Pico to integrate directly with the [Helidon Config](../config) subsystem.
 * [tools](./tools) - contains the libraries and template-based codegen mustache resources as well as model validation tooling; depends on runtime services. Only required at build time and is not required for Pico at runtime.
 * [processor](./processor) - contains the libraries for annotation processing; depends on tools. Only required at build time and is not required for Pico at runtime.
 * [maven-plugin](./maven-plugin) - provides code generation Mojo wrappers for maven; depends on tools. Only required at build time and is not required for Pico at runtime. This is what would be used to create your <b>Application</b>.
