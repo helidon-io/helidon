@@ -14,7 +14,7 @@ java -jar path-to-generator/openapi-generator-cli.jar \
           generate \
           -g java-helidon-server \  
           --library se \
-          -p helidonVersion=2.5.2 \          
+          -p helidonVersion=2.5.6 \          
           -i path-to-openapi-doc/quickstart.yaml
 ```
 
@@ -95,7 +95,7 @@ java -jar path-to-generator/openapi-generator-cli.jar \
           generate \
           -g java-helidon-client \  
           --library se \
-          -p helidonVersion=2.5.2 \          
+          -p helidonVersion=2.5.6 \          
           -i path-to-openapi-doc/quickstart.yaml
 ```
 
