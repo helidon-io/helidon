@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import io.netty.handler.codec.http.HttpRequest;
  */
 class BareRequestImpl implements BareRequest {
 
+    private final SocketConfiguration soConfig;
     private final HttpRequest nettyRequest;
     private final Flow.Publisher<DataChunk> publisher;
     private final WebServer webServer;
@@ -49,11 +50,13 @@ class BareRequestImpl implements BareRequest {
     private final URI uri;
 
     BareRequestImpl(HttpRequest request,
+                    SocketConfiguration soConfig,
                     Flow.Publisher<DataChunk> publisher,
                     WebServer webServer,
                     ChannelHandlerContext ctx,
                     SSLEngine sslEngine,
                     long requestId) {
+        this.soConfig = soConfig;
         this.nettyRequest = request;
         this.publisher = publisher;
         this.webServer = webServer;
@@ -101,6 +104,11 @@ class BareRequestImpl implements BareRequest {
     @Override
     public int remotePort() {
         return port(ctx.channel().remoteAddress());
+    }
+
+    @Override
+    public SocketConfiguration socketConfiguration() {
+        return soConfig;
     }
 
     private String hostString(SocketAddress address) {

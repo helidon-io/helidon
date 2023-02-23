@@ -7,11 +7,73 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
+
+## [2.5.6]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- Config: Add config enum mapping support [5788](https://github.com/helidon-io/helidon/pull/5788)
+- Dependencies: Neo4j Driver update [5753](https://github.com/helidon-io/helidon/pull/5753)
+- Dependencies: Upgrade Netty to 4.1.86.Final [5725](https://github.com/helidon-io/helidon/pull/5725)
+- Security: Accidentally removed updateRequest method returned [5843](https://github.com/helidon-io/helidon/pull/5843)
+- Security: Default tenant is not included for propagation [5899](https://github.com/helidon-io/helidon/pull/5899)
+- Security: Oidc tenant name now properly escaped  [5856](https://github.com/helidon-io/helidon/pull/5856)
+- WebServer: Add support for requested URI discovery [5827](https://github.com/helidon-io/helidon/pull/5827)
+- Build: remove duplicated dependencies in some projects [5864](https://github.com/helidon-io/helidon/pull/5864)
+- Docs: Update 01_vault.adoc [5483](https://github.com/helidon-io/helidon/pull/5483)
+- Test: Use Hamcrest assertions instead of JUnit [5870](https://github.com/helidon-io/helidon/pull/5870) and others
+
 ## [2.5.5]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
 
 ### CHANGES
+
+- Common: Add info to Charbuf exceptions [5368](https://github.com/helidon-io/helidon/pull/5368)
+- Config: Provide MP config profile support for application.yaml [5565](https://github.com/helidon-io/helidon/pull/5565)
+- DBClient: Handle exception on inTransaction apply [5644](https://github.com/helidon-io/helidon/pull/5644)
+- Docker: remove -Ddocker.build=true [5486](https://github.com/helidon-io/helidon/pull/5486)
+- Fault Tolerance: Additional @Retry strategies [5230](https://github.com/helidon-io/helidon/pull/5230)
+- GRPC: Grpc component Does not handle package directive in proto files. [5150](https://github.com/helidon-io/helidon/pull/5150)
+- Health: Use lazy values to initialized HealthSupport FT handlers [5106](https://github.com/helidon-io/helidon/pull/5106)
+- LRA: LRA false warning [5554](https://github.com/helidon-io/helidon/pull/5554)
+- Messaging: Message body operator matching with parameters [5523](https://github.com/helidon-io/helidon/pull/5523)
+- MicroProfile: Add null check to MP Server.Builder.config() [5363](https://github.com/helidon-io/helidon/pull/5363)
+- OpenAPI: Add support for OpenAPI UI [2.x] [5584](https://github.com/helidon-io/helidon/pull/5584)
+- Security: Add relativeUris flag in OidcConfig to allow Oidc webclient to use relative path on the request URI [5267](https://github.com/helidon-io/helidon/pull/5267)
+- Security: Jwt scope handling extended over array support [5520](https://github.com/helidon-io/helidon/pull/5520)
+- Security: Multitenant lazy loading implementation improved [5678](https://github.com/helidon-io/helidon/pull/5678)
+- Security: OIDC multi-tenant and lazy loading implementation [5168](https://github.com/helidon-io/helidon/pull/5168)
+- Security: Use only public APIs to read PKCS#1 keys (#5240) [5259](https://github.com/helidon-io/helidon/pull/5259)
+- Vault: Remove experimental flag from Vault docs (#5431) [5539](https://github.com/helidon-io/helidon/pull/5539)
+- WebServer: Log an entry in warning level for a 400 or 413 response  [5298](https://github.com/helidon-io/helidon/pull/5298)
+- WebServer: NullPointerException when there is an illegal character in the request [5470](https://github.com/helidon-io/helidon/pull/5470)
+- WebServer: WebServer.Builder media support methods with Supplier variants [5640](https://github.com/helidon-io/helidon/pull/5640)
+- Copyrights: Remove trailing empty line in copyright comment [5324](https://github.com/helidon-io/helidon/pull/5324) and others
+- Dependencies: Fix Guava version to match that required by the grpc-java libraries [5446](https://github.com/helidon-io/helidon/pull/5446)
+- Dependencies: Manage protobuf version using BOM [5177](https://github.com/helidon-io/helidon/pull/5177)
+- Dependencies: Upgrade PostgreSQL JDBC driver dependency to 42.4.3 [5563](https://github.com/helidon-io/helidon/pull/5563)
+- Dependencies: Upgrade grpc-java to 1.49.2 [5360](https://github.com/helidon-io/helidon/pull/5360)
+- Dependencies: Upgrade protobuf-java.  [5132](https://github.com/helidon-io/helidon/pull/5132)
+- Dependencies: Upgrade to jackson-databind-2.13.4.2 via bom 2.13.4.20221013 [5303](https://github.com/helidon-io/helidon/pull/5303)
+- Dependencies: Upgrade build-tools to 2.3.7 [5705](https://github.com/helidon-io/helidon/pull/5705)
+- Docs: Add doc describing use of OpenAPI code generator to 2.x [5590](https://github.com/helidon-io/helidon/pull/5590)
+- Docs: Archetype Doc [5576](https://github.com/helidon-io/helidon/pull/5576)
+- Docs: Replace deprecated ServerConfiguration.builder() on WebServer.builder() in docs - backport 2.x (#5024) [5119](https://github.com/helidon-io/helidon/pull/5119)
+- Docs: flatMapCompletionStage javadoc fix [5623](https://github.com/helidon-io/helidon/pull/5623)
+- Examples: Add OCI MP Archetype [5366](https://github.com/helidon-io/helidon/pull/5366)
+- Examples: Include istio and lra examples in reactor. Fix version numbers [5277](https://github.com/helidon-io/helidon/pull/5277)
+- Examples: Remove license-report from maven lifecycle [5245](https://github.com/helidon-io/helidon/pull/5245)
+- Tests: Add some retries because post-request metrics updates occur after the response is sent [5142](https://github.com/helidon-io/helidon/pull/5142)
+- Tests: Fix Intermittent TestJBatchEndpoint.runJob [5558](https://github.com/helidon-io/helidon/pull/5558)
+- Tests: Fix intermittent jBatch test [5248](https://github.com/helidon-io/helidon/pull/5248)
+- Tests: Move checkLazyFaultToleranceInitialization() test to its own class  [5138](https://github.com/helidon-io/helidon/pull/5138)
+- Tests: Remove value check of executor metrics; just check for existence [5120](https://github.com/helidon-io/helidon/pull/5120)
+- Tests: Simplify named socket WebTarget injection in Tests [5315](https://github.com/helidon-io/helidon/pull/5315)
+- Tests: Use Hamcrest assertions instead of JUnit [5275](https://github.com/helidon-io/helidon/pull/5275) and others
 
 ## [2.5.4]
 
@@ -2002,6 +2064,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.5.6]: https://github.com/oracle/helidon/compare/2.5.5...2.5.6
 [2.5.5]: https://github.com/oracle/helidon/compare/2.5.4...2.5.5
 [2.5.4]: https://github.com/oracle/helidon/compare/2.5.3...2.5.4
 [2.5.3]: https://github.com/oracle/helidon/compare/2.5.2...2.5.3

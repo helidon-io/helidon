@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,20 @@
  */
 package io.helidon.integrations.oci.metrics.cdi;
 
-import javax.annotation.Priority;
-import javax.enterprise.inject.Alternative;
-import static javax.interceptor.Interceptor.Priority.APPLICATION;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import io.helidon.config.Config;
+import io.helidon.integrations.oci.metrics.OciMetricsSupport;
+import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.microprofile.config.ConfigCdiExtension;
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import com.oracle.bmc.Region;
 import com.oracle.bmc.monitoring.Monitoring;
@@ -25,90 +36,150 @@ import com.oracle.bmc.monitoring.MonitoringPaginators;
 import com.oracle.bmc.monitoring.MonitoringWaiters;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
 import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
-import com.oracle.bmc.monitoring.requests.*;
-import com.oracle.bmc.monitoring.responses.*;
-
-import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.server.JaxRsCdiExtension;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import com.oracle.bmc.monitoring.requests.ChangeAlarmCompartmentRequest;
+import com.oracle.bmc.monitoring.requests.CreateAlarmRequest;
+import com.oracle.bmc.monitoring.requests.DeleteAlarmRequest;
+import com.oracle.bmc.monitoring.requests.GetAlarmHistoryRequest;
+import com.oracle.bmc.monitoring.requests.GetAlarmRequest;
+import com.oracle.bmc.monitoring.requests.ListAlarmsRequest;
+import com.oracle.bmc.monitoring.requests.ListAlarmsStatusRequest;
+import com.oracle.bmc.monitoring.requests.ListMetricsRequest;
+import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
+import com.oracle.bmc.monitoring.requests.RemoveAlarmSuppressionRequest;
+import com.oracle.bmc.monitoring.requests.SummarizeMetricsDataRequest;
+import com.oracle.bmc.monitoring.requests.UpdateAlarmRequest;
+import com.oracle.bmc.monitoring.responses.ChangeAlarmCompartmentResponse;
+import com.oracle.bmc.monitoring.responses.CreateAlarmResponse;
+import com.oracle.bmc.monitoring.responses.DeleteAlarmResponse;
+import com.oracle.bmc.monitoring.responses.GetAlarmHistoryResponse;
+import com.oracle.bmc.monitoring.responses.GetAlarmResponse;
+import com.oracle.bmc.monitoring.responses.ListAlarmsResponse;
+import com.oracle.bmc.monitoring.responses.ListAlarmsStatusResponse;
+import com.oracle.bmc.monitoring.responses.ListMetricsResponse;
+import com.oracle.bmc.monitoring.responses.PostMetricDataResponse;
+import com.oracle.bmc.monitoring.responses.RemoveAlarmSuppressionResponse;
+import com.oracle.bmc.monitoring.responses.SummarizeMetricsDataResponse;
+import com.oracle.bmc.monitoring.responses.UpdateAlarmResponse;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @HelidonTest(resetPerTest = true)
 @AddBean(OciMetricsCdiExtensionTest.MockMonitoring.class)
+@AddBean(OciMetricsCdiExtensionTest.MockOciMetricsBean.class)
 @DisableDiscovery
 // Helidon MP Extensions
 @AddExtension(ServerCdiExtension.class)
 @AddExtension(JaxRsCdiExtension.class)
+@AddExtension(ConfigCdiExtension.class)
 // OciMetricsCdiExtension
 @AddExtension(OciMetricsCdiExtension.class)
 // ConfigSources
 @AddConfig(key = "ocimetrics.compartmentId",
-        value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.compartmentId)
+           value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.compartmentId)
 @AddConfig(key = "ocimetrics.namespace",
-        value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.namespace)
+           value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.namespace)
 @AddConfig(key = "ocimetrics.resourceGroup",
-        value =  OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.resourceGroup)
+           value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.resourceGroup)
 @AddConfig(key = "ocimetrics.initialDelay", value = "1")
 @AddConfig(key = "ocimetrics.delay", value = "2")
-public class OciMetricsCdiExtensionTest {
+class OciMetricsCdiExtensionTest {
+    private static volatile int testMetricCount = 0;
+    private static CountDownLatch countDownLatch = new CountDownLatch(1);
+    private static PostMetricDataDetails postMetricDataDetails;
+    private static boolean activateOciMetricsSupportIsInvoked;
     private final RegistryFactory rf = RegistryFactory.getInstance();
+    private final MetricRegistry appMetricRegistry = rf.getRegistry(MetricRegistry.Type.APPLICATION);
     private final MetricRegistry baseMetricRegistry = rf.getRegistry(MetricRegistry.Type.BASE);
     private final MetricRegistry vendorMetricRegistry = rf.getRegistry(MetricRegistry.Type.VENDOR);
-    private final MetricRegistry appMetricRegistry = rf.getRegistry(MetricRegistry.Type.APPLICATION);
-    private static volatile int testMetricCount = 0;
-    // Use countDownLatch1 to signal the test that results to be asserted has been retrieved
-    private static CountDownLatch countDownLatch1 = new CountDownLatch(1);
-    private static PostMetricDataDetails postMetricDataDetails;
+
+    @AfterEach
+    void resetState() {
+        postMetricDataDetails = null;
+        activateOciMetricsSupportIsInvoked = false;
+        countDownLatch = new CountDownLatch(1);
+    }
 
     @Test
-    public void testRegisterOciMetrics() throws InterruptedException {
+    @AddConfig(key = "ocimetrics.enabled", value = "true")
+    void testEnableOciMetrics() throws InterruptedException {
+        validateOciMetricsSupport(true);
+    }
+
+    @Test
+    void testEnableOciMetricsWithoutConfig() throws InterruptedException {
+        validateOciMetricsSupport(true);
+    }
+
+    @Test
+    @AddConfig(key = "ocimetrics.enabled", value = "false")
+    void testDisableOciMetrics() throws InterruptedException {
+        validateOciMetricsSupport(false);
+    }
+
+    private void validateOciMetricsSupport(boolean enabled) throws InterruptedException {
         baseMetricRegistry.counter("baseDummyCounter").inc();
         vendorMetricRegistry.counter("vendorDummyCounter").inc();
         appMetricRegistry.counter("appDummyCounter").inc();
         // Wait for signal from metric update that testMetricCount has been retrieved
-        countDownLatch1.await(10, TimeUnit.SECONDS);
+        if (!countDownLatch.await(3, TimeUnit.SECONDS)) {
+            // If Oci Metrics is enabled, this means that countdown() of CountDownLatch was never triggered, and hence should fail
+            if (enabled) {
+                fail("CountDownLatch timed out");
+            }
+        }
 
-        assertThat(testMetricCount, is(equalTo(3)));
+        if (enabled) {
+            assertThat(activateOciMetricsSupportIsInvoked, is(true));
+            assertThat(testMetricCount, is(3));
 
-        MetricDataDetails metricDataDetails = postMetricDataDetails.getMetricData().get(0);
-        assertThat(metricDataDetails.getCompartmentId(),
-                is(equalTo(OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.compartmentId)));
-        assertThat(metricDataDetails.getNamespace(), is(equalTo(MetricDataDetailsOCIParams.namespace)));
-        assertThat(metricDataDetails.getResourceGroup(), is(equalTo(MetricDataDetailsOCIParams.resourceGroup)));
+            MetricDataDetails metricDataDetails = postMetricDataDetails.getMetricData().get(0);
+            assertThat(metricDataDetails.getCompartmentId(),
+                       is(MetricDataDetailsOCIParams.compartmentId));
+            assertThat(metricDataDetails.getNamespace(), is(MetricDataDetailsOCIParams.namespace));
+            assertThat(metricDataDetails.getResourceGroup(), is(MetricDataDetailsOCIParams.resourceGroup));
+        } else {
+            assertThat(activateOciMetricsSupportIsInvoked, is(false));
+            assertThat(testMetricCount, is(0));
+            // validate that OCI post metric is never called
+            assertThat(postMetricDataDetails, is(equalTo(null)));
+        }
     }
 
-    @Alternative
-    @Priority(APPLICATION + 1)
+    interface MetricDataDetailsOCIParams {
+        String compartmentId = "dummy.compartmentId";
+        String namespace = "dummy-namespace";
+        String resourceGroup = "dummy_resourceGroup";
+    }
+
     static class MockMonitoring implements Monitoring {
         @Override
-        public void setEndpoint(String s) {}
+        public String getEndpoint() {
+            return "http://www.DummyEndpoint.com";
+        }
 
         @Override
-        public String getEndpoint() {return "http://www.DummyEndpoint.com";}
+        public void setEndpoint(String s) {
+        }
 
         @Override
-        public void setRegion(Region region) {}
+        public void setRegion(Region region) {
+        }
 
         @Override
-        public void setRegion(String s) {}
+        public void setRegion(String s) {
+        }
 
         @Override
-        public void refreshClient() {}
+        public void refreshClient() {
+        }
 
         @Override
         public ChangeAlarmCompartmentResponse changeAlarmCompartment(ChangeAlarmCompartmentRequest changeAlarmCompartmentRequest) {
@@ -116,19 +187,29 @@ public class OciMetricsCdiExtensionTest {
         }
 
         @Override
-        public CreateAlarmResponse createAlarm(CreateAlarmRequest createAlarmRequest) {return null;}
+        public CreateAlarmResponse createAlarm(CreateAlarmRequest createAlarmRequest) {
+            return null;
+        }
 
         @Override
-        public DeleteAlarmResponse deleteAlarm(DeleteAlarmRequest deleteAlarmRequest) {return null;}
+        public DeleteAlarmResponse deleteAlarm(DeleteAlarmRequest deleteAlarmRequest) {
+            return null;
+        }
 
         @Override
-        public GetAlarmResponse getAlarm(GetAlarmRequest getAlarmRequest) {return null;}
+        public GetAlarmResponse getAlarm(GetAlarmRequest getAlarmRequest) {
+            return null;
+        }
 
         @Override
-        public GetAlarmHistoryResponse getAlarmHistory(GetAlarmHistoryRequest getAlarmHistoryRequest) {return null;}
+        public GetAlarmHistoryResponse getAlarmHistory(GetAlarmHistoryRequest getAlarmHistoryRequest) {
+            return null;
+        }
 
         @Override
-        public ListAlarmsResponse listAlarms(ListAlarmsRequest listAlarmsRequest) {return null;}
+        public ListAlarmsResponse listAlarms(ListAlarmsRequest listAlarmsRequest) {
+            return null;
+        }
 
         @Override
         public ListAlarmsStatusResponse listAlarmsStatus(ListAlarmsStatusRequest listAlarmsStatusRequest) {
@@ -136,14 +217,16 @@ public class OciMetricsCdiExtensionTest {
         }
 
         @Override
-        public ListMetricsResponse listMetrics(ListMetricsRequest listMetricsRequest) {return null;}
+        public ListMetricsResponse listMetrics(ListMetricsRequest listMetricsRequest) {
+            return null;
+        }
 
         @Override
         public PostMetricDataResponse postMetricData(PostMetricDataRequest postMetricDataRequest) {
             postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
             testMetricCount = postMetricDataDetails.getMetricData().size();
             // Give signal that testMetricCount was retrieved
-            countDownLatch1.countDown();
+            countDownLatch.countDown();
             return PostMetricDataResponse.builder()
                     .__httpStatusCode__(200)
                     .build();
@@ -160,28 +243,31 @@ public class OciMetricsCdiExtensionTest {
         }
 
         @Override
-        public UpdateAlarmResponse updateAlarm(UpdateAlarmRequest updateAlarmRequest) {return null;}
+        public UpdateAlarmResponse updateAlarm(UpdateAlarmRequest updateAlarmRequest) {
+            return null;
+        }
 
         @Override
-        public MonitoringWaiters getWaiters() {return null;}
+        public MonitoringWaiters getWaiters() {
+            return null;
+        }
 
         @Override
-        public MonitoringPaginators getPaginators() {return null;}
+        public MonitoringPaginators getPaginators() {
+            return null;
+        }
 
         @Override
-        public void close() throws Exception {}
+        public void close() throws Exception {
+        }
     }
 
-    public interface MetricDataDetailsOCIParams {
-        String compartmentId = "dummy.compartmentId";
-        String namespace = "dummy-namespace";
-        String resourceGroup = "dummy_resourceGroup";
-    }
-
-    private static void delay(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException ignore) {
+    static class MockOciMetricsBean extends OciMetricsBean {
+        // Override so we can test if this is invoked when enabled or skipped when disabled
+        @Override
+        void activateOciMetricsSupport(Config config, OciMetricsSupport.Builder builder) {
+            activateOciMetricsSupportIsInvoked = true;
+            super.activateOciMetricsSupport(config, builder);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -298,6 +298,7 @@ public class JerseySupport implements Service {
 
             requestContext.setProperty("io.helidon.jaxrs.remote-host", remoteHost);
             requestContext.setProperty("io.helidon.jaxrs.remote-port", remotePort);
+            requestContext.setProperty("io.helidon.jaxrs.requested-uri", req.requestedUri());
 
             requestContext.setWriter(responseWriter);
 

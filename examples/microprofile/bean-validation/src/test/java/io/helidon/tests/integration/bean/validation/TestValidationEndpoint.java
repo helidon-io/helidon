@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.tests.integration.bean.validation;
 
@@ -23,7 +22,8 @@ import javax.inject.Inject;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * When enabled, endpoints with bean validation should return response with BAD REQUEST status.
@@ -47,7 +47,7 @@ public class TestValidationEndpoint {
                 .get()
                 .getStatusInfo();
 
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), statusInfo.getStatusCode(), "Endpoint should return BAD REQUEST");
+        assertThat("Endpoint should return BAD REQUEST", statusInfo.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
 
     }
 
@@ -62,7 +62,7 @@ public class TestValidationEndpoint {
                 .request()
                 .get()
                 .getStatusInfo();
-        assertEquals(Response.Status.OK.getStatusCode(), statusInfo.getStatusCode(), "Endpoint should return OK");
+        assertThat("Endpoint should return OK", statusInfo.getStatusCode(), is(Response.Status.OK.getStatusCode()));
 
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,43 +15,17 @@
  */
 package io.helidon.integrations.oci.metrics.cdi;
 
-import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.CDI;
+import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
-
-import io.helidon.config.Config;
-import io.helidon.config.mp.MpConfig;
-import io.helidon.integrations.oci.metrics.OciMetricsSupport;
-import io.helidon.microprofile.server.RoutingBuilders;
-
-import com.oracle.bmc.monitoring.Monitoring;
-import org.eclipse.microprofile.config.ConfigProvider;
-
-import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * OCI metrics integration CDI extension.
  */
 public class OciMetricsCdiExtension implements Extension {
 
-    // Make Priority higher than MetricsCdiExtension so this will only start after MetricsCdiExtension has completed.
-    void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 20) @Initialized(ApplicationScoped.class) Object adv) {
-        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-        Config helidonConfig = MpConfig.toHelidonConfig(config).get("ocimetrics");
-
-        Monitoring monitoringClient = CDI.current()
-                .select(Monitoring.class)
-                .get();
-
-        OciMetricsSupport.Builder builder = OciMetricsSupport.builder()
-                .config(helidonConfig)
-                .monitoringClient(monitoringClient);
-
-        RoutingBuilders.create(helidonConfig)
-                .routingBuilder()
-                .register(builder.build());
+    // A new bean is added to handle the Observer Method as injection does not work here
+    void addOciMetricsBean(@Observes BeforeBeanDiscovery event) {
+        event.addAnnotatedType(OciMetricsBean.class, OciMetricsBean.class.getName());
     }
 }

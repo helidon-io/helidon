@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -239,6 +239,7 @@ public final class OidcSupport implements Service {
     private void logoutWithTenant(ServerRequest req, ServerResponse res, Tenant tenant) {
         OidcCookieHandler idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
         OidcCookieHandler tokenCookieHandler = oidcConfig.tokenCookieHandler();
+        OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
 
         Optional<String> idTokenCookie = req.headers()
                 .cookies()
@@ -266,6 +267,7 @@ public final class OidcSupport implements Service {
                     ResponseHeaders headers = res.headers();
                     headers.addCookie(tokenCookieHandler.removeCookie().build());
                     headers.addCookie(idTokenCookieHandler.removeCookie().build());
+                    headers.addCookie(tenantCookieHandler.removeCookie().build());
 
                     res.status(Http.Status.TEMPORARY_REDIRECT_307)
                             .addHeader(Http.Header.LOCATION, sb.toString())
@@ -412,7 +414,10 @@ public final class OidcSupport implements Service {
         } else {
             uri = oidcConfig.redirectUriWithHost();
         }
-        return uri + (uri.contains("?") ? "&" : "?") + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
+        if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+            return uri + (uri.contains("?") ? "&" : "?") + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
+        }
+        return uri;
     }
 
     private String processJsonResponse(ServerRequest req,
@@ -427,7 +432,9 @@ public final class OidcSupport implements Service {
         res.status(Http.Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
             state += (state.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + tokenValue;
-            state += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
+            if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                state += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
+            }
         }
 
         state = increaseRedirectCounter(state);
@@ -446,7 +453,7 @@ public final class OidcSupport implements Service {
                     .forSingle(builder -> {
                         headers.addCookie(builder.build());
                         if (idToken != null && oidcConfig.logoutEnabled()) {
-                            tokenCookieHandler.createCookie(idToken)
+                            oidcConfig.idTokenCookieHandler().createCookie(idToken)
                                     .forSingle(it -> {
                                         headers.addCookie(it.build());
                                         res.send();

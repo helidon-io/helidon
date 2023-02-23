@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -454,13 +454,13 @@ Config config = Config.create(
         ConfigSources.classpath("application.yaml")
                 .parserMapping(                                           // <1>
                         key -> "app".equals(key.toString())               // <2>
-                                ? HoconConfigParserBuilder.buildDefault()
-                                : null));
+                                ? Optional.of(HoconConfigParser.create())
+                                : Optional.empty()));
 ----
 
 <1> Uses the `parserMapping` method to map keys to parser instances.
 <2> Tells the config system to use the HOCON parser for translating the `String`
-value of the `app` key. (HCON is a superset of JSON.)
+value of the `app` key. (HOCON is a superset of JSON.)
 
 As before, the config system replaces the value node in the
 containing config tree with the config tree resulting from the additional parse.
@@ -686,6 +686,18 @@ Config config = Config.builder()
 <2> A deployment-specific environment configuration file.
 <3> A default configuration containing token references that are resolved
 using the environment-specific override.
+
+You can disable key and value token replacement separately as the following example shows.
+
+[source,java]
+.Disabling Key and Value Token Replacement
+----
+Config config = Config.builder()
+        .disableKeyResolving()
+        .disableValueResolving()
+        // other Config builder settings
+        .build();
+----
 
 == Executors for Asynchronous Config Activity
 Various parts of the config system work asychronously:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,9 @@ class BuilderImpl implements Config.Builder {
      */
     private boolean cachingEnabled;
     private boolean keyResolving;
+    private boolean keyResolvingFailOnMissing;
     private boolean valueResolving;
+    private boolean valueResolvingFailOnMissing;
     private boolean systemPropertiesSourceEnabled;
     private boolean environmentVariablesSourceEnabled;
     private boolean envVarAliasGeneratorEnabled;
@@ -262,8 +264,20 @@ class BuilderImpl implements Config.Builder {
     }
 
     @Override
+    public Config.Builder failOnMissingKeyReference(boolean shouldFail) {
+        this.keyResolvingFailOnMissing = shouldFail;
+        return this;
+    }
+
+    @Override
     public Config.Builder disableValueResolving() {
         this.valueResolving = false;
+        return this;
+    }
+
+    @Override
+    public Config.Builder failOnMissingValueReference(boolean shouldFail) {
+        this.valueResolvingFailOnMissing = shouldFail;
         return this;
     }
 
@@ -282,7 +296,7 @@ class BuilderImpl implements Config.Builder {
     @Override
     public AbstractConfigImpl build() {
         if (valueResolving) {
-            addFilter(ConfigFilters.valueResolving());
+            addFilter(ConfigFilters.valueResolving().failOnMissingReference(valueResolvingFailOnMissing));
         }
         if (null == changesExecutor) {
             changesExecutor = Executors.newCachedThreadPool(new ConfigThreadFactory("config-changes"));
@@ -329,6 +343,7 @@ class BuilderImpl implements Config.Builder {
                               cachingEnabled,
                               changesExecutor,
                               keyResolving,
+                              keyResolvingFailOnMissing,
                               aliasGenerator)
                 .newConfig();
     }
@@ -439,6 +454,7 @@ class BuilderImpl implements Config.Builder {
                                 boolean cachingEnabled,
                                 Executor changesExecutor,
                                 boolean keyResolving,
+                                boolean keyResolvingFailOnMissing,
                                 Function<String, List<String>> aliasGenerator) {
         return new ProviderImpl(configMapperManager,
                                 targetConfigSource,
@@ -447,6 +463,7 @@ class BuilderImpl implements Config.Builder {
                                 cachingEnabled,
                                 changesExecutor,
                                 keyResolving,
+                                keyResolvingFailOnMissing,
                                 aliasGenerator);
     }
 
@@ -463,7 +480,12 @@ class BuilderImpl implements Config.Builder {
 
     // this is a unit test method
     static ConfigMapperManager buildMappers(MapperProviders userDefinedProviders) {
-        return buildMappers(new ArrayList<>(), userDefinedProviders, false);
+        return buildMappers(userDefinedProviders, false);
+    }
+
+    // unit test method
+    static ConfigMapperManager buildMappers(MapperProviders userDefinedProviders, boolean mapperServicesEnabled) {
+        return buildMappers(new ArrayList<>(), userDefinedProviders, mapperServicesEnabled);
     }
 
     static ConfigMapperManager buildMappers(List<PrioritizedMapperProvider> prioritizedMappers,
@@ -493,6 +515,7 @@ class BuilderImpl implements Config.Builder {
     private static void loadMapperServices(List<PrioritizedMapperProvider> providers) {
         HelidonServiceLoader.builder(ServiceLoader.load(ConfigMapperProvider.class))
                 .defaultPriority(ConfigMapperProvider.PRIORITY)
+                .addService(new EnumMapperProvider(), EnumMapperProvider.PRIORITY)
                 .build()
                 .forEach(mapper -> providers.add(new HelidonMapperWrapper(mapper, Priorities.find(mapper, 100))));
     }

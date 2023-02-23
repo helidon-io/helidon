@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,13 @@ import javax.ws.rs.client.ClientBuilder;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Main tests of the application done here.
@@ -71,7 +73,7 @@ class MainTest {
                 .request()
                 .get(JsonArray.class);
         JsonObject first = jsorArray.getJsonObject(0);
-        Assertions.assertEquals("The Matrix Reloaded", first.getString("title"));
+        assertThat(first.getString("title"), is("The Matrix Reloaded"));
 
     }
 

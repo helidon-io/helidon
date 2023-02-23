@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,14 @@ import java.net.InetAddress;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.context.Context;
 
 import io.opentracing.Tracer;
@@ -44,7 +46,8 @@ class ServerBasicConfig implements ServerConfiguration {
     private final Optional<Transport> transport;
     private final Context context;
     private final boolean printFeatureDetails;
-
+    private final AllowList trustedProxies;
+    private final boolean isRequestedUriDiscoveryEnabled;
     /**
      * Creates new instance.
      *
@@ -60,6 +63,8 @@ class ServerBasicConfig implements ServerConfiguration {
         this.transport = builder.transport();
         this.context = builder.context();
         this.printFeatureDetails = builder.printFeatureDetails();
+        this.trustedProxies = builder.defaultSocketBuilder().trustedProxies();
+        this.isRequestedUriDiscoveryEnabled = builder.defaultSocketBuilder().requestedUriDiscoveryEnabled();
 
         HashMap<String, SocketConfiguration> map = new HashMap<>(builder.sockets());
         map.put(WebServer.DEFAULT_SOCKET_NAME, this.socketConfig);
@@ -191,6 +196,21 @@ class ServerBasicConfig implements ServerConfiguration {
         return socketConfig.enableCompression();
     }
 
+    @Override
+    public List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes() {
+        return socketConfig.requestedUriDiscoveryTypes();
+    }
+
+    @Override
+    public AllowList trustedProxies() {
+        return trustedProxies;
+    }
+
+    @Override
+    public boolean requestedUriDiscoveryEnabled() {
+        return isRequestedUriDiscoveryEnabled;
+    }
+
     static class SocketConfig implements SocketConfiguration {
 
         private final int port;
@@ -210,6 +230,10 @@ class ServerBasicConfig implements ServerConfiguration {
         private final long maxPayloadSize;
         private final long backpressureBufferSize;
         private final BackpressureStrategy backpressureStrategy;
+        private final boolean continueImmediately;
+        private final List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes;
+        private final AllowList trustedProxies;
+        private final boolean isRequestedUriDiscoveryEnabled;
 
         /**
          * Creates new instance.
@@ -231,8 +255,12 @@ class ServerBasicConfig implements ServerConfiguration {
             this.maxPayloadSize = builder.maxPayloadSize();
             this.backpressureBufferSize = builder.backpressureBufferSize();
             this.backpressureStrategy = builder.backpressureStrategy();
+            this.continueImmediately = builder.continueImmediately();
             WebServerTls webServerTls = builder.tlsConfig();
             this.webServerTls = webServerTls.enabled() ? webServerTls : null;
+            this.requestedUriDiscoveryTypes = builder.requestedUriDiscoveryTypes();
+            this.trustedProxies = builder.trustedProxies();
+            this.isRequestedUriDiscoveryEnabled = builder.requestedUriDiscoveryEnabled();
         }
 
         @Override
@@ -338,6 +366,26 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public BackpressureStrategy backpressureStrategy() {
             return backpressureStrategy;
+        }
+
+        @Override
+        public boolean continueImmediately() {
+            return continueImmediately;
+        }
+
+        @Override
+        public List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes() {
+            return requestedUriDiscoveryTypes;
+        }
+
+        @Override
+        public AllowList trustedProxies() {
+            return trustedProxies;
+        }
+
+        @Override
+        public boolean requestedUriDiscoveryEnabled() {
+            return isRequestedUriDiscoveryEnabled;
         }
     }
 }

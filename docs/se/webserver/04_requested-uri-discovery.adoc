@@ -1,0 +1,101 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Requested URI Discovery
+:h1Prefix: SE
+:description: Helidon Reactive WebServer requested URI discovery
+:keywords: helidon, reactive, reactive streams, reactive java, reactive webserver, requested URI discovery
+:rootdir: {docdir}/../..
+:incdir: {rootdir}/shared/server
+:requested-uri-discovery-inc: {incdir}/requested-uri-discovery.adoc
+:se-flavor: true
+:flavor-uc: SE
+:flavor-lc: se
+
+include::{requested-uri-discovery-inc}[tag=preamble]
+
+== Requested URI Discovery
+include::{requested-uri-discovery-inc}[tag=intro]
+
+=== Setting Up Requested URI Discovery Programmatically
+To set up requested URI discovery on the default socket for your server, use the link:{webserver-javadoc-base-url}/io/helidon/webserver/WebServer.Builder.html[`WebServer.Builder`]:
+[source,java]
+.Requested URI set-up for the default server socket
+----
+import io.helidon.common.configurable.AllowList;
+import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.FORWARDED;
+import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.X_FORWARDED;
+
+AllowList trustedProxies = AllowList.builder()
+        .addAllowedPattern(Pattern.compile("lb.+\\.mycorp\\.com"))
+        .addDenied("lbtest.mycorp.com")
+        .build(); // <1>
+
+WebServer.Builder builder = WebServer.builder()
+        .defaultSocket(s -> s
+                .host("localhost")
+                .port(0)
+                .requestedUriDiscoveryTypes(List.of(FORWARDED, X_FORWARDED)) // <2>
+                .trustedProxies(trustedProxies)) // <3>
+        .addRouting(yourRouting)
+        .config(serverConfig);
+----
+<1> Create the `AllowList` describing the intermediate networks nodes to trust and not trust. Presumably the `lbxxx.mycorp.com` nodes are trusted load balancers except for the test load balancer `lbtest`, and no other nodes are trusted.
+`AllowList` accepts prefixes, suffixes, predicates, regex patterns, and exact matches.
+See the link:{configurable-javadoc-base-url}/io/helidon/common/configurable/AllowList.html[`AllowList`] JavaDoc for complete information.
+<2> Use `Forwarded` first, then try `X-Forwarded-*` on each request.
+<3> Set the `AllowList` for trusted intermediaries.
+
+If you build your server with additional sockets, you can control requested URI discovery separately for each.
+
+=== Setting Up Requested URI Discovery using Configuration
+include::{requested-uri-discovery-inc}[tag=config-example-intro]
+
+[source,yaml]
+.Configuring requested URI behavior
+----
+server:
+  port: 0
+  requested-uri-discovery:
+    types: FORWARDED,X_FORWARDED
+    trusted-proxies:
+      allow:
+        pattern: "lb.*\\.mycorp\\.com"
+      deny:
+        exact: "lbtest.mycorp.com""
+----
+
+=== Obtaining the Requested URI Information
+Your code obtains the requested URI information from the Helidon server request object:
+
+[source,java]
+.Retrieving Requested URI Information
+----
+import io.helidon.common.http.UriInfo;
+
+public class MyHandler implements Handler {
+
+    @Override
+    public void accept(ServerRequest req, ServerResponse res) {
+        UriInfo uriInfo = req.requestedUri();
+        // ...
+    }
+}
+----
+See the link:{common-http-javadoc-base-url}/io/helidon/common/http/UriInfo.html[`UriInfo`] JavaDoc for more information.
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import java.util.function.Function;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelId;
+import io.netty.handler.codec.http.HttpExpectationFailedEvent;
 import io.netty.util.concurrent.Future;
 
 /**
@@ -41,10 +43,12 @@ import io.netty.util.concurrent.Future;
  */
 class NettyChannel {
     private final Channel channel;
+    private final ChannelHandlerContext ctx;
     private CompletionStage<ChannelFuture> writeFuture = CompletableFuture.completedFuture(null);
 
-    NettyChannel(Channel channel) {
-        this.channel = channel;
+    NettyChannel(ChannelHandlerContext ctx) {
+        this.ctx = ctx;
+        this.channel = ctx.channel();
     }
 
     /**
@@ -132,6 +136,14 @@ class NettyChannel {
         } else {
             completable.completeExceptionally(nettyFuture.cause());
         }
+    }
+
+
+    /**
+     * Reset HttpObjectDecoder to not expect data.
+     */
+    void expectationFailed(){
+        ctx.pipeline().fireUserEventTriggered(HttpExpectationFailedEvent.INSTANCE);
     }
 
     @Override

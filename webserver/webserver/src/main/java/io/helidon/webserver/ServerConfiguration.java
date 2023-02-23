@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
@@ -570,12 +571,51 @@ public interface ServerConfiguration extends SocketConfiguration {
          * <li>PREFETCH - After first data chunk arrives, probable number of chunks needed to fill the buffer up to watermark is calculated and requested.</li>
          * <li>NONE - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.</li>
          * </ul>
-         * @param backpressureStrategy One of NONE, PREFETCH or LINEAR, default is LINEAR
+         * @param backpressureStrategy One of NONE, PREFETCH, LINEAR or AUTO_FLUSH, default is AUTO_FLUSH
          * @return an updated builder
          */
         @Override
         public Builder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
             defaultSocketBuilder().backpressureStrategy(backpressureStrategy);
+            return this;
+        }
+
+        /**
+         * When true WebServer answers to expect continue with 100 continue immediately,
+         * not waiting for user to actually request the data.
+         * <p>
+         * Default is {@code false}
+         *
+         * @param continueImmediately , answer with 100 continue immediately after expect continue, default is false
+         * @return this builder
+         */
+        @Override
+        public Builder continueImmediately(boolean continueImmediately) {
+            defaultSocketBuilder().continueImmediately(continueImmediately);
+            return this;
+        }
+
+        @Override
+        public Builder addRequestedUriDiscoveryType(RequestedUriDiscoveryType type) {
+            defaultSocketBuilder().addRequestedUriDiscoveryType(type);
+            return this;
+        }
+
+        @Override
+        public Builder requestedUriDiscoveryTypes(List<RequestedUriDiscoveryType> types) {
+            defaultSocketBuilder().requestedUriDiscoveryTypes(types);
+            return this;
+        }
+
+        @Override
+        public Builder requestedUriDiscoveryEnabled(boolean enabled) {
+            defaultSocketBuilder().requestedUriDiscoveryEnabled(enabled);
+            return this;
+        }
+
+        @Override
+        public Builder trustedProxies(AllowList trustedProxies) {
+            defaultSocketBuilder().trustedProxies(trustedProxies);
             return this;
         }
 
