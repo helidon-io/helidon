@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -73,6 +74,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private final BufferData writeBuffer = BufferData.growing(128);
     // todo configurable
     private MediaContext mediaContext = MediaContext.create();
+    private final int connectionQueueSize;
 
     private Tls tls;
     private String uriTemplate;
@@ -89,6 +91,8 @@ class ClientRequestImpl implements Http1ClientRequest {
         this.tls = client.tls();
         this.channelOptions = client.socketOptions();
         this.query = query;
+
+        this.connectionQueueSize = client.connectionQueueSize();
     }
 
     @Override
@@ -326,12 +330,12 @@ class ClientRequestImpl implements Http1ClientRequest {
         }
 
         if (keepAlive) {
-            // todo add timeouts, proxy and tls to the key
-            KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(), uri.authority(), tls);
+            // todo add proxy to the key
+            KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(), uri.authority(), tls,
+                                                         channelOptions.connectTimeout(), channelOptions.readTimeout());
             var connectionQueue = CHANNEL_CACHE.computeIfAbsent(keepAliveKey,
-                                                                it -> new LinkedBlockingDeque<>());
+                                                                it -> new LinkedBlockingDeque<>(connectionQueueSize));
 
-            // TODO we must limit the queue in size
             while ((connection = connectionQueue.poll()) != null && !connection.isConnected()) {
             }
 
@@ -376,7 +380,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         return bos.toByteArray();
     }
 
-    private record KeepAliveKey(String scheme, String authority, Tls tlsConfig) {
+    private record KeepAliveKey(String scheme, String authority, Tls tlsConfig, Duration connectTimeout, Duration readTimeout) {
     }
 
     private static class ClientConnectionOutputStream extends OutputStream {
