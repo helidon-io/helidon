@@ -52,7 +52,7 @@ public class MyServices {
 
         @PostConstruct
         public void postConstruct() {
-            assert (Objects.nonNull(injected));
+            assert (injected != null);
             postConstructed = true;
         }
 
@@ -70,7 +70,7 @@ public class MyServices {
         @Inject
         void setMyConcreteClassContract(
                 MyConcreteClassContract injected) {
-            assert (Objects.isNull(this.injected));
+            assert (this.injected == null);
             this.injected = Objects.requireNonNull(injected);
         }
 

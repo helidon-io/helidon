@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
@@ -121,13 +120,13 @@ class JavaC {
 
         Builder source(String source) {
             assert (!closed);
-            JavaC.this.source = Objects.isNull(source) ? AbstractCreator.DEFAULT_SOURCE : source;
+            JavaC.this.source = (source == null) ? AbstractCreator.DEFAULT_SOURCE : source;
             return this;
         }
 
         Builder target(String target) {
             assert (!closed);
-            JavaC.this.target = Objects.isNull(target) ? AbstractCreator.DEFAULT_TARGET : target;
+            JavaC.this.target = (target == null) ? AbstractCreator.DEFAULT_TARGET : target;
             return this;
         }
 

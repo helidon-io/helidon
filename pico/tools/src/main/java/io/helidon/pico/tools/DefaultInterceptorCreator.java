@@ -177,7 +177,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         public Collection<AnnotationAndValue> resolve(
                 String annoTypeName) {
             ClassInfo classInfo = scan.getClassInfo(annoTypeName);
-            if (Objects.isNull(classInfo)) {
+            if (classInfo == null) {
                 try {
                     Class<? extends Annotation> annotationType = (Class<? extends Annotation>) Class.forName(annoTypeName);
                     return createAnnotationAndValueListFromAnnotations(annotationType.getAnnotations());
@@ -366,7 +366,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             return new CustomStrategy(creator);
         } else if (Strategy.NONE == strategy) {
             return new NoneStrategy();
-        } else if (Strategy.BLENDED == strategy || Objects.isNull(strategy)) {
+        } else if (Strategy.BLENDED == strategy || strategy == null) {
             return new BlendedStrategy(creator, resolver);
         } else {
             throw new ToolsException("unknown strategy: " + strategy);

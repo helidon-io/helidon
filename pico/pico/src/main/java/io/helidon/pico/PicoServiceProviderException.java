@@ -96,8 +96,7 @@ public class PicoServiceProviderException extends PicoException {
     @Override
     public String getMessage() {
         return super.getMessage()
-                + (Objects.isNull(serviceProvider)
-                           ? "" : (": service provider: " + serviceProvider));
+                + (serviceProvider == null ? "" : (": service provider: " + serviceProvider));
     }
 
 }

@@ -327,7 +327,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
         LinkedHashSet<Path> result = new LinkedHashSet<>(project.getDependencyArtifacts().size());
         for (Object a : project.getDependencyArtifacts()) {
             Artifact artifact = (Artifact) a;
-            if (Objects.isNull(optionalScopeFilter) || optionalScopeFilter.equals(artifact.getScope())) {
+            if (optionalScopeFilter == null || optionalScopeFilter.equals(artifact.getScope())) {
                 result.add(((Artifact) a).getFile().toPath());
             }
         }

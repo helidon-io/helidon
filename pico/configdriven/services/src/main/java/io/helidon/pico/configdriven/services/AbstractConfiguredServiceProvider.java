@@ -140,10 +140,10 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         assertIsInitializing();
 
         Object prev = configBeanMap.put(instanceId, configBean);
-        assert (Objects.isNull(prev));
+        assert (prev == null);
 
         prev = managedConfiguredServicesMap.put(instanceId, Optional.empty());
-        assert (Objects.isNull(prev));
+        assert (prev == null);
     }
 
     @Override
@@ -332,7 +332,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         if (phase == Phase.POST_BIND_ALL_MODULES) {
             assertIsInitializing();
             PicoServices picoServices = picoServices();
-            assert (Objects.nonNull(picoServices));
+            assert (picoServices != null);
 
             if (Phase.INIT == currentActivationPhase()) {
                 LogEntryAndResult logEntryAndResult = createLogEntryAndResult(Phase.PENDING);

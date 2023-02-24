@@ -19,11 +19,9 @@ package io.helidon.pico.maven.plugin;
 import java.io.File;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -124,8 +122,8 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
      * @return the explicit qualifiers that should be setup as part of activator creation
      */
     Map<String, Set<QualifierAndValue>> getServiceTypeToQualifiers() {
-        if (Objects.isNull(serviceTypeQualifiers)) {
-            return Collections.emptyMap();
+        if (serviceTypeQualifiers == null) {
+            return Map.of();
         }
 
         Map<String, Set<QualifierAndValue>> result = new LinkedHashMap<>();

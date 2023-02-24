@@ -106,7 +106,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         }
 
         Object prev = configuredServiceProviderMetaConfigBeanMap.put(configuredServiceProvider, metaConfigBeanInfo);
-        assert (Objects.isNull(prev)) : "duplicate service provider initialization occurred";
+        assert (prev == null) : "duplicate service provider initialization occurred";
 
         String configKey = validatedConfigKey(metaConfigBeanInfo);
         Class<?> cspType = Objects.requireNonNull(configuredServiceProvider.serviceType());
@@ -398,7 +398,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
             String key = cfg.name();
             CB configBean = toConfigBean(cfg, configuredServiceProvider);
             Object prev = result.put(key, configBean);
-            assert (Objects.isNull(prev)) : prev + " and " + configBean;
+            assert (prev == null) : prev + " and " + configBean;
         });
 
         return result;

@@ -234,7 +234,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
         try {
             for (Element typeToProcess : typesToProcess) {
-                assert (Objects.nonNull(typeToProcess));
+                assert (typeToProcess != null);
                 if (serviceTypeName != null && !typeToProcess.getEnclosingElement().toString()
                         .equals(serviceTypeName.name())) {
                     continue;
@@ -505,7 +505,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         try {
             Trees trees = Trees.instance(processingEnv);
             TreePath path = trees.getPath(type);
-            if (Objects.isNull(path)) {
+            if (path == null) {
                 return false;
             }
             JavaFileObject sourceFile = path.getCompilationUnit().getSourceFile();
@@ -656,8 +656,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
             String potentialProviderClassName = (1 == teContract.getTypeParameters().size())
                     ? teContract.getQualifiedName().toString() : null;
-            boolean isProviderType = Objects.nonNull(potentialProviderClassName)
-                    && isProviderType(potentialProviderClassName);
+            boolean isProviderType = (potentialProviderClassName != null) && isProviderType(potentialProviderClassName);
             if (!isProviderType) {
                 continue;
             }
@@ -668,7 +667,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             }
 
             TypeMirror gType = ((DeclaredType) possibleContract).getTypeArguments().get(0);
-            if (Objects.isNull(gType)) {
+            if (gType == null) {
                 continue;
             }
 
@@ -751,8 +750,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
             String potentialProviderClassName = (1 == teContract.getTypeParameters().size())
                     ? teContract.getQualifiedName().toString() : null;
-            boolean isProviderType = Objects.nonNull(potentialProviderClassName)
-                    && isProviderType(potentialProviderClassName);
+            boolean isProviderType = (potentialProviderClassName != null) && isProviderType(potentialProviderClassName);
             if (!isProviderType) {
                 continue;
             }
@@ -763,7 +761,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             }
 
             TypeMirror gType = ((DeclaredType) iface).getTypeArguments().get(0);
-            if (Objects.nonNull(gType)) {
+            if (gType != null) {
                 stack.add(gType);
             }
         }

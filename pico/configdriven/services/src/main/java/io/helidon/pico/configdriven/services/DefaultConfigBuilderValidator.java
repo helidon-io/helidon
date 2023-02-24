@@ -48,8 +48,8 @@ class DefaultConfigBuilderValidator<CBB> implements ConfigBeanBuilderValidator<C
             CBB builder,
             // Receiver?
             Class<CBB> configBeanBuilderType) {
-        assert (Objects.nonNull(builder));
-        assert (Objects.nonNull(configBeanBuilderType));
+        assert (builder != null);
+        assert (configBeanBuilderType != null);
 
         return new DefaultValidation(configBeanBuilderType);
     }

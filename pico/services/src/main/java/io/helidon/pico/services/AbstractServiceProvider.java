@@ -692,7 +692,7 @@ public abstract class AbstractServiceProvider<T>
                         .injectionPointQualifiedServiceProviders(List.of(bind(serviceProvider)))
                         .build();
                 Object prev = injectionPlan.put(id, plan);
-                assert (Objects.isNull(prev));
+                assert (prev == null);
                 return this;
             }
 
@@ -734,7 +734,7 @@ public abstract class AbstractServiceProvider<T>
                             .resolved(false)
                             .build();
                     Object prev = injectionPlan.put(id, plan);
-                    assert (Objects.isNull(prev));
+                    assert (prev == null);
                     return this;
                 } catch (Exception e) {
                     throw new PicoServiceProviderException("failed to process: " + id, e, AbstractServiceProvider.this);

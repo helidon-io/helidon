@@ -47,7 +47,7 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
      */
     public UnconfiguredServiceProvider(
             AbstractConfiguredServiceProvider<T, CB> delegate) {
-        assert (Objects.nonNull(delegate) && delegate.isRootProvider());
+        assert (delegate != null && delegate.isRootProvider());
         this.delegate = Objects.requireNonNull(delegate);
         rootProvider(delegate);
         assert (rootProvider().orElseThrow() == delegate);

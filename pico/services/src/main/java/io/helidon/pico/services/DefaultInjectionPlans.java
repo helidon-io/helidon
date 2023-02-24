@@ -131,7 +131,7 @@ class DefaultInjectionPlans {
                                 }
                             }
                             Object prev = result.put(id, planBuilder.build());
-                            assert (Objects.isNull(prev)) : ipInfo;
+                            assert (prev == null) : ipInfo;
                         }
                     });
         }

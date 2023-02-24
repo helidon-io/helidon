@@ -258,7 +258,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
             String ignoredAttrName,
             Class<T> ignoredType,
             Class<V> componentType) {
-        assert (Objects.nonNull(configBeans) && !configBeans.isEmpty());
+        assert (configBeans != null && !configBeans.isEmpty());
 
         configBeans.forEach(configBean -> {
             assert (componentType.isInstance(configBean));

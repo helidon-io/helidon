@@ -223,7 +223,7 @@ public class TypeToolsTest {
 
         @Override
         public String get() {
-            return Objects.isNull(providerOfString) ? null : providerOfString.get();
+            return (providerOfString == null) ? null : providerOfString.get();
         }
 
         void setProviderOfString(Provider<String> provider) {
@@ -243,7 +243,7 @@ public class TypeToolsTest {
 
         @Override
         public Integer get() {
-            return Objects.isNull(provider) ? null : provider.get();
+            return (provider == null) ? null : provider.get();
         }
     }
 

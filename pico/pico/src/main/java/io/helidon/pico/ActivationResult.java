@@ -17,7 +17,6 @@
 package io.helidon.pico;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
@@ -113,7 +112,7 @@ public interface ActivationResult {
      */
     default boolean finished() {
         Future<ActivationResult> f = finishedActivationResult().orElse(null);
-        return (Objects.isNull(f) || f.isDone());
+        return (f == null || f.isDone());
     }
 
     /**

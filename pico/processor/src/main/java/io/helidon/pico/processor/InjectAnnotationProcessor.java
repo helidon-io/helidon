@@ -78,8 +78,8 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
             return 0;
         }
 
-        assert (Objects.isNull(typeName));
-        assert (Objects.isNull(builder));
+        assert (typeName == null);
+        assert (builder == null);
 
         Set<TypeName> serviceTypeNames = typesToProcess.stream()
                 .map(element -> createTypeNameFromElement(element.getEnclosingElement()).orElseThrow())
@@ -131,7 +131,7 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
         String varTypeName = TypeTools.extractInjectionPointTypeInfo(varType, isProvider, isList, isOptional);
         Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(varType.getAnnotationMirrors());
 
-        assert (Objects.nonNull(elemKind) && Objects.nonNull(elemName));
+        assert (elemKind != null && elemName != null);
         continuation = continuation.add(serviceTypeName, elemName, varTypeName, elemKind, elemArgs, access)
                 .elemOffset(elemOffset)
                 .qualifiers(qualifiers)

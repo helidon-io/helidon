@@ -138,7 +138,7 @@ public class TypeTools extends BuilderTypeTools {
      */
     static TypeName createTypeNameFromClassInfo(
             ClassInfo classInfo) {
-        if (Objects.isNull(classInfo)) {
+        if (classInfo == null) {
             return null;
         }
         return DefaultTypeName.create(classInfo.getPackageName(), classInfo.getSimpleName());

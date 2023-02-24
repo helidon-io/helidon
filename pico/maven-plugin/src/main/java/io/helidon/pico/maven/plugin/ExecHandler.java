@@ -84,7 +84,7 @@ class ExecHandler implements Closeable {
         Thread bootstrapThread = new Thread(threadGroup, () -> {
             try {
                 Req req = reqSupplier.get();
-                if (Objects.isNull(req)) {
+                if (req == null) {
                     return;
                 }
                 result.set(fn.apply(req));
