@@ -89,7 +89,6 @@ public class SseSourceHandlerProvider implements SourceHandlerProvider<SseEvent>
                 } else if (line.startsWith(":")) {
                     sseBuilder.comment(line.length() > 1 ? line.substring(1) : "");
                 } else {
-                    // todo log extraneous line
                     emit = false;
                 }
             }
