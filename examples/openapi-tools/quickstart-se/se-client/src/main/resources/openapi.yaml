@@ -1,0 +1,96 @@
+#
+# Copyright (c) 2022 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+openapi: 3.0.0
+servers:
+  - url: 'http://localhost:8080'
+info:
+  description: >-
+    This is a sample for Helidon Quickstart project.
+  version: 1.0.0
+  title: OpenAPI Helidon Quickstart
+  license:
+    name: Apache-2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: message
+paths:
+  /greet:
+    get:
+      tags:
+        - message
+      summary: Return a worldly greeting message.
+      operationId: getDefaultMessage
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+  /greet/greeting:
+    put:
+      tags:
+        - message
+      summary: Set the greeting to use in future messages.
+      operationId: updateGreeting
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: No greeting provided
+      requestBody:
+        $ref: '#/components/requestBodies/Message'
+  '/greet/{name}':
+    get:
+      tags:
+        - message
+      summary: Return a greeting message using the name that was provided.
+      operationId: getMessage
+      parameters:
+        - name: name
+          in: path
+          description: the name to greet
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+components:
+  requestBodies:
+    Message:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Message'
+      description: Message for the user
+      required: true
+  schemas:
+    Message:
+      description: An message for the user
+      type: object
+      properties:
+        message:
+          type: string
+          format: int64
+        greeting:
+          type: string
+          format: int64
