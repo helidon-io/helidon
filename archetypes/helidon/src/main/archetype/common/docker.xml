@@ -76,8 +76,7 @@ docker build -t {{artifactId}} .
 
 ## Running the Docker Image
 
-{{#docker-run-readme-section}}
-{{.}}
+{{#docker-run-readme-section}}{{.}}
 {{/docker-run-readme-section}}
 {{^docker-run-readme-section}}
 ```
@@ -92,8 +91,7 @@ Exercise the application as described above.
                             <![CDATA[
 ## Building a Native Image
 
-{{#native-sections}}
-{{.}}
+{{#native-sections}}{{.}}
 {{/native-sections}}
 ]]>
                         </value>

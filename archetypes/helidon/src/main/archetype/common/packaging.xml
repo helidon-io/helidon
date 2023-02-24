@@ -52,8 +52,7 @@ kubectl get pods                            # Verify connectivity to cluster
 {{#k8s-readme-sections}}
 {{#first}}
 
-{{/first}}
-{{.}}
+{{/first}}{{.}}
 {{/k8s-readme-sections}}
 
 ### Deploy the application to Kubernetes
