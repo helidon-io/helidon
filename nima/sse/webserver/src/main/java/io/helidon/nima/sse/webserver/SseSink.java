@@ -27,6 +27,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.spi.Sink;
@@ -95,7 +96,7 @@ public class SseSink implements Sink<SseEvent> {
             Object data = sseEvent.data();
             if (data != null) {
                 outputStream.write(SSE_DATA);
-                eventConsumer.accept(data, sseEvent.mediaType());
+                eventConsumer.accept(data, sseEvent.mediaType().orElse(MediaTypes.TEXT_PLAIN));
                 outputStream.write(SSE_NL);
             }
             outputStream.write(SSE_NL);

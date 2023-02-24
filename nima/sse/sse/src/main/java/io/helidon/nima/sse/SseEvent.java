@@ -98,8 +98,7 @@ public class SseEvent {
     }
 
     /**
-     * Get data for this event as type T. Uses Nima's media support to convert
-     * event data to type T.
+     * Get data for this event as type T. Uses media support to convert event data to type T.
      *
      * @param clazz the class
      * @param mediaType media type of event data
@@ -143,8 +142,7 @@ public class SseEvent {
     }
 
     /**
-     * Get data for this event as type T. Uses Nima's media support to convert
-     * event data to type T.
+     * Get data for this event as type T. Uses media support to convert event data to type T.
      *
      * @param clazz the class
      * @param <T> the converted type
@@ -156,12 +154,25 @@ public class SseEvent {
     }
 
     /**
-     * Get media type for this event.
+     * Get optional media type for this event. If the media type is specified
+     * here, it will be used for serialization purposes.
      *
      * @return the media type
      */
-    public MediaType mediaType() {
-        return mediaType;
+    public Optional<MediaType> mediaType() {
+        return Optional.ofNullable(mediaType);
+    }
+
+    /**
+     * Get optional media context for this event. If the media type is specified
+     * here, it will be used for deserialization purposes.
+     *
+     * @return the media type
+     * @see #data(Class)
+     * @see #data(Class, MediaType)
+     */
+    public Optional<MediaContext> mediaContext() {
+        return Optional.ofNullable(mediaContext);
     }
 
     /**
@@ -209,7 +220,7 @@ public class SseEvent {
         private String name;
         private Object data;
         private String comment;
-        private MediaType mediaType = MediaTypes.TEXT_PLAIN;
+        private MediaType mediaType;
         private Duration reconnectMillis;
         private MediaContext mediaContext;
 
@@ -299,12 +310,13 @@ public class SseEvent {
         }
 
         /**
-         * Set the media context for this event. This is only required when using
-         * media providers.
+         * Set the media context for this event. This is only required for
+         * deserialization of events.
          *
          * @param mediaContext the media context
          * @return updated builder instance
          * @see #data(Class)
+         * @see #data(Class, MediaType)
          */
         public Builder mediaContext(MediaContext mediaContext) {
             Objects.requireNonNull(mediaContext);
