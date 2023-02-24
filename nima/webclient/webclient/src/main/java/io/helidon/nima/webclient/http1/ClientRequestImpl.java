@@ -24,9 +24,8 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
@@ -60,7 +59,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] CRLF_BYTES = "\r\n".getBytes(StandardCharsets.UTF_8);
     private static final String HTTPS = "https";
-    private static final Map<KeepAliveKey, Queue<Http1ClientConnection>> CHANNEL_CACHE = new ConcurrentHashMap<>();
+    private static final Map<KeepAliveKey, LinkedBlockingDeque<Http1ClientConnection>> CHANNEL_CACHE = new ConcurrentHashMap<>();
 
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private final UriQueryWriteable query;
@@ -313,7 +312,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         return false;
     }
 
-    private ClientConnection getConnection(boolean keepAlive) {
+    ClientConnection getConnection(boolean keepAlive) {
         if (this.connection != null) {
             return this.connection;
         }
@@ -330,7 +329,7 @@ class ClientRequestImpl implements Http1ClientRequest {
             // todo add timeouts, proxy and tls to the key
             KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(), uri.authority(), tls);
             var connectionQueue = CHANNEL_CACHE.computeIfAbsent(keepAliveKey,
-                                                                it -> new ConcurrentLinkedDeque<>());
+                                                                it -> new LinkedBlockingDeque<>());
 
             // TODO we must limit the queue in size
             while ((connection = connectionQueue.poll()) != null && !connection.isConnected()) {

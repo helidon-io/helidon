@@ -24,7 +24,8 @@ import java.net.Socket;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.HexFormat;
-import java.util.Queue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -46,8 +47,10 @@ import static java.lang.System.Logger.Level.TRACE;
 
 class Http1ClientConnection implements ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientConnection.class.getName());
+    private static final long QUEUE_TIMEOUT = 10;
+    private static final TimeUnit QUEUE_TIMEOUT_TIME_UNIT = TimeUnit.MILLISECONDS;
 
-    private final Queue<Http1ClientConnection> connectionQueue;
+    private final LinkedBlockingDeque<Http1ClientConnection> connectionQueue;
     private final ConnectionKey connectionKey;
     private final io.helidon.common.socket.SocketOptions options;
     private final boolean keepAlive;
@@ -62,7 +65,7 @@ class Http1ClientConnection implements ClientConnection {
     }
 
     Http1ClientConnection(SocketOptions options,
-                          Queue<Http1ClientConnection> connectionQueue,
+                          LinkedBlockingDeque<Http1ClientConnection> connectionQueue,
                           ConnectionKey connectionKey) {
         this.options = options;
         this.connectionQueue = connectionQueue;
@@ -171,16 +174,32 @@ class Http1ClientConnection implements ClientConnection {
 
     void finishRequest() {
         if (keepAlive && connectionQueue != null && socket.isConnected()) {
-            if (connectionQueue.offer(this)) {
+            try {
+                if (connectionQueue.offer(this, QUEUE_TIMEOUT, QUEUE_TIMEOUT_TIME_UNIT)) {
+                    if (LOGGER.isLoggable(DEBUG)) {
+                        LOGGER.log(DEBUG, String.format("[%s] client connection returned %s",
+                                                        channelId,
+                                                        Thread.currentThread().getName()));
+                    }
+                    return;
+                } else {
+                    if (LOGGER.isLoggable(DEBUG)) {
+                        LOGGER.log(DEBUG, String.format("[%s] Unable to return client connection because queue is full %s",
+                                                        channelId,
+                                                        Thread.currentThread().getName()));
+                    }
+                }
+            } catch (InterruptedException ie) {
                 if (LOGGER.isLoggable(DEBUG)) {
-                    LOGGER.log(DEBUG, String.format("[%s] client connection returned %s",
+                    LOGGER.log(DEBUG, String.format("[%s] Unable to return client connection due to '%s' %s",
                                                     channelId,
+                                                    ie.getMessage(),
                                                     Thread.currentThread().getName()));
                 }
-                return;
             }
         }
-        this.release();
+        // Close if unable to add to queue
+        this.close();
     }
 
     private void debugTls(SSLSocket sslSocket) {
