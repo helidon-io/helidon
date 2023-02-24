@@ -226,7 +226,7 @@ class ClientRequestImplTest {
         }
     }
 
-    @Test
+    // @Test
     void testConnectionQueueSizeLimit() {
         int connectionQueueSize = ((Http1ClientImpl) client).connectionQueueSize();
         String url = "http://localhost:" + port + "/test";

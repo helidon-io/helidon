@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,7 @@ import java.net.Socket;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.HexFormat;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
+import java.util.Queue;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -47,10 +46,8 @@ import static java.lang.System.Logger.Level.TRACE;
 
 class Http1ClientConnection implements ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientConnection.class.getName());
-    private static final long QUEUE_TIMEOUT = 10;
-    private static final TimeUnit QUEUE_TIMEOUT_TIME_UNIT = TimeUnit.MILLISECONDS;
 
-    private final LinkedBlockingDeque<Http1ClientConnection> connectionQueue;
+    private final Queue<Http1ClientConnection> connectionQueue;
     private final ConnectionKey connectionKey;
     private final io.helidon.common.socket.SocketOptions options;
     private final boolean keepAlive;
@@ -65,7 +62,7 @@ class Http1ClientConnection implements ClientConnection {
     }
 
     Http1ClientConnection(SocketOptions options,
-                          LinkedBlockingDeque<Http1ClientConnection> connectionQueue,
+                          Queue<Http1ClientConnection> connectionQueue,
                           ConnectionKey connectionKey) {
         this.options = options;
         this.connectionQueue = connectionQueue;
@@ -174,32 +171,16 @@ class Http1ClientConnection implements ClientConnection {
 
     void finishRequest() {
         if (keepAlive && connectionQueue != null && socket.isConnected()) {
-            try {
-                if (connectionQueue.offer(this, QUEUE_TIMEOUT, QUEUE_TIMEOUT_TIME_UNIT)) {
-                    if (LOGGER.isLoggable(DEBUG)) {
-                        LOGGER.log(DEBUG, String.format("[%s] client connection returned %s",
-                                                        channelId,
-                                                        Thread.currentThread().getName()));
-                    }
-                    return;
-                } else {
-                    if (LOGGER.isLoggable(DEBUG)) {
-                        LOGGER.log(DEBUG, String.format("[%s] Unable to return client connection because queue is full %s",
-                                                        channelId,
-                                                        Thread.currentThread().getName()));
-                    }
-                }
-            } catch (InterruptedException ie) {
+            if (connectionQueue.offer(this)) {
                 if (LOGGER.isLoggable(DEBUG)) {
-                    LOGGER.log(DEBUG, String.format("[%s] Unable to return client connection due to '%s' %s",
+                    LOGGER.log(DEBUG, String.format("[%s] client connection returned %s",
                                                     channelId,
-                                                    ie.getMessage(),
                                                     Thread.currentThread().getName()));
                 }
+                return;
             }
         }
-        // Close if unable to add to queue
-        this.close();
+        this.release();
     }
 
     private void debugTls(SSLSocket sslSocket) {
