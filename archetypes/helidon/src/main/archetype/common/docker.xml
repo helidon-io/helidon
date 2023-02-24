@@ -53,6 +53,12 @@
                     </includes>
                 </templates>
                 <model>
+                    <list key="poms">
+                        <value>pom.xml</value>
+                    </list>
+                    <list key="src-dirs" if="!${multi-module}">
+                        <value>src</value>
+                    </list>
                     <list key="native-sections" if="${db} &amp;&amp; ${flavor} == 'mp'">
                         <value file="/se/database/files/README.native.md" if="${docker.native-image}" template="mustache"/>
                     </list>
@@ -63,15 +69,21 @@
                         <value order="50" template="mustache">
                             <![CDATA[
 ## Building the Docker Image
+
 ```
 docker build -t {{artifactId}} .
 ```
 
 ## Running the Docker Image
 
+{{#docker-run-readme-section}}
+{{.}}
+{{/docker-run-readme-section}}
+{{^docker-run-readme-section}}
 ```
 docker run --rm -p 8080:8080 {{artifactId}}:latest
 ```
+{{/docker-run-readme-section}}
 
 Exercise the application as described above.
                                 ]]>
@@ -122,6 +134,10 @@ mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
 For more information on available configuration options see the helidon-maven-plugin documentation.
                                 ]]>
                         </value>
+                    </list>
+                    <list key="docker-phase1-options" if="${~flavor} == 'mp'">
+                        <value>-Declipselink.weave.skip</value>
+                        <value>-DskipOpenApiGenerate</value>
                     </list>
                 </model>
             </output>
