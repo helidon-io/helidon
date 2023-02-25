@@ -72,4 +72,40 @@ class ConfigCopyTest {
         assertThat(copy.get("object.second").asString(), is(ConfigValues.simpleValue("secondValue")));
         assertThat(copy.get("aaa.0").asString(), is(ConfigValues.simpleValue("bbb")));
     }
+
+    @Test
+    void testDottedKey() {
+        var withDottedName = ConfigNode.ObjectNode.builder()
+                .addValue(Config.Key.escapeName("first.one"), "firstValue")
+                .addValue("second", "secondValue")
+                .build();
+
+        var rootNode = ConfigNode.ObjectNode.builder()
+                .addObject("object", withDottedName)
+                .build();
+
+        var originalConfig = Config.builder()
+                .disableSystemPropertiesSource()
+                .disableEnvironmentVariablesSource()
+                .addSource(io.helidon.config.ConfigSources.create(rootNode))
+                .build();
+
+        assertThat("Dotted name entry in original",
+                   originalConfig.get("object." + Config.Key.escapeName("first.one")).asString().get(),
+                   is("firstValue"));
+
+        var copyConfig = Config.builder()
+                .disableSystemPropertiesSource()
+                .disableEnvironmentVariablesSource()
+                .addSource(ConfigSources.create(originalConfig))
+                .build();
+
+        var firstOneConfigValue = copyConfig.get("object." + Config.Key.escapeName("first.one")).asString();
+        assertThat("Dotted name key in copy is present",
+                   firstOneConfigValue.isPresent(),
+                   is(true));
+        assertThat("Dotted name value in copy",
+                   firstOneConfigValue.get(),
+                   is("firstValue"));
+    }
 }
