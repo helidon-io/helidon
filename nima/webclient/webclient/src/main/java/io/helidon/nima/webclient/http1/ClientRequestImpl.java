@@ -72,8 +72,11 @@ class ClientRequestImpl implements Http1ClientRequest {
     private final boolean defaultKeepAlive = true;
     private final SocketOptions channelOptions;
     private final BufferData writeBuffer = BufferData.growing(128);
-    // todo configurable
-    private MediaContext mediaContext = MediaContext.create();
+    private final int maxHeaderSize;
+    private final int maxStatusLineLength;
+    private final boolean sendExpect100Continue;
+    private final boolean validateHeaders;
+    private final MediaContext mediaContext;
     private final int connectionQueueSize;
 
     private Tls tls;
@@ -92,6 +95,11 @@ class ClientRequestImpl implements Http1ClientRequest {
         this.channelOptions = client.socketOptions();
         this.query = query;
 
+        this.maxHeaderSize = client.maxHeaderSize();
+        this.maxStatusLineLength = client.maxStatusLineLength();
+        this.sendExpect100Continue = client.sendExpect100Continue();
+        this.validateHeaders = client.validateHeaders();
+        this.mediaContext = client.mediaContext();
         this.connectionQueueSize = client.connectionQueueSize();
     }
 
@@ -284,18 +292,13 @@ class ClientRequestImpl implements Http1ClientRequest {
     }
 
     private Http1ClientResponse readResponse(ClientRequestHeaders usedHeaders, ClientConnection connection, DataReader reader) {
-        // todo configurable max status line length
-        Http.Status responseStatus = Http1StatusParser.readStatus(reader, 256);
+        Http.Status responseStatus = Http1StatusParser.readStatus(reader, maxStatusLineLength);
         ClientResponseHeaders responseHeaders = readHeaders(reader);
 
         return new ClientResponseImpl(responseStatus, usedHeaders, responseHeaders, connection, reader);
     }
 
     private ClientResponseHeaders readHeaders(DataReader reader) {
-        // todo configurable max headers and validate headers
-        int maxHeaderSize = 16384;
-        boolean validateHeaders = true;
-
         WritableHeaders<?> writable = Http1HeadersParser.readHeaders(reader, maxHeaderSize, validateHeaders);
 
         return ClientResponseHeaders.create(writable);
