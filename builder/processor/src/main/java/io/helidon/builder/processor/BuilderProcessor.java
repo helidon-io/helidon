@@ -154,11 +154,12 @@ public class BuilderProcessor extends AbstractProcessor {
                 .orElseThrow(() -> new IllegalArgumentException("Cannot find annotation mirror for " + annoType
                                                                         + " on " + element));
 
-        AnnotationAndValue builderAnnotation = BuilderTypeTools
+        AnnotationAndValue builderAnno = BuilderTypeTools
                 .createAnnotationAndValueFromMirror(am, elementUtils).get();
         TypeName typeName = BuilderTypeTools.createTypeNameFromElement(element).orElse(null);
+        boolean defineDefaultMethods = Boolean.parseBoolean(builderAnno.value("defineDefaultMethods").orElse(null));
         Optional<TypeInfo> typeInfo = tools
-                .createTypeInfo(builderAnnotation.typeName(), typeName, (TypeElement) element, processingEnv);
+                .createTypeInfo(builderAnno.typeName(), typeName, (TypeElement) element, processingEnv, defineDefaultMethods);
         if (typeInfo.isEmpty()) {
             String msg = "Nothing to process, skipping: " + element;
             LOGGER.log(System.Logger.Level.WARNING, msg);
@@ -168,7 +169,7 @@ public class BuilderProcessor extends AbstractProcessor {
 
         Set<BuilderCreatorProvider> creators = getProducersForType(DefaultTypeName.create(annoType));
         Optional<List<TypeAndBody>> result = creators.stream()
-                .map(it -> it.create(typeInfo.get(), builderAnnotation))
+                .map(it -> it.create(typeInfo.get(), builderAnno))
                 .filter(it -> !it.isEmpty())
                 .findFirst();
         if (result.isEmpty()) {

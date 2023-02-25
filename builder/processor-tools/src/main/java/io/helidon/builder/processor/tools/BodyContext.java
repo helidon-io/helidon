@@ -110,7 +110,7 @@ public class BodyContext {
             throw new IllegalStateException("Failed while processing: " + typeInfo.typeName(), e);
         }
         assert (allTypeInfos.size() == allAttributeNames.size());
-        this.hasParent = Objects.nonNull(parentTypeName.get());
+        this.hasParent = (parentTypeName.get() != null && hasBuilder(typeInfo.superTypeInfo(), builderTriggerAnnotation));
         this.hasAnyBuilderClashingMethodNames = determineIfHasAnyClashingMethodNames();
         this.isExtendingAnAbstractClass = typeInfo.typeKind().equals("CLASS");
         this.ctorBuilderAcceptTypeName = (hasParent)
@@ -130,6 +130,11 @@ public class BodyContext {
         this.publicOrPackagePrivateDecl = (typeInfo.typeKind().equals("INTERFACE")
                                                    || typeInfo.modifierNames().isEmpty()
                                                    || typeInfo.modifierNames().contains("PUBLIC")) ? "public " : "";
+    }
+
+    @Override
+    public String toString() {
+        return implTypeName.toString();
     }
 
     /**
@@ -499,6 +504,15 @@ public class BodyContext {
     }
 
     /**
+     * In support of {@link io.helidon.builder.Builder#defineDefaultMethods()}.
+     */
+    private static boolean toDefineDefaultMethods(AnnotationAndValue builderTriggerAnnotation,
+                                                  TypeInfo typeInfo) {
+        String val = searchForBuilderAnnotation("defineDefaultMethods", builderTriggerAnnotation, typeInfo);
+        return (val == null) ? Builder.DEFAULT_DEFINE_DEFAULT_METHODS : Boolean.parseBoolean(val);
+    }
+
+    /**
      * In support of {@link io.helidon.builder.Builder#listImplType()}.
      */
     private static String toListImplType(AnnotationAndValue builderTriggerAnnotation,
@@ -647,6 +661,18 @@ public class BodyContext {
         return beanAttributeName.equals("identity")
                 || beanAttributeName.equals("get")
                 || beanAttributeName.equals("toStringInner");
+    }
+
+    private boolean hasBuilder(Optional<TypeInfo> typeInfo, AnnotationAndValue builderTriggerAnnotation) {
+        if (typeInfo.isEmpty()) {
+            return false;
+        }
+
+        TypeName builderAnnoTypeName = builderTriggerAnnotation.typeName();
+        boolean hasBuilder = typeInfo.get().annotations().stream()
+                .map(AnnotationAndValue::typeName)
+                .anyMatch(it -> it.equals(builderAnnoTypeName));
+        return hasBuilder || hasBuilder(typeInfo.get().superTypeInfo(), builderTriggerAnnotation);
     }
 
 }
