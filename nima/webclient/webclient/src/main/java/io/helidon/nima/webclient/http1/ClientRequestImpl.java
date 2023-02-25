@@ -158,7 +158,10 @@ class ClientRequestImpl implements Http1ClientRequest {
 
     @Override
     public Http1ClientResponse submit(Object entity) {
-        // todo validate request ok
+        if (entity != BufferData.EMPTY_BYTES) {
+            rejectHeadWithEntity();
+        }
+
         if (uriTemplate != null) {
             String resolved = resolvePathParams(uriTemplate);
             this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
@@ -196,7 +199,7 @@ class ClientRequestImpl implements Http1ClientRequest {
 
     @Override
     public Http1ClientResponse outputStream(OutputStreamHandler streamHandler) {
-        // todo validate request ok
+        rejectHeadWithEntity();
 
         WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);
         boolean keepAlive = handleKeepAlive(headers);
@@ -367,6 +370,12 @@ class ClientRequestImpl implements Http1ClientRequest {
                                                                                      client.dnsAddressLookup())).connect();
         }
         return connection;
+    }
+
+    private void rejectHeadWithEntity() {
+        if (this.method.equals(Http.Method.HEAD)) {
+            throw new IllegalArgumentException("Payload in method '" + Http.Method.HEAD + "' has no defined semantics");
+        }
     }
 
     private byte[] entityBytes(Object entity, ClientRequestHeaders headers) {
