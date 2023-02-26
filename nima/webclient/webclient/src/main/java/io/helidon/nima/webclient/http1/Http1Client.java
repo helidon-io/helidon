@@ -44,8 +44,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
     class Http1ClientBuilder extends WebClient.Builder<Http1ClientBuilder, Http1Client> {
         private int maxHeaderSize = 16384;
         private int maxStatusLineLength = 256;
-        // temporarily disable to investigate a test issue in KeepAliveTest
-        private boolean sendExpect100Continue = false;
+        private boolean sendExpect100Continue = true;
         private boolean validateHeaders = true;
         private MediaContext mediaContext = MediaContext.create();
         private int connectionQueueSize = 16384;
