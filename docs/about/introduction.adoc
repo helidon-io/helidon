@@ -16,14 +16,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Introduction
+= Introducing Helidon
 :description: Helidon
 :keywords: helidon, java, microservices, microprofile
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/attributes.adoc[]
 
-== Contents
+== What is Helidon?
 
 * <<What is Helidon?, What is Helidon?>>
 * <<Helidon Flavors, Helidon Flavors>>
