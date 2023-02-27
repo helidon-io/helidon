@@ -116,19 +116,20 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
     private static void addObjectNode(Builder parentBuilder, Config parent) {
         parent.asNodeList().ifPresent(it -> {
             for (Config child : it) {
+                String escapedName = Config.Key.escapeName(child.name());
                 switch (child.type()) {
                 case OBJECT -> {
                     Builder childBuilder = ObjectNode.builder();
                     addObjectNode(childBuilder, child);
-                    parentBuilder.addObject(child.name(), childBuilder.build());
+                    parentBuilder.addObject(escapedName, childBuilder.build());
                 }
                 case LIST -> {
                     ListNode.Builder childBuilder = ListNode.builder();
                     addListNode(childBuilder, child);
-                    parentBuilder.addList(child.name(), childBuilder.build());
+                    parentBuilder.addList(escapedName, childBuilder.build());
                 }
                 case VALUE -> {
-                    parentBuilder.addValue(child.name(), child.asString().get());
+                    parentBuilder.addValue(escapedName, child.asString().get());
                 }
                 default -> {
                     // do nothing
