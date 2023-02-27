@@ -161,7 +161,8 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
         for (Element typeToProcess : typesToProcess) {
             try {
-                DefaultCustomAnnotationTemplateRequest.Builder req = toRequestBuilder(annoTypeName, typeToProcess, roundEnv);
+                DefaultCustomAnnotationTemplateRequest.Builder req =
+                        toRequestBuilder(annoTypeName, typeToProcess, roundEnv, true);
                 if (req == null) {
                     continue;
                 }
@@ -228,7 +229,8 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     DefaultCustomAnnotationTemplateRequest.Builder toRequestBuilder(
             TypeName annoTypeName,
             Element typeToProcess,
-            RoundEnvironment ignoredRoundEnv) {
+            RoundEnvironment ignoredRoundEnv,
+            boolean wantDefaultMethods) {
         TypeElement enclosingClassType = toEnclosingClassTypeElement(typeToProcess);
         TypeName enclosingClassTypeName = createTypeNameFromElement(enclosingClassType).orElse(null);
         if (enclosingClassTypeName == null) {
@@ -245,7 +247,8 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 .findFirst()
                 .orElse(null);
         TypeInfo enclosingClassTypeInfo = tools
-                .createTypeInfo(annoTypeName, enclosingClassTypeName, enclosingClassType, processingEnv).orElseThrow();
+                .createTypeInfo(annoTypeName, enclosingClassTypeName, enclosingClassType, processingEnv, wantDefaultMethods)
+                .orElseThrow();
         Elements elements = processingEnv.getElementUtils();
         return DefaultCustomAnnotationTemplateRequest.builder()
                 .filerEnabled(true)
