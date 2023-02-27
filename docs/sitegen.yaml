@@ -42,7 +42,7 @@ pages:
         - "includes/**"
 backend:
     name: "vuetify"
-    homePage: "about/introduction.adoc"
+    homePage: "about/doc_overview.adoc"
     releases:
         - "${project.version}"
     navigation:
@@ -53,8 +53,8 @@ backend:
         value: "images/helidon_logo_dark.svg"
       items:
         - type: "PAGE"
-          title: "Introduction"
-          source: "about/introduction.adoc"
+          title: "Documentation Overview"
+          source: "about/doc_overview.adoc"
           glyph:
             type: "icon"
             value: "lightbulb"
@@ -78,6 +78,24 @@ backend:
             value: "widgets"
         - type: "GROUPS"
           items:
+          - type: "GROUP"
+            title: "Helidon Nima"
+            dir: "nima"
+            items:
+              - type: "PAGE"
+                title: "Introduction"
+                source: "introduction.adoc"
+                glyph:
+                  type: "icon"
+                  value: "lightbulb"
+              - type: "MENU"
+                title: "Guides"
+                dir: "guides"
+                glyph:
+                  type: "icon"
+                  value: "explore"
+                sources:
+                  - "overview.adoc"
           - type: "GROUP"
             title: "Helidon SE"
             dir: "se"
