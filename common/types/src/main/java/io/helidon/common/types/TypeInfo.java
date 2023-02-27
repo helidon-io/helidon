@@ -104,7 +104,7 @@ public interface TypeInfo {
      * Annotation element type kind.
      * See javax.lang.model.element.ElementKind#ANNOTATION_TYPE
      */
-    String KIND_ANNOTATION = "ANNOTATION_TYPE";
+    String KIND_ANNOTATION_TYPE = "ANNOTATION_TYPE";
 
     /**
      * Package element type kind.
@@ -128,7 +128,7 @@ public interface TypeInfo {
     /**
      * The type element kind.
      *
-     * @return the type element kind (e.g., "{@value #KIND_INTERFACE}", "{@value #KIND_ANNOTATION}", etc.)
+     * @return the type element kind (e.g., "{@value #KIND_INTERFACE}", "{@value #KIND_ANNOTATION_TYPE}", etc.)
      * @see #KIND_CLASS and other constants on this class prefixed with {@code TYPE}
      */
     String typeKind();

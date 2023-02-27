@@ -579,7 +579,7 @@ public class BodyContext {
                     && superTypeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
                 ctx.parentTypeName.set(superTypeInfo.typeName());
             } else if (Objects.isNull(ctx.parentAnnotationType.get())
-                    && superTypeInfo.typeKind().equals(TypeInfo.KIND_ANNOTATION)) {
+                    && superTypeInfo.typeKind().equals(TypeInfo.KIND_ANNOTATION_TYPE)) {
                 ctx.parentAnnotationType.set(superTypeInfo.typeName());
             }
         }
