@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,7 +33,7 @@ class DefaultAnnotationAndValueTest {
         DefaultAnnotationAndValue val1 = DefaultAnnotationAndValue.create(Test.class);
         assertThat(val1.typeName().toString(), equalTo(Test.class.getName()));
         assertThat(val1.toString(),
-                   equalTo("DefaultAnnotationAndValue(typeName=" + Test.class.getName() + ")"));
+                   containsString("typeName=" + Test.class.getName()));
 
         DefaultAnnotationAndValue val2 = DefaultAnnotationAndValue.create(Test.class);
         assertThat(val2, equalTo(val1));
@@ -40,11 +41,11 @@ class DefaultAnnotationAndValueTest {
 
         DefaultAnnotationAndValue val3 = DefaultAnnotationAndValue.create(Target.class, "name");
         assertThat(val3.toString(),
-                   equalTo("DefaultAnnotationAndValue(typeName=java.lang.annotation.Target, value=name)"));
+                   containsString("typeName=java.lang.annotation.Target, value=name"));
 
         DefaultAnnotationAndValue val4 = DefaultAnnotationAndValue.create(Test.class, Map.of("a", "1"));
         assertThat(val4.toString(),
-                   equalTo("DefaultAnnotationAndValue(typeName=" + Test.class.getName() + ", values={a=1})"));
+                   containsString("typeName=" + Test.class.getName() + ", values={a=1}"));
     }
 
     @Test

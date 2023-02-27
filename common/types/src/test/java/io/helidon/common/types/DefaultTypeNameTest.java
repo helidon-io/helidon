@@ -205,7 +205,7 @@ class DefaultTypeNameTest {
         assertThat(typeName.fqName(),
                    is("java.util.List<java.lang.String>"));
         assertThat(typeName.toString(),
-                   is("java.util.List<java.lang.String>"));
+                   equalTo(typeName.fqName()));
         assertThat(typeName.name(),
                    is("java.util.List"));
 
@@ -227,7 +227,7 @@ class DefaultTypeNameTest {
         assertThat(typeName.fqName(),
                    is("?"));
         assertThat(typeName.toString(),
-                   is("?"));
+                   equalTo(typeName.fqName()));
         assertThat(typeName.name(),
                    is(Object.class.getName()));
         assertThat(typeName.packageName(),
@@ -242,7 +242,7 @@ class DefaultTypeNameTest {
         assertThat(typeName.fqName(),
                    is("java.util.List<? extends pkg.Something>"));
         assertThat(typeName.toString(),
-                   is("java.util.List<? extends pkg.Something>"));
+                   equalTo(typeName.fqName()));
         assertThat(typeName.name(),
                    is("java.util.List"));
     }
@@ -287,13 +287,13 @@ class DefaultTypeNameTest {
                 .build();
         assertThat(typeName.name(), equalTo("java.util.Map"));
         assertThat(typeName.fqName(), equalTo("java.util.Map<K, CB>"));
-        assertThat(typeName.toString(), equalTo("java.util.Map<K, CB>"));
+        assertThat(typeName.toString(), equalTo(typeName.fqName()));
 
         // note: in the future was can always add getBoundedTypeName()
         genericTypeName = DefaultTypeName.createFromGenericDeclaration("CB extends MyClass");
         assertThat(genericTypeName.name(), equalTo("CB extends MyClass"));
         assertThat(genericTypeName.fqName(), equalTo("CB extends MyClass"));
-        assertThat(genericTypeName.toString(), equalTo("CB extends MyClass"));
+        assertThat(genericTypeName.toString(), equalTo(genericTypeName.fqName()));
         assertThat(genericTypeName.generic(), is(true));
         assertThat(genericTypeName.wildcard(), is(false));
     }
