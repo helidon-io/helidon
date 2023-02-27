@@ -44,6 +44,7 @@ import io.helidon.config.mp.MpConfig;
 import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.NackHandler;
 import io.helidon.messaging.Stoppable;
+import io.helidon.messaging.connectors.jms.shim.JakartaJms;
 import io.helidon.messaging.connectors.jms.shim.JakartaWrapper;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -295,12 +296,15 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     static final String SCHEDULER_THREAD_NAME_PREFIX = "jms-poll-";
     static final String EXECUTOR_THREAD_NAME_PREFIX = "jms-";
 
-    private final Instance<ConnectionFactory> connectionFactories;
+    private final Instance<ConnectionFactory> jakartaConnectionFactories;
 
     private final ScheduledExecutorService scheduler;
     private final ExecutorService executor;
     private final Map<String, SessionMetadata> sessionRegister = new HashMap<>();
     private final Map<String, ConnectionFactory> connectionFactoryMap;
+
+    @Inject
+    private Instance<javax.jms.ConnectionFactory> javaxConnectionFactories;
 
     /**
      * Provides a {@link JmsConnectorBuilder} for creating
@@ -333,12 +337,13 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     /**
      * Create new JmsConnector.
      *
-     * @param connectionFactories connection factory beans
+     * @param jakartaConnectionFactories connection factory beans
      * @param config              root config for thread context
      */
     @Inject
-    protected JmsConnector(io.helidon.config.Config config, Instance<ConnectionFactory> connectionFactories) {
-        this.connectionFactories = connectionFactories;
+    protected JmsConnector(io.helidon.config.Config config,
+                           Instance<ConnectionFactory> jakartaConnectionFactories) {
+        this.jakartaConnectionFactories = jakartaConnectionFactories;
         this.connectionFactoryMap = Map.of();
         scheduler = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix(SCHEDULER_THREAD_NAME_PREFIX)
@@ -362,7 +367,8 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     protected JmsConnector(Map<String, ConnectionFactory> connectionFactoryMap,
                            ScheduledExecutorService scheduler,
                            ExecutorService executor) {
-        this.connectionFactories = null;
+        this.jakartaConnectionFactories = null;
+        this.javaxConnectionFactories = null;
         this.connectionFactoryMap = connectionFactoryMap;
         this.scheduler = scheduler;
         this.executor = executor;
@@ -452,20 +458,25 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         if (factoryName.isPresent()) {
             // Check SE map and MP instance for named factories
             return Optional.ofNullable(connectionFactoryMap.get(factoryName.get()))
-                    .or(() ->
-                            Optional.ofNullable(connectionFactories)
-                                    .flatMap(s -> s.select(NamedLiteral.of(factoryName.get()))
-                                            .stream()
-                                            .findFirst()
-                                    )
-                    );
+                    .or(() -> getConnectionFactoryBean(factoryName.get()));
         }
 
         // Check SE map and MP instance for any factories
         return connectionFactoryMap.values().stream().findFirst()
-                .or(() -> Optional.ofNullable(connectionFactories)
-                        .flatMap(s -> s.stream().findFirst())
-                );
+                .or(() -> getConnectionFactoryBean(factoryName.get()));
+    }
+
+    private <T> Optional<ConnectionFactory> getConnectionFactoryBean(String name){
+        NamedLiteral literal = NamedLiteral.of(name);
+        return jakartaConnectionFactories.select(literal)
+                .stream()
+                .findFirst()
+                .or(() -> javaxConnectionFactories.select(literal).stream().map(JakartaJms::create).findFirst());
+
+//        return CDI.current().select(literal)
+//                .stream()
+//                .findFirst()
+//                .map(o -> JakartaJms.resolve(o, ConnectionFactory.class));
     }
 
     @Override
@@ -712,7 +723,6 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
 
         if (ctx.isJndi()) {
             Optional<? extends Destination> jndiDestination = ctx.lookupDestination();
-            // JNDI can be used for looking up ConnectorFactory only
             if (jndiDestination.isPresent()) {
                 return jndiDestination.get();
             }
