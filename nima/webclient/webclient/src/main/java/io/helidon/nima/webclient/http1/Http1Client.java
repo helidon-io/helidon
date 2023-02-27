@@ -44,7 +44,9 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
     class Http1ClientBuilder extends WebClient.Builder<Http1ClientBuilder, Http1Client> {
         private int maxHeaderSize = 16384;
         private int maxStatusLineLength = 256;
-        private boolean sendExpect100Continue = true;
+        // todo Enable this once io.helidon.nima.tests.integration.server.KeepAliveTest.sendWithKeepAliveExpectKeepAlive
+        //  is resolved
+        private boolean sendExpect100Continue = false;
         private boolean validateHeaders = true;
         private MediaContext mediaContext = MediaContext.create();
         private int connectionQueueSize = 16384;

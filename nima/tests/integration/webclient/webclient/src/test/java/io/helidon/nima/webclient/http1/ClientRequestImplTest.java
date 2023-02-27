@@ -81,7 +81,6 @@ class ClientRequestImplTest {
         }
     }
 
-    // @Test
     void testMaxHeaderSizeFail() {
         Http1Client client = WebClient.builder()
                 .maxHeaderSize(15)
@@ -89,7 +88,6 @@ class ClientRequestImplTest {
         validateFailedResponse(client, "Header size exceeded");
     }
 
-    // @Test
     void testMaxHeaderSizeSuccess() {
         Http1Client client = WebClient.builder()
                 .maxHeaderSize(500)
@@ -97,7 +95,6 @@ class ClientRequestImplTest {
         validateSuccessfulResponse(client);
     }
 
-    // @Test
     void testMaxStatusLineLengthFail() {
         Http1Client client = WebClient.builder()
                 .maxStatusLineLength(1)
@@ -105,7 +102,6 @@ class ClientRequestImplTest {
         validateFailedResponse(client, "HTTP Response did not contain HTTP status line");
     }
 
-    // @Test
     void testMaxHeaderLineLengthSuccess() {
         Http1Client client = WebClient.builder()
                 .maxStatusLineLength(20)
@@ -192,7 +188,6 @@ class ClientRequestImplTest {
     }
 
     // validates that HEAD is not allowed with entity payload
-    // @Test
     void testHeadMethod() {
         String url = "http://localhost:" + port + "/test";
         assertThrows(IllegalArgumentException.class, () ->
@@ -226,7 +221,6 @@ class ClientRequestImplTest {
         }
     }
 
-    // @Test
     void testConnectionQueueSizeLimit() {
         int connectionQueueSize = ((Http1ClientImpl) client).connectionQueueSize();
         String url = "http://localhost:" + port + "/test";
