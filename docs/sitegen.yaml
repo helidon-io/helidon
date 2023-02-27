@@ -79,7 +79,7 @@ backend:
         - type: "GROUPS"
           items:
           - type: "GROUP"
-            title: "Helidon Níma"
+            title: "Helidon Nima"
             dir: "nima"
             items:
               - type: "PAGE"

@@ -112,9 +112,9 @@ xref:{rootdir}/se/guides/overview.adoc[SE Guides]
 xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 
 --
-//Helidon Níma
+//Helidon Nima
 [CARD]
-.Helidon Níma 
+.Helidon Nima 
 [icon=swap_horiz]
 --
 

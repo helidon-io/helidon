@@ -23,8 +23,8 @@ ifndef::flavor-included[]
 ifndef::rootdir[:rootdir: {docdir}/..]
 include::{rootdir}/includes/attributes.adoc[]
 
-:h1-prefix: Nima
-:flavor-uc: Nima
+:h1-prefix: Níma
+:flavor-uc: Níma
 :flavor-lc: nima
 
 
