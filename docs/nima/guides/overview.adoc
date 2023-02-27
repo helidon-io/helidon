@@ -16,8 +16,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
+= Helidon Níma Guides
+:description: Helidon Níma Guides
 :keywords: helidon, java, microservices, microprofile, guides
 :rootdir: {docdir}/../..
 

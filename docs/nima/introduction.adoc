@@ -16,8 +16,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima
-:description: about Helidon Nima
+= Helidon Níma
+:description: about Helidon Níma
 :keywords: helidon, java, microservices, reactive, virtual threads
 :rootdir: {docdir}/..
 
