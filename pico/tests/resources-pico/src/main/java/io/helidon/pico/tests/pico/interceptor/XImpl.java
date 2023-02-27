@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Optional;
 
+import io.helidon.pico.ExternalContracts;
 import io.helidon.pico.tests.plain.interceptor.IA;
 import io.helidon.pico.tests.plain.interceptor.IB;
 import io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno;
@@ -30,6 +31,7 @@ import jakarta.inject.Singleton;
 
 @Singleton
 @Named("ClassX")
+@ExternalContracts(value = Closeable.class, moduleNames = {"test1", "test2"})
 public class XImpl implements IA, IB, Closeable {
 
     XImpl() {

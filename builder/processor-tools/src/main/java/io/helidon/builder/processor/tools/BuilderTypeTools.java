@@ -391,7 +391,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * Extracts values from the annotation mirror value.
      *
      * @param am       the annotation mirror
-     * @param elements the optional elements
+     * @param elements the elements
      * @return the extracted values
      */
     public static Map<String, String> extractValues(
@@ -417,6 +417,19 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
             }
         });
         return result;
+    }
+
+    /**
+     * Extracts the singular {@code value()} value. Return value will always be non-null.
+     *
+     * @param am       the annotation mirror
+     * @param elements the elements
+     * @return the extracted values
+     */
+    public static String extractValue(
+            AnnotationMirror am,
+            Elements elements) {
+        return Objects.requireNonNull(extractValues(elements.getElementValuesWithDefaults(am)).get("value"));
     }
 
     /**

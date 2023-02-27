@@ -370,7 +370,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
-    // not that it is expected that the generated services override this method - which will override the getAnnotation() call.
+    // note: it is expected that the generated services override this method - which will override the getAnnotation() call.
     public Class<?> configBeanType() {
         Class<?> serviceType = serviceType();
         ConfiguredBy configuredBy =

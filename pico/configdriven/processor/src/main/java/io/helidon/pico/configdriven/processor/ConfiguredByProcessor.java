@@ -35,6 +35,7 @@ import io.helidon.builder.AttributeVisitor;
 import io.helidon.builder.Builder;
 import io.helidon.builder.config.ConfigBean;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
+import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.config.Config;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
@@ -197,8 +198,9 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
             throw new ToolsException("The config bean must be an interface: " + typeElement);
         }
 
-        ConfigBean cfgBean = typeElement.getAnnotation(ConfigBean.class);
-        if (cfgBean == null) {
+        Optional<? extends AnnotationMirror> cfgBean = BuilderTypeTools
+                .findAnnotationMirror(ConfigBean.class.getName(), typeElement.getAnnotationMirrors());
+        if (cfgBean.isEmpty()) {
             throw new ToolsException("The config bean must be annotated with @" + ConfigBean.class.getSimpleName()
                                              + ": " + configBeanType);
         }

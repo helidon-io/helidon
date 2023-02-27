@@ -89,6 +89,7 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
+import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValue;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
 import static io.helidon.pico.processor.Utils.nonNull;
@@ -393,9 +394,11 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         services.addIsAbstract(serviceTypeName, isAbstract(type));
         services.addServiceTypeHierarchy(serviceTypeName, toServiceTypeHierarchy(type, true));
 
-        RunLevel runLevel = type.getAnnotation(RunLevel.class);
+        AnnotationMirror runLevel = findAnnotationMirror(RunLevel.class.getName(), type.getAnnotationMirrors())
+                .orElse(null);
         if (runLevel != null) {
-            services.addDeclaredRunLevel(serviceTypeName, runLevel.value());
+            String val = extractValue(runLevel, processingEnv.getElementUtils());
+            services.addDeclaredRunLevel(serviceTypeName, Integer.parseInt(val));
         }
 
         List<String> scopeAnnotations = annotationsWithAnnotationOf(type, TypeNames.JAKARTA_SCOPE);
@@ -414,9 +417,11 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             services.addQualifiers(serviceTypeName, qualifiers);
         }
 
-        Weight weight = type.getAnnotation(Weight.class);
+        AnnotationMirror weight = findAnnotationMirror(Weight.class.getName(), type.getAnnotationMirrors())
+                .orElse(null);
         if (weight != null) {
-            services.addDeclaredWeight(serviceTypeName, weight.value());
+            String val = extractValue(weight, processingEnv.getElementUtils());
+            services.addDeclaredWeight(serviceTypeName, Double.parseDouble(val));
         } else {
             processPriority(serviceTypeName, type);
         }
@@ -643,7 +648,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             }
 
             TypeName parentTe = createTypeNameFromElement(teContract).orElse(null);
-            if (Objects.nonNull(teContract.getAnnotation(Contract.class))) {
+            if (findAnnotationMirror(Contract.class.getName(), teContract.getAnnotationMirrors()).isPresent()) {
                 result.add(parentTe);
                 continue;
             } else if (Options.isOptionEnabled(Options.TAG_AUTO_ADD_NON_CONTRACT_INTERFACES)
@@ -732,8 +737,9 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             stack.addAll(teContract.getInterfaces());
             stack.add(teContract.getSuperclass());
 
-            ExternalContracts externalContracts = teContract.getAnnotation(ExternalContracts.class);
-            if (Objects.nonNull(externalContracts)) {
+            AnnotationMirror externalContracts = findAnnotationMirror(ExternalContracts.class.getName(),
+                                                                      teContract.getAnnotationMirrors()).orElse(null);
+            if (externalContracts != null) {
                 Collection<AnnotationAndValue> annotations = createAnnotationAndValueSet(teContract);
                 Optional<? extends AnnotationAndValue> annotation = DefaultAnnotationAndValue
                         .findFirst(ExternalContracts.class.getName(), annotations);
@@ -742,8 +748,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 for (String externalContract : values) {
                     result.add(DefaultTypeName.createFromTypeName(externalContract));
                 }
-                if (externalContracts.moduleNames() != null) {
-                    externalModulesRequired.addAll(Arrays.asList(externalContracts.moduleNames()));
+                Map<String, String> map = extractValues(externalContracts, processingEnv.getElementUtils());
+                String moduleNames = map.get("moduleNames");
+                if (hasValue(moduleNames)) {
+                    externalModulesRequired.addAll(Arrays.asList(moduleNames.split(",[ ]*")));
                 }
                 continue;
             }

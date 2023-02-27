@@ -1048,8 +1048,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         ClassInfo parentClassInfo = toClassInfo(parentTypeName, scan);
         MethodInfoList parentMethods = parentClassInfo.getDeclaredMethodInfo();
         Map<IdAndToString, MethodInfo> injectedParentMethods = parentMethods.stream()
-                .filter((m) -> Objects.nonNull(m.getAnnotationInfo(TypeNames.JAKARTA_INJECT)))
-                .filter((m) -> DefaultExternalModuleCreator.isPicoSupported(parentTypeName, m, logger()))
+                .filter(m -> Objects.nonNull(m.getAnnotationInfo(TypeNames.JAKARTA_INJECT)))
+                .filter(m -> DefaultExternalModuleCreator.isPicoSupported(parentTypeName, m, logger()))
                 .collect(Collectors.toMap(DefaultActivatorCreator::toBaseIdTag, Function.identity()));
         if (injectedParentMethods.isEmpty()) {
             return null;
@@ -1139,7 +1139,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     boolean hasParent(
             TypeName serviceTypeName,
             ActivatorCreatorCodeGen codeGen) {
-        return Objects.nonNull(parentOf(serviceTypeName, codeGen));
+        return (parentOf(serviceTypeName, codeGen) != null);
     }
 
     TypeName parentOf(

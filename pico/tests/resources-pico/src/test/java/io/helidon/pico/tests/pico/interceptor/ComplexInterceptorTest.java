@@ -57,6 +57,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ComplexInterceptorTest {
@@ -88,8 +89,8 @@ class ComplexInterceptorTest {
         File file = new File("./target/generated-sources/annotations", path);
         assertThat(file.exists(), is(true));
         String java = Files.readString(file.toPath());
-        assertThat(loadStringFromResource("expected/ximpl-interceptor._java_"),
-                   equalTo(java));
+        assertEquals(loadStringFromResource("expected/ximpl-interceptor._java_"),
+                   java);
     }
 
     @Test

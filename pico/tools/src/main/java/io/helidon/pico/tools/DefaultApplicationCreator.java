@@ -238,7 +238,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         String template = templateHelper().safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_APPLICATION_HBS);
         String body = templateHelper().applySubstitutions(template, subst, true).trim();
 
-        if (Objects.nonNull(req.codeGenPaths().generatedSourcesPath())) {
+        if (req.codeGenPaths().generatedSourcesPath().isPresent()) {
             codegen(picoServices, req, application, body);
         }
 

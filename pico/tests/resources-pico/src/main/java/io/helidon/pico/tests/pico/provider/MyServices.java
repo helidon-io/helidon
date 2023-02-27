@@ -59,7 +59,7 @@ public class MyServices {
         @Override
         public Optional<MyConcreteClassContract> first(
                 ContextualServiceQuery query) {
-            assert (Objects.nonNull(injected));
+            assert (injected != null);
             assert (postConstructed);
             int num = counter++;
             String id = getClass().getSimpleName() + ":instance_" + num + ", "

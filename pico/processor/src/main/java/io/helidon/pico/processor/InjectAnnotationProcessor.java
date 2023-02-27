@@ -17,7 +17,6 @@
 package io.helidon.pico.processor;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -110,7 +109,7 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
             InjectionPointInfo.ElementKind elemKind,
             InjectionPointInfo.Access access,
             Boolean isStaticAlready) {
-        boolean isStatic = Objects.nonNull(isStaticAlready) && isStaticAlready;
+        boolean isStatic = (isStaticAlready != null && isStaticAlready);
         if (access == null) {
             if (varType.getKind() != ElementKind.FIELD) {
                 throw new ToolsException("unsupported element kind " + varType.getEnclosingElement()
