@@ -93,7 +93,7 @@ public class ConnectionContext {
     }
 
     Optional<? extends Destination> lookupDestination(String jndi) {
-        return Optional.ofNullable((Destination) lookup(jndi))
+        return Optional.ofNullable(lookup(jndi))
                 .map(o -> JakartaJms.resolve(o, Destination.class));
     }
 

@@ -68,5 +68,15 @@
             <artifactId>helidon-microprofile-tests-junit5</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.messaging.mock</groupId>
+            <artifactId>helidon-messaging-mock</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

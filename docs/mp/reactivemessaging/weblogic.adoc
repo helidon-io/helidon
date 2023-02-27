@@ -70,6 +70,7 @@ Connector name: `helidon-weblogic-jms`
 |`credentials` | WebLogic initial context credential(password)
 |`type` | Possible values are: `queue`, `topic`. Default value is: `topic`
 |`destination` | Queue or topic name in WebLogic CDI Syntax(CDI stands for Create Destination Identifier)
+|`jndi.destination` | JNDI destination identifier. When no such JNDI destination is found, falls back to `destination` with CDI syntax.
 |`acknowledge-mode` |Possible values are: `AUTO_ACKNOWLEDGE`- session automatically acknowledges a client’s receipt of a message,
 `CLIENT_ACKNOWLEDGE` - receipt of a message is acknowledged only when `Message.ack()` is called manually,
 `DUPS_OK_ACKNOWLEDGE` - session lazily acknowledges the delivery of messages. Default value: `AUTO_ACKNOWLEDGE`
@@ -114,7 +115,8 @@ mp:
     outgoing:
       to-wls:
         connector: helidon-weblogic-jms
-        destination: ./TestJMSModule!TestQueue
+        # JNDI identifier for the same queue
+        jndi.destination: jms/TestQueue
 ----
 
 When configuring destination with WebLogic CDI, the following syntax needs to be applied:
