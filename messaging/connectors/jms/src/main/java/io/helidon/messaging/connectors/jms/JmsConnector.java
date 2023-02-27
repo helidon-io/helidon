@@ -472,11 +472,6 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                 .stream()
                 .findFirst()
                 .or(() -> javaxConnectionFactories.select(literal).stream().map(JakartaJms::create).findFirst());
-
-//        return CDI.current().select(literal)
-//                .stream()
-//                .findFirst()
-//                .map(o -> JakartaJms.resolve(o, ConnectionFactory.class));
     }
 
     @Override
