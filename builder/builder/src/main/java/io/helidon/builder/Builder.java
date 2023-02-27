@@ -74,6 +74,11 @@ public @interface Builder {
     boolean DEFAULT_INCLUDE_GENERATED_ANNOTATION = false;
 
     /**
+     * The default value for {@link #defineDefaultMethods()}.
+     */
+    boolean DEFAULT_DEFINE_DEFAULT_METHODS = false;
+
+    /**
      * The default list type used for the generated class implementation for any references to {@link java.util.List} is found
      * on the methods of the {@link Builder}-annotation interface.
      */
@@ -193,6 +198,14 @@ public @interface Builder {
      * @return true to include the Generated annotation
      */
     boolean includeGeneratedAnnotation() default DEFAULT_INCLUDE_GENERATED_ANNOTATION;
+
+    /**
+     * Default methods are normally skipped. Setting this to true will allow definition for all {@code default} methods from
+     * the target type, but only for getter-type methods taking no arguments.
+     *
+     * @return true to define default methods
+     */
+    boolean defineDefaultMethods() default DEFAULT_DEFINE_DEFAULT_METHODS;
 
     /**
      * The interceptor implementation type. See {@link BuilderInterceptor} for further details. Any interceptor applied will be called

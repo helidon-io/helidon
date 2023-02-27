@@ -37,11 +37,13 @@ public interface TypeInfoCreatorProvider {
      * @param typeName      the type name that is being processed that is annotated with the triggering annotation
      * @param element       the element representative of the typeName
      * @param processingEnv the processing environment
+     * @param wantDefaultMethods true to accept {@code default} methods (normally this is passed as false)
      * @return the type info associated with the arguments being processed, or empty if not able to process the type
      */
     Optional<TypeInfo> createTypeInfo(TypeName annoTypeName,
                                       TypeName typeName,
                                       TypeElement element,
-                                      ProcessingEnvironment processingEnv);
+                                      ProcessingEnvironment processingEnv,
+                                      boolean wantDefaultMethods);
 
 }

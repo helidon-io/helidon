@@ -85,7 +85,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     @Override
-    public List<TypeAndBody> create(TypeInfo typeInfo, AnnotationAndValue builderAnnotation) {
+    public List<TypeAndBody> create(TypeInfo typeInfo,
+                                    AnnotationAndValue builderAnnotation) {
         try {
             TypeName abstractImplTypeName = toAbstractImplTypeName(typeInfo.typeName(), builderAnnotation);
             TypeName implTypeName = toImplTypeName(typeInfo.typeName(), builderAnnotation);
@@ -1765,7 +1766,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         return "\"" + val + "\"";
     }
 
-    private String maybeRequireNonNull(BodyContext ctx, String tag) {
+    private String maybeRequireNonNull(BodyContext ctx,
+                                       String tag) {
         return ctx.allowNulls() ? tag : "Objects.requireNonNull(" + tag + ")";
     }
 
