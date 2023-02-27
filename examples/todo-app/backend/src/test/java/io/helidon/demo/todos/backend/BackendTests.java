@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
 @Configuration(useExisting = true)
@@ -115,8 +116,8 @@ class BackendTests {
                 .header(Http.Header.AUTHORIZATION, basicAuth)
                 .post(Entity.json(todo), JsonObject.class);
 
-        assertEquals("john", returnedTodo.getString("user"));
-        assertEquals(todo.getString("title"), returnedTodo.getString("title"));
+        assertThat(returnedTodo.getString("user"), is("john"));
+        assertThat(returnedTodo.getString("title"), is(todo.getString("title")));
 
         // Get the todo created earlier
         JsonObject fromServer = webTarget.path("/api/backend/" + returnedTodo.getString("id"))
@@ -124,7 +125,7 @@ class BackendTests {
                 .header(Http.Header.AUTHORIZATION, basicAuth)
                 .get(JsonObject.class);
 
-        assertEquals(returnedTodo, fromServer);
+        assertThat(fromServer, is(returnedTodo));
 
         // Update the todo created earlier
         JsonObject updatedTodo = Json.createObjectBuilder()
@@ -137,7 +138,7 @@ class BackendTests {
                 .header(Http.Header.AUTHORIZATION, basicAuth)
                 .put(Entity.json(updatedTodo), JsonObject.class);
 
-        assertEquals(updatedTodo.getString("title"), fromServer.getString("title"));
+        assertThat(fromServer.getString("title"), is(updatedTodo.getString("title")));
 
         // Delete the todo created earlier
         fromServer = webTarget.path("/api/backend/" + returnedTodo.getString("id"))
@@ -145,7 +146,7 @@ class BackendTests {
                 .header(Http.Header.AUTHORIZATION, basicAuth)
                 .delete(JsonObject.class);
 
-        assertEquals(returnedTodo.getString("id"), fromServer.getString("id"));
+        assertThat(fromServer.getString("id"), is(returnedTodo.getString("id")));
 
         // Get list of todos
         JsonArray jsonValues = webTarget.path("/api/backend")
@@ -153,7 +154,7 @@ class BackendTests {
                 .header(Http.Header.AUTHORIZATION, basicAuth)
                 .get(JsonArray.class);
 
-        assertEquals(0, jsonValues.size(), "There should be no todos on server");
+        assertThat("There should be no todos on server", jsonValues.size(), is(0));
     }
 
 }
