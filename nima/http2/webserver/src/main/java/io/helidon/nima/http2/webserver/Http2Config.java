@@ -29,12 +29,13 @@ import io.helidon.pico.builder.config.ConfigBean;
 public interface Http2Config {
     /**
      * The size of the largest frame payload that the sender is willing to receive in bytes.
+     * Default value is {@code 16384} and maximum value is 2<sup>24</sup>-1 = 16777215 bytes.
      * See RFC 9113 section 6.5.2 for details.
      *
      * @return maximal frame size
      */
-    @ConfiguredOption("16_384")
-    long maxFrameSize();
+    @ConfiguredOption("16384")
+    int maxFrameSize();
 
     /**
      * The maximum field section size that the sender is prepared to accept in bytes.
@@ -65,6 +66,41 @@ public interface Http2Config {
      */
     @ConfiguredOption("8192")
     long maxConcurrentStreams();
+
+    /**
+     * This setting indicates whether flow control is turned on or off. Value of {@code true} turns flow control on
+     * and value of {@code false} turns flow control off.
+     * Default value is {@code true}.
+     *
+     * @return whether flow control is enabled
+     */
+    @ConfiguredOption("true")
+    boolean flowControlEnabled();
+
+    /**
+     * This setting indicates the sender's maximum window size in bytes for connection-level flow control.
+     * Default and maximum value is 2<sup>31</sup>-1 = 2147483647 bytes. This setting affects the window size
+     * of HTTP/2 connection.
+     * Any value greater than 2147483647 causes an error. Any value smaller than initial window size causes an error.
+     * See RFC 9113 section 6.9.1 for details.
+     *
+     * @return maximum window size in bytes
+     */
+    @ConfiguredOption("2147483647")
+    int maxWindowSize();
+
+    /**
+     * This setting indicates the sender's maximum window size in bytes for stream-level flow control.
+     * Value of {@code 0} is reserved to use the same value as connection-level value.
+     * Default value is {@code 0}. This setting affects the window size of all streams.
+     * Any value greater than 2147483647 causes an error. Any value greater than {@code 0} and smaller than initial
+     * window size causes an error.
+     * See RFC 9113 section 6.9.1 for details.
+     *
+     * @return maximum stream-level window size in bytes
+     */
+    @ConfiguredOption("0")
+    int maxStreamWindowSize();
 
     /**
      * Whether to send error message over HTTP to client.

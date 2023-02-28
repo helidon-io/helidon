@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     }
 
     @Override
-    public void write(Http2FrameData frame, FlowControl flowControl) {
+    public void write(Http2FrameData frame, FlowControl.Outbound flowControl) {
         withStreamLock(() -> {
             noLockWrite(flowControl, frame);
             return null;
@@ -65,7 +65,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     }
 
     @Override
-    public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags, FlowControl flowControl) {
+    public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags, FlowControl.Outbound flowControl) {
         // this is executing in the thread of the stream
         // we must enforce parallelism of exactly 1, to make sure the dynamic table is updated
         // and then immediately written
@@ -92,7 +92,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                             int streamId,
                             Http2Flag.HeaderFlags flags,
                             Http2FrameData dataFrame,
-                            FlowControl flowControl) {
+                            FlowControl.Outbound flowControl) {
         // this is executing in the thread of the stream
         // we must enforce parallelism of exactly 1, to make sure the dynamic table is updated
         // and then immediately written
@@ -145,7 +145,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
-    private void noLockWrite(FlowControl flowControl, Http2FrameData frame) {
+    private void noLockWrite(FlowControl.Outbound flowControl, Http2FrameData frame) {
         if (frame.header().type() == Http2FrameTypes.DATA.type()) {
             splitAndWrite(frame, flowControl);
         } else {
@@ -153,7 +153,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
-    private void splitAndWrite(Http2FrameData frame, FlowControl flowControl) {
+    private void splitAndWrite(Http2FrameData frame, FlowControl.Outbound flowControl) {
         Http2FrameData[] splitFrames = flowControl.split(frame);
         if (splitFrames.length == 1) {
             // windows are wide enough

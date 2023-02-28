@@ -23,4 +23,8 @@ server:
       max-frame-size: 8192
       max-header-list-size: 4096
       max-concurrent-streams: 16384
+      flow-control-enabled: false
+      initial-window-size: 8192
+      max-window-size: 32767
+      max-stream-window-size: 16383
       validate-path: false
