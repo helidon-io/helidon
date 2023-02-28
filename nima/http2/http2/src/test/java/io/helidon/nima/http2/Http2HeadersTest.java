@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,7 +163,7 @@ class Http2HeadersTest {
     @Test
     void testC_4_toBytes() {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
-        WritableHeaders headers = WritableHeaders.create();
+        WritableHeaders<?> headers = WritableHeaders.create();
         Http2Headers http2Headers = Http2Headers.create(headers);
         http2Headers.method(Http.Method.GET);
         http2Headers.scheme("http");
@@ -264,6 +264,12 @@ class Http2HeadersTest {
 
     private Http2Stream stream() {
         return new Http2Stream() {
+            private static final FlowControl.Inbound FC_IN_NOOP = FlowControl.builderInbound()
+                    .noop()
+                    .connectionWindowsize(WindowSize.createInboundNoop(http2WindowUpdate -> {}))
+                    .windowUpdateStreamWriter(http2WindowUpdate -> {})
+                    .build();
+
             @Override
             public void rstStream(Http2RstStream rstStream) {
 
@@ -300,8 +306,13 @@ class Http2HeadersTest {
             }
 
             @Override
-            public FlowControl flowControl() {
-                return FlowControl.NOOP;
+            public FlowControl.Outbound outboundFlowControl() {
+                return FlowControl.Outbound.NOOP;
+            }
+
+            @Override
+            public FlowControl.Inbound inboundFlowControl() {
+                return FC_IN_NOOP;
             }
         };
     }
@@ -309,11 +320,11 @@ class Http2HeadersTest {
     private static class DevNullWriter implements Http2StreamWriter {
 
         @Override
-        public void write(Http2FrameData frame, FlowControl flowControl) {
+        public void write(Http2FrameData frame, FlowControl.Outbound flowControl) {
         }
 
         @Override
-        public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags, FlowControl flowControl) {
+        public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags, FlowControl.Outbound flowControl) {
             return 0;
         }
 
@@ -322,7 +333,7 @@ class Http2HeadersTest {
                                 int streamId,
                                 Http2Flag.HeaderFlags flags,
                                 Http2FrameData dataFrame,
-                                FlowControl flowControl) {
+                                FlowControl.Outbound flowControl) {
             return 0;
         }
     }

@@ -61,7 +61,6 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                                   0), BufferData.empty());
     private static final System.Logger LOGGER = System.getLogger(Http2Stream.class.getName());
 
-    private final FlowControl flowControl;
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
     private final List<Http2SubProtocolSelector> subProviders;
@@ -80,19 +79,22 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
     private long expectedLength = -1;
     private HttpRouting routing;
     private HttpPrologue prologue;
+    private final FlowControl.Inbound inboundFlowControl;
+    private final FlowControl.Outbound outboundFlowControl;
 
     /**
      * A new HTTP/2 server stream.
      *
-     * @param ctx            connection context
-     * @param routing        HTTP routing
-     * @param http2Config    HTTP/2 configuration
+     * @param ctx                       connection context
+     * @param routing                   HTTP routing
+     * @param http2Config               HTTP/2 configuration
      * @param subProviders
-     * @param streamId       stream id
-     * @param serverSettings server settings
-     * @param clientSettings client settings
-     * @param writer         writer
-     * @param flowControl    flow control
+     * @param streamId                  stream id
+     * @param serverSettings            server settings
+     * @param clientSettings            client settings
+     * @param writer                    writer
+     * @param inboundFlowControlBuilder inbound flow control builder
+     * @param outboundFlowControl       outbound flow control
      */
     public Http2Stream(ConnectionContext ctx,
                        HttpRouting routing,
@@ -102,7 +104,8 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                        Http2Settings serverSettings,
                        Http2Settings clientSettings,
                        Http2StreamWriter writer,
-                       FlowControl flowControl) {
+                       FlowControl.Inbound.Builder inboundFlowControlBuilder,
+                       FlowControl.Outbound outboundFlowControl) {
         this.ctx = ctx;
         this.routing = routing;
         this.http2Config = http2Config;
@@ -112,7 +115,10 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
         this.clientSettings = clientSettings;
         this.writer = writer;
         this.router = ctx.router();
-        this.flowControl = flowControl;
+        this.inboundFlowControl = inboundFlowControlBuilder
+                .windowUpdateStreamWriter(this::writeWindowUpdate)
+                .build();
+        this.outboundFlowControl = outboundFlowControl;
     }
 
     /**
@@ -185,14 +191,21 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
         //6.9/2
         if (windowUpdate.windowSizeIncrement() == 0) {
             Http2RstStream frame = new Http2RstStream(Http2ErrorCode.PROTOCOL);
-            writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()), FlowControl.NOOP);
+            writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()), FlowControl.Outbound.NOOP);
         }
         //6.9.1/3
-        if (flowControl.incrementStreamWindowSize(windowUpdate.windowSizeIncrement())) {
+        if (outboundFlowControl.incrementStreamWindowSize(windowUpdate.windowSizeIncrement())) {
             Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
-            writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()), FlowControl.NOOP);
+            writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()), FlowControl.Outbound.NOOP);
         }
     }
+
+    // Used in inbound flow control instance to write WINDOW_UPDATE frame.
+    void writeWindowUpdate(Http2WindowUpdate windowUpdate) {
+        writer.write(windowUpdate.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()), FlowControl.Outbound.NOOP);
+        LOGGER.log(System.Logger.Level.INFO, () -> String.format("SRV IFC: Stream WINDOW_UPDATE %s", windowUpdate));
+    }
+
 
     // this method is called from connection thread and start the
     // thread o this stream
@@ -216,7 +229,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
         if (expectedLength != -1 && expectedLength < header.length()) {
             state = Http2StreamState.CLOSED;
             Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
-            writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()), flowControl);
+            writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()), outboundFlowControl);
             return;
         }
         if (expectedLength != -1) {
@@ -249,8 +262,13 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
     }
 
     @Override
-    public FlowControl flowControl() {
-        return flowControl;
+    public FlowControl.Outbound outboundFlowControl() {
+        return outboundFlowControl;
+    }
+
+    @Override
+    public FlowControl.Inbound inboundFlowControl() {
+        return inboundFlowControl;
     }
 
     @Override
@@ -262,7 +280,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
             handle();
         } catch (SocketWriterException | CloseConnectionException | UncheckedIOException e) {
             Http2RstStream rst = new Http2RstStream(Http2ErrorCode.STREAM_CLOSED);
-            writer.write(rst.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()), flowControl);
+            writer.write(rst.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()), outboundFlowControl);
             // no sense in throwing an exception, as this is invoked from an executor service directly
         } catch (RequestException e) {
             DirectHandler handler = ctx.listenerContext()
@@ -284,7 +302,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                 writer.writeHeaders(http2Headers,
                                     streamId,
                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                    flowControl);
+                        outboundFlowControl);
             } else {
                 Http2FrameHeader dataHeader = Http2FrameHeader.create(message.length,
                                                                       Http2FrameTypes.DATA,
@@ -294,7 +312,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                     streamId,
                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
                                     new Http2FrameData(dataHeader, BufferData.create(message)),
-                                    flowControl);
+                        outboundFlowControl);
             }
         } finally {
             headers = null;
@@ -374,7 +392,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                                                    decoder,
                                                                    streamId,
                                                                    this::readEntityFromPipeline);
-            Http2ServerResponse response = new Http2ServerResponse(ctx, request, writer, streamId, flowControl);
+            Http2ServerResponse response = new Http2ServerResponse(ctx, request, writer, streamId, outboundFlowControl);
             try {
                 routing.route(ctx, request, response);
             } finally {

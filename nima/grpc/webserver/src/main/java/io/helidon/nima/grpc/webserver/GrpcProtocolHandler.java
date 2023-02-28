@@ -151,7 +151,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 streamWriter.writeHeaders(http2Headers,
                                           streamId,
                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                          FlowControl.NOOP);
+                                          FlowControl.Outbound.NOOP);
             }
 
             @Override
@@ -175,7 +175,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                                                   Http2Flag.DataFlags.create(0),
                                                                   streamId);
 
-                streamWriter.write(new Http2FrameData(header, bufferData), FlowControl.NOOP);
+                streamWriter.write(new Http2FrameData(header, bufferData), FlowControl.Outbound.NOOP);
             }
 
             @Override
@@ -187,7 +187,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 streamWriter.writeHeaders(http2Headers,
                                           streamId,
                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                          FlowControl.NOOP);
+                                          FlowControl.Outbound.NOOP);
                 currentStreamState = Http2StreamState.HALF_CLOSED_LOCAL;
             }
 

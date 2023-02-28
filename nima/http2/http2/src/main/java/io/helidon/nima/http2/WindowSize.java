@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,110 +13,121 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.nima.http2;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * Window size container, used with {@link io.helidon.nima.http2.FlowControl}.
  */
-public class WindowSize {
+public interface WindowSize {
+
     /**
      * Default window size.
      */
-    public static final int DEFAULT_WIN_SIZE = 65_535;
+    int DEFAULT_WIN_SIZE = 65_535;
+
     /**
      * Maximal window size.
      */
-    public static final int MAX_WIN_SIZE = Integer.MAX_VALUE;
+    int MAX_WIN_SIZE = Integer.MAX_VALUE;
 
-    private final AtomicInteger remainingWindowSize;
-
-    private final AtomicReference<CompletableFuture<Void>> updated = new AtomicReference<>(new CompletableFuture<>());
-
-    WindowSize(int initialWindowSize) {
-        remainingWindowSize = new AtomicInteger(initialWindowSize);
+    /**
+     * Create inbound window size container with initial window size set.
+     *
+     * @param initialWindowSize  initial window size
+     * @param maxFrameSize       maximal frame size
+     * @param windowUpdateWriter writer method for HTTP/2 WINDOW_UPDATE frame
+     * @return a new window size container
+     */
+    static WindowSize.Inbound createInbound(int initialWindowSize,
+                                            int maxFrameSize,
+                                            Consumer<Http2WindowUpdate> windowUpdateWriter) {
+        return new WindowSizeImpl.Inbound(initialWindowSize, maxFrameSize, windowUpdateWriter);
     }
 
     /**
-     * Window size with default initial size.
+     * Create outbound window size container with default initial size.
+     *
+     * @return a new window size container
      */
-    public WindowSize() {
-        remainingWindowSize = new AtomicInteger(DEFAULT_WIN_SIZE);
+    static WindowSize.Outbound createOutbound() {
+        return new WindowSizeImpl.Outbound(WindowSize.DEFAULT_WIN_SIZE);
+    }
+
+    /**
+     * Create outbound window size container with initial window size set.
+     *
+     * @param initialWindowSize initial window size
+     * @return a new window size container
+     */
+    static WindowSize.Outbound createOutbound(int initialWindowSize) {
+        return new WindowSizeImpl.Outbound(initialWindowSize);
+    }
+
+    /**
+     * Create inbound window size container with flow control turned off.
+     *
+     * @param windowUpdateWriter WINDOW_UPDATE frame writer
+     * @return a new window size container
+     */
+    static WindowSize.Inbound createInboundNoop(Consumer<Http2WindowUpdate> windowUpdateWriter) {
+        return new WindowSizeImpl.InboundNoop(windowUpdateWriter);
     }
 
     /**
      * Reset window size.
      *
-     * @param n window size
+     * @param size window size
      */
-    public void resetWindowSize(long n) {
-        // When the value of SETTINGS_INITIAL_WINDOW_SIZE changes,
-        // a receiver MUST adjust the size of all stream flow-control windows that
-        // it maintains by the difference between the new value and the old value
-        remainingWindowSize.updateAndGet(o -> (int) n - o);
-    }
+    void resetWindowSize(long size);
 
     /**
      * Increment window size.
      *
-     * @param n increment
+     * @param increment increment
      * @return whether the increment succeeded
      */
-    public boolean incrementWindowSize(int n) {
-        int old = remainingWindowSize.getAndUpdate(r -> MAX_WIN_SIZE - r > n ? n + r : MAX_WIN_SIZE);
-        triggerUpdate();
-        return MAX_WIN_SIZE - old <= n;
-    }
+    boolean incrementWindowSize(int increment);
 
     /**
      * Decrement window size.
      *
      * @param decrement decrement
      */
-    public void decrementWindowSize(int decrement) {
-        remainingWindowSize.updateAndGet(operand -> operand - decrement);
-    }
+    void decrementWindowSize(int decrement);
 
     /**
      * Remaining window size.
      *
      * @return remaining sze
      */
-    public int getRemainingWindowSize() {
-        return remainingWindowSize.get();
+    int getRemainingWindowSize();
+
+    // Does not add anything new but having a separate name makes code more human-readable.
+    /**
+     * Inbound window size container.
+     */
+    interface Inbound extends WindowSize {
     }
 
     /**
-     * Block until window size update.
-     *
-     * @return whether update happened before timeout
+     * Outbound window size container.
      */
-    public boolean blockTillUpdate() {
-        try {
-            //TODO configurable timeout
-            updated.get().get(10, TimeUnit.SECONDS);
-            return false;
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            return true;
-        }
+    interface Outbound extends WindowSize {
+
+        /**
+         * Trigger update of window size.
+         */
+        void triggerUpdate();
+
+        /**
+         * Block until window size update.
+         *
+         * @return whether update happened before timeout
+         */
+        boolean blockTillUpdate();
+
     }
 
-    /**
-     * Trigger update of window size.
-     */
-    public void triggerUpdate() {
-        updated.getAndSet(new CompletableFuture<>()).complete(null);
-    }
-
-    @Override
-    public String toString() {
-        return String.valueOf(remainingWindowSize.get());
-    }
 }

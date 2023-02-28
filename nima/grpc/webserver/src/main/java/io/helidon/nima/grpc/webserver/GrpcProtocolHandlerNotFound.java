@@ -50,7 +50,7 @@ class GrpcProtocolHandlerNotFound implements Http2SubProtocolSelector.SubProtoco
         streamWriter.writeHeaders(http2Headers,
                                   streamId,
                                   Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                  FlowControl.NOOP);
+                                  FlowControl.Outbound.NOOP);
         currentStreamState = Http2StreamState.HALF_CLOSED_LOCAL;
     }
 
