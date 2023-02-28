@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -293,6 +294,7 @@ public interface WebServer {
         private ServerConfiguration explicitConfig;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
+        private Supplier<RequestedUriDiscoveryContext> discoveryContextSupplierForDefaultSocket;
 
         private Builder() {
             readerContext = MessageBodyReaderContext.create(DEFAULT_MEDIA_SUPPORT.readerContext());
@@ -313,6 +315,9 @@ public interface WebServer {
                 routingBuilders.put(WebServer.DEFAULT_SOCKET_NAME, RouterImpl.builder());
             }
             if (explicitConfig == null) {
+                if (discoveryContextSupplierForDefaultSocket != null) {
+                    configurationBuilder.requestedUriDiscovery(discoveryContextSupplierForDefaultSocket);
+                }
                 explicitConfig = configurationBuilder.build();
             }
 
@@ -810,6 +815,19 @@ public interface WebServer {
                 directHandlers.addHandler(type, handler);
             }
 
+            return this;
+        }
+
+        /**
+         * Requested URI discovery for the web server's default socket.
+         *
+         * @param discoveryContextSupplier {@link io.helidon.common.http.RequestedUriDiscoveryContext.Builder} to use
+         * @return updated builder
+         */
+
+        @ConfiguredOption(type = RequestedUriDiscoveryContext.class)
+        public Builder requestedUriDiscovery(Supplier<RequestedUriDiscoveryContext> discoveryContextSupplier) {
+            this.discoveryContextSupplierForDefaultSocket = discoveryContextSupplier;
             return this;
         }
     }

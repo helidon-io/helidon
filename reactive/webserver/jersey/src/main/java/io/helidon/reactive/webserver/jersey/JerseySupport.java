@@ -295,6 +295,7 @@ public class JerseySupport implements Service {
 
             requestContext.setProperty("io.helidon.jaxrs.remote-host", remoteHost);
             requestContext.setProperty("io.helidon.jaxrs.remote-port", remotePort);
+            requestContext.setProperty("io.helidon.jaxrs.requested-uri", req.requestedUri());
 
             requestContext.setWriter(responseWriter);
 

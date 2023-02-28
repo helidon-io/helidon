@@ -1,0 +1,76 @@
+#
+# Copyright (c) 2023 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+test-allow-1:
+test-allow-2:  
+  allow:
+    all: true
+test-allow-3:
+  allow:
+    exact: "first"
+test-allow-4:
+  allow:
+    exact: ["first", "www.helidon.io"]
+test-allow-5:
+  allow:
+    prefix: "www.helidon.io"
+test-allow-6:
+  allow:
+    suffix: [".helidon.io"]
+test-allow-7:
+  allow:
+    pattern: "f.*t"
+test-allow-8:
+  allow:
+    pattern: ".*\\.helidon\\.io"
+test-deny-1:
+  allow:
+    all: true
+  deny:
+    exact: "first"
+test-deny-2:
+  allow:
+    all: true
+  deny:
+    exact: ["first", "www.helidon.io"]
+test-deny-3:
+  allow:
+    all: true
+  deny:
+    prefix: "www.helidon.io"
+test-deny-4:
+  allow:
+    all: true
+  deny:
+    suffix: [".helidon.io"]
+test-deny-5:
+  allow:
+    all: true
+  deny:
+    pattern: "f.*t"
+test-deny-6:
+  allow:
+    all: true
+  deny:
+    pattern: "f.*t"
+    suffix: ".helidon.io"
+test-combined-1:
+  allow:
+    prefix: "f"
+    suffix: "helidon.io"
+    exact: ""
+  deny:
+    exact: "www.helidon.io"
+    suffix: "st"

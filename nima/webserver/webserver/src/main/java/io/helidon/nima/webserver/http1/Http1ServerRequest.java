@@ -19,6 +19,7 @@ package io.helidon.nima.webserver.http1;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -29,6 +30,7 @@ import io.helidon.common.http.RoutedPath;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.webserver.ConnectionContext;
@@ -44,6 +46,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     private final ConnectionContext ctx;
     private final HttpSecurity security;
     private final int requestId;
+    private final LazyValue<UriInfo> uriInfo = LazyValue.create(this::createUriInfo);
 
     private RoutedPath path;
     private WritableHeaders<?> writable;
@@ -195,5 +198,19 @@ abstract class Http1ServerRequest implements RoutingRequest {
     public Http1ServerRequest prologue(HttpPrologue newPrologue) {
         this.prologue = newPrologue;
         return this;
+    }
+
+    @Override
+    public UriInfo requestedUri() {
+        return uriInfo.get();
+    }
+
+    private UriInfo createUriInfo() {
+        return ctx.listenerContext().config().requestedUriDiscoveryContext().uriInfo(remotePeer().address().toString(),
+                                                                                     localPeer().address().toString(),
+                                                                                     path.path(),
+                                                                                     headers,
+                                                                                     query(),
+                                                                                     isSecure());
     }
 }

@@ -248,7 +248,11 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         requestId++;
 
         if (entity == EntityStyle.NONE) {
-            Http1ServerRequest request = Http1ServerRequest.create(ctx, routing.security(), prologue, headers, requestId);
+            Http1ServerRequest request = Http1ServerRequest.create(ctx,
+                                                                   routing.security(),
+                                                                   prologue,
+                                                                   headers,
+                                                                   requestId);
             Http1ServerResponse response = new Http1ServerResponse(ctx,
                                                                    sendListener,
                                                                    writer,
