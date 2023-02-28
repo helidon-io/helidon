@@ -298,15 +298,15 @@ class ClientRequestImplTest {
         assertThat(responseEntity, is(entity));
     }
 
-    private static void responseHandler(ServerRequest req, ServerResponse res) {
+    private static void responseHandler(ServerRequest req, ServerResponse res) throws IOException {
         customHandler(req, res, false);
     }
 
-    private static void chunkResponseHandler(ServerRequest req, ServerResponse res) {
+    private static void chunkResponseHandler(ServerRequest req, ServerResponse res) throws IOException {
         customHandler(req, res, true);
     }
 
-    private static void customHandler(ServerRequest req, ServerResponse res, boolean chunkResponse) {
+    private static void customHandler(ServerRequest req, ServerResponse res, boolean chunkResponse) throws IOException {
         Headers reqHeaders = req.headers();
         if (reqHeaders.contains(Http.HeaderValues.EXPECT_100)) {
             res.headers().set(REQ_EXPECT_100_HEADER_NAME);
@@ -335,8 +335,6 @@ class ClientRequestImplTest {
                     outputStream.write(chunk);
                 }
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 
