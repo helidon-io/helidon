@@ -40,7 +40,8 @@ public class TestUtils {
      * @return the loaded string
      */
     // same as from CommonUtils.
-    public static String loadStringFromResource(String resourceNamePath) {
+    public static String loadStringFromResource(
+            String resourceNamePath) {
         try {
             try (InputStream in = CommonUtils.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
@@ -58,11 +59,12 @@ public class TestUtils {
      * @throws io.helidon.pico.tools.ToolsException if there were any exceptions encountered
      */
      // same as from CommonUtils.
-     public static String loadStringFromFile(String fileName) {
+     public static String loadStringFromFile(
+             String fileName) {
         try {
             Path filePath = Path.of(fileName);
             String content = Files.readString(filePath);
-            return content;
+            return content.trim();
         } catch (IOException e) {
             throw new ToolsException("unable to load from file: " + fileName, e);
         }

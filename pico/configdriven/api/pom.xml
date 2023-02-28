@@ -28,7 +28,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-pico-configdriven</artifactId>
+    <artifactId>helidon-pico-configdriven-api</artifactId>
     <name>Helidon Pico Config-Driven ConfiguredBy</name>
 
     <dependencies>

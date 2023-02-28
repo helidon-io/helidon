@@ -269,7 +269,7 @@ class ToolBoxTest {
     }
 
     @Test
-    void startupAndShutdownCallsPostConstructAndPreDestroy() throws Exception {
+    void startupAndShutdownCallsPostConstructAndPreDestroy() {
         assertThat(TestingSingleton.postConstructCount(), equalTo(0));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(0));
 

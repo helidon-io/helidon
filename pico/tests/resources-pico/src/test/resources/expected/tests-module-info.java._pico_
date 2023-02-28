@@ -9,5 +9,5 @@ module io.helidon.pico.tests.pico/test {
     uses io.helidon.pico.spi.Resetable;
     uses io.helidon.pico.tests.pico.stacking.Intercepted;
     // pico services - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
-    requires transitive io.helidon.pico;
+    requires transitive io.helidon.pico.services;
 }

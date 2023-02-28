@@ -52,7 +52,7 @@ Request and Session scopes are simply not made available in Pico. We believe tha
 * Application - The fully realized set of modules and services/service providers that constitute your application, and code-generated using <b>Helidon Pico Tooling</b>.
 
 ## Getting Started
-As stated in the introduction above, the Pico framework aims to provide a minimalist API implementation. As a result, it might be surprising to learn how small the actual API is for Pico - see [pico api](./pico) and the API/annotation types at [pico api](./pico/src/main/java/io/helidon/pico).  If you are already familiar with [jakarta.inject](https://javadoc.io/doc/jakarta.inject/jakarta.inject-api/latest/index.html) and optionally, [jakarta.annotation](https://javadoc.io/doc/jakarta.annotation/jakarta.annotation-api/latest/jakarta.annotation/jakarta/annotation/package-summary.html) then basically you are ready to go. But if you've never used DI before then first review the basics of [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection).
+As stated in the introduction above, the Pico framework aims to provide a minimalist API implementation. As a result, it might be surprising to learn how small the actual API is for Pico - see [pico api](./pico) and the API/annotation types at [pico api](./api/src/main/java/io/helidon/pico).  If you are already familiar with [jakarta.inject](https://javadoc.io/doc/jakarta.inject/jakarta.inject-api/latest/index.html) and optionally, [jakarta.annotation](https://javadoc.io/doc/jakarta.annotation/jakarta.annotation-api/latest/jakarta.annotation/jakarta/annotation/package-summary.html) then basically you are ready to go. But if you've never used DI before then first review the basics of [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection).
 
 The prerequisites are familiarity with dependency injection, Java 11+, and maven 3.8.5+.
 
@@ -69,7 +69,7 @@ Compile-time dependency:
 ```
   <dependency>
     <groupId>io.helidon.pico</groupId>
-    <artifactId>helidon-pico-services</artifactId>
+    <artifactId>helidon-pico</artifactId>
     <version>${helidon.version}</version>
   </dependency>
 ```
@@ -118,7 +118,7 @@ Compile-time dependency:
 
 ## Modules
 
-* [pico](./pico) - the Pico API and SPI; depends on jakarta-inject and jakarta-annotations. Required as a maven compile-time dependency for runtime consumption.
+* [api](./api) - the Pico API and SPI; depends on jakarta-inject and jakarta-annotations. Required as a maven compile-time dependency for runtime consumption.
 * [services](./services) - contains the default runtime implementation of the Pico API/SPI; depends on the pico api module above. Requires as a maven compile-time dependency for runtime consumption.
 * [config-driven](./configdriven) - Extensions to Pico to integrate directly with the [Helidon Config](../config) subsystem.
 * [tools](./tools) - contains the libraries and template-based codegen mustache resources as well as model validation tooling; depends on runtime services. Only required at build time and is not required for Pico at runtime.

@@ -34,7 +34,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>configdriven</module>
+        <module>api</module>
         <module>processor</module>
         <module>services</module>
         <module>tests</module>

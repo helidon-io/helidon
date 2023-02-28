@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,19 @@
  */
 
 /**
- * Helidon Pico Config-Driven ConfiguredBy API Module.
+ * Pico API module.
  */
-module io.helidon.pico.configdriven {
-    requires static jakarta.inject;
-    requires static io.helidon.builder.config;
+module io.helidon.pico.api {
+    requires jakarta.inject;
+    requires io.helidon.common.types;
+    requires io.helidon.common;
+    requires io.helidon.common.config;
+    requires static io.helidon.builder;
+    requires static io.helidon.config.metadata;
+    requires static jakarta.annotation;
 
-    exports io.helidon.pico.configdriven;
+    uses io.helidon.pico.spi.PicoServicesProvider;
+
+    exports io.helidon.pico;
+    exports io.helidon.pico.spi;
 }

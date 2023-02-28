@@ -24,7 +24,7 @@ module io.helidon.pico.services {
     requires io.helidon.common.types;
     requires io.helidon.common;
     requires io.helidon.common.config;
-    requires transitive io.helidon.pico;
+    requires transitive io.helidon.pico.api;
 
     exports io.helidon.pico.services;
 

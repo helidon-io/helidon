@@ -23,12 +23,12 @@ module io.helidon.pico.configdriven.services {
     requires static io.helidon.config.metadata;
 
     // required for compilation of generated types
-    requires transitive io.helidon.pico.configdriven;
+    requires transitive io.helidon.pico.configdriven.api;
     requires transitive io.helidon.builder;
     requires transitive io.helidon.builder.config;
     requires transitive io.helidon.common.types;
     requires transitive io.helidon.config;
-    requires transitive io.helidon.pico;
+    requires transitive io.helidon.pico.api;
     requires transitive io.helidon.pico.services;
 
     exports io.helidon.pico.configdriven.services;

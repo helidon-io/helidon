@@ -50,12 +50,9 @@ public abstract class AbstractCreator {
 
     // no special chars since this will be used as a package and class name
     static final String NAME_PREFIX = /* PicoServicesConfig.NAME */ "Pico$$";
-    static final String MODULE_NAME = PicoServicesConfig.FQN;
+    static final String PICO_FRAMEWORK_MODULE = PicoServicesConfig.FQN + ".services";
     static final String MODULE_NAME_SUFFIX = "Module";
 
-    /**
-     * Logger.
-     */
     private final System.Logger logger = System.getLogger(getClass().getName());
     private final TemplateHelper templateHelper;
     private final String templateName;
@@ -142,10 +139,11 @@ public abstract class AbstractCreator {
             DefaultModuleInfoDescriptor.Builder moduleInfo,
             String generatedAnno) {
         Objects.requireNonNull(generatedAnno);
+        // requirements on the pico services framework itself
         String preComment = "    // " + PicoServicesConfig.NAME + " services - Generated(" + generatedAnno + ")";
-        ModuleInfoDescriptor.addIfAbsent(moduleInfo, MODULE_NAME, DefaultModuleInfoItem.builder()
+        ModuleInfoDescriptor.addIfAbsent(moduleInfo, PICO_FRAMEWORK_MODULE, DefaultModuleInfoItem.builder()
                 .requires(true)
-                .target(MODULE_NAME)
+                .target(PICO_FRAMEWORK_MODULE)
                 .transitiveUsed(true)
                 .addPrecomment(preComment));
         return moduleInfo;

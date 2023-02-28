@@ -26,7 +26,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-pico</artifactId>
+    <artifactId>helidon-pico-api</artifactId>
     <name>Helidon Pico API / SPI</name>
 
     <properties>

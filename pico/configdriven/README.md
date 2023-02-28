@@ -1,6 +1,6 @@
 # pico-configdriven
 
-This is a specialization of the [Pico](../)'s that is based upon </i>Helidon's [configuration](../../config)</i> subsystem, and adds support for something called <i>config-driven</i> services using the [@ConfiguredBy](./configdriven/src/main/java/io/helidon/pico/configdriven/ConfiguredBy.java) annotation. When applied to a target service interface it will allow developers to use a higher level aggregation for their application configuration, and then allow the configuration to drive activation of services in the Pico Framework.
+This is a specialization of the [Pico](../)'s that is based upon </i>Helidon's [configuration](../../config)</i> subsystem, and adds support for something called <i>config-driven</i> services using the [@ConfiguredBy](./api/src/main/java/io/helidon/pico/configdriven/ConfiguredBy.java) annotation. When applied to a target service interface it will allow developers to use a higher level aggregation for their application configuration, and then allow the configuration to drive activation of services in the Pico Framework.
 
 There are a few additional caveats to understand about <b>ConfiguredBy</b> and its supporting infrastructure.
 
@@ -10,7 +10,7 @@ There are a few additional caveats to understand about <b>ConfiguredBy</b> and i
 See the user documentation for more information.
 
 ## Modules
-* [configdriven](configdriven) - the config-driven API & SPI.
+* [api](api) - the config-driven API & SPI.
 * [processor](processor) - the annotation processor extensions that should be used when using <i>ConfiguredBy</i>.
 * [services](services) - the runtime support for config-driven services.
 * [tests](tests) - tests that can also serve as examples for usage.
@@ -31,7 +31,7 @@ public interface ServerConfig {
 }
 ```
 
-3. Write your [ConfiguredBy](./configdriven/src/main/java/io/helidon/pico/configdriven/ConfiguredBy.java) service.
+3. Write your [ConfiguredBy](./api/src/main/java/io/helidon/pico/configdriven/ConfiguredBy.java) service.
 
 ```java
 @ConfiguredBy(ServerConfig.class)

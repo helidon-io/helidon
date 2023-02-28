@@ -23,7 +23,7 @@ module io.helidon.pico.tests.pico {
 
     requires io.helidon.common.types;
     requires io.helidon.common;
-    requires io.helidon.pico;
+    requires io.helidon.pico.api;
     requires io.helidon.pico.services;
     requires io.helidon.pico.tests.plain;
 
