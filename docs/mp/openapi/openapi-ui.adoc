@@ -1,0 +1,54 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= OpenAPI UI
+:description: Helidon MP OpenAPI UI Support
+:keywords: helidon, mp, openapi ui
+:rootdir: {docdir}/../..
+:openapi-inc: {rootdir}/includes/openapi/openapi.adoc
+:ui-inc: {rootdir}/includes/openapi/openapi-ui.adoc
+
+include::{rootdir}/includes/mp.adoc[]
+
+:javadoc-path: {openapi-ui-javadoc-base-url}/io/helidon/integrations/openapi/ui
+:openapi-javadoc-path: {openapi-javadoc-base-url}/io/helidon/openapi
+
+include::{ui-inc}[tag=preamble]
+
+include::{ui-inc}[tags=intro;overview]
+
+include::{ui-inc}[tag=dependencies]
+
+Also make sure your project has the following dependency to include OpenAPI support in your Helidon MP application.
+[source,xml]
+----
+include::{openapi-inc}[tag=mp-depc]
+----
+
+include::{ui-inc}[tag=usage]
+
+== API
+
+Your Helidon MP application does not use any API to enable or control Helidon OpenAPI UI support.
+Adding the dependency as described earlier is sufficient, and you can control the UI behavior using <<Configuration,configuration>>.
+
+include::{ui-inc}[tag=config-intro]
+
+include::{ui-inc}[tag=config-details]
+
+include::{ui-inc}[tag=additional-info]

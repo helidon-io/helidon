@@ -1,0 +1,540 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+// tag::preamble[]
+:description: Helidon {flavor-uc} OpenAPI Generator
+:keywords: helidon, {flavor-lc}, openapi, generator
+:feature-name: Helidon {flavor-uc} OpenAPI Generator
+// DO NOT CHANGE THE FOLLOWING - it's used as a minimum release that will not normally change with new releases of the OpenAPI generator
+:first-version-with-strong-helidon-support: 6.2.1
+// Update the following when it is convenient to keep pace with the latest releases of the OpenAPITools generator
+// end::preamble[]
+
+// tag::intro[]
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Configuration, Configuration>>
+- <<Usage, Usage>>
+- <<References, References>>
+
+== Overview
+The link:{openapi-spec-url}[OpenAPI specification] provides a standard way to express RESTful APIs.
+
+Separately, the link:{openapi-generator-tool-site-url}[OpenAPI generator] project has created a powerful code generator tool which accepts an OpenAPI document and generates client and server code for many languages and frameworks. The Helidon team contributes to this tool to ensure that it provides strong support for Helidon {flavor-uc} clients and servers.
+As a result, you can use the generator to create code that fits smoothly into your Helidon applications.
+The OpenAPI generator release {first-version-with-strong-helidon-support} gained particularly strong support for Helidon.
+This document applies to that release and later ones.
+
+In the vocabulary of the tool, there are two _generators_ for Helidon:
+
+* `java-helidon-client` (hereafter the Helidon client generator)
+* `java-helidon-server` (hereafter the Helidon server generator).
+
+Each of these generators supports two _libraries_:
+
+* `mp` - for Helidon MP code generation
+* `se` - for Helidon SE code generation
+
+Use the Helidon _client_ generator and its `{flavor-lc}` library to create a
+ifdef::mp-flavor[]
+xref:{helidon-client-xref}[Helidon MicroProfile REST client].
+endif::mp-flavor[]
+ifdef::se-flavor[]
+Helidon SE client based on xref:{helidon-client-xref}[Helidon WebClients].
+endif::se-flavor[]
+The resulting client library works with any server that implements the API declared in the OpenAPI document you specified when you ran the generator.
+The client library provides an abstraction similar to remote procedure calls (RPC).
+To access a remote service that implements the endpoints declared in the OpenAPI document, your code uses the generated client library first to establish a connection to the remote service and then to call remote service endpoints by invoking local methods passing POJO business objects or Java types as arguments.
+
+Use the tool's Helidon _server_ generator and its `{flavor-lc}` library to create server endpoint stubs for a Helidon {flavor-uc} service. You build on these stubs by extending a generated class or implementing a generated interface, adding your specific business logic to finish the implementation of the endpoints. The combination of the generated server code plus Helidon {flavor-uc} underneath it allows you to focus on the business details instead of resource boilerplate.
+
+You can run the OpenAPI generators in three ways:
+
+// tag::three-ways-to-run[]
+* using the OpenAPI generator CLI
+* using the OpenAPI generator Maven plug-in
+* using the online OpenAPI generator website
+// end::three-ways-to-run[]
+
+The rest of this document walks you through <<usage-section,how to use>> each technique and how to <<Configuration,configure>> the generators to produce the code you want.
+
+// end::intro[]
+
+// tag::coords[]
+
+== Maven Coordinates
+Your project does not need any dependencies on the OpenAPI generator.
+
+To use the OpenAPI generator plug-in to generate or regenerate files during your project build, add the following to your project's `pom.xml` file to declare the plug-in. Choose whichever version of the generator plug-in meets your needs as long as it is at least {first-version-with-strong-helidon-support}.
+
+[source,xml,subs="+attributes,+macros"]
+.Declaring the OpenAPI Generator Plug-in
+----
+<properties>
+    <openapi-generator-version>{openapi-generator-version}</openapi-generator-version>
+</properties>
+...
+<build>
+    ...
+    <plugin-management>
+        ...
+        <plugin>
+             <groupId>org.openapitools</groupId>
+             <artifactId>openapi-generator-maven-plugin</artifactId>
+             <version>++${openapi-generator-version}++</version>
+        </plugin>
+        ...
+    </plugin-management>
+    ...
+</build>
+----
+
+A <<invoking-the-plugin,later section>> describes how to invoke the plug-in during your build.
+// end::coords[]
+
+// tag::config[]
+
+== Configuration
+
+The OpenAPI generators support a substantial, powerful, and sometimes bewildering group of configuration settings.
+For complete lists see these pages:
+
+[[links-to-settings]]
+
+* link:{openapi-generator-tool-docs-url}/usage.md#generate[generic options]
+* link:{openapi-generator-tool-generators-docs-url}/java-helidon-client.md[Helidon client generator options] and
+* link:{openapi-generator-tool-generators-docs-url}/java-helidon-server.md[Helidon server generator options]
+
+The OpenAPI generator divides its settings into two types:
+
+* _options_
++
+These high-level settings generally govern the overall behavior of the tool.
++
+For the CLI, use the common option style:
++
+`-i petstore.yaml`
++
+`--input-spec petstore.yaml`
++
+For the Maven plug-in, use elements within the `<configuration>` section of the plug-in:
++
+[source,xml]
+----
+<configuration>
+    <inputSpec>petstore.yaml</inputSpec>
+</configuration>
+----
+* _additional properties_
++
+These settings typically affect how a specific generator or library generates the code.
++
+For the CLI:
++
+`--additional-properties "useAbstractClasses=false,returnResponse=true"`
++
+or
++
+[source,bash]
+----
+-p useAbstractClasses=false
+-p returnResponse=true
+----
++
+For the Maven plug-in, use elements within the `<configuration><configOptions>` section:
++
+[source,xml]
+----
+<configuration>
+    ....
+    <configOptions>
+        <useAbstractClasses>false</useAbstractClasses>
+        <returnResponse>true</returnResponse>
+    </configOptions>
+</configuration>
+----
+
+Keep this distinction between options and additional properties in mind so you know how to express the configuration you want.
+The <<links-to-settings,earlier links>> to the lists of configuration options for the Helidon generators groups options and additional properties in separate tables.
+
+The next few sections describe, in turn, required settings, settings we recommend, and other common settings most developers will want to use.
+
+=== Required Settings
+
+You must specify the following options:
+
+.Required OpenAPI Generator Options
+[cols="4,1,4,6,5"]
+|===
+|Option | Short Option |Plug-in Setting | Description | Values
+
+|`--inputSpec`
+|`-i`
+|`<inputSpec>`
+|Path to the OpenAPI document defining the REST API
+|
+
+|`--generatorName`
+|`-g`
+|`<generatorName>`
+| Generator you want to use (`java-helidon-server` or `java-helidon-client`)
+| `java-helidon-server` +
+`java-helidon-client`
+
+|`--library` +
+`<library>`
+| {nbsp}
+|Library you want to use
+|`mp` +
+`se`
+|===
+
+=== Recommended Settings for the OpenAPI Generator
+Your project might have different needs, but in general we advise developers to use the following settings when using the OpenAPI generator.
+
+
+.Recommended OpenAPI Generator Additional Properties
+[cols="3,6,5"]
+|===
+| Property | Description | Default
+
+| `apiPackage`
+| Name of the package for generated API interfaces/classes
+| `org.openapitools.server.api` or +
+`org.openapitools.client.api`
+
+| `modelPackage`
+| Name of the package for generated model (POJO) classes
+| `org.openapitools.server.model` or +
+`org.openapitools.client.model`
+
+| `invokerPackage`
+| Name of the package for generated driver classes
+| `org.openapitools.server` or +
+`org.openapitools.client`
+
+| `groupId`
+| Group ID in the generated `pom.xml`
+| `org.openapitools`
+
+| `artifactId`
+| Artifact ID in the generated `pom.xml`
+| `openapi-java-server` or +
+`openapi-java-client`
+
+| `artifactVersion`
+| Artifact version in the generated `pom.xml`
+| `1.0.0`
+|===
+
+[NOTE]
+The next table contains recommendations only for using the OpenAPI generator plug-in (not for using the CLI).
+
+
+.Recommended OpenAPI Generator Plug-in Options
+[cols="4,8,5"]
+|===
+|Plug-in Option | Description |Default
+
+|`<output>`
+| Directory where the generator should place files. +
++
+We strongly recommend `<output>target/generated-sources</output>` or a subdirectory below there.
+|  `.` +
+(current directory)
+
+| `<addCompileSourceRoot>`
+| Whether Maven should include the output directory as a source root (that is, include it automatically in the build). +
++
+We advise `<addCompileSourceRoot>true</addCompileSourceRoot>`.
+| `false`
+|===
+
+
+=== Common Settings
+Among the many configuration settings available to you, some you should particularly consider are summarized in the table below. Refer to the <<links-to-settings,earlier links>> for complete lists.
+
+.Common OpenAPI Generator Additional Properties
+[cols="4,5,3,3,7"]
+|===
+|Property |Description |Values |Default |Notes
+
+| `helidonVersion`
+
+|Version of Helidon for which to generate the files
+| {nbsp}
+|`2.5.2`
+a|Affects:
+
+* Helidon version for the `<parent>`
+* Dependencies (`javax` vs. `jakarta`)
+* `java import` statements in generated code (`javax` vs. `jakarta`)
+
+|`fullProject`
+|Whether to generate all the normal files or only API files
+|`true`/`false`
+|`false`
+| The "API files" include files developers do not normally modify after they are generated: the interfaces or classes for the declared API
+and the model classes.
+
+|`serializationLibrary`
+|which Java library to use for serializing JSON
+|`jsonb`, `jackson`
+|`jackson`
+|
+|===
+
+
+// end::config[]
+
+// tag::usage[]
+
+[[usage-section]]
+== Usage
+
+This section covers two major topics:
+
+* <<usage-planning,Planning your use of the OpenAPI generators>>
+* <<usage-running,Running the generators>>
+
+[[usage-planning]]
+=== Planning Your Use of the OpenAPI Generators
+
+Beyond the settings listed above, there are several important choices you need to make when planning your project and when running the OpenAPI generators. This section addresses those choices.
+
+==== Generating a New Project and Generating _Into_ an Existing Project
+
+You can use the OpenAPI generator to create a new project or to generate files into an existing project.
+Some developers do both, using the generator to create the project at first and then to update the project as they evolve the OpenAPI document or change the generation options they select.
+Others create the project in some other way--for example, using the xref:{cli-page}[Helidon CLI]. The OpenAPI generator CLI and plug-in both support each type of usage.
+
+If the OpenAPI generator finds a pre-existing API or model file, it overwrites it with the latest content.
+It does _not_ overwrite a `pom.xml` file or test files.
+This is important because certain generation settings can influence the generated dependencies in the `pom.xml` file.
+For example, the `serializationLibrary` setting creates dependencies on either JSON-B or Jackson artifacts.
+As a result, changing the generation options can change the dependencies your project should have. If you rerun the generator, the old `pom.xml` remains and does not reflect the revised depencencies.
+
+As a practical matter, many developers use the OpenAPI generators in one of the  following ways:
+
+* Use the generator CLI once to create a new project.
++
+By default, the generator CLI creates files in the normal Maven project structure: `src/main/java`, etc.
+Then you add your own files to that same project structure.
+Because the generated files are in the standard places, the project build includes them by default.
++
+[NOTE]
+====
+You _can_ run the generator CLI again to update the generated files.
+Because this happens outside the project's build lifecycle, you need to remember to rerun the CLI yourself when you change the OpenAPI document.
+
+You also need to identify and manually remove any previously-generated files that become obsolete.
+Similarly, you must understand how changes in the OpenAPI document or the generation options affect the project dependencies and update the project `pom.xml` accordingly.
+====
+* Use the generator plug-in to (re)generate files during each build.
++
+Specify in the plug-in configuration that the generated files should reside in `target/generated-sources` directory (the conventional location for generated sources) or a subdirectory below there.
+Each project build runs the OpenAPI generator which reads the then-current OpenAPI document file.
+With the generated files under `target`, you can use `mvn clean` to remove any obsolete generated files left over from previous builds.
++
+[NOTE]
+====
+In particular, with `mvn clean` each build regenerates the candidate `pom.xml` under `target/generated-sources`. You can inspect the generated `pom.xml` file for changes in dependencies and make any necessary changes in the actual project `pom.xml` file.
+====
+
+==== Generating Interfaces or Classes
+As you generate a Helidon {flavor-uc} _server_, you can choose whether you want Java interfaces or classes to represent the RESTful API endpoints.
+
+By default, the Helidon OpenAPI server generator creates classes.
+You write your own concrete subclasses which extend those generated classes, supplying the business logic for each REST endpoint.
+_Do not_ modify the generated classes.
+
+If you set `useAbstractClasses=false` then the generator creates Java interfaces instead of classes.
+You then write classes which implement those generated interfaces.
+
+Either way, you can safely regenerate the code later so long as you have not edited the generated code.
+The generator replaces the generated classes or interfaces but does not touch other classes you wrote.
+
+The Helidon _client_ generator always creates concrete classes. Typically, you do not need to customize the behavior in the generated client API classes. If you choose to do so, write your own subclass of the generated client API class; _do not_ modify the generated files.
+
+==== Grouping Operations into "APIs"
+Each operation in an OpenAPI document can have a `tags` attribute.
+The generators group operations with the same `tags` value into the same API.
+
+When you generate a Helidon {flavor-uc} server, the generator creates a separate interface or class for each API your service _exposes_.
+You implement each interface or extend each class to add your business logic for that API.
+
+When you generate a Helidon {flavor-uc} client, the generated code contains a separate API class for each distinct API your code might _invoke_.
+
+[[usage-running]]
+=== Running the OpenAPI Generators
+
+Earlier we listed the ways you can run the OpenAPI generator:
+
+include::openapi-generator.adoc[tag=three-ways-to-run]
+
+The next sections describe each of these techniques in detail.
+
+==== Using the OpenAPI Generator CLI
+
+[NOTE]
+.Downloading the OpenAPI Generator CLI
+You need to download the CLI `.jar` file before you can run the CLI.
+Follow these link:https://github.com/OpenAPITools/openapi-generator#13---download-jar[instructions] and remember where you save the `.jar` file.
+The examples below use the placeholder `path-to-generator` to represent the directory where you store that downloaded file.
+
+The following example uses the Helidon server generator to create a project or regenerate files into an existing project.
+
+:example-project-type: server
+.Creating or updating a server project using the OpenAPI generator CLI
+// tag::example-cli-usage[]
+[source,bash,subs="attributes+"]
+----
+java -jar $\{path-to-generator}/openapi-generator-cli.jar \
+  generate \
+  -i src/main/resources/petstore.yaml \
+  -g java-helidon-{example-project-type} \
+  --library {flavor-lc} \
+  -p groupId=io.helidon.examples \
+  -p artifactId=helidon-openapigen-{flavor-lc}-{example-project-type} \
+  -p artifactVersion=1.0.0-SNAPSHOT \
+  -p apiPackage=io.helidon.examples.openapigen.{flavor-lc}.{example-project-type}.api \
+  -p modelPackage=io.helidon.examples.openapigen.{flavor-lc}.{example-project-type}.model \
+  -p invokerPackage=io.helidon.examples.openapigen.{flavor-lc}.{example-project-type}
+----
+// end::example-cli-usage[]
+
+The next example runs the Helidon client generator using the same input file.
+
+:example-project-type: client
+.Creating or updating a client project using the OpenAPI generator CLI
+include::openapi-generator.adoc[tag=example-cli-usage]
+
+The key differences between the commands are:
+
+* the generator selected by the `-g` option (`client` vs. `server`),
+* the artifact ID and package names (`client` vs. `server`).
+
+You could use these two commands together to generate a server submodule and a client submodule in a pre-existing multi-module Maven project. Remember that the resulting client project can access any server which implements the API described in the `petstore.yaml` OpenAPI document, whether it was generated using the OpenAPI generator tool or not.
+
+In both examples, the generator creates the entire project if it does not exist and recreates the generated API and model files if the project already exists.
+The generator does not overwrite an existing `pom.xml` file, previously-generated test files, or files you create yourself.
+
+[[invoking-the-plugin]]
+==== Invoking the OpenAPI Generator Maven Plug-in
+
+You can run the OpenAPI generator plug-in as part of your project build to generate or regenerate files.
+
+First, declare the plug-in as explained in the <<Maven Coordinates,earlier section on Maven coordinates>>.
+
+Then, in the `<build>` section of your `pom.xml` file, add an execution of the plug-in with the configuration you want. By default, the plug-in runs during the `generate-sources` phase of the Maven build.
+
+
+The plug-in execution in the following example is equivalent to the CLI example above for generating server files:
+
+[source,xml,subs="+attributes,+macros"]
+.Creating or updating a {example-project-type} project using the OpenAPI Maven plug-in
+----
+<plugin>
+    <groupId>org.openapitools</groupId>
+    <artifactId>openapi-generator-maven-plugin</artifactId>
+    <executions>
+        <execution>
+            <goals>
+                <goal>generate</goal>
+            </goals>
+            <configuration>
+                <inputSpec>++${project.basedir}++/src/main/resources/petstore.yaml</inputSpec>
+                <generatorName>java-helidon-{example-project-type}</generatorName>
+                <library>{flavor-lc}</library>
+                <output>++${project.build.directory}++/generated-sources/{example-project-type}</output> <!--1-->
+                <addCompileSourceRoot>true</addCompileSourceRoot>
+                <configOptions>
+                    <groupId>io.helidon.examples</groupId>
+                    <artifactId>helidon-openapigen-{flavor-lc}-{example-project-type}</artifactId>
+                    <artifactVersion>1.0.0-SNAPSHOT</artifactVersion>
+                    <apiPackage>io.helidon.examples.openapigen.{flavor-lc}.{example-project-type}.api</apiPackage>
+                    <modelPackage>io.helidon.examples.openapigen.{flavor-lc}.{example-project-type}.model</modelPackage>
+                    <invokerPackage>io.helidon.examples.openapigen.{flavor-lc}.{example-project-type}</invokerPackage>
+                </configOptions>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+<1> Specifies that the generated files should reside in the `target/generated-sources/{example-project-type}` directory.
+
+==== Using the Online Generator
+
+The OpenAPI tools project hosts and maintains the online OpenAPI generator at http://api.openapi-generator.tech. You can use the site's API browser to explore the available generators and the settings each supports, expressed as JSON.
+
+To generate your project, you supply the options and additional properties as JSON. The online generator provides you with a file ID, and you refer to the file ID in a subsequent HTTP request to retrieve your project.
+
+[NOTE]
+The online generator stores your project on the server which you then retrieve using a separate HTTP request.
+Before you use the online generator, consider whether any of the input you provide--the OpenAPI document, package or Maven coordinates--and therefore the generated project will reveal any sensitive information.
+
+This document does not explore further the use of the online generator.
+
+// end::usage[]
+
+
+// tag::using-generated-code-intro[]
+[[using-generated-code]]
+== Using the Generated Code
+
+The Helidon generators go a long way in helping you write your client or server. Even so, there are important parts of your project only you can provide. This section describes your next steps _after_ you have run the generator.
+// end::using-generated-code-intro[]
+
+// tag::using-generated-code-server[]
+// tag::using-generated-code-server-intro[]
+
+=== Completing the Server
+Recall from earlier how the OpenAPI generator gathers operations into one or more "APIs" and generates either a class or an interface--your choice--for each API.
+You need to extend each generated API class or implement each generated API interface by writing your own classes.
+Any input parameters to the endpoints are expressed as POJO model objects or Java types, as declared in the OpenAPI document. Your server code uses each of the input parameters to accomplish whatever business purpose that endpoint is responsible for, possibly returning a result as a POJO or Java type as indicated for that operation in the OpenAPI document.
+// end::using-generated-code-server-intro[]
+
+In some cases, you might need more control over the response sent to the client. In that case, specify the additional property `returnResponse=true` when you run the Helidon server generator. The return type for the generated methods is
+ifdef::mp-flavor[]
+the Jakarta RESTful web services `Response`
+endif::mp-flavor[]
+ifdef::se-flavor[]
+the Helidon SE `ServerResponse`
+endif::se-flavor[]
+and your code has complete control--and therefore responsibility--over setting the status, writing the response entity (if any), and assigning any returned headers.
+
+Your code plus the server code from the Helidon generator--all running on Helidon {flavor-uc}--combine to fully implement the server API declared in the original OpenAPI document. Build your project to get a tailored Helidon {flavor-uc} server `.jar` file or Docker image and your server is ready to run.
+
+// end::using-generated-code-server[]
+
+// tag::using-generated-code-client-intro[]
+=== Using the Client Library
+
+The generated client code represents a true library. Typically, you do not need to customize the generated client code itself. You _do_ need to write code to invoke the code in that library.
+
+// using the SE and MP clients are so different there's not much common content.
+
+// end::using-generated-code-client-intro[]
+
+// tag::common-references[]
+== References
+* link:{openapi-generator-tool-site-url}[OpenAPI Generator Official Website]
+* link:{openapi-generator-tool-base-url}[OpenAPI Generator GitHub Repository]
+* link:{openapi-spec-url}[OpenAPI specification]
+// end::common-references[]
