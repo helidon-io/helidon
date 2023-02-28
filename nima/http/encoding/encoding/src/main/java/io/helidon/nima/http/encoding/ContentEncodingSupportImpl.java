@@ -95,10 +95,10 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
             Accept-Encoding: gzip, compress, br
             Accept-Encoding: br;q=1.0, gzip;q=0.8, *;q=0.1
          */
-        String[] values = acceptEncoding.split(", ");
+        String[] values = acceptEncoding.split(",");
         List<EncodingWithQ> supported = new ArrayList<>(values.length);
         for (String value : values) {
-            supported.add(EncodingWithQ.parse(value));
+            supported.add(EncodingWithQ.parse(value.trim()));
         }
         Collections.sort(supported);
         for (EncodingWithQ encodingWithQ : supported) {
