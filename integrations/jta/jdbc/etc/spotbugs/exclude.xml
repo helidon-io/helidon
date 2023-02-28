@@ -29,6 +29,10 @@
         <Bug pattern="SQL_INJECTION_JDBC"/>
     </Match>
     <Match>
+        <Class name="io.helidon.integrations.jta.jdbc.JtaConnection$Enlistment"/>
+        <Bug pattern="IP_PARAMETER_IS_DEAD_BUT_OVERWRITTEN"/>
+    </Match>
+    <Match>
         <Class name="io.helidon.integrations.jta.jdbc.LocalXAResource$Association"/>
         <Bug pattern="IP_PARAMETER_IS_DEAD_BUT_OVERWRITTEN"/>
     </Match>

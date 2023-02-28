@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,6 +30,10 @@
     <groupId>io.helidon.tests.integration.jpa</groupId>
     <artifactId>helidon-tests-integration-jpa-simple</artifactId>
     <name>Integration Tests: JPA Simple Tests</name>
+
+    <properties>
+        <com.arjuna.ats.arjuna.coordinator.defaultTimeout>60</com.arjuna.ats.arjuna.coordinator.defaultTimeout>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -63,17 +67,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-delegates</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
             <scope>test</scope>
@@ -96,7 +89,6 @@
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -116,6 +108,11 @@
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
@@ -157,6 +154,10 @@
                 <version>${version.plugin.surefire}</version>
                 <configuration>
                     <parallel>methods</parallel>
+                    <systemPropertyVariables>
+                        <com.arjuna.ats.arjuna.coordinator.defaultTimeout>${com.arjuna.ats.arjuna.coordinator.defaultTimeout}</com.arjuna.ats.arjuna.coordinator.defaultTimeout>
+                        <project.build.directory>${project.build.directory}</project.build.directory>
+                    </systemPropertyVariables>
                     <threadCount>10</threadCount>
                 </configuration>
                 <executions>

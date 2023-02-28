@@ -332,7 +332,6 @@ final class TestJtaConnection {
         // The TransactionManager will report that there is no transaction.
         assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
 
-        // assertThat(logicalConnection.enlisted(), is(true)); // we're enlisted in a suspended transaction
         assertThat(logicalConnection.isCloseable(), is(false)); // we're still enlisted in a suspended transaction
 
         logicalConnection.close(); // doesn't really close, but the caller thinks it did, which is what we want
@@ -378,7 +377,7 @@ final class TestJtaConnection {
         assertThat(physicalConnection2.isClosed(), is(true));
 
         tm.resume(s);
-        
+
         t = tm.getTransaction();
         assertThat(t, sameInstance(s));
         assertThat(t.getStatus(), is(Status.STATUS_ACTIVE));
@@ -392,12 +391,12 @@ final class TestJtaConnection {
 
         tm.commit();
 
-        assertThat(logicalConnection.isClosePending(), is(true));
+        // Now it should be closed for real.
+        assertThat(logicalConnection.isClosePending(), is(false));
+        assertThat(logicalConnection.isClosed(), is(true));
+        assertThat(logicalConnection.delegate().isClosed(), is(true));
+        assertThat(physicalConnection.isClosed(), is(true));
 
-        assertThat(logicalConnection.isClosed(), is(true)); // returns true only because close is pending
-        assertThat(logicalConnection.delegate().isClosed(), is(false));
-
-        assertThat(physicalConnection.isClosed(), is(false)); // logicalConnection was never *really* closed
         assertThat(logicalConnection2.isClosed(), is(true));
         assertThat(physicalConnection2.isClosed(), is(true));
 
