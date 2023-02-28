@@ -1124,27 +1124,18 @@ class JtaConnection extends ConditionallyCloseableConnection {
     private void transactionCompleted(int commitedOrRolledBack) {
         this.enlistment = null; // volatile write
         try {
-            if (!super.isClosed()) {
-                // Did someone call close() while we were enlisted?  That's permitted by section 4.2 of the JTA
-                // specification, but it shouldn't actually close the connection because the prepare/commit cycle
-                // wouldn't have started.
-                boolean closeWasPending = this.isClosePending(); // volatile read
-
-                // If they did, then we must be non-closeable. If they didn't, we could be either closeable or not
-                // closeable.
-                assert !closeWasPending || !this.isCloseable();
-
-                // Now the global transaction is over, so blindly set our closeable status to true. (It may already be
-                // true.)  This resets the closePending status, per spec.
-
-                this.setCloseable(true);
-                assert this.isCloseable();
+            boolean closeWasPending = this.isClosePending();
+            this.setCloseable(true);
+            assert this.isCloseable();
+            assert !this.isClosePending();
+            if (closeWasPending) {
+                assert !this.isClosed();
+                assert !this.delegate().isClosed();
+                this.close();
+                assert this.isClosed();
+                assert this.delegate().isClosed();
+                assert !this.isCloseable();
                 assert !this.isClosePending();
-
-                // If there WAS a close() attempt, now it CAN work, so let it work.
-                if (closeWasPending) {
-                    this.close();
-                }
             }
         } catch (SQLException e) {
             // (Synchronization implementations can throw only unchecked exceptions.)
@@ -1205,6 +1196,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         }
 
         private Enlistment {
+            threadId = Thread.currentThread().getId();
             Objects.requireNonNull(transaction, "transaction");
             Objects.requireNonNull(xaResource, "xaResource");
         }
