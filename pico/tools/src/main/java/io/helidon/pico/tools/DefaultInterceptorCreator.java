@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -793,7 +795,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             ElementInfo ei) {
         StringBuilder builder = new StringBuilder(".typeName(create(" + ei.elementTypeName() + ".class))");
         builder.append("\n\t\t\t.elementName(").append(CodeGenUtils.elementNameRef(ei.elementName())).append(")");
-        for (AnnotationAndValue anno : ei.annotations()) {
+        TreeSet<AnnotationAndValue> sortedAnnotations = new TreeSet<>(ei.annotations());
+        for (AnnotationAndValue anno : sortedAnnotations) {
             builder.append("\n\t\t\t.addAnnotation(").append(toDecl(anno)).append(")");
         }
         return builder.toString();
@@ -813,7 +816,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         if (map != null && !map.isEmpty()) {
             builder.append(", Map.of(");
             int count = 0;
-            for (Map.Entry<String, String> e : map.entrySet()) {
+            TreeMap<String, String> sortedMap = new TreeMap<>(map);
+            for (Map.Entry<String, String> e : sortedMap.entrySet()) {
                 if (count++ > 0) {
                     builder.append(", ");
                 }
