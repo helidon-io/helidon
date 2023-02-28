@@ -431,8 +431,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <value template="mustache" order="0"><![CDATA[
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks()) // Adds a convenient set of checks
-{{#Main-healthBuilder}}
-{{.}}
+{{#Main-healthBuilder}}{{.}}
 {{/Main-healthBuilder}}
                 .build();]]>
                                     </value>
