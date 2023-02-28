@@ -16,18 +16,42 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ifndef::flavor-included[]
-
-:flavor-included: true
-
 ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.openapi.OpenApiUi
+:keywords: helidon, config, io.helidon.openapi.OpenApiUi
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.openapi.OpenApiUi
 include::{rootdir}/includes/attributes.adoc[]
 
-:h1-prefix: SE
-:flavor-uc: SE
-:flavor-lc: se
-:se-flavor: true
+= OpenApiUi (openapi) Configuration
 
-include::{rootdir}/includes/pages.adoc[]
+// tag::config[]
 
-endif::flavor-included[]
+
+Type: link:{javadoc-base-url}/io.helidon.openapi/io/helidon/openapi/OpenApiUi.html[io.helidon.openapi.OpenApiUi]
+
+
+[source,text]
+.Config key
+----
+ui
+----
+
+
+
+== Configuration options
+
+
+
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+|`enabled` |boolean |`true` |Sets whether the UI should be enabled.
+|`options` |Map&lt;string, string&gt; |{nbsp} |Sets implementation-specific UI options.
+|`web-context` |string |{nbsp} |web context (path) where the UI will respond
+
+|===
+
+// end::config[]

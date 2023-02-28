@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,18 +16,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ifndef::flavor-included[]
+= Introducing Helidon 4
+:description: Helidon
+:keywords: helidon, java, microservices
+:rootdir: {docdir}/..
 
-:flavor-included: true
 
-ifndef::rootdir[:rootdir: {docdir}/..]
-include::{rootdir}/includes/attributes.adoc[]
+== What's New in This Release
 
-:h1-prefix: SE
-:flavor-uc: SE
-:flavor-lc: se
-:se-flavor: true
-
-include::{rootdir}/includes/pages.adoc[]
-
-endif::flavor-included[]

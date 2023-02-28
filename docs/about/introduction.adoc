@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Introduction
+= Introducing Helidon
 :description: Helidon
 :keywords: helidon, java, microservices, microprofile
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/attributes.adoc[]
 
-== Contents
+== What is Helidon?
 
 * <<What is Helidon?, What is Helidon?>>
 * <<Helidon Flavors, Helidon Flavors>>
