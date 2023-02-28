@@ -82,6 +82,12 @@ public class Options {
     public static final String TAG_IGNORE_UNSUPPORTED_ANNOTATIONS = PicoServicesConfig.NAME
             + ".ignoreUnsupportedAnnotations";
 
+    /**
+     * Identify invalid usage of the {@code module-info.java} for appropriate Pico references (the default is to fail).
+     */
+    public static final String TAG_IGNORE_MODULE_USAGE = PicoServicesConfig.NAME
+            + ".ignoreModuleUsage";
+
     private static final Map<String, String> OPTS = new HashMap<>();
 
     private Options() {
@@ -113,6 +119,8 @@ public class Options {
                      getOption(TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE, null, processingEnv));
             OPTS.put(TAG_IGNORE_UNSUPPORTED_ANNOTATIONS,
                      getOption(TAG_IGNORE_UNSUPPORTED_ANNOTATIONS, null, processingEnv));
+            OPTS.put(TAG_IGNORE_MODULE_USAGE,
+                     getOption(TAG_IGNORE_MODULE_USAGE, null, processingEnv));
         }
     }
 

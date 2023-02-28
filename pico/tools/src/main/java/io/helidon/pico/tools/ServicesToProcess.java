@@ -37,8 +37,10 @@ import javax.lang.model.element.TypeElement;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.pico.Application;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.InjectionPointInfo;
+import io.helidon.pico.Module;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.services.Dependencies;
@@ -888,10 +890,69 @@ public class ServicesToProcess implements Resetable {
             RUNNING_PROCESSORS.decrementAndGet();
         }
         processor.debug(processor.getClass().getSimpleName() + " finished processing; done-done=" + done);
+
+        if (done && RUNNING_PROCESSORS.get() == 0) {
+            // perform module analysis to ensure the proper definitions are specified for modules and applications
+            ServicesToProcess.servicesInstance().performModuleUsageValidation(processor);
+        }
     }
 
     /**
-     * @return Returns true if any processor is running.
+     * If we made it here we know that Pico annotation processing was used. If there is a module-info in use and services where
+     * defined during processing, then we should have a module created and optionally and application.  If so then we should
+     * validate the integrity of the user's module-info.java for the {@link io.helidon.pico.Module} and
+     * {@link io.helidon.pico.Application} definitions - unless the user opted out of this check with the
+     * {@link io.helidon.pico.tools.Options#TAG_IGNORE_MODULE_USAGE} option.
+     */
+    private void performModuleUsageValidation(
+            Messager processor) {
+        if (lastKnownModuleInfoFilePath != null && lastKnownModuleInfoDescriptor == null) {
+            throw new ToolsException("expected to have a module-info.java");
+        }
+
+        if (lastKnownModuleInfoDescriptor == null) {
+            return;
+        }
+
+        boolean wasModuleDefined = !servicesTypeNames.isEmpty() || contracts().values().stream()
+                .flatMap(it -> it.stream())
+                .anyMatch(it -> it.name().equals(Module.class.getName()));
+        boolean wasApplicationDefined = contracts().values().stream()
+                .flatMap(it -> it.stream())
+                .anyMatch(it -> it.name().equals(Application.class.getName()));
+
+        boolean shouldWarnOnly = Options.isOptionEnabled(Options.TAG_IGNORE_MODULE_USAGE);
+        String message = ". Use -A" + Options.TAG_IGNORE_MODULE_USAGE + "=true to ignore.";
+
+        if (wasModuleDefined) {
+            Optional<ModuleInfoItem> moduleInfoItem = lastKnownModuleInfoDescriptor.first(Module.class.getName());
+            if (moduleInfoItem.isEmpty() || !moduleInfoItem.get().provides()) {
+                ToolsException te = new ToolsException("expected to have a 'provides " + Module.class.getName()
+                                                               + " with ... ' entry in " + lastKnownModuleInfoFilePath + message);
+                if (shouldWarnOnly) {
+                    processor.warn(te.getMessage(), te);
+                } else {
+                    processor.error(te.getMessage(), te);
+                }
+            }
+        }
+
+        if (wasApplicationDefined) {
+            Optional<ModuleInfoItem> moduleInfoItem = lastKnownModuleInfoDescriptor.first(Application.class.getName());
+            if (moduleInfoItem.isEmpty() || !moduleInfoItem.get().provides()) {
+                ToolsException te = new ToolsException("expected to have a 'provides " + Application.class.getName()
+                                                               + " with ... ' entry in " + lastKnownModuleInfoFilePath + message);
+                if (shouldWarnOnly) {
+                    processor.warn(te.getMessage(), te);
+                } else {
+                    processor.error(te.getMessage(), te);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns true if any processor is running.
      */
     static boolean isRunning() {
         return RUNNING_PROCESSORS.get() > 0;
