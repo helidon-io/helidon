@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.helidon.nima.webclient.DefaultDnsResolverProvider;
 import io.helidon.nima.webclient.RoundRobinDnsResolverProvider;
 import io.helidon.nima.webclient.NoDnsResolverProvider;
 import io.helidon.nima.webclient.spi.DnsResolverProvider;
+import io.helidon.nima.webclient.http.spi.SourceHandlerProvider;
 
 /**
  * WebClient API and HTTP/1.1 implementation.
@@ -42,6 +43,8 @@ module io.helidon.nima.webclient {
 
     exports io.helidon.nima.webclient;
     exports io.helidon.nima.webclient.spi;
+    exports io.helidon.nima.webclient.http.spi;
+
     /*
      This module exposes two packages, as we (want to) have cyclic dependency.
      The WebClient should support HTTP/1.1 out of the box and to have it in API, we must have the
@@ -50,5 +53,6 @@ module io.helidon.nima.webclient {
     exports io.helidon.nima.webclient.http1;
 
     uses DnsResolverProvider;
+    uses SourceHandlerProvider;
     provides DnsResolverProvider with RoundRobinDnsResolverProvider, DefaultDnsResolverProvider, NoDnsResolverProvider;
 }

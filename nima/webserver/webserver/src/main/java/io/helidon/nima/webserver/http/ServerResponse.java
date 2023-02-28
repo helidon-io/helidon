@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package io.helidon.nima.webserver.http;
 import java.io.OutputStream;
 import java.util.Optional;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.NotFoundException;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.nima.webserver.http.spi.Sink;
 
 /**
  * Http server response.
@@ -191,5 +193,16 @@ public interface ServerResponse {
      */
     default void contentLength(long length) {
         header(Http.Header.create(Http.Header.CONTENT_LENGTH, true, false, String.valueOf(length)));
+    }
+
+    /**
+     * Returns a sink from this response based on the sink type, if available.
+     *
+     * @param sinkType type of sink
+     * @return sink or {@code null} if not available
+     * @param <T> type of sink returned
+     */
+    default <T extends Sink<?>> T sink(GenericType<T> sinkType) {
+        throw new UnsupportedOperationException("No sink available for type " + sinkType);
     }
 }

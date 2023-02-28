@@ -1626,6 +1626,12 @@ public final class Http {
         public static final HeaderValue CONTENT_TYPE_OCTET_STREAM = Header.createCached(Header.CONTENT_TYPE,
                                                                                         "application/octet-stream");
         /**
+         * Content type SSE event stream.
+         */
+        public static final HeaderValue CONTENT_TYPE_EVENT_STREAM = Header.createCached(Header.CONTENT_TYPE,
+                                                                                  "text/event-stream");
+
+        /**
          * Accept application/json.
          */
         public static final HeaderValue ACCEPT_JSON = Header.createCached(Header.ACCEPT, "application/json");
@@ -1633,6 +1639,10 @@ public final class Http {
          * Accept text/plain with UTF-8.
          */
         public static final HeaderValue ACCEPT_TEXT = Header.createCached(Header.ACCEPT, "text/plain;charset=UTF-8");
+        /**
+         * Accept text/event-stream.
+         */
+        public static final HeaderValue ACCEPT_EVENT_STREAM = Header.createCached(Header.ACCEPT, "text/event-stream");
         /**
          * Expect 100 header.
          */

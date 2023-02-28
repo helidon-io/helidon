@@ -1309,6 +1309,21 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.nima.sse</groupId>
+                <artifactId>helidon-nima-sse</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.sse</groupId>
+                <artifactId>helidon-nima-sse-webclient</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.sse</groupId>
+                <artifactId>helidon-nima-sse-webserver</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.nima.testing.junit5</groupId>
                 <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
                 <version>${helidon.version}</version>
