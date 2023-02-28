@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -77,6 +77,7 @@ endif::[]
 :version-plugin-jib: 0.10.1
 :version-plugin-jandex: 1.0.6
 :version-lib-micrometer: 1.6.6
+:version-lib-smallrye-open-api: 2.1.16
 
 :jdk-version: 17
 
@@ -204,6 +205,7 @@ endif::[]
 :mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
 :mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
 :openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi
+:openapi-ui-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.openapi.ui
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
 :scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
 :security-integration-jersey-base-url: {javadoc-base-url}/io.helidon.security.integration.jersey
@@ -261,5 +263,17 @@ endif::[]
 :micrometer-api-url: https://micrometer.io/docs/concepts
 :micrometer-javadoc-base-url: https://javadoc.io/doc/io.micrometer
 :micrometer-javadoc-registry-prometheus-base-url: {micrometer-javadoc-base-url}/micrometer-registry-prometheus/{version-lib-micrometer}/io/micrometer/prometheus
+
+// OpenAPI generator
+:openapi-generator-version: 6.2.1
+:openapi-generator-tool-base-url: https://github.com/OpenAPITools/openapi-generator
+:openapi-generator-site-version: v{openapi-generator-version}
+
+:openapi-generator-tool-docs-url: {openapi-generator-tool-base-url}/blob/{openapi-generator-site-version}/docs
+:openapi-generator-tool-generators-docs-url: {openapi-generator-tool-docs-url}/generators
+:openapi-generator-tool-site-url: https://openapi-generator.tech
+
+// OpenAPI UI
+:smallrye-openapi-ui-base-url: https://github.com/smallrye/smallrye-open-api/tree/{version-lib-smallrye-open-api}/ui/open-api-ui
 
 endif::attributes-included[]
