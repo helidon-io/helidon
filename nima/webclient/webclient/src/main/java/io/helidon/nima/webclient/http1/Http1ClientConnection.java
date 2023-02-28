@@ -176,26 +176,20 @@ class Http1ClientConnection implements ClientConnection {
         if (keepAlive && connectionQueue != null && socket.isConnected()) {
             try {
                 if (connectionQueue.offer(this, QUEUE_TIMEOUT, QUEUE_TIMEOUT_TIME_UNIT)) {
-                    if (LOGGER.isLoggable(DEBUG)) {
-                        LOGGER.log(DEBUG, String.format("[%s] client connection returned %s",
-                                                        channelId,
-                                                        Thread.currentThread().getName()));
-                    }
+                    LOGGER.log(DEBUG, () -> String.format("[%s] client connection returned %s",
+                                                          channelId,
+                                                          Thread.currentThread().getName()));
                     return;
                 } else {
-                    if (LOGGER.isLoggable(DEBUG)) {
-                        LOGGER.log(DEBUG, String.format("[%s] Unable to return client connection because queue is full %s",
-                                                        channelId,
-                                                        Thread.currentThread().getName()));
-                    }
+                    LOGGER.log(DEBUG, () -> String.format("[%s] Unable to return client connection because queue is full %s",
+                                                          channelId,
+                                                          Thread.currentThread().getName()));
                 }
             } catch (InterruptedException ie) {
-                if (LOGGER.isLoggable(DEBUG)) {
-                    LOGGER.log(DEBUG, String.format("[%s] Unable to return client connection due to '%s' %s",
+                LOGGER.log(DEBUG, () -> String.format("[%s] Unable to return client connection due to '%s' %s",
                                                     channelId,
                                                     ie.getMessage(),
                                                     Thread.currentThread().getName()));
-                }
             }
         }
         // Close if unable to add to queue
