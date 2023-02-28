@@ -32,15 +32,17 @@ import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.ClientRequestImpl;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
@@ -51,6 +53,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@ServerTest
 class ClientRequestImplTest {
     private static final Http.HeaderValue REQ_CHUNKED_HEADER = Http.Header.createCached(
             Http.Header.create("X-Req-Chunked"), "true");
@@ -59,28 +62,19 @@ class ClientRequestImplTest {
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
     private static final long NO_CONTENT_LENGTH = -1L;
     private static final Http1Client client = WebClient.builder().build();
-    private static WebServer webServer;
     private static int port;
 
-    @BeforeAll
-    static void beforeAll() {
-        webServer = WebServer.builder()
-                .routing(router -> router
-                        .put("/test", ClientRequestImplTest::responseHandler)
-                        .put("/chunkresponse", ClientRequestImplTest::chunkResponseHandler)
-                )
-                .build()
-                .start();
+    ClientRequestImplTest(WebServer webServer) {
         port = webServer.port();
     }
 
-    @AfterAll
-    static void afterAll() {
-        if (webServer != null) {
-            webServer.stop();
-        }
+    @SetUpRoute
+    static void routing(HttpRules rules) {
+        rules.put("/test", ClientRequestImplTest::responseHandler);
+        rules.put("/chunkresponse", ClientRequestImplTest::chunkResponseHandler);
     }
 
+    @Test
     void testMaxHeaderSizeFail() {
         Http1Client client = WebClient.builder()
                 .maxHeaderSize(15)
@@ -88,6 +82,7 @@ class ClientRequestImplTest {
         validateFailedResponse(client, "Header size exceeded");
     }
 
+    @Test
     void testMaxHeaderSizeSuccess() {
         Http1Client client = WebClient.builder()
                 .maxHeaderSize(500)
@@ -95,6 +90,7 @@ class ClientRequestImplTest {
         validateSuccessfulResponse(client);
     }
 
+    @Test
     void testMaxStatusLineLengthFail() {
         Http1Client client = WebClient.builder()
                 .maxStatusLineLength(1)
@@ -102,6 +98,7 @@ class ClientRequestImplTest {
         validateFailedResponse(client, "HTTP Response did not contain HTTP status line");
     }
 
+    @Test
     void testMaxHeaderLineLengthSuccess() {
         Http1Client client = WebClient.builder()
                 .maxStatusLineLength(20)
@@ -171,7 +168,7 @@ class ClientRequestImplTest {
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
     }
 
-    // v@Test
+    @Test
     void testExpect100() {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
@@ -187,6 +184,7 @@ class ClientRequestImplTest {
         assertThat(response.headers(), hasHeader(REQ_EXPECT_100_HEADER_NAME));
     }
 
+    @Test
     // validates that HEAD is not allowed with entity payload
     void testHeadMethod() {
         String url = "http://localhost:" + port + "/test";
@@ -204,9 +202,9 @@ class ClientRequestImplTest {
     void testConnectionQueueDequeue() {
         String url = "http://localhost:" + port + "/test";
 
-        ClientConnection connectionNow;
+        ClientConnection connectionNow = null;
         ClientConnection connectionPrior = null;
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 5; ++i) {
             Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
             // connection will be dequeued if queue is not empty
             connectionNow = ((ClientRequestImpl) request).getConnection(true);
@@ -221,6 +219,7 @@ class ClientRequestImplTest {
         }
     }
 
+    @Test
     void testConnectionQueueSizeLimit() {
         int connectionQueueSize = ((Http1ClientImpl) client).connectionQueueSize();
         String url = "http://localhost:" + port + "/test";
@@ -283,7 +282,7 @@ class ClientRequestImplTest {
         assertThat(ie.getMessage(), containsString(errorMessage));
     }
 
-    private void validateChunkTransfer(Http1ClientResponse response, boolean chunked, long contentLength, String entity) {
+    private static void validateChunkTransfer(Http1ClientResponse response, boolean chunked, long contentLength, String entity) {
         assertThat(response.status(), is(Http.Status.OK_200));
         if (contentLength == NO_CONTENT_LENGTH) {
             assertThat(response.headers(), noHeader(REQ_CONTENT_LENGTH_HEADER_NAME));

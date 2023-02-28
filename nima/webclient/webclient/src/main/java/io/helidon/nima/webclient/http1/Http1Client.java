@@ -49,7 +49,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
         private boolean sendExpect100Continue = false;
         private boolean validateHeaders = true;
         private MediaContext mediaContext = MediaContext.create();
-        private int connectionQueueSize = 16384;
+        private int connectionQueueSize = 256;
 
         private Http1ClientBuilder() {
         }
@@ -127,7 +127,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          * @param connectionQueueSize maximum connection queue size
          * @return updated builder
          */
-        @ConfiguredOption("10")
+        @ConfiguredOption("256")
         public Http1ClientBuilder connectionQueueSize(int connectionQueueSize) {
             this.connectionQueueSize = connectionQueueSize;
             return this;

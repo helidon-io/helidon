@@ -56,6 +56,7 @@ class ClientRequestImplTest {
     private static final Http1Client client = WebClient.builder().build();
     private static final int dummyPort = 1234;
 
+    @Test
     void testMaxHeaderSizeFail() {
         Http1Client client = WebClient.builder()
                 .maxHeaderSize(15)
@@ -63,6 +64,7 @@ class ClientRequestImplTest {
         validateFailedResponse(client, new FakeHttp1ClientConnection(), "Header size exceeded");
     }
 
+    @Test
     void testMaxHeaderSizeSuccess() {
         Http1Client client = WebClient.builder()
                 .maxHeaderSize(500)
@@ -70,6 +72,7 @@ class ClientRequestImplTest {
         validateSuccessfulResponse(client, new FakeHttp1ClientConnection());
     }
 
+    @Test
     void testMaxStatusLineLengthFail() {
         Http1Client client = WebClient.builder()
                 .maxStatusLineLength(1)
@@ -77,6 +80,7 @@ class ClientRequestImplTest {
         validateFailedResponse(client, new FakeHttp1ClientConnection(), "HTTP Response did not contain HTTP status line");
     }
 
+    @Test
     void testMaxHeaderLineLengthSuccess() {
         Http1Client client = WebClient.builder()
                 .maxStatusLineLength(20)
@@ -139,6 +143,7 @@ class ClientRequestImplTest {
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
     }
 
+    @Test
     void testExpect100() {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
@@ -155,6 +160,7 @@ class ClientRequestImplTest {
         assertThat(response.headers(), hasHeader(REQ_EXPECT_100_HEADER_NAME));
     }
 
+    @Test
     // validates that HEAD is not allowed with entity payload
     void testHeadMethod() {
         String url = "http://localhost:" + dummyPort + "/test";
@@ -194,7 +200,7 @@ class ClientRequestImplTest {
         }
     }
 
-    private void validateChunkTransfer(Http1ClientResponse response, boolean chunked, long contentLength, String entity) {
+    private static void validateChunkTransfer(Http1ClientResponse response, boolean chunked, long contentLength, String entity) {
         assertThat(response.status(), is(Http.Status.OK_200));
         if (contentLength == NO_CONTENT_LENGTH) {
             assertThat(response.headers(), noHeader(REQ_CONTENT_LENGTH_HEADER_NAME));
