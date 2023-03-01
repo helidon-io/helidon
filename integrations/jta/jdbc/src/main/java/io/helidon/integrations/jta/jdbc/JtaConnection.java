@@ -1049,7 +1049,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
             throw new SQLTransientException("xaResourceSupplier.get() == null");
         }
 
-        Enlistment enlistment = new Enlistment(t, xar);
+        Enlistment enlistment = new Enlistment(Thread.currentThread().getId(), t, xar);
         if (!ENLISTMENT.compareAndSet(this, null, enlistment)) { // atomic volatile write
             // Setting this.enlistment could conceivably fail if another thread already enlisted this JtaConnection.
             // That would be bad.
@@ -1191,12 +1191,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     private static final record Enlistment(long threadId, Transaction transaction, XAResource xaResource) {
 
-        private Enlistment(Transaction transaction, XAResource xaResource) {
-            this(Thread.currentThread().getId(), transaction, xaResource);
-        }
-
         private Enlistment {
-            threadId = Thread.currentThread().getId();
             Objects.requireNonNull(transaction, "transaction");
             Objects.requireNonNull(xaResource, "xaResource");
         }
