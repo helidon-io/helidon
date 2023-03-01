@@ -117,6 +117,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
      * Configuration key for expected audiences of incoming tokens. Used for validation of JWT.
      */
     public static final String CONFIG_EXPECTED_AUDIENCES = "mp.jwt.verify.audiences";
+
     private static final String CONFIG_EXPECTED_MAX_TOKEN_AGE = "mp.jwt.verify.token.age";
     private static final String CONFIG_CLOCK_SKEW = "mp.jwt.verify.clock.skew";
     /**
@@ -1246,9 +1247,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         /**
-         * Required decryption key algorithm.
+         * Expected decryption key algorithm.
          *
-         * @param decryptionKeyAlgorithm required decryption key algorithm
+         * @param decryptionKeyAlgorithm expected decryption key algorithm
          * @return updated builder instance
          */
         public Builder decryptKeyAlgorithm(String decryptionKeyAlgorithm) {

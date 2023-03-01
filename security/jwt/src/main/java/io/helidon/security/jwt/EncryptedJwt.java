@@ -205,9 +205,8 @@ public final class EncryptedJwt {
         validators.add((encryptedJwt, collector) -> {
             Optional<String> kekAlgorithm = encryptedJwt.header.algorithm();
             if (kekAlgorithm.isPresent()) {
-                if (expectedKekAlg == null) {
-                    return; //any kek is allowed
-                } else if (kekAlgorithm.get().equals(expectedKekAlg)) {
+                //if null, any kek alg is allowed
+                if (expectedKekAlg == null || kekAlgorithm.get().equals(expectedKekAlg)) {
                     return;
                 }
                 collector.fatal(encryptedJwt, "Key encryption key algorithm must be equal to " + expectedKekAlg
