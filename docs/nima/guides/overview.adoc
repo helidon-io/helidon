@@ -28,10 +28,10 @@ include::{rootdir}/includes/nima.adoc[]
 [PILLARS]
 ====
 [CARD]
-.Nima Quickstart
+.N&iacute;ma Quickstart
 [link=quickstart.adoc]
 --
-Create your first Helidon Nima application in under 5 minutes.
+Create your first Helidon N&iacute;ma application in under 5 minutes.
 --
 
 ====

@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon N&iacute;ma Quickstart
-:description: Helidon Nima Quickstart Guide
+:description: Helidon N&iacute;ma Quickstart Guide
 :keywords: helidon
 :rootdir: {docdir}/../..
 
