@@ -66,7 +66,6 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @HelidonTest
 @DisableDiscovery
@@ -164,8 +163,8 @@ class ParticipantTest {
                 URI.create("http://localhost:8888"),
                 NonJaxRsResource.CONTEXT_PATH_DEFAULT,
                 DontEnd.class);
-        assertTrue(p.isLraMethod(DontEnd.class.getMethod("startDontEndLRA", URI.class)));
-        assertTrue(p.isLraMethod(DontEnd.class.getMethod("endLRA", URI.class)));
+        assertThat(p.isLraMethod(DontEnd.class.getMethod("startDontEndLRA", URI.class)), is(true));
+        assertThat(p.isLraMethod(DontEnd.class.getMethod("endLRA", URI.class)), is(true));
     }
 
     @ApplicationScoped
