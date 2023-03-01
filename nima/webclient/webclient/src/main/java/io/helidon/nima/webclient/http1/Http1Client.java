@@ -138,7 +138,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          *
          * @return maximum header size
          */
-        public int maxHeaderSize() {
+        int maxHeaderSize() {
             return maxHeaderSize;
         }
 
@@ -147,7 +147,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          *
          * @return maximum status line length
          */
-        public int maxStatusLineLength() {
+        int maxStatusLineLength() {
             return maxStatusLineLength;
         }
 
@@ -156,7 +156,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          *
          * @return whether to send Expect:100-Continue header for chunked transfers
          */
-        public boolean sendExpect100Continue() {
+        boolean sendExpect100Continue() {
             return sendExpect100Continue;
         }
 
@@ -165,7 +165,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          *
          * @return whether to validate headers
          */
-        public boolean validateHeaders() {
+        boolean validateHeaders() {
             return validateHeaders;
         }
 
@@ -174,7 +174,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          *
          * @return media context, never {@code null}
          */
-        public MediaContext mediaContext() {
+        MediaContext mediaContext() {
             return mediaContext;
         }
 
@@ -183,7 +183,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          *
          * @return maximum queue size
          */
-        public int connectionQueueSize() {
+        int connectionQueueSize() {
             return connectionQueueSize;
         }
 
