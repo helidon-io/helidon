@@ -330,7 +330,7 @@ class ClientRequestImplTest {
                 int regularChunkLen = entity.length / chunkParts;
                 int lastChunkLen = regularChunkLen + entity.length % chunkParts;
                 for (int i = 0; i < chunkParts; i++) {
-                    int chunkLen = (i != (chunkParts - 1)) ? regularChunkLen : lastChunkLen;
+                    int chunkLen = (i != chunkParts - 1) ? regularChunkLen : lastChunkLen;
                     byte[] chunk = new byte[chunkLen];
                     System.arraycopy(entity, i * regularChunkLen, chunk, 0, chunkLen);
                     outputStream.write(chunk);
