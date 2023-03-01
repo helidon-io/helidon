@@ -16,11 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Níma
-:description: about Helidon Níma
+= Introduction
+:description: about Helidon N&iacute;ma
 :keywords: helidon, java, microservices, reactive, virtual threads
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Introduction
+Helidon N&iacute;ma is a Java 19-based implementation of a server designed for Java Virtual Threads (product of https://openjdk.org/projects/loom/[Project Loom]).
+
+== Components

@@ -51,7 +51,7 @@ xref:{rootdir}/about/intro.adoc[What's New in Helidon 4]
 //Getting Started
 [CARD]
 .Getting Started
-[icon=settings]
+[icon=rocket_launch]
 --
 There are several ways to generate your first Helidon project. In a hurry? Try the Helidon CLI or Project Starter which provide a set of predefined archetypes to choose from.    
 
@@ -90,7 +90,7 @@ xref:{rootdir}/se/guides/migration.adoc[Upgrade From Helidon SE 2.x]
 //Developing Your First Application
 [CARD]
 .Developing Your First Application From Scratch
-[icon=share]
+[icon=terminal]
 --
 Use these hands-on development tutorials to learn how to generate a small "Hello World!" greeting service that demonstrates some of Helidon's core features. 
 
@@ -103,11 +103,11 @@ xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon SE Tutorial]
 //How-To Guides
 [CARD]
 .How-To Guides
-[icon=graphic_eq]
+[icon=library_books]
 --
 Ready for more hands-on learning? Explore the features of Helidon with these quick step-by-step guides.
 
-xref:{rootdir}/nima/guides/overview.adoc[Nima Guides]
+xref:{rootdir}/nima/guides/overview.adoc[N&iacute;ma Guides]
 
 xref:{rootdir}/se/guides/overview.adoc[SE Guides]
 
@@ -131,9 +131,9 @@ xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 
 --
 
-//Helidon SE
+//Helidon N&iacute;ma
 [CARD]
-.Helidon SE
+.Helidon N&iacute;ma
 [icon=swap_horiz]
 --
 

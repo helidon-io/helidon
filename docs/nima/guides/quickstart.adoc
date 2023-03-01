@@ -16,14 +16,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Quickstart
+= Helidon N&iacute;ma Quickstart
 :description: Helidon Nima Quickstart Guide
 :keywords: helidon
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-This guide describes a basic example of an Helidon Nima application using Docker and Kubernetes.
+This guide describes a basic example of an Helidon N&iacute;ma application using Docker and Kubernetes.
 
 == What You Need
 

@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Overview
-:description: Helidon Nima Guides
+:description: Helidon N&iacute;ma Guides
 :keywords: helidon, java, microservices, microprofile, guides
 :rootdir: {docdir}/../..
 
@@ -36,7 +36,7 @@ Create your first Helidon Nima application in under 5 minutes.
 
 ====
 
-== Helidon Nima Guides
+== Helidon N&iacute;ma Guides
 
 
 
