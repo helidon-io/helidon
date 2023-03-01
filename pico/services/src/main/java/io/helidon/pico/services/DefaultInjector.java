@@ -37,9 +37,8 @@ class DefaultInjector implements Injector {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> ActivationResult activateInject(
-            T serviceOrServiceProvider,
-            InjectorOptions opts) throws PicoServiceProviderException {
+    public <T> ActivationResult activateInject(T serviceOrServiceProvider,
+                                               InjectorOptions opts) throws PicoServiceProviderException {
         Objects.requireNonNull(serviceOrServiceProvider);
         Objects.requireNonNull(opts);
 
@@ -66,9 +65,8 @@ class DefaultInjector implements Injector {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> ActivationResult deactivate(
-            T serviceOrServiceProvider,
-            InjectorOptions opts) throws PicoServiceProviderException {
+    public <T> ActivationResult deactivate(T serviceOrServiceProvider,
+                                           InjectorOptions opts) throws PicoServiceProviderException {
         Objects.requireNonNull(serviceOrServiceProvider);
         Objects.requireNonNull(opts);
 
@@ -96,11 +94,10 @@ class DefaultInjector implements Injector {
         return deactivator.deactivate(request);
     }
 
-    private ActivationResult handleError(
-            DefaultActivationResult.Builder resultBuilder,
-            InjectorOptions opts,
-            String message,
-            ServiceProvider<?> serviceProvider) {
+    private ActivationResult handleError(DefaultActivationResult.Builder resultBuilder,
+                                         InjectorOptions opts,
+                                         String message,
+                                         ServiceProvider<?> serviceProvider) {
         PicoException e = (serviceProvider == null)
                 ? new PicoException(message) : new PicoServiceProviderException(message, serviceProvider);
         resultBuilder.error(e);

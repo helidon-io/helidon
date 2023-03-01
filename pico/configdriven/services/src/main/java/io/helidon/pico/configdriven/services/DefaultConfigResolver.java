@@ -49,10 +49,9 @@ class DefaultConfigResolver extends BasicConfigResolver {
     }
 
     @Override
-    public <T> Optional<T> of(
-            ResolutionContext ctx,
-            Map<String, Map<String, Object>> meta,
-            ConfigResolverRequest<T> request) {
+    public <T> Optional<T> of(ResolutionContext ctx,
+                              Map<String, Map<String, Object>> meta,
+                              ConfigResolverRequest<T> request) {
         Objects.requireNonNull(ctx);
         Objects.requireNonNull(request);
         Objects.requireNonNull(meta);
@@ -76,10 +75,9 @@ class DefaultConfigResolver extends BasicConfigResolver {
     }
 
     @Override
-    public <T> Optional<Collection<T>> ofCollection(
-            ResolutionContext ctx,
-            Map<String, Map<String, Object>> meta,
-            ConfigResolverRequest<T> request) {
+    public <T> Optional<Collection<T>> ofCollection(ResolutionContext ctx,
+                                                    Map<String, Map<String, Object>> meta,
+                                                    ConfigResolverRequest<T> request) {
         Objects.requireNonNull(ctx);
         Objects.requireNonNull(request);
         Objects.requireNonNull(meta);
@@ -103,10 +101,9 @@ class DefaultConfigResolver extends BasicConfigResolver {
     }
 
     @Override
-    public <K, V> Optional<Map<K, V>> ofMap(
-            ResolutionContext ctx,
-            Map<String, Map<String, Object>> meta,
-            ConfigResolverMapRequest<K, V> request) {
+    public <K, V> Optional<Map<K, V>> ofMap(ResolutionContext ctx,
+                                            Map<String, Map<String, Object>> meta,
+                                            ConfigResolverMapRequest<K, V> request) {
         Objects.requireNonNull(ctx);
         Objects.requireNonNull(request);
         Objects.requireNonNull(meta);
@@ -131,11 +128,10 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return validatedDefaults(thisMeta, request.attributeName(), request.valueType(), componentType);
     }
 
-    static Optional validatedDefaults(
-            Map<String, Object> meta,
-            String attrName,
-            Class<?> type,
-            Class<?> componentType) {
+    static Optional validatedDefaults(Map<String, Object> meta,
+                                      String attrName,
+                                      Class<?> type,
+                                      Class<?> componentType) {
         // check the default values...
         String defaultVal = (String) meta.get("value");
         if (defaultVal != null && defaultVal.equals(ConfiguredOption.UNCONFIGURED)) {
@@ -156,10 +152,9 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return Optional.empty();
     }
 
-    static <T> Class<T> validatedTypeForConfigBeanRegistry(
-            String attrName,
-            Class<T> type,
-            Class<?> cbType) {
+    static <T> Class<T> validatedTypeForConfigBeanRegistry(String attrName,
+                                                           Class<T> type,
+                                                           Class<?> cbType) {
         if (type.isArray()) {
             type = (Class<T>) type.getComponentType();
             if (type == null) {
@@ -174,10 +169,9 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return type;
     }
 
-    static <T> List<T> findInConfigBeanRegistryAsList(
-            ResolutionContext ctx,
-            Map<String, Map<String, Object>> meta,
-            ConfigResolverRequest<T> request) {
+    static <T> List<T> findInConfigBeanRegistryAsList(ResolutionContext ctx,
+                                                      Map<String, Map<String, Object>> meta,
+                                                      ConfigResolverRequest<T> request) {
         Class<T> type = validatedTypeForConfigBeanRegistry(request.attributeName(),
                                                            request.valueType(),
                                                            request.valueComponentType().orElse(null));
@@ -191,10 +185,9 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return Objects.requireNonNull(result);
     }
 
-    static <V> Map<String, V> findInConfigBeanRegistryAsMap(
-            ResolutionContext ctx,
-            Map<String, Map<String, Object>> meta,
-            ConfigResolverRequest<V> request) {
+    static <V> Map<String, V> findInConfigBeanRegistryAsMap(ResolutionContext ctx,
+                                                            Map<String, Map<String, Object>> meta,
+                                                            ConfigResolverRequest<V> request) {
         Class<?> type = validatedTypeForConfigBeanRegistry(request.attributeName(), request.valueType(), ctx.configBeanType());
         if (type == null) {
             return Map.of();
@@ -206,11 +199,10 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return Objects.requireNonNull(result);
     }
 
-    static Optional<?> parse(
-            String strValueToParse,
-            String attrName,
-            Class<?> type,
-            Class<?> componentType) {
+    static Optional<?> parse(String strValueToParse,
+                             String attrName,
+                             Class<?> type,
+                             Class<?> componentType) {
         if (strValueToParse == null) {
             return Optional.empty();
         }
@@ -235,11 +227,10 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return provider.parse(strValueToParse, type);
     }
 
-    static <T> Optional<T> optionalWrappedBean(
-            Object configBean,
-            String attrName,
-            Class<T> type,
-            Class<T> componentType) {
+    static <T> Optional<T> optionalWrappedBean(Object configBean,
+                                               String attrName,
+                                               Class<T> type,
+                                               Class<T> componentType) {
         if (type.isInstance(Objects.requireNonNull(configBean))
                 || (Optional.class.equals(type)
                         && (componentType != null) && componentType.isInstance(configBean))) {
@@ -253,11 +244,10 @@ class DefaultConfigResolver extends BasicConfigResolver {
         throw new UnsupportedOperationException("Cannot convert to type " + componentType + ": " + attrName);
     }
 
-    static <T, V> Optional<Collection<V>> optionalWrappedBeans(
-            List<?> configBeans,
-            String ignoredAttrName,
-            Class<T> ignoredType,
-            Class<V> componentType) {
+    static <T, V> Optional<Collection<V>> optionalWrappedBeans(List<?> configBeans,
+                                                               String ignoredAttrName,
+                                                               Class<T> ignoredType,
+                                                               Class<V> componentType) {
         assert (configBeans != null && !configBeans.isEmpty());
 
         configBeans.forEach(configBean -> {
@@ -267,13 +257,12 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return Optional.of((Collection) configBeans);
     }
 
-    static <K, V> Optional<Map<K, V>> optionalWrappedBeans(
-            Map<String, V> configBeans,
-            String attrName,
-            Class<?> keyType,
-            Class<?> ignoredKeyComponentType,
-            Class<?> type,
-            Class<?> componentType) {
+    static <K, V> Optional<Map<K, V>> optionalWrappedBeans(Map<String, V> configBeans,
+                                                           String attrName,
+                                                           Class<?> keyType,
+                                                           Class<?> ignoredKeyComponentType,
+                                                           Class<?> type,
+                                                           Class<?> componentType) {
         assert (configBeans != null && !configBeans.isEmpty() && (type != null) && componentType != null);
         if (keyType != null && String.class != keyType) {
             throw new UnsupportedOperationException("Only Map with key of String is currently supported: " + attrName);
@@ -286,10 +275,9 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return (Optional) Optional.of(configBeans);
     }
 
-    static String fullConfigKeyOf(
-            Config config,
-            String configKey,
-            Map<String, Map<String, Object>> metaAttributes) {
+    static String fullConfigKeyOf(Config config,
+                                  String configKey,
+                                  Map<String, Map<String, Object>> metaAttributes) {
         assert (hasValue(configKey));
         String parentKey;
         if (config != null) {
@@ -300,8 +288,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return parentKey + "." + configKey;
     }
 
-    static MetaConfigBeanInfo configBeanInfoOf(
-            Map<String, Map<String, Object>> metaAttributes) {
+    static MetaConfigBeanInfo configBeanInfoOf(Map<String, Map<String, Object>> metaAttributes) {
         Map<String, Object> meta = metaAttributes.get(TAG_META);
         if (meta == null) {
             return null;
@@ -310,8 +297,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return (MetaConfigBeanInfo) meta.get(ConfigBeanInfo.class.getName());
     }
 
-    static String configKeyOf(
-            Map<String, Map<String, Object>> metaAttributes) {
+    static String configKeyOf(Map<String, Map<String, Object>> metaAttributes) {
         MetaConfigBeanInfo cbi = configBeanInfoOf(metaAttributes);
         return (null == cbi) ? null : validatedConfigKey(cbi);
     }

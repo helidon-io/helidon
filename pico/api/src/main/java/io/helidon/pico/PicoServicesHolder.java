@@ -78,8 +78,7 @@ public abstract class PicoServicesHolder {
         BOOTSTRAP.set(null);
     }
 
-    static void bootstrap(
-            Bootstrap bootstrap) {
+    static void bootstrap(Bootstrap bootstrap) {
         Objects.requireNonNull(bootstrap);
         InternalBootstrap iBootstrap = InternalBootstrap.create(bootstrap, null);
         if (!BOOTSTRAP.compareAndSet(null, iBootstrap)) {
@@ -95,8 +94,7 @@ public abstract class PicoServicesHolder {
         }
     }
 
-    static Optional<Bootstrap> bootstrap(
-            boolean assignIfNeeded) {
+    static Optional<Bootstrap> bootstrap(boolean assignIfNeeded) {
         if (assignIfNeeded) {
             InternalBootstrap iBootstrap = InternalBootstrap.create();
             BOOTSTRAP.compareAndSet(null, iBootstrap);
@@ -119,8 +117,7 @@ public abstract class PicoServicesHolder {
         private final PicoServicesProvider provider;
         private final PicoServices picoServices;
 
-        private ProviderAndServicesTuple(
-                Optional<PicoServicesProvider> provider) {
+        private ProviderAndServicesTuple(Optional<PicoServicesProvider> provider) {
             this.provider = provider.orElse(null);
             this.picoServices = (provider.isPresent())
                     ? this.provider.services(bootstrap(true).orElseThrow()) : null;

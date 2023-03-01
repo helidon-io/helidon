@@ -59,12 +59,11 @@ class DefaultInjectionPlans {
      * @param logger            the logger to use for any logging
      * @return the injection plan per element identity belonging to the service provider
      */
-    static Map<String, InjectionPlan> createInjectionPlans(
-            PicoServices picoServices,
-            ServiceProvider<?> self,
-            DependenciesInfo dependencies,
-            boolean resolveIps,
-            System.Logger logger) {
+    static Map<String, InjectionPlan> createInjectionPlans(PicoServices picoServices,
+                                                           ServiceProvider<?> self,
+                                                           DependenciesInfo dependencies,
+                                                           boolean resolveIps,
+                                                           System.Logger logger) {
         Map<String, InjectionPlan> result = new LinkedHashMap<>();
         if (dependencies.allDependencies().isEmpty()) {
             return result;
@@ -77,13 +76,12 @@ class DefaultInjectionPlans {
     }
 
     @SuppressWarnings("unchecked")
-    private static void accumulate(
-            DependencyInfo dep,
-            Map<String, InjectionPlan> result,
-            PicoServices picoServices,
-            ServiceProvider<?> self,
-            boolean resolveIps,
-            System.Logger logger) {
+    private static void accumulate(DependencyInfo dep,
+                                   Map<String, InjectionPlan> result,
+                                   PicoServices picoServices,
+                                   ServiceProvider<?> self,
+                                   boolean resolveIps,
+                                   System.Logger logger) {
         ServiceInfoCriteria depTo = dep.dependencyTo();
         ServiceInfo selfInfo = self.serviceInfo();
         if (selfInfo.declaredWeight().isPresent()
@@ -147,7 +145,7 @@ class DefaultInjectionPlans {
         List<ServiceProvider<?>> serviceProviders =
                 (tmpServiceProviders != null && !tmpServiceProviders.isEmpty())
                         ? tmpServiceProviders.stream()
-                        .filter((sp) -> !isSelf(self, sp))
+                        .filter(sp -> !isSelf(self, sp))
                         .collect(Collectors.toList())
                         : tmpServiceProviders;
 
@@ -191,11 +189,10 @@ class DefaultInjectionPlans {
      * @return the resolution (and activation) of the qualified service provider(s) in the form acceptable to the injection point
      */
     @SuppressWarnings("unchecked")
-    static Object resolve(
-            ServiceProvider<?> self,
-            InjectionPointInfo ipInfo,
-            List<ServiceProvider<?>> serviceProviders,
-            System.Logger logger) {
+    static Object resolve(ServiceProvider<?> self,
+                          InjectionPointInfo ipInfo,
+                          List<ServiceProvider<?>> serviceProviders,
+                          System.Logger logger) {
         if (ipInfo.staticDeclaration()) {
             throw new InjectionException(ipInfo + ": static is not supported", null, self);
         }
@@ -288,8 +285,7 @@ class DefaultInjectionPlans {
         throw expectedToResolveCriteria(ipInfo, null, self);
     }
 
-    private static List<ServiceProvider<?>> toIpQualified(
-            Object target) {
+    private static List<ServiceProvider<?>> toIpQualified(Object target) {
         if (target instanceof Collection) {
             List<ServiceProvider<?>> result = new ArrayList<>();
             ((Collection<?>) target).stream()
@@ -303,8 +299,7 @@ class DefaultInjectionPlans {
                 : List.of();
     }
 
-    private static List<?> toIpUnqualified(
-            Object target) {
+    private static List<?> toIpUnqualified(Object target) {
         if (target instanceof Collection) {
             List<Object> result = new ArrayList<>();
             ((Collection<?>) target).stream()
@@ -318,9 +313,8 @@ class DefaultInjectionPlans {
                 : List.of(target);
     }
 
-    private static boolean isSelf(
-            ServiceProvider<?> self,
-            Object other) {
+    private static boolean isSelf(ServiceProvider<?> self,
+                                  Object other) {
         assert (self != null);
 
         if (self == other) {
@@ -338,19 +332,17 @@ class DefaultInjectionPlans {
         return false;
     }
 
-    private static boolean allowNullableInjectionPoint(
-            InjectionPointInfo ipInfo) {
+    private static boolean allowNullableInjectionPoint(InjectionPointInfo ipInfo) {
         ServiceInfoCriteria missingServiceInfo = ipInfo.dependencyToServiceInfo();
         Set<String> contractsNeeded = missingServiceInfo.contractsImplemented();
         return (1 == contractsNeeded.size() && contractsNeeded.contains(Interceptor.class.getName()));
     }
 
     @SuppressWarnings({"unchecked", "rawTypes"})
-    private static List<?> toEligibleInjectionRefs(
-            InjectionPointInfo ipInfo,
-            ServiceProvider<?> self,
-            List<ServiceProvider<?>> list,
-            boolean expected) {
+    private static List<?> toEligibleInjectionRefs(InjectionPointInfo ipInfo,
+                                                   ServiceProvider<?> self,
+                                                   List<ServiceProvider<?>> list,
+                                                   boolean expected) {
         List<?> result = new ArrayList<>();
 
         ContextualServiceQuery query = DefaultContextualServiceQuery.builder()
@@ -369,10 +361,9 @@ class DefaultInjectionPlans {
         return result;
     }
 
-    private static InjectionException expectedToResolveCriteria(
-            InjectionPointInfo ipInfo,
-            Throwable cause,
-            ServiceProvider<?> self) {
+    private static InjectionException expectedToResolveCriteria(InjectionPointInfo ipInfo,
+                                                                Throwable cause,
+                                                                ServiceProvider<?> self) {
         String msg = (cause == null) ? "expected" : "failed";
         return new InjectionException(msg + " to resolve a service instance appropriate for '"
                                               + ipInfo.serviceTypeName() + "." + ipInfo.elementName()

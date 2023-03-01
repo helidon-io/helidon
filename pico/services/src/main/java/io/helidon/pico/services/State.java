@@ -29,8 +29,7 @@ class State implements Resetable, Cloneable {
     private State() {
     }
 
-    static State create(
-            Phase phase) {
+    static State create(Phase phase) {
         return new State().currentPhase(phase);
     }
 
@@ -45,14 +44,12 @@ class State implements Resetable, Cloneable {
     }
 
     @Override
-    public boolean reset(
-            boolean deep) {
+    public boolean reset(boolean deep) {
         currentPhase(Phase.INIT).finished(false).lastError(null);
         return true;
     }
 
-    State currentPhase(
-            Phase phase) {
+    State currentPhase(Phase phase) {
         Phase lastPhase = this.currentPhase;
         this.currentPhase = Objects.requireNonNull(phase);
         if (lastPhase != this.currentPhase) {
@@ -66,8 +63,7 @@ class State implements Resetable, Cloneable {
         return currentPhase;
     }
 
-    State finished(
-            boolean finished) {
+    State finished(boolean finished) {
         this.isFinished = finished;
         return this;
     }
@@ -76,8 +72,7 @@ class State implements Resetable, Cloneable {
         return isFinished;
     }
 
-    State lastError(
-            Throwable t) {
+    State lastError(Throwable t) {
         this.lastError = t;
         return this;
     }

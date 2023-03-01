@@ -203,8 +203,7 @@ public interface ModuleInfoItem {
      * @param another the other descriptor item to merge
      * @return the merged descriptor
      */
-    default ModuleInfoItem mergeCreate(
-            ModuleInfoItem another) {
+    default ModuleInfoItem mergeCreate(ModuleInfoItem another) {
         if (another == this) {
             return this;
         }

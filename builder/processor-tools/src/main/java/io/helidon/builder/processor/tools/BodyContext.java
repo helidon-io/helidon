@@ -17,7 +17,6 @@
 package io.helidon.builder.processor.tools;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -442,7 +441,7 @@ public class BodyContext {
                                                 boolean isBeanStyleRequired) {
         AtomicReference<Optional<List<String>>> refAttrNames = new AtomicReference<>();
         BeanUtils.validateAndParseMethodName(method.elementName(), method.typeName().name(), isBeanStyleRequired, refAttrNames);
-        List<String> attrNames = (refAttrNames.get().isEmpty()) ? Collections.emptyList() : refAttrNames.get().get();
+        List<String> attrNames = (refAttrNames.get().isEmpty()) ? List.of() : refAttrNames.get().get();
         if (!isBeanStyleRequired) {
             return (!attrNames.isEmpty()) ? attrNames.get(0) : method.elementName();
         }
@@ -595,7 +594,7 @@ public class BodyContext {
                                                      method.typeName().name(), true, alternateNames);
                 assert (Objects.nonNull(alternateNames.get()));
                 final String currentAttrName = beanAttributeName;
-                Optional<String> alternateName = alternateNames.get().orElse(Collections.emptyList()).stream()
+                Optional<String> alternateName = alternateNames.get().orElse(List.of()).stream()
                         .filter(it -> !it.equals(currentAttrName))
                         .findFirst();
                 if (alternateName.isPresent() && !ctx.map.containsKey(alternateName.get())

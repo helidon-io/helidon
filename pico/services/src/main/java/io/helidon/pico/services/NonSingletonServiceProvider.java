@@ -32,16 +32,14 @@ import io.helidon.pico.Phase;
 class NonSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
     private final AbstractServiceProvider<T> delegate;
 
-    private NonSingletonServiceProvider(
-            AbstractServiceProvider<T> delegate) {
+    private NonSingletonServiceProvider(AbstractServiceProvider<T> delegate) {
         this.delegate = delegate;
         picoServices(Optional.of(delegate.picoServices()));
         serviceInfo(delegate.serviceInfo());
         dependencies(delegate.dependencies());
     }
 
-    static <T> T createAndActivate(
-            AbstractServiceProvider<T> delegate) {
+    static <T> T createAndActivate(AbstractServiceProvider<T> delegate) {
         NonSingletonServiceProvider<T> serviceProvider = new NonSingletonServiceProvider<>(delegate);
 
         LogEntryAndResult logEntryAndResult = serviceProvider.createLogEntryAndResult(Phase.ACTIVE);

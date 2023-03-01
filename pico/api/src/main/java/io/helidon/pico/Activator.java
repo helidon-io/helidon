@@ -50,7 +50,6 @@ public interface Activator<T> {
      * @param activationRequest activation request
      * @return the result of the activation
      */
-    ActivationResult activate(
-            ActivationRequest activationRequest);
+    ActivationResult activate(ActivationRequest activationRequest);
 
 }

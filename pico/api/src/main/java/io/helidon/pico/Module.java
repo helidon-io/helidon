@@ -37,8 +37,7 @@ public interface Module extends OptionallyNamed {
      *
      * @param binder the binder used to register the services to the registry
      */
-    void configure(
-            ServiceBinder binder);
+    void configure(ServiceBinder binder);
 
     @Override
     default Optional<String> named() {

@@ -41,9 +41,8 @@ import io.helidon.pico.tools.ToolsException;
      * @param parent the parent loader
      * @return the loader
      */
-    public static URLClassLoader create(
-            Collection<Path> classPath,
-            ClassLoader parent) {
+    public static URLClassLoader create(Collection<Path> classPath,
+                                        ClassLoader parent) {
         List<URL> urls = new ArrayList<>(classPath.size());
         try {
             for (Path dependency : classPath) {

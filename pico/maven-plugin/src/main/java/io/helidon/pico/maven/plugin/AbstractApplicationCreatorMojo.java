@@ -120,8 +120,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                                           + "was APT run and do you have a module-info?");
     }
 
-    static ToolsException noModuleFoundError(
-            String moduleName) {
+    static ToolsException noModuleFoundError(String moduleName) {
         return new ToolsException("no pico module named '" + moduleName + "' found in the current module - was APT run?");
     }
 
@@ -142,9 +141,8 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         return moduleName;
     }
 
-    ServiceProvider<Module> lookupThisModule(
-            String name,
-            Services services) {
+    ServiceProvider<Module> lookupThisModule(String name,
+                                             Services services) {
         return services.lookupFirst(Module.class, name, false).orElseThrow(() -> noModuleFoundError(name));
     }
 
@@ -193,8 +191,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
      * @param location the location for the located module-info
      * @return the module-info descriptor to return or null if none is available
      */
-    ModuleInfoDescriptor getAnyModuleInfo(
-            AtomicReference<File> location) {
+    ModuleInfoDescriptor getAnyModuleInfo(AtomicReference<File> location) {
         File file = getNonTestSourceRootPaths().stream()
                 .map(p -> new File(p.toFile(), REAL_MODULE_INFO_JAVA_NAME))
                 .filter(File::exists)
@@ -338,8 +335,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         }
     }
 
-    List<TypeName> toTypeNames(
-            List<String> permittedProviderQualifierTypeNames) {
+    List<TypeName> toTypeNames(List<String> permittedProviderQualifierTypeNames) {
         if (permittedProviderQualifierTypeNames == null || permittedProviderQualifierTypeNames.isEmpty()) {
             return List.of();
         }
@@ -349,8 +345,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                 .collect(Collectors.toList());
     }
 
-    Set<TypeName> toNames(
-            List<ServiceProvider<?>> services) {
+    Set<TypeName> toNames(List<ServiceProvider<?>> services) {
         Map<TypeName, ServiceProvider<?>> result = new LinkedHashMap<>();
         services.forEach(sp -> {
             sp = DefaultServiceBinder.toRootProvider(sp);
@@ -367,8 +362,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         return new TreeSet<>(result.keySet());
     }
 
-    void warn(
-            String msg) {
+    void warn(String msg) {
         ToolsException e = new ToolsException(toErrorMessage(maybeCreate(), "no modules to process"));
         if (PicoServices.isDebugEnabled()) {
             getLog().warn(e.getMessage(), e);

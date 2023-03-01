@@ -49,9 +49,8 @@ abstract class InternalBootstrap {
      * @param callingContext Optionally, the calling context if known - defaults to {@link io.helidon.pico.spi.CallingContext}
      * @return a newly created internal bootstrap instance
      */
-    static InternalBootstrap create(
-            Bootstrap bootstrap,
-            CallingContext callingContext) {
+    static InternalBootstrap create(Bootstrap bootstrap,
+                                    CallingContext callingContext) {
         return DefaultInternalBootstrap.builder()
                 .bootStrap((bootstrap == null) ? DefaultBootstrap.builder().build() : bootstrap)
                 .callingContext((callingContext == null) ? CallingContext.maybeCreate() : Optional.empty())

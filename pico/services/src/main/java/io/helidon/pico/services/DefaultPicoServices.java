@@ -89,9 +89,8 @@ class DefaultPicoServices implements PicoServices, Resetable {
      * @param bootstrap the bootstrap configuration
      * @param global    flag indicating whether this is the global con
      */
-    DefaultPicoServices(
-            Bootstrap bootstrap,
-            boolean global) {
+    DefaultPicoServices(Bootstrap bootstrap,
+                        boolean global) {
         this.bootstrap = bootstrap;
         this.cfg = DefaultPicoServicesConfig.createDefaultConfigBuilder().build();
         this.isGlobal = global;
@@ -145,8 +144,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
     }
 
     @Override
-    public Optional<ServiceBinder> createServiceBinder(
-            io.helidon.pico.Module module) {
+    public Optional<ServiceBinder> createServiceBinder(io.helidon.pico.Module module) {
         DefaultServices.assertPermitsDynamic(cfg);
         String moduleName = module.named().orElse(module.getClass().getName());
         return Optional.of(DefaultServiceBinder.create(this, moduleName, false));
@@ -191,9 +189,8 @@ class DefaultPicoServices implements PicoServices, Resetable {
         return Optional.ofNullable(result);
     }
 
-    private Map<String, ActivationResult> doShutdown(
-            DefaultServices services,
-            State state) {
+    private Map<String, ActivationResult> doShutdown(DefaultServices services,
+                                                     State state) {
         long start = System.currentTimeMillis();
 
         ThreadFactory threadFactory = r -> {
@@ -235,9 +232,8 @@ class DefaultPicoServices implements PicoServices, Resetable {
         private final InjectorOptions opts = InjectorOptions.DEFAULT.get();
         private final Map<String, ActivationResult> map = new LinkedHashMap<>();
 
-        Shutdown(
-                DefaultServices services,
-                State state) {
+        Shutdown(DefaultServices services,
+                 State state) {
             this.services = Objects.requireNonNull(services);
             this.state = Objects.requireNonNull(state);
             this.injector = injector().orElseThrow();
@@ -273,7 +269,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
             // next get all services that are beyond INIT state, and sort by runlevel order, and shut those down also
             List<ServiceProvider<?>> serviceProviders = services.lookupAll(DefaultServiceInfoCriteria.builder().build(), false);
             serviceProviders = serviceProviders.stream()
-                    .filter((sp) -> sp.currentActivationPhase().eligibleForDeactivation())
+                    .filter(sp -> sp.currentActivationPhase().eligibleForDeactivation())
                     .collect(Collectors.toList());
             serviceProviders.sort((o1, o2) -> {
                 int runLevel1 = o1.serviceInfo().realizedRunLevel();
@@ -288,8 +284,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
             return map;
         }
 
-        private void doFinalShutdown(
-                Collection<ServiceProvider<?>> serviceProviders) {
+        private void doFinalShutdown(Collection<ServiceProvider<?>> serviceProviders) {
             for (ServiceProvider<?> csp : serviceProviders) {
                 Phase startingActivationPhase = csp.currentActivationPhase();
                 ActivationResult result;
@@ -313,8 +308,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
 
     @Override
     // note that this is typically only called during testing, and also in the pico-maven-plugin
-    public synchronized boolean reset(
-            boolean deep) {
+    public synchronized boolean reset(boolean deep) {
         try {
             assertNotInitializing();
             if (isInitializing() || isInitialized()) {
@@ -442,8 +436,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
         state.finished(true);
     }
 
-    private List<Application> findApplications(
-            boolean load) {
+    private List<Application> findApplications(boolean load) {
         List<Application> result = applicationList.get();
         if (result != null) {
             return result;
@@ -464,8 +457,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
         return result;
     }
 
-    private List<io.helidon.pico.Module> findModules(
-            boolean load) {
+    private List<io.helidon.pico.Module> findModules(boolean load) {
         List<io.helidon.pico.Module> result = moduleList.get();
         if (result != null) {
             return result;
@@ -486,9 +478,8 @@ class DefaultPicoServices implements PicoServices, Resetable {
         return result;
     }
 
-    protected void bindApplications(
-            DefaultServices services,
-            Collection<Application> apps) {
+    protected void bindApplications(DefaultServices services,
+                                    Collection<Application> apps) {
         if (!cfg.usesCompileTimeApplications()) {
             LOGGER.log(System.Logger.Level.DEBUG, "application binding is disabled");
             return;
@@ -506,9 +497,8 @@ class DefaultPicoServices implements PicoServices, Resetable {
         apps.forEach(app -> services.bind(this, injectionPlanBinder, app));
     }
 
-    private void bindModules(
-            DefaultServices services,
-            Collection<io.helidon.pico.Module> modules) {
+    private void bindModules(DefaultServices services,
+                             Collection<io.helidon.pico.Module> modules) {
         if (!cfg.usesCompileTimeModules()) {
             LOGGER.log(System.Logger.Level.DEBUG, "module binding is disabled");
             return;
@@ -521,17 +511,15 @@ class DefaultPicoServices implements PicoServices, Resetable {
         }
     }
 
-    private void log(
-            String message) {
+    private void log(String message) {
         ActivationLogEntry entry = DefaultActivationLogEntry.builder()
                 .message(message)
                 .build();
         log.record(entry);
     }
 
-    private void errorLog(
-            String message,
-            Throwable t) {
+    private void errorLog(String message,
+                          Throwable t) {
         ActivationLogEntry entry = DefaultActivationLogEntry.builder()
                 .message(message)
                 .error(t)

@@ -74,8 +74,7 @@ class ToolBoxTest {
         setUp(config);
     }
 
-    void setUp(
-            Config config) {
+    void setUp(Config config) {
         this.picoServices = testableServices(config);
         this.services = picoServices.services();
     }
@@ -259,7 +258,7 @@ class ToolBoxTest {
         List<ServiceProvider<?>> allServices = services
                 .lookupAll(DefaultServiceInfoCriteria.builder().build(), true);
         allServices.stream()
-                .filter((sp) -> !(sp instanceof Provider))
+                .filter(sp -> !(sp instanceof Provider))
                 .forEach(sp -> {
                     sp.get();
                     assertThat("activation should not have triggered any lookups (for singletons): "

@@ -26,8 +26,7 @@ public interface Messager {
      *
      * @param message the message
      */
-    void debug(
-            String message);
+    void debug(String message);
 
     /**
      * Log a debug message.
@@ -35,25 +34,22 @@ public interface Messager {
      * @param message the message
      * @param t throwable
      */
-    void debug(
-            String message,
-            Throwable t);
+    void debug(String message,
+               Throwable t);
 
     /**
      * Log an info message.
      *
      * @param message the message
      */
-    void log(
-            String message);
+    void log(String message);
 
     /**
      * Log a warning.
      *
      * @param message the message
      */
-    void warn(
-            String message);
+    void warn(String message);
 
     /**
      * Log a warning message.
@@ -61,9 +57,8 @@ public interface Messager {
      * @param message the message
      * @param t throwable
      */
-    void warn(
-            String message,
-            Throwable t);
+    void warn(String message,
+              Throwable t);
 
     /**
      * Log an error message.
@@ -71,8 +66,7 @@ public interface Messager {
      * @param message the message
      * @param t any throwable
      */
-    void error(
-            String message,
-            Throwable t);
+    void error(String message,
+               Throwable t);
 
 }

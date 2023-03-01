@@ -29,8 +29,7 @@ import jakarta.inject.Singleton;
 public class OuterInterceptedImpl extends InterceptedImpl {
 
     @Inject
-    public OuterInterceptedImpl(
-            Optional<Intercepted> inner) {
+    public OuterInterceptedImpl(Optional<Intercepted> inner) {
         super(inner);
     }
 

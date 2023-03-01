@@ -46,9 +46,8 @@ class BoundedServiceProvider<T> implements ServiceProvider<T> {
     private final LazyValue<T> instance;
     private final LazyValue<List<T>> instances;
 
-    private BoundedServiceProvider(
-            ServiceProvider<T> binding,
-            InjectionPointInfo ipInfoCtx) {
+    private BoundedServiceProvider(ServiceProvider<T> binding,
+                                   InjectionPointInfo ipInfoCtx) {
         this.binding = Objects.requireNonNull(binding);
         this.ipInfoCtx = Objects.requireNonNull(ipInfoCtx);
         ContextualServiceQuery query = DefaultContextualServiceQuery.builder()
@@ -66,9 +65,8 @@ class BoundedServiceProvider<T> implements ServiceProvider<T> {
      * @param ipInfoCtx the binding context
      * @return the service provider created, wrapping the binding delegate provider
      */
-    static <V> ServiceProvider<V> create(
-            ServiceProvider<V> binding,
-            InjectionPointInfo ipInfoCtx) {
+    static <V> ServiceProvider<V> create(ServiceProvider<V> binding,
+                                         InjectionPointInfo ipInfoCtx) {
         assert (binding != null);
         assert (!(binding instanceof BoundedServiceProvider));
         if (binding instanceof AbstractServiceProvider) {
@@ -91,14 +89,12 @@ class BoundedServiceProvider<T> implements ServiceProvider<T> {
     }
 
     @Override
-    public boolean equals(
-            Object another) {
+    public boolean equals(Object another) {
         return binding.equals(another);
     }
 
     @Override
-    public Optional<T> first(
-            ContextualServiceQuery query) {
+    public Optional<T> first(ContextualServiceQuery query) {
         assert (query.injectionPointInfo().isEmpty() || ipInfoCtx.equals(query.injectionPointInfo().get()))
                 : query.injectionPointInfo() + " was not equal to " + this.ipInfoCtx;
         assert (ipInfoCtx.dependencyToServiceInfo().matches(query.serviceInfoCriteria()))
@@ -107,8 +103,7 @@ class BoundedServiceProvider<T> implements ServiceProvider<T> {
     }
 
     @Override
-    public List<T> list(
-            ContextualServiceQuery query) {
+    public List<T> list(ContextualServiceQuery query) {
         assert (query.injectionPointInfo().isEmpty() || ipInfoCtx.equals(query.injectionPointInfo().get()))
                 : query.injectionPointInfo() + " was not equal to " + this.ipInfoCtx;
         assert (ipInfoCtx.dependencyToServiceInfo().matches(query.serviceInfoCriteria()))

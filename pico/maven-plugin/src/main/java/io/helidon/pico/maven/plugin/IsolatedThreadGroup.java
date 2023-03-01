@@ -37,9 +37,8 @@ class IsolatedThreadGroup extends ThreadGroup implements Closeable {
     private final long timeoutInMillis;
     private Throwable uncaughtThrowable;
 
-    private IsolatedThreadGroup(
-            String name,
-            long timeOutInMillis) {
+    private IsolatedThreadGroup(String name,
+                                long timeOutInMillis) {
         super(name);
         this.timeoutInMillis = timeOutInMillis;
     }
@@ -50,8 +49,7 @@ class IsolatedThreadGroup extends ThreadGroup implements Closeable {
      * @param name the name of the group
      * @return the instance of the isolated thread group created
      */
-    static IsolatedThreadGroup create(
-            String name) {
+    static IsolatedThreadGroup create(String name) {
         return new IsolatedThreadGroup(name, DEFAULT_TIMEOUT_MILLIS);
     }
 
@@ -62,18 +60,17 @@ class IsolatedThreadGroup extends ThreadGroup implements Closeable {
      * @param timeOutInMillis timeoutInMillis used during close processing
      * @return the instance of the isolated thread group created
      */
-    static IsolatedThreadGroup create(
-            String name,
-            long timeOutInMillis) {
+    static IsolatedThreadGroup create(String name,
+                                      long timeOutInMillis) {
         return new IsolatedThreadGroup(name, timeOutInMillis);
     }
 
     /**
      * Adds an uncaught throwable for this thread group.
+     *
      * @param t the throwable to add, or null to reset
      */
-    void setUncaughtThrowable(
-            Throwable t) {
+    void setUncaughtThrowable(Throwable t) {
         if (t instanceof ThreadDeath) {
             return; // harmless
         }
@@ -116,9 +113,8 @@ class IsolatedThreadGroup extends ThreadGroup implements Closeable {
      * @param thread the thread
      * @param loader the loader
      */
-    void preStart(
-            Thread thread,
-            ClassLoader loader) {
+    void preStart(Thread thread,
+                  ClassLoader loader) {
         thread.setContextClassLoader(loader);
         thread.setName(getName() + "-" + counter.incrementAndGet());
     }
@@ -140,9 +136,8 @@ class IsolatedThreadGroup extends ThreadGroup implements Closeable {
         } while (foundNonDaemon && System.currentTimeMillis() < expiry);
     }
 
-    private void joinThread(
-            Thread thread,
-            long timeoutInMillis) {
+    private void joinThread(Thread thread,
+                            long timeoutInMillis) {
         try {
             thread.join(timeoutInMillis);
         } catch (InterruptedException e) {

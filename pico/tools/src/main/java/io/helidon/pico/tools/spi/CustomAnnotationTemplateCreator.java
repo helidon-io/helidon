@@ -42,7 +42,6 @@ public interface CustomAnnotationTemplateCreator {
      * @param request the request
      * @return the response that will describe what template to produce, or empty to skip
      */
-    Optional<CustomAnnotationTemplateResponse> create(
-            CustomAnnotationTemplateRequest request);
+    Optional<CustomAnnotationTemplateResponse> create(CustomAnnotationTemplateRequest request);
 
 }

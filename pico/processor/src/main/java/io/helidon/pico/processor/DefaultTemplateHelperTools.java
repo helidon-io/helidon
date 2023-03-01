@@ -95,9 +95,8 @@ class DefaultTemplateHelperTools implements TemplateHelperTools {
     }
 
     @Override
-    public Supplier<CharSequence> supplyFromResources(
-            String templateProfile,
-            String templateName) {
+    public Supplier<CharSequence> supplyFromResources(String templateProfile,
+                                                      String templateName) {
         TemplateHelper templateHelper = TemplateHelper.create();
         String template = templateHelper.loadTemplate(templateProfile, templateName);
         if (template == null) {
@@ -109,16 +108,14 @@ class DefaultTemplateHelperTools implements TemplateHelperTools {
     }
 
     @Override
-    public Supplier<CharSequence> supplyUsingLiteralTemplate(
-            CharSequence template) {
+    public Supplier<CharSequence> supplyUsingLiteralTemplate(CharSequence template) {
         return () -> template;
     }
 
-    Map<String, Object> gatherSubstitutions(
-            CustomAnnotationTemplateRequest req,
-            TemplateHelper templateHelper,
-            TypeName generatedType,
-            Function<Map<String, Object>, Map<String, Object>> propertiesFn) {
+    Map<String, Object> gatherSubstitutions(CustomAnnotationTemplateRequest req,
+                                            TemplateHelper templateHelper,
+                                            TypeName generatedType,
+                                            Function<Map<String, Object>, Map<String, Object>> propertiesFn) {
         Map<String, Object> substitutions = new HashMap<>();
         substitutions.put("generatedSticker", templateHelper.generatedStickerFor(generator.getName()));
         substitutions.put("annoTypeName", req.annoTypeName());

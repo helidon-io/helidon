@@ -57,16 +57,14 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     private final Messager msgrDelegate;
     private final System.Logger logger;
 
-    AbstractFilerMessager(
-            Filer filerDelegate,
-            Messager msgr) {
+    AbstractFilerMessager(Filer filerDelegate,
+                          Messager msgr) {
         this.filerDelegate = filerDelegate;
         this.msgrDelegate = msgr;
         this.logger = LOGGER;
     }
 
-    AbstractFilerMessager(
-            System.Logger logger) {
+    AbstractFilerMessager(System.Logger logger) {
         this.filerDelegate = null;
         this.msgrDelegate = null;
         this.logger = logger;
@@ -79,9 +77,8 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
      * @param msgr          the messager and error handler
      * @return the filer facade
      */
-    public static AbstractFilerMessager createAnnotationBasedFiler(
-            ProcessingEnvironment processingEnv,
-            Messager msgr) {
+    public static AbstractFilerMessager createAnnotationBasedFiler(ProcessingEnvironment processingEnv,
+                                                                   Messager msgr) {
         return new AbstractFilerMessager(Objects.requireNonNull(processingEnv.getFiler()), msgr) {};
     }
 
@@ -92,16 +89,14 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
      * @param logger    the logger for messaging
      * @return the filer facade
      */
-    public static AbstractFilerMessager createDirectFiler(
-            CodeGenPaths paths,
-            System.Logger logger) {
+    public static AbstractFilerMessager createDirectFiler(CodeGenPaths paths,
+                                                          System.Logger logger) {
         return new DirectFilerMessager(Objects.requireNonNull(paths), logger) {};
     }
 
     @Override
-    public JavaFileObject createSourceFile(
-            CharSequence name,
-            Element... originatingElements) throws IOException {
+    public JavaFileObject createSourceFile(CharSequence name,
+                                           Element... originatingElements) throws IOException {
         if (filerDelegate != null) {
             return filerDelegate.createSourceFile(name, originatingElements);
         }
@@ -109,9 +104,8 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     }
 
     @Override
-    public JavaFileObject createClassFile(
-            CharSequence name,
-            Element... originatingElements) throws IOException {
+    public JavaFileObject createClassFile(CharSequence name,
+                                          Element... originatingElements) throws IOException {
         if (filerDelegate != null) {
             return filerDelegate.createClassFile(name, originatingElements);
         }
@@ -119,11 +113,10 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     }
 
     @Override
-    public FileObject createResource(
-            JavaFileManager.Location location,
-            CharSequence moduleAndPkg,
-            CharSequence relativeName,
-            Element... originatingElements) throws IOException {
+    public FileObject createResource(JavaFileManager.Location location,
+                                     CharSequence moduleAndPkg,
+                                     CharSequence relativeName,
+                                     Element... originatingElements) throws IOException {
         if (filerDelegate != null) {
             return filerDelegate.createResource(location, moduleAndPkg, relativeName, originatingElements);
         }
@@ -131,10 +124,9 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     }
 
     @Override
-    public FileObject getResource(
-            JavaFileManager.Location location,
-            CharSequence moduleAndPkg,
-            CharSequence relativeName) throws IOException {
+    public FileObject getResource(JavaFileManager.Location location,
+                                  CharSequence moduleAndPkg,
+                                  CharSequence relativeName) throws IOException {
         if (filerDelegate != null) {
             return filerDelegate.getResource(location, moduleAndPkg, relativeName);
         }
@@ -142,8 +134,7 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     }
 
     @Override
-    public void debug(
-            String message) {
+    public void debug(String message) {
         if (msgrDelegate != null) {
             msgrDelegate.debug(message);
         }
@@ -153,9 +144,8 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     }
 
     @Override
-    public void debug(
-            String message,
-            Throwable t) {
+    public void debug(String message,
+                      Throwable t) {
         if (msgrDelegate != null) {
             msgrDelegate.debug(message, t);
         }
@@ -165,8 +155,7 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     }
 
     @Override
-    public void log(
-            String message) {
+    public void log(String message) {
         if (msgrDelegate != null) {
             msgrDelegate.log(message);
         }
@@ -176,8 +165,7 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     }
 
     @Override
-    public void warn(
-            String message) {
+    public void warn(String message) {
         if (msgrDelegate != null) {
             msgrDelegate.warn(message);
         }
@@ -187,9 +175,8 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     }
 
     @Override
-    public void warn(
-            String message,
-            Throwable t) {
+    public void warn(String message,
+                     Throwable t) {
         if (msgrDelegate != null) {
             msgrDelegate.warn(message, t);
         }
@@ -199,9 +186,8 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     }
 
     @Override
-    public void error(
-            String message,
-            Throwable t) {
+    public void error(String message,
+                      Throwable t) {
         if (msgrDelegate != null) {
             msgrDelegate.warn(message, t);
         }
@@ -214,26 +200,23 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     static class DirectFilerMessager extends AbstractFilerMessager {
         private final CodeGenPaths paths;
 
-        DirectFilerMessager(
-                CodeGenPaths paths,
-                System.Logger logger) {
+        DirectFilerMessager(CodeGenPaths paths,
+                            System.Logger logger) {
             super(logger);
             this.paths = paths;
         }
 
         @Override
-        public FileObject getResource(
-                JavaFileManager.Location location,
-                CharSequence moduleAndPkg,
-                CharSequence relativeName) throws IOException {
+        public FileObject getResource(JavaFileManager.Location location,
+                                      CharSequence moduleAndPkg,
+                                      CharSequence relativeName) throws IOException {
             return getResource(location, moduleAndPkg, relativeName, true);
         }
 
-        private FileObject getResource(
-                JavaFileManager.Location location,
-                CharSequence ignoreModuleAndPkg,
-                CharSequence relativeName,
-                boolean expectedToExist) throws IOException {
+        private FileObject getResource(JavaFileManager.Location location,
+                                       CharSequence ignoreModuleAndPkg,
+                                       CharSequence relativeName,
+                                       boolean expectedToExist) throws IOException {
             if (StandardLocation.CLASS_OUTPUT != location) {
                 throw new IllegalStateException(location + " is not supported for: " + relativeName);
             }
@@ -248,31 +231,27 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
         }
 
         @Override
-        public FileObject createResource(
-                JavaFileManager.Location location,
-                CharSequence moduleAndPkg,
-                CharSequence relativeName,
-                Element... originatingElements) throws IOException {
+        public FileObject createResource(JavaFileManager.Location location,
+                                         CharSequence moduleAndPkg,
+                                         CharSequence relativeName,
+                                         Element... originatingElements) throws IOException {
             return getResource(location, moduleAndPkg, relativeName, false);
         }
 
         @Override
-        public JavaFileObject createSourceFile(
-                CharSequence name,
-                Element... originatingElement) {
+        public JavaFileObject createSourceFile(CharSequence name,
+                                               Element... originatingElement) {
             Path javaFilePath = Objects.requireNonNull(toSourcePath(StandardLocation.SOURCE_OUTPUT, name.toString()));
             return new DirectJavaFileObject(javaFilePath.toFile());
         }
 
-        Path toSourcePath(
-                JavaFileManager.Location location,
-                String name) {
+        Path toSourcePath(JavaFileManager.Location location,
+                          String name) {
             return toSourcePath(location, DefaultTypeName.createFromTypeName(name));
         }
 
-        Path toSourcePath(
-                JavaFileManager.Location location,
-                TypeName typeName) {
+        Path toSourcePath(JavaFileManager.Location location,
+                          TypeName typeName) {
             String sourcePath;
             if (StandardLocation.SOURCE_PATH == location) {
                 sourcePath = paths.sourcePath().orElse(null);
@@ -295,8 +274,7 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
     static class DirectFileObject implements FileObject {
         private final File file;
 
-        DirectFileObject(
-                File file) {
+        DirectFileObject(File file) {
             this.file = file;
         }
 
@@ -323,14 +301,12 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
         }
 
         @Override
-        public Reader openReader(
-                boolean ignoreEncodingErrors) throws IOException {
+        public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
             return new InputStreamReader(openInputStream(), Charset.defaultCharset());
         }
 
         @Override
-        public CharSequence getCharContent(
-                boolean ignoreEncodingErrors) throws IOException {
+        public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
             return Files.readString(file.toPath());
         }
 
@@ -357,8 +333,7 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
 
 
     static class DirectJavaFileObject extends DirectFileObject implements JavaFileObject {
-        DirectJavaFileObject(
-                File javaFile) {
+        DirectJavaFileObject(File javaFile) {
             super(javaFile);
         }
 
@@ -368,9 +343,8 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
         }
 
         @Override
-        public boolean isNameCompatible(
-                String simpleName,
-                JavaFileObject.Kind kind) {
+        public boolean isNameCompatible(String simpleName,
+                                        JavaFileObject.Kind kind) {
             throw new IllegalStateException();
         }
 

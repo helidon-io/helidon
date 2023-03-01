@@ -58,7 +58,7 @@ class TemplateHelperTest {
     @Test
     public void applyMustacheSubstitutions() {
         TemplateHelper helper = TemplateHelper.create();
-        Map<String, Object> props = Collections.singletonMap("little", "big");
+        Map<String, Object> props = Map.of("little", "big");
 
         String val = helper.applySubstitutions("", props, true);
         assertThat(val, equalTo(""));

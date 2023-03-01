@@ -107,8 +107,7 @@ public enum Phase {
         return eligibleForDeactivation;
     }
 
-    Phase(
-            boolean eligibleForDeactivation) {
+    Phase(boolean eligibleForDeactivation) {
         this.eligibleForDeactivation = eligibleForDeactivation;
     }
 

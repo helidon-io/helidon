@@ -27,6 +27,12 @@ import io.helidon.common.config.Config;
 public abstract class IConfigBeanBuilderBase implements IConfigBeanBuilder {
     private Config cfg;
 
+    /**
+     * Constructor.
+     *
+     * @deprecated not intended to be created directly
+     */
+    @Deprecated
     protected IConfigBeanBuilderBase() {
     }
 

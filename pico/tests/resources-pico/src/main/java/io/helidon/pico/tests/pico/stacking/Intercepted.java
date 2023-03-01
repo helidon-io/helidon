@@ -25,23 +25,19 @@ public interface Intercepted {
     Intercepted getInner();
 
 //    @MyCompileTimeInheritableTestQualifier(value = "method", extendedValue = "ev method")
-    String sayHello(
-            /*@MyCompileTimeInheritableTestQualifier(value = "arg", extendedValue = "ev arg")*/ String arg);
+    String sayHello(/*@MyCompileTimeInheritableTestQualifier(value = "arg", extendedValue = "ev arg")*/ String arg);
 
     default void voidMethodWithNoArgs() {
     }
 
-    default void voidMethodWithAnnotatedPrimitiveIntArg(
-            /*@MyCompileTimeInheritableTestQualifier*/ int a) {
+    default void voidMethodWithAnnotatedPrimitiveIntArg(/*@MyCompileTimeInheritableTestQualifier*/ int a) {
     }
 
-    default int intMethodWithPrimitiveBooleanArg
-            (boolean b) {
+    default int intMethodWithPrimitiveBooleanArg(boolean b) {
         return 1;
     }
 
-    default byte[] byteArrayMethodWithAnnotatedPrimitiveCharArrayArg(
-            /*@MyCompileTimeInheritableTestQualifier*/ char[] c) {
+    default byte[] byteArrayMethodWithAnnotatedPrimitiveCharArrayArg(/*@MyCompileTimeInheritableTestQualifier*/ char[] c) {
         return null;
     }
 

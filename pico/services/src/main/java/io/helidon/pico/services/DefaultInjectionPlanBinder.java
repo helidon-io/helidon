@@ -26,14 +26,12 @@ class DefaultInjectionPlanBinder implements ServiceInjectionPlanBinder, ServiceI
 
     private final DefaultServices services;
 
-    DefaultInjectionPlanBinder(
-            DefaultServices services) {
+    DefaultInjectionPlanBinder(DefaultServices services) {
         this.services = services;
     }
 
     @Override
-    public Binder bindTo(
-            ServiceProvider<?> untrustedSp) {
+    public Binder bindTo(ServiceProvider<?> untrustedSp) {
         // don't trust what we get, but instead lookup the service provider that we carry in our services registry
         ServiceProvider<?> serviceProvider = services.serviceProviderFor(untrustedSp.serviceInfo().serviceTypeName());
         Optional<ServiceProviderBindable<?>> bindable = DefaultServiceBinder.toBindableProvider(serviceProvider);
@@ -53,32 +51,28 @@ class DefaultInjectionPlanBinder implements ServiceInjectionPlanBinder, ServiceI
     }
 
     @Override
-    public Binder bind(
-            String id,
-            ServiceProvider<?> serviceProvider) {
+    public Binder bind(String id,
+                       ServiceProvider<?> serviceProvider) {
         // NOP
         return this;
     }
 
     @Override
-    public Binder bindMany(
-            String id,
-            ServiceProvider<?>... serviceProviders) {
+    public Binder bindMany(String id,
+                           ServiceProvider<?>... serviceProviders) {
         // NOP
         return this;
     }
 
     @Override
-    public Binder bindVoid(
-            String ipIdentity) {
+    public Binder bindVoid(String ipIdentity) {
         // NOP
         return this;
     }
 
     @Override
-    public Binder resolvedBind(
-            String ipIdentity,
-            Class<?> serviceType) {
+    public Binder resolvedBind(String ipIdentity,
+                               Class<?> serviceType) {
         // NOP
         return this;
     }

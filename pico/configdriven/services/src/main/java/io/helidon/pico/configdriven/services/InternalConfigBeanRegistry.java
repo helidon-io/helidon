@@ -36,10 +36,9 @@ public interface InternalConfigBeanRegistry extends ConfigBeanRegistry, Resetabl
      * @param configuredByQualifier the qualifier associated with the {@link io.helidon.builder.config.spi.ConfigBeanInfo}
      * @param metaConfigBeanInfo the meta config bean info associated with this service provider
      */
-    void bind(
-            ConfiguredServiceProvider<?, ?> configuredServiceProvider,
-            QualifierAndValue configuredByQualifier,
-            MetaConfigBeanInfo metaConfigBeanInfo);
+    void bind(ConfiguredServiceProvider<?, ?> configuredServiceProvider,
+              QualifierAndValue configuredByQualifier,
+              MetaConfigBeanInfo metaConfigBeanInfo);
 
     /**
      * The first call to this initialize the bean registry, by loading all the backing configuration from the config
@@ -47,7 +46,6 @@ public interface InternalConfigBeanRegistry extends ConfigBeanRegistry, Resetabl
      *
      * @param picoServices the pico services instance
      */
-    void initialize(
-            PicoServices picoServices);
+    void initialize(PicoServices picoServices);
 
 }

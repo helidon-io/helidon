@@ -45,8 +45,7 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
      *
      * @param delegate the root delegate
      */
-    public UnconfiguredServiceProvider(
-            AbstractConfiguredServiceProvider<T, CB> delegate) {
+    public UnconfiguredServiceProvider(AbstractConfiguredServiceProvider<T, CB> delegate) {
         assert (delegate != null && delegate.isRootProvider());
         this.delegate = Objects.requireNonNull(delegate);
         rootProvider(delegate);
@@ -54,15 +53,13 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
     }
 
     @Override
-    public <C extends io.helidon.common.config.Config, T> Optional<T> toConfigBean(
-            C cfg,
-            Class<T> configBeanType) {
+    public <C extends io.helidon.common.config.Config, T> Optional<T> toConfigBean(C cfg,
+                                                                                   Class<T> configBeanType) {
         return Optional.empty();
     }
 
     @Override
-    protected Optional<T> maybeActivate(
-            ContextualServiceQuery query) {
+    protected Optional<T> maybeActivate(ContextualServiceQuery query) {
         return Optional.empty();
     }
 
@@ -92,8 +89,7 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
     }
 
     @Override
-    public String name(
-            boolean simple) {
+    public String name(boolean simple) {
         return delegate.name(simple);
     }
 
@@ -113,8 +109,7 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
     }
 
     @Override
-    public Optional<T> first(
-            ContextualServiceQuery query) {
+    public Optional<T> first(ContextualServiceQuery query) {
         // the entire point of this class is to really ensure that we do not resolve injection points!
         return Optional.empty();
     }
@@ -130,34 +125,29 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
     }
 
     @Override
-    public Map<String, InjectionPlan> getOrCreateInjectionPlan(
-            boolean resolveIps) {
+    public Map<String, InjectionPlan> getOrCreateInjectionPlan(boolean resolveIps) {
         return super.getOrCreateInjectionPlan(resolveIps);
     }
 
     @Override
-    public CB toConfigBean(
-            io.helidon.common.config.Config cfg) {
+    public CB toConfigBean(io.helidon.common.config.Config cfg) {
         return delegate.toConfigBean(cfg);
     }
 
     @Override
-    public IConfigBeanBuilderBase toConfigBeanBuilder(
-            Config config) {
+    public IConfigBeanBuilderBase toConfigBeanBuilder(Config config) {
         return delegate.toConfigBeanBuilder(config);
     }
 
     @Override
-    public <R> void visitAttributes(
-            CB configBean,
-            AttributeVisitor<Object> visitor,
-            R userDefinedContext) {
+    public <R> void visitAttributes(CB configBean,
+                                    AttributeVisitor<Object> visitor,
+                                    R userDefinedContext) {
         delegate.visitAttributes(configBean, visitor, userDefinedContext);
     }
 
     @Override
-    public String toConfigBeanInstanceId(
-            CB configBean) {
+    public String toConfigBeanInstanceId(CB configBean) {
         return delegate.toConfigBeanInstanceId(configBean);
     }
 
@@ -167,15 +157,13 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
     }
 
     @Override
-    public void configBeanInstanceId(
-            CB configBean,
-            String val) {
+    public void configBeanInstanceId(CB configBean,
+                                     String val) {
         delegate.configBeanInstanceId(configBean, val);
     }
 
     @Override
-    protected AbstractConfiguredServiceProvider<T, CB> createInstance(
-            Object configBean) {
+    protected AbstractConfiguredServiceProvider<T, CB> createInstance(Object configBean) {
         throw new UnsupportedOperationException();
     }
 
@@ -185,14 +173,12 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
     }
 
     @Override
-    protected void doPreDestroying(
-            LogEntryAndResult logEntryAndResult) {
+    protected void doPreDestroying(LogEntryAndResult logEntryAndResult) {
         delegate.doPreDestroying(logEntryAndResult);
     }
 
     @Override
-    protected void doDestroying(
-            LogEntryAndResult logEntryAndResult) {
+    protected void doDestroying(LogEntryAndResult logEntryAndResult) {
         delegate.doDestroying(logEntryAndResult);
     }
 

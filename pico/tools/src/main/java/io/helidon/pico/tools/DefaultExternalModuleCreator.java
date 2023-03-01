@@ -79,8 +79,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
     }
 
     @Override
-    public ExternalModuleCreatorResponse prepareToCreateExternalModule(
-            ExternalModuleCreatorRequest req) {
+    public ExternalModuleCreatorResponse prepareToCreateExternalModule(ExternalModuleCreatorRequest req) {
         Objects.requireNonNull(req);
 
         DefaultExternalModuleCreatorResponse.Builder responseBuilder =
@@ -132,8 +131,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         }
     }
 
-    private Collection<Path> identifyExternalJars(
-            Collection<String> packageNames) {
+    private Collection<Path> identifyExternalJars(Collection<String> packageNames) {
         Set<Path> classpath = new LinkedHashSet<>();
         for (String packageName : packageNames) {
             PackageInfo packageInfo = scan.get().getPackageInfo(packageName);
@@ -148,8 +146,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         return classpath;
     }
 
-    private void processServiceType(
-            ClassInfo classInfo) {
+    private void processServiceType(ClassInfo classInfo) {
         logger().log(System.Logger.Level.DEBUG, "processing " + classInfo);
 
         TypeName serviceTypeName = createTypeNameFromClassInfo(classInfo);
@@ -167,10 +164,9 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         processDependencies(classInfo, serviceTypeName);
     }
 
-    private void processTypeAndContracts(
-            ClassInfo classInfo,
-            TypeName serviceTypeName,
-            Collection<String> requiresModule) {
+    private void processTypeAndContracts(ClassInfo classInfo,
+                                         TypeName serviceTypeName,
+                                         Collection<String> requiresModule) {
         services.addServiceTypeName(serviceTypeName);
         services.addTypeForContract(serviceTypeName, serviceTypeName, true);
         services.addExternalRequiredModules(serviceTypeName, requiresModule);
@@ -206,9 +202,8 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         }
     }
 
-    private void processScopeAndQualifiers(
-            ClassInfo classInfo,
-            TypeName serviceTypeName) {
+    private void processScopeAndQualifiers(ClassInfo classInfo,
+                                           TypeName serviceTypeName) {
         String scopeTypeName = extractScopeTypeName(classInfo);
         if (scopeTypeName != null) {
             services.addScopeTypeName(serviceTypeName, scopeTypeName);
@@ -220,9 +215,8 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         }
     }
 
-    private void processPostConstructAndPreDestroy(
-            ClassInfo classInfo,
-            TypeName serviceTypeName) {
+    private void processPostConstructAndPreDestroy(ClassInfo classInfo,
+                                                   TypeName serviceTypeName) {
         MethodInfo postConstructMethod = methodsAnnotatedWith(classInfo, TypeNames.JAKARTA_POST_CONSTRUCT)
                 .stream().findFirst().orElse(null);
         if (postConstructMethod != null) {
@@ -236,9 +230,8 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         }
     }
 
-    private void processDependencies(
-            ClassInfo classInfo,
-            TypeName serviceTypeName) {
+    private void processDependencies(ClassInfo classInfo,
+                                     TypeName serviceTypeName) {
         Dependencies.BuilderContinuation continuation = Dependencies.builder(serviceTypeName.name());
         for (FieldInfo fieldInfo : classInfo.getFieldInfo()) {
             continuation = continuationProcess(serviceTypeName, continuation, fieldInfo);
@@ -258,10 +251,9 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         services.addDependencies(dependencies);
     }
 
-    private Dependencies.BuilderContinuation continuationProcess(
-            TypeName serviceTypeName,
-            Dependencies.BuilderContinuation continuation,
-            FieldInfo fieldInfo) {
+    private Dependencies.BuilderContinuation continuationProcess(TypeName serviceTypeName,
+                                                                 Dependencies.BuilderContinuation continuation,
+                                                                 FieldInfo fieldInfo) {
         if (hasAnnotation(fieldInfo, TypeNames.JAKARTA_INJECT)) {
             if (!PicoSupported.isSupportedInjectionPoint(logger(),
                                                          serviceTypeName, fieldInfo.toString(),
@@ -276,11 +268,10 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         return continuation;
     }
 
-    private Dependencies.BuilderContinuation continuationProcess(
-            TypeName serviceTypeName,
-            Dependencies.BuilderContinuation continuation,
-            InjectionPointInfo.ElementKind kind,
-            MethodInfo methodInfo) {
+    private Dependencies.BuilderContinuation continuationProcess(TypeName serviceTypeName,
+                                                                 Dependencies.BuilderContinuation continuation,
+                                                                 InjectionPointInfo.ElementKind kind,
+                                                                 MethodInfo methodInfo) {
         if (hasAnnotation(methodInfo, TypeNames.JAKARTA_INJECT)) {
             if (!isPicoSupported(serviceTypeName, methodInfo, logger())) {
                 return continuation;
@@ -302,18 +293,16 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         return continuation;
     }
 
-    static boolean isPicoSupported(
-            TypeName serviceTypeName,
-            MethodInfo methodInfo,
-            System.Logger logger) {
+    static boolean isPicoSupported(TypeName serviceTypeName,
+                                   MethodInfo methodInfo,
+                                   System.Logger logger) {
         return PicoSupported.isSupportedInjectionPoint(logger, serviceTypeName, methodInfo.toString(),
                                                        isPrivate(methodInfo.getModifiers()), methodInfo.isStatic());
     }
 
-    ExternalModuleCreatorResponse handleError(
-            ExternalModuleCreatorRequest request,
-            ToolsException e,
-            DefaultExternalModuleCreatorResponse.Builder builder) {
+    ExternalModuleCreatorResponse handleError(ExternalModuleCreatorRequest request,
+                                              ToolsException e,
+                                              DefaultExternalModuleCreatorResponse.Builder builder) {
         if (request == null || request.throwIfError()) {
             throw e;
         }

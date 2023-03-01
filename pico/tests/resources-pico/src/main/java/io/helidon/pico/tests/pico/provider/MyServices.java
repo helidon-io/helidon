@@ -57,8 +57,7 @@ public class MyServices {
         }
 
         @Override
-        public Optional<MyConcreteClassContract> first(
-                ContextualServiceQuery query) {
+        public Optional<MyConcreteClassContract> first(ContextualServiceQuery query) {
             assert (injected != null);
             assert (postConstructed);
             int num = counter++;
@@ -68,8 +67,7 @@ public class MyServices {
         }
 
         @Inject
-        void setMyConcreteClassContract(
-                MyConcreteClassContract injected) {
+        void setMyConcreteClassContract(MyConcreteClassContract injected) {
             assert (this.injected == null);
             this.injected = Objects.requireNonNull(injected);
         }

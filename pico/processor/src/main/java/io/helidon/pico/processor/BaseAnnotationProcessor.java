@@ -175,9 +175,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     }
 
     @Override
-    public boolean process(
-            Set<? extends TypeElement> annotations,
-            RoundEnvironment roundEnv) {
+    public boolean process(Set<? extends TypeElement> annotations,
+                           RoundEnvironment roundEnv) {
         this.roundEnv = roundEnv;
 
         try {
@@ -216,9 +215,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         }
     }
 
-    private boolean containsAnyAnnotation(
-            Element element,
-            Set<String> contraAnnotations) {
+    private boolean containsAnyAnnotation(Element element,
+                                          Set<String> contraAnnotations) {
         List<AnnotationAndValue> annotationAndValues =
                 createAnnotationAndValueListFromElement(element, processingEnv.getElementUtils());
         Optional<AnnotationAndValue> annotation = annotationAndValues.stream()
@@ -227,10 +225,9 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return annotation.isPresent();
     }
 
-    int doBulkInner(
-            Set<? extends Element> typesToProcess,
-            TypeName serviceTypeName,
-            B builder) {
+    int doBulkInner(Set<? extends Element> typesToProcess,
+                    TypeName serviceTypeName,
+                    B builder) {
         int injectedCtorCount = 0;
 
         try {
@@ -267,29 +264,26 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return injectedCtorCount;
     }
 
-    void doInner(
-            ExecutableElement method,
-            B builder) {
+    void doInner(ExecutableElement method,
+                 B builder) {
         // NOP
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    void doInner(
-            String serviceTypeName,
-            VariableElement var,
-            B builder,
-            String elemName,
-            int elemArgs,
-            Integer elemOffset,
-            InjectionPointInfo.ElementKind elemKind,
-            InjectionPointInfo.Access access,
-            Boolean isStaticAlready) {
+    void doInner(String serviceTypeName,
+                 VariableElement var,
+                 B builder,
+                 String elemName,
+                 int elemArgs,
+                 Integer elemOffset,
+                 InjectionPointInfo.ElementKind elemKind,
+                 InjectionPointInfo.Access access,
+                 Boolean isStaticAlready) {
         // NOP
     }
 
-    void doInner(
-            TypeElement type,
-            B builder) {
+    void doInner(TypeElement type,
+                 B builder) {
         createTypeNameFromElement(type).ifPresent(serviceTypeName -> processServiceType(serviceTypeName, type));
     }
 
@@ -299,17 +293,15 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
      * @param serviceTypeName the service type name
      * @param type the type element
      */
-    protected void processServiceType(
-            TypeName serviceTypeName,
-            TypeElement type) {
+    protected void processServiceType(TypeName serviceTypeName,
+                                      TypeElement type) {
         maybeSetBasicsForServiceType(serviceTypeName, type);
         maybeSetContractsAndModulesForServiceType(serviceTypeName, type);
         maybeSetInterceptorPlanForServiceType(serviceTypeName, type);
     }
 
-    void maybeSetInterceptorPlanForServiceType(
-            TypeName serviceTypeName,
-            TypeElement ignoredType) {
+    void maybeSetInterceptorPlanForServiceType(TypeName serviceTypeName,
+                                               TypeElement ignoredType) {
         if (services.hasVisitedInterceptorPlanFor(serviceTypeName)) {
             return;
         }
@@ -330,8 +322,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         services.addInterceptorPlanFor(serviceTypeName, plan);
     }
 
-    ServiceInfoBasics toInterceptedServiceInfoFor(
-            TypeName serviceTypeName) {
+    ServiceInfoBasics toInterceptedServiceInfoFor(TypeName serviceTypeName) {
         return DefaultServiceInfo.builder()
                 .serviceTypeName(serviceTypeName.name())
                 .declaredWeight(Optional.ofNullable(services.weightedPriorities().get(serviceTypeName)))
@@ -340,9 +331,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 .build();
     }
 
-    void maybeSetContractsAndModulesForServiceType(
-            TypeName serviceTypeName,
-            TypeElement type) {
+    void maybeSetContractsAndModulesForServiceType(TypeName serviceTypeName,
+                                                   TypeElement type) {
         if (services.hasContractsFor(serviceTypeName)) {
             return;
         }
@@ -370,9 +360,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         }
     }
 
-    void maybeSetBasicsForServiceType(
-            TypeName serviceTypeName,
-            TypeElement type) {
+    void maybeSetBasicsForServiceType(TypeName serviceTypeName,
+                                      TypeElement type) {
         if (services.hasHierarchyFor(serviceTypeName)) {
             return;
         }
@@ -427,9 +416,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         }
     }
 
-    boolean processPriority(
-            TypeName serviceTypeName,
-            TypeElement type) {
+    boolean processPriority(TypeName serviceTypeName,
+                            TypeElement type) {
         Optional<? extends AnnotationMirror> mirror = findAnnotationMirror(TypeNames.JAKARTA_PRIORITY,
                                                                            type.getAnnotationMirrors());
         if (mirror.isEmpty()) {
@@ -451,9 +439,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return true;
     }
 
-    List<TypeName> toServiceTypeHierarchy(
-            TypeElement type,
-            boolean includeSelf) {
+    List<TypeName> toServiceTypeHierarchy(TypeElement type,
+                                          boolean includeSelf) {
         List<TypeName> result = new ArrayList<>();
         if (!includeSelf) {
             TypeMirror mirror = type.getSuperclass();
@@ -467,10 +454,9 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return result;
     }
 
-    void adjustContractsForExternals(
-            Set<TypeName> contracts,
-            Set<TypeName> externalContracts,
-            Set<String> externalModuleNamesRequired) {
+    void adjustContractsForExternals(Set<TypeName> contracts,
+                                     Set<TypeName> externalContracts,
+                                     Set<String> externalModuleNamesRequired) {
         AtomicReference<String> externalModuleName = new AtomicReference<>();
         for (TypeName contract : contracts) {
             if (!isInThisModule(toTypeElement(contract), externalModuleName)) {
@@ -489,17 +475,15 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         contracts.removeAll(externalContracts);
     }
 
-    void maybeAddExternalModule(
-            String externalModuleName,
-            Set<String> externalModuleNamesRequired) {
+    void maybeAddExternalModule(String externalModuleName,
+                                Set<String> externalModuleNamesRequired) {
         if (needToDeclareModuleUsage(externalModuleName)) {
             externalModuleNamesRequired.add(externalModuleName);
         }
     }
 
-    boolean isInThisModule(
-            TypeElement type,
-            AtomicReference<String> moduleName) {
+    boolean isInThisModule(TypeElement type,
+                           AtomicReference<String> moduleName) {
         if (roundEnv.getRootElements().contains(type)) {
             return true;
         }
@@ -532,7 +516,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return false;
     }
 
-    List<String> annotationsWithAnnotationOf(TypeElement type, String annotation) {
+    List<String> annotationsWithAnnotationOf(TypeElement type,
+                                             String annotation) {
         List<String> list = annotationsWithAnnotationsOfNoOpposite(type, annotation);
         if (list.isEmpty()) {
             return annotationsWithAnnotationsOfNoOpposite(type, oppositeOf(annotation));
@@ -541,7 +526,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return list;
     }
 
-    private List<String> annotationsWithAnnotationsOfNoOpposite(TypeElement type, String annotation) {
+    private List<String> annotationsWithAnnotationsOfNoOpposite(TypeElement type,
+                                                                String annotation) {
         List<String> list = new ArrayList<>();
         type.getAnnotationMirrors()
                 .forEach(am -> findAnnotationMirror(annotation,
@@ -556,8 +542,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return CodeGenFiler.create(filer);
     }
 
-    boolean doFiler(
-            RoundEnvironment roundEnv) {
+    boolean doFiler(RoundEnvironment roundEnv) {
         // don't do filer until very end of the round
         boolean isProcessingOver = roundEnv.processingOver();
         ActivatorCreator creator = ActivatorCreatorProvider.instance();
@@ -633,9 +618,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         deferredMoves.clear();
     }
 
-    Set<TypeName> toContracts(
-            TypeElement type,
-            Set<TypeName> providerForSet) {
+    Set<TypeName> toContracts(TypeElement type,
+                              Set<TypeName> providerForSet) {
         Set<TypeName> result = new LinkedHashSet<>();
 
         Set<TypeMirror> processed = new LinkedHashSet<>();
@@ -696,29 +680,27 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return result;
     }
 
-    void gatherContractsToBeProcessed(
-            Set<TypeMirror> processed,
-            TypeElement typeElement) {
+    void gatherContractsToBeProcessed(Set<TypeMirror> processed,
+                                      TypeElement typeElement) {
         if (typeElement == null) {
             return;
         }
 
-        typeElement.getInterfaces().forEach((tm) -> {
+        typeElement.getInterfaces().forEach(tm -> {
             processed.add(tm);
             gatherContractsToBeProcessed(processed, TypeTools.toTypeElement(tm).orElse(null));
         });
 
         toServiceTypeHierarchy(typeElement, false).stream()
-                .map((te) -> toTypeElement(te).asType())
-                .forEach((tm) -> {
+                .map(te -> toTypeElement(te).asType())
+                .forEach(tm -> {
                     processed.add(tm);
                     gatherContractsToBeProcessed(processed, TypeTools.toTypeElement(tm).orElse(null));
                 });
     }
 
-    Set<TypeName> toExternalContracts(
-            TypeElement type,
-            Set<String> externalModulesRequired) {
+    Set<TypeName> toExternalContracts(TypeElement type,
+                                      Set<String> externalModulesRequired) {
         Set<TypeName> result = new LinkedHashSet<>();
 
         Stack<TypeMirror> stack = new Stack<>();
@@ -780,8 +762,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return result;
     }
 
-    TypeElement toTypeElement(
-            TypeName typeName) {
+    TypeElement toTypeElement(TypeName typeName) {
         return Objects.requireNonNull(processingEnv.getElementUtils().getTypeElement(typeName.name()));
     }
 
@@ -804,9 +785,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     }
 
     @Override
-    public void debug(
-            String message,
-            Throwable t) {
+    public void debug(String message,
+                      Throwable t) {
         if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
             if (logger.isLoggable(loggerLevel())) {
                 logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message, t);
@@ -818,8 +798,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     }
 
     @Override
-    public void debug(
-            String message) {
+    public void debug(String message) {
         if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
             if (logger.isLoggable(loggerLevel())) {
                 logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message);
@@ -831,8 +810,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     }
 
     @Override
-    public void log(
-            String message) {
+    public void log(String message) {
         //        logger.log(getLevel(), getClass().getSimpleName() + ": Note: " + message);
         if (processingEnv != null && processingEnv.getMessager() != null) {
             processingEnv.getMessager().printMessage(Kind.NOTE, message);
@@ -840,9 +818,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     }
 
     @Override
-    public void warn(
-            String message,
-            Throwable t) {
+    public void warn(String message,
+                     Throwable t) {
         if (Options.isOptionEnabled(Options.TAG_DEBUG) && t != null) {
             logger.log(Level.WARNING, getClass().getSimpleName() + ": Warning: " + message, t);
             t.printStackTrace();
@@ -853,8 +830,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     }
 
     @Override
-    public void warn(
-            String message) {
+    public void warn(String message) {
         if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
             logger.log(Level.WARNING, getClass().getSimpleName() + ": Warning: " + message);
         }
@@ -864,17 +840,15 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     }
 
     @Override
-    public void error(
-            String message,
-            Throwable t) {
+    public void error(String message,
+                      Throwable t) {
         logger.log(Level.ERROR, getClass().getSimpleName() + ": Error: " + message, t);
         if (processingEnv != null && processingEnv.getMessager() != null) {
             processingEnv.getMessager().printMessage(Kind.ERROR, message);
         }
     }
 
-    static boolean hasValue(
-            String val) {
+    static boolean hasValue(String val) {
         return (val != null && !val.isBlank());
     }
 

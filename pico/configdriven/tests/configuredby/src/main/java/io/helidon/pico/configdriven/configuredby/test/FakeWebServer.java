@@ -37,9 +37,8 @@ public class FakeWebServer implements FakeWebServerContract {
     private boolean running;
 
     @Inject
-    FakeWebServer(
-            FakeServerConfig cfg,
-            Optional<FakeTracer> tracer) {
+    FakeWebServer(FakeServerConfig cfg,
+                  Optional<FakeTracer> tracer) {
         this.cfg = Objects.requireNonNull(cfg);
         assert (tracer.isEmpty());
     }

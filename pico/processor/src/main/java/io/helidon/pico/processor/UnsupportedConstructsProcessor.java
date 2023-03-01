@@ -92,17 +92,15 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
     }
 
     @Override
-    public void init(
-            ProcessingEnvironment processingEnv) {
+    public void init(ProcessingEnvironment processingEnv) {
         this.processingEnv = processingEnv;
         Options.init(processingEnv);
         super.init(processingEnv);
     }
 
     @Override
-    public boolean process(
-            Set<? extends TypeElement> annotations,
-            RoundEnvironment roundEnv) {
+    public boolean process(Set<? extends TypeElement> annotations,
+                           RoundEnvironment roundEnv) {
         if (!annotations.isEmpty()) {
             Set<String> annotationTypeNames = annotations.stream().map(Object::toString).collect(Collectors.toSet());
             if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {

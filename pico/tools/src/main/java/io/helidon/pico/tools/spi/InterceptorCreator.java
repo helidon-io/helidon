@@ -102,8 +102,7 @@ public interface InterceptorCreator {
      * @param annotationType the annotation type name
      * @return true if the annotation type should trigger interceptor creation
      */
-    default boolean isWhiteListed(
-            String annotationType) {
+    default boolean isWhiteListed(String annotationType) {
         Objects.requireNonNull(annotationType);
         return whiteListedAnnotationTypes().contains(annotationType);
     }
@@ -117,10 +116,9 @@ public interface InterceptorCreator {
      * @param annotationTypeTriggers    the set of annotation names that are associated with interception.
      * @return the injection plan, or empty for the implementation to use the default strategy for creating a plan
      */
-    Optional<InterceptionPlan> createInterceptorPlan(
-            ServiceInfoBasics interceptedService,
-            ProcessingEnvironment processingEnvironment,
-            Set<String> annotationTypeTriggers);
+    Optional<InterceptionPlan> createInterceptorPlan(ServiceInfoBasics interceptedService,
+                                                     ProcessingEnvironment processingEnvironment,
+                                                     Set<String> annotationTypeTriggers);
 
     /**
      * Returns the processor appropriate for the context revealed in the calling arguments, favoring reflection if
@@ -131,10 +129,9 @@ public interface InterceptorCreator {
      * @param processEnv            optionally, the processing environment (should be passed if in annotation processor)
      * @return the processor to use for the given arguments
      */
-    InterceptorProcessor createInterceptorProcessor(
-            ServiceInfoBasics interceptedService,
-            InterceptorCreator delegateCreator,
-            Optional<ProcessingEnvironment> processEnv);
+    InterceptorProcessor createInterceptorProcessor(ServiceInfoBasics interceptedService,
+                                                    InterceptorCreator delegateCreator,
+                                                    Optional<ProcessingEnvironment> processEnv);
 
 
     /**
@@ -155,8 +152,7 @@ public interface InterceptorCreator {
          * @param interceptorAnnotationTriggers the annotation type triggering the interception creation.
          * @return the plan, or empty if there is no interception needed
          */
-        Optional<InterceptionPlan> createInterceptorPlan(
-                Set<String> interceptorAnnotationTriggers);
+        Optional<InterceptionPlan> createInterceptorPlan(Set<String> interceptorAnnotationTriggers);
 
     }
 

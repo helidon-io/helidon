@@ -158,8 +158,7 @@ public abstract class AbstractConfiguredByTest {
     }
 
     //    @Test
-    void testShutdown(
-            FakeWebServer fakeWebServer) {
+    void testShutdown(FakeWebServer fakeWebServer) {
         assertThat(fakeWebServer.isRunning(), is(true));
 
         picoServices.shutdown();

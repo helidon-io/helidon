@@ -51,8 +51,7 @@ public interface ActivatorCreator {
      * @param request the request for what to generate
      * @return the response result for the create operation
      */
-    ActivatorCreatorResponse createModuleActivators(
-            ActivatorCreatorRequest request);
+    ActivatorCreatorResponse createModuleActivators(ActivatorCreatorRequest request);
 
     /**
      * Generates just the interceptors.
@@ -61,9 +60,8 @@ public interface ActivatorCreator {
      * @param interceptionPlans the interceptor plans
      * @return the response result for the create operation
      */
-    InterceptorCreatorResponse codegenInterceptors(
-            GeneralCreatorRequest request,
-            Map<TypeName, InterceptionPlan> interceptionPlans);
+    InterceptorCreatorResponse codegenInterceptors(GeneralCreatorRequest request,
+                                                   Map<TypeName, InterceptionPlan> interceptionPlans);
 
     /**
      * Generates the would-be implementation type name that will be generated if
@@ -73,7 +71,6 @@ public interface ActivatorCreator {
      *
      * @return the code generated implementation type name that would be code generated
      */
-    TypeName toActivatorImplTypeName(
-            TypeName activatorTypeName);
+    TypeName toActivatorImplTypeName(TypeName activatorTypeName);
 
 }

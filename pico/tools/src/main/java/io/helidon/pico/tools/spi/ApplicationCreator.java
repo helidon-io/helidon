@@ -36,7 +36,6 @@ public interface ApplicationCreator {
      * @param request the request for what to generate
      * @return the result from the create operation
      */
-    ApplicationCreatorResponse createApplication(
-            ApplicationCreatorRequest request);
+    ApplicationCreatorResponse createApplication(ApplicationCreatorRequest request);
 
 }

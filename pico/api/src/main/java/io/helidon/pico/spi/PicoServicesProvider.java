@@ -31,7 +31,6 @@ public interface PicoServicesProvider {
      * @param bootstrap the primordial bootstrap configuration
      * @return pico services instance configured with the provided bootstrap instance
      */
-    PicoServices services(
-            Bootstrap bootstrap);
+    PicoServices services(Bootstrap bootstrap);
 
 }

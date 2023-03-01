@@ -63,8 +63,7 @@ public interface ActivationRequest {
      * @param targetPhase       the target phase
      * @return the activation request
      */
-    static ActivationRequest create(
-            Phase targetPhase) {
+    static ActivationRequest create(Phase targetPhase) {
         return DefaultActivationRequest.builder()
                 .targetPhase(targetPhase)
                 .build();

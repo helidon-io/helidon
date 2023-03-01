@@ -40,7 +40,6 @@ public interface ExternalModuleCreator {
      * @param request the request
      * @return the response
      */
-    ExternalModuleCreatorResponse prepareToCreateExternalModule(
-            ExternalModuleCreatorRequest request);
+    ExternalModuleCreatorResponse prepareToCreateExternalModule(ExternalModuleCreatorRequest request);
 
 }

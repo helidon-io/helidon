@@ -42,9 +42,8 @@ public class ContractAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     }
 
     @Override
-    public void doInner(
-            TypeElement type,
-            Void unused) {
+    public void doInner(TypeElement type,
+                        Void ignored) {
         // NOP (disable base processing)
     }
 

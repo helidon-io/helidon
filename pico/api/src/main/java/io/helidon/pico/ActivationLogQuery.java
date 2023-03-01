@@ -34,8 +34,7 @@ public interface ActivationLogQuery extends Resetable {
      * @return true if the log was cleared, false if the log was previously empty
      */
     @Override
-    boolean reset(
-            boolean deep);
+    boolean reset(boolean deep);
 
     /**
      * The full transcript of all services phase transitions being managed.

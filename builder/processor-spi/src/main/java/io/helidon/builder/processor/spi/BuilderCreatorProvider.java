@@ -54,8 +54,7 @@ public interface BuilderCreatorProvider {
      * @return the list of TypeAndBody sources to code-generate (tooling will handle the actual code generation aspects), or empty
      *         list to signal that the target type is not handled
      */
-    List<TypeAndBody> create(
-            TypeInfo typeInfo,
-            AnnotationAndValue builderAnnotation);
+    List<TypeAndBody> create(TypeInfo typeInfo,
+                             AnnotationAndValue builderAnnotation);
 
 }

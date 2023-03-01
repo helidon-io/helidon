@@ -79,8 +79,7 @@ public class InjectionException extends PicoServiceProviderException {
      * @param log the activation log
      * @return this exception instance
      */
-    public InjectionException activationLog(
-            Optional<ActivationLog> log) {
+    public InjectionException activationLog(Optional<ActivationLog> log) {
         if (log.isPresent()) {
             this.activationLog = log.orElseThrow();
         }

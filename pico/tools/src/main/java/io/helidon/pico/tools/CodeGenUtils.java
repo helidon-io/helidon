@@ -27,9 +27,8 @@ class CodeGenUtils {
     private CodeGenUtils() {
     }
 
-    static String elementNameKindRef(
-            String elemName,
-            ElementInfo.ElementKind elemKind) {
+    static String elementNameKindRef(String elemName,
+                                     ElementInfo.ElementKind elemKind) {
         if (elemKind == InjectionPointInfo.ElementKind.CONSTRUCTOR
                 && elemName.equals(InjectionPointInfo.CONSTRUCTOR)) {
             elemName = "CONSTRUCTOR";
@@ -39,8 +38,7 @@ class CodeGenUtils {
         return elemName;
     }
 
-    static String elementNameRef(
-            String elemName) {
+    static String elementNameRef(String elemName) {
         if (elemName.equals(ElementInfo.CONSTRUCTOR)) {
             return ElementInfo.class.getName() + "." + "CONSTRUCTOR";
         }

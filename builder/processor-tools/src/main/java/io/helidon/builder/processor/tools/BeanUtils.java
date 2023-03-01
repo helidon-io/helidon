@@ -16,7 +16,6 @@
 
 package io.helidon.builder.processor.tools;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -142,7 +141,7 @@ public class BeanUtils {
 
         c = Character.toLowerCase(c);
         String altName = "" + c + attrName.substring(1);
-        attributeNameRef.set(Optional.of(Collections.singletonList(isReservedWord(altName) ? name : altName)));
+        attributeNameRef.set(Optional.of(List.of(isReservedWord(altName) ? name : altName)));
 
         return true;
     }

@@ -98,8 +98,7 @@ public class Options {
      *
      * @param processingEnv the processing env
      */
-    public static void init(
-            ProcessingEnvironment processingEnv) {
+    public static void init(ProcessingEnvironment processingEnv) {
         if (OPTS.isEmpty()) {
             OPTS.put(TAG_DEBUG,
                      String.valueOf(isOptionEnabled(TAG_DEBUG, processingEnv)));
@@ -130,8 +129,7 @@ public class Options {
      * @param option the key (assumed to be meaningful to this class)
      * @return true if the option is enabled
      */
-    public static boolean isOptionEnabled(
-            String option) {
+    public static boolean isOptionEnabled(String option) {
         return "true".equals(getOption(option, ""));
     }
 
@@ -141,8 +139,7 @@ public class Options {
      * @param option the key (assumed to be meaningful to this class)
      * @return the option value
      */
-    public static Optional<String> getOption(
-            String option) {
+    public static Optional<String> getOption(String option) {
         return Optional.ofNullable(getOption(option, null));
     }
 
@@ -153,9 +150,8 @@ public class Options {
      * @param defaultVal the default value used if the associated value is null.
      * @return the option value
      */
-    private static String getOption(
-            String option,
-            String defaultVal) {
+    private static String getOption(String option,
+                                    String defaultVal) {
         assert (OPTS.containsKey(option));
         return OPTS.getOrDefault(option, defaultVal);
     }
@@ -166,8 +162,7 @@ public class Options {
      * @param option the key (assumed to be meaningful to this class)
      * @return the list of string values that were comma-delimited
      */
-    static List<String> getOptionStringList(
-            String option) {
+    static List<String> getOptionStringList(String option) {
         String result = getOption(option, null);
         if (!hasValue(result)) {
             return List.of();
@@ -176,9 +171,8 @@ public class Options {
         return toList(result);
     }
 
-    private static boolean isOptionEnabled(
-            String option,
-            ProcessingEnvironment processingEnv) {
+    private static boolean isOptionEnabled(String option,
+                                           ProcessingEnvironment processingEnv) {
         if (processingEnv != null) {
             String val = processingEnv.getOptions().get(option);
             if (val != null) {
@@ -189,10 +183,9 @@ public class Options {
         return getOption(option, "", processingEnv).equals("true");
     }
 
-    private static String getOption(
-            String option,
-            String defaultVal,
-            ProcessingEnvironment processingEnv) {
+    private static String getOption(String option,
+                                    String defaultVal,
+                                    ProcessingEnvironment processingEnv) {
         if (processingEnv != null) {
             String val = processingEnv.getOptions().get(option);
             if (val != null) {

@@ -48,8 +48,7 @@ class TrafficCop {
         private final Semaphore semaphore;
         private final AtomicBoolean closed = new AtomicBoolean(false);
 
-        private GreenLight(
-                Semaphore semaphore) throws InterruptedException {
+        private GreenLight(Semaphore semaphore) throws InterruptedException {
             this.semaphore = semaphore;
             semaphore.acquire();
         }

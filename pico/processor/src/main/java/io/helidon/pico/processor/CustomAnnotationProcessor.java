@@ -105,8 +105,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     }
 
     @Override
-    public void init(
-            ProcessingEnvironment processingEnv) {
+    public void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
         logger().log(System.Logger.Level.DEBUG, CustomAnnotationTemplateCreator.class.getSimpleName() + "s: " + PRODUCERS);
     }
@@ -116,16 +115,14 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         return Set.copyOf(ALL_ANNO_TYPES_HANDLED);
     }
 
-    Set<CustomAnnotationTemplateCreator> producersForType(
-            TypeName annoTypeName) {
+    Set<CustomAnnotationTemplateCreator> producersForType(TypeName annoTypeName) {
         Set<CustomAnnotationTemplateCreator> set = PRODUCERS_BY_ANNOTATION.get(annoTypeName);
         return (set == null) ? null : Collections.unmodifiableSet(set);
     }
 
     @Override
-    public boolean process(
-            Set<? extends TypeElement> annotations,
-            RoundEnvironment roundEnv) {
+    public boolean process(Set<? extends TypeElement> annotations,
+                           RoundEnvironment roundEnv) {
         try {
             if (!roundEnv.processingOver()) {
                 for (String annoType : annoTypes()) {
@@ -146,10 +143,9 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         }
     }
 
-    void doInner(
-            TypeName annoTypeName,
-            Set<? extends Element> typesToProcess,
-            RoundEnvironment roundEnv) {
+    void doInner(TypeName annoTypeName,
+                 Set<? extends Element> typesToProcess,
+                 RoundEnvironment roundEnv) {
         if (typesToProcess.isEmpty()) {
             return;
         }
@@ -186,8 +182,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         }
     }
 
-    void doFiler(
-            CustomAnnotationTemplateResponse response) {
+    void doFiler(CustomAnnotationTemplateResponse response) {
         AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, this);
         CodeGenFiler codegen = CodeGenFiler.create(filer);
         response.generatedSourceCode().forEach((typeName, codeBody) -> {
@@ -203,9 +198,8 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         });
     }
 
-    CustomAnnotationTemplateResponse process(
-            CustomAnnotationTemplateCreator producer,
-            CustomAnnotationTemplateRequest req) {
+    CustomAnnotationTemplateResponse process(CustomAnnotationTemplateCreator producer,
+                                             CustomAnnotationTemplateRequest req) {
         if (producer == null) {
             return null;
         }
@@ -226,11 +220,10 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         }
     }
 
-    DefaultCustomAnnotationTemplateRequest.Builder toRequestBuilder(
-            TypeName annoTypeName,
-            Element typeToProcess,
-            RoundEnvironment ignoredRoundEnv,
-            boolean wantDefaultMethods) {
+    DefaultCustomAnnotationTemplateRequest.Builder toRequestBuilder(TypeName annoTypeName,
+                                                                    Element typeToProcess,
+                                                                    RoundEnvironment ignoredRoundEnv,
+                                                                    boolean wantDefaultMethods) {
         TypeElement enclosingClassType = toEnclosingClassTypeElement(typeToProcess);
         TypeName enclosingClassTypeName = createTypeNameFromElement(enclosingClassType).orElse(null);
         if (enclosingClassTypeName == null) {
@@ -261,8 +254,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 .enclosingTypeInfo(enclosingClassTypeInfo);
     }
 
-    ServiceInfoBasics toBasicServiceInfo(
-            TypeName enclosingClassType) {
+    ServiceInfoBasics toBasicServiceInfo(TypeName enclosingClassType) {
         ActivatorCreatorCodeGen codeGen =
                 DefaultActivatorCreator.createActivatorCreatorCodeGen(servicesToProcess()).orElse(null);
         if (codeGen == null) {
@@ -271,8 +263,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         return DefaultActivatorCreator.toServiceInfo(enclosingClassType, codeGen);
     }
 
-    List<TypedElementName> toArgs(
-            Element typeToProcess) {
+    List<TypedElementName> toArgs(Element typeToProcess) {
         if (!(typeToProcess instanceof ExecutableElement)) {
             return List.of();
         }
@@ -280,13 +271,12 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         Elements elements = processingEnv.getElementUtils();
         List<TypedElementName> result = new ArrayList<>();
         ExecutableElement executableElement = (ExecutableElement) typeToProcess;
-        executableElement.getParameters().forEach((v) -> result.add(
+        executableElement.getParameters().forEach(v -> result.add(
                 createTypedElementNameFromElement(v, elements)));
         return result;
     }
 
-    TypeElement toEnclosingClassTypeElement(
-            Element typeToProcess) {
+    TypeElement toEnclosingClassTypeElement(Element typeToProcess) {
         while (typeToProcess != null && !(typeToProcess instanceof TypeElement)) {
             typeToProcess = typeToProcess.getEnclosingElement();
         }

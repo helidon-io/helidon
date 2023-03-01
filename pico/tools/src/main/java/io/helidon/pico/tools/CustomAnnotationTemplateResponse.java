@@ -59,9 +59,8 @@ public interface CustomAnnotationTemplateResponse {
      * @param responses the responses to aggregate into one response instance
      * @return the aggregated response
      */
-    static DefaultCustomAnnotationTemplateResponse.Builder aggregate(
-            CustomAnnotationTemplateRequest request,
-            CustomAnnotationTemplateResponse... responses) {
+    static DefaultCustomAnnotationTemplateResponse.Builder aggregate(CustomAnnotationTemplateRequest request,
+                                                                     CustomAnnotationTemplateResponse... responses) {
         DefaultCustomAnnotationTemplateResponse.Builder response = DefaultCustomAnnotationTemplateResponse.builder()
                 .request(request);
         for (CustomAnnotationTemplateResponse res : responses) {

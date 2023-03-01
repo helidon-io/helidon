@@ -82,9 +82,8 @@ public abstract class AbstractCreator {
      * @param isAnalysisOnly true if analysis only, where no code or resources will be physically written to disk
      * @return the code gen filer instance to use
      */
-    CodeGenFiler createDirectCodeGenFiler(
-            CodeGenPaths paths,
-            boolean isAnalysisOnly) {
+    CodeGenFiler createDirectCodeGenFiler(CodeGenPaths paths,
+                                          boolean isAnalysisOnly) {
         AbstractFilerMessager filer = AbstractFilerMessager.createDirectFiler(paths, logger);
         return new CodeGenFiler(filer, !isAnalysisOnly);
     }
@@ -95,8 +94,7 @@ public abstract class AbstractCreator {
      * @param req the creator request
      * @return the sticker
      */
-    String toGeneratedSticker(
-            GeneralCreatorRequest req) {
+    String toGeneratedSticker(GeneralCreatorRequest req) {
         String generator = (null == req) ? null : req.generator().orElse(null);
         return templateHelper.generatedStickerFor((generator != null) ? generator : getClass().getName());
     }
@@ -109,8 +107,7 @@ public abstract class AbstractCreator {
      * @param sp the collection of service providers
      * @return the code generated string for the service provider given
      */
-    static String toActivatorCodeGen(
-            ServiceProvider<?> sp) {
+    static String toActivatorCodeGen(ServiceProvider<?> sp) {
         if (sp instanceof AbstractServiceProvider && ((AbstractServiceProvider<?>) sp).isCustom()) {
             return null;
         }
@@ -123,8 +120,7 @@ public abstract class AbstractCreator {
      * @param coll the collection of service providers
      * @return the code generated string for the collection of service providers given
      */
-    static String toActivatorCodeGen(
-            Collection<ServiceProvider<?>> coll) {
+    static String toActivatorCodeGen(Collection<ServiceProvider<?>> coll) {
         return CommonUtils.toString(coll, AbstractCreator::toActivatorCodeGen, null);
     }
 
@@ -135,9 +131,8 @@ public abstract class AbstractCreator {
      * @param generatedAnno  the generator sticker value
      * @return the modified descriptor, fluent style
      */
-    DefaultModuleInfoDescriptor.Builder addPicoProviderRequirementsTo(
-            DefaultModuleInfoDescriptor.Builder moduleInfo,
-            String generatedAnno) {
+    DefaultModuleInfoDescriptor.Builder addPicoProviderRequirementsTo(DefaultModuleInfoDescriptor.Builder moduleInfo,
+                                                                      String generatedAnno) {
         Objects.requireNonNull(generatedAnno);
         // requirements on the pico services framework itself
         String preComment = "    // " + PicoServicesConfig.NAME + " services - Generated(" + generatedAnno + ")";
@@ -149,8 +144,7 @@ public abstract class AbstractCreator {
         return moduleInfo;
     }
 
-    ModuleInfoDescriptor createModuleInfo(
-            ModuleInfoCreatorRequest req) {
+    ModuleInfoDescriptor createModuleInfo(ModuleInfoCreatorRequest req) {
         String generatedAnno = templateHelper.generatedStickerFor(getClass().getName());
         String moduleInfoPath = req.moduleInfoPath().orElse(null);
         String moduleName = req.name().orElse(null);
@@ -292,8 +286,7 @@ public abstract class AbstractCreator {
         return addPicoProviderRequirementsTo(descriptorBuilder, generatedAnno);
     }
 
-    static Set<TypeName> toAllContracts(
-            Map<TypeName, Set<TypeName>> servicesToContracts) {
+    static Set<TypeName> toAllContracts(Map<TypeName, Set<TypeName>> servicesToContracts) {
         Set<TypeName> result = new LinkedHashSet<>();
         servicesToContracts.forEach((serviceTypeName, cn) -> result.addAll(cn));
         return result;
@@ -305,8 +298,7 @@ public abstract class AbstractCreator {
      * @param servicesToProcess the services to process
      * @return the payload for code gen paths
      */
-    static CodeGenPaths createCodeGenPaths(
-            ServicesToProcess servicesToProcess) {
+    static CodeGenPaths createCodeGenPaths(ServicesToProcess servicesToProcess) {
         Path moduleInfoFilePath = servicesToProcess.lastGeneratedModuleInfoFilePath();
         if (moduleInfoFilePath == null) {
             moduleInfoFilePath = servicesToProcess.lastKnownModuleInfoFilePath();

@@ -36,9 +36,8 @@ class IdAndToString {
      * @param id        the id
      * @param toString  the toString value
      */
-    IdAndToString(
-            String id,
-            Object toString) {
+    IdAndToString(String id,
+                  Object toString) {
         this.id = Objects.requireNonNull(id);
         this.toString = toString;
     }
@@ -64,8 +63,7 @@ class IdAndToString {
     }
 
     @Override
-    public boolean equals(
-            Object another) {
+    public boolean equals(Object another) {
         if (!(another instanceof IdAndToString)) {
             return false;
         }
@@ -80,9 +78,8 @@ class IdAndToString {
      * @param <T> the type of the list
      * @return the converted list
      */
-    static <T> List<IdAndToString> toList(
-            Collection<T> list,
-            Function<T, IdAndToString> toId) {
+    static <T> List<IdAndToString> toList(Collection<T> list,
+                                          Function<T, IdAndToString> toId) {
         if (list == null) {
             return null;
         }

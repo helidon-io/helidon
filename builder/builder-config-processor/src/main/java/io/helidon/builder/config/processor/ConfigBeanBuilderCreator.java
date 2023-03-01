@@ -18,7 +18,6 @@ package io.helidon.builder.config.processor;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -74,14 +73,13 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
 
     @Override
     public Set<Class<? extends Annotation>> supportedAnnotationTypes() {
-        return Collections.singleton(ConfigBean.class);
+        return Set.of(ConfigBean.class);
     }
 
     @Override
-    protected void preValidate(
-            TypeName implTypeName,
-            TypeInfo typeInfo,
-            AnnotationAndValue builderAnnotation) {
+    protected void preValidate(TypeName implTypeName,
+                               TypeInfo typeInfo,
+                               AnnotationAndValue builderAnnotation) {
         assertNoAnnotation(PICO_CONTRACT_TYPENAME, typeInfo);
         assertNoAnnotation(PICO_EXTERNAL_CONTRACT_TYPENAME, typeInfo);
         assertNoAnnotation(PICO_CONFIGUREDBY_TYPENAME, typeInfo);
@@ -95,33 +93,28 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     }
 
     @Override
-    protected String generatedVersionFor(
-            BodyContext ctx) {
+    protected String generatedVersionFor(BodyContext ctx) {
         return Versions.CURRENT_BUILDER_CONFIG_VERSION;
     }
 
     @Override
-    protected Optional<TypeName> baseExtendsTypeName(
-            BodyContext ctx) {
+    protected Optional<TypeName> baseExtendsTypeName(BodyContext ctx) {
         return Optional.of(DefaultTypeName.create(IConfigBeanBase.class));
     }
 
     @Override
-    protected Optional<TypeName> baseExtendsBuilderTypeName(
-            BodyContext ctx) {
+    protected Optional<TypeName> baseExtendsBuilderTypeName(BodyContext ctx) {
         return Optional.of(DefaultTypeName.create(IConfigBeanBuilderBase.class));
     }
 
     @Override
-    protected String instanceIdRef(
-            BodyContext ctx) {
+    protected String instanceIdRef(BodyContext ctx) {
         return "__instanceId()";
     }
 
     @Override
-    protected void appendExtraImports(
-            StringBuilder builder,
-            BodyContext ctx) {
+    protected void appendExtraImports(StringBuilder builder,
+                                      BodyContext ctx) {
         builder.append("\nimport ").append(AtomicInteger.class.getName()).append(";\n");
         builder.append("import ").append(Optional.class.getName()).append(";\n");
         builder.append("import ").append(Supplier.class.getName()).append(";\n\n");
@@ -134,9 +127,8 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     }
 
     @Override
-    protected void appendMetaAttributes(
-            StringBuilder builder,
-            BodyContext ctx) {
+    protected void appendMetaAttributes(StringBuilder builder,
+                                        BodyContext ctx) {
         if (ctx.doingConcreteType()) {
             super.appendMetaAttributes(builder, ctx);
             return;
@@ -155,11 +147,10 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     }
 
     @Override
-    protected void appendMetaProps(
-            StringBuilder builder,
-            BodyContext ctx,
-            String tag,
-            AtomicBoolean needsCustomMapOf) {
+    protected void appendMetaProps(StringBuilder builder,
+                                   BodyContext ctx,
+                                   String tag,
+                                   AtomicBoolean needsCustomMapOf) {
         builder.append("\t\t").append(tag);
         builder.append(".put(\"__meta\", Map.of(").append(ConfigBeanInfo.class.getName());
         builder.append(".class.getName(),\n\t\t\t\t").append(MetaConfigBeanInfo.class.getName()).append(".builder()\n");
@@ -173,9 +164,8 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     }
 
     @Override
-    protected void appendExtraFields(
-            StringBuilder builder,
-            BodyContext ctx) {
+    protected void appendExtraFields(StringBuilder builder,
+                                     BodyContext ctx) {
         super.appendExtraFields(builder, ctx);
         if (!ctx.hasParent() && !ctx.doingConcreteType()) {
             builder.append("\tprivate static final AtomicInteger __INSTANCE_ID = new AtomicInteger();\n");
@@ -183,10 +173,9 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     }
 
     @Override
-    protected void appendExtraCtorCode(
-            StringBuilder builder,
-            BodyContext ctx,
-            String builderTag) {
+    protected void appendExtraCtorCode(StringBuilder builder,
+                                       BodyContext ctx,
+                                       String builderTag) {
         if (!ctx.hasParent()) {
             builder.append("\t\tsuper(b, b.__config().isPresent() ? String.valueOf(__INSTANCE_ID.getAndIncrement()) : "
                                    + "\"-1\");\n");
@@ -196,10 +185,9 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     }
 
     @Override
-    protected void appendExtraToBuilderBuilderFunctions(
-            StringBuilder builder,
-            BodyContext ctx,
-            String decl) {
+    protected void appendExtraToBuilderBuilderFunctions(StringBuilder builder,
+                                                        BodyContext ctx,
+                                                        String decl) {
         if (ctx.doingConcreteType()) {
             String decl1 = decl.replace("{args}", Config.class.getName() + " cfg");
             javaDocToBuilder(builder, ctx, "cfg");
@@ -214,9 +202,8 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     }
 
     @Override
-    protected void appendExtraBuilderMethods(
-            StringBuilder builder,
-            BodyContext ctx) {
+    protected void appendExtraBuilderMethods(StringBuilder builder,
+                                             BodyContext ctx) {
         if (ctx.doingConcreteType()) {
             super.appendExtraBuilderMethods(builder, ctx);
             return;
@@ -261,10 +248,9 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                 TypeName mapKeyType = null;
                 TypeName mapKeyComponentType = null;
                 boolean isMap = typeName.equals(Map.class.getName());
-                boolean isCollection = (
-                        typeName.equals(Collection.class.getName())
-                                || typeName.equals(Set.class.getName())
-                                || typeName.equals(List.class.getName()));
+                boolean isCollection = (typeName.equals(Collection.class.getName())
+                                                || typeName.equals(Set.class.getName())
+                                                || typeName.equals(List.class.getName()));
                 if (isCollection) {
                     ofClause = "ofCollection";
                     type = type.typeArguments().get(0);
@@ -301,7 +287,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                         builder.append(".keyComponentType(").append(mapKeyComponentType.name()).append(".class)");
                     }
                 }
-                builder.append(".build())\n\t\t\t\t\t.ifPresent((val) -> this.").append(method.elementName()).append("((");
+                builder.append(".build())\n\t\t\t\t\t.ifPresent(val -> this.").append(method.elementName()).append("((");
                 builder.append(outerTypeName).append(") val));\n");
                 i++;
             }
@@ -318,21 +304,18 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     }
 
     @Override
-    protected boolean overridesVisitAttributes(
-            BodyContext ctx) {
+    protected boolean overridesVisitAttributes(BodyContext ctx) {
         return true;
     }
 
     @Override
-    protected String toConfigKey(
-            String attrName) {
+    protected String toConfigKey(String attrName) {
         return ConfigBeanInfo.toConfigKey(attrName);
     }
 
-    private void appendConfigBeanInfoAttributes(
-            StringBuilder builder,
-            TypeInfo typeInfo,
-            AnnotationAndValue configBeanAnno) {
+    private void appendConfigBeanInfoAttributes(StringBuilder builder,
+                                                TypeInfo typeInfo,
+                                                AnnotationAndValue configBeanAnno) {
         String configKey = configBeanAnno.value(ConfigBeanInfo.TAG_KEY).orElse(null);
         configKey = Objects.requireNonNull(normalizeConfiguredOptionKey(configKey, typeInfo.typeName().className()));
         builder.append("\t\t\t\t\t\t.value(\"")
@@ -347,8 +330,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                 .append(configBeanAnno.value(ConfigBeanInfo.TAG_WANT_DEFAULT_CONFIG_BEAN).orElseThrow()).append(")\n");
     }
 
-    private void javaDocMetaAttributesGetter(
-            StringBuilder builder) {
+    private void javaDocMetaAttributesGetter(StringBuilder builder) {
         builder.append("\t/**\n"
                                + "\t * Returns the {@code ConfigBean} type.\n"
                                + "\t *\n"
@@ -356,10 +338,9 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                                + "\t */\n");
     }
 
-    private void javaDocToBuilder(
-            StringBuilder builder,
-            BodyContext ctx,
-            String argTag) {
+    private void javaDocToBuilder(StringBuilder builder,
+                                  BodyContext ctx,
+                                  String argTag) {
         builder.append("\t/**\n"
                                + "\t * Creates a builder for this type, initialized with the Config value passed.\n"
                                + "\t *\n");
@@ -368,10 +349,9 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
         builder.append("}\n\t */\n");
     }
 
-    private void javaDocAcceptResolveConfigCtx(
-            StringBuilder builder,
-            BodyContext ctx,
-            String argTag) {
+    private void javaDocAcceptResolveConfigCtx(StringBuilder builder,
+                                               BodyContext ctx,
+                                               String argTag) {
         builder.append("\t\t/**\n"
                                + "\t\t * Accept the config, resolves it, optionally validates.\n"
                                + "\t\t *\n");
@@ -379,10 +359,9 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
         builder.append("\t\t */\n");
     }
 
-    private String toConfigKey(
-            String attrName,
-            TypedElementName method,
-            AnnotationAndValue ignoredBuilderAnnotation) {
+    private String toConfigKey(String attrName,
+                               TypedElementName method,
+                               AnnotationAndValue ignoredBuilderAnnotation) {
         String configKey = null;
         Optional<? extends AnnotationAndValue> configuredOptions = DefaultAnnotationAndValue
                 .findFirst(ConfiguredOption.class.getName(), method.annotations());
@@ -395,9 +374,8 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
         return configKey;
     }
 
-    private void assertNoAnnotation(
-            String annoTypeName,
-            TypeInfo typeInfo) {
+    private void assertNoAnnotation(String annoTypeName,
+                                    TypeInfo typeInfo) {
         Optional<? extends AnnotationAndValue> anno = DefaultAnnotationAndValue
                 .findFirst(annoTypeName, typeInfo.annotations());
         if (anno.isPresent()) {

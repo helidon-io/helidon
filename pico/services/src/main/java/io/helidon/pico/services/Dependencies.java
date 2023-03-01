@@ -51,8 +51,7 @@ public class Dependencies {
      * @param serviceTypeName the service type name
      * @return the fluent builder
      */
-    public static BuilderContinuation builder(
-            String serviceTypeName) {
+    public static BuilderContinuation builder(String serviceTypeName) {
         Objects.requireNonNull(serviceTypeName);
         return new BuilderContinuation(serviceTypeName);
     }
@@ -81,11 +80,10 @@ public class Dependencies {
          * @return the builder
          */
         // note: called from generated code
-        public BuilderContinuation add(
-                String elemName,
-                Class<?> elemType,
-                InjectionPointInfo.ElementKind kind,
-                InjectionPointInfo.Access access) {
+        public BuilderContinuation add(String elemName,
+                                       Class<?> elemType,
+                                       InjectionPointInfo.ElementKind kind,
+                                       InjectionPointInfo.Access access) {
             if (InjectionPointInfo.ElementKind.FIELD != kind && Void.class != elemType) {
                 throw new IllegalStateException("should not use this method for method types");
             }
@@ -104,12 +102,11 @@ public class Dependencies {
          * @return the builder
          */
         // note: called from generated code
-        public BuilderContinuation add(
-                String elemName,
-                Class<?> elemType,
-                InjectionPointInfo.ElementKind kind,
-                int elemArgs,
-                InjectionPointInfo.Access access) {
+        public BuilderContinuation add(String elemName,
+                                       Class<?> elemType,
+                                       InjectionPointInfo.ElementKind kind,
+                                       int elemArgs,
+                                       InjectionPointInfo.Access access) {
             if (InjectionPointInfo.ElementKind.FIELD == kind && 0 != elemArgs) {
                 throw new IllegalStateException("should not have args for field: " + elemName);
             }
@@ -128,12 +125,11 @@ public class Dependencies {
          * @return the builder
          */
         // note: called from generated code
-        public BuilderContinuation add(
-                Class<?> serviceType,
-                String elemName,
-                Class<?> elemType,
-                InjectionPointInfo.ElementKind kind,
-                InjectionPointInfo.Access access) {
+        public BuilderContinuation add(Class<?> serviceType,
+                                       String elemName,
+                                       Class<?> elemType,
+                                       InjectionPointInfo.ElementKind kind,
+                                       InjectionPointInfo.Access access) {
             if (InjectionPointInfo.ElementKind.FIELD != kind) {
                 throw new IllegalStateException("should not use this for method types");
             }
@@ -152,13 +148,12 @@ public class Dependencies {
          * @return the builder
          */
         // note: called from generated code
-        public BuilderContinuation add(
-                Class<?> serviceType,
-                String elemName,
-                Class<?> elemType,
-                InjectionPointInfo.ElementKind kind,
-                int elemArgs,
-                InjectionPointInfo.Access access) {
+        public BuilderContinuation add(Class<?> serviceType,
+                                       String elemName,
+                                       Class<?> elemType,
+                                       InjectionPointInfo.ElementKind kind,
+                                       int elemArgs,
+                                       InjectionPointInfo.Access access) {
             return add(serviceType.getName(), elemName, elemType.getName(), kind, elemArgs, access);
         }
 
@@ -168,8 +163,7 @@ public class Dependencies {
          * @param ipInfo the injection point info already built
          * @return the builder
          */
-        public BuilderContinuation add(
-                InjectionPointInfo ipInfo) {
+        public BuilderContinuation add(InjectionPointInfo ipInfo) {
             commitLastDependency();
 
             ipInfoBuilder = DefaultInjectionPointInfo.toBuilder(ipInfo);
@@ -183,8 +177,7 @@ public class Dependencies {
          * @return the builder
          */
         // note: called from generated code
-        public BuilderContinuation elemOffset(
-                Integer offset) {
+        public BuilderContinuation elemOffset(Integer offset) {
             ipInfoBuilder.elementOffset(Optional.ofNullable(offset));
             return this;
         }
@@ -206,8 +199,7 @@ public class Dependencies {
          * @return the builder
          */
         // note: called from generated code
-        public BuilderContinuation listWrapped(
-                boolean val) {
+        public BuilderContinuation listWrapped(boolean val) {
             ipInfoBuilder.listWrapped(val);
             return this;
         }
@@ -229,8 +221,7 @@ public class Dependencies {
          * @return the builder
          */
         // note: called from generated code
-        public BuilderContinuation providerWrapped(
-                boolean val) {
+        public BuilderContinuation providerWrapped(boolean val) {
             ipInfoBuilder.providerWrapped(val);
             return this;
         }
@@ -252,8 +243,7 @@ public class Dependencies {
          * @return the builder
          */
         // note: called from generated code
-        public BuilderContinuation optionalWrapped(
-                boolean val) {
+        public BuilderContinuation optionalWrapped(boolean val) {
             ipInfoBuilder.optionalWrapped(val);
             return this;
         }
@@ -264,8 +254,7 @@ public class Dependencies {
          * @param val the name
          * @return the builder
          */
-        public BuilderContinuation named(
-                String val) {
+        public BuilderContinuation named(String val) {
             ipInfoBuilder.addQualifier(DefaultQualifierAndValue.createNamed(val));
             return this;
         }
@@ -277,8 +266,7 @@ public class Dependencies {
          * @return the builder
          */
         // note: called from generated code
-        public BuilderContinuation addQualifier(
-                Class<? extends Annotation> val) {
+        public BuilderContinuation addQualifier(Class<? extends Annotation> val) {
             ipInfoBuilder.addQualifier(DefaultQualifierAndValue.create(val));
             return this;
         }
@@ -290,8 +278,7 @@ public class Dependencies {
          * @return the builder
          */
         // note: called from generated code
-        public BuilderContinuation addQualifier(
-                QualifierAndValue val) {
+        public BuilderContinuation addQualifier(QualifierAndValue val) {
             ipInfoBuilder.addQualifier(val);
             return this;
         }
@@ -302,8 +289,7 @@ public class Dependencies {
          * @param val the qualifier
          * @return the builder
          */
-        public BuilderContinuation qualifiers(
-                Collection<QualifierAndValue> val) {
+        public BuilderContinuation qualifiers(Collection<QualifierAndValue> val) {
             ipInfoBuilder.qualifiers(val);
             return this;
         }
@@ -323,8 +309,7 @@ public class Dependencies {
          * @param val flag indicating if static
          * @return the builder
          */
-        public BuilderContinuation staticDeclaration(
-                boolean val) {
+        public BuilderContinuation staticDeclaration(boolean val) {
             ipInfoBuilder.staticDeclaration(val);
             return this;
         }
@@ -354,13 +339,12 @@ public class Dependencies {
          * @param access            the element access
          * @return the builder
          */
-        public BuilderContinuation add(
-                String serviceTypeName,
-                String elemName,
-                String elemTypeName,
-                InjectionPointInfo.ElementKind kind,
-                int elemArgs,
-                InjectionPointInfo.Access access) {
+        public BuilderContinuation add(String serviceTypeName,
+                                       String elemName,
+                                       String elemTypeName,
+                                       InjectionPointInfo.ElementKind kind,
+                                       int elemArgs,
+                                       InjectionPointInfo.Access access) {
             commitLastDependency();
 
             // thus begins a new builder continuation round
@@ -422,9 +406,8 @@ public class Dependencies {
      * @param deps          the child set of dependencies
      * @return              the combined set
      */
-    public static DependenciesInfo combine(
-            DependenciesInfo parentDeps,
-            DependenciesInfo deps) {
+    public static DependenciesInfo combine(DependenciesInfo parentDeps,
+                                           DependenciesInfo deps) {
         Objects.requireNonNull(parentDeps);
         Objects.requireNonNull(deps);
 
@@ -442,8 +425,7 @@ public class Dependencies {
      * @param deps the dependencies, but might be actually in builder form
      * @return will always be the built version of the dependencies
      */
-    private static DependenciesInfo forceBuild(
-            DependenciesInfo deps) {
+    private static DependenciesInfo forceBuild(DependenciesInfo deps) {
         Objects.requireNonNull(deps);
 
         if (deps instanceof DefaultDependenciesInfo.Builder) {
@@ -453,8 +435,7 @@ public class Dependencies {
         return deps;
     }
 
-    static String toBaseIdentity(
-            InjectionPointInfo dep) {
+    static String toBaseIdentity(InjectionPointInfo dep) {
         ElementInfo.ElementKind kind = Objects.requireNonNull(dep.elementKind());
         String elemName = Objects.requireNonNull(dep.elementName());
         ElementInfo.Access access = Objects.requireNonNull(dep.access());
@@ -471,8 +452,7 @@ public class Dependencies {
         return baseId;
     }
 
-    static String toId(
-            InjectionPointInfo dep) {
+    static String toId(InjectionPointInfo dep) {
         ElementInfo.ElementKind kind = Objects.requireNonNull(dep.elementKind());
         String elemName = Objects.requireNonNull(dep.elementName());
         ElementInfo.Access access = Objects.requireNonNull(dep.access());
@@ -491,13 +471,11 @@ public class Dependencies {
         return id;
     }
 
-    private static Supplier<String> toPackageName(
-            String serviceTypeName) {
+    private static Supplier<String> toPackageName(String serviceTypeName) {
         return () -> toPackageName(DefaultTypeName.createFromTypeName(serviceTypeName));
     }
 
-    private static String toPackageName(
-            TypeName typeName) {
+    private static String toPackageName(TypeName typeName) {
         return (typeName != null) ? typeName.packageName() : null;
     }
 
@@ -508,9 +486,8 @@ public class Dependencies {
      * @param packageName   the package name of the owning service type containing the field
      * @return the field identity (relative to the owning service type)
      */
-    public static String toFieldIdentity(
-            String elemName,
-            Supplier<String> packageName) {
+    public static String toFieldIdentity(String elemName,
+                                         Supplier<String> packageName) {
         String id = Objects.requireNonNull(elemName);
         String pName = (packageName == null) ? null : packageName.get();
         if (pName != null) {
@@ -528,11 +505,10 @@ public class Dependencies {
      * @param packageName   the method's enclosing package name
      * @return the base identity (relative to the owning service type)
      */
-    public static String toMethodBaseIdentity(
-            String elemName,
-            int methodArgCount,
-            ElementInfo.Access access,
-            Supplier<String> packageName) {
+    public static String toMethodBaseIdentity(String elemName,
+                                              int methodArgCount,
+                                              ElementInfo.Access access,
+                                              Supplier<String> packageName) {
         String id = Objects.requireNonNull(elemName) + "|" + methodArgCount;
         if (ElementInfo.Access.PACKAGE_PRIVATE == access || elemName.equals(InjectionPointInfo.CONSTRUCTOR)) {
             String pName = (packageName == null) ? null : packageName.get();
@@ -554,12 +530,11 @@ public class Dependencies {
      * @param packageName   the package name of the owning service type containing the method
      * @return the unique identity (relative to the owning service type)
      */
-    public static String toMethodIdentity(
-            String elemName,
-            int methodArgCount,
-            Integer elemOffset,
-            ElementInfo.Access access,
-            Supplier<String> packageName) {
+    public static String toMethodIdentity(String elemName,
+                                          int methodArgCount,
+                                          Integer elemOffset,
+                                          ElementInfo.Access access,
+                                          Supplier<String> packageName) {
         String result = toMethodBaseIdentity(elemName, methodArgCount, access, packageName);
 
         if (elemOffset == null) {

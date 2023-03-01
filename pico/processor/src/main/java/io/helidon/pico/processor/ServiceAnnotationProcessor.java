@@ -69,9 +69,8 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     }
 
     @Override
-    public boolean process(
-            Set<? extends TypeElement> annotations,
-            RoundEnvironment roundEnv) {
+    public boolean process(Set<? extends TypeElement> annotations,
+                           RoundEnvironment roundEnv) {
         try {
             if (!roundEnv.processingOver()
                     && (servicesToProcess().moduleName() == null)) {
@@ -115,8 +114,7 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         }
     }
 
-    String getThisModuleName(
-            ModuleInfoDescriptor descriptor) {
+    String getThisModuleName(ModuleInfoDescriptor descriptor) {
         // user pass it in? if so then that will short-circuit the name calculation part
         String moduleName = Options.getOption(Options.TAG_MODULE_NAME).orElse(null);
         if (moduleName != null) {
@@ -125,10 +123,9 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         return (descriptor == null) ? null : descriptor.name();
     }
 
-    ModuleInfoDescriptor getThisModuleDescriptor(
-            AtomicReference<String> typeSuffix,
-            AtomicReference<File> moduleInfoFile,
-            AtomicReference<File> srcPath) {
+    ModuleInfoDescriptor getThisModuleDescriptor(AtomicReference<String> typeSuffix,
+                                                 AtomicReference<File> moduleInfoFile,
+                                                 AtomicReference<File> srcPath) {
         ModuleInfoDescriptor descriptor = tryFindModuleInfo(StandardLocation.SOURCE_OUTPUT,
                                                               typeSuffix,
                                                               moduleInfoFile,
@@ -161,9 +158,8 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         return descriptor;
     }
 
-    ModuleInfoDescriptor getThisModuleDescriptorFromSourceMain(
-            AtomicReference<File> moduleInfoFile,
-            AtomicReference<File> srcPath) {
+    ModuleInfoDescriptor getThisModuleDescriptorFromSourceMain(AtomicReference<File> moduleInfoFile,
+                                                               AtomicReference<File> srcPath) {
         if (srcPath != null && srcPath.get() != null && srcPath.get().getPath().contains(TARGET_DIR)) {
             String path = srcPath.get().getPath();
             int pos = path.indexOf(TARGET_DIR);
@@ -187,11 +183,10 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         return null;
     }
 
-    ModuleInfoDescriptor tryFindModuleInfo(
-            StandardLocation location,
-            AtomicReference<String> typeSuffix,
-            AtomicReference<File> moduleInfoFile,
-            AtomicReference<File> srcPath) {
+    ModuleInfoDescriptor tryFindModuleInfo(StandardLocation location,
+                                           AtomicReference<String> typeSuffix,
+                                           AtomicReference<File> moduleInfoFile,
+                                           AtomicReference<File> srcPath) {
         Filer filer = processingEnv.getFiler();
         try {
             FileObject f = filer.getResource(location, "", ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);

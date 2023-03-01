@@ -33,8 +33,7 @@ public interface StringValueParser {
      * @return the optional nullable parsed value
      * @throws java.lang.IllegalArgumentException if the format is not parsable or the return type is not supported
      */
-    <R> Optional<R> parse(
-            String val,
-            Class<R> type);
+    <R> Optional<R> parse(String val,
+                          Class<R> type);
 
 }

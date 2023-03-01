@@ -59,8 +59,7 @@ public class TableSaw extends AbstractSaw {
     }
 
     @Inject
-    public TableSaw(
-            Optional<Lubricant> lubricant) {
+    public TableSaw(Optional<Lubricant> lubricant) {
         ctorInjectedLubricantInSubClass = lubricant;
     }
 
@@ -70,36 +69,31 @@ public class TableSaw extends AbstractSaw {
     }
 
     @Inject
-    protected void injectLubricant(
-            Optional<Lubricant> lubricant) {
+    protected void injectLubricant(Optional<Lubricant> lubricant) {
         setterInjectedLubricantInSubClass = lubricant;
         setterInjectedLubricantInSubClassInjectedCount++;
     }
 
     @Inject
-    void setBladeProviderInSubclass(
-            Provider<AbstractBlade> blade) {
+    void setBladeProviderInSubclass(Provider<AbstractBlade> blade) {
         setterInjectedPkgPrivateProviderInSubClass = blade;
         setterInjectedPkgPrivateProviderInSubClassInjectedCount++;
     }
 
     @Inject
-    void setBladeOptionalInSubclass(
-            Optional<AbstractBlade> blade) {
+    void setBladeOptionalInSubclass(Optional<AbstractBlade> blade) {
         setterInjectedPkgPrivateOptionalInSubClass = blade;
         setterInjectedPkgPrivateOptionalInSubClassInjectedCount++;
     }
 
     @Inject
-    void setAllBladesInSubclass(
-            @Named("*") List<AbstractBlade> blades) {
+    void setAllBladesInSubclass(@Named("*") List<AbstractBlade> blades) {
         setterInjectedPkgPrivateListInSubClass = blades;
         setterInjectedPkgPrivateListInSubClassInjectedCount++;
     }
 
     @Inject
-    void setBladeProviderListInSubclass(
-            List<Provider<AbstractBlade>> blades) {
+    void setBladeProviderListInSubclass(List<Provider<AbstractBlade>> blades) {
         setterInjectedPkgPrivateProviderListInSubClass = blades;
         setterInjectedPkgPrivateProviderListInSubClassInjectedCount++;
     }

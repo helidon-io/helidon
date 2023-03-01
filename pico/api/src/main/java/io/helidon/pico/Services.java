@@ -57,8 +57,7 @@ public interface Services {
      * @return the best service provider matching the criteria
      * @throws io.helidon.pico.PicoException if resolution fails to resolve a match
      */
-    default <T> ServiceProvider<T> lookup(
-            Class<T> type) {
+    default <T> ServiceProvider<T> lookup(Class<T> type) {
         return lookupFirst(type, true).get();
     }
 
@@ -72,9 +71,8 @@ public interface Services {
      * @return the best service provider matching the criteria
      * @throws io.helidon.pico.PicoException if resolution fails to resolve a match
      */
-    default <T> ServiceProvider<T> lookup(
-            Class<T> type,
-            String name) {
+    default <T> ServiceProvider<T> lookup(Class<T> type,
+                                          String name) {
         return lookupFirst(type, name, true).get();
     }
 
@@ -88,9 +86,8 @@ public interface Services {
      * @return the best service provider matching the criteria, or {@code empty} if (@code expected = false) and no match found
      * @throws io.helidon.pico.PicoException if expected=true and resolution fails to resolve a match
      */
-    <T> Optional<ServiceProvider<T>> lookupFirst(
-            Class<T> type,
-            boolean expected);
+    <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
+                                                 boolean expected);
 
     /**
      * Retrieve the "first" service that implements a given contract type with no expectation that there is a match available
@@ -103,10 +100,9 @@ public interface Services {
      * @return the best service provider matching the criteria, or {@code empty} if (@code expected = false) and no match found
      * @throws io.helidon.pico.PicoException if expected=true and resolution fails to resolve a match
      */
-    <T> Optional<ServiceProvider<T>> lookupFirst(
-            Class<T> type,
-            String name,
-            boolean expected);
+    <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
+                                                 String name,
+                                                 boolean expected);
 
     /**
      * Retrieves the first match based upon the passed service info criteria.
@@ -117,8 +113,7 @@ public interface Services {
      * @throws io.helidon.pico.PicoException if resolution fails to resolve a match
      */
     @SuppressWarnings("unchecked")
-    default <T> ServiceProvider<T> lookup(
-            ServiceInfoCriteria criteria) {
+    default <T> ServiceProvider<T> lookup(ServiceInfoCriteria criteria) {
         return (ServiceProvider<T>) lookupFirst(criteria, true).orElseThrow();
     }
 
@@ -131,9 +126,8 @@ public interface Services {
      * @return the best service provider matching the criteria, or {@code empty} if (@code expected = false) and no match found
      * @throws io.helidon.pico.PicoException if expected=true and resolution fails to resolve a match
      */
-    <T> Optional<ServiceProvider<T>> lookupFirst(
-            ServiceInfoCriteria criteria,
-            boolean expected);
+    <T> Optional<ServiceProvider<T>> lookupFirst(ServiceInfoCriteria criteria,
+                                                 boolean expected);
 
     /**
      * Retrieves the first match based upon the passed service info criteria.
@@ -149,8 +143,7 @@ public interface Services {
      * @throws io.helidon.pico.PicoException if resolution fails to resolve a match
      */
     @SuppressWarnings("unchecked")
-    default <T> ServiceProvider<T> lookupFirst(
-            ServiceInfoCriteria criteria) {
+    default <T> ServiceProvider<T> lookupFirst(ServiceInfoCriteria criteria) {
         return (ServiceProvider<T>) lookupFirst(criteria, true).orElseThrow();
     }
 
@@ -168,8 +161,7 @@ public interface Services {
      * @throws io.helidon.pico.PicoException if resolution fails to resolve a match
      */
     @SuppressWarnings("unchecked")
-    default <T> ServiceProvider<T> lookupFirst(
-            Class<T> type) {
+    default <T> ServiceProvider<T> lookupFirst(Class<T> type) {
         return lookupFirst(type, true).orElseThrow();
     }
 
@@ -180,8 +172,7 @@ public interface Services {
      * @param <T> the type of the service being managed
      * @return the list of service providers matching criteria
      */
-    <T> List<ServiceProvider<T>> lookupAll(
-            Class<T> type);
+    <T> List<ServiceProvider<T>> lookupAll(Class<T> type);
 
     /**
      * Retrieve all services that match the criteria.
@@ -191,8 +182,7 @@ public interface Services {
      * @return the list of service providers matching criteria
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    default <T> List<ServiceProvider<T>> lookupAll(
-            ServiceInfoCriteria criteria) {
+    default <T> List<ServiceProvider<T>> lookupAll(ServiceInfoCriteria criteria) {
         return (List) lookupAll(criteria, false);
     }
 
@@ -203,9 +193,8 @@ public interface Services {
      * @param expected indicates whether the provider should throw if a match is not found
      * @return the list of service providers matching criteria
      */
-    List<ServiceProvider<?>> lookupAll(
-            ServiceInfoCriteria criteria,
-            boolean expected);
+    List<ServiceProvider<?>> lookupAll(ServiceInfoCriteria criteria,
+                                       boolean expected);
 
     /**
      * Implementors can provide a means to use a "special" services registry that better applies to the target injection
@@ -216,8 +205,7 @@ public interface Services {
      * @return the qualifying services relative to the given context
      * @see PicoServicesConfig#supportsContextualLookup()
      */
-    default Services contextualServices(
-            InjectionPointInfo ctx) {
+    default Services contextualServices(InjectionPointInfo ctx) {
         return this;
     }
 

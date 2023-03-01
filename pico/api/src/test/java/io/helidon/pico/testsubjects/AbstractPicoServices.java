@@ -44,8 +44,7 @@ abstract class AbstractPicoServices implements PicoServices {
     }
 
     @Override
-    public Optional<ServiceBinder> createServiceBinder(
-            Module module) {
+    public Optional<ServiceBinder> createServiceBinder(Module module) {
         return Optional.empty();
     }
 

@@ -52,8 +52,7 @@ public class DefaultPicoServicesProvider implements PicoServicesProvider, Reseta
     }
 
     @Override
-    public PicoServices services(
-            Bootstrap bootstrap) {
+    public PicoServices services(Bootstrap bootstrap) {
         Objects.requireNonNull(bootstrap);
         if (INSTANCE.get() == null) {
             DefaultPicoServices global = new DefaultPicoServices(bootstrap, true);
@@ -70,8 +69,7 @@ public class DefaultPicoServicesProvider implements PicoServicesProvider, Reseta
     }
 
     @Override
-    public synchronized boolean reset(
-            boolean deep) {
+    public synchronized boolean reset(boolean deep) {
         DefaultPicoServices services = INSTANCE.get();
         boolean result = (services != null);
         if (services != null) {

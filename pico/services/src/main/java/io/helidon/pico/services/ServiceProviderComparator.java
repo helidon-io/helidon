@@ -45,9 +45,8 @@ public class ServiceProviderComparator implements Comparator<Provider<?>>, Seria
     }
 
     @Override
-    public int compare(
-            Provider<?> p1,
-            Provider<?> p2) {
+    public int compare(Provider<?> p1,
+                       Provider<?> p2) {
         if (p1 == p2) {
             return 0;
         }

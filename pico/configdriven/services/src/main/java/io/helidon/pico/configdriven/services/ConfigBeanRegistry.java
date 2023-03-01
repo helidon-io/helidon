@@ -68,9 +68,8 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
      * @param <CB>          the config bean type
      * @return the list of known config keys
      */
-    <CB> List<CB> configBeansByConfigKey(
-            String key,
-            String fullConfigKey);
+    <CB> List<CB> configBeansByConfigKey(String key,
+                                         String fullConfigKey);
 
     /**
      * Similar to {@link #configBeansByConfigKey(String, String)}, but instead returns all the know config beans in a map
@@ -83,8 +82,7 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
      * @param <CB>          the config bean type
      * @return the list of known config keys
      */
-    <CB> Map<String, CB> configBeanMapByConfigKey(
-            String key,
-            String fullConfigKey);
+    <CB> Map<String, CB> configBeanMapByConfigKey(String key,
+                                                  String fullConfigKey);
 
 }

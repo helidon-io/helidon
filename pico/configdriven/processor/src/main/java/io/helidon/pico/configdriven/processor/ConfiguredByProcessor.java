@@ -17,7 +17,6 @@
 package io.helidon.pico.configdriven.processor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -88,9 +87,8 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     }
 
     @Override
-    public boolean process(
-            Set<? extends TypeElement> annotations,
-            RoundEnvironment roundEnv) {
+    public boolean process(Set<? extends TypeElement> annotations,
+                           RoundEnvironment roundEnv) {
         super.process(annotations, roundEnv);
 
         if (roundEnv.processingOver()) {
@@ -122,8 +120,7 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         return true;
     }
 
-    void process(
-            Element element) {
+    void process(Element element) {
         if (!(element instanceof TypeElement)) {
             throw new ToolsException("Expected " + element + " to be processed as a TypeElement");
         }
@@ -143,7 +140,7 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
             TypeName parentActivatorImplTypeName = ActivatorCreatorProvider.instance()
                     .toActivatorImplTypeName(parentServiceTypeName);
             parentServiceTypeName = toBuilder(parentActivatorImplTypeName)
-                    .typeArguments(Collections.singletonList(genericCB))
+                    .typeArguments(List.of(genericCB))
                     .build();
         } else {
             List<TypeName> typeArgs = List.of(serviceTypeName, genericCB);
@@ -165,19 +162,17 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         processServiceType(serviceTypeName, (TypeElement) element);
     }
 
-    void validate(
-            TypeElement element,
-            TypeName configBeanType,
-            TypeName serviceTypeName,
-            TypeName parentServiceTypeName) {
+    void validate(TypeElement element,
+                  TypeName configBeanType,
+                  TypeName serviceTypeName,
+                  TypeName parentServiceTypeName) {
         assertNoAnnotation(create(jakarta.inject.Singleton.class), element);
         validateBeanType(configBeanType);
         validateServiceType(serviceTypeName, parentServiceTypeName);
     }
 
-    void assertNoAnnotation(
-            TypeName annoType,
-            TypeElement element) {
+    void assertNoAnnotation(TypeName annoType,
+                            TypeElement element) {
         Set<AnnotationAndValue> annos = TypeTools.createAnnotationAndValueSet(element);
         Optional<? extends AnnotationAndValue> anno = DefaultAnnotationAndValue.findFirst(annoType.name(), annos);
         if (anno.isPresent()) {
@@ -186,8 +181,7 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         }
     }
 
-    void validateBeanType(
-            TypeName configBeanType) {
+    void validateBeanType(TypeName configBeanType) {
         TypeElement typeElement = (configBeanType == null)
                 ? null : processingEnv.getElementUtils().getTypeElement(configBeanType.name());
         if (typeElement == null) {
@@ -206,9 +200,8 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         }
     }
 
-    void validateServiceType(
-            TypeName serviceTypeName,
-            TypeName ignoredParentServiceTypeName) {
+    void validateServiceType(TypeName serviceTypeName,
+                             TypeName ignoredParentServiceTypeName) {
         TypeElement typeElement = (serviceTypeName == null)
                 ? null : processingEnv.getElementUtils().getTypeElement(serviceTypeName.name());
         if (typeElement == null) {
@@ -220,11 +213,10 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         }
     }
 
-    List<String> createExtraCodeGen(
-            TypeName activatorImplTypeName,
-            TypeName configBeanType,
-            boolean hasParent,
-            Map<String, String> configuredByAttributes) {
+    List<String> createExtraCodeGen(TypeName activatorImplTypeName,
+                                    TypeName configBeanType,
+                                    boolean hasParent,
+                                    Map<String, String> configuredByAttributes) {
         List<String> result = new ArrayList<>();
         TypeName configBeanImplName = toDefaultImpl(configBeanType);
 
@@ -324,8 +316,7 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         return result;
     }
 
-    TypeName toDefaultImpl(
-            TypeName configBeanType) {
+    TypeName toDefaultImpl(TypeName configBeanType) {
         return create(configBeanType.packageName(),
                               Builder.DEFAULT_IMPL_PREFIX + configBeanType.className() + Builder.DEFAULT_SUFFIX);
     }

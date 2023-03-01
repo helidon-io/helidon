@@ -264,11 +264,10 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
      * @param persistIt   pass true to write it to scratch, so that we can use it in the future for this module
      * @return the package name (which also typically doubles as the application name)
      */
-    protected String determinePackageName(
-            Optional<ServiceProvider<Module>> optModuleSp,
-            Collection<TypeName> typeNames,
-            ModuleInfoDescriptor descriptor,
-            boolean persistIt) {
+    protected String determinePackageName(Optional<ServiceProvider<Module>> optModuleSp,
+                                          Collection<TypeName> typeNames,
+                                          ModuleInfoDescriptor descriptor,
+                                          boolean persistIt) {
         String packageName = getPackageName();
         if (packageName == null) {
             // check for the existence of the file
@@ -309,8 +308,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
      *
      * @param packageName the package name
      */
-    protected void saveAppPackageName(
-            String packageName) {
+    protected void saveAppPackageName(String packageName) {
         ModuleUtils.saveAppPackageName(getPicoScratchDir().toPath(), packageName);
     }
 
@@ -321,8 +319,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
      */
     protected abstract void innerExecute() throws MojoExecutionException;
 
-    LinkedHashSet<Path> getDependencies(
-            String optionalScopeFilter) {
+    LinkedHashSet<Path> getDependencies(String optionalScopeFilter) {
         MavenProject project = getProject();
         LinkedHashSet<Path> result = new LinkedHashSet<>(project.getDependencyArtifacts().size());
         for (Object a : project.getDependencyArtifacts()) {
@@ -361,7 +358,8 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
         }
 
         @Override
-        public void debug(String message, Throwable t) {
+        public void debug(String message,
+                          Throwable t) {
             getLog().debug(message, t);
         }
 
@@ -376,12 +374,14 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
         }
 
         @Override
-        public void warn(String message, Throwable t) {
+        public void warn(String message,
+                         Throwable t) {
             getLog().warn(message, t);
         }
 
         @Override
-        public void error(String message, Throwable t) {
+        public void error(String message,
+                          Throwable t) {
             getLog().error(message, t);
         }
     }

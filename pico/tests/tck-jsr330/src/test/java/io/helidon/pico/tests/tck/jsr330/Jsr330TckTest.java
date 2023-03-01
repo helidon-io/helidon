@@ -59,8 +59,7 @@ class Jsr330TckTest {
         assertThat(toFailureReport(result), result.wasSuccessful(), is(true));
     }
 
-    String toFailureReport(
-            TestResult result) {
+    String toFailureReport(TestResult result) {
         StringBuilder builder = new StringBuilder();
         int count = 0;
         Enumeration<TestFailure> failures = result.failures();

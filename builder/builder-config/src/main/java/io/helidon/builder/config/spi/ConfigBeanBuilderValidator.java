@@ -39,10 +39,8 @@ public interface ConfigBeanBuilderValidator<CBB> {
      * @param configBeanBuilderType the config bean type
      * @return the validation round that can be used for attribute level validation
      */
-    ValidationRound createValidationRound(
-            CBB builder,
-            Class<CBB> configBeanBuilderType);
-
+    ValidationRound createValidationRound(CBB builder,
+                                          Class<CBB> configBeanBuilderType);
 
     /**
      * The validation issue severity level.
@@ -111,20 +109,18 @@ public interface ConfigBeanBuilderValidator<CBB> {
          * @param cbType        the attribute type
          * @return the validation round continuation as a fluent-builder
          */
-        ValidationRound validate(
-                String attributeName,
-                Supplier<?> valueSupplier,
-                Class<?> cbType,
-                Map<String, Object> meta);
+        ValidationRound validate(String attributeName,
+                                 Supplier<?> valueSupplier,
+                                 Class<?> cbType,
+                                 Map<String, Object> meta);
 
         @Override
-        default void visit(
-                String attributeName,
-                Supplier<Object> valueSupplier,
-                Map<String, Object> meta,
-                Object userDefinedCtx,
-                Class<?> cbType,
-                Class<?>... ignored) {
+        default void visit(String attributeName,
+                           Supplier<Object> valueSupplier,
+                           Map<String, Object> meta,
+                           Object userDefinedCtx,
+                           Class<?> cbType,
+                           Class<?>... ignored) {
             validate(attributeName, valueSupplier, cbType, meta);
         }
 
@@ -135,8 +131,7 @@ public interface ConfigBeanBuilderValidator<CBB> {
          * @return the fluent builder for this round
          * @throws java.lang.IllegalStateException if there were any validation errors in the round
          */
-        ValidationRound finish(
-                boolean throwIfErrors);
+        ValidationRound finish(boolean throwIfErrors);
     }
 
 
@@ -156,10 +151,9 @@ public interface ConfigBeanBuilderValidator<CBB> {
          * @param attributeName the attribute name in question
          * @param message       the message
          */
-        public ValidationIssue(
-                Severity severity,
-                String attributeName,
-                String message) {
+        public ValidationIssue(Severity severity,
+                               String attributeName,
+                               String message) {
             this.severity = Objects.requireNonNull(severity);
             this.attributeName = Objects.requireNonNull(attributeName);
             this.message = Objects.requireNonNull(message);

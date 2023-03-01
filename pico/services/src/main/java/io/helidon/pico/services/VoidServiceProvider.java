@@ -48,15 +48,13 @@ class VoidServiceProvider extends AbstractServiceProvider<Void> {
     }
 
     @Override
-    protected Void createServiceProvider(
-            Map<String, Object> resolvedDeps) {
+    protected Void createServiceProvider(Map<String, Object> resolvedDeps) {
         // this must return null by definition
         return null;
     }
 
     @Override
-    public Optional<Void> first(
-            ContextualServiceQuery query) {
+    public Optional<Void> first(ContextualServiceQuery query) {
         return Optional.empty();
     }
 

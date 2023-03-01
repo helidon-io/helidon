@@ -53,8 +53,7 @@ public class ExtensibleGetTemplateProducer implements CustomAnnotationTemplateCr
     }
 
     @Override
-    public Optional<CustomAnnotationTemplateResponse> create(
-            CustomAnnotationTemplateRequest request) {
+    public Optional<CustomAnnotationTemplateResponse> create(CustomAnnotationTemplateRequest request) {
         TypeInfo enclosingTypeInfo = request.enclosingTypeInfo();
         String classname = enclosingTypeInfo.typeName().className() + "_"
                 + request.annoTypeName().className() + "_"

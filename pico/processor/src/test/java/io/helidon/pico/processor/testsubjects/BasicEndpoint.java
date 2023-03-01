@@ -32,8 +32,7 @@ public class BasicEndpoint {
      * @return for testing.
      */
     @ExtensibleGET
-    public String itWorks(
-            String header) {
+    public String itWorks(String header) {
         return "Pico Works!";
     }
 

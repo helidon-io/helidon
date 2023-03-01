@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ConfigBean()
 class MetaConfigBeanInfoTest {
@@ -34,7 +35,7 @@ class MetaConfigBeanInfoTest {
     @Test
     void testToMetaConfigBeanInfoFromConfigBean() {
         ConfigBean cfg = getClass().getAnnotation(ConfigBean.class);
-        Assertions.assertNotNull(cfg);
+        assertNotNull(cfg);
         MetaConfigBeanInfo metaCfg = ConfigBeanInfo.toMetaConfigBeanInfo(cfg, ConfigBean.class);
         assertThat(metaCfg.annotationType(), sameInstance(ConfigBean.class));
         assertThat(metaCfg.repeatable(), is(true));
@@ -62,7 +63,7 @@ class MetaConfigBeanInfoTest {
 
     @Test
     void testToConfigKey() {
-        Assertions.assertAll(
+        assertAll(
                 () -> assertThat(ConfigBeanInfo.toConfigKey("maxInitialLineLength"), is("max-initial-line-length")),
                 () -> assertThat(ConfigBeanInfo.toConfigKey("port"), is("port")),
                 () -> assertThat(ConfigBeanInfo.toConfigKey("listenAddress"), is("listen-address"))

@@ -58,9 +58,8 @@ public class PicoTestingSupport {
      * @param serviceProvider the service provider to bind
      * @see io.helidon.pico.ServiceBinder
      */
-    public static void bind(
-            PicoServices picoServices,
-            ServiceProvider<?> serviceProvider) {
+    public static void bind(PicoServices picoServices,
+                            ServiceProvider<?> serviceProvider) {
         DefaultServiceBinder binder = DefaultServiceBinder.create(picoServices, PicoTestingSupport.class.getSimpleName(), true);
         binder.bind(serviceProvider);
     }
@@ -81,8 +80,7 @@ public class PicoTestingSupport {
      * @return testable services instance
      * @see io.helidon.pico.PicoServicesConfig
      */
-    public static PicoServices testableServices(
-            Config config) {
+    public static PicoServices testableServices(Config config) {
         return lazyCreate(config).get();
     }
 
@@ -106,8 +104,7 @@ public class PicoTestingSupport {
      * @param providerOrInstance the instance to provider
      * @return the description of the instance
      */
-    public static String toDescription(
-            Object providerOrInstance) {
+    public static String toDescription(Object providerOrInstance) {
         if (providerOrInstance instanceof Optional) {
             providerOrInstance = ((Optional<?>) providerOrInstance).orElse(null);
         }
@@ -124,8 +121,7 @@ public class PicoTestingSupport {
      * @param coll the instance to provider collection
      * @return the description of the instance
      */
-    public static List<String> toDescriptions(
-            Collection<?> coll) {
+    public static List<String> toDescriptions(Collection<?> coll) {
         return coll.stream().map(PicoTestingSupport::toDescription).collect(Collectors.toList());
     }
 
@@ -141,8 +137,7 @@ public class PicoTestingSupport {
         }
     }
 
-    private static LazyValue<PicoServices> lazyCreate(
-            Config config) {
+    private static LazyValue<PicoServices> lazyCreate(Config config) {
         return LazyValue.create(() -> {
             PicoServices.globalBootstrap(DefaultBootstrap.builder().config(config).build());
             return PicoServices.picoServices().orElseThrow();

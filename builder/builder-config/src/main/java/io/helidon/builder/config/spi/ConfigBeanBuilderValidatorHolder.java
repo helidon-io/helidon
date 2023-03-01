@@ -47,8 +47,7 @@ public class ConfigBeanBuilderValidatorHolder {
      * @return the config bean builder validator
      */
     @SuppressWarnings({"rawTypes", "unchecked"})
-    public static <CBB> Optional<ConfigBeanBuilderValidator<CBB>> configBeanValidatorFor(
-            Class<CBB> configBeanBuilderType) {
+    public static <CBB> Optional<ConfigBeanBuilderValidator<CBB>> configBeanValidatorFor(Class<CBB> configBeanBuilderType) {
         return (Optional) INSTANCE.get();
     }
 

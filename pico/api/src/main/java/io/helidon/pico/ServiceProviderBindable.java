@@ -64,8 +64,7 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
      *
      * @param interceptor the interceptor for this provider
      */
-    default void interceptor(
-            ServiceProvider<?> interceptor) {
+    default void interceptor(ServiceProvider<?> interceptor) {
         // NOP; intended to be overridden if applicable
         throw new UnsupportedOperationException();
     }
@@ -95,8 +94,7 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
      *
      * @param rootProvider  sets the root provider
      */
-    default void rootProvider(
-            ServiceProvider<T> rootProvider) {
+    default void rootProvider(ServiceProvider<T> rootProvider) {
         // NOP; intended to be overridden if applicable
         throw new UnsupportedOperationException();
     }
@@ -107,8 +105,7 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
      *
      * @param picoServices the pico services instance, or empty to clear any active binding
      */
-    void picoServices(
-            Optional<PicoServices> picoServices);
+    void picoServices(Optional<PicoServices> picoServices);
 
     /**
      * The binder can be provided by the service provider to deterministically set the injection plan at compile-time, and

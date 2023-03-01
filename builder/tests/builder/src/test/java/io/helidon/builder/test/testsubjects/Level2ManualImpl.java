@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package io.helidon.builder.test.testsubjects;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,11 +37,11 @@ public class Level2ManualImpl extends Level1ManualImpl implements Level2 {
     protected Level2ManualImpl(Builder builder) {
         super(builder);
         this.level2Level0Info = Objects.isNull(builder.level2Level0Info)
-                ? Collections.emptyList() : Collections.unmodifiableList(new LinkedList<>(builder.level2Level0Info));
+                ? List.of() : Collections.unmodifiableList(new ArrayList<>(builder.level2Level0Info));
         this.level2ListOfLevel0s = Objects.isNull(builder.level2ListOfLevel0s)
-                ? Collections.emptyList() : Collections.unmodifiableList(new LinkedList<>(builder.level2ListOfLevel0s));
+                ? List.of() : Collections.unmodifiableList(new ArrayList<>(builder.level2ListOfLevel0s));
         this.level2MapOfStringToLevel1s = Objects.isNull(builder.level2MapOfStringToLevel1s)
-                ? Collections.emptyMap() : Collections.unmodifiableMap(new LinkedHashMap<>(builder.level2MapOfStringToLevel1s));
+                ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(builder.level2MapOfStringToLevel1s));
     }
 
     @Override
@@ -178,15 +178,15 @@ public class Level2ManualImpl extends Level1ManualImpl implements Level2 {
 
             {
                 Collection<Level0> v = val.getLevel2Level0Info();
-                this.level2Level0Info = Objects.isNull(v) ? null : new LinkedList<>(v);
+                this.level2Level0Info = (v == null) ? null : new ArrayList<>(v);
             }
             {
                 Collection<Level0> v = val.getLevel2ListOfLevel0s();
-                this.level2ListOfLevel0s = Objects.isNull(v) ? null : new LinkedList<>(v);
+                this.level2ListOfLevel0s = (v == null) ? null : new ArrayList<>(v);
             }
             {
                 Map<String, Level1> v = val.getLevel2MapOfStringToLevel1s();
-                this.level2MapOfStringToLevel1s = Objects.isNull(v) ? null : new LinkedHashMap<>(v);
+                this.level2MapOfStringToLevel1s = (v == null) ? null : new LinkedHashMap<>(v);
             }
         }
 
@@ -196,7 +196,7 @@ public class Level2ManualImpl extends Level1ManualImpl implements Level2 {
          * @return ignored, here for testing only
          */
         public B level2Level0Info(Collection<Level0> val) {
-            this.level2Level0Info = Objects.isNull(val) ? null : new LinkedList<>(val);
+            this.level2Level0Info = (val == null) ? null : new ArrayList<>(val);
             return identity();
         }
 
@@ -207,7 +207,7 @@ public class Level2ManualImpl extends Level1ManualImpl implements Level2 {
          */
         public B addlevel2Level0Info(Level0 val) {
             if (Objects.isNull(level2Level0Info)) {
-                level2Level0Info = new LinkedList<>();
+                level2Level0Info = new ArrayList<>();
             }
             level2Level0Info.add(val);
             return identity();
@@ -219,7 +219,7 @@ public class Level2ManualImpl extends Level1ManualImpl implements Level2 {
          * @return ignored, here for testing only
          */
         public B level2ListOfLevel0s(Collection<Level0> val) {
-            this.level2ListOfLevel0s = Objects.isNull(val) ? null : new LinkedList<>(val);
+            this.level2ListOfLevel0s = (val == null) ? null : new ArrayList<>(val);
             return identity();
         }
 
@@ -230,7 +230,7 @@ public class Level2ManualImpl extends Level1ManualImpl implements Level2 {
          */
         public B addLevel0(Level0 val) {
             if (Objects.isNull(level2ListOfLevel0s)) {
-                level2ListOfLevel0s = new LinkedList<>();
+                level2ListOfLevel0s = new ArrayList<>();
             }
             level2ListOfLevel0s.add(val);
             return identity();

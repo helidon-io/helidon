@@ -20,8 +20,7 @@ public class MyConcreteClassContract {
 
     private final String id;
 
-    MyConcreteClassContract(
-            String id) {
+    MyConcreteClassContract(String id) {
         this.id = id;
     }
 

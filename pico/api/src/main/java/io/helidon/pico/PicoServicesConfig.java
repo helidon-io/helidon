@@ -432,9 +432,8 @@ public abstract class PicoServicesConfig {
      * @param defaultValueSupplier supplier of default value
      * @return value
      */
-    static String asString(
-            String key,
-            Supplier<String> defaultValueSupplier) {
+    static String asString(String key,
+                           Supplier<String> defaultValueSupplier) {
         Optional<Config> cfg = get(key);
         if (cfg.isEmpty()
                 || !cfg.get().hasValue()) {
@@ -450,9 +449,8 @@ public abstract class PicoServicesConfig {
      * @param defaultValueSupplier supplier of default value
      * @return value
      */
-    static Boolean asBoolean(
-            String key,
-            Supplier<Boolean> defaultValueSupplier) {
+    static Boolean asBoolean(String key,
+                             Supplier<Boolean> defaultValueSupplier) {
         Optional<Config> cfg = get(key);
         if (cfg.isEmpty()
                 || !cfg.get().hasValue()) {
@@ -468,9 +466,8 @@ public abstract class PicoServicesConfig {
      * @param defaultValueSupplier supplier of default value
      * @return value
      */
-    static Long asLong(
-            String key,
-            Supplier<Long> defaultValueSupplier) {
+    static Long asLong(String key,
+                       Supplier<Long> defaultValueSupplier) {
         Optional<Config> cfg = get(key);
         if (cfg.isEmpty()
                 || !cfg.get().hasValue()) {
@@ -487,8 +484,7 @@ public abstract class PicoServicesConfig {
      * @param key the config key relative to the parent global bootstrap configuration
      * @return the configuration for the key
      */
-    static Optional<Config> get(
-            String key) {
+    static Optional<Config> get(String key) {
         Optional<Bootstrap> bootstrap = PicoServicesHolder.bootstrap(false);
         if (bootstrap.isEmpty() || bootstrap.get().config().isEmpty()) {
             return Optional.empty();

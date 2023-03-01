@@ -35,8 +35,7 @@ class ReflectionHandler implements Resetable {
     private ScanResult scan;
 
     @Override
-    public boolean reset(
-            boolean deep) {
+    public boolean reset(boolean deep) {
         if (deep) {
             loader = getCurrentLoader();
             scan = new ClassGraph()

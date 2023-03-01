@@ -23,8 +23,7 @@ class Utils {
     private Utils() {
     }
 
-    static <T> Collection<T> nonNull(
-            Collection<T> coll) {
+    static <T> Collection<T> nonNull(Collection<T> coll) {
         return (coll == null) ? List.of() : coll;
     }
 

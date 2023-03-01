@@ -107,8 +107,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     }
 
     @Override
-    public ActivatorCreatorResponse createModuleActivators(
-            ActivatorCreatorRequest req) throws ToolsException {
+    public ActivatorCreatorResponse createModuleActivators(ActivatorCreatorRequest req) throws ToolsException {
         String templateName = (hasValue(req.templateName())) ? req.templateName() : templateName();
 
         DefaultActivatorCreatorResponse.Builder builder = DefaultActivatorCreatorResponse.builder()
@@ -132,10 +131,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     }
 
     @SuppressWarnings("unchecked")
-    ActivatorCreatorResponse codegen(
-            ActivatorCreatorRequest req,
-            DefaultActivatorCreatorResponse.Builder builder,
-            LazyValue<ScanResult> scan) {
+    ActivatorCreatorResponse codegen(ActivatorCreatorRequest req,
+                                     DefaultActivatorCreatorResponse.Builder builder,
+                                     LazyValue<ScanResult> scan) {
         boolean isApplicationPreCreated = req.configOptions().isApplicationPreCreated();
         boolean isModuleCreated = req.configOptions().isModuleCreated();
         CodeGenPaths codeGenPaths = req.codeGenPaths();
@@ -204,13 +202,12 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return builder.build();
     }
 
-    private ModuleDetail toModuleDetail(
-            ActivatorCreatorRequest req,
-            List<TypeName> activatorTypeNamesPutInModule,
-            TypeName moduleTypeName,
-            TypeName applicationTypeName,
-            boolean isApplicationCreated,
-            boolean isModuleCreated) {
+    private ModuleDetail toModuleDetail(ActivatorCreatorRequest req,
+                                        List<TypeName> activatorTypeNamesPutInModule,
+                                        TypeName moduleTypeName,
+                                        TypeName applicationTypeName,
+                                        boolean isApplicationCreated,
+                                        boolean isModuleCreated) {
         String className = moduleTypeName.className();
         String packageName = moduleTypeName.packageName();
         String moduleName = req.moduleName().orElse(null);
@@ -251,9 +248,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     /**
      * Applies to module-info.
      */
-    static TypeName toModuleTypeName(
-            ActivatorCreatorRequest req,
-            List<TypeName> activatorTypeNames) {
+    static TypeName toModuleTypeName(ActivatorCreatorRequest req,
+                                     List<TypeName> activatorTypeNames) {
         String packageName;
         if (hasValue(req.packageName().orElse(null))) {
             packageName = req.packageName().orElseThrow();
@@ -268,17 +264,15 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return create(packageName, className);
     }
 
-    static String toModuleClassName(
-            String modulePrefix) {
+    static String toModuleClassName(String modulePrefix) {
         modulePrefix = (modulePrefix == null) ? "" : modulePrefix;
         return NAME_PREFIX + modulePrefix + MODULE_NAME_SUFFIX;
     }
 
-    static Map<String, List<String>> toMetaInfServices(
-            ModuleDetail moduleDetail,
-            TypeName applicationTypeName,
-            boolean isApplicationCreated,
-            boolean isModuleCreated) {
+    static Map<String, List<String>> toMetaInfServices(ModuleDetail moduleDetail,
+                                                       TypeName applicationTypeName,
+                                                       boolean isApplicationCreated,
+                                                       boolean isModuleCreated) {
         Map<String, List<String>> metaInfServices = new LinkedHashMap<>();
         if (isApplicationCreated && applicationTypeName != null) {
             metaInfServices.put(TypeNames.PICO_APPLICATION,
@@ -291,10 +285,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return metaInfServices;
     }
 
-    void codegenMetaInfServices(
-            GeneralCreatorRequest req,
-            CodeGenPaths paths,
-            Map<String, List<String>> metaInfServices) {
+    void codegenMetaInfServices(GeneralCreatorRequest req,
+                                CodeGenPaths paths,
+                                Map<String, List<String>> metaInfServices) {
         boolean prev = true;
         if (req.analysisOnly()) {
             prev = CodeGenFiler.filerEnabled(false);
@@ -309,9 +302,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
     }
 
-    void codegenActivatorFilerOut(
-            GeneralCreatorRequest req,
-            ActivatorCodeGenDetail activatorDetail) {
+    void codegenActivatorFilerOut(GeneralCreatorRequest req,
+                                  ActivatorCodeGenDetail activatorDetail) {
         boolean prev = true;
         if (req.analysisOnly()) {
             prev = CodeGenFiler.filerEnabled(false);
@@ -326,9 +318,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
     }
 
-    void codegenModuleFilerOut(
-            GeneralCreatorRequest req,
-            ModuleDetail moduleDetail) {
+    void codegenModuleFilerOut(GeneralCreatorRequest req,
+                               ModuleDetail moduleDetail) {
         boolean prev = true;
         if (req.analysisOnly()) {
             prev = CodeGenFiler.filerEnabled(false);
@@ -343,10 +334,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
     }
 
-    void codegenApplicationFilerOut(
-            GeneralCreatorRequest req,
-            TypeName applicationTypeName,
-            String applicationBody) {
+    void codegenApplicationFilerOut(GeneralCreatorRequest req,
+                                    TypeName applicationTypeName,
+                                    String applicationBody) {
         boolean prev = true;
         if (req.analysisOnly()) {
             prev = CodeGenFiler.filerEnabled(false);
@@ -361,9 +351,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
     }
 
-    Path codegenModuleInfoFilerOut(
-            GeneralCreatorRequest req,
-            ModuleInfoDescriptor descriptor) {
+    Path codegenModuleInfoFilerOut(GeneralCreatorRequest req,
+                                   ModuleInfoDescriptor descriptor) {
         boolean prev = true;
         if (req.analysisOnly()) {
             prev = CodeGenFiler.filerEnabled(false);
@@ -379,9 +368,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     }
 
     @Override
-    public InterceptorCreatorResponse codegenInterceptors(
-            GeneralCreatorRequest req,
-            Map<TypeName, InterceptionPlan> interceptionPlans) {
+    public InterceptorCreatorResponse codegenInterceptors(GeneralCreatorRequest req,
+                                                          Map<TypeName, InterceptionPlan> interceptionPlans) {
         DefaultInterceptorCreatorResponse.Builder res = DefaultInterceptorCreatorResponse.builder();
         res.interceptionPlans(interceptionPlans);
 
@@ -397,10 +385,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return res.build();
     }
 
-    private Path codegenInterceptorFilerOut(
-            GeneralCreatorRequest req,
-            DefaultActivatorCreatorResponse.Builder builder,
-            InterceptionPlan interceptionPlan) {
+    private Path codegenInterceptorFilerOut(GeneralCreatorRequest req,
+                                            DefaultActivatorCreatorResponse.Builder builder,
+                                            InterceptionPlan interceptionPlan) {
         TypeName interceptorTypeName = DefaultInterceptorCreator.createInterceptorSourceTypeName(interceptionPlan);
         DefaultInterceptorCreator interceptorCreator = new DefaultInterceptorCreator();
         String body = interceptorCreator.createInterceptorSourceBody(interceptionPlan);
@@ -410,10 +397,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return req.filer().codegenJavaFilerOut(interceptorTypeName, body).orElseThrow();
     }
 
-    private ActivatorCodeGenDetail createActivatorCodeGenDetail(
-            ActivatorCreatorRequest req,
-            TypeName serviceTypeName,
-            LazyValue<ScanResult> scan) {
+    private ActivatorCodeGenDetail createActivatorCodeGenDetail(ActivatorCreatorRequest req,
+                                                                TypeName serviceTypeName,
+                                                                LazyValue<ScanResult> scan) {
         ActivatorCreatorCodeGen codeGen = req.codeGen();
         String template = templateHelper().safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_ACTIVATOR_HBS);
         ServiceInfoBasics serviceInfo = toServiceInfo(serviceTypeName, codeGen);
@@ -476,8 +462,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
      * @param services the services to process
      * @return the payload, or empty if unable or nothing to process
      */
-    public static Optional<ActivatorCreatorCodeGen> createActivatorCreatorCodeGen(
-            ServicesToProcess services) {
+    public static Optional<ActivatorCreatorCodeGen> createActivatorCreatorCodeGen(ServicesToProcess services) {
         // do not generate activators for modules or applications...
         List<TypeName> serviceTypeNames = services.serviceTypeNames();
         if (!serviceTypeNames.isEmpty()) {
@@ -532,12 +517,11 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
      * @param throwIfError      fail on error?
      * @return the activator request instance
      */
-    public static ActivatorCreatorRequest createActivatorCreatorRequest(
-            ServicesToProcess servicesToProcess,
-            ActivatorCreatorCodeGen codeGen,
-            ActivatorCreatorConfigOptions configOptions,
-            CodeGenFiler filer,
-            boolean throwIfError) {
+    public static ActivatorCreatorRequest createActivatorCreatorRequest(ServicesToProcess servicesToProcess,
+                                                                        ActivatorCreatorCodeGen codeGen,
+                                                                        ActivatorCreatorConfigOptions configOptions,
+                                                                        CodeGenFiler filer,
+                                                                        boolean throwIfError) {
         String packageName = servicesToProcess.determineGeneratedPackageName();
         String moduleName = servicesToProcess.determineGeneratedModuleName();
         if (ModuleInfoDescriptor.DEFAULT_MODULE_NAME.equals(moduleName)) {
@@ -558,8 +542,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                 .build();
     }
 
-    private static Map<TypeName, TypeName> toFilteredParentServiceTypes(
-            ServicesToProcess services) {
+    private static Map<TypeName, TypeName> toFilteredParentServiceTypes(ServicesToProcess services) {
         Map<TypeName, TypeName> parents = services.parentServiceTypes();
         Map<TypeName, TypeName> filteredParents = new LinkedHashMap<>(parents);
         for (Map.Entry<TypeName, TypeName> e : parents.entrySet()) {
@@ -576,8 +559,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return filteredParents;
     }
 
-    private static Map<TypeName, List<TypeName>> toFilteredHierarchy(
-            ServicesToProcess services) {
+    private static Map<TypeName, List<TypeName>> toFilteredHierarchy(ServicesToProcess services) {
         Map<TypeName, List<TypeName>> hierarchy = services.serviceTypeToHierarchy();
         Map<TypeName, List<TypeName>> filteredHierarchy = new LinkedHashMap<>();
         for (Map.Entry<TypeName, List<TypeName>> e : hierarchy.entrySet()) {
@@ -590,8 +572,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return filteredHierarchy;
     }
 
-    private static Map<TypeName, Set<TypeName>> toFilteredContracts(
-            ServicesToProcess services) {
+    private static Map<TypeName, Set<TypeName>> toFilteredContracts(ServicesToProcess services) {
         Map<TypeName, Set<TypeName>> contracts = services.contracts();
         Map<TypeName, Set<TypeName>> filteredContracts = new LinkedHashMap<>();
         for (Map.Entry<TypeName, Set<TypeName>> e : contracts.entrySet()) {
@@ -608,10 +589,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return filteredContracts;
     }
 
-    String toApplicationStubBody(
-            ActivatorCreatorRequest req,
-            TypeName applicationTypeName,
-            String moduleName) {
+    String toApplicationStubBody(ActivatorCreatorRequest req,
+                                 TypeName applicationTypeName,
+                                 String moduleName) {
         String template = templateHelper().safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_APPLICATION_STUB_HBS);
 
         Map<String, Object> subst = new HashMap<>();
@@ -625,12 +605,11 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return templateHelper().applySubstitutions(template, subst, true).trim();
     }
 
-    String toModuleBody(
-            ActivatorCreatorRequest req,
-            String packageName,
-            String className,
-            String moduleName,
-            List<TypeName> activatorTypeNames) {
+    String toModuleBody(ActivatorCreatorRequest req,
+                        String packageName,
+                        String className,
+                        String moduleName,
+                        List<TypeName> activatorTypeNames) {
         String template = templateHelper().safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_MODULE_HBS);
 
         Map<String, Object> subst = new HashMap<>();
@@ -646,15 +625,13 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     }
 
     @Override
-    public TypeName toActivatorImplTypeName(
-            TypeName serviceTypeName) {
+    public TypeName toActivatorImplTypeName(TypeName serviceTypeName) {
         return create(serviceTypeName.packageName(),
                                       toFlatName(serviceTypeName.className())
                                               + INNER_ACTIVATOR_CLASS_NAME);
     }
 
-    private String toActivatorBody(
-            ActivatorCreatorArgs args) {
+    private String toActivatorBody(ActivatorCreatorArgs args) {
         Map<String, Object> subst = new HashMap<>();
         subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
         subst.put("activatorsuffix", INNER_ACTIVATOR_CLASS_NAME);
@@ -701,10 +678,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return templateHelper().applySubstitutions(args.template(), subst, true).trim();
     }
 
-    String toCodenParent(
-            boolean ignoredIsSupportsJsr330InStrictMode,
-            TypeName activatorTypeName,
-            TypeName parentTypeName) {
+    String toCodenParent(boolean ignoredIsSupportsJsr330InStrictMode,
+                         TypeName activatorTypeName,
+                         TypeName parentTypeName) {
         String result;
         if (parentTypeName == null || Object.class.getName().equals(parentTypeName.name())) {
 //            getFiler().getMessager().log(activatorTypeName + " path is: 1: "
@@ -725,8 +701,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return result;
     }
 
-    List<String> toCodegenDependencies(
-            DependenciesInfo dependencies) {
+    List<String> toCodegenDependencies(DependenciesInfo dependencies) {
         if (dependencies == null) {
             return null;
         }
@@ -739,9 +714,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return result;
     }
 
-    String toCodegenDependency(
-            ServiceInfoCriteria dependencyTo,
-            InjectionPointInfo ipInfo) {
+    String toCodegenDependency(ServiceInfoCriteria dependencyTo,
+                               InjectionPointInfo ipInfo) {
         StringBuilder builder = new StringBuilder();
         //.add("world", World.class, InjectionPointInfo.ElementKind.FIELD, InjectionPointInfo.Access.PACKAGE_PRIVATE)
         String elemName = CodeGenUtils.elementNameKindRef(ipInfo.elementName(), ipInfo.elementKind());
@@ -777,8 +751,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return builder.toString();
     }
 
-    String toCodegenQualifiers(
-            Collection<QualifierAndValue> qualifiers) {
+    String toCodegenQualifiers(Collection<QualifierAndValue> qualifiers) {
         StringBuilder builder = new StringBuilder();
         for (QualifierAndValue qualifier : qualifiers) {
             if (builder.length() > 0) {
@@ -789,8 +762,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return builder.toString();
     }
 
-    String toCodegenQualifiers(
-            QualifierAndValue qualifier) {
+    String toCodegenQualifiers(QualifierAndValue qualifier) {
         String val = toCodegenQuotedString(qualifier.value().orElse(null));
         String result = DefaultQualifierAndValue.class.getName() + ".create("
                 + qualifier.qualifierTypeName() + ".class";
@@ -801,14 +773,12 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return result;
     }
 
-    String toCodegenQuotedString(
-            String value) {
+    String toCodegenQuotedString(String value) {
         return (value == null) ? null : "\"" + value + "\"";
     }
 
-    String toCodegenDecl(
-            ServiceInfoCriteria dependencyTo,
-            InjectionPointInfo injectionPointInfo) {
+    String toCodegenDecl(ServiceInfoCriteria dependencyTo,
+                         InjectionPointInfo injectionPointInfo) {
         String contract = first(dependencyTo.contractsImplemented(), true);
         StringBuilder builder = new StringBuilder();
         if (injectionPointInfo.optionalWrapped()) {
@@ -836,8 +806,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return builder.toString();
     }
 
-    String toCodegenCtorArgList(
-            DependenciesInfo dependencies) {
+    String toCodegenCtorArgList(DependenciesInfo dependencies) {
         if (dependencies == null) {
             return null;
         }
@@ -862,8 +831,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return (args.isEmpty()) ? null : CommonUtils.toString(args);
     }
 
-    List<String> toCodegenInjectCtorArgs(
-            DependenciesInfo dependencies) {
+    List<String> toCodegenInjectCtorArgs(DependenciesInfo dependencies) {
         if (dependencies == null) {
             return null;
         }
@@ -890,8 +858,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return args;
     }
 
-    List<Object> toCodegenInjectFields(
-            DependenciesInfo dependencies) {
+    List<Object> toCodegenInjectFields(DependenciesInfo dependencies) {
         if (dependencies == null) {
             return null;
         }
@@ -917,9 +884,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return fields;
     }
 
-    List<Object> toCodegenInjectMethods(
-            TypeName serviceTypeName,
-            DependenciesInfo dependencies) {
+    List<Object> toCodegenInjectMethods(TypeName serviceTypeName,
+                                        DependenciesInfo dependencies) {
         if (dependencies == null) {
             return null;
         }
@@ -987,11 +953,10 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return methods;
     }
 
-    Collection<Object> toCodegenInjectMethodsSkippedInParent(
-            boolean isSupportsJsr330InStrictMode,
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen,
-            LazyValue<ScanResult> scan) {
+    Collection<Object> toCodegenInjectMethodsSkippedInParent(boolean isSupportsJsr330InStrictMode,
+                                                             TypeName serviceTypeName,
+                                                             ActivatorCreatorCodeGen codeGen,
+                                                             LazyValue<ScanResult> scan) {
         List<TypeName> hierarchy = codeGen.serviceTypeHierarchy().get(serviceTypeName);
         TypeName parent = parentOf(serviceTypeName, codeGen);
         if (hierarchy == null && parent != null) {
@@ -1033,13 +998,12 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
      * @param scan              the provider of class introspection
      * @return the list of injection point identifiers that should be skipped in the parent delegation call
      */
-    List<Object> toCodegenInjectMethodsSkippedInParent(
-            boolean isSupportsJsr330InStrictMode,
-            TypeName serviceTypeName,
-            DependenciesInfo dependencies,
-            TypeName parentTypeName,
-            DependenciesInfo parentDependencies,
-            LazyValue<ScanResult> scan) {
+    List<Object> toCodegenInjectMethodsSkippedInParent(boolean isSupportsJsr330InStrictMode,
+                                                       TypeName serviceTypeName,
+                                                       DependenciesInfo dependencies,
+                                                       TypeName parentTypeName,
+                                                       DependenciesInfo parentDependencies,
+                                                       LazyValue<ScanResult> scan) {
         if (!isSupportsJsr330InStrictMode || parentTypeName == null) {
             return null;
         }
@@ -1057,7 +1021,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
 
         MethodInfoList methods = classInfo.getDeclaredMethodInfo();
         Map<IdAndToString, MethodInfo> allSupportedMethodsOnServiceType = methods.stream()
-                .filter((m) -> DefaultExternalModuleCreator.isPicoSupported(serviceTypeName, m, logger()))
+                .filter(m -> DefaultExternalModuleCreator.isPicoSupported(serviceTypeName, m, logger()))
                 .collect(Collectors.toMap(DefaultActivatorCreator::toBaseIdTag, Function.identity()));
 
         List<Object> removeList = null;
@@ -1079,9 +1043,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return removeList;
     }
 
-    static ClassInfo toClassInfo(
-            TypeName serviceTypeName,
-            LazyValue<ScanResult> scan) {
+    static ClassInfo toClassInfo(TypeName serviceTypeName,
+                                 LazyValue<ScanResult> scan) {
         ClassInfo classInfo = scan.get().getClassInfo(serviceTypeName.name());
         if (classInfo == null) {
             throw new ToolsException("unable to introspect: " + serviceTypeName);
@@ -1089,8 +1052,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return classInfo;
     }
 
-    static IdAndToString toBaseIdTag(
-            MethodInfo m) {
+    static IdAndToString toBaseIdTag(MethodInfo m) {
         String packageName = m.getClassInfo().getPackageName();
         boolean isPackagePrivate = isPackagePrivate(m.getModifiers());
         InjectionPointInfo.Access access = (isPackagePrivate)
@@ -1099,24 +1061,21 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return new IdAndToString(idTag, m);
     }
 
-    static String toBaseIdTagName(
-            InjectionPointInfo ipInfo,
-            TypeName serviceTypeName) {
+    static String toBaseIdTagName(InjectionPointInfo ipInfo,
+                                  TypeName serviceTypeName) {
         String packageName = serviceTypeName.packageName();
         return toBaseIdTagName(ipInfo.elementName(), ipInfo.elementArgs().orElse(0), ipInfo.access(), packageName);
     }
 
-    static String toBaseIdTagName(
-            String methodName,
-            int methodArgCount,
-            InjectionPointInfo.Access access,
-            String packageName) {
+    static String toBaseIdTagName(String methodName,
+                                  int methodArgCount,
+                                  InjectionPointInfo.Access access,
+                                  String packageName) {
         return Dependencies.toMethodBaseIdentity(methodName, methodArgCount, access, () -> packageName);
     }
 
-    Double toWeightedPriority(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    Double toWeightedPriority(TypeName serviceTypeName,
+                              ActivatorCreatorCodeGen codeGen) {
         Double weight = codeGen.serviceTypeWeights().get(serviceTypeName);
         if (weight == null && hasParent(serviceTypeName, codeGen)) {
             // we might be a child of another service, in which case we will need to override its value
@@ -1125,9 +1084,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return weight;
     }
 
-    Integer toRunLevel(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    Integer toRunLevel(TypeName serviceTypeName,
+                       ActivatorCreatorCodeGen codeGen) {
         Integer runLevel = codeGen.serviceTypeRunLevels().get(serviceTypeName);
         if (runLevel == null && hasParent(serviceTypeName, codeGen)) {
             // we might be a child of another service, in which case we will need to override its value
@@ -1136,43 +1094,36 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return runLevel;
     }
 
-    boolean hasParent(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    boolean hasParent(TypeName serviceTypeName,
+                      ActivatorCreatorCodeGen codeGen) {
         return (parentOf(serviceTypeName, codeGen) != null);
     }
 
-    TypeName parentOf(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    TypeName parentOf(TypeName serviceTypeName,
+                      ActivatorCreatorCodeGen codeGen) {
         return codeGen.serviceTypeToParentServiceTypes().get(serviceTypeName);
     }
 
-    List<String> toDescription(
-            TypeName serviceTypeName) {
+    List<String> toDescription(TypeName serviceTypeName) {
         return List.of("Activator for {@link " + serviceTypeName + "}.");
     }
 
-    TypeName toActivatorTypeName(
-            TypeName serviceTypeName) {
+    TypeName toActivatorTypeName(TypeName serviceTypeName) {
         return serviceTypeName;
     }
 
-    TypeName toParentTypeName(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    TypeName toParentTypeName(TypeName serviceTypeName,
+                              ActivatorCreatorCodeGen codeGen) {
         return codeGen.serviceTypeToParentServiceTypes().get(serviceTypeName);
     }
 
-    String toActivatorGenericDecl(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    String toActivatorGenericDecl(TypeName serviceTypeName,
+                                  ActivatorCreatorCodeGen codeGen) {
         return codeGen.serviceTypeToActivatorGenericDecl().get(serviceTypeName);
     }
 
-    Set<String> toScopeTypeNames(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    Set<String> toScopeTypeNames(TypeName serviceTypeName,
+                                 ActivatorCreatorCodeGen codeGen) {
         Set<String> result = codeGen.serviceTypeScopeNames().get(serviceTypeName);
         return (result == null) ? Set.of() : result;
     }
@@ -1182,9 +1133,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
      * that alone would fail JSR-330 testing. The interpretation there is any service without a scope is inferred to be
      * non-singleton, provided/dependent scope.
      */
-    boolean toIsProvider(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    boolean toIsProvider(TypeName serviceTypeName,
+                         ActivatorCreatorCodeGen codeGen) {
         Set<String> scopeTypeName = toScopeTypeNames(serviceTypeName, codeGen);
         if ((scopeTypeName == null || scopeTypeName.isEmpty()) && toIsConcrete(serviceTypeName, codeGen)) {
             return true;
@@ -1194,9 +1144,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return (providerFor != null) && !providerFor.isEmpty();
     }
 
-    boolean toIsConcrete(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    boolean toIsConcrete(TypeName serviceTypeName,
+                         ActivatorCreatorCodeGen codeGen) {
         Boolean isAbstract = codeGen.serviceTypeIsAbstractTypes().get(serviceTypeName);
         return (isAbstract == null) || !isAbstract;
     }
@@ -1208,9 +1157,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
      * @param codeGen         the code gen request
      * @return the service info
      */
-    public static ServiceInfoBasics toServiceInfo(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    public static ServiceInfoBasics toServiceInfo(TypeName serviceTypeName,
+                                                  ActivatorCreatorCodeGen codeGen) {
         Set<TypeName> contracts = codeGen.serviceTypeContracts().get(serviceTypeName);
         Set<TypeName> externalContracts = codeGen.serviceTypeExternalContracts().get(serviceTypeName);
         Set<QualifierAndValue> qualifiers = codeGen.serviceTypeQualifiers().get(serviceTypeName);
@@ -1222,9 +1170,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                 .build();
     }
 
-    DependenciesInfo toDependencies(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    DependenciesInfo toDependencies(TypeName serviceTypeName,
+                                    ActivatorCreatorCodeGen codeGen) {
         if (serviceTypeName == null) {
             return null;
         }
@@ -1233,23 +1180,20 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return dependenciesInfo;
     }
 
-    String toPostConstructMethodName(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    String toPostConstructMethodName(TypeName serviceTypeName,
+                                     ActivatorCreatorCodeGen codeGen) {
         return codeGen.serviceTypePostConstructMethodNames().get(serviceTypeName);
     }
 
-    String toPreDestroyMethodName(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    String toPreDestroyMethodName(TypeName serviceTypeName,
+                                  ActivatorCreatorCodeGen codeGen) {
         return codeGen.serviceTypePreDestroyMethodNames().get(serviceTypeName);
     }
 
     @SuppressWarnings("unchecked")
-    List<TypeName> toServiceTypeHierarchy(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen,
-            LazyValue<ScanResult> scan) {
+    List<TypeName> toServiceTypeHierarchy(TypeName serviceTypeName,
+                                          ActivatorCreatorCodeGen codeGen,
+                                          LazyValue<ScanResult> scan) {
         Map<TypeName, List<TypeName>> map = codeGen.serviceTypeHierarchy();
         List<TypeName> order = (map != null) ? map.get(serviceTypeName) : null;
         if (order != null) {
@@ -1259,17 +1203,15 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return serviceTypeHierarchy(serviceTypeName, scan);
     }
 
-    List<String> toExtraCodeGen(
-            TypeName serviceTypeName,
-            ActivatorCreatorCodeGen codeGen) {
+    List<String> toExtraCodeGen(TypeName serviceTypeName,
+                                ActivatorCreatorCodeGen codeGen) {
         Map<TypeName, List<String>> map = codeGen.extraCodeGen();
         List<String> extraCodeGen = (map != null) ? map.get(serviceTypeName) : List.of();
         return (extraCodeGen == null) ? List.of() : extraCodeGen;
     }
 
-    static List<TypeName> serviceTypeHierarchy(
-            TypeName serviceTypeName,
-            LazyValue<ScanResult> scan) {
+    static List<TypeName> serviceTypeHierarchy(TypeName serviceTypeName,
+                                               LazyValue<ScanResult> scan) {
         List<TypeName> order = new ArrayList<>();
         ClassInfo classInfo = toClassInfo(serviceTypeName, scan);
         while (classInfo != null) {
@@ -1279,10 +1221,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return (1 == order.size()) ? List.of() : order;
     }
 
-    ActivatorCreatorResponse handleError(
-            ActivatorCreatorRequest request,
-            ToolsException e,
-            DefaultActivatorCreatorResponse.Builder builder) {
+    ActivatorCreatorResponse handleError(ActivatorCreatorRequest request,
+                                         ToolsException e,
+                                         DefaultActivatorCreatorResponse.Builder builder) {
         if (request.throwIfError()) {
             throw e;
         }

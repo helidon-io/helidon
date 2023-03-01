@@ -132,9 +132,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * @param instanceId the config bean instance id
      * @param configBean the config bean
      */
-    public void registerConfigBean(
-            String instanceId,
-            Object configBean) {
+    public void registerConfigBean(String instanceId,
+                                   Object configBean) {
         Objects.requireNonNull(instanceId);
         Objects.requireNonNull(configBean);
         assertIsInitializing();
@@ -147,8 +146,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
-    public boolean reset(
-            boolean deep) {
+    public boolean reset(boolean deep) {
         super.reset(deep);
         configBeanMap.clear();
         managedConfiguredServicesMap.clear();
@@ -175,8 +173,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
-    protected void doPreDestroying(
-            LogEntryAndResult logEntryAndResult) {
+    protected void doPreDestroying(LogEntryAndResult logEntryAndResult) {
         if (isRootProvider()) {
             managedConfiguredServicesMap.values().stream()
                     .filter(Optional::isPresent)
@@ -190,8 +187,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
-    protected void doDestroying(
-            LogEntryAndResult logEntryAndResult) {
+    protected void doDestroying(LogEntryAndResult logEntryAndResult) {
         super.doDestroying(logEntryAndResult);
     }
 
@@ -215,8 +211,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     /**
      * Transition into an initialized state.
      */
-    void assertInitialized(
-            boolean initialized) {
+    void assertInitialized(boolean initialized) {
         assertIsInitializing();
         assert (!drivesActivation()
                         || isAlreadyAtTargetPhase(PicoServices.terminalActivationPhase())
@@ -231,9 +226,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * @param expectSet         true if this is a strong assertion, and if not claimed an exception will be thrown
      */
     // special note: this is referred to in code generated code!
-    protected void assertIsRootProvider(
-            boolean isRootProvider,
-            boolean expectSet) {
+    protected void assertIsRootProvider(boolean isRootProvider,
+                                        boolean expectSet) {
         boolean set = this.isRootProvider.compareAndSet(null, isRootProvider);
         if (!set && expectSet) {
             throw new PicoServiceProviderException(description() + " was already initialized", null, this);
@@ -254,8 +248,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
     @Override
     @SuppressWarnings("unchecked")
-    public void rootProvider(
-            ServiceProvider<T> root) {
+    public void rootProvider(ServiceProvider<T> root) {
         assertIsRootProvider(false, false);
         assert (!isRootProvider() && rootProvider.get() == null && this != root);
         boolean set = rootProvider.compareAndSet(null,
@@ -275,8 +268,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
-    protected void serviceInfo(
-            ServiceInfo serviceInfo) {
+    protected void serviceInfo(ServiceInfo serviceInfo) {
         // this might appear strange, but since activators can inherit from one another this is in place to trigger
         // only when the most derived activator ctor is setting its serviceInfo.
         boolean isThisOurServiceInfo = serviceType().getName().equals(serviceInfo.serviceTypeName());
@@ -296,8 +288,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
-    public void picoServices(
-            Optional<PicoServices> picoServices) {
+    public void picoServices(Optional<PicoServices> picoServices) {
         assertIsInitializing();
         assertIsRootProvider(true, false);
 
@@ -326,9 +317,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
-    public void onPhaseEvent(
-            Event event,
-            Phase phase) {
+    public void onPhaseEvent(Event event,
+                             Phase phase) {
         if (phase == Phase.POST_BIND_ALL_MODULES) {
             assertIsInitializing();
             PicoServices picoServices = picoServices();
@@ -411,8 +401,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     protected abstract Optional<io.helidon.common.config.Config> rawConfig();
 
     @Override
-    public abstract String toConfigBeanInstanceId(
-            CB configBean);
+    public abstract String toConfigBeanInstanceId(CB configBean);
 
     /**
      * Brokers the set of the instance id for the given config bean.
@@ -420,9 +409,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * @param configBean the config bean to set
      * @param val the instance id to associate it with
      */
-    public abstract void configBeanInstanceId(
-            CB configBean,
-            String val);
+    public abstract void configBeanInstanceId(CB configBean,
+                                              String val);
 
     /**
      * Creates a new instance of this type of configured service provider, along with the configuration bean
@@ -431,15 +419,13 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * @param configBean the config bean
      * @return the created instance injected with the provided config bean
      */
-    protected abstract AbstractConfiguredServiceProvider<T, CB> createInstance(
-            Object configBean);
+    protected abstract AbstractConfiguredServiceProvider<T, CB> createInstance(Object configBean);
 
     /**
      * After the gathering dependency phase, we will short circuit directly to the finish line.
      */
     @Override
-    protected void doConstructing(
-            LogEntryAndResult logEntryAndResult) {
+    protected void doConstructing(LogEntryAndResult logEntryAndResult) {
         if (isRootProvider()) {
             boolean shouldBeActive = (drivesActivation() && !managedConfiguredServicesMap.isEmpty());
             Phase setPhase = (shouldBeActive) ? Phase.ACTIVE : Phase.PENDING;
@@ -454,11 +440,10 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     // note that all responsibilities to resolve is delegated to the root provider
     @Override
     @SuppressWarnings("unchecked")
-    public Optional<Object> resolve(
-            InjectionPointInfo ipInfo,
-            PicoServices picoServices,
-            ServiceProvider<?> serviceProvider,
-            boolean resolveIps) {
+    public Optional<Object> resolve(InjectionPointInfo ipInfo,
+                                    PicoServices picoServices,
+                                    ServiceProvider<?> serviceProvider,
+                                    boolean resolveIps) {
         if (resolveIps) {
             assert (isRootProvider());
             // too early to resolve...
@@ -512,10 +497,9 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * @return the set of matching service providers based upon the context and criteria provided
      */
     @Override
-    public List<ServiceProvider<?>> serviceProviders(
-            ServiceInfoCriteria criteria,
-            boolean wantThis,
-            boolean thisAlreadyMatches) {
+    public List<ServiceProvider<?>> serviceProviders(ServiceInfoCriteria criteria,
+                                                     boolean wantThis,
+                                                     boolean thisAlreadyMatches) {
         if (isRootProvider()) {
             Set<QualifierAndValue> qualifiers = criteria.qualifiers();
             Optional<? extends AnnotationAndValue> configuredByQualifier = DefaultQualifierAndValue
@@ -564,8 +548,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
-    public Map<String, AbstractConfiguredServiceProvider<?, CB>> managedServiceProviders(
-            ServiceInfoCriteria criteria) {
+    public Map<String, AbstractConfiguredServiceProvider<?, CB>> managedServiceProviders(ServiceInfoCriteria criteria) {
         if (!isRootProvider()) {
             assert (managedConfiguredServicesMap.isEmpty());
             return Map.of();
@@ -586,8 +569,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
     @Override
     @SuppressWarnings("unchecked")
-    public Optional<T> first(
-            ContextualServiceQuery query) {
+    public Optional<T> first(ContextualServiceQuery query) {
         if (!isRootProvider()) {
             Optional<T> serviceOrProvider = maybeActivate(query);
             return serviceOrProvider;
@@ -618,8 +600,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<T> list(
-            ContextualServiceQuery query) {
+    public List<T> list(ContextualServiceQuery query) {
         if (!isRootProvider()) {
             Optional<T> serviceOrProvider = maybeActivate(query);
             if (query.expected() && serviceOrProvider.isEmpty()) {
@@ -687,8 +668,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * @return the new config bean
      */
     // expected that the generated configured service overrides this to set its new config bean value
-    protected CB acceptConfig(
-            Config config) {
+    protected CB acceptConfig(Config config) {
         return Objects.requireNonNull(toConfigBean(config));
     }
 
@@ -715,9 +695,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         configBeanMap.forEach(this::activateManagedService);
     }
 
-    private AbstractConfiguredServiceProvider<T, CB> activateManagedService(
-            String instanceId,
-            Object configBean) {
+    private AbstractConfiguredServiceProvider<T, CB> activateManagedService(String instanceId,
+                                                                            Object configBean) {
         return managedConfiguredServicesMap.compute(instanceId, (id, existing) -> {
             if (existing == null || existing.isEmpty()) {
                 existing = innerPreActivateManagedService(instanceId, configBean);
@@ -742,9 +721,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         }
     }
 
-    private AbstractConfiguredServiceProvider<T, CB> preActivateManagedService(
-            String instanceId,
-            Object configBean) {
+    private AbstractConfiguredServiceProvider<T, CB> preActivateManagedService(String instanceId,
+                                                                               Object configBean) {
         return managedConfiguredServicesMap.compute(instanceId, (id, existing) -> {
             if (existing != null && existing.isPresent()) {
                 return existing;
@@ -753,9 +731,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         }).get();
     }
 
-    private Optional<AbstractConfiguredServiceProvider<T, CB>> innerPreActivateManagedService(
-            String instanceId,
-            Object configBean) {
+    private Optional<AbstractConfiguredServiceProvider<T, CB>> innerPreActivateManagedService(String instanceId,
+                                                                                              Object configBean) {
         Objects.requireNonNull(instanceId);
         Objects.requireNonNull(configBean);
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -814,9 +791,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
     @Override
     @SuppressWarnings("unchecked")
-    public <C extends Config, CB> Optional<CB> toConfigBean(
-            C config,
-            Class<CB> configBeanType) {
+    public <C extends Config, CB> Optional<CB> toConfigBean(C config,
+                                                            Class<CB> configBeanType) {
         CB configBean = (CB) toConfigBean(config);
         assert (configBeanType.isInstance(configBean)) : configBean;
         return Optional.of(configBean);
@@ -827,9 +803,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      */
     static class CBInstanceComparator implements Comparator<String>, Serializable {
         @Override
-        public int compare(
-                String str1,
-                String str2) {
+        public int compare(String str1,
+                           String str2) {
             if (DefaultConfigBeanRegistry.DEFAULT_INSTANCE_ID.equals(str1)) {
                 return -1 * Integer.MAX_VALUE;
             } else if (DefaultConfigBeanRegistry.DEFAULT_INSTANCE_ID.equals(str2)) {

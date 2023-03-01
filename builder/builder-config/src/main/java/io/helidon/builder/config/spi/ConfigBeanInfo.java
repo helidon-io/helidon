@@ -63,9 +63,8 @@ public interface ConfigBeanInfo extends ConfigBean {
      * @param cfgBeanType   the config bean type
      * @return the meta information for the config bean
      */
-    static MetaConfigBeanInfo toMetaConfigBeanInfo(
-            ConfigBean val,
-            Class<?> cfgBeanType) {
+    static MetaConfigBeanInfo toMetaConfigBeanInfo(ConfigBean val,
+                                                   Class<?> cfgBeanType) {
         Objects.requireNonNull(val);
         Objects.requireNonNull(cfgBeanType);
         MetaConfigBeanInfo.Builder builder = MetaConfigBeanInfo.toBuilder(val);
@@ -103,8 +102,7 @@ public interface ConfigBeanInfo extends ConfigBean {
      * @return the config key
      */
     // note: this method is also found in ConfigMetadataHandler.
-    static String toConfigKey(
-            String name) {
+    static String toConfigKey(String name) {
         StringBuilder result = new StringBuilder(name.length() + 5);
 
         char[] chars = name.toCharArray();

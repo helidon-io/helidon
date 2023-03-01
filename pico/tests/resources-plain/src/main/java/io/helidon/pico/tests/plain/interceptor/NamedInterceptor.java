@@ -32,9 +32,8 @@ public class NamedInterceptor implements Interceptor {
     }
 
     @Override
-    public <V> V proceed(
-            InvocationContext ctx,
-            Chain<V> chain) {
+    public <V> V proceed(InvocationContext ctx,
+                         Chain<V> chain) {
         assert (ctx != null);
 
         TypedElementName methodInfo = ctx.elementInfo();

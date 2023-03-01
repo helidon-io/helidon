@@ -60,9 +60,8 @@ public interface Injector {
      * @throws io.helidon.pico.PicoServiceProviderException if an injection or activation problem occurs
      * @see Activator
      */
-    <T> ActivationResult activateInject(
-            T serviceOrServiceProvider,
-            InjectorOptions opts) throws PicoServiceProviderException;
+    <T> ActivationResult activateInject(T serviceOrServiceProvider,
+                                        InjectorOptions opts) throws PicoServiceProviderException;
 
     /**
      * Called to deactivate a managed service or service provider, putting it into {@link Phase#DESTROYED}.
@@ -76,8 +75,7 @@ public interface Injector {
      * @throws io.helidon.pico.PicoServiceProviderException if a problem occurs
      * @see DeActivator
      */
-    <T> ActivationResult deactivate(
-            T serviceOrServiceProvider,
-            InjectorOptions opts) throws PicoServiceProviderException;
+    <T> ActivationResult deactivate(T serviceOrServiceProvider,
+                                    InjectorOptions opts) throws PicoServiceProviderException;
 
 }

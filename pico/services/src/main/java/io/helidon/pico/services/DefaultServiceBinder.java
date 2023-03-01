@@ -35,10 +35,9 @@ public class DefaultServiceBinder implements ServiceBinder {
     private final String moduleName;
     private final boolean trusted;
 
-    private DefaultServiceBinder(
-            PicoServices picoServices,
-            String moduleName,
-            boolean trusted) {
+    private DefaultServiceBinder(PicoServices picoServices,
+                                 String moduleName,
+                                 boolean trusted) {
         this.picoServices = Objects.requireNonNull(picoServices);
         this.serviceRegistry = (ServiceBinder) picoServices.services();
         this.moduleName = moduleName;
@@ -53,18 +52,16 @@ public class DefaultServiceBinder implements ServiceBinder {
      * @param trusted are we in trusted mode (typically only set during early initialization sequence)
      * @return the newly created service binder
      */
-    public static DefaultServiceBinder create(
-            PicoServices picoServices,
-            String moduleName,
-            boolean trusted) {
+    public static DefaultServiceBinder create(PicoServices picoServices,
+                                              String moduleName,
+                                              boolean trusted) {
         Objects.requireNonNull(picoServices);
         Objects.requireNonNull(moduleName);
         return new DefaultServiceBinder(picoServices, moduleName, trusted);
     }
 
     @Override
-    public void bind(
-            ServiceProvider<?> sp) {
+    public void bind(ServiceProvider<?> sp) {
         if (!trusted) {
             DefaultServices.assertPermitsDynamic(picoServices.config());
         }
@@ -95,8 +92,7 @@ public class DefaultServiceBinder implements ServiceBinder {
      * @return the bindable service provider if available, otherwise empty
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public static Optional<ServiceProviderBindable<?>> toBindableProvider(
-            ServiceProvider<?> sp) {
+    public static Optional<ServiceProviderBindable<?>> toBindableProvider(ServiceProvider<?> sp) {
         Objects.requireNonNull(sp);
         if (sp instanceof ServiceProviderBindable) {
             return Optional.of((ServiceProviderBindable<?>) sp);
@@ -110,8 +106,7 @@ public class DefaultServiceBinder implements ServiceBinder {
      * @param sp the service provider
      * @return the root provider of the service provider, falling back to the service provider passed
      */
-    public static ServiceProvider<?> toRootProvider(
-            ServiceProvider<?> sp) {
+    public static ServiceProvider<?> toRootProvider(ServiceProvider<?> sp) {
         Optional<ServiceProviderBindable<?>> bindable = toBindableProvider(sp);
         if (bindable.isPresent()) {
             sp = bindable.get();

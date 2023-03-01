@@ -81,10 +81,9 @@ public class ModuleUtils {
      * @param defaultPackageName the default package name to use if all options are exhausted
      * @return the suggested package name
      */
-    public static String toSuggestedGeneratedPackageName(
-            ModuleInfoDescriptor descriptor,
-            Collection<TypeName> typeNames,
-            String defaultPackageName) {
+    public static String toSuggestedGeneratedPackageName(ModuleInfoDescriptor descriptor,
+                                                         Collection<TypeName> typeNames,
+                                                         String defaultPackageName) {
         String export = null;
 
         if (descriptor != null) {
@@ -119,10 +118,9 @@ public class ModuleUtils {
      * @param defaultName the default name to return if it cannot be determined
      * @return the suggested module name or defaultName if it cannot be properly determined
      */
-    static String toSuggestedModuleName(
-            String moduleName,
-            String typeSuffix,
-            String defaultName) {
+    static String toSuggestedModuleName(String moduleName,
+                                        String typeSuffix,
+                                        String defaultName) {
         if (moduleName == null && typeSuffix == null) {
             return defaultName;
         }
@@ -139,8 +137,7 @@ public class ModuleUtils {
      * @param typeSuffix the type suffix.
      * @return the module name suffix
      */
-    static String normalizedModuleNameTypeSuffix(
-            String typeSuffix) {
+    static String normalizedModuleNameTypeSuffix(String typeSuffix) {
         if (!hasValue(typeSuffix)) {
             return "";
         }
@@ -153,8 +150,7 @@ public class ModuleUtils {
      * @param moduleName the module name (base or test)
      * @return the base module name
      */
-    public static String normalizedBaseModuleName(
-            String moduleName) {
+    public static String normalizedBaseModuleName(String moduleName) {
         if (!hasValue(moduleName)) {
             return moduleName;
         }
@@ -172,10 +168,9 @@ public class ModuleUtils {
      * @return the module name suggested to use, most appropriate for the name of {@link
      *         io.helidon.pico.Application} or {@link io.helidon.pico.Module}
      */
-    public static Optional<String> toSuggestedModuleName(
-            Path basePath,
-            Path sourcePath,
-            boolean defaultToUnnamed) {
+    public static Optional<String> toSuggestedModuleName(Path basePath,
+                                                         Path sourcePath,
+                                                         boolean defaultToUnnamed) {
         AtomicReference<String> typeSuffix = new AtomicReference<>();
         ModuleInfoDescriptor descriptor = findModuleInfo(basePath, sourcePath, typeSuffix, null, null)
                 .orElse(null);
@@ -193,12 +188,11 @@ public class ModuleUtils {
      * @param srcPath        the holder that will be set with the source path
      * @return the descriptor, or null if one cannot be found
      */
-    static Optional<ModuleInfoDescriptor> findModuleInfo(
-            Path basePath,
-            Path sourcePath,
-            AtomicReference<String> typeSuffix,
-            AtomicReference<File> moduleInfoPath,
-            AtomicReference<File> srcPath) {
+    static Optional<ModuleInfoDescriptor> findModuleInfo(Path basePath,
+                                                         Path sourcePath,
+                                                         AtomicReference<String> typeSuffix,
+                                                         AtomicReference<File> moduleInfoPath,
+                                                         AtomicReference<File> srcPath) {
         Objects.requireNonNull(basePath);
         Objects.requireNonNull(sourcePath);
         // if we found a module-info in the source path, then that has to be the module to use
@@ -239,11 +233,10 @@ public class ModuleUtils {
         return Optional.empty();
     }
 
-    private static Optional<ModuleInfoDescriptor> finishModuleInfoDescriptor(
-            AtomicReference<File> moduleInfoPath,
-            AtomicReference<File> srcPath,
-            Set<Path> moduleInfoPaths,
-            String moduleInfoName) {
+    private static Optional<ModuleInfoDescriptor> finishModuleInfoDescriptor(AtomicReference<File> moduleInfoPath,
+                                                                             AtomicReference<File> srcPath,
+                                                                             Set<Path> moduleInfoPaths,
+                                                                             String moduleInfoName) {
         File moduleInfoFile = new File(first(moduleInfoPaths, false).toFile(), moduleInfoName);
         if (moduleInfoPath != null) {
             moduleInfoPath.set(moduleInfoFile);
@@ -260,8 +253,7 @@ public class ModuleUtils {
      * @param path the path
      * @return 'test' or '' (for base non-test)
      */
-    public static String inferSourceOrTest(
-            Path path) {
+    public static String inferSourceOrTest(Path path) {
         Objects.requireNonNull(path);
         Path parent = path.getParent();
         if (parent == null) {
@@ -281,9 +273,8 @@ public class ModuleUtils {
      * @param sourcePath the source path, assumed a child of the base path
      * @return 'test' or ''
      */
-    static String inferSourceOrTest(
-            Path basePath,
-            Path sourcePath) {
+    static String inferSourceOrTest(Path basePath,
+                                    Path sourcePath) {
         // create a relative path from the two paths
         URI relativePath = basePath.toUri().relativize(sourcePath.toUri());
         String path = relativePath.getPath();
@@ -305,9 +296,8 @@ public class ModuleUtils {
      * @param type the type name
      * @return the source path, or empty if it cannot be inferred
      */
-    public static Optional<Path> toSourcePath(
-            Optional<Path> optFile,
-            TypeElement type) {
+    public static Optional<Path> toSourcePath(Optional<Path> optFile,
+                                              TypeElement type) {
         if (optFile.isEmpty()) {
             return Optional.empty();
         }
@@ -326,8 +316,7 @@ public class ModuleUtils {
      * @param sourcePath the source path
      * @return the base path
      */
-    public static Path toBasePath(
-            String sourcePath) {
+    public static Path toBasePath(String sourcePath) {
         int pos = sourcePath.lastIndexOf(SRC_MAIN_JAVA_DIR);
         if (pos < 0) {
             pos = sourcePath.lastIndexOf(SRC_TEST_JAVA_DIR);
@@ -345,8 +334,7 @@ public class ModuleUtils {
      * @param sourcePath the source path
      * @return the target output path
      */
-    public static Path toTargetPath(
-            String sourcePath) {
+    public static Path toTargetPath(String sourcePath) {
         return toBasePath(sourcePath).resolve(TARGET_DIR);
     }
 
@@ -356,8 +344,7 @@ public class ModuleUtils {
      * @param sourcePath the source path
      * @return the scratch path
      */
-    public static Path toPicoScratchPath(
-            String sourcePath) {
+    public static Path toPicoScratchPath(String sourcePath) {
         return toTargetPath(sourcePath).resolve(PicoServicesConfig.NAME);
     }
 
@@ -367,8 +354,7 @@ public class ModuleUtils {
      * @param uri the uri of the artifact
      * @return the file instance, or empty if not local
      */
-    public static Optional<Path> toPath(
-            URI uri) {
+    public static Optional<Path> toPath(URI uri) {
         if (uri.getHost() != null) {
             return Optional.empty();
         }
@@ -381,17 +367,15 @@ public class ModuleUtils {
      * @param moduleName the module name to check
      * @return true if the provided module name is unnamed
      */
-    public static boolean isUnnamedModuleName(
-            String moduleName) {
+    public static boolean isUnnamedModuleName(String moduleName) {
         return !hasValue(moduleName)
                 || moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME)
                 || moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME + "/" + ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX);
     }
 
-    private static Set<Path> findFile(
-            Path startPath,
-            Path untilPath,
-            String fileToFind) {
+    private static Set<Path> findFile(Path startPath,
+                                      Path untilPath,
+                                      String fileToFind) {
         if (startPath == null || !startPath.toString().contains(untilPath.toString())) {
             return Set.of();
         }
@@ -410,9 +394,8 @@ public class ModuleUtils {
         return Set.of();
     }
 
-    private static Set<Path> findFile(
-            Path target,
-            String fileToFind) {
+    private static Set<Path> findFile(Path target,
+                                      String fileToFind) {
         Set<Path> result = new LinkedHashSet<>();
 
         Stack<Path> searchStack = new Stack<>();
@@ -449,8 +432,7 @@ public class ModuleUtils {
      * @param scratchPath the scratch directory path
      * @return the app package name that was loaded
      */
-    public static Optional<String> loadAppPackageName(
-            Path scratchPath) {
+    public static Optional<String> loadAppPackageName(Path scratchPath) {
         File scratchDir = scratchPath.toFile();
         File packageFileName = new File(scratchDir, APPLICATION_PACKAGE_FILE_NAME);
         if (packageFileName.exists()) {
@@ -474,9 +456,8 @@ public class ModuleUtils {
      * @param scratchPath the scratch directory path
      * @param packageName the package name
      */
-    public static void saveAppPackageName(
-            Path scratchPath,
-            String packageName) {
+    public static void saveAppPackageName(Path scratchPath,
+                                          String packageName) {
         File scratchDir = scratchPath.toFile();
         File packageFileName = new File(scratchDir, APPLICATION_PACKAGE_FILE_NAME);
         try {

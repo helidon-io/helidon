@@ -104,8 +104,7 @@ public class ServicesToProcess implements Resetable {
     }
 
     @Override
-    public boolean reset(
-            boolean ignoredDeep) {
+    public boolean reset(boolean ignoredDeep) {
         servicesTypeNames.clear();
         requiredModules.clear();
         servicesToContracts.clear();
@@ -137,8 +136,7 @@ public class ServicesToProcess implements Resetable {
      *
      * @param serviceTypeName the service type name
      */
-    void addServiceTypeName(
-            TypeName serviceTypeName) {
+    void addServiceTypeName(TypeName serviceTypeName) {
         servicesTypeNames.add(Objects.requireNonNull(serviceTypeName));
     }
 
@@ -149,9 +147,8 @@ public class ServicesToProcess implements Resetable {
      * @param parentServiceTypeName the parent for this service type name
      * @return flag indicating whether the parent was accepted
      */
-    public boolean addParentServiceType(
-            TypeName serviceTypeName,
-            TypeName parentServiceTypeName) {
+    public boolean addParentServiceType(TypeName serviceTypeName,
+                                        TypeName parentServiceTypeName) {
         return addParentServiceType(serviceTypeName, parentServiceTypeName, Optional.empty());
     }
 
@@ -163,10 +160,9 @@ public class ServicesToProcess implements Resetable {
      * @param lockParent flag indicating whether the parent should be locked
      * @return flag indicating whether the parent was accepted
      */
-    public boolean addParentServiceType(
-            TypeName serviceTypeName,
-            TypeName parentServiceTypeName,
-            Optional<Boolean> lockParent) {
+    public boolean addParentServiceType(TypeName serviceTypeName,
+                                        TypeName parentServiceTypeName,
+                                        Optional<Boolean> lockParent) {
         if (parentServiceTypeName == null) {
             return false;
         }
@@ -207,9 +203,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param activatorGenericDecl the generics portion of the class decl
      */
-    public void addActivatorGenericDecl(
-            TypeName serviceTypeName,
-            String activatorGenericDecl) {
+    public void addActivatorGenericDecl(TypeName serviceTypeName,
+                                        String activatorGenericDecl) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToActivatorGenericDecl.put(serviceTypeName, activatorGenericDecl);
         assert (prev == null || Objects.equals(prev, activatorGenericDecl));
@@ -228,9 +223,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param access the access level for the service type name
      */
-    public void addAccessLevel(
-            TypeName serviceTypeName,
-            InjectionPointInfo.Access access) {
+    public void addAccessLevel(TypeName serviceTypeName,
+                               InjectionPointInfo.Access access) {
         addServiceTypeName(serviceTypeName);
         if (access != null) {
             Object prev = servicesToAccess.put(serviceTypeName, access);
@@ -253,9 +247,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param isAbstract whether the service type name is abstract (i.e., interface or abstract)
      */
-    public void addIsAbstract(
-            TypeName serviceTypeName,
-            boolean isAbstract) {
+    public void addIsAbstract(TypeName serviceTypeName,
+                              boolean isAbstract) {
         addServiceTypeName(serviceTypeName);
         servicesToIsAbstract.put(serviceTypeName, isAbstract);
     }
@@ -280,9 +273,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param serviceTypeHierarchy the list of superclasses (where this service type is the last in the list)
      */
-    public void addServiceTypeHierarchy(
-            TypeName serviceTypeName,
-            List<TypeName> serviceTypeHierarchy) {
+    public void addServiceTypeHierarchy(TypeName serviceTypeName,
+                                        List<TypeName> serviceTypeHierarchy) {
         addServiceTypeName(serviceTypeName);
         if (serviceTypeHierarchy != null) {
             Object prev = this.serviceTypeHierarchy.put(serviceTypeName, serviceTypeHierarchy);
@@ -298,8 +290,7 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @return true if the hierarchy is known for this service type
      */
-    public boolean hasHierarchyFor(
-            TypeName serviceTypeName) {
+    public boolean hasHierarchyFor(TypeName serviceTypeName) {
         Collection<?> coll = serviceTypeHierarchy.get(serviceTypeName);
         return (coll != null);
     }
@@ -310,8 +301,7 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @return true if contracts are known about this service type
      */
-    public boolean hasContractsFor(
-            TypeName serviceTypeName) {
+    public boolean hasContractsFor(TypeName serviceTypeName) {
         Collection<?> coll = servicesToContracts.get(serviceTypeName);
         if (coll != null) {
             return true;
@@ -332,8 +322,7 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @return true if this service type has already been considered for interceptors
      */
-    public boolean hasVisitedInterceptorPlanFor(
-            TypeName serviceTypeName) {
+    public boolean hasVisitedInterceptorPlanFor(TypeName serviceTypeName) {
         return interceptorPlanFor.containsKey(serviceTypeName);
     }
 
@@ -343,9 +332,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName   the service type name
      * @param plan              the interceptor plan
      */
-    public void addInterceptorPlanFor(
-            TypeName serviceTypeName,
-            Optional<InterceptionPlan> plan) {
+    public void addInterceptorPlanFor(TypeName serviceTypeName,
+                                      Optional<InterceptionPlan> plan) {
         Object prev = interceptorPlanFor.put(serviceTypeName, plan.orElse(null));
         if (prev != null && plan.isPresent()) {
             throw new ToolsException("should only set interception plan once for: " + serviceTypeName);
@@ -383,9 +371,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param codeGen the extra code gen to tack onto the activation implementation
      */
-    public void addExtraCodeGen(
-            TypeName serviceTypeName,
-            String codeGen) {
+    public void addExtraCodeGen(TypeName serviceTypeName,
+                                String codeGen) {
         Objects.requireNonNull(codeGen);
         extraCodeGen.compute(serviceTypeName, (key, val) -> {
             if (val == null) {
@@ -403,10 +390,9 @@ public class ServicesToProcess implements Resetable {
      * @param contractTypeName the contract type name
      * @param isExternal whether the contract is external
      */
-    public void addTypeForContract(
-            TypeName serviceTypeName,
-            TypeName contractTypeName,
-            boolean isExternal) {
+    public void addTypeForContract(TypeName serviceTypeName,
+                                   TypeName contractTypeName,
+                                   boolean isExternal) {
         if (serviceTypeName.equals(contractTypeName)) {
             return;
         }
@@ -437,8 +423,7 @@ public class ServicesToProcess implements Resetable {
      *
      * @param dependencies the dependencies
      */
-    public void addDependencies(
-            DependenciesInfo dependencies) {
+    public void addDependencies(DependenciesInfo dependencies) {
         TypeName serviceTypeName =
                 DefaultTypeName.createFromTypeName(dependencies.fromServiceTypeName().orElseThrow());
         addServiceTypeName(serviceTypeName);
@@ -455,9 +440,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param preDestroyMethodName the method name
      */
-    public void addPreDestroyMethod(
-            TypeName serviceTypeName,
-            String preDestroyMethodName) {
+    public void addPreDestroyMethod(TypeName serviceTypeName,
+                                    String preDestroyMethodName) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToPreDestroyMethod.put(serviceTypeName, preDestroyMethodName);
         if (prev != null) {
@@ -471,9 +455,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param postConstructMethodName the method name
      */
-    public void addPostConstructMethod(
-            TypeName serviceTypeName,
-            String postConstructMethodName) {
+    public void addPostConstructMethod(TypeName serviceTypeName,
+                                       String postConstructMethodName) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToPostConstructMethod.put(serviceTypeName, postConstructMethodName);
         if (prev != null) {
@@ -487,9 +470,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param weight the weight priority
      */
-    public void addDeclaredWeight(
-            TypeName serviceTypeName,
-            Double weight) {
+    public void addDeclaredWeight(TypeName serviceTypeName,
+                                  Double weight) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToWeightedPriority.put(serviceTypeName, weight);
         if (prev != null) {
@@ -503,9 +485,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param runLevel its run level
      */
-    public void addDeclaredRunLevel(
-            TypeName serviceTypeName,
-            Integer runLevel) {
+    public void addDeclaredRunLevel(TypeName serviceTypeName,
+                                    Integer runLevel) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToRunLevel.put(serviceTypeName, runLevel);
         if (prev != null) {
@@ -519,9 +500,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param scopeTypeName its scope type name
      */
-    public void addScopeTypeName(
-            TypeName serviceTypeName,
-            String scopeTypeName) {
+    public void addScopeTypeName(TypeName serviceTypeName,
+                                 String scopeTypeName) {
         Objects.requireNonNull(scopeTypeName);
         addServiceTypeName(serviceTypeName);
 
@@ -540,9 +520,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param providerFor the types that it provides
      */
-    public void addProviderFor(
-            TypeName serviceTypeName,
-            Set<TypeName> providerFor) {
+    public void addProviderFor(TypeName serviceTypeName,
+                               Set<TypeName> providerFor) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToProviderFor.put(serviceTypeName, providerFor);
         if (prev != null && !prev.equals(providerFor)) {
@@ -556,9 +535,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param qualifiers its qualifiers
      */
-    public void addQualifiers(
-            TypeName serviceTypeName,
-            Set<QualifierAndValue> qualifiers) {
+    public void addQualifiers(TypeName serviceTypeName,
+                              Set<QualifierAndValue> qualifiers) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToQualifiers.put(serviceTypeName, qualifiers);
         if (prev != null) {
@@ -660,9 +638,8 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param moduleNames the required module names to support known external contracts
      */
-    public void addExternalRequiredModules(
-            TypeName serviceTypeName,
-            Collection<String> moduleNames) {
+    public void addExternalRequiredModules(TypeName serviceTypeName,
+                                           Collection<String> moduleNames) {
         if (moduleNames != null) {
             requiredModules.addAll(moduleNames);
         }
@@ -680,8 +657,7 @@ public class ServicesToProcess implements Resetable {
      *
      * @param moduleName the module name
      */
-    public void moduleName(
-            String moduleName) {
+    public void moduleName(String moduleName) {
         // special note: the compiler uses the same jvm instance for each round, including source and test, so we
         // cannot guard against changes here!!
         //        if (Objects.nonNull(this.moduleName) && !this.moduleName.equals(moduleName)) {
@@ -713,8 +689,7 @@ public class ServicesToProcess implements Resetable {
      *
      * @param descriptor the descriptor
      */
-    public void lastKnownModuleInfoDescriptor(
-            ModuleInfoDescriptor descriptor) {
+    public void lastKnownModuleInfoDescriptor(ModuleInfoDescriptor descriptor) {
         this.lastKnownModuleInfoDescriptor = descriptor;
         if (descriptor != null) {
             moduleName(descriptor.name());
@@ -733,8 +708,7 @@ public class ServicesToProcess implements Resetable {
      *
      * @param lastKnownModuleInfoFile the file path location for the descriptor
      */
-    public void lastKnownModuleInfoFilePath(
-            Path lastKnownModuleInfoFile) {
+    public void lastKnownModuleInfoFilePath(Path lastKnownModuleInfoFile) {
         this.lastKnownModuleInfoFilePath = lastKnownModuleInfoFile;
     }
 
@@ -751,9 +725,8 @@ public class ServicesToProcess implements Resetable {
      * @param descriptor the descriptor
      * @param location the location for the descriptor
      */
-    void lastGeneratedModuleInfoDescriptor(
-            ModuleInfoDescriptor descriptor,
-            Path location) {
+    void lastGeneratedModuleInfoDescriptor(ModuleInfoDescriptor descriptor,
+                                           Path location) {
         this.lastGeneratedModuleInfoDescriptor = descriptor;
         this.lastGeneratedModuleInfoFilePath = location;
     }
@@ -777,8 +750,7 @@ public class ServicesToProcess implements Resetable {
      *
      * @param lastKnownSourcePathBeingProcessed the last source path being processed
      */
-    public void lastKnownSourcePathBeingProcessed(
-            Path lastKnownSourcePathBeingProcessed) {
+    public void lastKnownSourcePathBeingProcessed(Path lastKnownSourcePathBeingProcessed) {
         this.lastKnownSourcePathBeingProcessed = lastKnownSourcePathBeingProcessed;
     }
 
@@ -794,8 +766,7 @@ public class ServicesToProcess implements Resetable {
      *
      * @param typeSuffix the optional type suffix
      */
-    public void lastKnownTypeSuffix(
-            String typeSuffix) {
+    public void lastKnownTypeSuffix(String typeSuffix) {
         this.lastKnownTypeSuffix = typeSuffix;
     }
 
@@ -811,8 +782,7 @@ public class ServicesToProcess implements Resetable {
      *
      * @param lastGeneratedPackageName the package name
      */
-    public void lastGeneratedPackageName(
-            String lastGeneratedPackageName) {
+    public void lastGeneratedPackageName(String lastGeneratedPackageName) {
         this.lastGeneratedPackageName = lastGeneratedPackageName;
     }
 
@@ -862,10 +832,9 @@ public class ServicesToProcess implements Resetable {
      * @param annotations the annotations being processed
      * @param roundEnv the round env
      */
-    public static void onBeginProcessing(
-            Messager processor,
-            Set<? extends TypeElement> annotations,
-            RoundEnvironment roundEnv) {
+    public static void onBeginProcessing(Messager processor,
+                                         Set<? extends TypeElement> annotations,
+                                         RoundEnvironment roundEnv) {
         boolean reallyStarted = !annotations.isEmpty();
         if (reallyStarted && !roundEnv.processingOver()) {
             RUNNING_PROCESSORS.incrementAndGet();
@@ -881,10 +850,9 @@ public class ServicesToProcess implements Resetable {
      * @param annotations the annotations being processed
      * @param roundEnv the round env
      */
-    public static void onEndProcessing(
-            Messager processor,
-            Set<? extends TypeElement> annotations,
-            RoundEnvironment roundEnv) {
+    public static void onEndProcessing(Messager processor,
+                                       Set<? extends TypeElement> annotations,
+                                       RoundEnvironment roundEnv) {
         boolean done = annotations.isEmpty();
         if (done && roundEnv.processingOver()) {
             RUNNING_PROCESSORS.decrementAndGet();
@@ -904,8 +872,7 @@ public class ServicesToProcess implements Resetable {
      * {@link io.helidon.pico.Application} definitions - unless the user opted out of this check with the
      * {@link io.helidon.pico.tools.Options#TAG_IGNORE_MODULE_USAGE} option.
      */
-    private void performModuleUsageValidation(
-            Messager processor) {
+    private void performModuleUsageValidation(Messager processor) {
         if (lastKnownModuleInfoFilePath != null && lastKnownModuleInfoDescriptor == null) {
             throw new ToolsException("expected to have a module-info.java");
         }

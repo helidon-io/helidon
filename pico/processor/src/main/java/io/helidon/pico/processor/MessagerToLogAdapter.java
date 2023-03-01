@@ -22,21 +22,18 @@ class MessagerToLogAdapter implements Messager {
 
     private final System.Logger logger;
 
-    MessagerToLogAdapter(
-            System.Logger logger) {
+    MessagerToLogAdapter(System.Logger logger) {
         this.logger = logger;
     }
 
     @Override
-    public void debug(
-            String message) {
+    public void debug(String message) {
         logger.log(System.Logger.Level.DEBUG, message);
     }
 
     @Override
-    public void debug(
-            String message,
-            Throwable t) {
+    public void debug(String message,
+                      Throwable t) {
         logger.log(System.Logger.Level.DEBUG, message, t);
     }
 
@@ -46,22 +43,19 @@ class MessagerToLogAdapter implements Messager {
     }
 
     @Override
-    public void warn(
-            String message) {
+    public void warn(String message) {
         logger.log(System.Logger.Level.WARNING, message);
     }
 
     @Override
-    public void warn(
-            String message,
-            Throwable t) {
+    public void warn(String message,
+                     Throwable t) {
         logger.log(System.Logger.Level.WARNING, message, t);
     }
 
     @Override
-    public void error(
-            String message,
-            Throwable t) {
+    public void error(String message,
+                      Throwable t) {
         logger.log(System.Logger.Level.ERROR, message, t);
     }
 

@@ -43,8 +43,7 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
     static final QualifierAndValue fine = DefaultQualifierAndValue.createNamed("fine");
 
     @Override
-    public Optional<AbstractBlade> first(
-            ContextualServiceQuery query) {
+    public Optional<AbstractBlade> first(ContextualServiceQuery query) {
         Objects.requireNonNull(query);
         ServiceInfoCriteria criteria = query.serviceInfoCriteria();
         assert (criteria.contractsImplemented().size() == 1) : criteria;
@@ -64,8 +63,7 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
     }
 
     @Override
-    public List<AbstractBlade> list(
-            ContextualServiceQuery query) {
+    public List<AbstractBlade> list(ContextualServiceQuery query) {
         Objects.requireNonNull(query);
         assert (query.injectionPointInfo().orElseThrow().listWrapped()) : query;
         ServiceInfoCriteria criteria = query.serviceInfoCriteria();

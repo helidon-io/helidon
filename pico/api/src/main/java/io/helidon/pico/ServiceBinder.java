@@ -26,7 +26,6 @@ public interface ServiceBinder {
      *
      * @param serviceProvider the service provider to bind into the service registry
      */
-    void bind(
-            ServiceProvider<?> serviceProvider);
+    void bind(ServiceProvider<?> serviceProvider);
 
 }

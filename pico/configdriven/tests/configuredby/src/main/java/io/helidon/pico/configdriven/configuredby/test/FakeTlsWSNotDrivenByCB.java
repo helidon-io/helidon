@@ -34,8 +34,7 @@ public class FakeTlsWSNotDrivenByCB {
     private boolean running;
 
     @Inject
-    FakeTlsWSNotDrivenByCB(
-            FakeWebServerTlsConfig cfg) {
+    FakeTlsWSNotDrivenByCB(FakeWebServerTlsConfig cfg) {
         this.cfg = Objects.requireNonNull(cfg);
     }
 

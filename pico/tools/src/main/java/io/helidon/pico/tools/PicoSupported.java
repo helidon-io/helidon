@@ -36,12 +36,11 @@ class PicoSupported {
      * @param isStatic              is the target element static
      * @return true if the target supported pico injection, false otherwise (assuming not throwIfNotSupported)
      */
-    static boolean isSupportedInjectionPoint(
-            System.Logger logger,
-            TypeName serviceType,
-            Object targetElement,
-            boolean isPrivate,
-            boolean isStatic) {
+    static boolean isSupportedInjectionPoint(System.Logger logger,
+                                             TypeName serviceType,
+                                             Object targetElement,
+                                             boolean isPrivate,
+                                             boolean isStatic) {
         boolean supported = (!isPrivate && !isStatic);
         if (!supported) {
             String message = "static and private injection points are not supported: " + serviceType + "." + targetElement;

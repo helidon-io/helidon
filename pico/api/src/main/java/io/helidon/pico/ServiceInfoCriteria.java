@@ -114,8 +114,7 @@ public interface ServiceInfoCriteria {
     // internal note: it is unfortunate that we have a matches() here as well as in ServiceInfo. This is what happened
     // when we split ServiceInfo into ServiceInfoCriteria.  Sometimes we need ServiceInfo.matches(criteria), and other times
     // ServiceInfoCriteria.matches(criteria).
-    default boolean matches(
-            ServiceInfoCriteria criteria) {
+    default boolean matches(ServiceInfoCriteria criteria) {
         return matchesContracts(criteria)
                 && scopeTypeNames().containsAll(criteria.scopeTypeNames())
                 && ServiceInfo.matchesQualifiers(qualifiers(), criteria.qualifiers())
@@ -132,8 +131,7 @@ public interface ServiceInfoCriteria {
      * @param criteria the criteria to compare against
      * @return true if the criteria provided matches this instance from only the contracts point of view
      */
-    default boolean matchesContracts(
-            ServiceInfoCriteria criteria) {
+    default boolean matchesContracts(ServiceInfoCriteria criteria) {
         if (criteria == PicoServices.EMPTY_CRITERIA) {
             return true;
         }
@@ -145,9 +143,8 @@ public interface ServiceInfoCriteria {
         return matches;
     }
 
-    private static boolean matches(
-            Object src,
-            Optional<?> criteria) {
+    private static boolean matches(Object src,
+                                   Optional<?> criteria) {
         if (criteria.isEmpty()) {
             return true;
         }

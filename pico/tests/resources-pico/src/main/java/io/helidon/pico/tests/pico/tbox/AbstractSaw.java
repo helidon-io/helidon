@@ -48,29 +48,25 @@ public abstract class AbstractSaw extends Verification implements Tool {
     int setterInjectedPkgPrivateProviderListInAbstractBaseInjectedCount;
 
     @Inject
-    void setBladeProvider(
-            Provider<AbstractBlade> blade) {
+    void setBladeProvider(Provider<AbstractBlade> blade) {
         setterInjectedPkgPrivateProviderInAbstractBase = blade;
         setterInjectedPkgPrivateProviderInAbstractBaseInjectedCount++;
     }
 
     @Inject
-    void setBladeOptional(
-            Optional<AbstractBlade> blade) {
+    void setBladeOptional(Optional<AbstractBlade> blade) {
         setterInjectedPkgPrivateOptionalInAbstractBase = blade;
         setterInjectedPkgPrivateOptionalInAbstractBaseInjectedCount++;
     }
 
     @Inject
-    void setBladeList(
-            List<AbstractBlade> blades) {
+    void setBladeList(List<AbstractBlade> blades) {
         setterInjectedPkgPrivateListInAbstractBase = blades;
         setterInjectedPkgPrivateListInAbstractBaseInjectedCount++;
     }
 
     @Inject
-    void setBladeProviders(
-            List<Provider<AbstractBlade>> blades) {
+    void setBladeProviders(List<Provider<AbstractBlade>> blades) {
         setterInjectedPkgPrivateProviderListInAbstractBase = blades;
         setterInjectedPkgPrivateProviderListInAbstractBaseInjectedCount++;
     }

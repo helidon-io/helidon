@@ -41,8 +41,7 @@ public class Utils {
      * @param sp the service provider
      * @return true if the service provider can receive injection
      */
-    public static boolean isQualifiedInjectionTarget(
-            ServiceProvider<?> sp) {
+    public static boolean isQualifiedInjectionTarget(ServiceProvider<?> sp) {
         ServiceInfo serviceInfo = sp.serviceInfo();
         Set<String> contractsImplemented = serviceInfo.contractsImplemented();
         DependenciesInfo deps = sp.dependencies();
@@ -59,8 +58,7 @@ public class Utils {
      * @param provider the provider
      * @return the description
      */
-    public static String toDescription(
-            Object provider) {
+    public static String toDescription(Object provider) {
         if (provider instanceof Optional) {
             provider = ((Optional<?>) provider).orElse(null);
         }
@@ -78,8 +76,7 @@ public class Utils {
      * @param coll the collection of providers
      * @return the description
      */
-    public static List<String> toDescriptions(
-            Collection<?> coll) {
+    public static List<String> toDescriptions(Collection<?> coll) {
         return coll.stream().map(Utils::toDescription).collect(Collectors.toList());
     }
 

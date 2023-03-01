@@ -36,8 +36,7 @@ public class InterceptedImpl implements Intercepted {
     private final Intercepted inner;
 
     @Inject
-    public InterceptedImpl(
-            Optional<Intercepted> inner) {
+    public InterceptedImpl(Optional<Intercepted> inner) {
         this.inner = inner.orElse(null);
     }
 
@@ -48,8 +47,7 @@ public class InterceptedImpl implements Intercepted {
 
     @Override
 //    @MyCompileTimeInheritableTestQualifier(value = "InterceptedImpl method", extendedValue = "ev derived method")
-    public String sayHello(
-            String arg) {
+    public String sayHello(String arg) {
         return getClass().getSimpleName() + ":" + (inner != null ? inner.sayHello(arg) : arg);
     }
 

@@ -42,8 +42,7 @@ public class TestingSingleton extends InterceptedImpl implements Resetable {
     @Inject Provider<Awl> awlProvider;
 
     @Inject
-    TestingSingleton(
-            Optional<Intercepted> inner) {
+    TestingSingleton(Optional<Intercepted> inner) {
         super(inner);
     }
 
@@ -67,8 +66,7 @@ public class TestingSingleton extends InterceptedImpl implements Resetable {
     }
 
     @Override
-    public boolean reset(
-            boolean deep) {
+    public boolean reset(boolean deep) {
         postConstructCount.set(0);
         preDestroyCount.set(0);
         return true;

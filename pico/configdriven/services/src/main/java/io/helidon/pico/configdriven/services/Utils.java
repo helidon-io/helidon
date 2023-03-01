@@ -27,34 +27,29 @@ class Utils {
     private Utils() {
     }
 
-    static boolean isBlank(
-            ServiceInfoCriteria criteria) {
+    static boolean isBlank(ServiceInfoCriteria criteria) {
         assert (criteria.externalContractsImplemented().isEmpty());
         return criteria.serviceTypeName().isEmpty()
                 && criteria.contractsImplemented().isEmpty()
                 && criteria.qualifiers().isEmpty();
     }
 
-    static boolean hasValue(
-            String val) {
+    static boolean hasValue(String val) {
         return (val != null) && !val.isBlank();
     }
 
-    static String validatedConfigKey(
-            String configKey) {
+    static String validatedConfigKey(String configKey) {
         if (!hasValue(configKey)) {
             throw new IllegalStateException("key was expected to be non-blank");
         }
         return configKey;
     }
 
-    static String validatedConfigKey(
-            MetaConfigBeanInfo metaConfigBeanInfo) {
+    static String validatedConfigKey(MetaConfigBeanInfo metaConfigBeanInfo) {
         return validatedConfigKey(metaConfigBeanInfo.value());
     }
 
-    static Config safeDowncastOf(
-            io.helidon.common.config.Config config) {
+    static Config safeDowncastOf(io.helidon.common.config.Config config) {
         if (!(config instanceof Config)) {
             throw new IllegalStateException(config.getClass() + " is not supported - the only type supported is " + Config.class);
         }
@@ -62,8 +57,7 @@ class Utils {
         return (Config) config;
     }
 
-    static Optional<Integer> toNumeric(
-            String val) {
+    static Optional<Integer> toNumeric(String val) {
         if (val == null) {
             return Optional.empty();
         }

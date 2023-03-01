@@ -20,8 +20,6 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,7 +78,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
     @Override
     public Set<Class<? extends Annotation>> supportedAnnotationTypes() {
-        return Collections.singleton(Builder.class);
+        return Set.of(Builder.class);
     }
 
     @Override
@@ -91,7 +89,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             TypeName implTypeName = toImplTypeName(typeInfo.typeName(), builderAnnotation);
             preValidate(implTypeName, typeInfo, builderAnnotation);
 
-            LinkedList<TypeAndBody> builds = new LinkedList<>();
+            List<TypeAndBody> builds = new ArrayList<>();
             builds.add(DefaultTypeAndBody.builder()
                                .typeName(abstractImplTypeName)
                                .body(toBody(createBodyContext(false, abstractImplTypeName, typeInfo, builderAnnotation)))
@@ -382,7 +380,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 builder.append(baseExtendsTypeName.get().fqName());
             }
 
-            LinkedList<String> impls = new LinkedList<>();
+            List<String> impls = new ArrayList<>();
             if (!ctx.isExtendingAnAbstractClass()) {
                 impls.add(ctx.typeInfo().typeName().fqName());
             }
@@ -1387,7 +1385,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 }
             }
 
-            LinkedList<String> impls = new LinkedList<>();
+            List<String> impls = new ArrayList<>();
             if (!ctx.isExtendingAnAbstractClass() && !ctx.hasAnyBuilderClashingMethodNames()) {
                 impls.add(ctx.typeInfo().typeName().name());
             }
@@ -1763,7 +1761,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             configuredOptions.get().values().entrySet().stream()
                     .filter(e -> BuilderTypeTools.hasNonBlankValue(e.getValue()))
                     .filter(e -> !e.getKey().equals("key"))
-                    .forEach((e) -> {
+                    .forEach(e -> {
                         result.append(", ");
                         result.append(quotedTupleOf(e.getKey(), e.getValue()));
                     });

@@ -47,9 +47,8 @@ class DefaultStringValueParser implements StringValueParser {
     }
 
     @Override
-    public <R> Optional<R> parse(
-            String val,
-            Class<R> type) {
+    public <R> Optional<R> parse(String val,
+                                 Class<R> type) {
         if (String.class == type) {
             return (Optional<R>) Optional.ofNullable(val);
         }
@@ -64,49 +63,43 @@ class DefaultStringValueParser implements StringValueParser {
 
 
     static class IntegerParser {
-        public static Optional parse(
-                String val,
-                Class ignoredType) {
+        public static Optional parse(String val,
+                                     Class ignoredType) {
             return Optional.ofNullable(null == val ? null : Integer.valueOf(val));
         }
     }
 
     static class LongParser {
-        public static Optional parse(
-                String val,
-                Class ignoredType) {
+        public static Optional parse(String val,
+                                     Class ignoredType) {
             return Optional.ofNullable(null == val ? null : Long.valueOf(val));
         }
     }
 
     static class FloatParser {
-        public static Optional parse(
-                String val,
-                Class ignoredType) {
+        public static Optional parse(String val,
+                                     Class ignoredType) {
             return Optional.ofNullable(null == val ? null : Float.valueOf(val));
         }
     }
 
     static class DoubleParser {
-        public static Optional parse(
-                String val,
-                Class ignoredType) {
+        public static Optional parse(String val,
+                                     Class ignoredType) {
             return Optional.ofNullable(null == val ? null : Double.valueOf(val));
         }
     }
 
     static class BooleanParser {
-        public static Optional parse(
-                String val,
-                Class ignoredType) {
+        public static Optional parse(String val,
+                                     Class ignoredType) {
             return Optional.ofNullable(null == val ? null : Boolean.valueOf(val));
         }
     }
 
     static class CharArrayParser {
-        public static Optional parse(
-                String val,
-                Class ignoredType) {
+        public static Optional parse(String val,
+                                     Class ignoredType) {
             return Optional.ofNullable(null == val ? null : val.toCharArray());
         }
     }

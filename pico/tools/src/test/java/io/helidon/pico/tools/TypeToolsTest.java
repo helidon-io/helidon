@@ -129,12 +129,11 @@ public class TypeToolsTest {
                                            .get(0).getParameterInfo()[0]);
     }
 
-    private void optionalsProvidersAndLists(
-            String expectedType,
-            boolean expectedProvider,
-            boolean expectedList,
-            boolean expectedOptional,
-            FieldInfo fld) {
+    private void optionalsProvidersAndLists(String expectedType,
+                                            boolean expectedProvider,
+                                            boolean expectedList,
+                                            boolean expectedOptional,
+                                            FieldInfo fld) {
         assertNotNull(fld);
         AtomicReference<Boolean> isProvider = new AtomicReference<>();
         AtomicReference<Boolean> isList = new AtomicReference<>();
@@ -145,9 +144,8 @@ public class TypeToolsTest {
         assertThat("optional for " + fld, isOptional.get(), is(expectedOptional));
     }
 
-    private void optionalsProvidersAndListsException(
-            String exceptedException,
-            FieldInfo fld) {
+    private void optionalsProvidersAndListsException(String exceptedException,
+                                                     FieldInfo fld) {
         AtomicReference<Boolean> isProvider = new AtomicReference<>();
         AtomicReference<Boolean> isList = new AtomicReference<>();
         AtomicReference<Boolean> isOptional = new AtomicReference<>();
@@ -156,12 +154,11 @@ public class TypeToolsTest {
         assertThat(fld.toString(), te.getMessage(), equalTo(exceptedException));
     }
 
-    private void optionalsProvidersAndLists(
-            String expectedType,
-            boolean expectedProvider,
-            boolean expectedList,
-            boolean expectedOptional,
-            MethodParameterInfo fld) {
+    private void optionalsProvidersAndLists(String expectedType,
+                                            boolean expectedProvider,
+                                            boolean expectedList,
+                                            boolean expectedOptional,
+                                            MethodParameterInfo fld) {
         AtomicReference<Boolean> isProvider = new AtomicReference<>();
         AtomicReference<Boolean> isList = new AtomicReference<>();
         AtomicReference<Boolean> isOptional = new AtomicReference<>();
@@ -171,9 +168,8 @@ public class TypeToolsTest {
         assertThat("optional for " + fld, isOptional.get(), is(expectedOptional));
     }
 
-    private void optionalsProvidersAndListsException(
-            String exceptedException,
-            MethodParameterInfo fld) {
+    private void optionalsProvidersAndListsException(String exceptedException,
+                                                     MethodParameterInfo fld) {
         AtomicReference<Boolean> isProvider = new AtomicReference<>();
         AtomicReference<Boolean> isList = new AtomicReference<>();
         AtomicReference<Boolean> isOptional = new AtomicReference<>();
@@ -181,6 +177,7 @@ public class TypeToolsTest {
                                          () -> extractInjectionPointTypeInfo(fld, isProvider, isList, isOptional));
         assertThat(fld.toString(), te.getMessage(), equalTo(exceptedException));
     }
+
 
     static abstract class ProviderOfGeneric<D> implements Provider<D> {
         List<Provider<TypeToolsTest>> listOfProviders;
@@ -209,6 +206,7 @@ public class TypeToolsTest {
         public void setGeneric(D ignored) {
         }
     }
+
 
     static class ProviderOfTypeDirect implements Provider<String> {
         Provider<String> providerOfString;
@@ -247,8 +245,7 @@ public class TypeToolsTest {
         }
     }
 
-    static class InjectionPointProviderOfTypeDirect
-            extends ProviderOfGeneric<Boolean> implements Provider<Boolean> {
+    static class InjectionPointProviderOfTypeDirect extends ProviderOfGeneric<Boolean> implements Provider<Boolean> {
         Provider<Boolean> provider;
 
         public InjectionPointProviderOfTypeDirect(Provider<Boolean> provider) {
@@ -257,7 +254,7 @@ public class TypeToolsTest {
 
         @Override
         public Boolean get() {
-            return Objects.isNull(provider) ? null : provider.get();
+            return (provider == null) ? null : provider.get();
         }
     }
 

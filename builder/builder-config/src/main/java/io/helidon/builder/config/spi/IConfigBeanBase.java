@@ -32,7 +32,9 @@ public abstract class IConfigBeanBase implements IConfigBeanCommon {
      *
      * @param b             the builder
      * @param instanceId    the instance id
+     * @deprecated not intended to be created directly
      */
+    @Deprecated
     protected IConfigBeanBase(IConfigBeanBuilder b,
                               String instanceId) {
         this.config = b.__config().orElse(null);

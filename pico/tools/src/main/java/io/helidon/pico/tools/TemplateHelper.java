@@ -52,8 +52,7 @@ public class TemplateHelper {
 
     private final String versionId;
 
-    private TemplateHelper(
-            PicoServicesConfig cfg) {
+    private TemplateHelper(PicoServicesConfig cfg) {
         Objects.requireNonNull(cfg.providerName(), "provider name is required");
         this.versionId = Objects.requireNonNull(cfg.providerVersion(), "provider version is required");
     }
@@ -75,8 +74,7 @@ public class TemplateHelper {
      * @param generatorClassTypeName the generator class type name
      * @return the generated sticker
      */
-    public String generatedStickerFor(
-            String generatorClassTypeName) {
+    public String generatedStickerFor(String generatorClassTypeName) {
         return BuilderTypeTools.generatedStickerFor(generatorClassTypeName, versionId);
     }
 
@@ -89,10 +87,9 @@ public class TemplateHelper {
      *
      * @return the new string, fully resolved with substitutions
      */
-    public String applySubstitutions(
-            String target,
-            Map<String, Object> props,
-            boolean logErr) {
+    public String applySubstitutions(String target,
+                                     Map<String, Object> props,
+                                     boolean logErr) {
         Set<String> missingArgs = new LinkedHashSet<>();
         try {
             return applySubstitutions(target, props, logErr, true, missingArgs, null, null);
@@ -107,8 +104,7 @@ public class TemplateHelper {
      * @param target the target template
      * @return the set of attributes that are required for substitution
      */
-    public Set<String> requiredArguments(
-            String target) {
+    public Set<String> requiredArguments(String target) {
         return requiredArguments(target, Optional.empty(), Optional.empty());
     }
 
@@ -119,8 +115,7 @@ public class TemplateHelper {
      *
      * @return the template file, without substitutions applied
      */
-    String safeLoadTemplate(
-            String name) {
+    String safeLoadTemplate(String name) {
         return safeLoadTemplate(DEFAULT_TEMPLATE_NAME, name);
     }
 
@@ -132,9 +127,8 @@ public class TemplateHelper {
      *
      * @return the template file, without substitutions applied
      */
-    String safeLoadTemplate(
-            String templateName,
-            String name) {
+    String safeLoadTemplate(String templateName,
+                            String name) {
         return Objects.requireNonNull(loadTemplate(templateName, name), "failed to load: " + toFQN(templateName, name));
     }
 
@@ -145,15 +139,13 @@ public class TemplateHelper {
      * @param name          the template name to use
      * @return the template, or null if not found
      */
-    public String loadTemplate(
-            String templateName,
-            String name) {
+    public String loadTemplate(String templateName,
+                               String name) {
         return loadStringFromResource(toFQN(templateName, name));
     }
 
-    private static String toFQN(
-            String templateName,
-            String name) {
+    private static String toFQN(String templateName,
+                                String name) {
         return "templates/" + PicoServicesConfig.NAME + "/" + templateName + "/" + name;
     }
 
@@ -165,10 +157,9 @@ public class TemplateHelper {
      * @param delimEnd      provides support for custom delimiters
      * @return the set of attributes that are required for substitution
      */
-    Set<String> requiredArguments(
-            String target,
-            Optional<String> delimStart,
-            Optional<String> delimEnd) {
+    Set<String> requiredArguments(String target,
+                                  Optional<String> delimStart,
+                                  Optional<String> delimEnd) {
         try {
             Handlebars handlebars = new Handlebars();
             delimStart.ifPresent(handlebars::setStartDelimiter);
@@ -186,14 +177,13 @@ public class TemplateHelper {
         }
     }
 
-    private static String applySubstitutions(
-            String target,
-            Map<String, Object> props,
-            boolean logErr,
-            boolean throwOnMissingArgs,
-            Set<String> missingArgs,
-            String delimStart,
-            String delimEnd) throws IOException {
+    private static String applySubstitutions(String target,
+                                             Map<String, Object> props,
+                                             boolean logErr,
+                                             boolean throwOnMissingArgs,
+                                             Set<String> missingArgs,
+                                             String delimStart,
+                                             String delimEnd) throws IOException {
         if (target == null) {
             return null;
         }

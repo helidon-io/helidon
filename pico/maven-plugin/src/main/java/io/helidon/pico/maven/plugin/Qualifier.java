@@ -48,8 +48,7 @@ public class Qualifier implements QualifierAndValue {
      *
      * @param val the qualifier type name
      */
-    public void setQualifierTypeName(
-            String val) {
+    public void setQualifierTypeName(String val) {
         this.qualifierTypeName = val;
     }
 
@@ -64,8 +63,7 @@ public class Qualifier implements QualifierAndValue {
     }
 
     @Override
-    public Optional<String> value(
-            String name) {
+    public Optional<String> value(String name) {
         throw new UnsupportedOperationException();
     }
 
@@ -83,8 +81,7 @@ public class Qualifier implements QualifierAndValue {
      * @param val the qualifer value
      */
     @SuppressWarnings("unused")
-    public void setValue(
-            String val) {
+    public void setValue(String val) {
         this.value = val;
     }
 

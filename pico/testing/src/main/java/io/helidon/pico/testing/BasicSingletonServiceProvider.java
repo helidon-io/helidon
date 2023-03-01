@@ -33,9 +33,8 @@ import io.helidon.pico.services.AbstractServiceProvider;
 public class BasicSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
     private final Class<T> serviceType;
 
-    private BasicSingletonServiceProvider(
-            Class<T> serviceType,
-            ServiceInfo serviceInfo) {
+    private BasicSingletonServiceProvider(Class<T> serviceType,
+                                          ServiceInfo serviceInfo) {
         this.serviceType = serviceType;
         serviceInfo(serviceInfo);
     }
@@ -61,9 +60,8 @@ public class BasicSingletonServiceProvider<T> extends AbstractServiceProvider<T>
      * @return the service provider capable of being bound to the services registry
      * @see io.helidon.pico.testing.PicoTestingSupport#bind(io.helidon.pico.PicoServices, io.helidon.pico.ServiceProvider)
      */
-    public static <T> BasicSingletonServiceProvider<T> create(
-            Class<T> serviceType,
-            ServiceInfoBasics siBasics) {
+    public static <T> BasicSingletonServiceProvider<T> create(Class<T> serviceType,
+                                                              ServiceInfoBasics siBasics) {
         Objects.requireNonNull(serviceType);
         Objects.requireNonNull(siBasics);
 
@@ -80,8 +78,7 @@ public class BasicSingletonServiceProvider<T> extends AbstractServiceProvider<T>
     }
 
     @Override
-    protected T createServiceProvider(
-            Map<String, Object> deps) {
+    protected T createServiceProvider(Map<String, Object> deps) {
         try {
             Constructor<T> ctor = serviceType.getDeclaredConstructor();
             ctor.setAccessible(true);

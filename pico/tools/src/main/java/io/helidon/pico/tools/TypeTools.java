@@ -100,8 +100,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param typeName the type name to evaluate
      * @return the file path expression where dots are translated to file separators
      */
-    public static String toFilePath(
-            TypeName typeName) {
+    public static String toFilePath(TypeName typeName) {
         return toFilePath(typeName, ".java");
     }
 
@@ -112,9 +111,8 @@ public class TypeTools extends BuilderTypeTools {
      * @param fileType the file type, typically ".java"
      * @return the file path expression where dots are translated to file separators
      */
-    public static String toFilePath(
-            TypeName typeName,
-            String fileType) {
+    public static String toFilePath(TypeName typeName,
+                                    String fileType) {
         String className = typeName.className();
         String packageName = typeName.packageName();
         if (!hasValue(packageName)) {
@@ -136,8 +134,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param classInfo the classInfo
      * @return the typeName for the class info
      */
-    static TypeName createTypeNameFromClassInfo(
-            ClassInfo classInfo) {
+    static TypeName createTypeNameFromClassInfo(ClassInfo classInfo) {
         if (classInfo == null) {
             return null;
         }
@@ -150,8 +147,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param type the type name
      * @return the Object type name for the given type (e.g., "int.class" -> "Integer.class")
      */
-    static TypeName toObjectTypeName(
-            String type) {
+    static TypeName toObjectTypeName(String type) {
         if (boolean.class.getName().equals(type)) {
             return DefaultTypeName.create(Boolean.class);
         } else if (byte.class.getName().equals(type)) {
@@ -181,8 +177,7 @@ public class TypeTools extends BuilderTypeTools {
      * @deprecated switch to using pure annotation processing wherever possible
      */
     @Deprecated
-    static AnnotationAndValue createAnnotationAndValueFromAnnotation(
-            Annotation annotation) {
+    static AnnotationAndValue createAnnotationAndValueFromAnnotation(Annotation annotation) {
         return DefaultAnnotationAndValue.create(DefaultTypeName.create(annotation.annotationType()), extractValues(annotation));
     }
 
@@ -192,8 +187,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param m the method definition (from introspection)
      * @return the created instance
      */
-    static List<TypedElementName> createTypedElementNameListFromMethodArgs(
-            Method m) {
+    static List<TypedElementName> createTypedElementNameListFromMethodArgs(Method m) {
         List<TypedElementName> result = new ArrayList<>(m.getParameterCount());
         for (int i = 0; i < m.getParameterCount(); i++) {
             Class<?> pType = m.getParameterTypes()[i];
@@ -220,10 +214,9 @@ public class TypeTools extends BuilderTypeTools {
      * @deprecated Switch to use pure annotation processing instead of reflection
      */
     @Deprecated
-    public static List<AnnotationAndValue> createAnnotationAndValueListFromAnnotations(
-            Annotation[] annotations) {
+    public static List<AnnotationAndValue> createAnnotationAndValueListFromAnnotations(Annotation[] annotations) {
         if (annotations == null || annotations.length <= 0) {
-            return Collections.emptyList();
+            return List.of();
         }
 
         return Arrays.stream(annotations).map(TypeTools::createAnnotationAndValueFromAnnotation).collect(Collectors.toList());
@@ -237,8 +230,7 @@ public class TypeTools extends BuilderTypeTools {
      * @deprecated Switch to use pure annotation processing instead of reflection
      */
     @Deprecated
-    static Map<String, String> extractValues(
-            Annotation annotation) {
+    static Map<String, String> extractValues(Annotation annotation) {
         Map<String, String> result = new HashMap<>();
 
         Class<? extends Annotation> aClass = annotation.annotationType();
@@ -287,10 +279,9 @@ public class TypeTools extends BuilderTypeTools {
      * @param values the annotation values
      * @return the extracted values
      */
-    static Map<String, String> extractValues(
-            AnnotationParameterValueList values) {
+    static Map<String, String> extractValues(AnnotationParameterValueList values) {
         return values.asMap().entrySet().stream()
-                .map((e) -> new AbstractMap
+                .map(e -> new AbstractMap
                         .SimpleEntry<>(e.getKey(), toString(e.getValue())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
@@ -301,8 +292,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param typeName the type name, that might use generics
      * @return the generics component type name
      */
-    static String componentTypeNameOf(
-            String typeName) {
+    static String componentTypeNameOf(String typeName) {
         int pos = typeName.indexOf('<');
         if (pos < 0) {
             return typeName;
@@ -313,8 +303,7 @@ public class TypeTools extends BuilderTypeTools {
         return typeName.substring(pos + 1, lastPos);
     }
 
-    private static String toString(
-            AnnotationParameterValue val) {
+    private static String toString(AnnotationParameterValue val) {
         if (val == null) {
             return null;
         }
@@ -339,8 +328,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param classInfo the class info
      * @return the qualifiers
      */
-    static Set<QualifierAndValue> createQualifierAndValueSet(
-            ClassInfo classInfo) {
+    static Set<QualifierAndValue> createQualifierAndValueSet(ClassInfo classInfo) {
         return createQualifierAndValueSet(classInfo.getAnnotationInfo());
     }
 
@@ -350,8 +338,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param methodInfo the method info
      * @return the qualifiers
      */
-    static Set<QualifierAndValue> createQualifierAndValueSet(
-            MethodInfo methodInfo) {
+    static Set<QualifierAndValue> createQualifierAndValueSet(MethodInfo methodInfo) {
         return createQualifierAndValueSet(methodInfo.getAnnotationInfo());
     }
 
@@ -361,8 +348,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param fieldInfo the field info
      * @return the qualifiers
      */
-    static Set<QualifierAndValue> createQualifierAndValueSet(
-            FieldInfo fieldInfo) {
+    static Set<QualifierAndValue> createQualifierAndValueSet(FieldInfo fieldInfo) {
         return createQualifierAndValueSet(fieldInfo.getAnnotationInfo());
     }
 
@@ -372,8 +358,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param annotation the annotation
      * @return the new instance
      */
-    static QualifierAndValue createQualifierAndValue(
-            Annotation annotation) {
+    static QualifierAndValue createQualifierAndValue(Annotation annotation) {
         return DefaultQualifierAndValue.create(DefaultTypeName.create(annotation.annotationType()), extractValues(annotation));
     }
 
@@ -383,8 +368,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param annotationInfoList the list of annotations
      * @return the qualifiers
      */
-    static Set<QualifierAndValue> createQualifierAndValueSet(
-            AnnotationInfoList annotationInfoList) {
+    static Set<QualifierAndValue> createQualifierAndValueSet(AnnotationInfoList annotationInfoList) {
         Set<AnnotationAndValue> set = createAnnotationAndValueSetFromMetaAnnotation(annotationInfoList,
                                                                                     TypeNames.JAKARTA_QUALIFIER);
         if (set.isEmpty()) {
@@ -401,8 +385,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param type the element type (from anno processing)
      * @return the set of qualifiers that the owning element has
      */
-    public static Set<QualifierAndValue> createQualifierAndValueSet(
-            Element type) {
+    public static Set<QualifierAndValue> createQualifierAndValueSet(Element type) {
         return createQualifierAndValueSet(type.getAnnotationMirrors());
     }
 
@@ -412,8 +395,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param annoMirrors the annotation type mirrors (from anno processing)
      * @return the set of qualifiers that the owning element has
      */
-    public static Set<QualifierAndValue> createQualifierAndValueSet(
-            List<? extends AnnotationMirror> annoMirrors) {
+    public static Set<QualifierAndValue> createQualifierAndValueSet(List<? extends AnnotationMirror> annoMirrors) {
         Set<QualifierAndValue> result = new LinkedHashSet<>();
 
         for (AnnotationMirror annoMirror : annoMirrors) {
@@ -469,8 +451,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param classInfo the class info
      * @return the annotation value set
      */
-    static Set<AnnotationAndValue> createAnnotationAndValueSet(
-            ClassInfo classInfo) {
+    static Set<AnnotationAndValue> createAnnotationAndValueSet(ClassInfo classInfo) {
         return classInfo.getAnnotationInfo().stream()
                 .map(TypeTools::createAnnotationAndValue)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -482,8 +463,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param type the enclosing/owing type element
      * @return the annotation value set
      */
-    public static Set<AnnotationAndValue> createAnnotationAndValueSet(
-            Element type) {
+    public static Set<AnnotationAndValue> createAnnotationAndValueSet(Element type) {
         return type.getAnnotationMirrors().stream()
                 .map(TypeTools::createAnnotationAndValue)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -495,8 +475,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param annoMirrors the annotation type mirrors
      * @return the annotation value set
      */
-    static Set<AnnotationAndValue> createAnnotationAndValueSet(
-            List<? extends AnnotationMirror> annoMirrors) {
+    static Set<AnnotationAndValue> createAnnotationAndValueSet(List<? extends AnnotationMirror> annoMirrors) {
         return annoMirrors.stream()
                 .map(TypeTools::createAnnotationAndValue)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -508,8 +487,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param annotationInfoList the list of annotations
      * @return the annotation and value set
      */
-    public static Set<AnnotationAndValue> createAnnotationAndValueSet(
-            AnnotationInfoList annotationInfoList) {
+    public static Set<AnnotationAndValue> createAnnotationAndValueSet(AnnotationInfoList annotationInfoList) {
         return annotationInfoList.stream()
                 .map(TypeTools::createAnnotationAndValue)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -521,8 +499,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param annotationInfo the introspected annotation
      * @return the annotation and value
      */
-    static AnnotationAndValue createAnnotationAndValue(
-            AnnotationInfo annotationInfo) {
+    static AnnotationAndValue createAnnotationAndValue(AnnotationInfo annotationInfo) {
         TypeName annoTypeName = createTypeNameFromClassInfo(annotationInfo.getClassInfo());
         return DefaultAnnotationAndValue.create(annoTypeName, extractValues(annotationInfo.getParameterValues()));
     }
@@ -533,8 +510,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param annotationMirror the introspected annotation
      * @return the annotation and value
      */
-    static AnnotationAndValue createAnnotationAndValue(
-            AnnotationMirror annotationMirror) {
+    static AnnotationAndValue createAnnotationAndValue(AnnotationMirror annotationMirror) {
         TypeName annoTypeName = createTypeNameFromMirror(annotationMirror.getAnnotationType()).orElseThrow();
         return DefaultAnnotationAndValue.create(annoTypeName, extractValues(annotationMirror.getElementValues()));
     }
@@ -545,12 +521,11 @@ public class TypeTools extends BuilderTypeTools {
      * @param classInfo the classInfo of the enclosing class type
      * @return the complete set of annotations
      */
-    static Set<AnnotationAndValue> gatherAllAnnotationsUsedOnPublicNonStaticMethods(
-            ClassInfo classInfo) {
+    static Set<AnnotationAndValue> gatherAllAnnotationsUsedOnPublicNonStaticMethods(ClassInfo classInfo) {
         Set<AnnotationAndValue> result = new LinkedHashSet<>(createAnnotationAndValueSet(classInfo));
         classInfo.getMethodAndConstructorInfo()
-                .filter((m) -> !m.isPrivate() && !m.isStatic())
-                .forEach((mi) -> result.addAll(createAnnotationAndValueSet(mi.getAnnotationInfo())));
+                .filter(m -> !m.isPrivate() && !m.isStatic())
+                .forEach(mi -> result.addAll(createAnnotationAndValueSet(mi.getAnnotationInfo())));
         return result;
     }
 
@@ -561,31 +536,30 @@ public class TypeTools extends BuilderTypeTools {
      * @param processEnv the processing environment
      * @return the complete set of annotations
      */
-    static Set<AnnotationAndValue> gatherAllAnnotationsUsedOnPublicNonStaticMethods(
-            TypeElement serviceTypeElement,
-            ProcessingEnvironment processEnv) {
+    static Set<AnnotationAndValue> gatherAllAnnotationsUsedOnPublicNonStaticMethods(TypeElement serviceTypeElement,
+                                                                                    ProcessingEnvironment processEnv) {
         Elements elementUtils = processEnv.getElementUtils();
         Set<AnnotationAndValue> result = new LinkedHashSet<>();
-        createAnnotationAndValueSet(serviceTypeElement).forEach((anno) -> {
+        createAnnotationAndValueSet(serviceTypeElement).forEach(anno -> {
             TypeElement typeElement = elementUtils.getTypeElement(anno.typeName().name());
             if (typeElement != null) {
                 typeElement.getAnnotationMirrors()
-                        .forEach((am) -> result.add(createAnnotationAndValue(am)));
+                        .forEach(am -> result.add(createAnnotationAndValue(am)));
             }
         });
         serviceTypeElement.getEnclosedElements().stream()
-                .filter((e) -> e.getKind() == ElementKind.METHOD)
-                .filter((e) -> !e.getModifiers().contains(javax.lang.model.element.Modifier.PRIVATE))
-                .filter((e) -> !e.getModifiers().contains(javax.lang.model.element.Modifier.STATIC))
+                .filter(e -> e.getKind() == ElementKind.METHOD)
+                .filter(e -> !e.getModifiers().contains(javax.lang.model.element.Modifier.PRIVATE))
+                .filter(e -> !e.getModifiers().contains(javax.lang.model.element.Modifier.STATIC))
                 .map(ExecutableElement.class::cast)
-                .forEach((exec) -> {
-                    exec.getAnnotationMirrors().forEach((am) -> {
+                .forEach(exec -> {
+                    exec.getAnnotationMirrors().forEach(am -> {
                         AnnotationAndValue anno = createAnnotationAndValue(am);
                         result.add(anno);
                         TypeElement typeElement = elementUtils.getTypeElement(anno.typeName().name());
                         if (typeElement != null) {
                             typeElement.getAnnotationMirrors()
-                                    .forEach((am2) -> result.add(createAnnotationAndValue(am2)));
+                                    .forEach(am2 -> result.add(createAnnotationAndValue(am2)));
                         }
                     });
                 });
@@ -601,7 +575,6 @@ public class TypeTools extends BuilderTypeTools {
      */
     static Set<AnnotationAndValue> createAnnotationAndValueSetFromMetaAnnotation(AnnotationInfoList annotationInfoList,
                                                                                  String metaAnnoType) {
-
         // resolve meta annotations uses the opposite of already
         AnnotationInfoList list = resolveMetaAnnotations(annotationInfoList, metaAnnoType);
         if (list == null) {
@@ -635,8 +608,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param classInfo the introspected class
      * @return the scope name, or null if no scope found
      */
-    static String extractScopeTypeName(
-            ClassInfo classInfo) {
+    static String extractScopeTypeName(ClassInfo classInfo) {
         AnnotationInfoList list = resolveMetaAnnotations(classInfo.getAnnotationInfo(), TypeNames.JAKARTA_SCOPE);
         if (list == null) {
             return null;
@@ -652,13 +624,12 @@ public class TypeTools extends BuilderTypeTools {
      * @param annoType  the annotation
      * @return the methods with the annotation
      */
-    static MethodInfoList methodsAnnotatedWith(
-            ClassInfo classInfo,
-            String annoType) {
+    static MethodInfoList methodsAnnotatedWith(ClassInfo classInfo,
+                                               String annoType) {
         MethodInfoList result = new MethodInfoList();
         classInfo.getMethodInfo()
                 .stream()
-                .filter((methodInfo) -> hasAnnotation(methodInfo, annoType))
+                .filter(methodInfo -> hasAnnotation(methodInfo, annoType))
                 .forEach(result::add);
         return result;
     }
@@ -670,9 +641,8 @@ public class TypeTools extends BuilderTypeTools {
      * @param annoTypeName the annotation to check
      * @return true if the method has the annotation
      */
-    static boolean hasAnnotation(
-            MethodInfo methodInfo,
-            String annoTypeName) {
+    static boolean hasAnnotation(MethodInfo methodInfo,
+                                 String annoTypeName) {
         return methodInfo.hasAnnotation(annoTypeName) || methodInfo.hasAnnotation(oppositeOf(annoTypeName));
     }
 
@@ -683,9 +653,8 @@ public class TypeTools extends BuilderTypeTools {
      * @param annoTypeName the annotation to check
      * @return true if the method has the annotation
      */
-    static boolean hasAnnotation(
-            FieldInfo fieldInfo,
-            String annoTypeName) {
+    static boolean hasAnnotation(FieldInfo fieldInfo,
+                                 String annoTypeName) {
         return fieldInfo.hasAnnotation(annoTypeName) || fieldInfo.hasAnnotation(oppositeOf(annoTypeName));
     }
 
@@ -694,11 +663,10 @@ public class TypeTools extends BuilderTypeTools {
      *
      * @param annoList the complete set of annotations
      * @param metaAnnoType the meta-annotation to filter on
-     * @return the filtered set having the meta-annotation.
+     * @return the filtered set having the meta-annotation
      */
-    static AnnotationInfoList resolveMetaAnnotations(
-            AnnotationInfoList annoList,
-            String metaAnnoType) {
+    static AnnotationInfoList resolveMetaAnnotations(AnnotationInfoList annoList,
+                                                     String metaAnnoType) {
         if (annoList == null) {
             return null;
         }
@@ -723,8 +691,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param classInfo class info
      * @return the provided type
      */
-    static String providesContractType(
-            ClassInfo classInfo) {
+    static String providesContractType(ClassInfo classInfo) {
         Set<String> candidates = new LinkedHashSet<>();
 
         ClassInfo nxt = classInfo;
@@ -770,9 +737,8 @@ public class TypeTools extends BuilderTypeTools {
     /**
      * Should only be called if the encloser of the typeArgument is known to be Provider type.
      */
-    private static String providerTypeOf(
-            TypeArgument typeArgument,
-            Object enclosingElem) {
+    private static String providerTypeOf(TypeArgument typeArgument,
+                                         Object enclosingElem) {
         if (!(typeArgument.getTypeSignature() instanceof ClassRefTypeSignature)) {
             throw new ToolsException("unsupported provider<> type of " + typeArgument + " in " + enclosingElem);
         }
@@ -785,8 +751,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param sig class type signature
      * @return the provided type
      */
-    static String providesContractType(
-            TypeSignature sig) {
+    static String providesContractType(TypeSignature sig) {
         if (sig instanceof ClassRefTypeSignature) {
             ClassRefTypeSignature csig = (ClassRefTypeSignature) sig;
             if (isProviderType(csig.getFullyQualifiedClassName())) {
@@ -803,11 +768,10 @@ public class TypeTools extends BuilderTypeTools {
     /**
      * Returns the injection point info given a method element.
      *
-     * @param elemInfo          the method element info
+     * @param elemInfo the method element info
      * @return the injection point info
      */
-    static InjectionPointInfo createInjectionPointInfo(
-            MethodInfo elemInfo) {
+    static InjectionPointInfo createInjectionPointInfo(MethodInfo elemInfo) {
         return createInjectionPointInfo(createTypeNameFromClassInfo(elemInfo.getClassInfo()), elemInfo, null);
     }
 
@@ -819,10 +783,9 @@ public class TypeTools extends BuilderTypeTools {
      * @param elemOffset        optionally, the argument position (or null for the method level) - starts at 1 not 0
      * @return the injection point info
      */
-    static InjectionPointInfo createInjectionPointInfo(
-            TypeName serviceTypeName,
-            MethodInfo elemInfo,
-            Integer elemOffset) {
+    static InjectionPointInfo createInjectionPointInfo(TypeName serviceTypeName,
+                                                       MethodInfo elemInfo,
+                                                       Integer elemOffset) {
         String elemType;
         Set<QualifierAndValue> qualifiers;
         Set<AnnotationAndValue> annotations;
@@ -875,9 +838,8 @@ public class TypeTools extends BuilderTypeTools {
      * @param serviceLevelAnnos the annotation at the class level that should be inherited at the method level
      * @return the method info
      */
-    static MethodElementInfo createMethodElementInfo(
-            MethodInfo methodInfo,
-            Set<AnnotationAndValue> serviceLevelAnnos) {
+    static MethodElementInfo createMethodElementInfo(MethodInfo methodInfo,
+                                                     Set<AnnotationAndValue> serviceLevelAnnos) {
         TypeName serviceTypeName = createTypeNameFromClassInfo(methodInfo.getClassInfo());
         String elemType = methodInfo.getTypeDescriptor().getResultType().toString();
         Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(methodInfo);
@@ -913,10 +875,9 @@ public class TypeTools extends BuilderTypeTools {
      * @param serviceLevelAnnos the annotation at the class level that should be inherited at the method level
      * @return the method info
      */
-    static MethodElementInfo createMethodElementInfo(
-            TypeElement serviceTypeElement,
-            ExecutableElement ee,
-            Set<AnnotationAndValue> serviceLevelAnnos) {
+    static MethodElementInfo createMethodElementInfo(TypeElement serviceTypeElement,
+                                                     ExecutableElement ee,
+                                                     Set<AnnotationAndValue> serviceLevelAnnos) {
         TypeName serviceTypeName = createTypeNameFromElement(serviceTypeElement).orElseThrow();
         String elemType = ee.getReturnType().toString();
         Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(ee);
@@ -950,8 +911,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param methodInfo the method info
      * @return the list of throwable type names
      */
-    private static List<String> extractThrowableTypeNames(
-            MethodInfo methodInfo) {
+    private static List<String> extractThrowableTypeNames(MethodInfo methodInfo) {
         String[] thrownExceptionNames = methodInfo.getThrownExceptionNames();
         if (thrownExceptionNames == null || thrownExceptionNames.length == 0) {
             return List.of();
@@ -966,8 +926,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param methodInfo the method info
      * @return the list of throwable type names
      */
-    private static List<String> extractThrowableTypeNames(
-            ExecutableElement methodInfo) {
+    private static List<String> extractThrowableTypeNames(ExecutableElement methodInfo) {
         List<? extends TypeMirror> thrownExceptionTypes = methodInfo.getThrownTypes();
         if (thrownExceptionTypes == null) {
             return List.of();
@@ -982,9 +941,8 @@ public class TypeTools extends BuilderTypeTools {
      * @param methodInfo the method info
      * @return the list of info elements/parameters
      */
-    private static List<ElementInfo> createParameterInfo(
-            TypeName serviceTypeName,
-            MethodInfo methodInfo) {
+    private static List<ElementInfo> createParameterInfo(TypeName serviceTypeName,
+                                                         MethodInfo methodInfo) {
         List<ElementInfo> result = new ArrayList<>();
         int count = 0;
         for (MethodParameterInfo ignore : methodInfo.getParameterInfo()) {
@@ -1001,9 +959,8 @@ public class TypeTools extends BuilderTypeTools {
      * @param methodInfo the method info
      * @return the list of info elements/parameters
      */
-    private static List<ElementInfo> createParameterInfo(
-            TypeName serviceTypeName,
-            ExecutableElement methodInfo) {
+    private static List<ElementInfo> createParameterInfo(TypeName serviceTypeName,
+                                                         ExecutableElement methodInfo) {
         List<ElementInfo> result = new ArrayList<>();
         int count = 0;
         for (VariableElement ignore : methodInfo.getParameters()) {
@@ -1021,10 +978,9 @@ public class TypeTools extends BuilderTypeTools {
      * @param elemOffset        the argument position - starts at 1 not 0
      * @return the element info
      */
-    static DefaultElementInfo createParameterInfo(
-            TypeName serviceTypeName,
-            MethodInfo elemInfo,
-            int elemOffset) {
+    static DefaultElementInfo createParameterInfo(TypeName serviceTypeName,
+                                                  MethodInfo elemInfo,
+                                                  int elemOffset) {
         MethodParameterInfo paramInfo = elemInfo.getParameterInfo()[elemOffset - 1];
         String elemType = paramInfo.getTypeDescriptor().toString();
 //        Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(paramInfo.getAnnotationInfo());
@@ -1052,10 +1008,9 @@ public class TypeTools extends BuilderTypeTools {
      * @param elemOffset        the argument position - starts at 1 not 0
      * @return the element info
      */
-    static DefaultElementInfo createParameterInfo(
-            TypeName serviceTypeName,
-            ExecutableElement elemInfo,
-            int elemOffset) {
+    static DefaultElementInfo createParameterInfo(TypeName serviceTypeName,
+                                                  ExecutableElement elemInfo,
+                                                  int elemOffset) {
         VariableElement paramInfo = elemInfo.getParameters().get(elemOffset - 1);
         String elemType = paramInfo.asType().toString();
         //        Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(paramInfo.getAnnotationInfo());
@@ -1082,9 +1037,8 @@ public class TypeTools extends BuilderTypeTools {
      * @param elemInfo          the field element info
      * @return the injection point info
      */
-    static InjectionPointInfo createInjectionPointInfo(
-            TypeName serviceTypeName,
-            FieldInfo elemInfo) {
+    static InjectionPointInfo createInjectionPointInfo(TypeName serviceTypeName,
+                                                       FieldInfo elemInfo) {
         AtomicReference<Boolean> isProviderWrapped = new AtomicReference<>();
         AtomicReference<Boolean> isListWrapped = new AtomicReference<>();
         AtomicReference<Boolean> isOptionalWrapped = new AtomicReference<>();
@@ -1121,11 +1075,10 @@ public class TypeTools extends BuilderTypeTools {
      * @param isOptionalWrapped set to indicate that the ip is am optional type
      * @return the return type of the parameter type
      */
-    static String extractInjectionPointTypeInfo(
-            MethodParameterInfo paramInfo,
-            AtomicReference<Boolean> isProviderWrapped,
-            AtomicReference<Boolean> isListWrapped,
-            AtomicReference<Boolean> isOptionalWrapped) {
+    static String extractInjectionPointTypeInfo(MethodParameterInfo paramInfo,
+                                                AtomicReference<Boolean> isProviderWrapped,
+                                                AtomicReference<Boolean> isListWrapped,
+                                                AtomicReference<Boolean> isOptionalWrapped) {
         TypeSignature sig = Objects.requireNonNull(paramInfo).getTypeSignature();
         if (sig == null) {
             sig = Objects.requireNonNull(paramInfo.getTypeDescriptor());
@@ -1143,11 +1096,10 @@ public class TypeTools extends BuilderTypeTools {
      * @param isOptionalWrapped set to indicate that the ip is an optional type
      * @return the return type of the injection point
      */
-    static String extractInjectionPointTypeInfo(
-            FieldInfo elemInfo,
-            AtomicReference<Boolean> isProviderWrapped,
-            AtomicReference<Boolean> isListWrapped,
-            AtomicReference<Boolean> isOptionalWrapped) {
+    static String extractInjectionPointTypeInfo(FieldInfo elemInfo,
+                                                AtomicReference<Boolean> isProviderWrapped,
+                                                AtomicReference<Boolean> isListWrapped,
+                                                AtomicReference<Boolean> isOptionalWrapped) {
         TypeSignature sig = Objects.requireNonNull(elemInfo).getTypeSignature();
         if (sig == null) {
             sig = Objects.requireNonNull(elemInfo.getTypeDescriptor());
@@ -1156,9 +1108,8 @@ public class TypeTools extends BuilderTypeTools {
                                              isProviderWrapped, isListWrapped, isOptionalWrapped);
     }
 
-    private static ClassRefTypeSignature toClassRefSignature(
-            TypeSignature sig,
-            Object enclosingElem) {
+    private static ClassRefTypeSignature toClassRefSignature(TypeSignature sig,
+                                                             Object enclosingElem) {
         if (!(Objects.requireNonNull(sig) instanceof ClassRefTypeSignature)) {
             throw new ToolsException("unsupported type for " + sig + " in " + enclosingElem);
         }
@@ -1180,12 +1131,11 @@ public class TypeTools extends BuilderTypeTools {
      * @param isOptionalWrapped set to indicate that the ip is an optional type
      * @return the return type of the injection point
      */
-    static String extractInjectionPointTypeInfo(
-            TypeSignature sig,
-            Object enclosingElem,
-            AtomicReference<Boolean> isProviderWrapped,
-            AtomicReference<Boolean> isListWrapped,
-            AtomicReference<Boolean> isOptionalWrapped) {
+    static String extractInjectionPointTypeInfo(TypeSignature sig,
+                                                Object enclosingElem,
+                                                AtomicReference<Boolean> isProviderWrapped,
+                                                AtomicReference<Boolean> isListWrapped,
+                                                AtomicReference<Boolean> isOptionalWrapped) {
         ClassRefTypeSignature csig = toClassRefSignature(sig, enclosingElem);
         boolean isProvider = false;
         boolean isOptional = false;
@@ -1247,11 +1197,10 @@ public class TypeTools extends BuilderTypeTools {
      * @param isOptionalWrapped set to indicate that the ip is an optional type
      * @return the return type of the injection point
      */
-    public static String extractInjectionPointTypeInfo(
-            Element typeElement,
-            AtomicReference<Boolean> isProviderWrapped,
-            AtomicReference<Boolean> isListWrapped,
-            AtomicReference<Boolean> isOptionalWrapped) {
+    public static String extractInjectionPointTypeInfo(Element typeElement,
+                                                       AtomicReference<Boolean> isProviderWrapped,
+                                                       AtomicReference<Boolean> isListWrapped,
+                                                       AtomicReference<Boolean> isOptionalWrapped) {
         TypeMirror typeMirror = typeElement.asType();
         if (!(typeMirror instanceof DeclaredType)) {
             throw new ToolsException("unsupported type for " + typeElement.getEnclosingElement() + "."
@@ -1339,13 +1288,11 @@ public class TypeTools extends BuilderTypeTools {
      * @param typeElement the type element to check
      * @return true if {@link jakarta.inject.Provider} or {@link InjectionPointProvider}
      */
-    static boolean isProviderType(
-            TypeElement typeElement) {
+    static boolean isProviderType(TypeElement typeElement) {
         return isProviderType(typeElement.getQualifiedName().toString());
     }
 
-    private static boolean isProviderType(
-            ClassRefTypeSignature sig) {
+    private static boolean isProviderType(ClassRefTypeSignature sig) {
         return isProviderType(sig.getFullyQualifiedClassName());
     }
 
@@ -1355,8 +1302,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param typeName the type name to check
      * @return true if {@link jakarta.inject.Provider} or {@link InjectionPointProvider}
      */
-    public static boolean isProviderType(
-            String typeName) {
+    public static boolean isProviderType(String typeName) {
         String type = translate(componentTypeNameOf(typeName));
         return (Provider.class.getName().equals(type)
                         || TypeNames.JAVAX_PROVIDER.equals(type)
@@ -1369,13 +1315,11 @@ public class TypeTools extends BuilderTypeTools {
      * @param typeElement the type element to check
      * @return true if {@link java.util.Optional}
      */
-    static boolean isOptionalType(
-            TypeElement typeElement) {
+    static boolean isOptionalType(TypeElement typeElement) {
         return isOptionalType(typeElement.getQualifiedName().toString());
     }
 
-    private static boolean isOptionalType(
-            ClassRefTypeSignature sig) {
+    private static boolean isOptionalType(ClassRefTypeSignature sig) {
         return isOptionalType(sig.getFullyQualifiedClassName());
     }
 
@@ -1385,8 +1329,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param typeName the type name to check
      * @return true if {@link java.util.Optional}
      */
-    static boolean isOptionalType(
-            String typeName) {
+    static boolean isOptionalType(String typeName) {
         return Optional.class.getName().equals(componentTypeNameOf(typeName));
     }
 
@@ -1396,8 +1339,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param typeElement the type element to check
      * @return true if {@link java.util.List}
      */
-    static boolean isListType(
-            TypeElement typeElement) {
+    static boolean isListType(TypeElement typeElement) {
         return isListType(typeElement.getQualifiedName().toString());
     }
 
@@ -1407,8 +1349,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param typeName the type name to check
      * @return true if {@link java.util.List}
      */
-    static boolean isListType(
-            String typeName) {
+    static boolean isListType(String typeName) {
         return List.class.getName().equals(componentTypeNameOf(typeName));
     }
 
@@ -1418,8 +1359,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param typeName the type name to transpose
      * @return the transposed value, or the same if not able to be transposed
      */
-    public static String oppositeOf(
-            String typeName) {
+    public static String oppositeOf(String typeName) {
         boolean startsWithJakarta = typeName.startsWith(TypeNames.PREFIX_JAKARTA);
         boolean startsWithJavax = !startsWithJakarta && typeName.startsWith(TypeNames.PREFIX_JAVAX);
 
@@ -1438,8 +1378,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param typeName the type name
      * @return the normalized, transposed value or the original if it doesn't contain javax
      */
-    static String translate(
-            String typeName) {
+    static String translate(String typeName) {
         if (typeName == null || typeName.startsWith(TypeNames.PREFIX_JAKARTA)) {
             return typeName;
         }
@@ -1453,8 +1392,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param modifiers the modifiers
      * @return true if package private
      */
-    static boolean isPackagePrivate(
-            int modifiers) {
+    static boolean isPackagePrivate(int modifiers) {
         return !Modifier.isPrivate(modifiers) && !Modifier.isProtected(modifiers) && !Modifier.isPublic(modifiers);
     }
 
@@ -1464,8 +1402,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param modifiers the modifiers
      * @return true if private
      */
-    static boolean isPrivate(
-            int modifiers) {
+    static boolean isPrivate(int modifiers) {
         return Modifier.isPrivate(modifiers);
     }
 
@@ -1475,8 +1412,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param modifiers the modifiers
      * @return true if static
      */
-    static boolean isStatic(
-            int modifiers) {
+    static boolean isStatic(int modifiers) {
         return Modifier.isStatic(modifiers);
     }
 
@@ -1486,8 +1422,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param element the element
      * @return true if static
      */
-    public static boolean isStatic(
-            Element element) {
+    public static boolean isStatic(Element element) {
         Set<javax.lang.model.element.Modifier> modifiers = element.getModifiers();
         return (modifiers != null) && modifiers.contains(javax.lang.model.element.Modifier.STATIC);
     }
@@ -1498,8 +1433,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param modifiers the modifiers
      * @return true if abstract
      */
-    static boolean isAbstract(
-            int modifiers) {
+    static boolean isAbstract(int modifiers) {
         return Modifier.isInterface(modifiers) || Modifier.isAbstract(modifiers);
     }
 
@@ -1509,8 +1443,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param element the element
      * @return true if abstract
      */
-    public static boolean isAbstract(
-            Element element) {
+    public static boolean isAbstract(Element element) {
         Set<javax.lang.model.element.Modifier> modifiers = element.getModifiers();
         return (modifiers != null) && modifiers.contains(javax.lang.model.element.Modifier.ABSTRACT);
     }
@@ -1521,8 +1454,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param modifiers the moifiers
      * @return the access
      */
-    static InjectionPointInfo.Access toAccess(
-            int modifiers) {
+    static InjectionPointInfo.Access toAccess(int modifiers) {
         if (Modifier.isPublic(modifiers)) {
             return InjectionPointInfo.Access.PUBLIC;
         } else if (Modifier.isProtected(modifiers)) {
@@ -1540,8 +1472,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param element the element
      * @return the access
      */
-    public static InjectionPointInfo.Access toAccess(
-            Element element) {
+    public static InjectionPointInfo.Access toAccess(Element element) {
         InjectionPointInfo.Access access = InjectionPointInfo.Access.PACKAGE_PRIVATE;
         Set<javax.lang.model.element.Modifier> modifiers = element.getModifiers();
         if (modifiers != null) {
@@ -1567,8 +1498,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param methodInfo the method info
      * @return the kind
      */
-    static ElementInfo.ElementKind toKind(
-            MethodInfo methodInfo) {
+    static ElementInfo.ElementKind toKind(MethodInfo methodInfo) {
         return (methodInfo.isConstructor())
                 ? ElementInfo.ElementKind.CONSTRUCTOR : ElementInfo.ElementKind.METHOD;
     }
@@ -1579,8 +1509,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param methodInfo the method info
      * @return the kind
      */
-    static ElementInfo.ElementKind toKind(
-            ExecutableElement methodInfo) {
+    static ElementInfo.ElementKind toKind(ExecutableElement methodInfo) {
         return (methodInfo.getKind() == ElementKind.CONSTRUCTOR)
                 ? ElementInfo.ElementKind.CONSTRUCTOR : ElementInfo.ElementKind.METHOD;
     }
@@ -1591,8 +1520,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param packageName the package name
      * @return true if the package name needs to be declared
      */
-    public static boolean needToDeclarePackageUsage(
-            String packageName) {
+    public static boolean needToDeclarePackageUsage(String packageName) {
         return !(packageName.startsWith("java.")
                          || packageName.startsWith("sun.")
                          || packageName.toLowerCase().endsWith(".impl"));
@@ -1604,8 +1532,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param moduleName the module name
      * @return true if the module name needs to be declared
      */
-    public static boolean needToDeclareModuleUsage(
-            String moduleName) {
+    public static boolean needToDeclareModuleUsage(String moduleName) {
         return (moduleName != null) && !moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME)
                 && !(moduleName.startsWith("java.")
                              || moduleName.startsWith("sun.")

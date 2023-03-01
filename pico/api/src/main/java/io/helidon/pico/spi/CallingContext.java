@@ -78,8 +78,7 @@ public abstract class CallingContext {
      * @param trace the trace
      * @return the list of strings for the stack trace
      */
-    public static List<String> stackTraceOf(
-            StackTraceElement[] trace) {
+    public static List<String> stackTraceOf(StackTraceElement[] trace) {
         List<String> result = new ArrayList<>();
         for (StackTraceElement e : trace) {
             result.add(e.toString());
@@ -93,8 +92,7 @@ public abstract class CallingContext {
      * @param trace the trace
      * @return the stringified stack trace
      */
-    public static String prettyPrintStackTraceOf(
-            StackTraceElement[] trace) {
+    public static String prettyPrintStackTraceOf(StackTraceElement[] trace) {
         return String.join("\n", stackTraceOf(trace));
     }
 
@@ -106,9 +104,8 @@ public abstract class CallingContext {
      * @return a new calling context if there is indication that debug mode is enabled
      * @see io.helidon.pico.PicoServices#isDebugEnabled()
      */
-    public static Optional<CallingContext> maybeCreate(
-            Optional<String> moduleName,
-            Optional<Boolean> isDebugEnabled) {
+    public static Optional<CallingContext> maybeCreate(Optional<String> moduleName,
+                                                       Optional<Boolean> isDebugEnabled) {
         boolean debug = isDebugEnabled.orElseGet(() -> isDebugEnabled());
         if (!debug) {
             return Optional.empty();
@@ -139,12 +136,11 @@ public abstract class CallingContext {
      * @param throwIfAlreadySet should an exception be thrown if the global calling context was already set
      * @return a new calling context if there is indication that debug mode is enabled
      */
-    public static Optional<CallingContext> maybeCreate(
-            boolean force,
-            Optional<String> moduleName,
-            Optional<Boolean> isDebugEnabled,
-            boolean setGlobalDefault,
-            boolean throwIfAlreadySet) {
+    public static Optional<CallingContext> maybeCreate(boolean force,
+                                                       Optional<String> moduleName,
+                                                       Optional<Boolean> isDebugEnabled,
+                                                       boolean setGlobalDefault,
+                                                       boolean throwIfAlreadySet) {
         CallingContext global = defaultCallingContext;
         if (global != null) {
             return Optional.of(global);
@@ -173,9 +169,8 @@ public abstract class CallingContext {
      * @param throwIfAlreadySet should an exception be thrown if the global calling context was already set
      * @throws java.lang.IllegalStateException if context was already set and the throwIfAlreadySet is active
      */
-    public static void globalCallingContext(
-            CallingContext callingContext,
-            boolean throwIfAlreadySet) {
+    public static void globalCallingContext(CallingContext callingContext,
+                                            boolean throwIfAlreadySet) {
         Objects.requireNonNull(callingContext);
 
         CallingContext global = defaultCallingContext;
@@ -196,9 +191,8 @@ public abstract class CallingContext {
      * @param msg the base message to display
      * @return the message appropriate for any exception being thrown
      */
-    public static String toErrorMessage(
-            Optional<CallingContext> callingContext,
-            String msg) {
+    public static String toErrorMessage(Optional<CallingContext> callingContext,
+                                        String msg) {
         if (callingContext.isEmpty()) {
             return msg + " - " + DEBUG_HINT;
         } else {

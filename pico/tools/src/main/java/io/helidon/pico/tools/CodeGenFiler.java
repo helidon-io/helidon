@@ -78,8 +78,7 @@ public class CodeGenFiler {
      *
      * @param filer the filer to use for creating resources
      */
-    CodeGenFiler(
-            AbstractFilerMessager filer) {
+    CodeGenFiler(AbstractFilerMessager filer) {
         this(filer, null);
     }
 
@@ -89,9 +88,8 @@ public class CodeGenFiler {
      * @param filer the filer to use for creating resources
      * @param enabled true if forcing enablement, false if forcing disablement, null for using defaults
      */
-    CodeGenFiler(
-            AbstractFilerMessager filer,
-            Boolean enabled) {
+    CodeGenFiler(AbstractFilerMessager filer,
+                 Boolean enabled) {
         this.filer = Objects.requireNonNull(filer);
         this.enabled = enabled;
     }
@@ -102,8 +100,7 @@ public class CodeGenFiler {
      * @param filer the physical filer
      * @return a newly created code gen filer
      */
-    public static CodeGenFiler create(
-            AbstractFilerMessager filer) {
+    public static CodeGenFiler create(AbstractFilerMessager filer) {
         return new CodeGenFiler(filer);
     }
 
@@ -114,8 +111,7 @@ public class CodeGenFiler {
      * @param enabled if disabled, pass false
      * @return the previous value of this setting
      */
-    static boolean filerEnabled(
-            boolean enabled) {
+    static boolean filerEnabled(boolean enabled) {
         boolean prev = filerWriteIsDisabled;
         filerWriteIsDisabled = enabled;
         return prev;
@@ -149,9 +145,8 @@ public class CodeGenFiler {
      * @param paths           paths to where code should be written
      * @param metaInfServices the meta-inf services mapping
      */
-    public void codegenMetaInfServices(
-            CodeGenPaths paths,
-            Map<String, List<String>> metaInfServices) {
+    public void codegenMetaInfServices(CodeGenPaths paths,
+                                       Map<String, List<String>> metaInfServices) {
         if (metaInfServices == null || metaInfServices.isEmpty()) {
             return;
         }
@@ -201,8 +196,7 @@ public class CodeGenFiler {
         }
     }
 
-    private void targetOutputPath(
-            FileObject f) {
+    private void targetOutputPath(FileObject f) {
         try {
             Path path = Path.of(f.toUri());
             Path parent = path.getParent();
@@ -215,8 +209,7 @@ public class CodeGenFiler {
         }
     }
 
-    private Path toScratchPath(
-            boolean wantClassesOrTestClassesRelative) {
+    private Path toScratchPath(boolean wantClassesOrTestClassesRelative) {
         Objects.requireNonNull(targetOutputPath);
         Objects.requireNonNull(scratchPathName);
         Path base = targetOutputPath.resolve(PicoServicesConfig.NAME);
@@ -231,10 +224,9 @@ public class CodeGenFiler {
      * @param optFnUpdater the optional updater of the body
      * @return file path coordinates corresponding to the resource in question, or empty if not generated
      */
-    public Optional<Path> codegenResourceFilerOut(
-            String outPath,
-            String body,
-            Optional<Function<InputStream, String>> optFnUpdater) {
+    public Optional<Path> codegenResourceFilerOut(String outPath,
+                                                  String body,
+                                                  Optional<Function<InputStream, String>> optFnUpdater) {
         Messager messager = messager();
         if (!isFilerWriteEnabled()) {
             messager.log("(disabled) Writing " + outPath + " with:\n" + body);
@@ -313,11 +305,10 @@ public class CodeGenFiler {
      * @param fileRef  the reference that will be set to the coordinates of the resource
      * @return true if the implementation was able to verify the contents match
      */
-    boolean tryToEnsureSameContents(
-            Exception e,
-            String expected,
-            Messager messager,
-            AtomicReference<File> fileRef) {
+    boolean tryToEnsureSameContents(Exception e,
+                                    String expected,
+                                    Messager messager,
+                                    AtomicReference<File> fileRef) {
         if (!(e instanceof FilerException)) {
             return false;
         }
@@ -364,8 +355,7 @@ public class CodeGenFiler {
      *
      * @param moduleDetail the module details
      */
-    void codegenModuleFilerOut(
-            ModuleDetail moduleDetail) {
+    void codegenModuleFilerOut(ModuleDetail moduleDetail) {
         if (moduleDetail.moduleBody().isEmpty()) {
             return;
         }
@@ -381,9 +371,8 @@ public class CodeGenFiler {
      * @param applicationTypeName the application type
      * @param body                the application body of source
      */
-    void codegenApplicationFilerOut(
-            TypeName applicationTypeName,
-            String body) {
+    void codegenApplicationFilerOut(TypeName applicationTypeName,
+                                    String body) {
         codegenJavaFilerOut(applicationTypeName, body);
     }
 
@@ -392,8 +381,7 @@ public class CodeGenFiler {
      *
      * @param activatorDetail the activator details
      */
-    void codegenActivatorFilerOut(
-            ActivatorCodeGenDetail activatorDetail) {
+    void codegenActivatorFilerOut(ActivatorCodeGenDetail activatorDetail) {
         if (activatorDetail.body().isEmpty()) {
             return;
         }
@@ -410,9 +398,8 @@ public class CodeGenFiler {
      * @param body     the source body
      * @return the new file path coordinates or empty if nothing was written
      */
-    public Optional<Path> codegenJavaFilerOut(
-            TypeName typeName,
-            String body) {
+    public Optional<Path> codegenJavaFilerOut(TypeName typeName,
+                                              String body) {
         Messager messager = messager();
         if (!isFilerWriteEnabled()) {
             messager.log("(disabled) Writing " + typeName + " with:\n" + body);
@@ -449,9 +436,8 @@ public class CodeGenFiler {
      * @param overwriteTargetIfExists should the file be overwritten if it already exists
      * @return the module-info coordinates, or empty if nothing was written
      */
-    Optional<Path> codegenModuleInfoFilerOut(
-            ModuleInfoDescriptor newDeltaDescriptor,
-            boolean overwriteTargetIfExists) {
+    Optional<Path> codegenModuleInfoFilerOut(ModuleInfoDescriptor newDeltaDescriptor,
+                                             boolean overwriteTargetIfExists) {
         Objects.requireNonNull(newDeltaDescriptor);
 
         Messager messager = messager();
@@ -490,8 +476,7 @@ public class CodeGenFiler {
      * @param name the name to the module-info file
      * @return the module-info descriptor, or empty if it doesn't exist
      */
-    Optional<ModuleInfoDescriptor> readModuleInfo(
-            String name) {
+    Optional<ModuleInfoDescriptor> readModuleInfo(String name) {
         Objects.requireNonNull(name);
 
         try {
@@ -508,8 +493,7 @@ public class CodeGenFiler {
      * @param name the name of the resource
      * @return the body of the resource as a string, or null if it doesn't exist
      */
-    CharSequence readResourceAsString(
-            String name) {
+    CharSequence readResourceAsString(String name) {
         try {
             FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", name);
             targetOutputPath(f);
@@ -539,8 +523,7 @@ public class CodeGenFiler {
      * @param name the name of the resource
      * @return the file path coordinates if it can be ascertained, or empty if not possible to ascertain this information
      */
-    Optional<Path> toResourceLocation(
-            String name) {
+    Optional<Path> toResourceLocation(String name) {
         try {
             FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", name);
             targetOutputPath(f);
@@ -559,8 +542,7 @@ public class CodeGenFiler {
      *
      * @see ModuleUtils#toSourcePath for annotation processing use cases
      */
-    Optional<Path> toSourceLocation(
-            String name) {
+    Optional<Path> toSourceLocation(String name) {
         if (filer instanceof AbstractFilerMessager.DirectFilerMessager) {
             TypeName typeName = DefaultTypeName.createFromTypeName(name);
             Optional<Path> path = Optional.ofNullable(((AbstractFilerMessager.DirectFilerMessager) filer)

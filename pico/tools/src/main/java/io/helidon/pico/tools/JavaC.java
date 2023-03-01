@@ -19,7 +19,6 @@ package io.helidon.pico.tools;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import javax.tools.Diagnostic;
@@ -163,8 +162,7 @@ class JavaC {
         private boolean hasWarnings = false;
 
         @SuppressWarnings("unchecked")
-        private Result(
-                File applicationJavaFile) {
+        private Result(File applicationJavaFile) {
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             StandardJavaFileManager fileManager = compiler.getStandardFileManager(this, null, null);
 
@@ -195,7 +193,7 @@ class JavaC {
                 optionList.add(outputDirectory.getPath());
             }
 
-            List<File> filesToCompile = new LinkedList<>();
+            List<File> filesToCompile = new ArrayList<>();
             filesToCompile.add(applicationJavaFile);
             if (!modulepath.isEmpty()) {
                 modulepath.forEach(path -> {
@@ -239,8 +237,7 @@ class JavaC {
         }
 
         @Override
-        public void report(
-                Diagnostic diagnostic) {
+        public void report(Diagnostic diagnostic) {
             System.Logger.Level level;
             if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
                 level = System.Logger.Level.ERROR;

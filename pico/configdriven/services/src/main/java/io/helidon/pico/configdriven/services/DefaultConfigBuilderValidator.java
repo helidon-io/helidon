@@ -18,7 +18,6 @@ package io.helidon.pico.configdriven.services;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -44,10 +43,8 @@ class DefaultConfigBuilderValidator<CBB> implements ConfigBeanBuilderValidator<C
      * @return the validation round that can be used for attribute level validation
      */
     @Override
-    public ValidationRound createValidationRound(
-            CBB builder,
-            // Receiver?
-            Class<CBB> configBeanBuilderType) {
+    public ValidationRound createValidationRound(CBB builder,
+                                                 Class<CBB> configBeanBuilderType) {
         assert (builder != null);
         assert (configBeanBuilderType != null);
 
@@ -59,8 +56,7 @@ class DefaultConfigBuilderValidator<CBB> implements ConfigBeanBuilderValidator<C
         private final List<ValidationIssue> issues = new ArrayList<>();
         private boolean finished;
 
-        DefaultValidation(
-                Class<?> configBeanType) {
+        DefaultValidation(Class<?> configBeanType) {
             this.configBeanType = Objects.requireNonNull(configBeanType);
         }
 
@@ -91,17 +87,16 @@ class DefaultConfigBuilderValidator<CBB> implements ConfigBeanBuilderValidator<C
             return this;
         }
 
-        Collection<?> extractValues(
-                Object rawVal,
-                Class<?> cbType) {
+        Collection<?> extractValues(Object rawVal,
+                                    Class<?> cbType) {
             if (rawVal == null) {
-                return Collections.emptyList();
+                return List.of();
             }
 
             if (Optional.class.equals(rawVal.getClass())) {
                 Optional<?> val = (Optional<?>) rawVal;
                 if (val.isEmpty()) {
-                    return Collections.emptyList();
+                    return List.of();
                 }
 
                 rawVal = val.get();
@@ -125,8 +120,7 @@ class DefaultConfigBuilderValidator<CBB> implements ConfigBeanBuilderValidator<C
         }
 
         @Override
-        public ValidationRound finish(
-                boolean throwIfErrors) {
+        public ValidationRound finish(boolean throwIfErrors) {
             assert (!finished) : "already finished";
             finished = true;
 
@@ -148,8 +142,7 @@ class DefaultConfigBuilderValidator<CBB> implements ConfigBeanBuilderValidator<C
                                                        ? System.Logger.Level.ERROR : System.Logger.Level.WARNING, issue));
         }
 
-        static String toDescription(
-                List<ValidationIssue> issues) {
+        static String toDescription(List<ValidationIssue> issues) {
             StringBuilder builder = new StringBuilder();
             issues.forEach(issue -> {
                 builder.append("* ").append(issue.severity()).append(": ").append(issue.attributeName());
@@ -158,7 +151,6 @@ class DefaultConfigBuilderValidator<CBB> implements ConfigBeanBuilderValidator<C
 
             return builder.toString();
         }
-
     }
 
 }

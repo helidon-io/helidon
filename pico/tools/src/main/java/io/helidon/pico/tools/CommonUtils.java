@@ -45,8 +45,7 @@ public final class CommonUtils {
      * @return the loaded string resource
      * @throws io.helidon.pico.tools.ToolsException if there were any exceptions encountered
      */
-    static String loadStringFromResource(
-            String resourceNamePath) {
+    static String loadStringFromResource(String resourceNamePath) {
         try {
             try (InputStream in = CommonUtils.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -63,8 +62,7 @@ public final class CommonUtils {
      * @return the contents of the file
      * @throws io.helidon.pico.tools.ToolsException if there were any exceptions encountered
      */
-    static String loadStringFromFile(
-            String fileName) {
+    static String loadStringFromFile(String fileName) {
         try {
             Path filePath = Path.of(fileName);
             String content = Files.readString(filePath);
@@ -80,8 +78,7 @@ public final class CommonUtils {
      * @param coll the collection
      * @return the concatenated, delimited string value
      */
-    static String toPathString(
-            Collection<?> coll) {
+    static String toPathString(Collection<?> coll) {
         return toString(coll, null, System.getProperty("path.separator"));
     }
 
@@ -91,8 +88,7 @@ public final class CommonUtils {
      * @param coll the collection
      * @return the concatenated, delimited string value
      */
-    public static String toString(
-            Collection<?> coll) {
+    public static String toString(Collection<?> coll) {
         return toString(coll, null, null);
     }
 
@@ -106,10 +102,9 @@ public final class CommonUtils {
      * @param <T> the type held by the collection
      * @return the concatenated, delimited string value
      */
-    static <T> String toString(
-            Collection<T> coll,
-            Function<T, String> fnc,
-            String separator) {
+    static <T> String toString(Collection<T> coll,
+                               Function<T, String> fnc,
+                               String separator) {
         Function<T, String> fn = (fnc == null) ? String::valueOf : fnc;
         separator = (separator == null) ? ", " : separator;
         return coll.stream().map(fn::apply).collect(Collectors.joining(separator));
@@ -121,8 +116,7 @@ public final class CommonUtils {
      * @param str the string to split
      * @return the list of string values
      */
-    public static List<String> toList(
-            String str) {
+    public static List<String> toList(String str) {
         return toList(str, ",");
     }
 
@@ -133,9 +127,8 @@ public final class CommonUtils {
      * @param delim the delimiter
      * @return the list of string values
      */
-    static List<String> toList(
-            String str,
-            String delim) {
+    static List<String> toList(String str,
+                               String delim) {
         String[] split = str.split(delim);
         return Arrays.stream(split).map(String::trim).collect(Collectors.toList());
     }
@@ -148,9 +141,8 @@ public final class CommonUtils {
      * @param <T>   the type of the items in the collection
      * @return the set of mapped strings from the collection
      */
-    static <T> Set<String> toSet(
-            Collection<T> coll,
-            Function<T, String> fn) {
+    static <T> Set<String> toSet(Collection<T> coll,
+                                 Function<T, String> fn) {
         if (coll == null) {
             return Set.of();
         }
@@ -164,8 +156,7 @@ public final class CommonUtils {
      * @param multiLineStr the string
      * @return the trimmed content
      */
-    static String trimLines(
-            String multiLineStr) {
+    static String trimLines(String multiLineStr) {
         BufferedReader reader = new BufferedReader(new StringReader(multiLineStr));
         String line;
         StringBuilder builder = new StringBuilder();
@@ -192,9 +183,8 @@ public final class CommonUtils {
      * @return the first element, or null if empty collections are allowed
      * @throws io.helidon.pico.tools.ToolsException if not allowEmptyCollection and the collection is empty
      */
-    static <T> T first(
-            Collection<T> coll,
-            boolean allowEmptyCollection) {
+    static <T> T first(Collection<T> coll,
+                       boolean allowEmptyCollection) {
         if (coll.isEmpty()) {
             if (allowEmptyCollection) {
                 return null;
@@ -217,8 +207,7 @@ public final class CommonUtils {
      * @param className the classname
      * @return the converted string
      */
-    static String toFlatName(
-            String className) {
+    static String toFlatName(String className) {
         return className.replace('.', '$');
     }
 
@@ -228,8 +217,7 @@ public final class CommonUtils {
      * @param t the throwable
      * @return the root throwable error stack trace element
      */
-    public static StackTraceElement rootStackTraceElementOf(
-            Throwable t) {
+    public static StackTraceElement rootStackTraceElementOf(Throwable t) {
         while (t.getCause() != null && t.getCause() != t) {
             t = t.getCause();
         }

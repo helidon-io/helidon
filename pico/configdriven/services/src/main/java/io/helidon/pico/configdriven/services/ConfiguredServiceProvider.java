@@ -70,8 +70,7 @@ public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, Co
      * @param config the backing configuration
      * @return the generated config bean instance
      */
-    CB toConfigBean(
-            io.helidon.common.config.Config config);
+    CB toConfigBean(io.helidon.common.config.Config config);
 
     /**
      * Similar to {@link #toConfigBean(io.helidon.common.config.Config)}, but instead this method builds a config bean builder
@@ -80,8 +79,7 @@ public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, Co
      * @param config the backing configuration
      * @return the generated config bean instance
      */
-    IConfigBeanBuilderBase toConfigBeanBuilder(
-            io.helidon.common.config.Config config);
+    IConfigBeanBuilderBase toConfigBeanBuilder(io.helidon.common.config.Config config);
 
     /**
      * The mapper associated with this service's config bean types.
@@ -100,10 +98,9 @@ public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, Co
      * @param userDefinedContext    the optional user define context
      * @param <R> the type of the user defined context
      */
-    <R> void visitAttributes(
-            CB configBean,
-            AttributeVisitor<Object> visitor,
-            R userDefinedContext);
+    <R> void visitAttributes(CB configBean,
+                             AttributeVisitor<Object> visitor,
+                             R userDefinedContext);
 
     /**
      * Gets the internal config bean instance id for the provided config bean.
@@ -111,8 +108,7 @@ public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, Co
      * @param configBean the config bean
      * @return the config bean instance id
      */
-    String toConfigBeanInstanceId(
-            CB configBean);
+    String toConfigBeanInstanceId(CB configBean);
 
     /**
      * Returns the config bean associated with this managed service provider.

@@ -76,13 +76,11 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
      *
      * @param cfg the config
      */
-    DefaultServices(
-            PicoServicesConfig cfg) {
+    DefaultServices(PicoServicesConfig cfg) {
         this.cfg = Objects.requireNonNull(cfg);
     }
 
-    void state(
-            State state) {
+    void state(State state) {
         this.stateWatchOnly = Objects.requireNonNull(state);
     }
 
@@ -113,8 +111,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
      * @throws java.lang.IllegalStateException when dynamic is not permitted
      */
     @Override
-    public boolean reset(
-            boolean deep) {
+    public boolean reset(boolean deep) {
         if (Phase.ACTIVATION_STARTING != currentPhase()) {
             assertPermitsDynamic(cfg);
         }
@@ -122,7 +119,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         boolean changed = (deep || !servicesByTypeName.isEmpty() || lookupCount.get() > 0 || cacheLookupCount.get() > 0);
 
         if (deep) {
-            servicesByTypeName.values().forEach((sp) -> {
+            servicesByTypeName.values().forEach(sp -> {
                 if (sp instanceof Resetable) {
                     ((Resetable) sp).reset(true);
                 }
@@ -156,9 +153,8 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     }
 
     @Override
-    public <T> Optional<ServiceProvider<T>> lookupFirst(
-            Class<T> type,
-            boolean expected) {
+    public <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
+                                                        boolean expected) {
         DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
                 .addContractImplemented(type.getName())
                 .build();
@@ -166,10 +162,9 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     }
 
     @Override
-    public <T> Optional<ServiceProvider<T>> lookupFirst(
-            Class<T> type,
-            String name,
-            boolean expected) {
+    public <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
+                                                        String name,
+                                                        boolean expected) {
         DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
                 .addContractImplemented(type.getName())
                 .addQualifier(DefaultQualifierAndValue.createNamed(name))
@@ -178,17 +173,15 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     }
 
     @Override
-    public <T> Optional<ServiceProvider<T>> lookupFirst(
-            ServiceInfoCriteria criteria,
-            boolean expected) {
+    public <T> Optional<ServiceProvider<T>> lookupFirst(ServiceInfoCriteria criteria,
+                                                        boolean expected) {
         List<ServiceProvider<T>> result = lookup(criteria, expected, 1);
         assert (!expected || !result.isEmpty());
         return (result.isEmpty()) ? Optional.empty() : Optional.of(result.get(0));
     }
 
     @Override
-    public <T> List<ServiceProvider<T>> lookupAll(
-            Class<T> type) {
+    public <T> List<ServiceProvider<T>> lookupAll(Class<T> type) {
         DefaultServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
                 .addContractImplemented(type.getName())
                 .build();
@@ -197,19 +190,17 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
 
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public List<ServiceProvider<?>> lookupAll(
-            ServiceInfoCriteria criteria,
-            boolean expected) {
+    public List<ServiceProvider<?>> lookupAll(ServiceInfoCriteria criteria,
+                                              boolean expected) {
         List<ServiceProvider<?>> result = (List) lookup(criteria, expected, Integer.MAX_VALUE);
         assert (!expected || !result.isEmpty());
         return result;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    <T> List<ServiceProvider<T>> lookup(
-            ServiceInfoCriteria criteria,
-            boolean expected,
-            int limit) {
+    <T> List<ServiceProvider<T>> lookup(ServiceInfoCriteria criteria,
+                                        boolean expected,
+                                        int limit) {
         List<ServiceProvider<?>> result;
 
         lookupCount.incrementAndGet();
@@ -274,8 +265,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         return (List) result;
     }
 
-    ServiceProvider<?> serviceProviderFor(
-            String serviceTypeName) {
+    ServiceProvider<?> serviceProviderFor(String serviceTypeName) {
         ServiceProvider<?> serviceProvider = servicesByTypeName.get(serviceTypeName);
         if (serviceProvider == null) {
             throw resolutionBasedInjectionError(serviceTypeName);
@@ -283,8 +273,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         return serviceProvider;
     }
 
-    List<ServiceProvider<?>> allServiceProviders(
-            boolean explode) {
+    List<ServiceProvider<?>> allServiceProviders(boolean explode) {
         if (explode) {
             return explodeAndSort(servicesByTypeName.values(), null, false);
         }
@@ -293,10 +282,9 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    static <T> List<T> explodeAndSort(
-            Collection<?> coll,
-            ServiceInfoCriteria criteria,
-            boolean expected) {
+    static <T> List<T> explodeAndSort(Collection<?> coll,
+                                      ServiceInfoCriteria criteria,
+                                      boolean expected) {
         List result;
 
         if ((coll.size() > 1)
@@ -331,29 +319,25 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         return result;
     }
 
-    static boolean hasContracts(
-            ServiceInfoCriteria criteria) {
+    static boolean hasContracts(ServiceInfoCriteria criteria) {
         return !criteria.contractsImplemented().isEmpty();
     }
 
-    static boolean isIntercepted(
-            ServiceProvider<?> sp) {
+    static boolean isIntercepted(ServiceProvider<?> sp) {
         return (sp instanceof ServiceProviderBindable && ((ServiceProviderBindable<?>) sp).isIntercepted());
     }
 
-    ServiceBinder createServiceBinder(
-            PicoServices picoServices,
-            DefaultServices services,
-            String moduleName,
-            boolean trusted) {
+    ServiceBinder createServiceBinder(PicoServices picoServices,
+                                      DefaultServices services,
+                                      String moduleName,
+                                      boolean trusted) {
         assert (picoServices.services() == services);
         return DefaultServiceBinder.create(picoServices, moduleName, trusted);
     }
 
-    void bind(
-            PicoServices picoServices,
-            DefaultInjectionPlanBinder binder,
-            Application app) {
+    void bind(PicoServices picoServices,
+              DefaultInjectionPlanBinder binder,
+              Application app) {
         String appName = app.named().orElse(app.getClass().getName());
         boolean isLoggable = DefaultPicoServices.LOGGER.isLoggable(System.Logger.Level.INFO);
         if (isLoggable) {
@@ -370,10 +354,9 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         }
     }
 
-    void bind(
-            PicoServices picoServices,
-            Module module,
-            boolean initializing) {
+    void bind(PicoServices picoServices,
+              Module module,
+              boolean initializing) {
         String moduleName = module.named().orElse(module.getClass().getName());
         boolean isLoggable = DefaultPicoServices.LOGGER.isLoggable(System.Logger.Level.TRACE);
         if (isLoggable) {
@@ -388,8 +371,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     }
 
     @Override
-    public void bind(
-            ServiceProvider<?> serviceProvider) {
+    public void bind(ServiceProvider<?> serviceProvider) {
         if (currentPhase().ordinal() > Phase.GATHERING_DEPENDENCIES.ordinal()) {
             assertPermitsDynamic(cfg);
         }
@@ -411,7 +393,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         // special handling in case we are an interceptor...
         Set<QualifierAndValue> qualifiers = serviceInfo.qualifiers();
         Optional<QualifierAndValue> interceptedQualifier = qualifiers.stream()
-                .filter((q) -> q.typeName().name().equals(Intercepted.class.getName()))
+                .filter(q -> q.typeName().name().equals(Intercepted.class.getName()))
                 .findFirst();
         if (interceptedQualifier.isPresent()) {
             // assumption: expected that the root service provider is registered prior to any interceptors
@@ -453,8 +435,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         return COMPARATOR;
     }
 
-    static void assertPermitsDynamic(
-            PicoServicesConfig cfg) {
+    static void assertPermitsDynamic(PicoServicesConfig cfg) {
         if (!cfg.permitsDynamic()) {
             String msg = toErrorMessage(maybeCreate(),
                                         "Services are configured to prevent dynamic updates.\n"
@@ -465,39 +446,33 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         }
     }
 
-    private ServiceProvider<?> createServiceProvider(
-            io.helidon.pico.Module module,
-            String moduleName,
-            PicoServices picoServices) {
+    private ServiceProvider<?> createServiceProvider(io.helidon.pico.Module module,
+                                                     String moduleName,
+                                                     PicoServices picoServices) {
         return new BasicModuleServiceProvider(module, moduleName, picoServices);
     }
 
-    private ServiceProvider<?> createServiceProvider(
-            Application app,
-            PicoServices picoServices) {
+    private ServiceProvider<?> createServiceProvider(Application app,
+                                                     PicoServices picoServices) {
         return new BasicApplicationServiceProvider(app, picoServices);
     }
 
-    static ServiceInfo toValidatedServiceInfo(
-            ServiceProvider<?> serviceProvider) {
+    static ServiceInfo toValidatedServiceInfo(ServiceProvider<?> serviceProvider) {
         ServiceInfo info = serviceProvider.serviceInfo();
         Objects.requireNonNull(info.serviceTypeName(), () -> "service type name is required for " + serviceProvider);
         return info;
     }
 
-    static InjectionException serviceProviderAlreadyBoundInjectionError(
-            ServiceProvider<?> previous,
-            ServiceProvider<?> sp) {
+    static InjectionException serviceProviderAlreadyBoundInjectionError(ServiceProvider<?> previous,
+                                                                        ServiceProvider<?> sp) {
         return new InjectionException("service provider already bound to " + previous, null, sp);
     }
 
-    static InjectionException resolutionBasedInjectionError(
-            ServiceInfoCriteria ctx) {
+    static InjectionException resolutionBasedInjectionError(ServiceInfoCriteria ctx) {
         return new InjectionException("expected to resolve a service matching " + ctx);
     }
 
-    static InjectionException resolutionBasedInjectionError(
-            String serviceTypeName) {
+    static InjectionException resolutionBasedInjectionError(String serviceTypeName) {
         return resolutionBasedInjectionError(DefaultServiceInfoCriteria.builder().serviceTypeName(serviceTypeName).build());
     }
 

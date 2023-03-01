@@ -182,9 +182,8 @@ public interface TemplateHelperTools {
      *
      * @return the generic resource based resolver
      */
-    Supplier<CharSequence> supplyFromResources(
-            String templateProfile,
-            String templateName);
+    Supplier<CharSequence> supplyFromResources(String templateProfile,
+                                               String templateName);
 
     /**
      * Returns a literal resolver to the static template provided.
@@ -193,7 +192,6 @@ public interface TemplateHelperTools {
      *
      * @return the resolver that directly returns the template
      */
-    Supplier<CharSequence> supplyUsingLiteralTemplate(
-            CharSequence template);
+    Supplier<CharSequence> supplyUsingLiteralTemplate(CharSequence template);
 
 }

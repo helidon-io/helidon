@@ -44,8 +44,7 @@ public class ConfigBeanMapperHolder {
      * @param configBeanType the config bean type to map
      * @return the config bean mapper
      */
-    public static Optional<ConfigBeanMapper> configBeanMapperFor(
-            Class<?> configBeanType) {
+    public static Optional<ConfigBeanMapper> configBeanMapperFor(Class<?> configBeanType) {
         return INSTANCE.get();
     }
 

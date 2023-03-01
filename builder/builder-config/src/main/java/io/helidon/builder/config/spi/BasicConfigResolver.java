@@ -61,39 +61,35 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
     }
 
     @Override
-    public <T> Optional<T> of(
-            ResolutionContext ctx,
-            Map<String, Map<String, Object>> meta,
-            ConfigResolverRequest<T> request) {
+    public <T> Optional<T> of(ResolutionContext ctx,
+                              Map<String, Map<String, Object>> meta,
+                              ConfigResolverRequest<T> request) {
         Config attrCfg = ctx.config().get(request.configKey());
         return attrCfg.exists()
                 ? optionalWrappedConfig(attrCfg, meta, request) : Optional.empty();
     }
 
     @Override
-    public <T> Optional<Collection<T>> ofCollection(
-            ResolutionContext ctx,
-            Map<String, Map<String, Object>> meta,
-            ConfigResolverRequest<T> request) {
+    public <T> Optional<Collection<T>> ofCollection(ResolutionContext ctx,
+                                                    Map<String, Map<String, Object>> meta,
+                                                    ConfigResolverRequest<T> request) {
         Config attrCfg = ctx.config().get(request.configKey());
         return attrCfg.exists()
                 ? (Optional<Collection<T>>) optionalWrappedConfig(attrCfg, meta, request) : Optional.empty();
     }
 
     @Override
-    public <K, V> Optional<Map<K, V>> ofMap(
-            ResolutionContext ctx,
-            Map<String, Map<String, Object>> meta,
-            ConfigResolverMapRequest<K, V> request) {
+    public <K, V> Optional<Map<K, V>> ofMap(ResolutionContext ctx,
+                                            Map<String, Map<String, Object>> meta,
+                                            ConfigResolverMapRequest<K, V> request) {
         Config attrCfg = ctx.config().get(request.configKey());
         return attrCfg.exists()
                 ? (Optional<Map<K, V>>) optionalWrappedConfig(attrCfg, meta, request) : Optional.empty();
     }
 
-    private <T> Optional<T> optionalWrappedConfig(
-            Config attrCfg,
-            Map<String, Map<String, Object>> meta,
-            ConfigResolverRequest<T> request) {
+    private <T> Optional<T> optionalWrappedConfig(Config attrCfg,
+                                                  Map<String, Map<String, Object>> ignoredMeta,
+                                                  ConfigResolverRequest<T> request) {
         Class<?> componentType = request.valueComponentType().orElse(null);
         Class<?> type = request.valueType();
         final boolean isOptional = Optional.class.equals(type);
@@ -130,17 +126,15 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
      * @param <T> the attribute value type being resolved in the request
      * @return the component type
      */
-    public static <T> Optional<Class<T>> toComponentType(
-            Map<String, Map<String, Object>> meta,
-            ConfigResolverRequest<T> request) {
+    public static <T> Optional<Class<T>> toComponentType(Map<String, Map<String, Object>> meta,
+                                                         ConfigResolverRequest<T> request) {
         Map<String, Object> thisMeta = meta.get(request.attributeName());
         return Optional.ofNullable((Class<T>) (thisMeta == null
                                                        ? request.valueComponentType() : thisMeta.get(TAG_COMPONENT_TYPE)));
     }
 
-    private static String toTypeNameDescription(
-            Class<?> type,
-            Class<?> componentType) {
+    private static String toTypeNameDescription(Class<?> type,
+                                                Class<?> componentType) {
         return type.getTypeName() + "<" + componentType.getTypeName() + ">";
     }
 

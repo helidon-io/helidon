@@ -62,8 +62,7 @@ public class HelloImpl implements Hello {
     }
 
     @Inject
-    public HelloImpl(
-            World ctorWorld) {
+    public HelloImpl(World ctorWorld) {
         this();
         this.ctorWorld = ctorWorld;
     }
@@ -79,15 +78,13 @@ public class HelloImpl implements Hello {
     }
 
     @Inject
-    public void world(
-            World world) {
+    public void world(World world) {
         this.setWorld = world;
         assert (world == ctorWorld);
     }
 
     @Inject
-    public void setRedWorld(
-            @Named("red") Optional<World> redWorld) {
+    public void setRedWorld(@Named("red") Optional<World> redWorld) {
         this.setRedWorld = redWorld;
     }
 

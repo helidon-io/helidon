@@ -58,9 +58,8 @@ public interface ContextualServiceQuery {
      * @param expected  true if the query is expected to at least have a single match
      * @return the query
      */
-    static ContextualServiceQuery create(
-            InjectionPointInfo ipInfo,
-            boolean expected) {
+    static ContextualServiceQuery create(InjectionPointInfo ipInfo,
+                                         boolean expected) {
         Objects.requireNonNull(ipInfo);
         return DefaultContextualServiceQuery.builder()
                 .expected(expected)

@@ -42,18 +42,16 @@ public class Invocation<V> implements Interceptor.Chain<V> {
     private Supplier<V> call;
     private Runnable runnableCall;
 
-    private Invocation(
-            InvocationContext ctx,
-            Supplier<V> call) {
+    private Invocation(InvocationContext ctx,
+                       Supplier<V> call) {
         this.ctx = ctx;
         this.call = Objects.requireNonNull(call);
         this.runnableCall = null;
         this.interceptorIterator = ctx.interceptors().listIterator();
     }
 
-    private Invocation(
-            InvocationContext ctx,
-            Runnable call) {
+    private Invocation(InvocationContext ctx,
+                       Runnable call) {
         this.ctx = ctx;
         this.call = null;
         this.runnableCall = Objects.requireNonNull(call);
@@ -69,9 +67,8 @@ public class Invocation<V> implements Interceptor.Chain<V> {
      * @return the invocation instance
      */
     @SuppressWarnings("unchecked")
-    public static <V> V createInvokeAndSupply(
-            InvocationContext ctx,
-            Supplier<V> call) {
+    public static <V> V createInvokeAndSupply(InvocationContext ctx,
+                                              Supplier<V> call) {
         if (ctx.interceptors().isEmpty()) {
             return call.get();
         }
@@ -86,9 +83,8 @@ public class Invocation<V> implements Interceptor.Chain<V> {
      * @param call  the call to the base service provider's method
      */
     @SuppressWarnings("rawtypes")
-    public static void createAndInvoke(
-            InvocationContext ctx,
-            Runnable call) {
+    public static void createAndInvoke(InvocationContext ctx,
+                                       Runnable call) {
         if (ctx.interceptors().isEmpty()) {
             call.run();
         } else {
@@ -105,8 +101,7 @@ public class Invocation<V> implements Interceptor.Chain<V> {
      * @return the merged result, or null instead of empty lists
      */
     @SuppressWarnings("unchecked")
-    public static <T> List<Provider<T>> mergeAndCollapse(
-            List<Provider<T>>... lists) {
+    public static <T> List<Provider<T>> mergeAndCollapse(List<Provider<T>>... lists) {
         List<Provider<T>> result = null;
 
         for (List<Provider<T>> list : lists) {

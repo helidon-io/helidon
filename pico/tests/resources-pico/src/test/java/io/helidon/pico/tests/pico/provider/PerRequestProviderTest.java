@@ -42,8 +42,7 @@ class PerRequestProviderTest {
         setUp(config);
     }
 
-    void setUp(
-            Config config) {
+    void setUp(Config config) {
         this.picoServices = testableServices(config);
         this.services = picoServices.services();
     }

@@ -49,11 +49,10 @@ public class MainToolBox implements ToolBox {
     public int setterCallCount;
 
     @Inject
-    MainToolBox(
-            List<Provider<Tool>> allTools,
-            Screwdriver screwdriver,
-            @Named("big") Provider<Hammer> bigHammer,
-            List<Provider<Hammer>> allHammers) {
+    MainToolBox(List<Provider<Tool>> allTools,
+                Screwdriver screwdriver,
+                @Named("big") Provider<Hammer> bigHammer,
+                List<Provider<Hammer>> allHammers) {
         this.allTools = Objects.requireNonNull(allTools);
         this.screwdriver = Objects.requireNonNull(screwdriver);
         this.bigHammer = bigHammer;

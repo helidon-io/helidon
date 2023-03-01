@@ -55,8 +55,7 @@ public class XImpl implements IA, IB, Closeable {
     @Named("methodIB")
     @InterceptorBasedAnno("IBSubAnno")
     @Override
-    public void methodIB(
-            @Named("arg1") String val) {
+    public void methodIB(@Named("arg1") String val) {
     }
 
     @InterceptorBasedAnno
@@ -65,7 +64,9 @@ public class XImpl implements IA, IB, Closeable {
         throw new IOException("forced");
     }
 
-    public long methodX(String arg1, int arg2, boolean arg3) throws IOException, RuntimeException, AssertionError {
+    public long methodX(String arg1,
+                        int arg2,
+                        boolean arg3) throws IOException, RuntimeException, AssertionError {
         return 101;
     }
 

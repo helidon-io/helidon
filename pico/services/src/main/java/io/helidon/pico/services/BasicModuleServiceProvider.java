@@ -26,18 +26,16 @@ import io.helidon.pico.ServiceInfo;
  */
 class BasicModuleServiceProvider extends AbstractServiceProvider<io.helidon.pico.Module> {
 
-    BasicModuleServiceProvider(
-            io.helidon.pico.Module module,
-            String moduleName,
-            PicoServices picoServices) {
+    BasicModuleServiceProvider(io.helidon.pico.Module module,
+                               String moduleName,
+                               PicoServices picoServices) {
         super(module, PicoServices.terminalActivationPhase(), createServiceInfo(module, moduleName), picoServices);
         serviceRef(module);
     }
 
     @SuppressWarnings("rawtypes")
-    static ServiceInfo createServiceInfo(
-            io.helidon.pico.Module module,
-            String moduleName) {
+    static ServiceInfo createServiceInfo(io.helidon.pico.Module module,
+                                         String moduleName) {
         DefaultServiceInfo.Builder builder = DefaultServiceInfo.builder()
                 .serviceTypeName(module.getClass().getName())
                 .addContractsImplemented(io.helidon.pico.Module.class.getName());

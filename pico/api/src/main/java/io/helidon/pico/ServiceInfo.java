@@ -71,8 +71,7 @@ public interface ServiceInfo extends ServiceInfoBasics {
     // internal note: it is unfortunate that we have a matches() here as well as in ServiceInfo. This is what happened
     // when we split ServiceInfo into ServiceInfoCriteria.  Sometimes we need ServiceInfo.matches(criteria), and other times
     // ServiceInfoCriteria.matches(criteria).
-    default boolean matches(
-            ServiceInfoCriteria criteria) {
+    default boolean matches(ServiceInfoCriteria criteria) {
         if (criteria == PicoServices.EMPTY_CRITERIA) {
             return true;
         }
@@ -98,9 +97,8 @@ public interface ServiceInfo extends ServiceInfoBasics {
      * @param criteria the criteria to compare against
      * @return true if the criteria provided matches this instance
      */
-    static boolean matchesQualifiers(
-            Collection<QualifierAndValue> src,
-            Collection<QualifierAndValue> criteria) {
+    static boolean matchesQualifiers(Collection<QualifierAndValue> src,
+                                     Collection<QualifierAndValue> criteria) {
         if (criteria.isEmpty()) {
             return true;
         }
@@ -145,9 +143,8 @@ public interface ServiceInfo extends ServiceInfoBasics {
         return true;
     }
 
-    private static boolean matches(
-            Object src,
-            Optional<?> criteria) {
+    private static boolean matches(Object src,
+                                   Optional<?> criteria) {
         if (criteria.isEmpty()) {
             return true;
         }
@@ -162,9 +159,8 @@ public interface ServiceInfo extends ServiceInfoBasics {
      * @param criteria the criteria
      * @return true if there is a match
      */
-    private static boolean matchesWeight(
-            ServiceInfoBasics src,
-            ServiceInfoCriteria criteria) {
+    private static boolean matchesWeight(ServiceInfoBasics src,
+                                         ServiceInfoCriteria criteria) {
         if (criteria.weight().isEmpty()) {
             return true;
         }
@@ -180,8 +176,7 @@ public interface ServiceInfo extends ServiceInfoBasics {
      * @return the fluent builder
      */
     // note to self: the builders framework should probably code-generate this automatically
-    static DefaultServiceInfo.Builder toBuilder(
-            ServiceInfoBasics val) {
+    static DefaultServiceInfo.Builder toBuilder(ServiceInfoBasics val) {
         if (val instanceof ServiceInfo) {
             return DefaultServiceInfo.toBuilder((ServiceInfo) val);
         }

@@ -76,8 +76,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     }
 
     @Override
-    public boolean reset(
-            boolean deep) {
+    public boolean reset(boolean deep) {
         System.Logger.Level level = isInitialized() ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
         LOGGER.log(level, "Resetting");
         configuredServiceProviderMetaConfigBeanMap.clear();
@@ -88,10 +87,9 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     }
 
     @Override
-    public void bind(
-            ConfiguredServiceProvider<?, ?> configuredServiceProvider,
-            QualifierAndValue configuredByQualifier,
-            MetaConfigBeanInfo metaConfigBeanInfo) {
+    public void bind(ConfiguredServiceProvider<?, ?> configuredServiceProvider,
+                     QualifierAndValue configuredByQualifier,
+                     MetaConfigBeanInfo metaConfigBeanInfo) {
         Objects.requireNonNull(configuredServiceProvider);
         Objects.requireNonNull(configuredByQualifier);
         Objects.requireNonNull(metaConfigBeanInfo);
@@ -127,8 +125,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     }
 
     @Override
-    public void initialize(
-            PicoServices ignoredPicoServices) {
+    public void initialize(PicoServices ignoredPicoServices) {
         try {
             if (initializing.getAndSet(true)) {
                 // all threads should wait for the leader (and the config bean registry) to have been fully initialized
@@ -157,8 +154,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         }
     }
 
-    private void initialize(
-            Config commonCfg) {
+    private void initialize(Config commonCfg) {
         if (configuredServiceProvidersByConfigKey.isEmpty()) {
             LOGGER.log(System.Logger.Level.INFO, "No config driven services found...");
             return;
@@ -194,9 +190,8 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         return (0 == initialized.getCount());
     }
 
-    private void visitAndInitialize(
-            List<io.helidon.config.Config> configs,
-            int depth) {
+    private void visitAndInitialize(List<io.helidon.config.Config> configs,
+                                    int depth) {
         configs.forEach((config) -> {
             if (depth > 0) {
                 String key = config.name();
@@ -254,9 +249,8 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<?> configBeansByConfigKey(
-            String key,
-            String fullConfigKey) {
+    public List<?> configBeansByConfigKey(String key,
+                                          String fullConfigKey) {
         List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
                 configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
         if (cspsUsingSameKey == null) {
@@ -283,7 +277,8 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     }
 
     @Override
-    public <CB> Map<String, CB> configBeanMapByConfigKey(String key, String fullConfigKey) {
+    public <CB> Map<String, CB> configBeanMapByConfigKey(String key,
+                                                         String fullConfigKey) {
         List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
                 configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
         if (cspsUsingSameKey == null) {
@@ -332,11 +327,10 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         return result;
     }
 
-    <T, CB> void loadConfigBeans(
-            io.helidon.config.Config config,
-            ConfiguredServiceProvider<T, CB> configuredServiceProvider,
-            ConfigBeanInfo metaConfigBeanInfo,
-            Map<String, Map<String, Object>> metaAttributes) {
+    <T, CB> void loadConfigBeans(io.helidon.config.Config config,
+                                 ConfiguredServiceProvider<T, CB> configuredServiceProvider,
+                                 ConfigBeanInfo metaConfigBeanInfo,
+                                 Map<String, Map<String, Object>> metaAttributes) {
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             LOGGER.log(System.Logger.Level.DEBUG, "Loading config bean(s) for "
                     + configuredServiceProvider.serviceType() + " with config: "
@@ -370,10 +364,9 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
      * The base config bean must be a root config, and is only available if there is a non-numeric
      * key in our node list (e.g., "x.y" not "x.1.y").
      */
-    <T, CB> CB maybeLoadBaseConfigBean(
-            io.helidon.config.Config config,
-            ConfigValue<List<io.helidon.config.Config>> nodeList,
-            ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
+    <T, CB> CB maybeLoadBaseConfigBean(io.helidon.config.Config config,
+                                       ConfigValue<List<io.helidon.config.Config>> nodeList,
+                                       ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
         boolean hasAnyNonNumericNodes = nodeList.get().stream()
                .anyMatch(cfg -> toNumeric(cfg.name()).isEmpty());
         if (!hasAnyNonNumericNodes) {
@@ -386,9 +379,8 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     /**
      * These are any {config}.N instances, not the base w/o the N.
      */
-    <T, CB> Map<String, CB> maybeLoadConfigBeans(
-            ConfigValue<List<io.helidon.config.Config>> nodeList,
-            ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
+    <T, CB> Map<String, CB> maybeLoadConfigBeans(ConfigValue<List<io.helidon.config.Config>> nodeList,
+                                                 ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
         Map<String, CB> result = new LinkedHashMap<>();
 
         nodeList.get().stream()
@@ -404,9 +396,8 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         return result;
     }
 
-    <T, CB> CB toConfigBean(
-            io.helidon.config.Config config,
-            ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
+    <T, CB> CB toConfigBean(io.helidon.config.Config config,
+                            ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
         CB configBean = Objects.requireNonNull(configuredServiceProvider.toConfigBean(config),
                                                "unable to create default config bean for " + configuredServiceProvider);
         if (configuredServiceProvider instanceof AbstractConfiguredServiceProvider) {
@@ -427,12 +418,11 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
      * @param metaAttributes            the meta-attributes that captures the policy in a map like structure by attribute name
      * @throws PicoServiceProviderException if the provided config bean is not validated according to policy
      */
-    <T> void validate(
-            Object configBean,
-            String key,
-            Config config,
-            AbstractConfiguredServiceProvider<T, Object> csp,
-            Map<String, Map<String, Object>> metaAttributes) {
+    <T> void validate(Object configBean,
+                      String key,
+                      Config config,
+                      AbstractConfiguredServiceProvider<T, Object> csp,
+                      Map<String, Map<String, Object>> metaAttributes) {
         Set<String> problems = new LinkedHashSet<>();
         String instanceId = csp.toConfigBeanInstanceId(configBean);
         assert (hasValue(key));
@@ -490,13 +480,12 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         }
     }
 
-    static boolean validateUsingConfigAttributes(
-            String instanceId,
-            String attrName,
-            String attrConfigKey,
-            Config config,
-            Supplier<Object> beanBasedValueSupplier,
-            Set<String> problems) {
+    static boolean validateUsingConfigAttributes(String instanceId,
+                                                 String attrName,
+                                                 String attrConfigKey,
+                                                 Config config,
+                                                 Supplier<Object> beanBasedValueSupplier,
+                                                 Set<String> problems) {
         if (config == null) {
             if (!DEFAULT_INSTANCE_ID.equals(instanceId)) {
                 problems.add("Unable to obtain backing config for service provider for " + attrConfigKey);
@@ -521,10 +510,9 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         }
     }
 
-    static void validateUsingBeanAttributes(
-            Supplier<Object> valueSupplier,
-            String attrName,
-            Set<String> problems) {
+    static void validateUsingBeanAttributes(Supplier<Object> valueSupplier,
+                                            String attrName,
+                                            Set<String> problems) {
         Object val = valueSupplier.get();
         if (val == null) {
             problems.add("'" + attrName + "' is a required attribute and cannot be null");
@@ -539,12 +527,11 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     }
 
     @SuppressWarnings("unchecked")
-    <CB> void registerConfigBean(
-            Object configBean,
-            String instanceId,
-            Config config,
-            ConfiguredServiceProvider<?, CB> configuredServiceProvider,
-            Map<String, Map<String, Object>> metaAttributes) {
+    <CB> void registerConfigBean(Object configBean,
+                                 String instanceId,
+                                 Config config,
+                                 ConfiguredServiceProvider<?, CB> configuredServiceProvider,
+                                 Map<String, Map<String, Object>> metaAttributes) {
         assert (configuredServiceProvider instanceof AbstractConfiguredServiceProvider);
         AbstractConfiguredServiceProvider<?, Object> csp =
                 (AbstractConfiguredServiceProvider<?, Object>) configuredServiceProvider;

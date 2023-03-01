@@ -63,8 +63,7 @@ public class HandSaw extends AbstractSaw {
     }
 
     @Inject
-    public HandSaw(
-            Optional<Lubricant> lubricant) {
+    public HandSaw(Optional<Lubricant> lubricant) {
         ctorInjectedLubricantInSubClass = lubricant;
     }
 
@@ -74,37 +73,32 @@ public class HandSaw extends AbstractSaw {
     }
 
     @Inject
-    protected void injectLubricant(
-            Optional<Lubricant> lubricant) {
+    protected void injectLubricant(Optional<Lubricant> lubricant) {
         setterInjectedLubricantInSubClass = lubricant;
         setterInjectedLubricantInSubClassInjectedCount++;
     }
 
     @Inject
-    void setBladeProvider(
-            Provider<AbstractBlade> blade) {
+    void setBladeProvider(Provider<AbstractBlade> blade) {
         setterInjectedPkgPrivateProviderInSubClass = blade;
         setterInjectedPkgPrivateProviderInSubClassInjectedCount++;
     }
 
     @Inject
-    void setBladeOptional(
-            Optional<AbstractBlade> blade) {
+    void setBladeOptional(Optional<AbstractBlade> blade) {
         setterInjectedPkgPrivateOptionalInSubClass = blade;
         setterInjectedPkgPrivateOptionalInSubClassInjectedCount++;
     }
 
     @Inject
-    void setBladeList(
-            List<AbstractBlade> blades) {
+    void setBladeList(List<AbstractBlade> blades) {
         setterInjectedPkgPrivateListInSubClass = blades;
         setterInjectedPkgPrivateListInSubClassInjectedCount++;
     }
 
     @Inject
     @SuppressWarnings("unchecked")
-    void setAllBlades(
-            @Named("*") List<Provider<AbstractBlade>> blades) {
+    void setAllBlades(@Named("*") List<Provider<AbstractBlade>> blades) {
         setterInjectedAllProviderListInSubClass = (List) blades;
         setterInjectedAllProviderListInSubClassInjectedCount++;
     }

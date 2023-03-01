@@ -27,8 +27,7 @@ public interface ServiceInjectionPlanBinder {
      * @param serviceProvider the service provider to receive the injection plan.
      * @return the binder to use for binding the injection plan to the service provider
      */
-    Binder bindTo(
-            ServiceProvider<?> serviceProvider);
+    Binder bindTo(ServiceProvider<?> serviceProvider);
 
 
     /**
@@ -46,9 +45,8 @@ public interface ServiceInjectionPlanBinder {
          * @param serviceProvider   the service provider to bind to this identity.
          * @return the binder builder
          */
-        Binder bind(
-                String id,
-                ServiceProvider<?> serviceProvider);
+        Binder bind(String id,
+                    ServiceProvider<?> serviceProvider);
 
         /**
         * Binds a list of service providers to the injection point identified by {@link InjectionPointInfo#id()}.
@@ -58,9 +56,8 @@ public interface ServiceInjectionPlanBinder {
         * @param serviceProviders   the list of service providers to bind to this identity.
         * @return the binder builder
         */
-        Binder bindMany(
-                String id,
-                ServiceProvider<?>... serviceProviders);
+        Binder bindMany(String id,
+                        ServiceProvider<?>... serviceProviders);
 
         /**
          * Represents a void / null bind, only applicable for an Optional injection point.
@@ -68,8 +65,7 @@ public interface ServiceInjectionPlanBinder {
          * @param id the injection point identity
          * @return the binder builder
          */
-        Binder bindVoid(
-                String id);
+        Binder bindVoid(String id);
 
         /**
          * Represents injection points that cannot be bound at startup, and instead must rely on a
@@ -79,9 +75,8 @@ public interface ServiceInjectionPlanBinder {
          * @param serviceType   the service type needing to be resolved
          * @return the binder builder
          */
-        Binder resolvedBind(
-                String id,
-                Class<?> serviceType);
+        Binder resolvedBind(String id,
+                            Class<?> serviceType);
 
         /**
          * Commits the bindings for this service provider.

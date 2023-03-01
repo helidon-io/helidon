@@ -69,8 +69,7 @@ public interface DependenciesInfo {
      * @param elemName the element name of the injection point
      * @return the list of all dependencies got a given element name of a given injection point
      */
-    default List<DependencyInfo> allDependenciesFor(
-            String elemName) {
+    default List<DependencyInfo> allDependenciesFor(String elemName) {
         Objects.requireNonNull(elemName);
         List<DependencyInfo> result = new ArrayList<>();
         allDependencies().forEach(dep -> dep.injectionPointDependencies().stream()
@@ -93,7 +92,8 @@ public interface DependenciesInfo {
         }
 
         @Override
-        public int compare(DependencyInfo o1, DependencyInfo o2) {
+        public int compare(DependencyInfo o1,
+                           DependencyInfo o2) {
             int pos1 = o1.injectionPointDependencies().iterator().next().elementOffset().orElse(0);
             int pos2 = o2.injectionPointDependencies().iterator().next().elementOffset().orElse(0);
             return Integer.compare(pos1, pos2);

@@ -45,23 +45,20 @@ public class ASimpleRunLevelService implements Resetable {
     }
 
     @Inject
-    void setSingleton(
-            ASingletonServiceContract singleton) {
+    void setSingleton(ASingletonServiceContract singleton) {
         assert (this.singleton == null);
         this.singleton = Objects.requireNonNull(singleton);
     }
 
     @Inject
-    void setWebServer(
-            List<Provider<FakeWebServerContract>> fakeWebServers) {
+    void setWebServer(List<Provider<FakeWebServerContract>> fakeWebServers) {
         assert (this.fakeWebServers == null);
         assert (!Objects.requireNonNull(fakeWebServers).isEmpty());
         this.fakeWebServers = Objects.requireNonNull(fakeWebServers);
     }
 
     @Override
-    public boolean reset(
-            boolean deep) {
+    public boolean reset(boolean deep) {
         postConstructCount = 0;
         preDestroyCount = 0;
         return true;

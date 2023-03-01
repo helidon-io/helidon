@@ -69,10 +69,9 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
     }
 
     @Override
-    int doBulkInner(
-            Set<? extends Element> typesToProcess,
-            TypeName typeName,
-            Dependencies.BuilderContinuation builder) {
+    int doBulkInner(Set<? extends Element> typesToProcess,
+                    TypeName typeName,
+                    Dependencies.BuilderContinuation builder) {
         if (typesToProcess.isEmpty()) {
             return 0;
         }
@@ -99,16 +98,15 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
     }
 
     @Override
-    void doInner(
-            String serviceTypeName,
-            VariableElement varType,
-            Dependencies.BuilderContinuation continuation,
-            String elemName,
-            int elemArgs,
-            Integer elemOffset,
-            InjectionPointInfo.ElementKind elemKind,
-            InjectionPointInfo.Access access,
-            Boolean isStaticAlready) {
+    void doInner(String serviceTypeName,
+                 VariableElement varType,
+                 Dependencies.BuilderContinuation continuation,
+                 String elemName,
+                 int elemArgs,
+                 Integer elemOffset,
+                 InjectionPointInfo.ElementKind elemKind,
+                 InjectionPointInfo.Access access,
+                 Boolean isStaticAlready) {
         boolean isStatic = (isStaticAlready != null && isStaticAlready);
         if (access == null) {
             if (varType.getKind() != ElementKind.FIELD) {
@@ -143,9 +141,8 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
     }
 
     @Override
-    void doInner(
-            ExecutableElement method,
-            Dependencies.BuilderContinuation builder) {
+    void doInner(ExecutableElement method,
+                 Dependencies.BuilderContinuation builder) {
         if (method.getKind() != ElementKind.METHOD
                 && method.getKind() != ElementKind.CONSTRUCTOR) {
             throw new ToolsException("unsupported element kind " + method.getEnclosingElement()
@@ -177,9 +174,8 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
     }
 
     @Override
-    public void doInner(
-            TypeElement type,
-            Dependencies.BuilderContinuation builder) {
+    public void doInner(TypeElement type,
+                        Dependencies.BuilderContinuation builder) {
         throw new IllegalStateException();  // should never be here
     }
 

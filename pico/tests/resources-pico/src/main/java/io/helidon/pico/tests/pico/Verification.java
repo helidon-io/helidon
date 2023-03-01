@@ -36,12 +36,11 @@ public abstract class Verification {
      * @param expected expected
      * @param expectedType expectedType
      */
-    public static void verifyInjected(
-            Optional<?> injectee,
-            String tag,
-            Integer injectedCount,
-            boolean expected,
-            Class<?> expectedType) {
+    public static void verifyInjected(Optional<?> injectee,
+                                      String tag,
+                                      Integer injectedCount,
+                                      boolean expected,
+                                      Class<?> expectedType) {
         if (expected && injectee.isEmpty()) {
             throw new AssertionError(tag + " was expected to be present");
         } else if (!expected && injectee.isPresent()) {
@@ -67,12 +66,11 @@ public abstract class Verification {
      * @param expectedSingleton expectedSingleton
      * @param expectedType expectedType
      */
-    public static void verifyInjected(
-            Provider<?> injectee,
-            String tag,
-            Integer injectedCount,
-            boolean expectedSingleton,
-            Class<?> expectedType) {
+    public static void verifyInjected(Provider<?> injectee,
+                                      String tag,
+                                      Integer injectedCount,
+                                      boolean expectedSingleton,
+                                      Class<?> expectedType) {
         Objects.requireNonNull(injectee, tag + " was not injected");
         Object provided = Objects.requireNonNull(injectee.get(), tag + " was expected to be provided");
 
@@ -104,12 +102,11 @@ public abstract class Verification {
      * @param expectedSize expectedSize
      * @param expectedType expectedType
      */
-    public static void verifyInjected(
-            List<?> injectee,
-            String tag,
-            Integer injectedCount,
-            int expectedSize,
-            Class<?> expectedType) {
+    public static void verifyInjected(List<?> injectee,
+                                      String tag,
+                                      Integer injectedCount,
+                                      int expectedSize,
+                                      Class<?> expectedType) {
         Objects.requireNonNull(injectee, tag + " was not injected");
 
         int size = injectee.size();
@@ -125,7 +122,7 @@ public abstract class Verification {
         }
 
         if (expectedType != null) {
-            injectee.forEach((item) -> {
+            injectee.forEach(item -> {
                 if (!expectedType.isInstance(item)) {
                     throw new AssertionError(tag + " was expected to be of type " + expectedType + " : " + item);
                 }

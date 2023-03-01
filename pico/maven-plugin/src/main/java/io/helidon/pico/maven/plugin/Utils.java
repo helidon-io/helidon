@@ -52,8 +52,7 @@ class Utils {
      *
      * @return pico services
      */
-    static PicoServices picoServices(
-            boolean wantApps) {
+    static PicoServices picoServices(boolean wantApps) {
         resetAll();
         return lazyCreate(basicConfig(wantApps)).get();
     }
@@ -66,18 +65,15 @@ class Utils {
     }
 
     static ApplicationCreator applicationCreator() {
-        return HelidonServiceLoader.create(
-                ServiceLoader.load(ApplicationCreator.class)).iterator().next();
+        return HelidonServiceLoader.create(ServiceLoader.load(ApplicationCreator.class)).iterator().next();
     }
 
     static ExternalModuleCreator externalModuleCreator() {
-        return HelidonServiceLoader.create(
-                ServiceLoader.load(ExternalModuleCreator.class)).iterator().next();
+        return HelidonServiceLoader.create(ServiceLoader.load(ExternalModuleCreator.class)).iterator().next();
     }
 
     static ActivatorCreator activatorCreator() {
-        return HelidonServiceLoader.create(
-                ServiceLoader.load(ActivatorCreator.class)).iterator().next();
+        return HelidonServiceLoader.create(ServiceLoader.load(ActivatorCreator.class)).iterator().next();
     }
 
     /**
@@ -86,8 +82,7 @@ class Utils {
      * @param providerOrInstance the instance to provider
      * @return the description of the instance
      */
-    static String toDescription(
-            Object providerOrInstance) {
+    static String toDescription(Object providerOrInstance) {
         if (providerOrInstance instanceof Optional) {
             providerOrInstance = ((Optional<?>) providerOrInstance).orElse(null);
         }
@@ -104,18 +99,15 @@ class Utils {
      * @param coll the instance to provider collection
      * @return the description of the instance
      */
-    static List<String> toDescriptions(
-            Collection<?> coll) {
+    static List<String> toDescriptions(Collection<?> coll) {
         return coll.stream().map(Utils::toDescription).collect(Collectors.toList());
     }
 
-    static boolean hasValue(
-            String val) {
+    static boolean hasValue(String val) {
         return (val != null && !val.isBlank());
     }
 
-    static LazyValue<PicoServices> lazyCreate(
-            Config config) {
+    static LazyValue<PicoServices> lazyCreate(Config config) {
         return LazyValue.create(() -> {
             PicoServices.globalBootstrap(DefaultBootstrap.builder()
                                                  .config(config)
@@ -125,8 +117,7 @@ class Utils {
         });
     }
 
-    static Config basicConfig(
-            boolean apps) {
+    static Config basicConfig(boolean apps) {
         return Config.create(ConfigSources.create(
                 Map.of(NAME + "." + KEY_PERMITS_DYNAMIC, "true",
                        NAME + "." + KEY_USES_COMPILE_TIME_APPLICATIONS, String.valueOf(apps)),

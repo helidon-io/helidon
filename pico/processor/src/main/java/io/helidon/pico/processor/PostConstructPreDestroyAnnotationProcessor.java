@@ -62,9 +62,8 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
     }
 
     @Override
-    void doInner(
-            ExecutableElement method,
-            Void builder) {
+    void doInner(ExecutableElement method,
+                 Void builder) {
         if (method.getKind() == ElementKind.CONSTRUCTOR) {
             throw new ToolsException("Invalid use of PreDestroy/PostConstruct on " + method.getEnclosingElement() + "." + method);
         }

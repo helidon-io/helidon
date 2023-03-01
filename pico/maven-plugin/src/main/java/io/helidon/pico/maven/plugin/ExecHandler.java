@@ -41,10 +41,9 @@ class ExecHandler implements Closeable {
      * @param threadGroup   the containing thread group to use for any/all spawned threads.
      * @param loader        the loader context to invoke the function in
      */
-    ExecHandler(
-            boolean ownedContext,
-            IsolatedThreadGroup threadGroup,
-            URLClassLoader loader) {
+    ExecHandler(boolean ownedContext,
+                IsolatedThreadGroup threadGroup,
+                URLClassLoader loader) {
         this.ownedContext = ownedContext;
         this.threadGroup = threadGroup;
         this.loader = loader;
@@ -58,9 +57,8 @@ class ExecHandler implements Closeable {
      * @param loader        the loader context to invoke the function
      * @return the exec handler instance
      */
-    static ExecHandler create(
-            IsolatedThreadGroup threadGroup,
-            URLClassLoader loader) {
+    static ExecHandler create(IsolatedThreadGroup threadGroup,
+                              URLClassLoader loader) {
         return new ExecHandler(false, Objects.requireNonNull(threadGroup), Objects.requireNonNull(loader));
     }
 
@@ -75,9 +73,8 @@ class ExecHandler implements Closeable {
      * @param <Res> the function response type
      * @return res the result (where the caller might have to use reflection to access)
      */
-    <Req, Res> Res apply(
-            Supplier<Req> reqSupplier,
-            Function<Req, Res> fn) {
+    <Req, Res> Res apply(Supplier<Req> reqSupplier,
+                         Function<Req, Res> fn) {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Res> result = new AtomicReference<>();
 

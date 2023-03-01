@@ -32,8 +32,7 @@ public interface ActivationPhaseReceiver {
      * @param event the event
      * @param phase the phase
      */
-    void onPhaseEvent(
-            Event event,
-            Phase phase);
+    void onPhaseEvent(Event event,
+                      Phase phase);
 
 }
