@@ -43,6 +43,7 @@ import io.helidon.nima.webserver.ConnectionContext;
  */
 @SuppressWarnings("unchecked")
 public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implements RoutingResponse {
+
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final ServerRequestHeaders requestHeaders;
@@ -172,6 +173,15 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     @Override
     public boolean isNexted() {
         return nexted;
+    }
+
+    /**
+     * Gets media context for this response.
+     *
+     * @return the media context
+     */
+    protected MediaContext mediaContext() {
+        return mediaContext;
     }
 
     /**

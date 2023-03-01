@@ -39,5 +39,6 @@
         <module>media</module>
         <module>observe</module>
         <module>logging</module>
+        <module>sse</module>
     </modules>
 </project>

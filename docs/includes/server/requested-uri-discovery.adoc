@@ -1,0 +1,71 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/../..]
+:description: Requested URI Discovery
+:keywords: helidon, webserver, URI, discovery
+
+ifndef::flavor-uc[]
+:se-flavor: true
+:flavor-uc: SE
+:flavor-lc: se
+endif::flavor-uc[]
+// ifndef::flavor-uc[:se-flavor: true]
+// ifndef::flavor-uc[:flavor-uc: SE]
+// ifndef::flavor-uc[:flavor-lc: se]
+
+// tag::intro[]
+Proxies and reverse proxies between an HTTP client and your Helidon application mask important information (for example `Host` header, originating IP address, protocol) about the request the client sent.
+Fortunately, many of these intermediary network nodes set or update either the link:https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded[standard HTTP `Forwarded` header] or the link:https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For[non-standard `X-Forwarded-*` family of headers] to preserve information about the original client request.
+
+Helidon's requested URI discovery feature allows your application--and Helidon itself--to reconstruct information about the original request using the `Forwarded` header and the `X-Forwarded-*` family of headers.
+
+When you prepare the connections in your server you can include the following optional requested URI discovery settings:
+
+* enabled or disabled
+* which type or types of requested URI discovery to use:
+** `FORWARDED` - uses the `Forwarded` header
+** `X_FORWARDED` - uses the `X-Forwarded-*` headers
+** `HOST` - uses the `Host` header
+* what intermediate nodes to trust
+
+When your application
+ifdef::se-flavor[invokes `request.requestedUri()`]
+ifdef::mp-flavor[receives a request]
+Helidon iterates through the discovery types you set up for the receiving connection, gathering information from the corresponding header(s) for that type.
+If the request does not have the corresponding header(s), or your settings do not trust the intermediate nodes reflected in those headers, then Helidon tries the next discovery type you set up.
+Helidon uses the `HOST` discovery type if you do not set up discovery yourself or if, for a particular request, it cannot assemble the request information using any discovery type you did set up for the socket.
+
+// end::intro[]
+
+// tag::obtaining-uriinfo[]
+To obtain the requested URI information, your
+ifdef::se-flavor[handler or service]
+ifdef::mp-flavor[code]
+invokes `ServerRequest.requestedUri()` which returns a `UriInfo` record
+
+// end::obtaining-uriinfo[]
+
+// tag::config-example-intro[]
+You can
+ifdef::se-flavor[also ]
+use configuration to set up the requested URI discovery behavior.
+ifdef::se-flavor[]
+The following example replicates the settings assigned programmatically in the earlier code example:
+endif::se-flavor[]
+// end::config-example-intro[]

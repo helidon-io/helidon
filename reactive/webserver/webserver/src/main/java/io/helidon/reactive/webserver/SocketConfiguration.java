@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.DeprecatedConfig;
@@ -213,6 +214,13 @@ public interface SocketConfiguration {
     }
 
     /**
+     * Requested URI discovery settings.
+     *
+     * @return current settings
+     */
+    RequestedUriDiscoveryContext requestedUriDiscoveryContext();
+
+    /**
      * Creates a builder of {@link SocketConfiguration} class.
      *
      * @return a builder
@@ -242,6 +250,7 @@ public interface SocketConfiguration {
      */
     @Configured
     interface SocketConfigurationBuilder<B extends SocketConfigurationBuilder<B>> {
+
         /**
          * Configures a server port to listen on with the server socket. If port is
          * {@code 0} then any available ephemeral port will be used.
@@ -446,6 +455,15 @@ public interface SocketConfiguration {
         B maxUpgradeContentLength(int size);
 
         /**
+         * Requested URI discovery settings.
+         *
+         * @param requestedUriDiscoveryContextSupplier supplier of the requested URI discovery context
+         * @return current settings
+         */
+        @ConfiguredOption(type = RequestedUriDiscoveryContext.class)
+        B requestedUriDiscovery(Supplier<RequestedUriDiscoveryContext> requestedUriDiscoveryContextSupplier);
+
+        /**
          * Update this socket configuration from a {@link io.helidon.config.Config}.
          *
          * @param config configuration on the node of a socket
@@ -489,6 +507,12 @@ public interface SocketConfiguration {
             config.get("enable-compression").asBoolean().ifPresent(this::enableCompression);
             config.get("backpressure-buffer-size").asLong().ifPresent(this::backpressureBufferSize);
             config.get("backpressure-strategy").as(BackpressureStrategy.class).ifPresent(this::backpressureStrategy);
+
+
+            // requested URI support
+            config.get(RequestedUriDiscoveryContext.Builder.REQUESTED_URI_DISCOVERY_CONFIG_KEY)
+                    .as(RequestedUriDiscoveryContext::builder)
+                    .ifPresent(this::requestedUriDiscovery);
             return (B) this;
         }
     }
@@ -504,6 +528,8 @@ public interface SocketConfiguration {
         @Deprecated
         static final String UNCONFIGURED_NAME = "io.helidon.reactive.webserver.SocketConfiguration.UNCONFIGURED";
         private final WebServerTls.Builder tlsConfigBuilder = WebServerTls.builder();
+
+        private static final System.Logger LOGGER = System.getLogger(SocketConfiguration.class.getName());
 
         private int port = 0;
         private InetAddress bindAddress = null;
@@ -528,6 +554,7 @@ public interface SocketConfiguration {
         private boolean continueImmediately = false;
         private int maxUpgradeContentLength = 64 * 1024;
         private long maxBufferSize = 5 * 1024 * 1024;
+        private Supplier<RequestedUriDiscoveryContext> requestedUriDiscoveryContextSupplier;
 
         private Builder() {
         }
@@ -540,6 +567,11 @@ public interface SocketConfiguration {
 
             if (null == name) {
                 throw new ConfigException("Socket name must be configured for each socket");
+            }
+
+            if (null == requestedUriDiscoveryContextSupplier) {
+                requestedUriDiscoveryContextSupplier = RequestedUriDiscoveryContext.builder()
+                        .socketId(UNCONFIGURED_NAME.equals(name) ? WebServer.DEFAULT_SOCKET_NAME : name);
             }
 
             return new ServerBasicConfig.SocketConfig(this);
@@ -796,6 +828,12 @@ public interface SocketConfiguration {
         }
 
         @Override
+        public Builder requestedUriDiscovery(Supplier<RequestedUriDiscoveryContext> requestedUriDiscoveryContextSupplier) {
+            this.requestedUriDiscoveryContextSupplier = requestedUriDiscoveryContextSupplier;
+            return this;
+        }
+
+        @Override
         public Builder config(Config config) {
             SocketConfigurationBuilder.super.config(config);
 
@@ -808,6 +846,10 @@ public interface SocketConfiguration {
             config.get("backpressure-buffer-size").asLong().ifPresent(this::backpressureBufferSize);
             config.get("backpressure-strategy").as(BackpressureStrategy.class).ifPresent(this::backpressureStrategy);
 
+            // requested URI support
+            config.get(RequestedUriDiscoveryContext.Builder.REQUESTED_URI_DISCOVERY_CONFIG_KEY)
+                    .as(RequestedUriDiscoveryContext::builder)
+                    .ifPresent(this::requestedUriDiscovery);
             return this;
         }
 
@@ -885,6 +927,10 @@ public interface SocketConfiguration {
 
         int maxUpgradeContentLength() {
             return maxUpgradeContentLength;
+        }
+
+        Supplier<RequestedUriDiscoveryContext> requestedUriDiscoveryContextSupplier() {
+            return requestedUriDiscoveryContextSupplier;
         }
     }
 }
