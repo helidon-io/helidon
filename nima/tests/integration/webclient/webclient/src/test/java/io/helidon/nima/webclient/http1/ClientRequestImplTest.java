@@ -61,11 +61,12 @@ class ClientRequestImplTest {
             Http.Header.create("X-Req-Expect100"), "true");
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
     private static final long NO_CONTENT_LENGTH = -1L;
-    private static final Http1Client client = WebClient.builder().build();
+    private static Http1Client client;
     private static int port;
 
-    ClientRequestImplTest(WebServer webServer) {
-        port = webServer.port();
+    ClientRequestImplTest(WebServer webServer, Http1Client client) {
+        this.port = webServer.port();
+        this.client = client;
     }
 
     @SetUpRoute
@@ -329,7 +330,7 @@ class ClientRequestImplTest {
                 int regularChunkLen = entity.length / chunkParts;
                 int lastChunkLen = regularChunkLen + entity.length % chunkParts;
                 for (int i = 0; i < chunkParts; i++) {
-                    int chunkLen = i != (chunkParts - 1) ? regularChunkLen : lastChunkLen;
+                    int chunkLen = (i != (chunkParts - 1)) ? regularChunkLen : lastChunkLen;
                     byte[] chunk = new byte[chunkLen];
                     System.arraycopy(entity, i * regularChunkLen, chunk, 0, chunkLen);
                     outputStream.write(chunk);
