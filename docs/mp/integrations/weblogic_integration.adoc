@@ -68,7 +68,7 @@ Bidirectional REST calls between WebLogic 12.2.1.4
 === WebLogic JMS Integration
 
 
-xref:{rootdir}reactivemessaging/weblogic.adoc[WebLogic JMS with Reactive Messaging]
+
 
 ==== Maven Coordinates
 
