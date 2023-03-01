@@ -16,27 +16,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Overview
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= Helidon Nima Quickstart
+:description: Helidon Nima Quickstart Guide
+:keywords: helidon
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
+This guide describes a basic example of an Helidon Nima application using Docker and Kubernetes.
 
-[PILLARS]
-====
-[CARD]
-.Nima Quickstart
-[link=quickstart.adoc]
---
-Create your first Helidon Nima application in under 5 minutes.
---
+== What You Need
 
-====
-
-== Helidon Nima Guides
-
-
-
+For this 5 minute tutorial, you will need the following:

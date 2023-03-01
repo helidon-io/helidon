@@ -53,11 +53,17 @@ backend:
         value: "images/helidon_logo_dark.svg"
       items:
         - type: "PAGE"
-          title: "Documentation Overview"
+          title: "Helidon Documentation"
           source: "about/doc_overview.adoc"
           glyph:
             type: "icon"
             value: "lightbulb"
+        - type: "PAGE"
+          title: "Documentation Overview"
+          source: "about/doc_sitemap.adoc"
+          glyph:
+            type: "icon"
+            value: "library_books"
         - type: "PAGE"
           title: "Get Started"
           source: "about/prerequisites.adoc"
