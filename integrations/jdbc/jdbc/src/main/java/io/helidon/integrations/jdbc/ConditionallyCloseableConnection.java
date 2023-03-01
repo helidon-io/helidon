@@ -98,6 +98,25 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      *
      * <p>This field is never {@code null}.</p>
      *
+     * <!--
+     * digraph ConditionallyCloseableConnection {
+     *
+     *   CLOSEABLE -> CLOSED [label="close()"];
+     *   CLOSEABLE -> NOT_CLOSEABLE [label="setCloseable(false)"];
+     *   CLOSEABLE -> CLOSEABLE;
+     *
+     *   NOT_CLOSEABLE -> CLOSE_PENDING [label="close()"];
+     *   NOT_CLOSEABLE -> NOT_CLOSEABLE [label="setCloseable(false), isCloseable(), isClosed()"];
+     *   NOT_CLOSEABLE -> CLOSEABLE [label="setCloseable(true)"];
+     *
+     *   CLOSE_PENDING -> CLOSE_PENDING [label="close(), setCloseable(false), isCloseable(), isClosed()"];
+     *   CLOSE_PENDING -> CLOSEABLE [label="setCloseable(true)"];
+     *
+     *   CLOSED -> CLOSED [label="close(), isCloseable(), isClosed()"];
+     *
+     * }
+     * -->
+     *
      * @see #isClosed()
      *
      * @see #isCloseable()
@@ -881,7 +900,6 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      */
     protected final void failWhenClosed() throws SQLException {
         if (this.isClosed()) {
-            assert this.state == State.CLOSED || this.state == State.CLOSE_PENDING;
             throw new SQLNonTransientConnectionException("Connection is closed", "08000");
         }
     }
