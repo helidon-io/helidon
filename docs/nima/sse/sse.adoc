@@ -155,7 +155,9 @@ and registers an `SseSource` to process a single event.
 
 [source,java]
 ----
-try (Http1ClientResponse r = client.get("/sseJson").header(ACCEPT_EVENT_STREAM).request()) {
+try (Http1ClientResponse r = client.get("/sseJson")
+                                    .header(ACCEPT_EVENT_STREAM)
+                                    .request()) {
     CountDownLatch latch = new CountDownLatch(1);
     r.source(SseSource.TYPE, event -> {
         // ...
