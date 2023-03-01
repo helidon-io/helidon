@@ -1,0 +1,92 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Oracle WebLogic Server
+:description: Oracle WebLogic Server Integration
+:keywords: weblogic, WebLogic
+:feature-name: WebLogic Server
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
+
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Usage, Usage>>
+* <<Using REST API Calls with WebLogic Server, Using REST API Calls with WebLogic Server>>
+* <<WebLogic JMS Integration, WebLogic JMS Integration>>
+* <<WebLogic Server Web Services, WebLogic Server Web Services>>
+* <<WebLogic Helidon SSO Integration on OCI, WebLogic Helidon SSO Integration on OCI>>
+- <<References, References>>
+
+== Overview
+
+Helidon MP WebLogic Server integration provides ____________.
+
+
+
+
+== Usage
+
+
+
+=== Using REST API Calls with WebLogic Server
+
+==== Maven Coordinates
+
+----
+<dependency>
+    <groupId>xxxxxxxxxxxxxx</groupId>
+    <artifactId>xxxxxxxxxxxxxxxxs</artifactId>
+</dependency>
+----
+
+
+//link to Geetha's book
+Bidirectional REST calls between WebLogic 14.1.1
+
+//link to Geetha's book
+Bidirectional REST calls between WebLogic 12.2.1.4
+
+
+=== WebLogic JMS Integration
+
+
+xref:{rootdir}reactivemessaging/weblogic.adoc[WebLogic JMS with Reactive Messaging]
+
+==== Maven Coordinates
+
+----
+<dependency>
+    <groupId>io.helidon.messaging.wls-jms</groupId>
+    <artifactId>helidon-messaging-wls-jms</artifactId>
+</dependency>
+----
+
+=== WebLogic Server Web Services
+
+
+
+=== WebLogic Helidon SSO Integration on OCI
+
+
+
+== References
+
+

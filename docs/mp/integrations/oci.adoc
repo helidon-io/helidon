@@ -39,7 +39,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.`
+Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
