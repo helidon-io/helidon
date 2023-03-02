@@ -129,13 +129,11 @@ class MainTest {
                     conn = (HttpURLConnection) url.openConnection();
                     conn.setConnectTimeout(1000);
                     responseCode = conn.getResponseCode();
-                    System.out.println("XXX HealthURL=" + url.toString() + " responseCode=" + responseCode);
                     if (toBeUp && responseCode != 200) {
                         LOGGER.log(Level.INFO, "Waiting for application to " + operation + ": Bad health response  "
                                 + responseCode);
                     }
                 } catch (Exception ex) {
-                    System.out.println("XXX Exception: " + ex.toString());
                     if (toBeUp) {
                         LOGGER.log(Level.INFO, "Waiting for application to " + operation + ": Unable to connect to "
                                 + url.toString() + ": " + ex);
@@ -223,9 +221,11 @@ class MainTest {
         application.close();
     }
 
-    @Test
-    void basicTestJsonP() throws Exception {
-        runJsonFunctionalTest("se", "jsonp");
+
+    @ParameterizedTest
+    @ValueSource(strings = {"se", "mp", "nima"})
+    void basicTestJson(String edition) throws Exception {
+        runJsonFunctionalTest(edition, "");
     }
 
     @Test
@@ -238,29 +238,10 @@ class MainTest {
         runJsonFunctionalTest("se", "jackson");
     }
 
-    @Test
-    void basicTestJsonMP() throws Exception {
-        runJsonFunctionalTest("mp", "");
-    }
-
-    @Test
-    void basicTestJsonPNima() throws Exception {
-        runJsonFunctionalTest("nima", "jsonp");
-    }
-
-    @Test
-    void basicTestMetricsHealthSE() throws Exception {
-        runMetricsAndHealthTest("se", "jsonp", false);
-    }
-
-    @Test
-    void basicTestMetricsHealthMP() throws Exception {
-        runMetricsAndHealthTest("mp", "", false);
-    }
-
-    @Test
-    void basicTestMetricsHealthNima() throws Exception {
-        runMetricsAndHealthTest("nima", "jsonp", false);
+    @ParameterizedTest
+    @ValueSource(strings = {"se", "mp", "nima"})
+    void basicTestMetricsHealth(String edition) throws Exception {
+        runMetricsAndHealthTest(edition, "", false);
     }
 
     @Test
@@ -273,14 +254,10 @@ class MainTest {
         runMetricsAndHealthTest("se", "jackson", false);
     }
 
-    @Test
-    void basicTestMetricsHealthSEModules() throws Exception {
-        runMetricsAndHealthTest("se", "jsonp", true);
-    }
-
-    @Test
-    void basicTestMetricsHealthMPModules() throws Exception {
-        runMetricsAndHealthTest("mp", "", true);
+    @ParameterizedTest
+    @ValueSource(strings = {"se", "mp", "nima"})
+    void basicTestMetricsHealthModules(String edition) throws Exception {
+        runMetricsAndHealthTest(edition, "", true);
     }
 
     /**
@@ -523,7 +500,7 @@ class MainTest {
             return MODULE_NAME_SE;
         } else if ("mp".equals(edition)) {
             return MODULE_NAME_MP;
-        } else if ("mp".equals(edition)) {
+        } else if ("nima".equals(edition)) {
             return MODULE_NAME_NIMA;
         } else {
             throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se' or 'mp' or 'nima'");
