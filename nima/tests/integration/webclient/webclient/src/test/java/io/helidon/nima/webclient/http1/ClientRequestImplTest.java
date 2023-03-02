@@ -62,11 +62,11 @@ class ClientRequestImplTest {
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
     private static final long NO_CONTENT_LENGTH = -1L;
     private static String baseURI;
-    private static Http1Client client;
+    private static Http1Client injectedHttp1client;
 
     ClientRequestImplTest(WebServer webServer, Http1Client client) {
         this.baseURI = "http://localhost:" + webServer.port();
-        this.client = client;
+        this.injectedHttp1client = client;
     }
 
     @SetUpRoute
@@ -196,13 +196,13 @@ class ClientRequestImplTest {
     void testHeadMethod() {
         String path = "/test";
         assertThrows(IllegalArgumentException.class, () ->
-                client.method(Http.Method.HEAD).uri(path).submit("Foo Bar"));
+                injectedHttp1client.method(Http.Method.HEAD).uri(path).submit("Foo Bar"));
         assertThrows(IllegalArgumentException.class, () ->
-                client.method(Http.Method.HEAD).uri(path).outputStream(it -> {
+                injectedHttp1client.method(Http.Method.HEAD).uri(path).outputStream(it -> {
                     it.write("Foo Bar".getBytes(StandardCharsets.UTF_8));
                     it.close();
                 }));
-        client.method(Http.Method.HEAD).uri(path).request();
+        injectedHttp1client.method(Http.Method.HEAD).uri(path).request();
     }
 
     @Test
@@ -210,7 +210,7 @@ class ClientRequestImplTest {
         ClientConnection connectionNow = null;
         ClientConnection connectionPrior = null;
         for (int i = 0; i < 5; ++i) {
-            Http1ClientRequest request = client.method(Http.Method.PUT).path("/test");
+            Http1ClientRequest request = injectedHttp1client.method(Http.Method.PUT).path("/test");
             // connection will be dequeued if queue is not empty
             connectionNow = ((ClientRequestImpl) request).getConnection(true);
             request.connection(connectionNow);
@@ -226,13 +226,13 @@ class ClientRequestImplTest {
 
     @Test
     void testConnectionQueueSizeLimit() {
-        int connectionQueueSize = ((Http1ClientImpl) client).connectionQueueSize();
+        int connectionQueueSize = ((Http1ClientImpl) injectedHttp1client).connectionQueueSize();
 
         List<ClientConnection> connectionList = new ArrayList<ClientConnection>();
         List<Http1ClientResponse> responseList = new ArrayList<Http1ClientResponse>();
         // create connections beyond the queue size limit
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
-            Http1ClientRequest request = client.method(Http.Method.PUT).path("/test");
+            Http1ClientRequest request = injectedHttp1client.method(Http.Method.PUT).path("/test");
             connectionList.add(((ClientRequestImpl) request).getConnection(true));
             request.connection(connectionList.get(i));
             responseList.add(request.request());
@@ -247,7 +247,7 @@ class ClientRequestImplTest {
         ClientConnection connection = null;
         Http1ClientResponse response = null;
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
-            Http1ClientRequest request = client.method(Http.Method.PUT).path("/test");
+            Http1ClientRequest request = injectedHttp1client.method(Http.Method.PUT).path("/test");
             connection = ((ClientRequestImpl) request).getConnection(true);
             request.connection(connection);
             response = request.request();
@@ -262,7 +262,7 @@ class ClientRequestImplTest {
 
         // The queue is currently empty so check if we can add the last created connection into it.
         response.close();
-        Http1ClientRequest request = client.method(Http.Method.PUT).path("/test");
+        Http1ClientRequest request = injectedHttp1client.method(Http.Method.PUT).path("/test");
         ClientConnection connectionNow = ((ClientRequestImpl) request).getConnection(true);
         request.connection(connectionNow);
         Http1ClientResponse responseNow = request.request();
@@ -343,7 +343,7 @@ class ClientRequestImplTest {
     }
 
     private static Http1ClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
-        return client.method(method).uri(uriPath);
+        return injectedHttp1client.method(method).uri(uriPath);
     }
 
     private static Http1ClientResponse getHttp1ClientResponseFromOutputStream(Http1ClientRequest request,
