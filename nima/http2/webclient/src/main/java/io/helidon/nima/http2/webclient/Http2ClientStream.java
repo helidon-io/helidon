@@ -52,6 +52,7 @@ class Http2ClientStream implements Http2Stream {
     private final Http2ClientConnection connection;
     private final SocketContext ctx;
     private final LockingStreamIdSequence streamIdSeq;
+    private final FlowControl outboundFlowControl;
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     // todo configure
@@ -60,10 +61,14 @@ class Http2ClientStream implements Http2Stream {
     private Http2Headers currentHeaders;
     private int streamId;
 
-    Http2ClientStream(Http2ClientConnection connection, SocketContext ctx, LockingStreamIdSequence streamIdSeq) {
+    Http2ClientStream(Http2ClientConnection connection,
+                      SocketContext ctx,
+                      LockingStreamIdSequence streamIdSeq,
+                      FlowControl outboundFlowControl) {
         this.connection = connection;
         this.ctx = ctx;
         this.streamIdSeq = streamIdSeq;
+        this.outboundFlowControl = outboundFlowControl;
     }
 
     void cancel() {
@@ -142,8 +147,10 @@ class Http2ClientStream implements Http2Stream {
             // §5.1.1 - The identifier of a newly established stream MUST be numerically
             //          greater than all streams that the initiating endpoint has opened or reserved.
             this.streamId = streamIdSeq.lockAndNext();
+            this.connection.addStream(streamId, this);
+            this.outboundFlowControl.streamId(streamId);
             // First call to the server-starting stream, needs to be increasing sequence of odd numbers
-            connection.getWriter().writeHeaders(http2Headers, streamId, flags, FlowControl.NOOP);
+            connection.getWriter().writeHeaders(http2Headers, streamId, flags, outboundFlowControl);
         } finally {
             streamIdSeq.unlock();
         }
@@ -222,8 +229,7 @@ class Http2ClientStream implements Http2Stream {
 
     @Override
     public FlowControl flowControl() {
-        //FIXME: Flow control
-        throw new UnsupportedOperationException("Not implemented yet!");
+        return outboundFlowControl;
     }
 
     class ClientOutputStream extends OutputStream {

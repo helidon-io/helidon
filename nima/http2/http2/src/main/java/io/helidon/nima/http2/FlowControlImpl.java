@@ -20,7 +20,7 @@ import io.helidon.common.buffers.BufferData;
 
 class FlowControlImpl implements FlowControl {
 
-    private final int streamId;
+    private int streamId;
     private final WindowSize connectionWindowSize;
     private final WindowSize streamWindowSize;
 
@@ -28,6 +28,15 @@ class FlowControlImpl implements FlowControl {
         this.streamId = streamId;
         this.connectionWindowSize = connectionWindowSize;
         this.streamWindowSize = new WindowSize(streamInitialWindowSize);
+    }
+
+    FlowControlImpl(int streamInitialWindowSize, WindowSize connectionWindowSize) {
+        this.connectionWindowSize = connectionWindowSize;
+        this.streamWindowSize = new WindowSize(streamInitialWindowSize);
+    }
+
+    public void streamId(int streamId){
+        this.streamId = streamId;
     }
 
     @Override

@@ -51,6 +51,10 @@ public interface FlowControl {
         public boolean blockTillUpdate() {
             return false;
         }
+
+        @Override
+        public void streamId(int streamId) {
+        }
     };
 
     /**
@@ -63,6 +67,10 @@ public interface FlowControl {
      */
     static FlowControl create(int streamId, int streamInitialWindowSize, WindowSize connectionWindowSize) {
         return new FlowControlImpl(streamId, streamInitialWindowSize, connectionWindowSize);
+    }
+
+    static FlowControlImpl create(int streamInitialWindowSize, WindowSize connectionWindowSize) {
+        return new FlowControlImpl(streamInitialWindowSize, connectionWindowSize);
     }
 
     /**
@@ -108,4 +116,6 @@ public interface FlowControl {
      * @return {@code true} if window update happened, {@code false} in case of timeout
      */
     boolean blockTillUpdate();
+
+    void streamId(int streamId);
 }
