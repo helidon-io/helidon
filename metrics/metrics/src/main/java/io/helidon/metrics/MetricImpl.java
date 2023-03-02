@@ -277,7 +277,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType, boolean isStrictExemplars) {
         String nameWithUnits = prometheusNameWithUnits(metricID);
         if (withHelpType) {
             prometheusType(sb, nameWithUnits, metadata().getType());
@@ -297,7 +297,8 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             PrometheusName name,
             Units units,
             String quantile,
-            Derived derived) {
+            Derived derived,
+            boolean isStrictExemplars) {
         // application:file_sizes_bytes{quantile="0.5"} 4201
         String quantileTag = "quantile=\"" + quantile + "\"";
         String tags = name.prometheusTags();
@@ -311,7 +312,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                 .append(tags)
                 .append(" ")
                 .append(units.convert(derived.value()));
-        sb.append(prometheusExemplar(derived.sample(), units));
+        sb.append(isStrictExemplars ? "" : prometheusExemplar(derived.sample(), units));
         sb.append("\n");
     }
 
@@ -354,15 +355,20 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb, MetricID metricID,
-            boolean withHelpType, long count, DisplayableLabeledSnapshot snap) {
+            boolean withHelpType, long count, DisplayableLabeledSnapshot snap,
+                                           boolean isStrictExemplars) {
         PrometheusName name = PrometheusName.create(this, metricID);
-        appendPrometheusHistogramElements(sb, name, withHelpType, count, snap);
+        appendPrometheusHistogramElements(sb, name, withHelpType, count, snap, isStrictExemplars);
     }
 
-    void appendPrometheusHistogramElements(StringBuilder sb, PrometheusName name,
-            boolean withHelpType, long count, DisplayableLabeledSnapshot snap) {
+    void appendPrometheusHistogramElements(StringBuilder sb,
+                                           PrometheusName name,
+                                           boolean withHelpType,
+                                           long count,
+                                           DisplayableLabeledSnapshot snap,
+                                           boolean isStrictExemplars) {
 
-        appendPrometheusHistogramElements(sb, name, getUnits(), withHelpType, count, snap);
+        appendPrometheusHistogramElements(sb, name, getUnits(), withHelpType, count, snap, isStrictExemplars);
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb,
@@ -370,7 +376,8 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                                            Units units,
                                            boolean withHelpType,
                                            long count,
-                                           DisplayableLabeledSnapshot snap) {
+                                           DisplayableLabeledSnapshot snap,
+                                           boolean isStrictExemplars) {
 
         // # TYPE application:file_sizes_mean_bytes gauge
         // application:file_sizes_mean_bytes 4738.231
@@ -403,12 +410,12 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
 
         // application:file_sizes_bytes{quantile="0.5"} 4201
         // for each supported quantile
-        prometheusQuantile(sb, name, units, "0.5", snap.median());
-        prometheusQuantile(sb, name, units, "0.75", snap.sample75thPercentile());
-        prometheusQuantile(sb, name, units, "0.95", snap.sample95thPercentile());
-        prometheusQuantile(sb, name, units, "0.98", snap.sample98thPercentile());
-        prometheusQuantile(sb, name, units, "0.99", snap.sample99thPercentile());
-        prometheusQuantile(sb, name, units, "0.999", snap.sample999thPercentile());
+        prometheusQuantile(sb, name, units, "0.5", snap.median(), isStrictExemplars);
+        prometheusQuantile(sb, name, units, "0.75", snap.sample75thPercentile(), isStrictExemplars);
+        prometheusQuantile(sb, name, units, "0.95", snap.sample95thPercentile(), isStrictExemplars);
+        prometheusQuantile(sb, name, units, "0.98", snap.sample98thPercentile(), isStrictExemplars);
+        prometheusQuantile(sb, name, units, "0.99", snap.sample99thPercentile(), isStrictExemplars);
+        prometheusQuantile(sb, name, units, "0.999", snap.sample999thPercentile(), isStrictExemplars);
 
     }
 

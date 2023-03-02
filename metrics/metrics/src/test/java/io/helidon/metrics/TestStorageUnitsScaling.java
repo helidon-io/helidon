@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class TestStorageUnitsScaling {
         MetricID gaugeMetricID = new MetricID(gaugeMetadata.getName());
 
         StringBuilder sb = new StringBuilder();
-        hGauge.prometheusData(sb, gaugeMetricID, true);
+        hGauge.prometheusData(sb, gaugeMetricID, true, false);
 
         Pattern pattern = Pattern.compile("# TYPE application_myGauge_bytes gauge\n"
                                 + "# HELP application_myGauge_bytes \n"

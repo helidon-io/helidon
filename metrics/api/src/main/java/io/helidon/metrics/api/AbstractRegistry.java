@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,16 +78,19 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
     private final Map<MetricType, BiFunction<String, Metadata, M>> metricFactories = prepareMetricFactories();
 
     private final Class<M> metricClass;
+    private final RegistrySettings registrySettings;
 
     /**
      * Create a registry of a certain type.
      *
      * @param type Registry type.
      * @param metricClass class of the specific metric type this registry manages
+     * @param registrySettings settings for configuring the registry
      */
-    protected AbstractRegistry(Type type, Class<M> metricClass) {
+    protected AbstractRegistry(Type type, Class<M> metricClass, RegistrySettings registrySettings) {
         this.type = type;
         this.metricClass = metricClass;
+        this.registrySettings = registrySettings;
     }
 
     /**
@@ -434,6 +437,14 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
     }
 
     /**
+     *
+     * @return whether exemplars are to be implemented strictly
+     */
+    protected boolean isStrictExemplars() {
+        return registrySettings.isStrictExemplars();
+    }
+
+    /**
      * Returns a stream of {@link Map.Entry} for this registry for enabled metrics.
      *
      * @return Stream of {@link Map.Entry}
@@ -454,7 +465,9 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
 
     protected abstract Map<MetricType, BiFunction<String, Metadata, M>> prepareMetricFactories();
 
-    protected abstract RegistrySettings registrySettings();
+    protected RegistrySettings registrySettings() {
+        return registrySettings;
+    }
 
     // -- Package private -----------------------------------------------------
 

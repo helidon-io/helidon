@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,6 +106,14 @@ public interface MetricsSettings {
     RegistrySettings registrySettings(MetricRegistry.Type registryType);
 
     /**
+     * Returns whether Helidon adds exemplars (if at all) to only those types of metrics described in the
+     * OpenMetrics spec as accepting exemplars.
+     *
+     * @return true/false
+     */
+    boolean isStrictExemplars();
+
+    /**
      * Builder for {@code MetricsSettings}.
      */
     @Configured(prefix = Builder.METRICS_CONFIG_KEY)
@@ -135,6 +143,11 @@ public interface MetricsSettings {
          * Default web context for the metrics endpoint.
          */
         String DEFAULT_CONTEXT = "/metrics";
+
+        /**
+         * Config key within {@code metrics} for strict (vs. lax) exemplar behavior.
+         */
+        String EXEMPLARS_STRICT_CONFIG_KEY = "exemplars.strict";
 
         /**
          * Constructs a {@code MetricsSettings} object from the builder.
@@ -191,5 +204,21 @@ public interface MetricsSettings {
                           kind = ConfiguredOption.Kind.LIST,
                           type = RegistrySettings.class)
         Builder registrySettings(MetricRegistry.Type registryType, RegistrySettings registrySettings);
+
+        /**
+         * Whether to add exemplars (if exemplar providers are present) only to counter totals and buckets.
+         * <p>
+         *     By default, Helidon adds exemplars only to those metric types described as accepting exemplars in the
+         *     <a href="https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md">OpenMetrics
+         *     spec</a>. Helidon can add exemplars to additional metric types but only if the user sets {@code strcitExamplars}
+         *     to @{code false}.
+         * </p>
+         *
+         * @param value true/false
+         * @return updated builder
+         *
+         */
+        @ConfiguredOption(key = EXEMPLARS_STRICT_CONFIG_KEY, value = "true")
+        Builder strictExemplars(boolean value);
     }
 }

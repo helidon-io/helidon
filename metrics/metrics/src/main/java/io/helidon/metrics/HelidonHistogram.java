@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 20232 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,8 +76,8 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
-        appendPrometheusHistogramElements(sb, metricID, withHelpType, getCount(), snapshot());
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType, boolean isStrictExemplars) {
+        appendPrometheusHistogramElements(sb, metricID, withHelpType, getCount(), snapshot(), isStrictExemplars);
     }
 
     @Override
