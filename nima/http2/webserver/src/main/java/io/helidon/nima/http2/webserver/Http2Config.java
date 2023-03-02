@@ -17,8 +17,8 @@
 package io.helidon.nima.http2.webserver;
 
 import io.helidon.builder.Builder;
-import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.builder.config.ConfigBean;
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
