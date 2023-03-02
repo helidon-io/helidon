@@ -395,7 +395,13 @@ class TenantAuthenticationHandler {
                 .getOrDefault(Security.HEADER_ORIG_URI, List.of());
 
         if (origUri.isEmpty()) {
-            origUri = List.of(providerRequest.env().targetUri().getPath());
+            String query = providerRequest.env().targetUri().getQuery();
+            String path = providerRequest.env().targetUri().getPath();
+            if ((null == query) || query.isEmpty()) {
+                origUri = List.of(path);
+            } else {
+                origUri = List.of(path + "?" + query);
+            }
         }
 
         return origUri.get(0);
