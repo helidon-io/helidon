@@ -21,6 +21,7 @@
 :keywords: helidon, metrics, exemplar, prometheus, OpenMetrics
 :zipkinPageRef: mp/tracing/02_zipkin.adoc
 :jaegerPageRef: mp/tracing/03_jaeger.adoc
+:mp-flavor:
 
 = Metrics Support for Exemplars
 
