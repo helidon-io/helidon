@@ -321,9 +321,10 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             String statName,
             boolean withHelpType,
             String typeName,
-            Derived derived) {
+            Derived derived,
+            boolean isStrictExemplars) {
         appendPrometheusElement(sb, name, () -> name.nameStatUnits(statName), withHelpType, typeName, derived.value(),
-                derived.sample());
+                derived.sample(), isStrictExemplars);
     }
 
     void appendPrometheusElement(StringBuilder sb,
@@ -331,9 +332,10 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             String statName,
             boolean withHelpType,
             String typeName,
-            Sample.Labeled sample) {
+            Sample.Labeled sample,
+            boolean isStrictExemplars) {
         appendPrometheusElement(sb, name, () -> name.nameStatUnits(statName), withHelpType, typeName, sample.value(),
-                sample);
+                sample, isStrictExemplars);
     }
 
     private void appendPrometheusElement(StringBuilder sb,
@@ -342,7 +344,8 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             boolean withHelpType,
             String typeName,
             double value,
-            Sample.Labeled sample) {
+            Sample.Labeled sample,
+            boolean isStrictExemplars) {
         if (withHelpType) {
             prometheusType(sb, nameToUse.get(), typeName);
         }
@@ -350,7 +353,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         sb.append(nameToUse.get() + name.prometheusTags())
                 .append(" ")
                 .append(convertedValue)
-                .append(prometheusExemplar(sample, name.units()))
+                .append(isStrictExemplars ? "" : prometheusExemplar(sample, name.units()))
                 .append("\n");
     }
 
@@ -381,19 +384,19 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
 
         // # TYPE application:file_sizes_mean_bytes gauge
         // application:file_sizes_mean_bytes 4738.231
-        appendPrometheusElement(sb, name, "mean",  withHelpType, "gauge", snap.mean());
+        appendPrometheusElement(sb, name, "mean",  withHelpType, "gauge", snap.mean(), isStrictExemplars);
 
         // # TYPE application:file_sizes_max_bytes gauge
         // application:file_sizes_max_bytes 31716
-        appendPrometheusElement(sb, name, "max", withHelpType, "gauge", snap.max());
+        appendPrometheusElement(sb, name, "max", withHelpType, "gauge", snap.max(), isStrictExemplars);
 
         // # TYPE application:file_sizes_min_bytes gauge
         // application:file_sizes_min_bytes 180
-        appendPrometheusElement(sb, name, "min", withHelpType, "gauge", snap.min());
+        appendPrometheusElement(sb, name, "min", withHelpType, "gauge", snap.min(), isStrictExemplars);
 
         // # TYPE application:file_sizes_stddev_bytes gauge
         // application:file_sizes_stddev_bytes 1054.7343037063602
-        appendPrometheusElement(sb, name, "stddev", withHelpType, "gauge", snap.stdDev());
+        appendPrometheusElement(sb, name, "stddev", withHelpType, "gauge", snap.stdDev(), isStrictExemplars);
 
         // # TYPE application:file_sizes_bytes summary
         // # HELP application:file_sizes_bytes Users file size

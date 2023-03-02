@@ -18,6 +18,7 @@ package io.helidon.metrics.exemplartrace;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -32,6 +33,7 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
+import org.eclipse.microprofile.metrics.Timer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -65,25 +67,31 @@ class TestExamplarStrictness {
             metricRegistry.removeMatching((id, metric) -> true);
             Counter counter = metricRegistry.counter("c1");
             SimpleTimer simpleTimer = metricRegistry.simpleTimer("st1");
+            Timer timer = metricRegistry.timer("t1");
+
             long incs = 3;
+            long timerDuration = 3000L;
 
             Duration duration = Duration.ofSeconds(4);
             simpleTimer.update(duration);
             counter.inc(incs);
+            timer.update(timerDuration, TimeUnit.NANOSECONDS);
+            timer.update(timerDuration, TimeUnit.NANOSECONDS);
 
             assertThat("Updated counter", counter.getCount(), is(incs));
             assertThat("Updated simple timer count", simpleTimer.getCount(), is(1L));
             assertThat("Updated simple timer duration", simpleTimer.getElapsedTime(), is(duration));
+            assertThat("Updated timer count", timer.getCount(), is(2L));
+            assertThat("Updated timer duration", timer.getSnapshot().getMax(), is(timerDuration));
 
             String promData = prometheusData(counter, "Counter", new MetricID("c1"), false, isStrictExemplars);
             String simpleTimerElapsedData = "application_st1_elapsedTime_seconds 4.0";
             String simpleTimerCounterData = "application_st1_total 1";
+            String timerCounterData = "application_t1_seconds_count 2";
 
             assertThat("Prometheus counter output with strict exemplars", promData, containsString("# {trace_id"));
 
             promData = prometheusData(simpleTimer, "SimpleTimer", new MetricID("st1"), false, isStrictExemplars);
-
-
             assertThat("Prometheus simple timer output with strict exemplars",
                        promData,
                        containsString(simpleTimerElapsedData));
@@ -93,6 +101,15 @@ class TestExamplarStrictness {
             assertThat("Prometheus simple timer output with strict exemplars",
                        promData,
                        containsString(simpleTimerCounterData + " # {trace"));
+
+            promData = prometheusData(timer, "Timer", new MetricID("t1"), false, isStrictExemplars);
+            assertThat("Prometheus timer output with strict exemplars",
+                       promData,
+                       containsString(timerCounterData));
+            assertThat("Prometheus timer output with strict exemplars",
+                       promData,
+                       not(containsString(timerCounterData) + " # {trace"));
+
             return null;
         });
 
