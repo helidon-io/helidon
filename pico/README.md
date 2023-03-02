@@ -30,7 +30,7 @@ The Helidon Team believes that the above features help developers achieve the fo
 Many DI frameworks start simple and over time become bloated with "bells and whistle" type features - the majority of which most developers don't need and will never use; especially in today's world of microservices where the application scope is the JVM process itself.
 
 ***
-The <b>Helidon Pico Framework</b> is a reset back to basics, and perfect for such use cases requiring minimalism but yet still be extensible. This is why Pico intentionally chose to reset back to basics and implemented the earlier JSR-330 specification at its foundation. <i>Application Scope</i> == <i>Singleton Scope</i> in a microservices world.
+The <b>Helidon Pico Framework</b> is a reset back to basics, and perfect for such use cases requiring minimalism but yet still be extensible. This is why Pico intentionally chose to implement the earlier JSR-330 specification at its foundation. <i>Application Scope</i> == <i>Singleton Scope</i> in a microservices world.
 ***
 
 Request and Session scopes are simply not made available in Pico. We believe that scoping is a recipe for undo complexity, confusion, and bugs for the many developers today. 

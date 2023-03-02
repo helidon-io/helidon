@@ -25,14 +25,15 @@ public interface Interceptor {
 
     /**
      * Called during interception of the target V. The implementation typically should finish with the call to
-     * {@link Interceptor.Chain#proceed()}.
+     * {@link Interceptor.Chain#proceed}.
      *
      * @param ctx   the invocation context
      * @param chain the chain to call proceed on
+     * @param args  the arguments to the call
      * @param <V>   the return value type (or {@link Void} for void method elements)
      * @return the return value to the caller
      */
-    <V> V proceed(InvocationContext ctx, Chain<V> chain);
+    <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args);
 
 
     /**
@@ -44,9 +45,10 @@ public interface Interceptor {
         /**
          * Call the next interceptor in line, or finishing with the call to the service provider.
          *
-         * @return the result of the call.
+         * @param args the arguments pass
+         * @return the result of the call
          */
-        V proceed();
+        V proceed(Object[] args);
     }
 
 }

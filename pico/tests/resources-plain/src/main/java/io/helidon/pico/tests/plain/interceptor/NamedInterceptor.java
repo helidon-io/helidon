@@ -33,17 +33,18 @@ public class NamedInterceptor implements Interceptor {
 
     @Override
     public <V> V proceed(InvocationContext ctx,
-                         Chain<V> chain) {
+                         Chain<V> chain,
+                         Object... args) {
         assert (ctx != null);
 
         TypedElementName methodInfo = ctx.elementInfo();
         if (methodInfo != null && methodInfo.typeName().equals(DefaultTypeName.create(long.class))) {
-            V result = chain.proceed();
+            V result = chain.proceed(args);
             long longResult = (Long) result;
             Object interceptedResult = (longResult * 2);
             return (V) interceptedResult;
         } else {
-            return chain.proceed();
+            return chain.proceed(args);
         }
     }
 

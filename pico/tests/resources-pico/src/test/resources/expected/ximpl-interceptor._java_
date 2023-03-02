@@ -17,6 +17,7 @@ import io.helidon.pico.DefaultInvocationContext;
 import io.helidon.pico.Interceptor;
 import io.helidon.pico.InvocationException;
 import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.services.InterceptedMethod;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -24,10 +25,12 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 import static io.helidon.common.types.DefaultTypeName.create;
-import static io.helidon.pico.services.Invocation.createAndInvoke;
 import static io.helidon.pico.services.Invocation.createInvokeAndSupply;
 import static io.helidon.pico.services.Invocation.mergeAndCollapse;
 
+/**
+ * Pico {@link Interceptor} manager for {@link io.helidon.pico.tests.pico.interceptor.XImpl }.
+ */
 @io.helidon.common.Weight(100.001)
 @io.helidon.pico.Intercepted(io.helidon.pico.tests.pico.interceptor.XImpl.class)
 @Singleton
@@ -139,6 +142,14 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     private final List<Provider<Interceptor>> __methodY__interceptors;
     private final List<Provider<Interceptor>> __methodZ__interceptors;
     private final List<Provider<Interceptor>> __throwRuntimeException__interceptors;
+    private final InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void> __methodIA1__call;
+    private final InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void> __methodIA2__call;
+    private final InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void> __methodIB__call;
+    private final InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void> __close__call;
+    private final InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Long> __methodX__call;
+    private final InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.String> __methodY__call;
+    private final InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.String> __methodZ__call;
+    private final InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void> __throwRuntimeException__call;
 
     @Inject
     XImpl$$Pico$$Interceptor(
@@ -161,7 +172,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
         Supplier<io.helidon.pico.tests.pico.interceptor.XImpl> call = __provider::get;
         io.helidon.pico.tests.pico.interceptor.XImpl result = createInvokeAndSupply(
                 DefaultInvocationContext.builder()
-                    .rootServiceProvider(__sp)
+                    .serviceProvider(__sp)
                     .serviceTypeName(__serviceTypeName)
                     .classAnnotations(__serviceLevelAnnotations)
                     .elementInfo(__ctor)
@@ -169,193 +180,117 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
                     /*.build()*/,
                 call);
         this.__impl = Objects.requireNonNull(result);
+
+        this.__methodIA1__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void>(
+                __impl, __sp, __serviceTypeName, __serviceLevelAnnotations, __methodIA1__interceptors, __methodIA1) {
+            @Override
+            public java.lang.Void invoke(Object... args) throws Throwable {
+                impl().methodIA1();
+                return null;
+            }
+        };
+
+        this.__methodIA2__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void>(
+                __impl, __sp, __serviceTypeName, __serviceLevelAnnotations, __methodIA2__interceptors, __methodIA2) {
+            @Override
+            public java.lang.Void invoke(Object... args) throws Throwable {
+                impl().methodIA2();
+                return null;
+            }
+        };
+
+        this.__methodIB__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void>(
+                __impl, __sp, __serviceTypeName, __serviceLevelAnnotations, __methodIB__interceptors, __methodIB,
+				new TypedElementName[] {__methodIB__p1}) {
+            @Override
+            public java.lang.Void invoke(Object... args) throws Throwable {
+                impl().methodIB((java.lang.String) args[0]);
+                return null;
+            }
+        };
+
+        this.__close__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void>(
+                __impl, __sp, __serviceTypeName, __serviceLevelAnnotations, __close__interceptors, __close) {
+            @Override
+            public java.lang.Void invoke(Object... args) throws Throwable {
+                impl().close();
+                return null;
+            }
+        };
+
+        this.__methodX__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Long>(
+                __impl, __sp, __serviceTypeName, __serviceLevelAnnotations, __methodX__interceptors, __methodX,
+				new TypedElementName[] {__methodX__p1, __methodX__p2, __methodX__p3}) {
+            @Override
+            public java.lang.Long invoke(Object... args) throws Throwable {
+                return impl().methodX((java.lang.String) args[0], (java.lang.Integer) args[1], (java.lang.Boolean) args[2]);
+            }
+        };
+
+        this.__methodY__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.String>(
+                __impl, __sp, __serviceTypeName, __serviceLevelAnnotations, __methodY__interceptors, __methodY) {
+            @Override
+            public java.lang.String invoke(Object... args) throws Throwable {
+                return impl().methodY();
+            }
+        };
+
+        this.__methodZ__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.String>(
+                __impl, __sp, __serviceTypeName, __serviceLevelAnnotations, __methodZ__interceptors, __methodZ) {
+            @Override
+            public java.lang.String invoke(Object... args) throws Throwable {
+                return impl().methodZ();
+            }
+        };
+
+        this.__throwRuntimeException__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void>(
+                __impl, __sp, __serviceTypeName, __serviceLevelAnnotations, __throwRuntimeException__interceptors, __throwRuntimeException) {
+            @Override
+            public java.lang.Void invoke(Object... args) throws Throwable {
+                impl().throwRuntimeException();
+                return null;
+            }
+        };
     }
 
     @Override
     public void methodIA1() {
-		Runnable call = () -> {
-			try {
-				__impl.methodIA1();
-			} catch (RuntimeException e) {
-				throw e;
-			} catch (Throwable t) {
-				throw new InvocationException(t.getMessage(), t, __sp);
-			}
-		};
-		createAndInvoke(
-			io.helidon.pico.DefaultInvocationContext.builder()
-				.rootServiceProvider(__sp)
-				.serviceTypeName(__serviceTypeName)
-				.classAnnotations(__serviceLevelAnnotations)
-				.interceptors(__methodIA1__interceptors)
-				.elementInfo(__methodIA1)
-			/*.build()*/,
-			call);
-	}
+        createInvokeAndSupply(__methodIA1__call.ctx(), () -> __methodIA1__call.apply());
+    }
 
     @Override
     public void methodIA2() {
-		Runnable call = () -> {
-			try {
-				__impl.methodIA2();
-			} catch (RuntimeException e) {
-				throw e;
-			} catch (Throwable t) {
-				throw new InvocationException(t.getMessage(), t, __sp);
-			}
-		};
-		createAndInvoke(
-			io.helidon.pico.DefaultInvocationContext.builder()
-				.rootServiceProvider(__sp)
-				.serviceTypeName(__serviceTypeName)
-				.classAnnotations(__serviceLevelAnnotations)
-				.interceptors(__methodIA2__interceptors)
-				.elementInfo(__methodIA2)
-			/*.build()*/,
-			call);
-	}
+        createInvokeAndSupply(__methodIA2__call.ctx(), () -> __methodIA2__call.apply());
+    }
 
     @Override
     public void methodIB(java.lang.String p1) {
-		Object[] args = new Object[] {p1};
-		Runnable call = () -> {
-			try {
-				__impl.methodIB((java.lang.String) args[0]);
-			} catch (RuntimeException e) {
-				throw e;
-			} catch (Throwable t) {
-				throw new InvocationException(t.getMessage(), t, __sp);
-			}
-		};
-		createAndInvoke(
-			io.helidon.pico.DefaultInvocationContext.builder()
-				.rootServiceProvider(__sp)
-				.serviceTypeName(__serviceTypeName)
-				.classAnnotations(__serviceLevelAnnotations)
-				.interceptors(__methodIB__interceptors)
-				.elementInfo(__methodIB)
-				.elementArgInfo(new TypedElementName[] {__methodIB__p1})
-				.elementArgs(args)
-			/*.build()*/,
-			call);
-	}
+        createInvokeAndSupply(__methodIB__call.ctx(), () -> __methodIB__call.apply(p1));
+    }
 
     @Override
     public void close() throws java.io.IOException, java.lang.RuntimeException {
-		Runnable call = () -> {
-			try {
-				__impl.close();
-			} catch (RuntimeException e) {
-				throw e;
-			} catch (Throwable t) {
-				throw new InvocationException(t.getMessage(), t, __sp);
-			}
-		};
-		createAndInvoke(
-			io.helidon.pico.DefaultInvocationContext.builder()
-				.rootServiceProvider(__sp)
-				.serviceTypeName(__serviceTypeName)
-				.classAnnotations(__serviceLevelAnnotations)
-				.interceptors(__close__interceptors)
-				.elementInfo(__close)
-			/*.build()*/,
-			call);
-	}
+        createInvokeAndSupply(__close__call.ctx(), () -> __close__call.apply());
+    }
 
     @Override
     public long methodX(java.lang.String p1, int p2, boolean p3) throws java.io.IOException, java.lang.RuntimeException, java.lang.AssertionError {
-		Object[] args = new Object[] {p1, p2, p3};
-		Supplier<java.lang.Long> call = () -> {
-			try {
-				return __impl.methodX((java.lang.String) args[0], (java.lang.Integer) args[1], (java.lang.Boolean) args[2]);
-			} catch (RuntimeException e) {
-				throw e;
-			} catch (Throwable t) {
-				throw new InvocationException(t.getMessage(), t, __sp);
-			}
-		};
-		java.lang.Long result = createInvokeAndSupply(
-			io.helidon.pico.DefaultInvocationContext.builder()
-				.rootServiceProvider(__sp)
-				.serviceTypeName(__serviceTypeName)
-				.classAnnotations(__serviceLevelAnnotations)
-				.interceptors(__methodX__interceptors)
-				.elementInfo(__methodX)
-				.elementArgInfo(new TypedElementName[] {__methodX__p1,
-					__methodX__p2,
-					__methodX__p3})
-				.elementArgs(args)
-			/*.build()*/,
-			call);
-		return result;
-	}
+        return createInvokeAndSupply(__methodX__call.ctx(), () -> __methodX__call.apply(p1, p2, p3));
+    }
 
     @Override
     public java.lang.String methodY() {
-		Supplier<java.lang.String> call = () -> {
-			try {
-				return __impl.methodY();
-			} catch (RuntimeException e) {
-				throw e;
-			} catch (Throwable t) {
-				throw new InvocationException(t.getMessage(), t, __sp);
-			}
-		};
-		java.lang.String result = createInvokeAndSupply(
-			io.helidon.pico.DefaultInvocationContext.builder()
-				.rootServiceProvider(__sp)
-				.serviceTypeName(__serviceTypeName)
-				.classAnnotations(__serviceLevelAnnotations)
-				.interceptors(__methodY__interceptors)
-				.elementInfo(__methodY)
-			/*.build()*/,
-			call);
-		return result;
-	}
+        return createInvokeAndSupply(__methodY__call.ctx(), () -> __methodY__call.apply());
+    }
 
     @Override
     public java.lang.String methodZ() {
-		Supplier<java.lang.String> call = () -> {
-			try {
-				return __impl.methodZ();
-			} catch (RuntimeException e) {
-				throw e;
-			} catch (Throwable t) {
-				throw new InvocationException(t.getMessage(), t, __sp);
-			}
-		};
-		java.lang.String result = createInvokeAndSupply(
-			io.helidon.pico.DefaultInvocationContext.builder()
-				.rootServiceProvider(__sp)
-				.serviceTypeName(__serviceTypeName)
-				.classAnnotations(__serviceLevelAnnotations)
-				.interceptors(__methodZ__interceptors)
-				.elementInfo(__methodZ)
-			/*.build()*/,
-			call);
-		return result;
-	}
+        return createInvokeAndSupply(__methodZ__call.ctx(), () -> __methodZ__call.apply());
+    }
 
     @Override
     public void throwRuntimeException() {
-		Runnable call = () -> {
-			try {
-				__impl.throwRuntimeException();
-			} catch (RuntimeException e) {
-				throw e;
-			} catch (Throwable t) {
-				throw new InvocationException(t.getMessage(), t, __sp);
-			}
-		};
-		createAndInvoke(
-			io.helidon.pico.DefaultInvocationContext.builder()
-				.rootServiceProvider(__sp)
-				.serviceTypeName(__serviceTypeName)
-				.classAnnotations(__serviceLevelAnnotations)
-				.interceptors(__throwRuntimeException__interceptors)
-				.elementInfo(__throwRuntimeException)
-			/*.build()*/,
-			call);
-	}
+        createInvokeAndSupply(__throwRuntimeException__call.ctx(), () -> __throwRuntimeException__call.apply());
+    }
 
 }

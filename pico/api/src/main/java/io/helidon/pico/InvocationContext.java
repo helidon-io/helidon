@@ -33,11 +33,11 @@ import jakarta.inject.Provider;
 public interface InvocationContext {
 
     /**
-     * The root service provider being intercepted.
+     * The service provider being intercepted.
      *
-     * @return the root service provider being intercepted
+     * @return the service provider being intercepted
      */
-    ServiceProvider<?> rootServiceProvider();
+    ServiceProvider<?> serviceProvider();
 
     /**
      * The service type name for the root service provider.
@@ -67,12 +67,12 @@ public interface InvocationContext {
      */
     TypedElementName[] elementArgInfo();
 
-    /**
-     * The arguments to the method.
-     *
-     * @return the read/write method/element arguments
-     */
-    Object[] elementArgs();
+//    /**
+//     * The arguments to the method.
+//     *
+//     * @return the read/write method/element arguments
+//     */
+//    Object[] elementArgs();
 
     /**
      * The interceptor chain.

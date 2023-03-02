@@ -30,31 +30,20 @@ import io.helidon.pico.ServiceProvider;
 import jakarta.inject.Provider;
 
 /**
- * Handles the code generation in support of {@link Interceptor}.
+ * Handles the invocation of {@link Interceptor} methods.
  *
  * @see io.helidon.pico.InvocationContext
  * @param <V> the invocation type
  */
 public class Invocation<V> implements Interceptor.Chain<V> {
-
     private final InvocationContext ctx;
     private final ListIterator<Provider<Interceptor>> interceptorIterator;
     private Supplier<V> call;
-    private Runnable runnableCall;
 
     private Invocation(InvocationContext ctx,
                        Supplier<V> call) {
         this.ctx = ctx;
         this.call = Objects.requireNonNull(call);
-        this.runnableCall = null;
-        this.interceptorIterator = ctx.interceptors().listIterator();
-    }
-
-    private Invocation(InvocationContext ctx,
-                       Runnable call) {
-        this.ctx = ctx;
-        this.call = null;
-        this.runnableCall = Objects.requireNonNull(call);
         this.interceptorIterator = ctx.interceptors().listIterator();
     }
 
@@ -63,38 +52,24 @@ public class Invocation<V> implements Interceptor.Chain<V> {
      *
      * @param ctx   the invocation context
      * @param call  the call to the base service provider's method
+     * @param args  the call arguments
      * @param <V>   the type returned from the method element
      * @return the invocation instance
      */
     @SuppressWarnings("unchecked")
     public static <V> V createInvokeAndSupply(InvocationContext ctx,
-                                              Supplier<V> call) {
+                                              Supplier<V> call,
+                                              Object... args) {
         if (ctx.interceptors().isEmpty()) {
             return call.get();
-        }
-
-        return (V) new Invocation(ctx, call).proceed();
-    }
-
-    /**
-     * Creates an instance of {@link Invocation} and invokes it in this context.
-     *
-     * @param ctx   the invocation context
-     * @param call  the call to the base service provider's method
-     */
-    @SuppressWarnings("rawtypes")
-    public static void createAndInvoke(InvocationContext ctx,
-                                       Runnable call) {
-        if (ctx.interceptors().isEmpty()) {
-            call.run();
         } else {
-            new Invocation(ctx, call).proceed();
+            return (V) new Invocation(ctx, call).proceed(args);
         }
     }
 
     /**
      * Merges a variable number of lists together, where the net result is the merged set of non-null providers
-     * ranked in proper weight order, or null if the list would have otherwise been empty.
+     * ranked in proper weight order, or else empty list.
      *
      * @param lists the lists to merge
      * @param <T>   the type of the provider
@@ -137,24 +112,19 @@ public class Invocation<V> implements Interceptor.Chain<V> {
     }
 
     @Override
-    public V proceed() {
+    public V proceed(Object... args) {
         if (!interceptorIterator.hasNext()) {
             if (this.call != null) {
                 Supplier<V> call = this.call;
                 this.call = null;
                 return call.get();
-            } else if (this.runnableCall != null) {
-                Runnable call = this.runnableCall;
-                this.runnableCall = null;
-                call.run();
-                return null;
             } else {
                 throw new IllegalStateException("unknown call type: " + this);
             }
         } else {
             return interceptorIterator.next()
                     .get()
-                    .proceed(ctx, this);
+                    .proceed(ctx, this, args);
         }
     }
 

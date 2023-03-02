@@ -49,7 +49,6 @@ import io.helidon.common.Weighted;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.DefaultInvocationContext;
 import io.helidon.pico.ElementInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.InterceptedTrigger;
@@ -714,12 +713,13 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         subst.put("generatedanno", toGeneratedSticker(null));
         subst.put("weight", interceptorWeight(plan.interceptedService().declaredWeight()));
         subst.put("interceptedmethoddecls", toInterceptedMethodDecls(plan));
-        subst.put("interceptedmethods", IdAndToString
+        subst.put("interceptedelements", IdAndToString
                 .toList(plan.interceptedElements(), DefaultInterceptorCreator::toBody).stream()
                 .filter(it -> !it.getId().equals(CTOR_ALIAS))
                 .collect(Collectors.toList()));
-        subst.put("annotationtriggertypenames", IdAndToString.toList(plan.annotationTriggerTypeNames(),
-                                             str -> new IdAndToString(str.replace(".", "_"), str)));
+        subst.put("annotationtriggertypenames", IdAndToString
+                .toList(plan.annotationTriggerTypeNames(),
+                        str -> new IdAndToString(str.replace(".", "_"), str)));
         subst.put("servicelevelannotations", IdAndToString
                 .toList(plan.serviceLevelAnnotations(), DefaultInterceptorCreator::toDecl));
         String template = templateHelper().safeLoadTemplate(COMPLEX_INTERCEPTOR_HBS);
@@ -797,7 +797,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
     }
 
     @SuppressWarnings("checkstyle:OperatorWrap")
-    private static IdAndToString toBody(InterceptedElement method) {
+    private static InterceptedMethodCodeGen toBody(InterceptedElement method) {
         MethodElementInfo mi = method.elementInfo();
         String name = (mi.elementKind() == ElementInfo.ElementKind.CONSTRUCTOR) ? CTOR_ALIAS : mi.elementName();
         StringBuilder builder = new StringBuilder();
@@ -807,6 +807,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         String argDecls = "";
         String objArrayArgs = "";
         String typedElementArgs = "";
+        String untypedElementArgs = "";
         boolean hasArgs = (args.length() > 0);
         if (hasArgs) {
             argDecls = CommonUtils.toString(IdAndToString.toList(mi.parameterInfo(), DefaultInterceptorCreator::toDecl));
@@ -817,61 +818,70 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                                        .collect(Collectors.toList()));
             typedElementArgs = CommonUtils.toString(mi.parameterInfo().stream()
                                        .map(ei -> "__" + mi.elementName() + "__" + ei.elementName())
-                                       .collect(Collectors.toList()), null, ",\n\t\t\t\t\t");
+                                       .collect(Collectors.toList()), null, ", ");
+            count.set(0);
+            untypedElementArgs = CommonUtils.toString(mi.parameterInfo().stream()
+                                       .map(ei -> "args[" + count.getAndIncrement() + "]")
+                                       .collect(Collectors.toList()));
         }
+
         boolean hasReturn = !mi.elementTypeName().equals(void.class.getName());
         builder.append(argDecls);
         builder.append(")");
         if (!mi.throwableTypeNames().isEmpty()) {
             builder.append(" throws ").append(CommonUtils.toString(mi.throwableTypeNames()));
         }
-        // note to self: turn these into mustaches
+        String methodDecl = builder.toString();
         builder.append(" {\n");
-        if (hasArgs) {
-            builder.append("\t\tObject[] args = new Object[] {" + args + "};\n");
-        }
+//        if (hasArgs) {
+//            builder.append("\t\tObject[] args = new Object[] {" + args + "};\n");
+//        }
+        TypeName supplierType = (hasReturn) ? toObjectTypeName(mi.elementTypeName()) : DefaultTypeName.create(Void.class);
         if (hasReturn) {
-            TypeName supplierType = toObjectTypeName(mi.elementTypeName());
-            builder.append("\t\tSupplier<" + supplierType + "> call = () -> {\n" +
-                                   "\t\t\ttry {\n" +
-                                   "\t\t\t\treturn __impl." + mi.elementName() + "(" + objArrayArgs + ");\n" +
-                                   "\t\t\t} catch (RuntimeException e) {\n" +
-                                   "\t\t\t\tthrow e;\n" +
-                                   "\t\t\t} catch (Throwable t) {\n" +
-                                   "\t\t\t\tthrow new InvocationException(t.getMessage(), t, __sp);\n" +
-                                   "\t\t\t}\n" +
-                                   "\t\t};\n");
-            builder.append("\t\t" + supplierType + " result = createInvokeAndSupply(\n");
+//            builder.append("\t\tSupplier<" + supplierType + "> call = () -> {\n" +
+//                                   "\t\t\ttry {\n" +
+//                                   "\t\t\t\treturn __impl." + mi.elementName() + "(" + objArrayArgs + ");\n" +
+//                                   "\t\t\t} catch (RuntimeException e) {\n" +
+//                                   "\t\t\t\tthrow e;\n" +
+//                                   "\t\t\t} catch (Throwable t) {\n" +
+//                                   "\t\t\t\tthrow new InvocationException(t.getMessage(), t, __sp);\n" +
+//                                   "\t\t\t}\n" +
+//                                   "\t\t};\n");
+//            builder.append("\t\t" + supplierType + " result = createInvokeAndSupply(\n");
         } else {
-            builder.append("\t\tRunnable call = () -> {\n" +
-                                   "\t\t\ttry {\n" +
-                                   "\t\t\t\t__impl." + mi.elementName() + "(" + objArrayArgs + ");\n" +
-                                   "\t\t\t} catch (RuntimeException e) {\n" +
-                                   "\t\t\t\tthrow e;\n" +
-                                   "\t\t\t} catch (Throwable t) {\n" +
-                                   "\t\t\t\tthrow new InvocationException(t.getMessage(), t, __sp);\n" +
-                                   "\t\t\t}\n" +
-                                   "\t\t};\n");
-            builder.append("\t\tcreateAndInvoke(\n");
+//            builder.append("\t\tRunnable call = () -> {\n" +
+//                                   "\t\t\ttry {\n" +
+//                                   "\t\t\t\t__impl." + mi.elementName() + "(" + objArrayArgs + ");\n" +
+//                                   "\t\t\t} catch (RuntimeException e) {\n" +
+//                                   "\t\t\t\tthrow e;\n" +
+//                                   "\t\t\t} catch (Throwable t) {\n" +
+//                                   "\t\t\t\tthrow new InvocationException(t.getMessage(), t, __sp);\n" +
+//                                   "\t\t\t}\n" +
+//                                   "\t\t};\n");
+//            builder.append("\t\tcreateAndInvoke(\n");
         }
-        builder.append("\t\t\t").append(DefaultInvocationContext.class.getName()).append(".builder()\n");
-        builder.append("\t\t\t\t.rootServiceProvider(__sp)\n");
-        builder.append("\t\t\t\t.serviceTypeName(__serviceTypeName)\n");
-        builder.append("\t\t\t\t.classAnnotations(__serviceLevelAnnotations)\n");
-        builder.append("\t\t\t\t.interceptors(__").append(mi.elementName()).append("__interceptors)\n");
-        builder.append("\t\t\t\t.elementInfo(__").append(mi.elementName()).append(")\n");
-        if (hasArgs) {
-            builder.append("\t\t\t\t.elementArgInfo(new TypedElementName[] {" + typedElementArgs + "})\n");
-            builder.append("\t\t\t\t.elementArgs(args)\n");
-        }
-        builder.append("\t\t\t/*.build()*/,\n");
-        builder.append("\t\t\tcall);\n");
+//        builder.append("\t\t\t").append(DefaultInvocationContext.class.getName()).append(".builder()\n");
+//        builder.append("\t\t\t\t.serviceProvider(__sp)\n");
+//        builder.append("\t\t\t\t.serviceTypeName(__serviceTypeName)\n");
+//        builder.append("\t\t\t\t.classAnnotations(__serviceLevelAnnotations)\n");
+//        builder.append("\t\t\t\t.interceptors(__").append(mi.elementName()).append("__interceptors)\n");
+//        builder.append("\t\t\t\t.elementInfo(__").append(mi.elementName()).append(")\n");
 
-        if (hasReturn) {
-            builder.append("\t\treturn result;\n");
+        String elementArgInfo = "";
+        if (hasArgs) {
+            elementArgInfo = ",\n\t\t\t\tnew TypedElementName[] {" + typedElementArgs + "}";
         }
-        builder.append("\t}\n");
-        return new InterceptedMethodCodeGen(name, method.interceptedTriggerTypeNames(), builder);
+//        builder.append("\t\t\t/*.build()*/,\n");
+//        builder.append("\t\t\tcall);\n");
+//
+//        if (hasReturn) {
+//            builder.append("\t\treturn " + argDecls + "\n");
+//        }
+//        builder.append("\t}\n");
+
+        return new InterceptedMethodCodeGen(name, methodDecl, hasReturn, supplierType, elementArgInfo, args,
+                                            objArrayArgs, untypedElementArgs,
+                                            method.interceptedTriggerTypeNames(), builder);
     }
 
     private static TypeName toInterceptorTypeName(String serviceTypeName) {
@@ -893,14 +903,75 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
 
 
     static class InterceptedMethodCodeGen extends IdAndToString {
+        private final String methodDecl;
+        private final boolean hasReturn;
+        private final TypeName elementTypeName;
+        private final String elementArgInfo;
+        private final String args;
+        private final String objArrayArgs;
+        private final String untypedElementArgs;
         private final String interceptedTriggerTypeNames;
 
         InterceptedMethodCodeGen(String id,
+                                 String methodDecl,
+                                 boolean hasReturn,
+                                 TypeName elementTypeName,
+                                 String elementArgInfo,
+                                 String args,
+                                 String objArrayArgs,
+                                 String untypedElementArgs,
                                  Collection<String> interceptedTriggerTypeNames,
                                  Object toString) {
             super(id, toString);
+            this.methodDecl = methodDecl;
+            this.hasReturn = hasReturn;
+            this.elementTypeName = elementTypeName;
+            this.elementArgInfo = elementArgInfo;
+            this.args = args;
+            this.objArrayArgs = objArrayArgs;
+            this.untypedElementArgs = untypedElementArgs;
             this.interceptedTriggerTypeNames = CommonUtils.toString(interceptedTriggerTypeNames,
                                                                 (str) -> str.replace(".", "_"), null);
+        }
+
+        // note: this needs to stay as a public getXXX() method to support Mustache
+        public String getMethodDecl() {
+            return methodDecl;
+        }
+
+        // note: this needs to stay as a public getXXX() method to support Mustache
+        public TypeName getElementTypeName() {
+            return elementTypeName;
+        }
+
+        // note: this needs to stay as a public getXXX() method to support Mustache
+        public String getElementArgInfo() {
+            return elementArgInfo;
+        }
+
+        // note: this needs to stay as a public getXXX() method to support Mustache
+        public String getArgs() {
+            return args;
+        }
+
+        // note: this needs to stay as a public getXXX() method to support Mustache
+        public String getObjArrayArgs() {
+            return objArrayArgs;
+        }
+
+        // note: this needs to stay as a public getXXX() method to support Mustache
+        public String getUntypedElementArgs() {
+            return untypedElementArgs;
+        }
+
+        // note: this needs to stay as a public getXXX() method to support Mustache
+        public boolean getHasReturn() {
+            return hasReturn;
+        }
+
+        // note: this needs to stay as a public getXXX() method to support Mustache
+        public boolean getHasArgs() {
+            return !args.isEmpty();
         }
 
         // note: this needs to stay as a public getXXX() method to support Mustache

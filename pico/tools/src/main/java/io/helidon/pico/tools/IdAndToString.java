@@ -23,7 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Convenience for use with handlebars to offer {{.id}} that is different from {{.}}.
+ * Convenience for use with handlebars to offer {{id}} that is different from {{.}}.
  */
 class IdAndToString {
 
@@ -31,7 +31,7 @@ class IdAndToString {
     private final Object toString;
 
     /**
-     * Ctor.
+     * Constructor.
      *
      * @param id        the id
      * @param toString  the toString value

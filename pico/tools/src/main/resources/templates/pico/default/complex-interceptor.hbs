@@ -31,6 +31,7 @@ import io.helidon.pico.DefaultInvocationContext;
 import io.helidon.pico.Interceptor;
 import io.helidon.pico.InvocationException;
 import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.services.InterceptedMethod;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -38,10 +39,12 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 import static io.helidon.common.types.DefaultTypeName.create;
-import static io.helidon.pico.services.Invocation.createAndInvoke;
 import static io.helidon.pico.services.Invocation.createInvokeAndSupply;
 import static io.helidon.pico.services.Invocation.mergeAndCollapse;
 
+/**
+ * Pico {@link Interceptor} manager for {@link {{parent}} }.
+ */
 @io.helidon.common.Weight({{weight}})
 @io.helidon.pico.Intercepted({{parent}}.class)
 @Singleton
@@ -58,8 +61,9 @@ public class {{className}} extends {{parent}} {
     private final Provider<{{parent}}> __provider;
     private final ServiceProvider<{{parent}}> __sp;
     private final {{parent}} __impl;
-    private final TypeName __serviceTypeName;{{#interceptedmethods}}
-    private final List<Provider<Interceptor>> __{{{id}}}__interceptors;{{/interceptedmethods}}
+    private final TypeName __serviceTypeName;{{#interceptedelements}}
+    private final List<Provider<Interceptor>> __{{id}}__interceptors;{{/interceptedelements}}{{#interceptedelements}}
+    private final InterceptedMethod<{{parent}}, {{elementTypeName}}> __{{id}}__call;{{/interceptedelements}}
 
     @Inject
     {{this.className}}({{#annotationtriggertypenames}}
@@ -68,22 +72,34 @@ public class {{className}} extends {{parent}} {
         this.__provider = Objects.requireNonNull(provider);
         this.__sp = (provider instanceof ServiceProvider) ? (ServiceProvider<{{parent}}>) __provider : null;
         this.__serviceTypeName = DefaultTypeName.create({{parent}}.class);
-        List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse({{#annotationtriggertypenames}}{{id}}{{#unless @last}}, {{/unless}}{{/annotationtriggertypenames}});{{#interceptedmethods}}
-        this.__{{{id}}}__interceptors = mergeAndCollapse({{interceptedTriggerTypeNames}});{{/interceptedmethods}}
+        List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse({{#annotationtriggertypenames}}{{id}}{{#unless @last}}, {{/unless}}{{/annotationtriggertypenames}});{{#interceptedelements}}
+        this.__{{{id}}}__interceptors = mergeAndCollapse({{interceptedTriggerTypeNames}});{{/interceptedelements}}
 
         Supplier<{{parent}}> call = __provider::get;
         {{parent}} result = createInvokeAndSupply(
                 DefaultInvocationContext.builder()
-                    .rootServiceProvider(__sp)
+                    .serviceProvider(__sp)
                     .serviceTypeName(__serviceTypeName)
                     .classAnnotations(__serviceLevelAnnotations)
                     .elementInfo(__ctor)
                     .interceptors(__ctor__interceptors)
                     /*.build()*/,
                 call);
-        this.__impl = Objects.requireNonNull(result);
+        this.__impl = Objects.requireNonNull(result);{{#interceptedelements}}
+
+        this.__{{id}}__call = new InterceptedMethod<{{parent}}, {{elementTypeName}}>(
+                __impl, __sp, __serviceTypeName, __serviceLevelAnnotations, __{{id}}__interceptors, __{{id}}{{elementArgInfo}}) {
+            @Override
+            public {{elementTypeName}} invoke(Object... args) throws Throwable {
+                {{#if hasReturn}}return impl().{{id}}({{objArrayArgs}});{{else}}impl().{{id}}({{objArrayArgs}});
+                return null;{{/if}}
+            }
+        };{{/interceptedelements}}
     }
-{{#interceptedmethods}}
+{{#interceptedelements}}
     @Override
-    {{{.}}}{{/interceptedmethods}}
+    {{{methodDecl}}} {
+        {{#if hasReturn}}return {{/if}}createInvokeAndSupply(__{{id}}__call.ctx(), () -> __{{id}}__call.apply({{args}}));
+    }
+{{/interceptedelements}}
 }
