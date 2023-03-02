@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.tests.apps.bookstore.se;
+package io.helidon.tests.apps.bookstore.common;
 
 import java.util.Collection;
 
+import io.helidon.tests.apps.bookstore.common.AuthorMapper;
 import io.helidon.tests.apps.bookstore.common.Book;
 
 import jakarta.json.Json;
@@ -26,7 +27,7 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 
-class BookMapper {
+public class BookMapper {
 
     private static final String ISBN = "isbn";
     private static final String TITLE = "title";
@@ -52,7 +53,7 @@ class BookMapper {
      * @param book Book to convert to JSON
      * @return new JsonObject representing book
      */
-    static JsonObject encodeJsonp(Book book) {
+    public static JsonObject encodeJsonp(Book book) {
         JsonObject jo = JSON_FACTORY.createObjectBuilder()
                 .add(ISBN, book.getIsbn())
                 .add(TITLE, book.getTitle())
@@ -67,7 +68,7 @@ class BookMapper {
         return jo;
     }
 
-    static JsonArray encodeJsonp(Collection<Book> books) {
+    public static JsonArray encodeJsonp(Collection<Book> books) {
         JsonArrayBuilder builder = JSON_FACTORY.createArrayBuilder();
         for (Book b : books) {
             builder.add(encodeJsonp(b));
@@ -79,7 +80,7 @@ class BookMapper {
      * @param jo JsonObject representation to convert to Book pojo
      * @return New Book pojo
      */
-    static Book decodeJsonp(JsonObject jo) {
+    public static Book decodeJsonp(JsonObject jo) {
         return updateBook(new Book(), jo);
     }
 

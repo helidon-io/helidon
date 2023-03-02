@@ -56,15 +56,16 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
-@Disabled
 class MainTest {
 
     private static String appJarPathSE = System.getProperty("app.jar.path.se", "please-set-app.jar.path.se");
     private static String appJarPathMP = System.getProperty("app.jar.path.mp", "please-set-app.jar.path.mp");
+    private static String appJarPathNima = System.getProperty("app.jar.path.nima", "please-set-app.jar.path.nima");
 
     private static final LocalPlatform localPlatform = LocalPlatform.get();
     private static final String MODULE_NAME_MP = "io.helidon.tests.apps.bookstore.mp";
     private static final String MODULE_NAME_SE = "io.helidon.tests.apps.bookstore.se";
+    private static final String MODULE_NAME_NIMA = "io.helidon.tests.apps.bookstore.nima";
     private static final System.Logger LOGGER = System.getLogger(MainTest.class.getName());
 
     /**
@@ -111,6 +112,7 @@ class MainTest {
         private void waitForApplication(boolean toBeUp) throws Exception {
             long timeout = 15 * 1000; // 15 seconds should be enough to start/stop the server
             long now = System.currentTimeMillis();
+            int count = 0;
             String operation = (toBeUp ? "start" : "stop");
             URL url = getHealthUrl();
             LOGGER.log(Level.INFO, "Waiting for application to " + operation);
@@ -120,17 +122,20 @@ class MainTest {
             do {
                 Thread.sleep(500);
                 if ((System.currentTimeMillis() - now) > timeout) {
-                    Assertions.fail("Application failed to " + operation);
+                    Assertions.fail("Application failed to " + operation + ": count=" + count);
                 }
                 try {
+                    count++;
                     conn = (HttpURLConnection) url.openConnection();
-                    conn.setConnectTimeout(500);
+                    conn.setConnectTimeout(1000);
                     responseCode = conn.getResponseCode();
+                    System.out.println("XXX HealthURL=" + url.toString() + " responseCode=" + responseCode);
                     if (toBeUp && responseCode != 200) {
                         LOGGER.log(Level.INFO, "Waiting for application to " + operation + ": Bad health response  "
                                 + responseCode);
                     }
                 } catch (Exception ex) {
+                    System.out.println("XXX Exception: " + ex.toString());
                     if (toBeUp) {
                         LOGGER.log(Level.INFO, "Waiting for application to " + operation + ": Unable to connect to "
                                 + url.toString() + ": " + ex);
@@ -149,6 +154,7 @@ class MainTest {
     static void setup() {
         appJarPathSE = Paths.get(appJarPathSE).normalize().toString();
         appJarPathMP = Paths.get(appJarPathMP).normalize().toString();
+        appJarPathNima = Paths.get(appJarPathNima).normalize().toString();
     }
 
     /**
@@ -238,6 +244,11 @@ class MainTest {
     }
 
     @Test
+    void basicTestJsonPNima() throws Exception {
+        runJsonFunctionalTest("nima", "jsonp");
+    }
+
+    @Test
     void basicTestMetricsHealthSE() throws Exception {
         runMetricsAndHealthTest("se", "jsonp", false);
     }
@@ -245,6 +256,11 @@ class MainTest {
     @Test
     void basicTestMetricsHealthMP() throws Exception {
         runMetricsAndHealthTest("mp", "", false);
+    }
+
+    @Test
+    void basicTestMetricsHealthNima() throws Exception {
+        runMetricsAndHealthTest("nima", "jsonp", false);
     }
 
     @Test
@@ -258,13 +274,11 @@ class MainTest {
     }
 
     @Test
-    @Disabled("3.0.0-JAKARTA")
     void basicTestMetricsHealthSEModules() throws Exception {
         runMetricsAndHealthTest("se", "jsonp", true);
     }
 
     @Test
-    @Disabled("3.0.0-JAKARTA")
     void basicTestMetricsHealthMPModules() throws Exception {
         runMetricsAndHealthTest("mp", "", true);
     }
@@ -428,7 +442,7 @@ class MainTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"se", "mp"})
+    @ValueSource(strings = {"se", "mp", "nima"})
     void routing(String edition) throws Exception {
 
         HelidonApplication application = startTheApplication(editionToJarPath(edition), Collections.emptyList());
@@ -443,7 +457,7 @@ class MainTest {
                 .path("/boo%6bs")
                 .request()
                 .thenAccept(it -> {
-                    if ("se".equals(edition)) {
+                    if ("se".equals(edition) || "nima".equals(edition)) {
                         assertThat("Checking encode URL response SE", it.status(), is(Http.Status.OK_200));
                     } else {
                         // JAXRS does not decode URLs before matching
@@ -497,8 +511,10 @@ class MainTest {
             return appJarPathSE;
         } else if ("mp".equals(edition)) {
             return appJarPathMP;
+        } else if ("nima".equals(edition)) {
+            return appJarPathNima;
         } else {
-            throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se' or 'mp'");
+            throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se' or 'mp' or 'nima'");
         }
     }
 
@@ -507,8 +523,10 @@ class MainTest {
             return MODULE_NAME_SE;
         } else if ("mp".equals(edition)) {
             return MODULE_NAME_MP;
+        } else if ("mp".equals(edition)) {
+            return MODULE_NAME_NIMA;
         } else {
-            throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se' or 'mp'");
+            throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se' or 'mp' or 'nima'");
         }
     }
 }
