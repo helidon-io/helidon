@@ -61,11 +61,11 @@ class ClientRequestImplTest {
             Http.Header.create("X-Req-Expect100"), "true");
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
     private static final long NO_CONTENT_LENGTH = -1L;
+    private static String baseURI;
     private static Http1Client client;
-    private static int port;
 
     ClientRequestImplTest(WebServer webServer, Http1Client client) {
-        this.port = webServer.port();
+        this.baseURI = "http://localhost:" + webServer.port();
         this.client = client;
     }
 
@@ -78,7 +78,7 @@ class ClientRequestImplTest {
     @Test
     void testMaxHeaderSizeFail() {
         Http1Client client = WebClient.builder()
-                .baseUri("http://localhost:" + port)
+                .baseUri(baseURI)
                 .maxHeaderSize(15)
                 .build();
         validateFailedResponse(client, "Header size exceeded");
@@ -87,7 +87,7 @@ class ClientRequestImplTest {
     @Test
     void testMaxHeaderSizeSuccess() {
         Http1Client client = WebClient.builder()
-                .baseUri("http://localhost:" + port)
+                .baseUri(baseURI)
                 .maxHeaderSize(500)
                 .build();
         validateSuccessfulResponse(client);
@@ -96,7 +96,7 @@ class ClientRequestImplTest {
     @Test
     void testMaxStatusLineLengthFail() {
         Http1Client client = WebClient.builder()
-                .baseUri("http://localhost:" + port)
+                .baseUri(baseURI)
                 .maxStatusLineLength(1)
                 .build();
         validateFailedResponse(client, "HTTP Response did not contain HTTP status line");
@@ -105,7 +105,7 @@ class ClientRequestImplTest {
     @Test
     void testMaxHeaderLineLengthSuccess() {
         Http1Client client = WebClient.builder()
-                .baseUri("http://localhost:" + port)
+                .baseUri(baseURI)
                 .maxStatusLineLength(20)
                 .build();
         validateSuccessfulResponse(client);
@@ -114,7 +114,7 @@ class ClientRequestImplTest {
     @Test
     void testMediaContext() {
         Http1Client client = WebClient.builder()
-                .baseUri("http://localhost:" + port)
+                .baseUri(baseURI)
                 .mediaContext(new CustomizedMediaContext())
                 .build();
         validateSuccessfulResponse(client);
@@ -179,7 +179,7 @@ class ClientRequestImplTest {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
         Http1Client client = WebClient.builder()
-                .baseUri("http://localhost:" + port)
+                .baseUri(baseURI)
                 .sendExpect100Continue(true)
                 .build();
         Http1ClientRequest request = client.method(Http.Method.PUT)
