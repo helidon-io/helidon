@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,28 +94,42 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
     private SQLBooleanSupplier isClosedFunction;
 
     /**
-     * Whether or not the {@link #close()} method will actually close this {@link DelegatingConnection}.
+     * The internal state of this {@link ConditionallyCloseableConnection}.
      *
-     * <p>This field is set based on the value of the {@code strictClosedChecking} argument supplied to the {@link
-     * #ConditionallyCloseableConnection(Connection, boolean, boolean)} constructor. It may end up deliberately doing
-     * nothing.</p>
+     * <p>This field is never {@code null}.</p>
+     *
+     * <!--
+     * digraph ConditionallyCloseableConnection {
+     *
+     *   CLOSEABLE -> CLOSED [label="close()"];
+     *   CLOSEABLE -> NOT_CLOSEABLE [label="setCloseable(false)"];
+     *   CLOSEABLE -> CLOSEABLE;
+     *
+     *   NOT_CLOSEABLE -> CLOSE_PENDING [label="close()"];
+     *   NOT_CLOSEABLE -> NOT_CLOSEABLE [label="setCloseable(false), isCloseable(), isClosed()"];
+     *   NOT_CLOSEABLE -> CLOSEABLE [label="setCloseable(true)"];
+     *
+     *   CLOSE_PENDING -> CLOSE_PENDING [label="close(), setCloseable(false), isCloseable(), isClosed()"];
+     *   CLOSE_PENDING -> CLOSEABLE [label="setCloseable(true)"];
+     *
+     *   CLOSED -> CLOSED [label="close(), isCloseable(), isClosed()"];
+     *
+     * }
+     * -->
+     *
+     * @see #isClosed()
      *
      * @see #isCloseable()
      *
      * @see #setCloseable(boolean)
      *
-     * @see #ConditionallyCloseableConnection(Connection, boolean, boolean)
-     */
-    private volatile boolean closeable;
-
-    /**
-     * Whether or not a {@link #close()} request has been issued from another thread.
+     * @see #close()
      *
      * @see #isClosePending()
      *
-     * @see #isClosed()
+     * @see #ConditionallyCloseableConnection(Connection, boolean, boolean)
      */
-    private volatile boolean closePending;
+    private volatile State state;
 
 
     /*
@@ -205,12 +219,12 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
         super(delegate);
         if (strictClosedChecking) {
             this.closedChecker = this::failWhenClosed;
-            this.isClosedFunction = () -> this.isClosePending() || super.isClosed();
+            this.isClosedFunction = this::strictIsClosed;
         } else {
             this.closedChecker = ConditionallyCloseableConnection::doNothing;
             this.isClosedFunction = super::isClosed;
         }
-        this.closeable = closeable;
+        this.state = closeable ? State.CLOSEABLE : State.NOT_CLOSEABLE;
     }
 
 
@@ -252,15 +266,29 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
     @Override // DelegatingConnection
     public void close() throws SQLException {
         // this.checkOpen(); // Deliberately omitted per spec.
-        if (this.isCloseable()) {
+        switch (this.state) {
+        case CLOSEABLE:
             try {
                 super.close();
             } finally {
-                this.closePending = false;
+                this.state = State.CLOSED;
                 this.onClose();
             }
-        } else {
-            this.closePending = true;
+            break;
+        case NOT_CLOSEABLE:
+            this.state = State.CLOSE_PENDING;
+            break;
+        case CLOSE_PENDING:
+            break;
+        case CLOSED:
+            try {
+                super.close();
+            } finally {
+                this.onClose();
+            }
+            break;
+        default:
+            throw new AssertionError();
         }
     }
 
@@ -329,7 +357,21 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      */
     public boolean isCloseable() throws SQLException {
         // this.checkOpen(); // Deliberately omitted.
-        return this.closeable && !this.isClosed();
+        switch (this.state) {
+        case CLOSEABLE:
+            return !this.isClosed(); // reduces to !super.isClosed() which reduces to !this.delegate().isClosed()
+        case NOT_CLOSEABLE:
+            assert !this.isClosed(); // reduces to !super.isClosed() which reduces to !this.delegate().isClosed()
+            return false;
+        case CLOSE_PENDING:
+            // (Can't assert about isClosed() because its behavior depends on strictClosedChecking constructor parameter.)
+            return false;
+        case CLOSED:
+            assert this.isClosed(); // reduces to super.isClosed() which reduces to this.delegate().isClosed()
+            return false;
+        default:
+            throw new AssertionError();
+        }
     }
 
     /**
@@ -364,9 +406,22 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      */
     public void setCloseable(boolean closeable) {
         // this.checkOpen(); // Deliberately omitted.
-        this.closeable = closeable;
-        if (closeable) {
-            this.closePending = false;
+        switch (this.state) {
+        case CLOSEABLE:
+            if (!closeable) {
+                this.state = State.NOT_CLOSEABLE;
+            }
+            break;
+        case NOT_CLOSEABLE:
+        case CLOSE_PENDING:
+            if (closeable) {
+                this.state = State.CLOSEABLE;
+            }
+            break;
+        case CLOSED:
+            break;
+        default:
+            throw new AssertionError();
         }
     }
 
@@ -393,7 +448,7 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      */
     public boolean isClosePending() {
         // this.checkOpen(); // Deliberately omitted.
-        return this.closePending;
+        return this.state == State.CLOSE_PENDING;
     }
 
     @Override // DelegatingConnection
@@ -479,6 +534,11 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
     public boolean isClosed() throws SQLException {
         // this.checkOpen(); // Deliberately omitted per spec (and common sense).
         return this.isClosedFunction.getAsBoolean();
+    }
+
+    // (Invoked by method reference only.)
+    private boolean strictIsClosed() throws SQLException {
+        return this.isClosePending() || super.isClosed();
     }
 
     @Override // DelegatingConnection
@@ -863,6 +923,52 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      */
     // (Invoked by method reference only.)
     private static void doNothing() {
+
+    }
+
+
+    /*
+     * Inner and nested classes.
+     */
+
+
+    /**
+     * A state that a {@link ConditionallyCloseableConnection} can have.
+     */
+    private enum State {
+
+        /**
+         * A {@link State} indicating that an invocation of a {@link ConditionallyCloseableConnection}'s {@link
+         * ConditionallyCloseableConnection#close() close()} method will close {@linkplain
+         * ConditionallyCloseableConnection#delegate() its underlying delegate}.
+         */
+        CLOSEABLE,
+
+        /**
+         * A {@link State} indicating that an invocation of a {@link ConditionallyCloseableConnection}'s {@link
+         * ConditionallyCloseableConnection#close() close()} method will place it into the {@link #CLOSE_PENDING} state.
+         *
+         * @see ConditionallyCloseableConnection#setCloseable(boolean)
+         */
+        NOT_CLOSEABLE,
+
+        /**
+         * A {@link State} indicating that an invocation of a {@link ConditionallyCloseableConnection}'s {@link
+         * ConditionallyCloseableConnection#close() close()} method has placed it into this state, and actual closing of
+         * {@linkplain ConditionallyCloseableConnection#delegate() its underlying delegate} will need to be arranged.
+         *
+         * @see ConditionallyCloseableConnection#setCloseable(boolean)
+         */
+        CLOSE_PENDING,
+
+        /**
+         * A {@link State} indicating that an invocation of a {@link ConditionallyCloseableConnection}'s {@link
+         * ConditionallyCloseableConnection#close() close()} method has placed it into this state, and that {@linkplain
+         * ConditionallyCloseableConnection#delegate() its underlying delegate} has also been closed.
+         *
+         * <p>This is a terminal state.</p>
+         */
+        CLOSED;
 
     }
 
