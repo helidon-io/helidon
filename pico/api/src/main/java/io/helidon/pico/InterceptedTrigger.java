@@ -24,6 +24,9 @@ import java.lang.annotation.Target;
 
 /**
  * Meta-annotation for an annotation that will trigger services annotated with it to become intercepted.
+ *
+ * @see io.helidon.pico.Interceptor
+ * @see io.helidon.pico.Intercepted
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

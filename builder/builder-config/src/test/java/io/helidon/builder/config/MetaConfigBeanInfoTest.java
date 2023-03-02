@@ -21,13 +21,13 @@ import java.util.Map;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ConfigBean()
 class MetaConfigBeanInfoTest {
@@ -66,7 +66,15 @@ class MetaConfigBeanInfoTest {
         assertAll(
                 () -> assertThat(ConfigBeanInfo.toConfigKey("maxInitialLineLength"), is("max-initial-line-length")),
                 () -> assertThat(ConfigBeanInfo.toConfigKey("port"), is("port")),
-                () -> assertThat(ConfigBeanInfo.toConfigKey("listenAddress"), is("listen-address"))
+                () -> assertThat(ConfigBeanInfo.toConfigKey("listenAddress"), is("listen-address")),
+                () -> assertThat(ConfigBeanInfo.toConfigKey("Http2Config"), is("http2-config"))
+        );
+
+        assertAll(
+                () -> assertThat(ConfigBeanInfo.toConfigKey("MyClient", true), is("my-client")),
+                () -> assertThat(ConfigBeanInfo.toConfigKey("Http2Config", true), is("http2-config")),
+                () -> assertThat(ConfigBeanInfo.toConfigKey("MyClient", false), is("my-client")),
+                () -> assertThat(ConfigBeanInfo.toConfigKey("Http2Config", false), is("http2"))
         );
     }
 

@@ -369,7 +369,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
             configKey = configuredOptions.get().value("key").orElse(null);
         }
         if (configKey == null || configKey.isBlank()) {
-            configKey = ConfigBeanInfo.toConfigKey(attrName);
+            configKey = ConfigBeanInfo.toConfigKey(attrName, false);
         }
         return configKey;
     }

@@ -93,16 +93,32 @@ public interface ConfigBeanInfo extends ConfigBean {
     }
 
     /**
+     * Same as calling {@code toConfigKey(name, true)}.
+     *
+     * @param name the input name
+     * @return the config key
+     * @see #toConfigKey(String, boolean)
+     */
+    static String toConfigKey(String name) {
+        return toConfigKey(name, true);
+    }
+
+    /**
      * Converts the name (i.e., simple class name or method name) into a config key.
      * <p>
      * Method name is camel case (such as maxInitialLineLength)
      * result is dash separated and lower cased (such as max-initial-line-length).
+     * <p>
+     * The behavior is modified slightly for config bean type names (i.e., when {@code isElement=false}) in that any
+     * configuration ending in "-config" is stripped off as a general convention (e.g., "Http2Config" maps to "http2").
      *
-     * @param name the input name
+     * @param name      the input name
+     * @param isElement true if the input name is a method attribute element, false for simple config bean class type names
      * @return the config key
      */
-    // note: this method is also found in ConfigMetadataHandler.
-    static String toConfigKey(String name) {
+    // note: a similar method is also found in ConfigMetadataHandler.
+    static String toConfigKey(String name,
+                              boolean isElement) {
         StringBuilder result = new StringBuilder(name.length() + 5);
 
         char[] chars = name.toCharArray();
@@ -119,7 +135,15 @@ public interface ConfigBeanInfo extends ConfigBean {
             }
         }
 
-        return result.toString();
+        String res = result.toString();
+        if (!isElement) {
+            int pos = res.lastIndexOf("-config");
+            if (pos > 0) {
+                res = res.substring(0, pos);
+            }
+        }
+
+        return res;
     }
 
 }
