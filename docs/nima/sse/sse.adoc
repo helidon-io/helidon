@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Server-Sent Events in Nima
+= Server-Sent Events in N&iacute;ma
 :description: Helidon Nima SSE Support
 :keywords: helidon, nima, sse
 :feature-name: SSE
@@ -26,7 +26,11 @@
 
 - <<Overview, Overview>>
 - <<Server API, Server API>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
 - <<Client API, Client API>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
 - <<Additional Information, Additional Information>>
 
 == Overview
@@ -38,20 +42,22 @@ _event streams_. For more information about server-sent events, see the
 link:https://html.spec.whatwg.org/multipage/server-sent-events.html[`Server-sent events`]
 specification.
 
-Server-sent events is an alternative technology to WebSockets when only server-to-client messaging
+SSE is an alternative technology to WebSockets when only server-to-client messaging
 is required and can be accomplished without the need to switch protocols (upgrades) and without
 using imperfect solutions such as long polling. A server-sent connection is typically a long-lived
 connection in which messages are sent to the client over a longer period of time compared to a
 normal request-response connection. It is useful for updating _live data_ such as stock tickers,
 results of live events, etc.
 
-Nima provides support for server and client APIs, although often Web browsers are
-popular client alternatives. The following sections describe these APIs in more detail.
+N&iacute;ma provides support for server and client APIs, although Web browsers are popular client alternatives.
+The following sections describe these APIs in more detail.
 
 == Server API
 
-The Server API is available as a loadable service in the Nima Webserver. The following additional
+The Server API is available as a loadable service in the N&iacute;ma Webserver. The following additional
 dependency is required to find and load the SSE service in the Webserver.
+
+=== Maven Coordinates
 
 [source,xml,subs="attributes+"]
 ----
@@ -61,6 +67,7 @@ dependency is required to find and load the SSE service in the Webserver.
 </dependency>
 ----
 
+=== Usage
 Sending events is accomplished by obtaining an `SseSink` instance from a `ServerResponse` using the
 `SseSink.TYPE` constant. The following example converts the response into an `SseSink`, emits two string
 messages and then closes the connection.
@@ -85,10 +92,10 @@ above, a simple create method with a string param is used to showcase a very com
 API supports integration with Nima's media type providers, so the event data may actually be of any
 type as long as it is possible to convert it to a string value.
 
-=== Integration with media types
+=== Integration with Media Types
 
-It is possible to serialize event data using the media support in Nima. For example, if JSON-P is available
-in your class path, you can create an SSE event from a `JsonObject` and Nima will find the appropriate media
+It is possible to serialize event data using the media support in N&iacute;ma. For example, if JSON-P is available
+in your class path, you can create an SSE event from a `JsonObject` and N&iacute;ma will find the appropriate media
 converter and serialize the event data on your behalf.
 
 [source,java]
@@ -140,13 +147,17 @@ by using `application/xml` as the event's media type.
 The Client API is available as a loadable service in the Nima Webclient. The following additional
 dependency is required to find and load the service in the Webclient.
 
+=== Maven Coordinates
+
 [source,xml,subs="attributes+"]
 ----
 <dependency>
     <groupId>io.helidon.nima.sse</groupId>
-    <artifactId>helidon-nima-sse-webclient</artifactId>
+    <artifactId>helidon-N&iacute;ma-sse-webclient</artifactId>
 </dependency>
 ----
+
+=== Usage
 
 Receiving events is accomplished by providing an `SseSource` handler using the source
 type `SseSource.TYPE`. An `SseSource` is a functional interface defined for the purpose of
@@ -191,9 +202,9 @@ try (Http1ClientResponse r = client.get("/sseString")
 }
 ----
 
-=== Integration with media types
+=== Integration with Media Types
 
-The Client API is also integrated with Nima's media type support. The data received as part of an
+The Client API is also integrated with N&iacute;ma's media type support. The data received as part of an
 event can be deserialized using any of the media converters available in your class path. There are
 special methods in `SseEvent` for this purpose. Without a parameter, the method `data()` in `SseEvent` will
 always return a string. Other types can be requested using `data(Class<T>)`
