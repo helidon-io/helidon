@@ -78,6 +78,7 @@ class ClientRequestImplTest {
     @Test
     void testMaxHeaderSizeFail() {
         Http1Client client = WebClient.builder()
+                .baseUri("http://localhost:" + port)
                 .maxHeaderSize(15)
                 .build();
         validateFailedResponse(client, "Header size exceeded");
@@ -86,6 +87,7 @@ class ClientRequestImplTest {
     @Test
     void testMaxHeaderSizeSuccess() {
         Http1Client client = WebClient.builder()
+                .baseUri("http://localhost:" + port)
                 .maxHeaderSize(500)
                 .build();
         validateSuccessfulResponse(client);
@@ -94,6 +96,7 @@ class ClientRequestImplTest {
     @Test
     void testMaxStatusLineLengthFail() {
         Http1Client client = WebClient.builder()
+                .baseUri("http://localhost:" + port)
                 .maxStatusLineLength(1)
                 .build();
         validateFailedResponse(client, "HTTP Response did not contain HTTP status line");
@@ -102,6 +105,7 @@ class ClientRequestImplTest {
     @Test
     void testMaxHeaderLineLengthSuccess() {
         Http1Client client = WebClient.builder()
+                .baseUri("http://localhost:" + port)
                 .maxStatusLineLength(20)
                 .build();
         validateSuccessfulResponse(client);
@@ -110,6 +114,7 @@ class ClientRequestImplTest {
     @Test
     void testMediaContext() {
         Http1Client client = WebClient.builder()
+                .baseUri("http://localhost:" + port)
                 .mediaContext(new CustomizedMediaContext())
                 .build();
         validateSuccessfulResponse(client);
@@ -174,10 +179,11 @@ class ClientRequestImplTest {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
         Http1Client client = WebClient.builder()
+                .baseUri("http://localhost:" + port)
                 .sendExpect100Continue(true)
                 .build();
         Http1ClientRequest request = client.method(Http.Method.PUT)
-                .uri("http://localhost:" + port + "/test");
+                .uri("/test");
 
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -188,25 +194,23 @@ class ClientRequestImplTest {
     @Test
     // validates that HEAD is not allowed with entity payload
     void testHeadMethod() {
-        String url = "http://localhost:" + port + "/test";
+        String path = "/test";
         assertThrows(IllegalArgumentException.class, () ->
-                client.method(Http.Method.HEAD).uri(url).submit("Foo Bar"));
+                client.method(Http.Method.HEAD).uri(path).submit("Foo Bar"));
         assertThrows(IllegalArgumentException.class, () ->
-                client.method(Http.Method.HEAD).uri(url).outputStream(it -> {
+                client.method(Http.Method.HEAD).uri(path).outputStream(it -> {
                     it.write("Foo Bar".getBytes(StandardCharsets.UTF_8));
                     it.close();
                 }));
-        client.method(Http.Method.HEAD).uri(url).request();
+        client.method(Http.Method.HEAD).uri(path).request();
     }
 
     @Test
     void testConnectionQueueDequeue() {
-        String url = "http://localhost:" + port + "/test";
-
         ClientConnection connectionNow = null;
         ClientConnection connectionPrior = null;
         for (int i = 0; i < 5; ++i) {
-            Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
+            Http1ClientRequest request = client.method(Http.Method.PUT).path("/test");
             // connection will be dequeued if queue is not empty
             connectionNow = ((ClientRequestImpl) request).getConnection(true);
             request.connection(connectionNow);
@@ -223,13 +227,12 @@ class ClientRequestImplTest {
     @Test
     void testConnectionQueueSizeLimit() {
         int connectionQueueSize = ((Http1ClientImpl) client).connectionQueueSize();
-        String url = "http://localhost:" + port + "/test";
 
         List<ClientConnection> connectionList = new ArrayList<ClientConnection>();
         List<Http1ClientResponse> responseList = new ArrayList<Http1ClientResponse>();
         // create connections beyond the queue size limit
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
-            Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
+            Http1ClientRequest request = client.method(Http.Method.PUT).path("/test");
             connectionList.add(((ClientRequestImpl) request).getConnection(true));
             request.connection(connectionList.get(i));
             responseList.add(request.request());
@@ -244,7 +247,7 @@ class ClientRequestImplTest {
         ClientConnection connection = null;
         Http1ClientResponse response = null;
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
-            Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
+            Http1ClientRequest request = client.method(Http.Method.PUT).path("/test");
             connection = ((ClientRequestImpl) request).getConnection(true);
             request.connection(connection);
             response = request.request();
@@ -259,7 +262,7 @@ class ClientRequestImplTest {
 
         // The queue is currently empty so check if we can add the last created connection into it.
         response.close();
-        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
+        Http1ClientRequest request = client.method(Http.Method.PUT).path("/test");
         ClientConnection connectionNow = ((ClientRequestImpl) request).getConnection(true);
         request.connection(connectionNow);
         Http1ClientResponse responseNow = request.request();
@@ -269,7 +272,7 @@ class ClientRequestImplTest {
 
     private static void validateSuccessfulResponse(Http1Client client) {
         String requestEntity = "Sending Something";
-        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
+        Http1ClientRequest request = client.method(Http.Method.PUT).path("/test");
         Http1ClientResponse response = request.submit(requestEntity);
 
         assertThat(response.status(), is(Http.Status.OK_200));
@@ -278,7 +281,7 @@ class ClientRequestImplTest {
 
     private static void validateFailedResponse(Http1Client client, String errorMessage) {
         String requestEntity = "Sending Something";
-        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + port + "/test");
+        Http1ClientRequest request = client.method(Http.Method.PUT).path("/test");
         IllegalStateException ie = assertThrows(IllegalStateException.class, () -> request.submit(requestEntity));
         assertThat(ie.getMessage(), containsString(errorMessage));
     }
@@ -340,7 +343,7 @@ class ClientRequestImplTest {
     }
 
     private static Http1ClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
-        return client.method(method).uri("http://localhost:" + port + uriPath);
+        return client.method(method).uri(uriPath);
     }
 
     private static Http1ClientResponse getHttp1ClientResponseFromOutputStream(Http1ClientRequest request,
