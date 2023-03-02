@@ -71,8 +71,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.pico.builder.config</groupId>
-                            <artifactId>helidon-pico-builder-config-processor</artifactId>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-config-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -86,4 +86,3 @@
         </plugins>
     </build>
 </project>
-
