@@ -125,7 +125,7 @@
    <cve>CVE-2022-45129</cve>
 </suppress>
 
-<!-- Falise Positive. CVE-2023-25194 is against Kafka Connect, not the client -->
+<!-- False Positive. CVE-2023-25194 is against Kafka Connect, not the client -->
 <!-- See https://github.com/jeremylong/DependencyCheck/issues/5469 -->
 <suppress>
    <notes><![CDATA[
@@ -134,5 +134,27 @@
    <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
    <cve>CVE-2023-25194</cve>
 </suppress>
+
+<!-- False Positive. This CVE is against H2 1.x.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: h2-2.1.212.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.h2database/h2@.*$</packageUrl>
+   <vulnerabilityName>CVE-2018-14335</vulnerabilityName>
+</suppress>
+
+<!-- This is a low priority CVE against a deprecated method in Guava. We don't use guava directly.
+     This CVE bounces in and out of being "fixed" in version 30 and later.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: guava-31.1-jre.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
+   <vulnerabilityName>CVE-2020-8908</vulnerabilityName>
+</suppress>
+
 
 </suppressions>
