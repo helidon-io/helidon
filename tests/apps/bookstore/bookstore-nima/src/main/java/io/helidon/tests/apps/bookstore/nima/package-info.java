@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,10 @@
  */
 
 /**
- * Helidon Bookstore test app common code
+ * Quickstart demo application
+ * <p>
+ * Start with {@link io.helidon.tests.apps.bookstore.nima.Main} class.
+ *
+ * @see io.helidon.tests.apps.bookstore.nima.Main
  */
-module io.helidon.tests.apps.bookstore.common {
-
-    requires jakarta.cdi;
-    requires jakarta.json;
-
-    opens io.helidon.tests.apps.bookstore.common to weld.core.impl, io.helidon.microprofile.cdi;
-
-    exports io.helidon.tests.apps.bookstore.common;
-}
+package io.helidon.tests.apps.bookstore.nima;

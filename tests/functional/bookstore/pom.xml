@@ -32,6 +32,7 @@
     <properties>
         <appJarPathSE>${project.basedir}/../../apps/bookstore/bookstore-se/target/bookstore-se.jar</appJarPathSE>
         <appJarPathMP>${project.basedir}/../../apps/bookstore/bookstore-mp/target/bookstore-mp.jar</appJarPathMP>
+        <appJarPathNima>${project.basedir}/../../apps/bookstore/bookstore-nima/target/bookstore-nima.jar</appJarPathNima>
     </properties>
 
     <build>
@@ -44,6 +45,7 @@
                     <systemPropertyVariables>
                         <app.jar.path.se>${appJarPathSE}</app.jar.path.se>
                         <app.jar.path.mp>${appJarPathMP}</app.jar.path.mp>
+                        <app.jar.path.nima>${appJarPathNima}</app.jar.path.nima>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

@@ -35,6 +35,7 @@
 
     <modules>
         <module>common</module>
+        <module>bookstore-nima</module>
         <module>bookstore-se</module>
         <module>bookstore-mp</module>
     </modules>

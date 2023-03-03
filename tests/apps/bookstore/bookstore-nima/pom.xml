@@ -21,59 +21,69 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-se</artifactId>
+        <artifactId>helidon-nima</artifactId>
         <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../../../../applications/se/pom.xml</relativePath>
+        <relativePath>../../../../applications/nima/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.tests.apps.bookstore.bookstore-se</groupId>
-    <artifactId>bookstore-se</artifactId>
-    <name>Helidon Test Applications Bookstore SE</name>
+    <groupId>io.helidon.tests.apps.bookstore.bookstore-nima</groupId>
+    <artifactId>bookstore-nima</artifactId>
+    <name>Helidon Test Applications Bookstore Nima</name>
 
     <properties>
-        <mainClass>io.helidon.tests.apps.bookstore.se.Main</mainClass>
+        <mainClass>io.helidon.tests.apps.bookstore.nima.Main</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver</artifactId>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver-http2</artifactId>
+            <groupId>io.helidon.nima.webclient</groupId>
+            <artifactId>helidon-nima-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml</artifactId>
+            <groupId>io.helidon.nima.http2</groupId>
+            <artifactId>helidon-nima-http2-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.health</groupId>
-            <artifactId>helidon-reactive-health</artifactId>
+            <groupId>io.helidon.nima.http2</groupId>
+            <artifactId>helidon-nima-http2-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.health</groupId>
-            <artifactId>helidon-health-checks</artifactId>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jsonp</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.metrics</groupId>
-            <artifactId>helidon-reactive-metrics</artifactId>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-metrics</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jsonp</artifactId>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jsonb</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-key-util</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jackson</artifactId>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-checks</artifactId>
         </dependency>
+        <!-- does not exist yet
+        <dependency>
+            <groupId>io.helidon.nima.media</groupId>
+            <artifactId>helidon-nima-media-jackson</artifactId>
+        </dependency>
+        -->
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.common</groupId>
             <artifactId>helidon-tests-apps-bookstore-common</artifactId>
