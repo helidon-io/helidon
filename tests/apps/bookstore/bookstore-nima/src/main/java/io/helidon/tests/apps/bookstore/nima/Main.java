@@ -21,12 +21,9 @@ import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.health.checks.DeadlockHealthCheck;
 import io.helidon.health.checks.DiskSpaceHealthCheck;
-import io.helidon.health.checks.HealthChecks;
 import io.helidon.health.checks.HeapMemoryHealthCheck;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.common.tls.Tls;
-import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
 import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.observe.metrics.MetricsFeature;
 import io.helidon.nima.webserver.Routing;
@@ -106,22 +103,22 @@ public final class Main {
 
     private static void configureJsonSupport(WebServer.Builder wsBuilder, Config config) {
         JsonLibrary jsonLibrary = getJsonLibrary(config);
-        return;
 
         /* Nima WebServer.Builder does not currently support programmatic way to set media support */
-//        switch (jsonLibrary) {
-//        case JSONP:
-//            wsBuilder.addMediaSupport(JsonpSupport.create());
-//            break;
-//        case JSONB:
-//            wsBuilder.addMediaSupport(JsonbSupport.create());
-//            break;
-//        case JACKSON:
-//            wsBuilder.addMediaSupport(JacksonSupport.create());
-//            break;
-//        default:
-//            throw new RuntimeException("Unknown JSON library " + jsonLibrary);
-//        }
+        /* See issue https://github.com/helidon-io/helidon/issues/6278 */
+        switch (jsonLibrary) {
+        case JSONP:
+            //wsBuilder.addMediaSupport(JsonpSupport.create());
+            break;
+        case JSONB:
+            throw new RuntimeException(jsonLibrary + " is not a supported JSON Library. Only JSONP is supported at this time");
+            //wsBuilder.addMediaSupport(JsonbSupport.create());
+        case JACKSON:
+            throw new RuntimeException(jsonLibrary + " is not a supported JSON Library. Only JSONP is supported at this time");
+            //wsBuilder.addMediaSupport(JacksonSupport.create());
+        default:
+            throw new RuntimeException("Unknown JSON library " + jsonLibrary);
+        }
     }
 
     private static void configureSsl(WebServer.Builder wsBuilder, boolean useSsl) {
