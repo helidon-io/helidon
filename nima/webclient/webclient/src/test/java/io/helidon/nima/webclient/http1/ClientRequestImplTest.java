@@ -159,8 +159,8 @@ class ClientRequestImplTest {
         assertThat(response.headers(), hasHeader(REQ_EXPECT_100_HEADER_NAME));
     }
 
+    // validates that HEAD is not allowed with entity payload
     @Test
-        // validates that HEAD is not allowed with entity payload
     void testHeadMethod() {
         String url = "http://localhost:" + dummyPort + "/test";
         ClientConnection http1ClientConnection = new FakeHttp1ClientConnection();
