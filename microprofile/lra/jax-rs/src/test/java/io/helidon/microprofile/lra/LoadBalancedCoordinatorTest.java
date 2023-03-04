@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,6 @@ import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.hamcrest.core.AnyOf;
 import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
@@ -78,7 +77,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Use case of two standalone coordinators with simple proxying loadbalancer.
@@ -183,7 +181,7 @@ public class LoadBalancedCoordinatorTest {
         assertThat(response.getStatus(), AnyOf.anyOf(is(200), is(204)));
         URI lraId = await(JaxRsCompleteOrCompensate.CS_START_LRA);
         assertThat(await(JaxRsCompleteOrCompensate.CS_COMPLETE), is(lraId));
-        assertFalse(getCompletable(JaxRsCompleteOrCompensate.CS_COMPENSATE).isDone());
+        assertThat(getCompletable(JaxRsCompleteOrCompensate.CS_COMPENSATE).isDone(), is(false));
         assertLoadBalancerCalledProperly();
     }
 
@@ -199,7 +197,7 @@ public class LoadBalancedCoordinatorTest {
         assertThat(response.getStatus(), is(500));
         URI lraId = await(JaxRsCompleteOrCompensate.CS_START_LRA);
         assertThat(await(JaxRsCompleteOrCompensate.CS_COMPENSATE), is(lraId));
-        assertFalse(getCompletable(JaxRsCompleteOrCompensate.CS_COMPLETE, lraId).isDone());
+        assertThat(getCompletable(JaxRsCompleteOrCompensate.CS_COMPLETE, lraId).isDone(), is(false));
         assertLoadBalancerCalledProperly();
     }
 
@@ -215,7 +213,7 @@ public class LoadBalancedCoordinatorTest {
         assertThat(response.getStatus(), AnyOf.anyOf(is(200), is(204)));
         URI lraId = await(NonJaxRsCompleteOrCompensate.CS_START_LRA);
         assertThat(await(NonJaxRsCompleteOrCompensate.CS_COMPLETE), is(lraId));
-        assertFalse(getCompletable(NonJaxRsCompleteOrCompensate.CS_COMPENSATE).isDone());
+        assertThat(getCompletable(NonJaxRsCompleteOrCompensate.CS_COMPENSATE).isDone(), is(false));
         assertLoadBalancerCalledProperly();
     }
 
@@ -231,7 +229,7 @@ public class LoadBalancedCoordinatorTest {
         assertThat(response.getStatus(), AnyOf.anyOf(is(200), is(204)));
         URI lraId = await(NonJaxRsCompleteOrCompensateCS.CS_START_LRA);
         assertThat(await(NonJaxRsCompleteOrCompensateCS.CS_COMPLETE), is(lraId));
-        assertFalse(getCompletable(NonJaxRsCompleteOrCompensateCS.CS_COMPENSATE).isDone());
+        assertThat(getCompletable(NonJaxRsCompleteOrCompensateCS.CS_COMPENSATE).isDone(), is(false));
         assertLoadBalancerCalledProperly();
     }
 
@@ -249,7 +247,7 @@ public class LoadBalancedCoordinatorTest {
         assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_COMPLETE), is(lraId));
         assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_AFTER_LRA), is(lraId));
         assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_STATUS), is(lraId));
-        assertFalse(getCompletable(NonJaxRsCompleteOrCompensateSingle.CS_COMPENSATE).isDone());
+        assertThat(getCompletable(NonJaxRsCompleteOrCompensateSingle.CS_COMPENSATE).isDone(), is(false));
         assertLoadBalancerCalledProperly();
     }
 
@@ -265,7 +263,7 @@ public class LoadBalancedCoordinatorTest {
         assertThat(response.getStatus(), is(500));
         URI lraId = await(NonJaxRsCompleteOrCompensate.CS_START_LRA);
         assertThat(await(NonJaxRsCompleteOrCompensate.CS_COMPENSATE), is(lraId));
-        assertFalse(getCompletable(NonJaxRsCompleteOrCompensate.CS_COMPLETE).isDone());
+        assertThat(getCompletable(NonJaxRsCompleteOrCompensate.CS_COMPLETE).isDone(), is(false));
         assertLoadBalancerCalledProperly();
     }
 
@@ -281,7 +279,7 @@ public class LoadBalancedCoordinatorTest {
         assertThat(response.getStatus(), is(500));
         URI lraId = await(NonJaxRsCompleteOrCompensateCS.CS_START_LRA);
         assertThat(await(NonJaxRsCompleteOrCompensateCS.CS_COMPENSATE), is(lraId));
-        assertFalse(getCompletable(NonJaxRsCompleteOrCompensateCS.CS_COMPLETE).isDone());
+        assertThat(getCompletable(NonJaxRsCompleteOrCompensateCS.CS_COMPLETE).isDone(), is(false));
         assertLoadBalancerCalledProperly();
     }
 
@@ -299,7 +297,7 @@ public class LoadBalancedCoordinatorTest {
         assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_COMPENSATE), is(lraId));
         assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_AFTER_LRA), is(lraId));
         assertThat(await(NonJaxRsCompleteOrCompensateSingle.CS_STATUS), is(lraId));
-        assertFalse(getCompletable(NonJaxRsCompleteOrCompensateSingle.CS_COMPLETE).isDone());
+        assertThat(getCompletable(NonJaxRsCompleteOrCompensateSingle.CS_COMPLETE).isDone(), is(false));
         assertLoadBalancerCalledProperly();
     }
 
@@ -353,12 +351,12 @@ public class LoadBalancedCoordinatorTest {
         URI nestedLraId = await(CdiNestedCompleteOrCompensate.CS_START_NESTED_LRA);
 
         // Nothing is ended, completed or compensated
-        assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_END_PARENT_LRA).isDone());
-        assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_END_NESTED_LRA).isDone());
-        assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPENSATED, parentLraId).isDone());
-        assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPENSATED, nestedLraId).isDone());
-        assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPLETED, parentLraId).isDone());
-        assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPLETED, nestedLraId).isDone());
+        assertThat(getCompletable(CdiNestedCompleteOrCompensate.CS_END_PARENT_LRA).isDone(), is(false));
+        assertThat(getCompletable(CdiNestedCompleteOrCompensate.CS_END_NESTED_LRA).isDone(), is(false));
+        assertThat(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPENSATED, parentLraId).isDone(), is(false));
+        assertThat(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPENSATED, nestedLraId).isDone(), is(false));
+        assertThat(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPLETED, parentLraId).isDone(), is(false));
+        assertThat(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPLETED, nestedLraId).isDone(), is(false));
 
         // End nested LRA
         response = target.path(pathBase)
@@ -373,7 +371,7 @@ public class LoadBalancedCoordinatorTest {
         assertThat(response.getStatusInfo().getReasonPhrase(), response.getStatus(), isIn(endNestedLRAWork.expectedResponseStatuses()));
         assertThat(UriBuilder.fromUri(response.getHeaderString(LRA_HTTP_CONTEXT_HEADER)).build(), is(nestedLraId));
         assertThat(await(CdiNestedCompleteOrCompensate.CS_END_NESTED_LRA), is(nestedLraId));
-        assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_END_PARENT_LRA).isDone());
+        assertThat(getCompletable(CdiNestedCompleteOrCompensate.CS_END_PARENT_LRA).isDone(), is(false));
         if (endNestedLRAWork == Work.BOOM) {
             // Compensate expected
             assertThat("Nested LRA should have compensated and get parent LRA in the header.",
@@ -400,14 +398,14 @@ public class LoadBalancedCoordinatorTest {
 
         assertThat("Parent LRA should have completed and get null as parent LRA in the header.",
                 await(CdiNestedCompleteOrCompensate.CS_COMPLETED, parentLraId), is(IsNull.nullValue()));
-        assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPENSATED, parentLraId).isDone());
+        assertThat(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPENSATED, parentLraId).isDone(), is(false));
 
         if (endNestedLRAWork == Work.BOOM) {
             // Compensated
-            assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPLETED, nestedLraId).isDone());
+            assertThat(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPLETED, nestedLraId).isDone(), is(false));
         } else {
             // Completed
-            assertFalse(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPENSATED, nestedLraId).isDone());
+            assertThat(getCompletable(CdiNestedCompleteOrCompensate.CS_COMPENSATED, nestedLraId).isDone(), is(false));
         }
 
         assertLoadBalancerCalledProperly();
