@@ -24,6 +24,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.RegistrySettings;
 import io.helidon.tracing.TracerBuilder;
 
 import io.opentracing.Span;
@@ -122,7 +123,12 @@ class TestExamplarStrictness {
 
             boolean isStrictExemplars = false;
             MetricRegistry metricRegistry = RegistryFactory
-                    .getInstance(MetricsSettings.builder().strictExemplars(isStrictExemplars).build())
+                    .getInstance(MetricsSettings.builder()
+                                         .registrySettings(MetricRegistry.Type.APPLICATION,
+                                                           RegistrySettings.builder()
+                                                                   .strictExemplars(isStrictExemplars)
+                                                                   .build())
+                                         .build())
                     .getRegistry(MetricRegistry.Type.APPLICATION);
             metricRegistry.removeMatching((id, metric) -> true);
             Counter counter = metricRegistry.counter("c1");

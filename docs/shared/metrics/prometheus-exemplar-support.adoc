@@ -98,6 +98,8 @@ In this context, with _strict_ exemplar behavior Helidon adds exemplars only to 
 [NOTE]
 The lax exemplar behavior is non-standard. Some downstream consumers of the resulting OpenMetrics output might reject it because it contains non-standard content.
 
+You control strict vs. lax exemplar support separately for each registry type.
+
 ifdef::se-flavor[]
 === Using Configuration
 endif::[]
@@ -106,17 +108,21 @@ ifdef::se-flavor[]
 .Enabling non-standard exemplar behavior in `application.yaml`
 ----
 metrics:
-  strict-exemplars: false
+  registries:
+    - type: application
+      exemplars:
+        strict: false
 ----
 endif::[]
 ifdef::mp-flavor[]
 [source,properties]
 .Enabling non-standard exemplar behavior in `META-INF/microprofile-config.properties`
 ----
-metrics.strict-exemplars = false
+metrics.registries.0.type=application
+metrics.registries.0.exemplars.strict = false
 ----
 endif::[]
-The `strict-exemplars` setting defaults to `true`.
+The `exemplars.strict` setting defaults to `true` for all registry types.
 
 ifdef::se-flavor[]
 === Using `MetricsSettings` Programmatically

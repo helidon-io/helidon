@@ -33,14 +33,12 @@ class MetricsSettingsImpl implements MetricsSettings {
     private final KeyPerformanceIndicatorMetricsSettings kpiMetricsSettings;
     private final BaseMetricsSettings baseMetricsSettings;
     private final EnumMap<MetricRegistry.Type, RegistrySettings> registrySettings;
-    private final boolean isStrictExemplars;
 
     private MetricsSettingsImpl(MetricsSettingsImpl.Builder builder) {
         isEnabled = builder.isEnabled;
         kpiMetricsSettings = builder.kpiMetricsSettingsBuilder.build();
         baseMetricsSettings = builder.baseMetricsSettingsBuilder.build();
         registrySettings = builder.registrySettings;
-        isStrictExemplars = builder.isStrictExemplars;
     }
 
     @Override
@@ -72,11 +70,6 @@ class MetricsSettingsImpl implements MetricsSettings {
         return registrySettings.getOrDefault(registryType, DEFAULT_REGISTRY_SETTINGS);
     }
 
-    @Override
-    public boolean isStrictExemplars() {
-        return isStrictExemplars;
-    }
-
     // For testing and within-package use only
     Map<MetricRegistry.Type, RegistrySettings> registrySettings() {
         return registrySettings;
@@ -89,7 +82,6 @@ class MetricsSettingsImpl implements MetricsSettings {
                 KeyPerformanceIndicatorMetricsSettings.builder();
         private BaseMetricsSettings.Builder baseMetricsSettingsBuilder = BaseMetricsSettings.builder();
         private final EnumMap<MetricRegistry.Type, RegistrySettings> registrySettings = prepareRegistrySettings();
-        private boolean isStrictExemplars = true;
 
         private static EnumMap<MetricRegistry.Type, RegistrySettings> prepareRegistrySettings() {
             EnumMap<MetricRegistry.Type, RegistrySettings> result = new EnumMap<>(MetricRegistry.Type.class);
@@ -103,7 +95,6 @@ class MetricsSettingsImpl implements MetricsSettings {
         }
 
         protected Builder(MetricsSettings serviceSettings) {
-            isStrictExemplars = serviceSettings.isStrictExemplars();
             isEnabled = serviceSettings.isEnabled();
             kpiMetricsSettingsBuilder = KeyPerformanceIndicatorMetricsSettings.builder(
                     serviceSettings.keyPerformanceIndicatorSettings());
@@ -142,8 +133,6 @@ class MetricsSettingsImpl implements MetricsSettings {
                     .asBoolean()
                     .ifPresent(this::enabled);
 
-            metricsSettingsConfig.get(Builder.EXEMPLARS_STRICT_CONFIG_KEY).asBoolean().ifPresent(this::strictExemplars);
-
             metricsSettingsConfig.get(REGISTRIES_CONFIG_KEY)
                     .asList(TypedRegistrySettingsImpl::create)
                     .ifPresent(this::addAllTypedRegistrySettings);
@@ -160,12 +149,6 @@ class MetricsSettingsImpl implements MetricsSettings {
         @Override
         public MetricsSettings.Builder registrySettings(MetricRegistry.Type registryType, RegistrySettings registrySettings) {
             this.registrySettings.put(registryType, registrySettings);
-            return this;
-        }
-
-        @Override
-        public MetricsSettings.Builder strictExemplars(boolean value) {
-            isStrictExemplars = value;
             return this;
         }
 
