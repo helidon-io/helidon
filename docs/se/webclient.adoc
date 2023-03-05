@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -48,8 +48,8 @@ Creates every client and request as a builder pattern. This improves readability
 * *Redirect chain* +
 Follows the redirect chain and perform requests on the correct endpoint by itself.
 
-* *Tracing, metrics and security propagation* +
-Automatically propagates the configured tracing, metrics and security settings of the Helidon WebServer to the WebClient and uses them during request and response.
+* *Tracing and security propagation* +
+Automatically propagates the configured tracing and security settings of the Helidon WebServer to the WebClient and uses them during request and response.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
