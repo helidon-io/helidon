@@ -125,6 +125,6 @@ endif::[]
 The `exemplars.strict` setting defaults to `true` for all registry types.
 
 ifdef::se-flavor[]
-=== Using `MetricsSettings` Programmatically
-The `MetricsSettings.Builder` interface accepts `strictExemplars(boolean)` with which you can programmatically choose the .
+=== Using `RegistrySettings` Programmatically
+The `MetricsSettings.Builder` interface exposes `registrySettings(MetricRegistry.Type, RegistrySettings)` with which your code can assign registry settings for each registry type separately. The `RegistrySettings.Builder` interface has the `strictExemplars(boolean)` method with which you can programmatically choose whether to use strict or lax exemplar support. The default is `true`.
 endif::[]
