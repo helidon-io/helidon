@@ -150,8 +150,7 @@ class ClientRequestImplTest {
         Http1Client client = WebClient.builder()
                 .sendExpect100Continue(true)
                 .build();
-        Http1ClientRequest request = client.method(Http.Method.PUT)
-                .uri("http://localhost:" + dummyPort + "/test");
+        Http1ClientRequest request = client.put("http://localhost:" + dummyPort + "/test");
         request.connection(new FakeHttp1ClientConnection());
 
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
@@ -160,25 +159,25 @@ class ClientRequestImplTest {
         assertThat(response.headers(), hasHeader(REQ_EXPECT_100_HEADER_NAME));
     }
 
-    @Test
     // validates that HEAD is not allowed with entity payload
+    @Test
     void testHeadMethod() {
         String url = "http://localhost:" + dummyPort + "/test";
         ClientConnection http1ClientConnection = new FakeHttp1ClientConnection();
         assertThrows(IllegalArgumentException.class, () ->
-                client.method(Http.Method.HEAD).uri(url).connection(http1ClientConnection).submit("Foo Bar"));
+                client.head(url).connection(http1ClientConnection).submit("Foo Bar"));
         assertThrows(IllegalArgumentException.class, () ->
-                client.method(Http.Method.HEAD).uri(url).connection(http1ClientConnection).outputStream(it -> {
+                client.head(url).connection(http1ClientConnection).outputStream(it -> {
                     it.write("Foo Bar".getBytes(StandardCharsets.UTF_8));
                     it.close();
                 }));
-        client.method(Http.Method.HEAD).uri(url).connection(http1ClientConnection).request();
+        client.head(url).connection(http1ClientConnection).request();
         http1ClientConnection.close();
     }
 
     private static void validateSuccessfulResponse(Http1Client client, ClientConnection connection) {
         String requestEntity = "Sending Something";
-        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + dummyPort + "/test");
+        Http1ClientRequest request = client.put("http://localhost:" + dummyPort + "/test");
         if (connection != null) {
             request.connection(connection);
         }
@@ -190,7 +189,7 @@ class ClientRequestImplTest {
 
     private static void validateFailedResponse(Http1Client client, ClientConnection connection, String errorMessage) {
         String requestEntity = "Sending Something";
-        Http1ClientRequest request = client.method(Http.Method.PUT).path("http://localhost:" + dummyPort + "/test");
+        Http1ClientRequest request = client.put("http://localhost:" + dummyPort + "/test");
         if (connection != null) {
             request.connection(connection);
         }
