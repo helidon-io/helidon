@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.types.TypeName;
+
 import static io.helidon.common.types.TypeInfo.KIND_CLASS;
 import static io.helidon.common.types.TypeInfo.KIND_ENUM;
 import static io.helidon.common.types.TypeInfo.KIND_INTERFACE;
@@ -128,6 +130,16 @@ public class BeanUtils {
                 || word.equals(MODIFIER_ABSTRACT);
     }
 
+    /**
+     * Returns true if the given type is known to be a built-in java type (e.g., package name starts with "java").
+     *
+     * @param type the fully qualified type name
+     * @return true if the given type is definitely known to be built-in Java type
+     */
+    public static boolean isBuiltInJavaType(TypeName type) {
+        return type.primitive() || type.name().startsWith("java.");
+    }
+
     private static boolean validMethod(String name,
                                        AtomicReference<Optional<List<String>>> attributeNameRef,
                                        boolean throwIfInvalid) {
@@ -163,7 +175,9 @@ public class BeanUtils {
         return true;
     }
 
-    private static boolean validMethodCase(String name, char c, boolean throwIfInvalid) {
+    private static boolean validMethodCase(String name,
+                                           char c,
+                                           boolean throwIfInvalid) {
         if (!Character.isAlphabetic(c)) {
             return invalidMethod(name,
                                  throwIfInvalid,
@@ -179,7 +193,9 @@ public class BeanUtils {
         return true;
     }
 
-    private static boolean invalidMethod(String methodName, boolean throwIfInvalid, String message) {
+    private static boolean invalidMethod(String methodName,
+                                         boolean throwIfInvalid,
+                                         String message) {
         if (throwIfInvalid) {
             throw new RuntimeException(message + ": " + methodName);
         }

@@ -50,6 +50,8 @@ import io.helidon.config.metadata.ConfiguredOption;
 
 import static io.helidon.builder.processor.tools.BodyContext.TAG_META_PROPS;
 import static io.helidon.builder.processor.tools.BodyContext.toBeanAttributeName;
+import static io.helidon.builder.processor.tools.BuilderTypeTools.copyrightHeaderFor;
+import static io.helidon.builder.processor.tools.BuilderTypeTools.hasNonBlankValue;
 
 /**
  * Default implementation for {@link io.helidon.builder.processor.spi.BuilderCreatorProvider}.
@@ -405,7 +407,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      * @return the copyright level header
      */
     protected String generatedCopyrightHeaderFor(BodyContext ctx) {
-        return BuilderTypeTools.copyrightHeaderFor(getClass().getName());
+        return copyrightHeaderFor(getClass().getName());
     }
 
     /**
@@ -752,7 +754,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      */
     protected String normalizeConfiguredOptionKey(String key,
                                                   String attrName) {
-        return BuilderTypeTools.hasNonBlankValue(key) ? key : toConfigKey(attrName);
+        return hasNonBlankValue(key) ? key : toConfigKey(attrName);
     }
 
     /**
@@ -927,7 +929,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         for (AnnotationAndValue methodAnno : annotations) {
             if (methodAnno.typeName().name().equals(Annotated.class.getName())) {
                 String val = methodAnno.value().orElse("");
-                if (!BuilderTypeTools.hasNonBlankValue(val)) {
+                if (!hasNonBlankValue(val)) {
                     continue;
                 }
                 if (!val.startsWith("@")) {
@@ -1018,7 +1020,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                               boolean wantTypeElementDefaults,
                                               boolean avoidBlanks) {
         if (wantTypeElementDefaults && method.defaultValue().isPresent()) {
-            if (!avoidBlanks || BuilderTypeTools.hasNonBlankValue(method.defaultValue().orElse(null))) {
+            if (!avoidBlanks || hasNonBlankValue(method.defaultValue().orElse(null))) {
                 return method.defaultValue();
             }
         }
@@ -1030,7 +1032,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 if (!avoidBlanks) {
                     return val;
                 }
-                return BuilderTypeTools.hasNonBlankValue(val.orElse(null)) ? val : Optional.empty();
+                return hasNonBlankValue(val.orElse(null)) ? val : Optional.empty();
             }
         }
 
@@ -1672,7 +1674,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 // candidate for override...
                 String thisDefault = toConfiguredOptionValue(method, true, true).orElse(null);
                 String superDefault = superValue(ctx.typeInfo().superTypeInfo(), beanAttributeName, ctx.beanStyleRequired());
-                if (BuilderTypeTools.hasNonBlankValue(thisDefault) && !Objects.equals(thisDefault, superDefault)) {
+                if (hasNonBlankValue(thisDefault) && !Objects.equals(thisDefault, superDefault)) {
                     appendDefaultOverride(builder, beanAttributeName, method, thisDefault);
                 }
             }
@@ -1691,7 +1693,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 .findFirst();
         if (method.isPresent()) {
             Optional<String> defaultValue = toConfiguredOptionValue(method.get(), true, true);
-            if (defaultValue.isPresent() && BuilderTypeTools.hasNonBlankValue(defaultValue.get())) {
+            if (defaultValue.isPresent() && hasNonBlankValue(defaultValue.get())) {
                 return defaultValue.orElse(null);
             }
         } else {
@@ -1725,25 +1727,25 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     private String mapOf(String attrName,
                          TypedElementName method,
                          AtomicBoolean needsCustomMapOf) {
-        final Optional<? extends AnnotationAndValue> configuredOptions = DefaultAnnotationAndValue
+        Optional<? extends AnnotationAndValue> configuredOptions = DefaultAnnotationAndValue
                 .findFirst(ConfiguredOption.class.getName(), method.annotations());
 
         TypeName typeName = method.typeName();
-        String typeDecl = "\"type\", " + typeName.name() + ".class";
+        String typeDecl = "\"__type\", " + typeName.name() + ".class";
         if (!typeName.typeArguments().isEmpty()) {
             int pos = typeName.typeArguments().size() - 1;
-            typeDecl += ", \"componentType\", " + normalize(typeName.typeArguments().get(pos).name()) + ".class";
+            typeDecl += ", \"__componentType\", " + normalize(typeName.typeArguments().get(pos).name()) + ".class";
         }
 
         String key = (configuredOptions.isEmpty())
                 ? null : configuredOptions.get().value("key").orElse(null);
         key = normalizeConfiguredOptionKey(key, attrName);
-        if (BuilderTypeTools.hasNonBlankValue(key)) {
-            typeDecl += ", " + quotedTupleOf("key", key);
+        if (hasNonBlankValue(key)) {
+            typeDecl += ", " + quotedTupleOf(method.typeName(), "key", key);
         }
         String defaultValue = method.defaultValue().orElse(null);
 
-        if (configuredOptions.isEmpty() && !BuilderTypeTools.hasNonBlankValue(defaultValue)) {
+        if (configuredOptions.isEmpty() && !hasNonBlankValue(defaultValue)) {
             return "Map.of(" + typeDecl + ")";
         }
 
@@ -1752,18 +1754,22 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         result.append("__mapOf(").append(typeDecl);
 
         if (configuredOptions.isEmpty()) {
+            result.append(", ");
             if (defaultValue.startsWith("{")) {
                 defaultValue = "new String[] " + defaultValue;
+                result.append(quotedValueOf("value"));
+                result.append(", ");
+                result.append(defaultValue);
+            } else {
+                result.append(quotedTupleOf(typeName, "value", defaultValue));
             }
-            result.append(", ");
-            result.append(quotedValueOf("value")).append(", ").append(defaultValue);
         } else {
             configuredOptions.get().values().entrySet().stream()
-                    .filter(e -> BuilderTypeTools.hasNonBlankValue(e.getValue()))
+                    .filter(e -> hasNonBlankValue(e.getValue()))
                     .filter(e -> !e.getKey().equals("key"))
                     .forEach(e -> {
                         result.append(", ");
-                        result.append(quotedTupleOf(e.getKey(), e.getValue()));
+                        result.append(quotedTupleOf(typeName, e.getKey(), e.getValue()));
                     });
         }
         result.append(")");
@@ -1775,12 +1781,17 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         return name.equals("?") ? "Object" : name;
     }
 
-    private String quotedTupleOf(String key,
+    private String quotedTupleOf(TypeName valType,
+                                 String key,
                                  String val) {
-        assert (Objects.nonNull(key));
-        assert (BuilderTypeTools.hasNonBlankValue(val)) : key;
-        if (key.equals("value") && ConfiguredOption.UNCONFIGURED.equals(val)) {
-            val = ConfiguredOption.class.getName() + ".UNCONFIGURED";
+        assert (key != null);
+        assert (hasNonBlankValue(val)) : key;
+        boolean isEnumLikeType = isEnumLikeType(valType, key, val);
+        if (isEnumLikeType) {
+            val = valType + "." + val;
+        } else if (key.equals("value") && val.startsWith(ConfiguredOption.class.getName())) {
+            // NOP; process this as-is
+            int debugMe = 0;
         } else {
             val = quotedValueOf(val);
         }
@@ -1793,6 +1804,26 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         }
 
         return "\"" + val + "\"";
+    }
+
+    // note to self: this is not a bullet-proof heuristic since we have no real way to know if valType/val combination is an enum
+    private boolean isEnumLikeType(TypeName valType,
+                                   String key,
+                                   String val) {
+        if (!hasNonBlankValue(val) || valType.primitive()) {
+            return false;
+        }
+
+        int dotPos = key.indexOf(".");
+        if (dotPos < 0) {
+            return false;
+        }
+
+        if (valType.isOptional() && !valType.typeArguments().isEmpty()) {
+            return isEnumLikeType(valType.typeArguments().get(0), key, val);
+        }
+
+        return !BeanUtils.isBuiltInJavaType(valType);
     }
 
     private String maybeRequireNonNull(BodyContext ctx,

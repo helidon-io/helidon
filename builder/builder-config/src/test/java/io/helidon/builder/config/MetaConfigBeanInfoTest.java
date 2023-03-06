@@ -51,13 +51,15 @@ class MetaConfigBeanInfoTest {
                                              ConfigBeanInfo.TAG_REPEATABLE, "true",
                                              ConfigBeanInfo.TAG_DRIVES_ACTIVATION, "true",
                                              ConfigBeanInfo.TAG_AT_LEAST_ONE, "true",
-                                             ConfigBeanInfo.TAG_WANT_DEFAULT_CONFIG_BEAN, "true");
+                                             ConfigBeanInfo.TAG_WANT_DEFAULT_CONFIG_BEAN, "true",
+                                             ConfigBeanInfo.TAG_LEVEL_TYPE, "ROOT");
         MetaConfigBeanInfo metaCfg = ConfigBeanInfo.toMetaConfigBeanInfo(metaMap);
         assertThat(metaCfg.annotationType(), sameInstance(ConfigBean.class));
         assertThat(metaCfg.repeatable(), is(true));
         assertThat(metaCfg.drivesActivation(), is(true));
         assertThat(metaCfg.atLeastOne(), is(true));
         assertThat(metaCfg.wantDefaultConfigBean(), is(true));
+        assertThat(metaCfg.levelType(), is(ConfigBean.LevelType.ROOT));
         assertThat(metaCfg.value(), is("fake-config"));
     }
 

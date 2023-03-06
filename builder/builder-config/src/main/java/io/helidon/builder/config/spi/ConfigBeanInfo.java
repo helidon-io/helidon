@@ -55,6 +55,11 @@ public interface ConfigBeanInfo extends ConfigBean {
     String TAG_WANT_DEFAULT_CONFIG_BEAN = "wantDefaultConfigBean";
 
     /**
+     * The attribute name for {@link #levelType()}.
+     */
+    String TAG_LEVEL_TYPE = "levelType";
+
+    /**
      * Builds meta information appropriate for config integration from a
      * {@link io.helidon.builder.config.ConfigBean} instance. This will use the key if {@link #value()} is present, and
      * if not present will default to the simple class name of the bean type.
@@ -85,10 +90,11 @@ public interface ConfigBeanInfo extends ConfigBean {
     static MetaConfigBeanInfo toMetaConfigBeanInfo(Map<String, Object> meta) {
         return MetaConfigBeanInfo.builder()
                 .value((String) meta.get("value"))
-                .repeatable(Boolean.parseBoolean((String) meta.get("repeatable")))
-                .drivesActivation(Boolean.parseBoolean((String) meta.get("drivesActivation")))
-                .atLeastOne(Boolean.parseBoolean((String) meta.get("atLeastOne")))
-                .wantDefaultConfigBean(Boolean.parseBoolean((String) meta.get("atLeastOne")))
+                .repeatable(Boolean.parseBoolean((String) meta.get(TAG_REPEATABLE)))
+                .drivesActivation(Boolean.parseBoolean((String) meta.get(TAG_DRIVES_ACTIVATION)))
+                .atLeastOne(Boolean.parseBoolean((String) meta.get(TAG_AT_LEAST_ONE)))
+                .wantDefaultConfigBean(Boolean.parseBoolean((String) meta.get(TAG_WANT_DEFAULT_CONFIG_BEAN)))
+                .levelType(LevelType.valueOf((String) meta.get(TAG_LEVEL_TYPE)))
                 .build();
     }
 

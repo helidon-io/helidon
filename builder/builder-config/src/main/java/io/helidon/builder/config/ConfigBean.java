@@ -106,4 +106,27 @@ public @interface ConfigBean {
      */
     boolean wantDefaultConfigBean() default false;
 
+    /**
+     * The {@link LevelType} of this config bean. The default level type is {@link LevelType#ROOT}.
+     *
+     * @return the level type of this config bean
+     */
+    LevelType levelType() default LevelType.ROOT;
+
+
+    /**
+     * Represents the level in the config tree to search for config bean instances. Currently, only
+     * {@link ConfigBean.LevelType#ROOT} is supported.
+     */
+    enum LevelType {
+        /**
+         * THe config bean {@link #value()} must be at the root of the {@link io.helidon.common.config.ConfigValue} tree in order
+         * to trigger config bean instance creation.
+         */
+        ROOT,
+
+//        NESTED,
+//
+//        ANY
+    }
 }

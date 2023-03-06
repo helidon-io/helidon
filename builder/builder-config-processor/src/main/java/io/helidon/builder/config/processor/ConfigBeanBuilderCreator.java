@@ -49,6 +49,14 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.config.metadata.ConfiguredOption;
 
+import static io.helidon.builder.config.spi.ConfigBeanInfo.LevelType;
+import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_AT_LEAST_ONE;
+import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_DRIVES_ACTIVATION;
+import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_KEY;
+import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_LEVEL_TYPE;
+import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_REPEATABLE;
+import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_WANT_DEFAULT_CONFIG_BEAN;
+
 /**
  * A specialization of {@link io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider} that supports the additional
  * add-ons to the builder generated classes that binds to the config sub-system.
@@ -316,18 +324,20 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     private void appendConfigBeanInfoAttributes(StringBuilder builder,
                                                 TypeInfo typeInfo,
                                                 AnnotationAndValue configBeanAnno) {
-        String configKey = configBeanAnno.value(ConfigBeanInfo.TAG_KEY).orElse(null);
+        String configKey = configBeanAnno.value(TAG_KEY).orElse(null);
         configKey = Objects.requireNonNull(normalizeConfiguredOptionKey(configKey, typeInfo.typeName().className()));
         builder.append("\t\t\t\t\t\t.value(\"")
                 .append(configKey).append("\")\n");
-        builder.append("\t\t\t\t\t\t.repeatable(")
-                .append(configBeanAnno.value(ConfigBeanInfo.TAG_REPEATABLE).orElseThrow()).append(")\n");
-        builder.append("\t\t\t\t\t\t.drivesActivation(")
-                .append(configBeanAnno.value(ConfigBeanInfo.TAG_DRIVES_ACTIVATION).orElseThrow()).append(")\n");
-        builder.append("\t\t\t\t\t\t.atLeastOne(")
-                .append(configBeanAnno.value(ConfigBeanInfo.TAG_AT_LEAST_ONE).orElseThrow()).append(")\n");
-        builder.append("\t\t\t\t\t\t.wantDefaultConfigBean(")
-                .append(configBeanAnno.value(ConfigBeanInfo.TAG_WANT_DEFAULT_CONFIG_BEAN).orElseThrow()).append(")\n");
+        builder.append("\t\t\t\t\t\t.").append(TAG_REPEATABLE).append("(")
+                .append(configBeanAnno.value(TAG_REPEATABLE).orElseThrow()).append(")\n");
+        builder.append("\t\t\t\t\t\t.").append(TAG_DRIVES_ACTIVATION).append("(")
+                .append(configBeanAnno.value(TAG_DRIVES_ACTIVATION).orElseThrow()).append(")\n");
+        builder.append("\t\t\t\t\t\t.").append(TAG_AT_LEAST_ONE).append("(")
+                .append(configBeanAnno.value(TAG_AT_LEAST_ONE).orElseThrow()).append(")\n");
+        builder.append("\t\t\t\t\t\t.").append(TAG_WANT_DEFAULT_CONFIG_BEAN).append("(")
+                .append(configBeanAnno.value(TAG_WANT_DEFAULT_CONFIG_BEAN).orElseThrow()).append(")\n");
+        builder.append("\t\t\t\t\t\t.").append(TAG_LEVEL_TYPE).append("(").append(LevelType.class.getCanonicalName()).append(".")
+                .append(configBeanAnno.value(TAG_LEVEL_TYPE).orElseThrow()).append(")\n");
     }
 
     private void javaDocMetaAttributesGetter(StringBuilder builder) {

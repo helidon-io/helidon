@@ -34,11 +34,11 @@ class MyDerivedConfigBeanTest {
     @Test
     void testIt() {
         assertThat(sort(MyDerivedConfigBeanImpl.__metaAttributes()).toString(),
-                   equalTo("{__generated={version=1}, enabled={type=boolean}, name={deprecated=false, experimental=false, "
-                                   + "kind=VALUE, "
+                   equalTo("{__generated={version=1}, enabled={__type=boolean}, name={__type=class java.lang.String, "
+                                   + "deprecated=false, experimental=false, kind=VALUE, "
                                    + "mergeWithParent=false, provider=false, required=true, type=io.helidon.config.metadata"
                                    + ".ConfiguredOption, value=io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED}, "
-                                   + "port={type=int}}"));
+                                   + "port={__type=int}}"));
 
         MyDerivedConfigBean cfg = MyDerivedConfigBeanImpl.builder().name("test").build();
         assertThat(cfg.toString(),
