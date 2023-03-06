@@ -39,7 +39,6 @@ import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import services.EchoService;
 
@@ -50,7 +49,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Integration tests for gRPC server with metrics.
  */
-@Disabled
 public class MetricsIT {
 
     // ----- data members ---------------------------------------------------
