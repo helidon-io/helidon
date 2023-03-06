@@ -71,7 +71,7 @@
    <cve>CVE-2022-37734</cve>
 </suppress>
 
-<!-- False Postive. This CVE is against the kafka server. This is the kafka client
+<!-- False Postive. This CVE is against the kafka server. We use the kafka client
 -->
 <suppress>
    <notes><![CDATA[
@@ -79,6 +79,26 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
    <cve>CVE-2022-34917</cve>
+</suppress>
+
+<!-- This is a low priority CVE against a deprecated method in Guava. We don't use guava directly.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: graphql-java-17.4.jar (shaded: com.google.guava:guava:30.0-jre)
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
+   <vulnerabilityName>CVE-2020-8908</vulnerabilityName>
+</suppress>
+
+<!-- This CVE is against Kafka Connect server, we use kafka client
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: kafka-clients-2.8.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
+   <cve>CVE-2023-25194</cve>
 </suppress>
 
 </suppressions>
