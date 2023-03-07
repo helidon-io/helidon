@@ -222,7 +222,7 @@ class JmsMpTest extends AbstractMPTest {
         AbstractSampleBean bean = CDI.current().select(AbstractSampleBean.ChannelError.class).get();
         // This is correctly processed
         List<String> testData = Collections.singletonList("10");
-        produceAndCheck(bean, testData, TEST_TOPIC_ERROR, testData);
+        produce(TEST_TOPIC_ERROR, testData, textMessage -> {});
         // This will throw a run time error in TestBean#error
         testData = Collections.singletonList("error");
         produceAndCheck(bean, testData, TEST_TOPIC_ERROR, Collections.singletonList("10"));

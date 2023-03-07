@@ -150,15 +150,19 @@ abstract class AbstractSampleBean {
     @ApplicationScoped
     public static class ChannelError extends AbstractSampleBean {
         @Incoming("test-channel-error")
-        @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<Void> error(Message<String> msg) {
-            try {
-                LOGGER.fine(() -> String.format("Received possible error %s", msg.getPayload()));
-                consumed().add(Integer.toString(Integer.parseInt(msg.getPayload())));
-            } finally {
-                msg.ack().whenComplete((a, b) -> countDown("error()"));
-            }
-            return CompletableFuture.completedFuture(null);
+        @Outgoing("test-channel-error-2")
+        @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
+        public String error(String msg) {
+            LOGGER.fine(() -> String.format("Received possible error %s", msg));
+            consumed().add(Integer.toString(Integer.parseInt(msg)));
+            return msg;
+        }
+
+        @Incoming("test-channel-error-2")
+        public SubscriberBuilder<String, Void> consume() {
+            return ReactiveStreams.<String>builder()
+                    .onError(t -> countDown("error()"))
+                    .ignore();
         }
     }
 
