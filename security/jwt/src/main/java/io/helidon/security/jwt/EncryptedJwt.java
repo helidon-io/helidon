@@ -174,7 +174,7 @@ public final class EncryptedJwt {
      * </ul>
      *
      * @param header parsed JWT header
-     * @param token  String with the token
+     * @param token String with the token
      * @return Encrypted jwt parts
      * @throws RuntimeException in case of invalid content, see {@link Errors.ErrorMessagesException}
      */

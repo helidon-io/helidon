@@ -101,9 +101,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Provider that provides JWT authentication.
  */
 public class JwtAuthProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
-    private static final System.Logger LOGGER = System.getLogger(JwtAuthProvider.class.getName());
-
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     /**
      * Configure this for outbound requests to override user to use.
@@ -132,6 +129,8 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
      * Default value is {@link Http.Header#AUTHORIZATION}.
      */
     private static final String CONFIG_JWT_HEADER = "mp.jwt.token.header";
+    private static final System.Logger LOGGER = System.getLogger(JwtAuthProvider.class.getName());
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     private final boolean optional;
     private final boolean authenticate;
