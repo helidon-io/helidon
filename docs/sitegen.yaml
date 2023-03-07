@@ -88,6 +88,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "lightbulb"
+              - type: "PAGE"
+                title: "Server-Sent Events"
+                source: "sse/sse.adoc"
+                glyph:
+                  type: "icon"
+                  value: "reply-all"
               - type: "MENU"
                 title: "Guides"
                 dir: "guides"
