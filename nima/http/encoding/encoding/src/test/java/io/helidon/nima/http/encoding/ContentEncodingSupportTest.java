@@ -41,7 +41,6 @@ class ContentEncodingSupportTest {
         assertThat(encodings.get(0).toString(), is("gzip;q=1.0"));
         assertThat(encodings.get(1).toString(), is("compress;q=1.0"));
         assertThat(encodings.get(2).toString(), is("br;q=1.0"));
-
     }
 
     @Test
