@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,14 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.MGF1ParameterSpec;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +40,8 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 
 import io.helidon.common.Errors;
@@ -54,7 +60,6 @@ import io.helidon.security.jwt.jwk.JwkRSA;
  */
 public final class EncryptedJwt {
 
-    private static final Map<SupportedAlgorithm, String> RSA_ALGORITHMS;
     private static final Map<SupportedEncryption, AesAlgorithm> CONTENT_ENCRYPTION;
 
     private static final Pattern JWE_PATTERN = Pattern
@@ -63,10 +68,6 @@ public final class EncryptedJwt {
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
 
     static {
-        RSA_ALGORITHMS = Map.of(SupportedAlgorithm.RSA_OAEP, "RSA/ECB/OAEPWithSHA-1AndMGF1Padding",
-                                SupportedAlgorithm.RSA_OAEP_256, "RSA/ECB/OAEPWithSHA-256AndMGF1Padding",
-                                SupportedAlgorithm.RSA1_5, "RSA/ECB/PKCS1Padding");
-
         CONTENT_ENCRYPTION = Map.of(SupportedEncryption.A128GCM, new AesGcmAlgorithm(128),
                                     SupportedEncryption.A192GCM, new AesGcmAlgorithm(192),
                                     SupportedEncryption.A256GCM, new AesGcmAlgorithm(256),
@@ -193,6 +194,31 @@ public final class EncryptedJwt {
         }
     }
 
+    /**
+     * Add validator of kek algorithm to the collection of validators.
+     *
+     * @param validators collection of validators
+     * @param expectedKekAlg   audience key encryption key algorithm
+     * @param mandatory  whether the alg field is mandatory in the token
+     */
+    public static void addKekValidator(Collection<Validator<EncryptedJwt>> validators, String expectedKekAlg, boolean mandatory) {
+        validators.add((encryptedJwt, collector) -> {
+            Optional<String> kekAlgorithm = encryptedJwt.header.algorithm();
+            if (kekAlgorithm.isPresent()) {
+                //if null, any kek alg is allowed
+                if (expectedKekAlg == null || kekAlgorithm.get().equals(expectedKekAlg)) {
+                    return;
+                }
+                collector.fatal(encryptedJwt, "Key encryption key algorithm must be equal to " + expectedKekAlg
+                        + ", yet it is: " + kekAlgorithm.get());
+            } else {
+                if (mandatory) {
+                    collector.fatal(encryptedJwt, "Key encryption key algorithm is expected to be present for encrypted JWT");
+                }
+            }
+        });
+    }
+
     private static EncryptedJwt parse(String token,
                                       Errors.Collector collector,
                                       JwtHeaders header,
@@ -211,21 +237,29 @@ public final class EncryptedJwt {
         return new EncryptedJwt(token, header, iv, encryptedKey, authTag, encryptedPayload);
     }
 
-    private static byte[] encryptRsa(String algorithm, PublicKey publicKey, byte[] unencryptedKey) {
+    private static byte[] wrapRsa(SupportedAlgorithm supportedAlgorithm, PublicKey publicKey, byte[] unencryptedKey) {
         try {
-            Cipher rsaCipher = Cipher.getInstance(algorithm);
-            rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey);
-            return rsaCipher.doFinal(unencryptedKey);
+            Cipher rsaCipher = Cipher.getInstance(supportedAlgorithm.cipherName());
+            if (supportedAlgorithm.parameterSpec() == null) {
+                rsaCipher.init(Cipher.WRAP_MODE, publicKey);
+            } else {
+                rsaCipher.init(Cipher.WRAP_MODE, publicKey, supportedAlgorithm.parameterSpec());
+            }
+            return rsaCipher.wrap(new SecretKeySpec(unencryptedKey, "AES"));
         } catch (Exception e) {
             throw new JwtException("Exception during rsa key decryption occurred.", e);
         }
     }
 
-    private static byte[] decryptRsa(String algorithm, PrivateKey privateKey, byte[] encryptedKey) {
+    private static byte[] unwrapRsa(SupportedAlgorithm supportedAlgorithm, PrivateKey privateKey, byte[] encryptedKey) {
         try {
-            Cipher rsaCipher = Cipher.getInstance(algorithm);
-            rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
-            return rsaCipher.doFinal(encryptedKey);
+            Cipher rsaCipher = Cipher.getInstance(supportedAlgorithm.cipherName());
+            if (supportedAlgorithm.parameterSpec() == null) {
+                rsaCipher.init(Cipher.UNWRAP_MODE, privateKey);
+            } else {
+                rsaCipher.init(Cipher.UNWRAP_MODE, privateKey, supportedAlgorithm.parameterSpec());
+            }
+            return rsaCipher.unwrap(encryptedKey, "AES", Cipher.SECRET_KEY).getEncoded();
         } catch (Exception e) {
             throw new JwtException("Exception during rsa key decryption occurred.", e);
         }
@@ -255,7 +289,7 @@ public final class EncryptedJwt {
      *
      * Selected {@link Jwk} needs to have private key set.
      *
-     * @param jwkKeys   jwk keys
+     * @param jwkKeys jwk keys
      * @return empty optional if any error has occurred or SignedJwt instance if the decryption and validation was successful
      */
     public SignedJwt decrypt(JwkKeys jwkKeys) {
@@ -268,7 +302,7 @@ public final class EncryptedJwt {
      *
      * Provided {@link Jwk} needs to have private key set.
      *
-     * @param jwk       jwk keys
+     * @param jwk jwk keys
      * @return empty optional if any error has occurred or SignedJwt instance if the decryption and validation was successful
      */
     public SignedJwt decrypt(Jwk jwk) {
@@ -313,11 +347,10 @@ public final class EncryptedJwt {
         if (enc == null) {
             errors.fatal("Content encryption algorithm not set.");
         }
-
+        SupportedAlgorithm supportedAlgorithm = null;
         if (alg != null) {
             try {
-                SupportedAlgorithm supportedAlgorithm = SupportedAlgorithm.getValue(alg);
-                algorithm = RSA_ALGORITHMS.get(supportedAlgorithm);
+                supportedAlgorithm = SupportedAlgorithm.getValue(alg);
             } catch (IllegalArgumentException e) {
                 errors.fatal("Value of the claim alg not supported. alg: " + alg);
             }
@@ -345,7 +378,7 @@ public final class EncryptedJwt {
 
         errors.collect().checkValid();
 
-        byte[] decryptedKey = decryptRsa(algorithm, privateKey, encryptedKey);
+        byte[] decryptedKey = unwrapRsa(supportedAlgorithm, privateKey, encryptedKey);
         //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
         EncryptionParts encryptionParts = new EncryptionParts(decryptedKey,
                                                               iv,
@@ -415,6 +448,18 @@ public final class EncryptedJwt {
      */
     public byte[] encryptedPayload() {
         return Arrays.copyOf(encryptedPayload, encryptedPayload.length);
+    }
+
+    /**
+     * Validate this Encrypted JWT against provided validators.
+     *
+     * @param validators Validators to validate with.
+     * @return errors instance to check if valid and access error messages
+     */
+    public Errors validate(List<Validator<EncryptedJwt>> validators) {
+        Errors.Collector collector = Errors.collector();
+        validators.forEach(it -> it.validate(this, collector));
+        return collector.collect();
     }
 
     /**
@@ -511,14 +556,13 @@ public final class EncryptedJwt {
             JwtHeaders headers = headersBuilder.build();
             StringBuilder tokenBuilder = new StringBuilder();
             String headersBase64 = encode(headers.headerJson().toString());
-            String rsaCipherType = RSA_ALGORITHMS.get(algorithm);
             AesAlgorithm contentEncryption = CONTENT_ENCRYPTION.get(encryption);
             //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
             EncryptionParts encryptionParts = contentEncryption.encrypt(jwt.tokenContent().getBytes(StandardCharsets.UTF_8),
                                                                         headersBase64.getBytes(StandardCharsets.US_ASCII));
             byte[] aesKey = encryptionParts.key();
 
-            byte[] encryptedAesKey = encryptRsa(rsaCipherType, publicKey, aesKey);
+            byte[] encryptedAesKey = wrapRsa(algorithm, publicKey, aesKey);
             String token = tokenBuilder.append(headersBase64).append(".")
                     .append(encode(encryptedAesKey)).append(".")
                     .append(encode(encryptionParts.iv())).append(".")
@@ -544,20 +588,28 @@ public final class EncryptedJwt {
         /**
          * RSA-OAEP declares that RSA/ECB/OAEPWithSHA-1AndMGF1Padding cipher will be used for content key encryption.
          */
-        RSA_OAEP("RSA-OAEP"),
+        RSA_OAEP("RSA-OAEP",
+                 "RSA/ECB/OAEPWithSHA-1AndMGF1Padding",
+                 new OAEPParameterSpec("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, PSource.PSpecified.DEFAULT)),
         /**
          * RSA-OAEP-256 declares that RSA/ECB/OAEPWithSHA-256AndMGF1Padding cipher will be used for content key encryption.
          */
-        RSA_OAEP_256("RSA-OAEP-256"),
+        RSA_OAEP_256("RSA-OAEP-256",
+                     "RSA/ECB/OAEPWithSHA-256AndMGF1Padding",
+                     new OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT)),
         /**
          * RSA1_5 declares that RSA/ECB/PKCS1Padding cipher will be used for content key encryption.
          */
-        RSA1_5("RSA1_5");
+        RSA1_5("RSA1_5", "RSA/ECB/PKCS1Padding", null);
 
         private final String algorithmName;
+        private final String cipherName;
+        private final AlgorithmParameterSpec parameterSpec;
 
-        SupportedAlgorithm(String algorithmName) {
+        SupportedAlgorithm(String algorithmName, String cipherName, AlgorithmParameterSpec parameterSpec) {
             this.algorithmName = algorithmName;
+            this.cipherName = cipherName;
+            this.parameterSpec = parameterSpec;
         }
 
         @Override
@@ -565,9 +617,21 @@ public final class EncryptedJwt {
             return algorithmName;
         }
 
-        static SupportedAlgorithm getValue(String value) {
+        String cipherName() {
+            return cipherName;
+        }
+
+        String algorithmName() {
+            return algorithmName;
+        }
+
+        AlgorithmParameterSpec parameterSpec() {
+            return parameterSpec;
+        }
+
+        static SupportedAlgorithm getValue(String algorithmName) {
             for (SupportedAlgorithm v : values()) {
-                if (v.algorithmName.equalsIgnoreCase(value)) {
+                if (v.algorithmName.equalsIgnoreCase(algorithmName)) {
                     return v;
                 }
             }

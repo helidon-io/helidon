@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.security.jwt;
 
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -421,6 +422,36 @@ public class Jwt {
                 if (mandatory) {
                     collector.fatal(jwt, "Audience is expected to be: " + audience + ", yet no audience in JWT");
                 }
+            }
+
+        });
+    }
+
+    /**
+     * Add validator of max token age to the collection of validators.
+     *
+     * @param validators collection of validators
+     * @param expectedMaxTokenAge max token age since issue time
+     * @param clockSkew clock skew
+     * @param iatRequired whether to fail if iat clam is present
+     */
+    public static void addMaxTokenAgeValidator(Collection<Validator<Jwt>> validators,
+                                               Duration expectedMaxTokenAge,
+                                               Duration clockSkew,
+                                               boolean iatRequired) {
+        validators.add((jwt, collector) -> {
+            Optional<Instant> maybeIssueTime = jwt.issueTime();
+            if (maybeIssueTime.isPresent()) {
+                Instant now = Instant.now();
+                Instant issueTime = maybeIssueTime.get().minus(clockSkew);
+                Instant maxValidTime = issueTime.plus(expectedMaxTokenAge).plus(clockSkew);
+                if (issueTime.isBefore(now) && maxValidTime.isAfter(now)) {
+                    return;
+                }
+                collector.fatal(jwt, "Current time need to be between " + issueTime
+                        + " and " + maxValidTime + ", but was " + now);
+            } else if (iatRequired) {
+                collector.fatal(jwt, "Claim iat is required to be present in JWT when validating token max allowed age.");
             }
 
         });
