@@ -270,8 +270,8 @@ public abstract class OpenAPISupport implements Service {
             if (helper == null) {
                 Config config = Config.create();
                 boolean allowSnakeYamlWarnings = (config.get("openapi.parsing.warnings.enabled").asBoolean().orElse(false));
-                if (!allowSnakeYamlWarnings) {
-                    SNAKE_YAML_INTROSPECTOR_LOGGER.setLevel(Level.OFF);
+                if (SNAKE_YAML_INTROSPECTOR_LOGGER.isLoggable(Level.WARNING) && !allowSnakeYamlWarnings) {
+                    SNAKE_YAML_INTROSPECTOR_LOGGER.setLevel(Level.SEVERE);
                 }
                 helper = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create);
                 adjustTypeDescriptions(helper.types());
