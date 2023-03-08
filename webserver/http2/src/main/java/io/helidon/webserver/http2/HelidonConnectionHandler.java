@@ -21,6 +21,7 @@ import java.util.Map;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpScheme;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
@@ -68,6 +69,10 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
                     .method(request.method().asciiName())
                     .path(request.uri())
                     .scheme(HttpScheme.HTTP.name());
+            CharSequence host = request.headers().get(HttpHeaderNames.HOST);
+            if (host != null) {
+                headers.authority(host);
+            }
             for (Map.Entry<String, String> e : request.headers()) {
                 headers.add(e.getKey().toLowerCase(), e.getValue());
             }
