@@ -85,6 +85,19 @@
             <version>2.3.2</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Jackson delegates to SnakeYaml so use a very recent version that also uses SnakeYAML 2.0 -->
+        <dependency>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                </exclusion>
+            </exclusions>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.32</version>
+        </dependency>
     </dependencies>
 
     <build>
