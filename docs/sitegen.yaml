@@ -76,12 +76,6 @@ backend:
           glyph:
             type: "icon"
             value: "terminal"
-        - type: "PAGE"
-          title: "Helidon Application Bootstraping"
-          source: "about/archetype.adoc"
-          glyph:
-            type: "icon"
-            value: "widgets"
         - type: "GROUPS"
           items:
           - type: "GROUP"
@@ -94,6 +88,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "lightbulb"
+              - type: "PAGE"
+                title: "Server-Sent Events"
+                source: "sse/sse.adoc"
+                glyph:
+                  type: "icon"
+                  value: "reply-all"
               - type: "MENU"
                 title: "Guides"
                 dir: "guides"
@@ -102,6 +102,14 @@ backend:
                   value: "explore"
                 sources:
                   - "overview.adoc"
+              - type: "MENU"
+                title: "Pico"
+                dir: "pico"
+                glyph:
+                  type: "icon"
+                  value: "explore" 
+                sources:
+                  - "pico_intro.adoc"
           - type: "GROUP"
             title: "Helidon SE"
             dir: "se"
