@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ class MetricImplTest {
                 + "# HELP base_theName theDescription\n"
                 + "base_theName 45\n";
         final StringBuilder sb = new StringBuilder();
-        impl.prometheusData(sb, implID, true);
+        impl.prometheusData(sb, implID, true, false);
         assertThat(sb.toString(), is(expected));
     }
 
@@ -145,7 +145,7 @@ class MetricImplTest {
                 + "# HELP base_counterWithoutDescription \n"
                 + "base_counterWithoutDescription 45\n";
         final StringBuilder sb = new StringBuilder();
-        implWithoutDescription.prometheusData(sb, implWithoutDescriptionID, true);
+        implWithoutDescription.prometheusData(sb, implWithoutDescriptionID, true, false);
         assertThat(sb.toString(), is(expected));
     }
 
@@ -153,7 +153,7 @@ class MetricImplTest {
     void testPrometheusWithoutTypeAndHelp() {
         String expected = "base_counterWithoutDescription 45\n";
         final StringBuilder sb = new StringBuilder();
-        implWithoutDescription.prometheusData(sb, implWithoutDescriptionID, false);
+        implWithoutDescription.prometheusData(sb, implWithoutDescriptionID, false, false);
         assertThat(sb.toString(), is(expected));
     }
 

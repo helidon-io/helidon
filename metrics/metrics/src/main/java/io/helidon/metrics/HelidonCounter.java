@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ final class HelidonCounter extends MetricImpl implements Counter {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType, boolean isStrictExemplars) {
         prometheusData(sb, metricID, withHelpType, prometheusNameWithUnits(metricID));
     }
 
@@ -83,6 +83,7 @@ final class HelidonCounter extends MetricImpl implements Counter {
         if (delegate instanceof CounterImpl) {
             Sample.Labeled sample = ((CounterImpl) delegate).sample;
             if (sample != null) {
+                // Always include exemplar output if enabled, even when strict exemplars selected.
                 sb.append(prometheusExemplar(sample));
             }
         }

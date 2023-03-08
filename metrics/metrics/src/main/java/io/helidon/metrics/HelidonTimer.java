@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType, boolean isStrictExemplars) {
 
         // In Prometheus, times are always expressed in seconds. So force the TimeUnits value accordingly, ignoring
         // whatever units were specified in the timer's metadata.
@@ -128,7 +128,8 @@ final class HelidonTimer extends MetricImpl implements Timer {
                                           TimeUnits.PROMETHEUS_TIMER_CONVERSION_TIME_UNITS,
                                           withHelpType,
                                           getCount(),
-                                          snap);
+                                          snap,
+                                          isStrictExemplars);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -277,7 +277,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType, boolean isStrictExemplars) {
         String nameWithUnits = prometheusNameWithUnits(metricID);
         if (withHelpType) {
             prometheusType(sb, nameWithUnits, metadata().getType());
@@ -297,7 +297,8 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             PrometheusName name,
             Units units,
             String quantile,
-            Derived derived) {
+            Derived derived,
+            boolean isStrictExemplars) {
         // application:file_sizes_bytes{quantile="0.5"} 4201
         String quantileTag = "quantile=\"" + quantile + "\"";
         String tags = name.prometheusTags();
@@ -311,7 +312,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                 .append(tags)
                 .append(" ")
                 .append(units.convert(derived.value()));
-        sb.append(prometheusExemplar(derived.sample(), units));
+        sb.append(isStrictExemplars ? "" : prometheusExemplar(derived.sample(), units));
         sb.append("\n");
     }
 
@@ -320,9 +321,10 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             String statName,
             boolean withHelpType,
             String typeName,
-            Derived derived) {
+            Derived derived,
+            boolean isStrictExemplars) {
         appendPrometheusElement(sb, name, () -> name.nameStatUnits(statName), withHelpType, typeName, derived.value(),
-                derived.sample());
+                derived.sample(), isStrictExemplars);
     }
 
     void appendPrometheusElement(StringBuilder sb,
@@ -330,9 +332,10 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             String statName,
             boolean withHelpType,
             String typeName,
-            Sample.Labeled sample) {
+            Sample.Labeled sample,
+            boolean isStrictExemplars) {
         appendPrometheusElement(sb, name, () -> name.nameStatUnits(statName), withHelpType, typeName, sample.value(),
-                sample);
+                sample, isStrictExemplars);
     }
 
     private void appendPrometheusElement(StringBuilder sb,
@@ -341,7 +344,8 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
             boolean withHelpType,
             String typeName,
             double value,
-            Sample.Labeled sample) {
+            Sample.Labeled sample,
+            boolean isStrictExemplars) {
         if (withHelpType) {
             prometheusType(sb, nameToUse.get(), typeName);
         }
@@ -349,20 +353,25 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         sb.append(nameToUse.get() + name.prometheusTags())
                 .append(" ")
                 .append(convertedValue)
-                .append(prometheusExemplar(sample, name.units()))
+                .append(isStrictExemplars ? "" : prometheusExemplar(sample, name.units()))
                 .append("\n");
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb, MetricID metricID,
-            boolean withHelpType, long count, DisplayableLabeledSnapshot snap) {
+            boolean withHelpType, long count, DisplayableLabeledSnapshot snap,
+                                           boolean isStrictExemplars) {
         PrometheusName name = PrometheusName.create(this, metricID);
-        appendPrometheusHistogramElements(sb, name, withHelpType, count, snap);
+        appendPrometheusHistogramElements(sb, name, withHelpType, count, snap, isStrictExemplars);
     }
 
-    void appendPrometheusHistogramElements(StringBuilder sb, PrometheusName name,
-            boolean withHelpType, long count, DisplayableLabeledSnapshot snap) {
+    void appendPrometheusHistogramElements(StringBuilder sb,
+                                           PrometheusName name,
+                                           boolean withHelpType,
+                                           long count,
+                                           DisplayableLabeledSnapshot snap,
+                                           boolean isStrictExemplars) {
 
-        appendPrometheusHistogramElements(sb, name, getUnits(), withHelpType, count, snap);
+        appendPrometheusHistogramElements(sb, name, getUnits(), withHelpType, count, snap, isStrictExemplars);
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb,
@@ -370,23 +379,24 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                                            Units units,
                                            boolean withHelpType,
                                            long count,
-                                           DisplayableLabeledSnapshot snap) {
+                                           DisplayableLabeledSnapshot snap,
+                                           boolean isStrictExemplars) {
 
         // # TYPE application:file_sizes_mean_bytes gauge
         // application:file_sizes_mean_bytes 4738.231
-        appendPrometheusElement(sb, name, "mean",  withHelpType, "gauge", snap.mean());
+        appendPrometheusElement(sb, name, "mean",  withHelpType, "gauge", snap.mean(), isStrictExemplars);
 
         // # TYPE application:file_sizes_max_bytes gauge
         // application:file_sizes_max_bytes 31716
-        appendPrometheusElement(sb, name, "max", withHelpType, "gauge", snap.max());
+        appendPrometheusElement(sb, name, "max", withHelpType, "gauge", snap.max(), isStrictExemplars);
 
         // # TYPE application:file_sizes_min_bytes gauge
         // application:file_sizes_min_bytes 180
-        appendPrometheusElement(sb, name, "min", withHelpType, "gauge", snap.min());
+        appendPrometheusElement(sb, name, "min", withHelpType, "gauge", snap.min(), isStrictExemplars);
 
         // # TYPE application:file_sizes_stddev_bytes gauge
         // application:file_sizes_stddev_bytes 1054.7343037063602
-        appendPrometheusElement(sb, name, "stddev", withHelpType, "gauge", snap.stdDev());
+        appendPrometheusElement(sb, name, "stddev", withHelpType, "gauge", snap.stdDev(), isStrictExemplars);
 
         // # TYPE application:file_sizes_bytes summary
         // # HELP application:file_sizes_bytes Users file size
@@ -403,12 +413,12 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
 
         // application:file_sizes_bytes{quantile="0.5"} 4201
         // for each supported quantile
-        prometheusQuantile(sb, name, units, "0.5", snap.median());
-        prometheusQuantile(sb, name, units, "0.75", snap.sample75thPercentile());
-        prometheusQuantile(sb, name, units, "0.95", snap.sample95thPercentile());
-        prometheusQuantile(sb, name, units, "0.98", snap.sample98thPercentile());
-        prometheusQuantile(sb, name, units, "0.99", snap.sample99thPercentile());
-        prometheusQuantile(sb, name, units, "0.999", snap.sample999thPercentile());
+        prometheusQuantile(sb, name, units, "0.5", snap.median(), isStrictExemplars);
+        prometheusQuantile(sb, name, units, "0.75", snap.sample75thPercentile(), isStrictExemplars);
+        prometheusQuantile(sb, name, units, "0.95", snap.sample95thPercentile(), isStrictExemplars);
+        prometheusQuantile(sb, name, units, "0.98", snap.sample98thPercentile(), isStrictExemplars);
+        prometheusQuantile(sb, name, units, "0.99", snap.sample99thPercentile(), isStrictExemplars);
+        prometheusQuantile(sb, name, units, "0.999", snap.sample999thPercentile(), isStrictExemplars);
 
     }
 

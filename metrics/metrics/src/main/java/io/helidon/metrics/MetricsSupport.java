@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -249,10 +249,18 @@ public final class MetricsSupport extends HelidonRestServiceSupport
                 .forEach(entry -> {
                     String name = entry.getKey().getName();
                     if (!serialized.contains(name)) {
-                        toPrometheusData(builder, entry.getKey(), entry.getValue(), true);
+                        toPrometheusData(builder,
+                                         entry.getKey(),
+                                         entry.getValue(),
+                                         true,
+                                         registry.registrySettings().isStrictExemplars());
                         serialized.add(name);
                     } else {
-                        toPrometheusData(builder, entry.getKey(), entry.getValue(), false);
+                        toPrometheusData(builder,
+                                         entry.getKey(),
+                                         entry.getValue(),
+                                         false,
+                                         registry.registrySettings().isStrictExemplars());
                     }
                 });
         return builder.toString();
@@ -267,8 +275,12 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      * @return metric info in Prometheus format
      */
     public static String toPrometheusData(MetricID metricID, Metric metric, boolean withHelpType) {
+        return toPrometheusData(metricID, metric, withHelpType, true);
+    }
+
+    static String toPrometheusData(MetricID metricID, Metric metric, boolean withHelpType, boolean isStrictExemplars) {
         final StringBuilder sb = new StringBuilder();
-        checkMetricTypeThenRun(sb, metricID, metric, withHelpType);
+        checkMetricTypeThenRun(sb, metricID, metric, withHelpType, isStrictExemplars);
         return sb.toString();
     }
 
@@ -294,13 +306,18 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      * @param metricID the {@code MetricID} for the metric to convert
      * @param metric the {@code Metric} to convert to Prometheus format
      * @param withHelpType flag controlling serialization of HELP and TYPE
+     * @param isStrictExemplar whether strict exemplar implementation is selected
      */
-    static void toPrometheusData(StringBuilder sb, MetricID metricID, Metric metric, boolean withHelpType) {
-        checkMetricTypeThenRun(sb, metricID, metric, withHelpType);
+    static void toPrometheusData(StringBuilder sb, MetricID metricID, Metric metric, boolean withHelpType,
+                                 boolean isStrictExemplar) {
+        checkMetricTypeThenRun(sb, metricID, metric, withHelpType, isStrictExemplar);
     }
 
-    private static void checkMetricTypeThenRun(StringBuilder sb, MetricID metricID, Metric metric,
-                                               boolean withHelpType) {
+    private static void checkMetricTypeThenRun(StringBuilder sb,
+                                               MetricID metricID,
+                                               Metric metric,
+                                               boolean withHelpType,
+                                               boolean isStrictExemplar) {
         Objects.requireNonNull(metric);
 
         if (!(metric instanceof HelidonMetric)) {
@@ -310,7 +327,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
                     HelidonMetric.class.getName()));
         }
 
-        ((HelidonMetric) metric).prometheusData(sb, metricID, withHelpType);
+        ((HelidonMetric) metric).prometheusData(sb, metricID, withHelpType, isStrictExemplar);
     }
 
     // unit testable
@@ -530,7 +547,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         for (Map.Entry<MetricID, HelidonMetric> metricEntry : registry.getMetricsByName(metricName)) {
             HelidonMetric metric = metricEntry.getValue();
             if (registry.isMetricEnabled(metricName)) {
-                metric.prometheusData(sb, metricEntry.getKey(), isFirst);
+                metric.prometheusData(sb, metricEntry.getKey(), isFirst, registry.registrySettings().isStrictExemplars());
             }
             isFirst = false;
         }

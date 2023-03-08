@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,6 +135,11 @@ public interface MetricsSettings {
          * Default web context for the metrics endpoint.
          */
         String DEFAULT_CONTEXT = "/metrics";
+
+        /**
+         * Config key within {@code metrics} for strict (vs. lax) exemplar behavior.
+         */
+        String EXEMPLARS_STRICT_CONFIG_KEY = "exemplars.strict";
 
         /**
          * Constructs a {@code MetricsSettings} object from the builder.

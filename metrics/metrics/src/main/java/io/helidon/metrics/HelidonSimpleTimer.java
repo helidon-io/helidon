@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
+    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType, boolean isStrictExemplar) {
         String promName;
         String name = metricID.getName();
         String tags = prometheusTags(metricID.getTags());
@@ -99,6 +99,7 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
 
         SimpleTimerImpl simpleTimerImpl = (delegate instanceof SimpleTimerImpl) ? ((SimpleTimerImpl) delegate) : null;
         Sample.Labeled sample = simpleTimerImpl != null ? simpleTimerImpl.sample : null;
+        // Always emit an exemplar for a counter (if enabled), even with strict exemplars.
         if (sample != null) {
             sb.append(prometheusExemplar(1, sample)); // exemplar always contributes 1 to the count
         }
@@ -113,7 +114,7 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
                 .append(tags)
                 .append(" ")
                 .append(elapsedTimeInSeconds())
-                .append(exemplarForElapsedTime(sample))
+                .append(isStrictExemplar ? "" : exemplarForElapsedTime(sample))
                 .append("\n");
     }
 
