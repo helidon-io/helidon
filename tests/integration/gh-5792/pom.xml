@@ -52,12 +52,6 @@
         </dependency>
         <!-- Verify that the app builds and that config and OpenAPI document parsing work with the older SnakeYAML release. -->
         <dependency>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>${selectedSnakeYamlVersion}</version>
