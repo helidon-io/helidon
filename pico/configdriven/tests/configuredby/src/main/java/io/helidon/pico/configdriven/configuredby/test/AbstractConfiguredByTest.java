@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.MapConfigSource;
 import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.Phase;
@@ -36,8 +37,8 @@ import io.helidon.pico.configdriven.ConfiguredBy;
 import io.helidon.pico.configdriven.services.ConfigBeanRegistry;
 import io.helidon.pico.testing.PicoTestingSupport;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
@@ -53,8 +54,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests for {@link io.helidon.pico.configdriven.ConfiguredBy}.
  */
 public abstract class AbstractConfiguredByTest {
-    protected static final String TAG_FAKE_SOCKET_CONFIG = "fake-socket-config";
-    protected static final String TAG_FAKE_SERVER_CONFIG_CONFIG = "fake-server-config";
+    protected static final String FAKE_SOCKET_CONFIG = "fake-socket";
+    protected static final String FAKE_SERVER_CONFIG_CONFIG = "fake-server";
 
     protected PicoServices picoServices;
     protected Services services;
@@ -65,25 +66,40 @@ public abstract class AbstractConfiguredByTest {
         assertThat(cbr.ready(), is(false));
     }
 
-    @BeforeEach
-    public void reset() {
+    @AfterAll
+    static void tearDown() {
         PicoTestingSupport.resetAll();
-        Config config = io.helidon.config.Config.create(
-                ConfigSources.create(
-                        Map.of(
-                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
-                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_ACTIVATION_LOGS, "true",
-                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_SERVICE_LOOKUP_CACHING, "true",
-                                TAG_FAKE_SOCKET_CONFIG + ".port", "8080",
-                                TAG_FAKE_SERVER_CONFIG_CONFIG + ".worker-count", "1"
-                        ), "config-1"));
+    }
+
+    protected void resetWith(Config config) {
+        PicoTestingSupport.resetAll();
         this.picoServices = testableServices(config);
         this.services = picoServices.services();
         assertThat(picoServices.metrics().orElseThrow().lookupCount().orElseThrow(), greaterThan(1));
     }
 
+    public MapConfigSource.Builder createBasicTestingConfigSource() {
+        return ConfigSources.create(
+                Map.of(
+                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
+                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_ACTIVATION_LOGS, "true",
+                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_SERVICE_LOOKUP_CACHING, "true"
+                ), "config-basic");
+    }
+
+    public MapConfigSource.Builder createRootDefault8080TestingConfigSource() {
+        return ConfigSources.create(
+                Map.of(
+                        FAKE_SERVER_CONFIG_CONFIG + ".name", "root",
+                        FAKE_SERVER_CONFIG_CONFIG + ".port", "8080",
+                        FAKE_SERVER_CONFIG_CONFIG + ".worker-count", "1"
+                ), "config-root-default-8080");
+    }
+
     @Test
-    public void testItAll() {
+    void testItAll() {
+        resetWith(io.helidon.config.Config.create(createBasicTestingConfigSource(), createRootDefault8080TestingConfigSource()));
+
         // verify the services registry
         testRegistry();
 
@@ -113,7 +129,7 @@ public abstract class AbstractConfiguredByTest {
                    contains("ASingletonService{root}:ACTIVE",
                             "FakeTlsWSNotDrivenByCB{root}:PENDING",
                             "FakeWebServer{root}:ACTIVE",
-                            "FakeWebServerNotDrivenByServiceOverrides{root}:PENDING"
+                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{root}:PENDING"
                    ));
 
         criteria = DefaultServiceInfoCriteria.builder()
@@ -123,7 +139,7 @@ public abstract class AbstractConfiguredByTest {
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat("no root providers expected in result, but all are auto-started unless overridden", desc,
                    contains("FakeWebServer{3}:ACTIVE",
-                            "FakeWebServerNotDrivenByServiceOverrides{2}:PENDING"));
+                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{2}:PENDING"));
 
         criteria = DefaultServiceInfoCriteria.builder()
                 .serviceTypeName(FakeTlsWSNotDrivenByCB.class.getName())
@@ -174,7 +190,7 @@ public abstract class AbstractConfiguredByTest {
         Set<String> set = cbr.allConfigBeans().keySet();
         assertThat(set, containsInAnyOrder(
                 "@default",
-                "fake-server-config"
+                "fake-server"
         ));
     }
 

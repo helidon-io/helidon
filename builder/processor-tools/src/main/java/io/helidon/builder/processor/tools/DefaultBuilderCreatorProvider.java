@@ -748,22 +748,26 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     /**
      * Normalize the configured option key.
      *
-     * @param key      the key attribute
-     * @param attrName the attribute name
-     * @return the key to write on the generated output.
+     * @param key           the key attribute
+     * @param name          the name
+     * @param isAttribute   if the name represents an attribute value (otherwise is a config bean name)
+     * @return the key to write on the generated output
      */
     protected String normalizeConfiguredOptionKey(String key,
-                                                  String attrName) {
-        return hasNonBlankValue(key) ? key : toConfigKey(attrName);
+                                                  String name,
+                                                  boolean isAttribute) {
+        return hasNonBlankValue(key) ? key : toConfigKey(name, isAttribute);
     }
 
     /**
      * Applicable if this builder is intended for config beans.
      *
-     * @param attrName the attribute name
+     * @param name          the name
+     * @param isAttribute   if the name represents an attribute value (otherwise is a config bean name)
      * @return the config key
      */
-    protected String toConfigKey(String attrName) {
+    protected String toConfigKey(String name,
+                                 boolean isAttribute) {
         return "";
     }
 
@@ -1739,7 +1743,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
         String key = (configuredOptions.isEmpty())
                 ? null : configuredOptions.get().value("key").orElse(null);
-        key = normalizeConfiguredOptionKey(key, attrName);
+        key = normalizeConfiguredOptionKey(key, attrName, true);
         if (hasNonBlankValue(key)) {
             typeDecl += ", " + quotedTupleOf(method.typeName(), "key", key);
         }

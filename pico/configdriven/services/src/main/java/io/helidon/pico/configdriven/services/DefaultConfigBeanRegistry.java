@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import io.helidon.builder.AttributeVisitor;
+import io.helidon.builder.config.ConfigBean;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.config.spi.ConfigProvider;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
@@ -113,7 +114,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                 cspList = new ArrayList<>();
             }
             Optional<ConfiguredServiceProvider<?, ?>> prevCsp = cspList.stream()
-                    .filter(it -> (cspType.equals(it.configBeanType())))
+                    .filter(it -> cspType.equals(it.configBeanType()))
                     .findAny();
             assert (prevCsp.isEmpty()) : "duplicate service provider initialization occurred";
 
@@ -162,19 +163,10 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
 
         io.helidon.config.Config cfg = safeDowncastOf(commonCfg);
 
-        // first load all the top-level config beans... but defer resolve until later phase
+        // first load all the root config beans... but defer resolve until later phase
         configuredServiceProviderMetaConfigBeanMap.forEach((configuredServiceProvider, cbi) -> {
             MetaConfigBeanInfo metaConfigBeanInfo = (MetaConfigBeanInfo) cbi;
-            String key = validatedConfigKey(metaConfigBeanInfo);
-            io.helidon.config.Config config = cfg.get(key);
-            Map<String, Map<String, Object>> metaAttributes = configuredServiceProvider.configBeanAttributes();
-            if (config.exists()) {
-                loadConfigBeans(config, configuredServiceProvider, metaConfigBeanInfo, metaAttributes);
-            } else if (metaConfigBeanInfo.wantDefaultConfigBean()) {
-                Object cfgBean = Objects.requireNonNull(configuredServiceProvider.toConfigBean(cfg),
-                                                        "unable to create default config bean for " + configuredServiceProvider);
-                registerConfigBean(cfgBean, DEFAULT_INSTANCE_ID, config, configuredServiceProvider, metaAttributes);
-            }
+            processRootLevelConfigBean(cfg, configuredServiceProvider, metaConfigBeanInfo);
         });
 
         if (!cfg.exists() || cfg.isLeaf()) {
@@ -190,19 +182,48 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         return (0 == initialized.getCount());
     }
 
+    private void processRootLevelConfigBean(io.helidon.config.Config cfg,
+                                            ConfiguredServiceProvider<?, ?> configuredServiceProvider,
+                                            MetaConfigBeanInfo metaConfigBeanInfo) {
+        if (metaConfigBeanInfo.levelType() != ConfigBean.LevelType.ROOT) {
+            return;
+        }
+
+        String key = validatedConfigKey(metaConfigBeanInfo);
+        io.helidon.config.Config config = cfg.get(key);
+        Map<String, Map<String, Object>> metaAttributes = configuredServiceProvider.configBeanAttributes();
+        if (config.exists()) {
+            loadConfigBeans(config, configuredServiceProvider, metaConfigBeanInfo, metaAttributes);
+        } else if (metaConfigBeanInfo.wantDefaultConfigBean()) {
+            Object cfgBean = Objects.requireNonNull(configuredServiceProvider.toConfigBean(cfg),
+                                                    "unable to create default config bean for " + configuredServiceProvider);
+            registerConfigBean(cfgBean, DEFAULT_INSTANCE_ID, config, configuredServiceProvider, metaAttributes);
+        }
+    }
+
+    private void processNestedLevelConfigBean(io.helidon.config.Config config,
+                                              ConfiguredServiceProvider<?, ?> configuredServiceProvider,
+                                              ConfigBeanInfo metaConfigBeanInfo) {
+        if (metaConfigBeanInfo.levelType() != ConfigBean.LevelType.NESTED) {
+            return;
+        }
+
+        Map<String, Map<String, Object>> metaAttributes = configuredServiceProvider.configBeanAttributes();
+        loadConfigBeans(config, configuredServiceProvider, metaConfigBeanInfo, metaAttributes);
+    }
+
     private void visitAndInitialize(List<io.helidon.config.Config> configs,
                                     int depth) {
-        configs.forEach((config) -> {
+        configs.forEach(config -> {
+            // we start nested, since we've already processed the root level config beans previously
             if (depth > 0) {
                 String key = config.name();
-
                 List<ConfiguredServiceProvider<?, ?>> csps = configuredServiceProvidersByConfigKey.get(key);
                 if (csps != null && !csps.isEmpty()) {
                     csps.forEach(configuredServiceProvider -> {
                         ConfigBeanInfo metaConfigBeanInfo =
                                 Objects.requireNonNull(configuredServiceProviderMetaConfigBeanMap.get(configuredServiceProvider));
-                        Map<String, Map<String, Object>> metaAttributes = configuredServiceProvider.configBeanAttributes();
-                        loadConfigBeans(config, configuredServiceProvider, metaConfigBeanInfo, metaAttributes);
+                        processNestedLevelConfigBean(config, configuredServiceProvider, metaConfigBeanInfo);
                     });
                 }
             }
@@ -216,6 +237,23 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     @Override
     public boolean ready() {
         return isInitialized();
+    }
+
+    @Override
+    public List<ConfiguredServiceProvider<?, ?>> configuredServiceProvidersConfiguredBy(String key) {
+        List<ConfiguredServiceProvider<?, ?>> result = new ArrayList<>();
+
+        configuredServiceProvidersByConfigKey.forEach((k, csps) -> {
+            if (k.equals(key)) {
+                result.addAll(csps);
+            }
+        });
+
+        if (result.size() > 1) {
+            result.sort(ServiceProviderComparator.create());
+        }
+
+        return result;
     }
 
     @Override
@@ -248,37 +286,36 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public List<?> configBeansByConfigKey(String key,
-                                          String fullConfigKey) {
+    public <CB> Set<CB> configBeansByConfigKey(String key,
+                                               Optional<String> optFullConfigKey) {
         List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
                 configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
         if (cspsUsingSameKey == null) {
-            return List.of();
+            return Set.of();
         }
 
-        List<Object> result = new ArrayList<>();
+        Set<Object> result = new LinkedHashSet<>();
         cspsUsingSameKey.stream()
                 .filter(csp -> csp instanceof AbstractConfiguredServiceProvider)
                 .map(AbstractConfiguredServiceProvider.class::cast)
                 .forEach(csp -> {
                     Map<String, ?> configBeans = csp.configBeanMap();
-                    if (fullConfigKey == null) {
+                    if (optFullConfigKey.isEmpty()) {
                         result.addAll(configBeans.values());
                     } else {
                         configBeans.forEach((k, v) -> {
-                            if (fullConfigKey.equals(k)) {
+                            if (optFullConfigKey.get().equals(k)) {
                                 result.add(v);
                             }
                         });
                     }
                 });
-        return result;
+        return (Set<CB>) result;
     }
 
     @Override
     public <CB> Map<String, CB> configBeanMapByConfigKey(String key,
-                                                         String fullConfigKey) {
+                                                         Optional<String> optFullConfigKey) {
         List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
                 configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
         if (cspsUsingSameKey == null) {
@@ -292,7 +329,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                 .forEach(csp -> {
                     Map<String, ?> configBeans = csp.configBeanMap();
                     configBeans.forEach((k, v) -> {
-                        if (fullConfigKey == null || fullConfigKey.equals(k)) {
+                        if (optFullConfigKey.isEmpty() || optFullConfigKey.get().equals(k)) {
                             Object prev = result.put(k, (CB) v);
                             if (prev != null && prev != v) {
                                 throw new IllegalStateException("had two entries with the same key: " + prev + " and " + v);

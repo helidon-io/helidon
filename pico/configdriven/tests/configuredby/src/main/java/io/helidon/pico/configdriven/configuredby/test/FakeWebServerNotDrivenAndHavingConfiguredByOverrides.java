@@ -25,11 +25,11 @@ import io.helidon.pico.configdriven.ConfiguredBy;
 import jakarta.inject.Inject;
 
 @ConfiguredBy(value = FakeServerConfig.class, overrideBean = true, drivesActivation = false)
-public class FakeWebServerNotDrivenByServiceOverrides extends FakeWebServer {
+public class FakeWebServerNotDrivenAndHavingConfiguredByOverrides extends FakeWebServer {
 
     @Inject
-    FakeWebServerNotDrivenByServiceOverrides(FakeServerConfig cfg,
-                                             Optional<FakeTracer> tracer) {
+    FakeWebServerNotDrivenAndHavingConfiguredByOverrides(FakeServerConfig cfg,
+                                                         Optional<FakeTracer> tracer) {
         super(cfg, tracer);
     }
 

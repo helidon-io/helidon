@@ -72,10 +72,12 @@ public @interface ConfigBean {
     /**
      * Determines whether an instance of this config bean in the bean registry will result in the backing service
      * {@code ConfiguredBy} this bean to be activated.
+     * <p>
+     * As of the current release, only {@link LevelType#ROOT} level config beans can drive activation.
      *
      * @return true if this config bean should drive {@code ConfiguredBy} service activation
      */
-    boolean drivesActivation() default true;
+    boolean drivesActivation() default false;
 
     /**
      * An instance of this bean will be created if there are no instances discovered by the configuration provider(s) post
@@ -101,6 +103,8 @@ public @interface ConfigBean {
     /**
      * An instance of this bean will be created if there are no instances discovered by the configuration provider(s) post
      * startup, and will use all default values annotated on the bean interface.
+     * <p>
+     * As of the current release, only {@link LevelType#ROOT} level config beans can be defaulted.
      *
      * @return use the default config instance
      */
@@ -120,13 +124,19 @@ public @interface ConfigBean {
      */
     enum LevelType {
         /**
-         * THe config bean {@link #value()} must be at the root of the {@link io.helidon.common.config.ConfigValue} tree in order
+         * The config bean {@link #value()} must be at the root of the {@link io.helidon.common.config.ConfigValue} tree in order
          * to trigger config bean instance creation.
+         * <p>
+         * As of the current release, only {@code ROOT} level config beans can {@link #drivesActivation()}.
          */
         ROOT,
 
-//        NESTED,
-//
-//        ANY
+        /**
+         * The config bean {@link #value()} must be at a depth > 0 of the config tree.
+         * As of the current release, {@code NESTED} config beans are unable to {@link #drivesActivation()}.
+         */
+        NESTED,
+
     }
+
 }

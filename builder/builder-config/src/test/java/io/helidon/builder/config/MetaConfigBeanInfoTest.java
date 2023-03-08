@@ -39,7 +39,7 @@ class MetaConfigBeanInfoTest {
         MetaConfigBeanInfo metaCfg = ConfigBeanInfo.toMetaConfigBeanInfo(cfg, ConfigBean.class);
         assertThat(metaCfg.annotationType(), sameInstance(ConfigBean.class));
         assertThat(metaCfg.repeatable(), is(true));
-        assertThat(metaCfg.drivesActivation(), is(true));
+        assertThat(metaCfg.drivesActivation(), is(false));
         assertThat(metaCfg.atLeastOne(), is(false));
         assertThat(metaCfg.wantDefaultConfigBean(), is(false));
         assertThat(metaCfg.value(), is(""));
@@ -64,19 +64,21 @@ class MetaConfigBeanInfoTest {
     }
 
     @Test
-    void testToConfigKey() {
+    void toConfigAttributeName() {
         assertAll(
-                () -> assertThat(ConfigBeanInfo.toConfigKey("maxInitialLineLength"), is("max-initial-line-length")),
-                () -> assertThat(ConfigBeanInfo.toConfigKey("port"), is("port")),
-                () -> assertThat(ConfigBeanInfo.toConfigKey("listenAddress"), is("listen-address")),
-                () -> assertThat(ConfigBeanInfo.toConfigKey("Http2Config"), is("http2-config"))
+                () -> assertThat(ConfigBeanInfo.toConfigAttributeName("maxInitialLineLength"), is("max-initial-line-length")),
+                () -> assertThat(ConfigBeanInfo.toConfigAttributeName("port"), is("port")),
+                () -> assertThat(ConfigBeanInfo.toConfigAttributeName("listenAddress"), is("listen-address")),
+                () -> assertThat(ConfigBeanInfo.toConfigAttributeName("Http2Config"), is("http2-config"))
         );
+    }
 
+    @Test
+    void toConfigABeanName() {
         assertAll(
-                () -> assertThat(ConfigBeanInfo.toConfigKey("MyClient", true), is("my-client")),
-                () -> assertThat(ConfigBeanInfo.toConfigKey("Http2Config", true), is("http2-config")),
-                () -> assertThat(ConfigBeanInfo.toConfigKey("MyClient", false), is("my-client")),
-                () -> assertThat(ConfigBeanInfo.toConfigKey("Http2Config", false), is("http2"))
+                () -> assertThat(ConfigBeanInfo.toConfigBeanName("MyClient"), is("my-client")),
+                () -> assertThat(ConfigBeanInfo.toConfigBeanName("Http2Config"), is("http2")),
+                () -> assertThat(ConfigBeanInfo.toConfigBeanName("Http2ConfigTest"), is("http2-config-test"))
         );
     }
 

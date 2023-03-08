@@ -16,11 +16,13 @@
 
 package io.helidon.pico.configdriven.services;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.builder.config.spi.BasicConfigResolver;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
@@ -181,8 +183,8 @@ class DefaultConfigResolver extends BasicConfigResolver {
 
         DefaultConfigBeanRegistry cbr = (DefaultConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
         String fullConfigKey = fullConfigKeyOf(safeDowncastOf(ctx.config()), request.configKey(), meta);
-        List result = cbr.configBeansByConfigKey(request.configKey(), fullConfigKey);
-        return Objects.requireNonNull(result);
+        Set<T> result = cbr.configBeansByConfigKey(request.configKey(), Optional.ofNullable(fullConfigKey));
+        return new ArrayList<>(result);
     }
 
     static <V> Map<String, V> findInConfigBeanRegistryAsMap(ResolutionContext ctx,
@@ -195,7 +197,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
 
         DefaultConfigBeanRegistry cbr = (DefaultConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
         String fullConfigKey = fullConfigKeyOf(safeDowncastOf(ctx.config()), request.configKey(), meta);
-        Map<String, V> result = cbr.configBeanMapByConfigKey(request.configKey(), fullConfigKey);
+        Map<String, V> result = cbr.configBeanMapByConfigKey(request.configKey(), Optional.ofNullable(fullConfigKey));
         return Objects.requireNonNull(result);
     }
 

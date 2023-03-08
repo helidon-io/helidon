@@ -16,9 +16,97 @@
 
 package io.helidon.pico.configdriven.configuredby.test;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
+import io.helidon.builder.config.testsubjects.fakes.FakeServerConfig;
+import io.helidon.builder.config.testsubjects.fakes.FakeSocketConfig;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.MapConfigSource;
+import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.configdriven.services.ConfigBeanRegistry;
+import io.helidon.pico.configdriven.services.ConfiguredServiceProvider;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.is;
+
 /**
  * Executes the tests from the base.
  */
-public class ConfiguredByTest extends AbstractConfiguredByTest {
+class ConfiguredByTest extends AbstractConfiguredByTest {
+
+    protected MapConfigSource.Builder createNested8080TestingConfigSource() {
+        return ConfigSources.create(
+                Map.of(
+                        "nested." + FAKE_SERVER_CONFIG_CONFIG + ".name", "nested",
+                        "nested." + FAKE_SERVER_CONFIG_CONFIG + ".port", "8080",
+                        "nested." + FAKE_SERVER_CONFIG_CONFIG + ".worker-count", "1"
+                ), "config-nested-default-8080");
+    }
+
+    public MapConfigSource.Builder createRootPlusOneSocketTestingConfigSource() {
+        return ConfigSources.create(
+                Map.of(
+                        FAKE_SERVER_CONFIG_CONFIG + ".name", "root",
+                        FAKE_SERVER_CONFIG_CONFIG + ".port", "8080",
+                        FAKE_SERVER_CONFIG_CONFIG + "." + FAKE_SOCKET_CONFIG + ".name", "first",
+                        FAKE_SERVER_CONFIG_CONFIG + "." + FAKE_SOCKET_CONFIG + ".port", "8081"
+                ), "config-root-plus-one-socket");
+    }
+
+    @Test
+    void onlyRootConfigBeansAreCreated() {
+        resetWith(io.helidon.config.Config.create(createBasicTestingConfigSource(),
+                                                  createRootDefault8080TestingConfigSource(),
+                                                  createNested8080TestingConfigSource()));
+
+        ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
+        assertThat(cbr.ready(), is(true));
+
+        Set<String> set = cbr.allConfigBeans().keySet();
+        assertThat(set, containsInAnyOrder(
+                "@default",
+                "fake-server"
+        ));
+    }
+
+    @Test
+    void serverConfigWithOneSocketConfigNested() {
+        resetWith(io.helidon.config.Config.create(createBasicTestingConfigSource(),
+                                                  createRootPlusOneSocketTestingConfigSource()));
+
+        ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
+        assertThat(cbr.ready(), is(true));
+
+        Set<String> set = cbr.allConfigBeans().keySet();
+        assertThat(set, containsInAnyOrder(
+                "@default",
+                "fake-server"
+        ));
+
+        Set<?> configBeans = cbr.configBeansByConfigKey("fake-server", Optional.empty());
+        assertThat(configBeans.toString(), configBeans.size(), is(1));
+
+        List<ConfiguredServiceProvider<?, ?>> list = cbr.configuredServiceProvidersConfiguredBy("fake-server");
+        List<String> desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        assertThat(desc, contains(
+                "FakeWebServer{root}:ACTIVE",
+                "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{root}:PENDING"));
+
+        FakeServerConfig cfg = (FakeServerConfig) configBeans.iterator().next();
+        Map<String, FakeSocketConfig> sockets = cfg.sockets();
+
+        // TODO:
+//        assertThat(sockets.toString(), sockets.size(), is(1));
+        // TODO: more testing here
+    }
 
 }

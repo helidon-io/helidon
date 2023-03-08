@@ -16,19 +16,90 @@
 
 package io.helidon.builder.config.processor;
 
-import io.helidon.builder.processor.spi.BuilderCreatorProvider;
-import io.helidon.builder.config.ConfigBean;
+import java.util.Map;
 
-import org.junit.jupiter.api.Assertions;
+import io.helidon.builder.config.ConfigBean;
+import io.helidon.builder.config.spi.ConfigBeanInfo;
+import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.DefaultTypeInfo;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeName;
+
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 class ConfigBeanBuilderCreatorTest {
+    final ConfigBeanBuilderCreator creator = new ConfigBeanBuilderCreator();
 
     @Test
     void supportedAnnotationTypes() {
-        BuilderCreatorProvider creator = new ConfigBeanBuilderCreator();
-        Assertions.assertEquals(1, creator.supportedAnnotationTypes().size());
-        Assertions.assertSame(ConfigBean.class, creator.supportedAnnotationTypes().iterator().next());
+        assertThat(creator.supportedAnnotationTypes().toString(), creator.supportedAnnotationTypes().size(),
+                   is(1));
+        assertThat(creator.supportedAnnotationTypes().iterator().next(),
+                   equalTo(ConfigBean.class));
+    }
+
+    @Test
+    void preValidateConfigBeansMustBeInterfaces() {
+        TypeName implTypeName = DefaultTypeName.create(getClass());
+        TypeInfo typeInfo = DefaultTypeInfo.builder()
+                .typeKind(TypeInfo.KIND_CLASS)
+                .typeName(DefaultTypeName.create(getClass()))
+                .build();
+        DefaultAnnotationAndValue configBeanAnno = DefaultAnnotationAndValue.builder()
+                .typeName(DefaultTypeName.create(ConfigBean.class))
+                .values(Map.of(
+                        ConfigBeanInfo.TAG_LEVEL_TYPE, ConfigBean.LevelType.ROOT.name(),
+                        ConfigBeanInfo.TAG_DRIVES_ACTIVATION, "true"))
+                .build();
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                                               () -> creator.preValidate(implTypeName, typeInfo, configBeanAnno));
+        assertThat(e.getMessage(),
+                   equalTo("@ConfigBean is only supported on interface types: " + getClass().getName()));
+    }
+
+    @Test
+    void preValidateConfigBeansMustBeRootToDriveActivation() {
+        TypeName implTypeName = DefaultTypeName.create(getClass());
+        TypeInfo typeInfo = DefaultTypeInfo.builder()
+                .typeKind(TypeInfo.KIND_INTERFACE)
+                .typeName(DefaultTypeName.create(getClass()))
+                .build();
+        DefaultAnnotationAndValue configBeanAnno = DefaultAnnotationAndValue.builder()
+                .typeName(DefaultTypeName.create(ConfigBean.class))
+                .values(Map.of(
+                        ConfigBeanInfo.TAG_LEVEL_TYPE, ConfigBean.LevelType.NESTED.name(),
+                        ConfigBeanInfo.TAG_DRIVES_ACTIVATION, "true"))
+                .build();
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                                               () -> creator.preValidate(implTypeName, typeInfo, configBeanAnno));
+        assertThat(e.getMessage(),
+                   equalTo("only levelType {ROOT} config beans can drive activation for: " + getClass().getName()));
+    }
+
+    @Test
+    void preValidateConfigBeansMustBeRootToHaveDefaults() {
+        TypeName implTypeName = DefaultTypeName.create(getClass());
+        TypeInfo typeInfo = DefaultTypeInfo.builder()
+                .typeKind(TypeInfo.KIND_INTERFACE)
+                .typeName(DefaultTypeName.create(getClass()))
+                .build();
+        DefaultAnnotationAndValue configBeanAnno = DefaultAnnotationAndValue.builder()
+                .typeName(DefaultTypeName.create(ConfigBean.class))
+                .values(Map.of(
+                        ConfigBeanInfo.TAG_LEVEL_TYPE, ConfigBean.LevelType.NESTED.name(),
+                        ConfigBeanInfo.TAG_DRIVES_ACTIVATION, "false",
+                        ConfigBeanInfo.TAG_WANT_DEFAULT_CONFIG_BEAN, "true"))
+                .build();
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                                               () -> creator.preValidate(implTypeName, typeInfo, configBeanAnno));
+        assertThat(e.getMessage(),
+                   equalTo("only levelType {ROOT} config beans can have a default bean for: " + getClass().getName()));
     }
 
 }

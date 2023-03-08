@@ -75,7 +75,7 @@ public interface ConfigBeanInfo extends ConfigBean {
         MetaConfigBeanInfo.Builder builder = MetaConfigBeanInfo.toBuilder(val);
         String key = val.value();
         if (!key.isBlank()) {
-            builder.value(toConfigKey(cfgBeanType.getSimpleName()));
+            builder.value(toConfigBeanName(cfgBeanType.getSimpleName()));
         }
         return builder.build();
     }
@@ -99,32 +99,35 @@ public interface ConfigBeanInfo extends ConfigBean {
     }
 
     /**
-     * Same as calling {@code toConfigKey(name, true)}.
+     * Converts the name (e.g., simple class name) into a config key.
+     * <p>
+     * Name is camel case - such as WebServer result is dash separated and lower cased web-server.
+     * <p>
+     * Unlike {@link #toConfigAttributeName(String)}, the behavior here is modified slightly for config bean type names
+     * in that any configuration ending in "-config" is stripped off as a general convention (e.g.,
+     * "Http2Config" maps to "http2").
      *
      * @param name the input name
      * @return the config key
-     * @see #toConfigKey(String, boolean)
      */
-    static String toConfigKey(String name) {
-        return toConfigKey(name, true);
+    // note: a similar method is also found in ConfigMetadataHandler.
+    static String toConfigBeanName(String name) {
+        String result = toConfigAttributeName(name);
+        if (result.endsWith("-config")) {
+            result = result.substring(0, result.length() - 7);
+        }
+        return result;
     }
 
     /**
-     * Converts the name (i.e., simple class name or method name) into a config key.
+     * Converts the name (e.g., method element name) into a config key.
      * <p>
-     * Method name is camel case (such as maxInitialLineLength)
-     * result is dash separated and lower cased (such as max-initial-line-length).
-     * <p>
-     * The behavior is modified slightly for config bean type names (i.e., when {@code isElement=false}) in that any
-     * configuration ending in "-config" is stripped off as a general convention (e.g., "Http2Config" maps to "http2").
+     * Name is camel case - such as someAttributeValue result is dash separated and lower cased some-attribute-value.
      *
-     * @param name      the input name
-     * @param isElement true if the input name is a method attribute element, false for simple config bean class type names
+     * @param name the input name
      * @return the config key
      */
-    // note: a similar method is also found in ConfigMetadataHandler.
-    static String toConfigKey(String name,
-                              boolean isElement) {
+    static String toConfigAttributeName(String name) {
         StringBuilder result = new StringBuilder(name.length() + 5);
 
         char[] chars = name.toCharArray();
@@ -141,15 +144,7 @@ public interface ConfigBeanInfo extends ConfigBean {
             }
         }
 
-        String res = result.toString();
-        if (!isElement) {
-            int pos = res.lastIndexOf("-config");
-            if (pos > 0) {
-                res = res.substring(0, pos);
-            }
-        }
-
-        return res;
+        return result.toString();
     }
 
 }

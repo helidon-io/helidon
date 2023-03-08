@@ -87,7 +87,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     @Override
     protected void preValidate(TypeName implTypeName,
                                TypeInfo typeInfo,
-                               AnnotationAndValue builderAnnotation) {
+                               AnnotationAndValue configBeanAnno) {
         assertNoAnnotation(PICO_CONTRACT_TYPENAME, typeInfo);
         assertNoAnnotation(PICO_EXTERNAL_CONTRACT_TYPENAME, typeInfo);
         assertNoAnnotation(PICO_CONFIGUREDBY_TYPENAME, typeInfo);
@@ -95,9 +95,23 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
         assertNoAnnotation("javax.inject.Singleton", typeInfo);
 
         if (!typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
-            throw new IllegalStateException("@" + builderAnnotation.typeName().className()
+            throw new IllegalStateException("@" + configBeanAnno.typeName().className()
                                                     + " is only supported on interface types: " + typeInfo.typeName());
         }
+
+        boolean drivesActivation = Boolean.parseBoolean(configBeanAnno.value(TAG_DRIVES_ACTIVATION).orElseThrow());
+        LevelType levelType = LevelType.valueOf(configBeanAnno.value(TAG_LEVEL_TYPE).orElseThrow());
+        if (drivesActivation && levelType != LevelType.ROOT) {
+            throw new IllegalStateException("only levelType {" + LevelType.ROOT + "} config beans can drive activation for: "
+                                                    + typeInfo.typeName());
+        }
+
+        boolean wantDefaultConfigBean = Boolean.parseBoolean(configBeanAnno.value(TAG_WANT_DEFAULT_CONFIG_BEAN).orElseThrow());
+        if (wantDefaultConfigBean && levelType != LevelType.ROOT) {
+            throw new IllegalStateException("only levelType {" + LevelType.ROOT + "} config beans can have a default bean for: "
+                                                    + typeInfo.typeName());
+        }
+
     }
 
     @Override
@@ -317,15 +331,16 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     }
 
     @Override
-    protected String toConfigKey(String attrName) {
-        return ConfigBeanInfo.toConfigKey(attrName);
+    protected String toConfigKey(String name,
+                                 boolean isAttribute) {
+        return (isAttribute) ? ConfigBeanInfo.toConfigAttributeName(name) : ConfigBeanInfo.toConfigBeanName(name);
     }
 
     private void appendConfigBeanInfoAttributes(StringBuilder builder,
                                                 TypeInfo typeInfo,
                                                 AnnotationAndValue configBeanAnno) {
         String configKey = configBeanAnno.value(TAG_KEY).orElse(null);
-        configKey = Objects.requireNonNull(normalizeConfiguredOptionKey(configKey, typeInfo.typeName().className()));
+        configKey = Objects.requireNonNull(normalizeConfiguredOptionKey(configKey, typeInfo.typeName().className(), false));
         builder.append("\t\t\t\t\t\t.value(\"")
                 .append(configKey).append("\")\n");
         builder.append("\t\t\t\t\t\t.").append(TAG_REPEATABLE).append("(")
@@ -379,12 +394,12 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
             configKey = configuredOptions.get().value("key").orElse(null);
         }
         if (configKey == null || configKey.isBlank()) {
-            configKey = ConfigBeanInfo.toConfigKey(attrName, false);
+            configKey = ConfigBeanInfo.toConfigAttributeName(attrName);
         }
         return configKey;
     }
 
-    private void assertNoAnnotation(String annoTypeName,
+    private static void assertNoAnnotation(String annoTypeName,
                                     TypeInfo typeInfo) {
         Optional<? extends AnnotationAndValue> anno = DefaultAnnotationAndValue
                 .findFirst(annoTypeName, typeInfo.annotations());

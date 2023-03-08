@@ -45,6 +45,8 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
      */
     @Test
     void verifyNoLookups() {
+        resetWith(io.helidon.config.Config.create(createBasicTestingConfigSource(), createRootDefault8080TestingConfigSource()));
+
         Metrics metrics = picoServices.metrics().orElseThrow();
         Set<ServiceInfoCriteria> criteriaSearchLog = picoServices.lookups().orElseThrow();
         Set<String> contractSearchLog = criteriaSearchLog.stream().flatMap(it -> it.contractsImplemented().stream())
@@ -63,6 +65,8 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
 
     @Test
     public void startupAndShutdownRunLevelServices() {
+        resetWith(io.helidon.config.Config.create(createBasicTestingConfigSource(), createRootDefault8080TestingConfigSource()));
+
         Metrics metrics = picoServices.metrics().orElseThrow();
         int startingLookupCount = metrics.lookupCount().orElseThrow();
 

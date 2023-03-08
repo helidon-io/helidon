@@ -25,7 +25,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * aka ServerConfiguration.
  * The SocketConfiguration configures a port to listen on and its associated server socket parameters.
  */
-@ConfigBean
+@ConfigBean(levelType = ConfigBean.LevelType.NESTED)
 public interface FakeSocketConfig {
 
     /**

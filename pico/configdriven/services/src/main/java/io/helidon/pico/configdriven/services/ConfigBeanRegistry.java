@@ -18,6 +18,8 @@ package io.helidon.pico.configdriven.services;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.builder.config.spi.BasicConfigBeanRegistry;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
@@ -49,40 +51,47 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
     <T, CB> Map<ConfiguredServiceProvider<T, CB>, ConfigBeanInfo> configurableServiceProviders();
 
     /**
-     * These are the non-root, managed/slave service providers that are associated with config bean instances.
+     * These are the managed/slave service providers that are associated with config bean instances.
      *
-     * @param <T>  the service type
-     * @param <CB> the config bean type
      * @return the list of configured services
      */
-    <T, CB> List<ConfiguredServiceProvider<T, CB>> configuredServiceProviders();
+    List<ConfiguredServiceProvider<?, ?>> configuredServiceProviders();
 
     /**
-     * Returns all the know config beans in order of rank given the short config key / alias. Callers should understand
+     * These are the managed/slave service providers that are associated with config bean instances with the config key provided.
+     *
+     * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
+     *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
+     * @return the list of configured services
+     */
+    List<ConfiguredServiceProvider<?, ?>> configuredServiceProvidersConfiguredBy(String key);
+
+    /**
+     * Returns all the known config beans in order of rank given the short config key / alias. Callers should understand
      * that this list might be incomplete until ready state is reached (see {@link #ready()}).
      *
      * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
      *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
-     * @param fullConfigKey optionally, the full config key for the config - if not passed will return the list of all matches
+     * @param fullConfigKey optionally, the full config key - if not passed will return the list of all matches
      *                      using just the key
      * @param <CB>          the config bean type
      * @return the list of known config keys
      */
-    <CB> List<CB> configBeansByConfigKey(String key,
-                                         String fullConfigKey);
+    <CB> Set<CB> configBeansByConfigKey(String key,
+                                        Optional<String> fullConfigKey);
 
     /**
-     * Similar to {@link #configBeansByConfigKey(String, String)}, but instead returns all the know config beans in a map
-     * where the key of the map is the config key.
+     * Similar to {@link #configBeansByConfigKey(String, Optional<String>)}, but instead returns all the known config beans in a
+     * map where the key of the map is the config key.
      *
      * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
      *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
-     * @param fullConfigKey optionally, the full config key for the config - if not passed will return the list of all matches
+     * @param fullConfigKey optionally, the full config key - if not passed will return the list of all matches
      *                      using just the key
      * @param <CB>          the config bean type
      * @return the list of known config keys
      */
     <CB> Map<String, CB> configBeanMapByConfigKey(String key,
-                                                  String fullConfigKey);
+                                                  Optional<String> fullConfigKey);
 
 }
