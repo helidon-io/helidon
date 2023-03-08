@@ -67,6 +67,21 @@
             <artifactId>jakarta.activation-api</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Jackson delegates to SnakeYaml and currently depends on 1.x, so override our new built-in dep. on 2.x
+             but only for the TCK run. -->
+        <dependency>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                </exclusion>
+            </exclusions>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.32</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

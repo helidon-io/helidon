@@ -57,6 +57,7 @@
         <module>mp-bean-validation</module>
         <module>restclient</module>
         <module>oidc</module>
+        <module>gh-5792</module>
     </modules>
 
     <profiles>
