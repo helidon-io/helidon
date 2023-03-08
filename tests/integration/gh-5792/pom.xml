@@ -33,14 +33,22 @@
         <selectedSnakeYamlVersion>1.32</selectedSnakeYamlVersion>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- Verify that the app builds correctly and that config and OpenAPI document YAML parsing work with the older
+                 SnakeYAML release. -->
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${selectedSnakeYamlVersion}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.media</groupId>
@@ -50,11 +58,10 @@
             <groupId>io.helidon.openapi</groupId>
             <artifactId>helidon-openapi</artifactId>
         </dependency>
-        <!-- Verify that the app builds and that config and OpenAPI document parsing work with the older SnakeYAML release. -->
         <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>${selectedSnakeYamlVersion}</version>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
