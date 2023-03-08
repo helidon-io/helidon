@@ -104,15 +104,13 @@ public class GreetService implements Service {
 
     private static <T> T processErrors(Throwable ex, ServerRequest request, ServerResponse response) {
 
-         if (ex.getCause() instanceof JsonException){
-
+        if (ex.getCause() instanceof JsonException) {
             LOGGER.log(Level.FINE, "Invalid JSON", ex);
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                 .add("error", "Invalid JSON")
                 .build();
             response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
         }  else {
-
             LOGGER.log(Level.FINE, "Internal error", ex);
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                 .add("error", "Internal error")
