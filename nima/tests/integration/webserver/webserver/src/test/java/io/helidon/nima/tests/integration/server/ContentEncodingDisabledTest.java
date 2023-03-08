@@ -36,7 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  *     <li>Content encoding is completely disabled using custom context which does not contain even
  *         default "dentity" encoder</li>
  *     <li>Request contains Content-Encoding header and also something to trigger EntityStyle.NONE
- *         replacement, e.g it's a POST request with Content-Length > 0</li>
+ *         replacement, e.g it's a POST request with Content-Length &gt; 0</li>
  *     <li>Request headers validation is enabled</li>
  * </ul>
  */
@@ -54,7 +54,7 @@ class ContentEncodingDisabledTest extends ContentEncodingDisabledAbstract {
                 .http1Config(DefaultHttp1Config.builder().build())
                 .build();
         server.addConnectionProvider(http1)
-        // Content encoding needs to be completely disabled
+                // Content encoding needs to be completely disabled
                 .contentEncodingContext(emptyEncodingContext());
     }
 

@@ -33,10 +33,10 @@ import io.helidon.nima.webserver.http.ServerResponse;
  * <ul>
  *     <li>content encoding is completely disabled,</li>
  *     <li>request contains Content-Encoding header</li>
- *     <li>and additional data with value of Content-Length header > 0</li>
+ *     <li>and additional data with value of Content-Length header &gt; 0</li>
  * </ul>
  */
-public abstract class ContentEncodingDisabledAbstract {
+abstract class ContentEncodingDisabledAbstract {
 
     private final Http1Client client;
 
@@ -61,7 +61,9 @@ public abstract class ContentEncodingDisabledAbstract {
         return new EmptyEncodingContext();
     }
 
-    // Completely disable encoding. Even default "identity" encoding shall not be present.
+    /**
+     * Completely disable encoding. Even default "identity" encoding shall not be present.
+     */
     static final class EmptyEncodingContext implements ContentEncodingContext {
 
         private EmptyEncodingContext() {
