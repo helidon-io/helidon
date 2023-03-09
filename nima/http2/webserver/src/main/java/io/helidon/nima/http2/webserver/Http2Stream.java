@@ -202,8 +202,8 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
 
     // Used in inbound flow control instance to write WINDOW_UPDATE frame.
     void writeWindowUpdate(Http2WindowUpdate windowUpdate) {
+        LOGGER.log(System.Logger.Level.DEBUG, () -> String.format("SRV IFC: Sending stream WINDOW_UPDATE %s", windowUpdate));
         writer.write(windowUpdate.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()), FlowControl.Outbound.NOOP);
-        LOGGER.log(System.Logger.Level.INFO, () -> String.format("SRV IFC: Stream WINDOW_UPDATE %s", windowUpdate));
     }
 
 
@@ -332,6 +332,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
         DataFrame frame;
         try {
             frame = inboundData.take();
+            inboundFlowControl().incrementWindowSize(frame.header().length());
         } catch (InterruptedException e) {
             // this stream was interrupted, does not make sense to do anything else
             return BufferData.empty();

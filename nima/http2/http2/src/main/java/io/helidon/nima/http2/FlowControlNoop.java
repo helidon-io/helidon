@@ -60,13 +60,12 @@ class FlowControlNoop implements FlowControl {
         }
 
         @Override
-        public Http2FrameData[] split(Http2FrameData frame) {
+        public Http2FrameData[] cut(Http2FrameData frame) {
             return new Http2FrameData[] {frame};
         }
 
         @Override
-        public boolean blockTillUpdate() {
-            return false;
+        public void blockTillUpdate() {
         }
 
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,14 +146,21 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     }
 
     @Override
-    public UriQueryWriteable add(String name, String value) {
+    public UriQueryWriteable add(String name, String... values) {
         String encodedName = UriEncoding.encodeUri(name);
-        String encodedValue = UriEncoding.encodeUri(value);
 
-        rawQueryParams.computeIfAbsent(encodedName, it -> new ArrayList<>(1))
-                .add(encodedValue);
-        decodedQueryParams.computeIfAbsent(name, it -> new ArrayList<>(1))
-                .add(value);
+        List<String> decodedValues = new ArrayList<>(values.length);
+        List<String> encodedValues = new ArrayList<>(values.length);
+
+        for (String value : values) {
+            decodedValues.add(value);
+            encodedValues.add(UriEncoding.encodeUri(value));
+        }
+
+        rawQueryParams.computeIfAbsent(encodedName, it -> new ArrayList<>(values.length))
+                .addAll(encodedValues);
+        decodedQueryParams.computeIfAbsent(name, it -> new ArrayList<>(values.length))
+                .addAll(decodedValues);
 
         return this;
     }
