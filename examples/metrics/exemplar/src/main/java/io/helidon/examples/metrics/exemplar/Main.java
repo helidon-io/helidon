@@ -143,7 +143,7 @@ public final class Main {
                 .register("/greet", greetService);
     }
 
-    private static Routing createRouting(Config config) {
+    private static Routing.Builder createRouting(Config config) {
         MetricsSupport metrics = MetricsSupport.create(MetricsSettings.builder()
                                                                .config(config.get("metrics"))
                                                                .build());
@@ -151,7 +151,6 @@ public final class Main {
 
         return Routing.builder()
                 .register(metrics)
-                .register("/greet", greetService)
-                .build();
+                .register("/greet", greetService);
     }
 }

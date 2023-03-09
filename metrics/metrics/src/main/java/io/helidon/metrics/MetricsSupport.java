@@ -304,11 +304,10 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      * @param name the name of the metric
      * @param metric the {@code Metric} containing the data to be formatted
      * @param withHelpType flag controlling serialization of HELP and TYPE
-     * @param isStrictExemplars whether to use strict exemplar support
      * @return metric info in Prometheus format
      */
-    public static String toPrometheusData(String name, Metric metric, boolean withHelpType, boolean isStrictExemplars) {
-        return toPrometheusData(new MetricID(name), metric, withHelpType, isStrictExemplars);
+    public static String toPrometheusData(String name, Metric metric, boolean withHelpType) {
+        return toPrometheusData(new MetricID(name), metric, withHelpType);
     }
 
     /**

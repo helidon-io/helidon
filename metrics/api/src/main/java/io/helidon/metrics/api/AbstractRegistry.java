@@ -61,7 +61,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
     private final Map<MetricType, BiFunction<String, Metadata, M>> metricFactories = prepareMetricFactories();
 
     private final MetricStore<M> metricStore;
-    private final RegistrySettings registrySettings;
+    private RegistrySettings registrySettings;
 
     /**
      * Create a registry of a certain type.
@@ -486,6 +486,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
      */
     public void update(RegistrySettings registrySettings) {
         metricStore.update(registrySettings);
+        this.registrySettings = registrySettings;
     }
 
 
