@@ -157,13 +157,13 @@ endif::[]
 Once you enable exemplar support you can see the exemplars in the metrics output.
 
 .Exemplar output - `Counter`
-[listing,subs="quotes"]
+[listing,subs="+quotes"]
 ----
 # TYPE application_globalRequestTracker_total counter
 # HELP application_globalRequestTracker_total
-application_globalRequestTracker_total 4 *# {trace_id="daf26fe35fee9917"} 0.001183992 1617725180.234000* <1>
+application_globalRequestTracker_total 4 *# {trace_id="daf26fe35fee9917"} 0.001183992 1617725180.234000*
 ----
-<1> This exemplar is the most recent sample.
+This exemplar in this case is the most recent sample.
 
 == Additional Information
 
