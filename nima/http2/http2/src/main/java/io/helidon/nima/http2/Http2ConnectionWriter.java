@@ -154,27 +154,21 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     }
 
     private void splitAndWrite(Http2FrameData frame, FlowControl.Outbound flowControl) {
-        Http2FrameData[] splitFrames = flowControl.split(frame);
+        Http2FrameData[] splitFrames = flowControl.cut(frame);
         if (splitFrames.length == 1) {
             // windows are wide enough
             writeFrameInternal(frame);
             flowControl.decrementWindowSize(frame.header().length());
         } else if (splitFrames.length == 0) {
             // block until window update
-            if (!flowControl.blockTillUpdate()) {
-                // no timeout
-                splitAndWrite(frame, flowControl);
-            }
+            flowControl.blockTillUpdate();
+            splitAndWrite(frame, flowControl);
         } else if (splitFrames.length == 2) {
             // write send-able part and block until window update with the rest
             writeFrameInternal(splitFrames[0]);
             flowControl.decrementWindowSize(frame.header().length());
-            if (!flowControl.blockTillUpdate()) {
-                // no timeout
-                splitAndWrite(splitFrames[1], flowControl);
-            } else {
-                //TODO discarded frames after timeout
-            }
+            flowControl.blockTillUpdate();
+            splitAndWrite(splitFrames[1], flowControl);
         }
     }
 

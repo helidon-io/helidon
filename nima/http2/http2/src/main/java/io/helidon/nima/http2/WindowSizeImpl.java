@@ -110,13 +110,13 @@ abstract class WindowSizeImpl implements WindowSize {
         }
 
         @Override
-        public boolean blockTillUpdate() {
-            try {
-                //TODO configurable timeout
-                updated.get().get(10, TimeUnit.SECONDS);
-                return false;
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                return true;
+        public void blockTillUpdate() {
+            while (getRemainingWindowSize() == 0){
+                try {
+                    //TODO configurable timeout
+                    updated.get().get(100, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                }
             }
         }
 

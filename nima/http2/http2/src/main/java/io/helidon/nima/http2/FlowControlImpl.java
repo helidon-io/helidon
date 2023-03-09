@@ -18,8 +18,6 @@ package io.helidon.nima.http2;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import io.helidon.common.buffers.BufferData;
-
 abstract class FlowControlImpl implements FlowControl {
 
     private final int streamId;
@@ -43,9 +41,12 @@ abstract class FlowControlImpl implements FlowControl {
 
     @Override
     public int getRemainingWindowSize() {
-        return Integer.min(
-                connectionWindowSize().getRemainingWindowSize(),
-                streamWindowSize().getRemainingWindowSize());
+        return Math.max(0,
+                        Integer.min(
+                                connectionWindowSize().getRemainingWindowSize(),
+                                streamWindowSize().getRemainingWindowSize()
+                        )
+        );
     }
 
     @Override
@@ -128,49 +129,15 @@ abstract class FlowControlImpl implements FlowControl {
         }
 
         @Override
-        public Http2FrameData[] split(Http2FrameData frame) {
-            return split(getRemainingWindowSize(), frame);
+        public Http2FrameData[] cut(Http2FrameData frame) {
+            return frame.cut(getRemainingWindowSize());
         }
 
         @Override
-        public boolean blockTillUpdate() {
-            return connectionWindowSize.blockTillUpdate();
+        public void blockTillUpdate() {
+            connectionWindowSize.blockTillUpdate();
+            streamWindowSize.blockTillUpdate();
         }
-
-        private Http2FrameData[] split(int size, Http2FrameData frame) {
-            int length = frame.header().length();
-            if (length <= size || length == 0) {
-                return new Http2FrameData[]{frame};
-            }
-
-            if (size == 0) {
-                return new Http2FrameData[0];
-            }
-
-            byte[] data1 = new byte[size];
-            byte[] data2 = new byte[length - size];
-
-            frame.data().read(data1);
-            frame.data().read(data2);
-
-            BufferData bufferData1 = BufferData.create(data1);
-            BufferData bufferData2 = BufferData.create(data2);
-
-            Http2FrameData frameData1 = new Http2FrameData(Http2FrameHeader.create(bufferData1.available(),
-                    Http2FrameTypes.DATA,
-                    Http2Flag.DataFlags.create(0),
-                    frame.header().streamId()),
-                    bufferData1);
-
-            Http2FrameData frameData2 = new Http2FrameData(Http2FrameHeader.create(bufferData2.available(),
-                    Http2FrameTypes.DATA,
-                    Http2Flag.DataFlags.create(0),
-                    frame.header().streamId()),
-                    bufferData2);
-
-            return new Http2FrameData[]{frameData1, frameData2};
-        }
-
     }
 
 }

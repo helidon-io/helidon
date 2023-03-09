@@ -207,14 +207,13 @@ public interface FlowControl {
          * @param frame frame to split
          * @return result
          */
-        Http2FrameData[] split(Http2FrameData frame);
+        Http2FrameData[] cut(Http2FrameData frame);
 
         /**
          * Block until a window size update happens.
          *
-         * @return {@code true} if window update happened, {@code false} in case of timeout
          */
-        boolean blockTillUpdate();
+        void blockTillUpdate();
 
     }
 

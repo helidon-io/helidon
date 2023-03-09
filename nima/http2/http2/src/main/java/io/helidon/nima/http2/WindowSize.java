@@ -124,9 +124,8 @@ public interface WindowSize {
         /**
          * Block until window size update.
          *
-         * @return whether update happened before timeout
          */
-        boolean blockTillUpdate();
+        void blockTillUpdate();
 
     }
 
