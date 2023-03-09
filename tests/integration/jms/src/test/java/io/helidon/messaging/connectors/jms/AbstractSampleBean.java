@@ -94,25 +94,6 @@ abstract class AbstractSampleBean {
     }
 
     @ApplicationScoped
-    public static class ChannelAck extends AbstractSampleBean {
-
-        @Incoming("test-channel-ack-1")
-        @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<Void> channelAck(Message<String> msg) {
-            LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
-            consumed().add(msg.getPayload());
-            if (msg.getPayload().startsWith("NO_ACK")) {
-                LOGGER.fine(() -> String.format("NOT Acked %s", msg.getPayload()));
-            } else {
-                LOGGER.fine(() -> String.format("Acked %s", msg.getPayload()));
-                msg.ack();
-            }
-            countDown("channel1()");
-            return CompletableFuture.completedFuture(null);
-        }
-    }
-
-    @ApplicationScoped
     public static class Channel1 extends AbstractSampleBean {
 
         @Incoming("test-channel-1")
