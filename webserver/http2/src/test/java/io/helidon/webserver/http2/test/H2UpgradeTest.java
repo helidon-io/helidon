@@ -25,11 +25,18 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 
 import io.helidon.common.LogConfig;
+import io.helidon.common.http.Http;
+import io.helidon.webserver.Http1Route;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http2.Http2Route;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static java.net.http.HttpClient.Version;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.newHttpClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -55,12 +62,18 @@ class H2UpgradeTest {
                         .put("/", (req, res) ->
                                 req.content().as(String.class).thenAccept(s ->
                                         res.send("PUT " + req.version() + " " + s)))
+                        .route(Http1Route.route(Http.Method.PUT, "/version", (req, res) ->
+                                req.content().as(String.class).thenAccept(s ->
+                                        res.send("HTTP1 PUT " + req.version() + " " + s))))
+                        .route(Http2Route.route(Http.Method.PUT, "/version", (req, res) ->
+                                req.content().as(String.class).thenAccept(s ->
+                                        res.send("HTTP2 PUT " + req.version() + " " + s))))
                 )
                 .build()
                 .start()
                 .await(Duration.ofSeconds(10));
 
-        httpClient = HttpClient.newHttpClient();
+        httpClient = newHttpClient();
     }
 
     @AfterAll
@@ -70,26 +83,43 @@ class H2UpgradeTest {
 
     @Test
     void testGetUpgrade() throws IOException, InterruptedException {
-        HttpResponse<String> r = httpClientGet("GET", "/", BodyPublishers.noBody());
+        HttpResponse<String> r = httpClient(HTTP_2, "GET", "/",
+                BodyPublishers.noBody());
         assertThat(r.body(), is("GET V2_0"));
     }
 
     @Test
     void testPostUpgrade() throws IOException, InterruptedException {
-        HttpResponse<String> r = httpClientGet("POST", "/", BodyPublishers.ofString("Hello World"));
+        HttpResponse<String> r = httpClient(HTTP_2, "POST", "/",
+                BodyPublishers.ofString("Hello World"));
         assertThat(r.body(), is("POST V2_0 Hello World"));
     }
 
     @Test
     void testPutUpgrade() throws IOException, InterruptedException {
-        HttpResponse<String> r = httpClientGet("PUT", "/", BodyPublishers.ofString("Hello World"));
+        HttpResponse<String> r = httpClient(HTTP_2, "PUT", "/",
+                BodyPublishers.ofString("Hello World"));
         assertThat(r.body(), is("PUT V2_0 Hello World"));
     }
 
-    private HttpResponse<String> httpClientGet(String method, String path, HttpRequest.BodyPublisher publisher)
-            throws IOException, InterruptedException {
+    @Test
+    void testPutUpgradeAndRoute() throws IOException, InterruptedException {
+        HttpResponse<String> r = httpClient(HTTP_2, "PUT", "/version",
+                BodyPublishers.ofString("Hello World"));
+        assertThat(r.body(), is("HTTP2 PUT V2_0 Hello World"));
+    }
+
+    @Test
+    void testPutNoUpgradeAndRoute() throws IOException, InterruptedException {
+        HttpResponse<String> r = httpClient(HTTP_1_1, "PUT", "/version",
+                BodyPublishers.ofString("Hello World"));
+        assertThat(r.body(), is("HTTP1 PUT V1_1 Hello World"));
+    }
+
+    private HttpResponse<String> httpClient(Version version, String method, String path,
+                                            HttpRequest.BodyPublisher publisher) throws IOException, InterruptedException {
         return httpClient.send(HttpRequest.newBuilder()
-                .version(HttpClient.Version.HTTP_2)     // always upgrade, no prior knowledge support
+                .version(version)     // always upgrade, no prior knowledge support
                 .uri(URI.create("http://localhost:" + webServer.port() + path))
                 .method(method, publisher)
                 .build(), HttpResponse.BodyHandlers.ofString());
