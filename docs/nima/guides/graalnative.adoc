@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= OpenAPI
-:toc:
-:toc-placement: preamble
-:description: Helidon SE OpenAPI Support
-:keywords: helidon, se, openapi
-:feature-name: OpenAPI
-:rootdir: {docdir}/..
+= GraalVM Native Images
+:description:  Helidon Native Image
+:keywords: helidon, guide, graalvm, native-image
+:rootdir: {docdir}/../..
 
+include::{rootdir}/includes/nima.adoc[]
+
+This guide describes how to build a GraalVM native image for a Helidon SE application.
+
+include::{rootdir}/includes/guides/graalnative.adoc[]

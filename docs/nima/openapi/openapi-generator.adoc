@@ -17,16 +17,3 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = OpenAPI-based Code Generation
-:rootdir: {docdir}/../..
-:incdir: {rootdir}/includes/openapi
-:gen-inc: {incdir}/openapi-generator.adoc
-
-include::{rootdir}/includes/nima.adoc[]
-
-:helidon-client-xref: {webclient-page}
-include::{gen-inc}[tag=preamble]
-
-include::{gen-inc}[tags=intro;coords;config;usage;using-generated-code-intro;using-generated-code-server-intro]
-
-
-TO DO FOR NIMA

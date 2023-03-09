@@ -25,6 +25,12 @@ ifdef::mp-flavor[]
 :metrics-page: {rootdir}/mp/metrics/metrics.adoc
 :openapi-page: {rootdir}/mp/openapi/openapi.adoc
 endif::[]
-:webclient-page: {rootdir}/se/webclient.adoc
+ifdef::nima-flavor[]
+:health-page: {rootdir}/nima/health.adoc
+:metrics-page: {rootdir}/nima/metrics/metrics.adoc
+:openapi-page: {rootdir}/nima/openapi/openapi.adoc
+endif::[]
+
+:webclient-page: {rootdir}/nima/webclient.adoc
 :restclient-page: {rootdir}/mp/restclient.adoc
 :cli-page: {rootdir}/about/cli.adoc

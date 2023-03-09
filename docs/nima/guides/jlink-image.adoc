@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= OpenAPI
-:toc:
-:toc-placement: preamble
-:description: Helidon SE OpenAPI Support
-:keywords: helidon, se, openapi
-:feature-name: OpenAPI
-:rootdir: {docdir}/..
+= Custom Runtime Images with `jlink`
+:description: Helidon Custom Runtime Images
+:keywords: helidon, guide, jlink, image
+:rootdir: {docdir}/../..
 
+include::{rootdir}/includes/se.adoc[]
+
+This guide describes how to build a custom runtime image for your Helidon application
+using Helidon's support for the JDK's `jlink` tool.
+
+include::{rootdir}/includes/guides/jlink-image.adoc[]

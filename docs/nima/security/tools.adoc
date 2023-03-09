@@ -16,18 +16,35 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ifndef::flavor-included[]
+= Security Tools
+:description: Helidon Security Tools
+:keywords: helidon, security
+:rootdir: {docdir}/../..
 
-:flavor-included: true
+== Tools
 
-ifndef::rootdir[:rootdir: {docdir}/..]
-include::{rootdir}/includes/attributes.adoc[]
+=== Secure configuration
 
-:h1-prefix: Nima
-:flavor-uc: Nima
-:flavor-lc: nima
-:nima-flavor: true
+Support for encrypting secrets in configuration files.
+[source,xml]
+.Maven Dependency
+----
+<dependency>
+    <groupId>io.helidon.config</groupId>
+    <artifactId>helidon-config-encryption</artifactId>
+</dependency>
+----
 
-include::{rootdir}/includes/pages.adoc[]
+=== Key and certificate configuration
 
-endif::flavor-included[]
+Configuration support for accessing private keys, public keys, certificates and
+ certificate chains including runtime access to instances of such.
+[source,xml]
+.Maven Dependency
+----
+<dependency>
+    <groupId>io.helidon.common</groupId>
+    <artifactId>helidon-common-key-util</artifactId>
+</dependency>
+----
+

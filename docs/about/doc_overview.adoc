@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Documentation Overview
+= Helidon Documentation
 :description: Helidon
 :keywords: helidon, java, microservices, microprofile
 :rootdir: {docdir}/..
@@ -105,7 +105,7 @@ xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon SE Tutorial]
 --
 Ready for more hands-on learning? Explore the features of Helidon with these quick step-by-step guides.
 
-Nima Guides
+xref:{rootdir}/nima/guides/overview.adoc[Nima Guides]
 
 xref:{rootdir}/se/guides/overview.adoc[SE Guides]
 
@@ -129,9 +129,9 @@ xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 
 --
 
-//Helidon SE
+//Advanced Features and FAQs
 [CARD]
-.Helidon SE
+.Advanced Features and FAQs
 [icon=swap_horiz]
 --
 
