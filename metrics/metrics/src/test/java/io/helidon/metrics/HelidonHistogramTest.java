@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -272,7 +272,7 @@ class HelidonHistogramTest {
     @Test
     void testPrometheus() throws IOException, ParseException {
         final StringBuilder sb = new StringBuilder();
-        histoInt.prometheusData(sb, histoIntID, true);
+        histoInt.prometheusData(sb, histoIntID, true, false);
         parsePrometheusText(new LineNumberReader(new StringReader(sb.toString())).lines())
                 .forEach(entry -> assertThat("Unexpected value checking " + entry.getKey(),
                                     EXPECTED_PROMETHEUS_RESULTS.get(entry.getKey()),
@@ -282,7 +282,7 @@ class HelidonHistogramTest {
     @Test
     void testPrometheusWithTags() {
         final StringBuilder sb = new StringBuilder();
-        histoInt.prometheusData(sb, histoIntIDWithTags, true);
+        histoInt.prometheusData(sb, histoIntIDWithTags, true, false);
 
         parsePrometheusText(new LineNumberReader(new StringReader(sb.toString())).lines())
                 .forEach(entry -> assertThat("Missing tag labels for " + entry.getKey(),

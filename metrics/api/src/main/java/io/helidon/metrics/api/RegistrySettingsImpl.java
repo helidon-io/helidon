@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,12 @@ class RegistrySettingsImpl implements RegistrySettings {
 
     private final boolean isEnabled;
     private final RegistryFilterSettings registryFilterSettings;
+    private final boolean isStrictExemplars;
 
     protected RegistrySettingsImpl(Builder builder) {
         isEnabled = builder.isEnabled;
         registryFilterSettings = builder.registryFilterSettingsBuilder.build();
+        isStrictExemplars = builder.isStrictExemplars;
     }
 
     @Override
@@ -41,9 +43,16 @@ class RegistrySettingsImpl implements RegistrySettings {
         return isEnabled && registryFilterSettings.passes(dottedName);
     }
 
+    @Override
+    public boolean isStrictExemplars() {
+        return isStrictExemplars;
+    }
+
     static class Builder implements RegistrySettings.Builder {
 
         private boolean isEnabled = true;
+        private boolean isStrictExemplars = true;
+
         private RegistryFilterSettings.Builder registryFilterSettingsBuilder = RegistryFilterSettings.builder();
 
         @Override
@@ -64,6 +73,12 @@ class RegistrySettingsImpl implements RegistrySettings {
         }
 
         @Override
+        public RegistrySettings.Builder strictExemplars(boolean value) {
+            this.isStrictExemplars = value;
+            return this;
+        }
+
+        @Override
         public RegistrySettings.Builder config(Config registrySettings) {
             registrySettings.get(Builder.ENABLED_CONFIG_KEY)
                     .asBoolean()
@@ -72,12 +87,21 @@ class RegistrySettingsImpl implements RegistrySettings {
             registrySettings.get(Builder.FILTER_CONFIG_KEY)
                     .as(RegistryFilterSettings.Builder::create)
                     .ifPresent(this::filterSettings);
+
+            registrySettings.get(MetricsSettings.Builder.EXEMPLARS_STRICT_CONFIG_KEY)
+                    .asBoolean()
+                    .ifPresent(this::strictExemplars);
             return this;
         }
 
         @Override
         public boolean isEnabled() {
             return isEnabled;
+        }
+
+        @Override
+        public boolean isStrictExemplars() {
+            return isStrictExemplars;
         }
     }
 }

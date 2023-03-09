@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ public class HelidonConcurrentGaugeTest {
         // Make sure the concurrent gauge formatting conforms to Prometheus rules.
         StringBuilder sb = new StringBuilder();
         MetricID metricID = new MetricID(meta.getName());
-        gauge.prometheusData(sb, metricID, true);
+        gauge.prometheusData(sb, metricID, true, false);
         assertThat("Prometheus format for ConcurrentGauge", sb.toString(), containsString(
                 "# TYPE base_" + metricID.getName() + "_current gauge"));
     }

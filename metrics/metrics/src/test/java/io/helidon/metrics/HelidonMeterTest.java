@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,7 +134,7 @@ class HelidonMeterTest {
     @Test
     void testPrometheus() {
         final StringBuilder sb = new StringBuilder();
-        meter.prometheusData(sb, meterID, true);
+        meter.prometheusData(sb, meterID, true, false);
         String data = sb.toString();
 
         assertThat(data, startsWith(EXPECTED_PROMETHEUS_START));

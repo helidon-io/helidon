@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,13 @@ public interface RegistrySettings {
     boolean isEnabled();
 
     /**
+     * Returns whether strict exemplar behavior is enabled.
+     *
+     * @return true/false
+     */
+    boolean isStrictExemplars();
+
+    /**
      * Returns whether the specified metric name is enabled or not, factoring in the enabled setting for this type as a whole
      * with the regex pattern.
      *
@@ -121,6 +128,22 @@ public interface RegistrySettings {
         Builder filterSettings(RegistryFilterSettings.Builder registryFilterSettingsBuilder);
 
         /**
+         * Whether to add exemplars (if exemplar providers are present) only to counter totals and buckets.
+         * <p>
+         *     By default, Helidon adds exemplars only to those metric types described as accepting exemplars in the
+         *     <a href="https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md">OpenMetrics
+         *     spec</a>. Helidon can add exemplars to additional metric types but only if the user sets {@code strcitExamplars}
+         *     to @{code false}.
+         * </p>
+         *
+         * @param value true/false
+         * @return updated builder
+         *
+         */
+        @ConfiguredOption(key = MetricsSettings.Builder.EXEMPLARS_STRICT_CONFIG_KEY, value = "true")
+        Builder strictExemplars(boolean value);
+
+        /**
          * Sets values in the builder based on the provided {@code Config} node.
          *
          * @param registrySettings {@code Config} node containing settings for the registry type
@@ -133,6 +156,12 @@ public interface RegistrySettings {
          * @return builder's current setting for whether metrics in the relevant registry are to be used
          */
         boolean isEnabled();
+
+        /**
+         *
+         * @return whether strict exemplar behavior is enabled
+         */
+        boolean isStrictExemplars();
 
         /**
          * Creates a new {@code RegistrySettings} instance from the builder.
