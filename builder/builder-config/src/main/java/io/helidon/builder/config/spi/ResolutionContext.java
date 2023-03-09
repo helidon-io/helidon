@@ -16,8 +16,11 @@
 
 package io.helidon.builder.config.spi;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 import io.helidon.common.config.Config;
 
@@ -29,6 +32,7 @@ public class ResolutionContext {
     private final Config cfg;
     private final ConfigResolver resolver;
     private final ConfigBeanBuilderValidator<?> validator;
+    private final Map<Class<?>, Function<Config, ?>> mappers;
 
     /**
      * Constructor for this type that takes a builder.
@@ -40,6 +44,7 @@ public class ResolutionContext {
         this.cfg = Objects.requireNonNull(b.cfg);
         this.resolver = Objects.requireNonNull(b.resolver);
         this.validator = b.validator;
+        this.mappers = Map.copyOf(b.mappers);
     }
 
     /**
@@ -78,6 +83,15 @@ public class ResolutionContext {
         return Optional.ofNullable(validator);
     }
 
+    /**
+     * Return the known config bean mappers associated with this config bean context.
+     *
+     * @return the config bean mappers
+     */
+    public Map<Class<?>, Function<Config, ?>> mappers() {
+        return mappers;
+    }
+
     @Override
     public String toString() {
         return config().toString();
@@ -96,21 +110,24 @@ public class ResolutionContext {
     /**
      * Creates a resolution context from the provided arguments.
      *
-     * @param configBeanType    the config bean type
-     * @param cfg               the config
-     * @param resolver          the resolver
-     * @param validator         the bean builder validator
+     * @param configBeanType the config bean type
+     * @param cfg            the config
+     * @param resolver       the resolver
+     * @param validator      the bean builder validator
+     * @param mappers        the known config bean mappers related to this config bean context
      * @return the resolution context
      */
     public static ResolutionContext create(Class<?> configBeanType,
                                            Config cfg,
                                            ConfigResolver resolver,
-                                           ConfigBeanBuilderValidator<?> validator) {
+                                           ConfigBeanBuilderValidator<?> validator, Map<Class<?>,
+            Function<Config, ?>> mappers) {
         return ResolutionContext.builder()
                 .configBeanType(configBeanType)
                 .config(cfg)
                 .resolver(resolver)
                 .validator(validator)
+                .mappers(mappers)
                 .build();
     }
 
@@ -122,6 +139,7 @@ public class ResolutionContext {
         private Config cfg;
         private ConfigResolver resolver;
         private ConfigBeanBuilderValidator<?> validator;
+        private final Map<Class<?>, Function<Config, ?>> mappers = new LinkedHashMap<>();
 
         /**
          * Constructor for the fluent builder.
@@ -147,7 +165,7 @@ public class ResolutionContext {
          */
         public Builder configBeanType(Class<?> configBeanType) {
             this.configBeanType = Objects.requireNonNull(configBeanType);
-            return this;
+            return identity();
         }
 
         /**
@@ -180,6 +198,32 @@ public class ResolutionContext {
          */
         public Builder validator(ConfigBeanBuilderValidator<?> val) {
             this.validator = val;
+            return identity();
+        }
+
+        /**
+         * Sets the mappers to val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder mappers(Map<Class<?>, Function<Config, ?>> val) {
+            Objects.requireNonNull(val);
+            this.mappers.clear();
+            this.mappers.putAll(val);
+            return identity();
+        }
+
+        /**
+         * Adds a single mapper val.
+         *
+         * @param key the key
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder addMapper(Class<?> key, Function<Config, ?> val) {
+            Objects.requireNonNull(val);
+            this.mappers.put(key, val);
             return identity();
         }
     }

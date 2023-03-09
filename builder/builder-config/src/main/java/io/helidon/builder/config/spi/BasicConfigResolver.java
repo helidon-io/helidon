@@ -16,10 +16,17 @@
 
 package io.helidon.builder.config.spi;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 
+import io.helidon.common.Builder;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
@@ -65,8 +72,11 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
                               Map<String, Map<String, Object>> meta,
                               ConfigResolverRequest<T> request) {
         Config attrCfg = ctx.config().get(request.configKey());
-        return attrCfg.exists()
-                ? optionalWrappedConfig(attrCfg, meta, request) : Optional.empty();
+        if (!attrCfg.exists()) {
+            return Optional.empty();
+        }
+
+        return optionalWrappedConfig(ctx, attrCfg, meta, request);
     }
 
     @Override
@@ -74,8 +84,11 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
                                                     Map<String, Map<String, Object>> meta,
                                                     ConfigResolverRequest<T> request) {
         Config attrCfg = ctx.config().get(request.configKey());
-        return attrCfg.exists()
-                ? (Optional<Collection<T>>) optionalWrappedConfig(attrCfg, meta, request) : Optional.empty();
+        if (!attrCfg.exists()) {
+            return Optional.empty();
+        }
+
+        return (Optional<Collection<T>>) optionalWrappedConfig(ctx, attrCfg, meta, request);
     }
 
     @Override
@@ -83,37 +96,105 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
                                             Map<String, Map<String, Object>> meta,
                                             ConfigResolverMapRequest<K, V> request) {
         Config attrCfg = ctx.config().get(request.configKey());
-        return attrCfg.exists()
-                ? (Optional<Map<K, V>>) optionalWrappedConfig(attrCfg, meta, request) : Optional.empty();
+        if (!attrCfg.exists()) {
+            return Optional.empty();
+        }
+
+        return (Optional<Map<K, V>>) optionalWrappedConfig(ctx, attrCfg, meta, request);
     }
 
-    private <T> Optional<T> optionalWrappedConfig(Config attrCfg,
+    private <T> Optional<T> optionalWrappedConfig(ResolutionContext ctx,
+                                                  Config attrCfg,
                                                   Map<String, Map<String, Object>> ignoredMeta,
                                                   ConfigResolverRequest<T> request) {
         Class<?> componentType = request.valueComponentType().orElse(null);
         Class<?> type = request.valueType();
-        final boolean isOptional = Optional.class.equals(type);
+        boolean isOptional = Optional.class.equals(type);
         if (isOptional) {
             type = request.valueComponentType().orElseThrow();
         }
-        final boolean isCharArray = (type.isArray() && char.class == type.getComponentType());
+        boolean isList = List.class.isAssignableFrom(type);
+        boolean isSet = Set.class.isAssignableFrom(type);
+        boolean isMap = Map.class.isAssignableFrom(type);
+
+        boolean isCharArray = (type.isArray() && char.class == type.getComponentType());
         if (isCharArray) {
             type = String.class;
         }
 
+        Object val;
         try {
-            ConfigValue<?> attrVal = attrCfg.as(type);
-            Object val = attrVal.get();
-            if (isCharArray) {
-                val = ((String) val).toCharArray();
+            Function<Config, ?> mapper = (componentType == null) ? null : ctx.mappers().get(componentType);
+            if (mapper != null) {
+                if (attrCfg.isList()) {
+                    if (!isList && !isSet) {
+                        throw new IllegalStateException("unable to convert node list to " + type + " for " + attrCfg);
+                    }
+
+                    List<Object> cfgList = new ArrayList<>();
+                    List<Config> nodeList = attrCfg.asNodeList().get();
+                    for (Config subCfg : nodeList) {
+                        Object subVal = Objects.requireNonNull(mapper.apply(subCfg));
+                        Builder builder = (Builder) subVal;
+                        subVal = Objects.requireNonNull(builder.build());
+
+                        cfgList.add(subVal);
+                    }
+
+                    if (isSet) {
+                        Set<Object> set = new LinkedHashSet<>();
+                        set.addAll(cfgList);
+                        val = set;
+                    } else {
+                        val = cfgList;
+                    }
+                } else {
+                    val = Objects.requireNonNull(mapper.apply(attrCfg));
+                    Builder builder = (Builder) val;
+                    val = Objects.requireNonNull(builder.build());
+
+                    if (isList) {
+                        val = List.of(val);
+                    } else if (isSet) {
+                        Set<Object> set = new LinkedHashSet<>();
+                        set.add(val);
+                        val = set;
+                    } else if (isMap) {
+                        // https://github.com/helidon-io/helidon/issues/6382
+                        throw new UnsupportedOperationException("map is not supported");
+                    }
+                }
+            } else {
+                ConfigValue<?> attrVal;
+                if (isList) {
+                    attrVal = attrCfg.asList(componentType);
+                    val = attrVal.get();
+                } else if (isSet) {
+                    attrVal = attrCfg.asList(componentType);
+                    // note to tlanger: consider adding support for asSet() in common
+                    val = new LinkedHashSet<>((List<?>) attrVal.get());
+                } else if (isMap) {
+                    attrVal = attrCfg.asMap();
+                    val = attrVal.get();
+                } else {
+                    attrVal = attrCfg.as(type);
+                    val = attrVal.get();
+                }
+                if (isCharArray) {
+                    val = ((String) val).toCharArray();
+                }
             }
 
-            return Optional.of(isOptional ? (T) Optional.of(val) : (T) val);
-        } catch (Exception e) {
+            if (isOptional) {
+                return Optional.of((T) Optional.of(val));
+            }
+
+            return Optional.of((T) val);
+        } catch (Throwable e) {
             String typeName = toTypeNameDescription(request.valueType(), componentType);
             String configKey = attrCfg.key().toString();
             throw new IllegalStateException("Failed to convert " + typeName
-                                              + " for attribute: " + request.attributeName()
+                                                    + " for attribute: " + request.attributeName()
                                                     + " and config key: " + configKey, e);
         }
     }

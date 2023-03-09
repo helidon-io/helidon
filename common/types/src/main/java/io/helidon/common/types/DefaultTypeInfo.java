@@ -18,8 +18,10 @@ package io.helidon.common.types;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -33,6 +35,7 @@ public class DefaultTypeInfo implements TypeInfo {
     private final List<AnnotationAndValue> annotations;
     private final List<TypedElementName> elementInfo;
     private final List<TypedElementName> otherElementInfo;
+    private final Map<TypeName, List<AnnotationAndValue>> referencedTypeNamesToAnnotations;
     private final TypeInfo superTypeInfo;
     private final Set<String> modifierNames;
 
@@ -50,6 +53,7 @@ public class DefaultTypeInfo implements TypeInfo {
         this.otherElementInfo = List.copyOf(b.otherElementInfo);
         this.superTypeInfo = b.superTypeInfo;
         this.modifierNames = Set.copyOf(b.modifierNames);
+        this.referencedTypeNamesToAnnotations = Map.copyOf(b.referencedTypeNamesToAnnotations);
     }
 
     /**
@@ -87,6 +91,11 @@ public class DefaultTypeInfo implements TypeInfo {
     }
 
     @Override
+    public Map<TypeName, List<AnnotationAndValue>> referencedTypeNamesToAnnotations() {
+        return referencedTypeNamesToAnnotations;
+    }
+
+    @Override
     public Optional<TypeInfo> superTypeInfo() {
         return Optional.ofNullable(superTypeInfo);
     }
@@ -121,6 +130,7 @@ public class DefaultTypeInfo implements TypeInfo {
         private final List<AnnotationAndValue> annotations = new ArrayList<>();
         private final List<TypedElementName> elementInfo = new ArrayList<>();
         private final List<TypedElementName> otherElementInfo = new ArrayList<>();
+        private final Map<TypeName, List<AnnotationAndValue>> referencedTypeNamesToAnnotations = new LinkedHashMap<>();
         private final Set<String> modifierNames = new LinkedHashSet<>();
         private TypeName typeName;
         private String typeKind;
@@ -151,7 +161,7 @@ public class DefaultTypeInfo implements TypeInfo {
          */
         public Builder typeName(TypeName val) {
             this.typeName = val;
-            return this;
+            return identity();
         }
 
         /**
@@ -162,7 +172,7 @@ public class DefaultTypeInfo implements TypeInfo {
          */
         public Builder typeKind(String val) {
             this.typeKind = val;
-            return this;
+            return identity();
         }
 
         /**
@@ -175,7 +185,7 @@ public class DefaultTypeInfo implements TypeInfo {
             Objects.requireNonNull(val);
             this.annotations.clear();
             this.annotations.addAll(val);
-            return this;
+            return identity();
         }
 
         /**
@@ -187,7 +197,7 @@ public class DefaultTypeInfo implements TypeInfo {
         public Builder addAnnotation(AnnotationAndValue val) {
             Objects.requireNonNull(val);
             annotations.add(Objects.requireNonNull(val));
-            return this;
+            return identity();
         }
 
         /**
@@ -200,7 +210,7 @@ public class DefaultTypeInfo implements TypeInfo {
             Objects.requireNonNull(val);
             this.elementInfo.clear();
             this.elementInfo.addAll(val);
-            return this;
+            return identity();
         }
 
         /**
@@ -212,7 +222,7 @@ public class DefaultTypeInfo implements TypeInfo {
         public Builder addElementInfo(TypedElementName val) {
             Objects.requireNonNull(val);
             elementInfo.add(val);
-            return this;
+            return identity();
         }
 
         /**
@@ -225,7 +235,7 @@ public class DefaultTypeInfo implements TypeInfo {
             Objects.requireNonNull(val);
             this.otherElementInfo.clear();
             this.otherElementInfo.addAll(val);
-            return this;
+            return identity();
         }
 
         /**
@@ -237,7 +247,50 @@ public class DefaultTypeInfo implements TypeInfo {
         public Builder addOtherElementInfo(TypedElementName val) {
             Objects.requireNonNull(val);
             otherElementInfo.add(val);
+            return identity();
+        }
+
+        /**
+         * Sets the referencedTypeNamesToAnnotations to val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder referencedTypeNamesToAnnotations(Map<TypeName, List<AnnotationAndValue>> val) {
+            Objects.requireNonNull(val);
+            this.referencedTypeNamesToAnnotations.clear();
+            this.referencedTypeNamesToAnnotations.putAll(val);
             return this;
+        }
+
+        /**
+         * Adds a single referencedTypeNamesToAnnotations val.
+         *
+         * @param key the key
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder addReferencedTypeNamesToAnnotations(TypeName key, AnnotationAndValue val) {
+            return addReferencedTypeNamesToAnnotations(key, List.of(val));
+        }
+
+        /**
+         * Adds a collection of referencedTypeNamesToAnnotations values.
+         *
+         * @param key the key
+         * @param vals the values
+         * @return this fluent builder
+         */
+        public Builder addReferencedTypeNamesToAnnotations(TypeName key, Collection<AnnotationAndValue> vals) {
+            Objects.requireNonNull(vals);
+            referencedTypeNamesToAnnotations.compute(key, (k, v) -> {
+                if (v == null) {
+                    v = new ArrayList<>();
+                }
+                v.addAll(vals);
+                return v;
+            });
+            return identity();
         }
 
         /**
@@ -250,7 +303,7 @@ public class DefaultTypeInfo implements TypeInfo {
             Objects.requireNonNull(val);
             this.modifierNames.clear();
             this.modifierNames.addAll(val);
-            return this;
+            return identity();
         }
 
         /**
@@ -262,7 +315,7 @@ public class DefaultTypeInfo implements TypeInfo {
         public Builder addModifierName(String val) {
             Objects.requireNonNull(val);
             modifierNames.add(val);
-            return this;
+            return identity();
         }
 
         /**
@@ -274,7 +327,7 @@ public class DefaultTypeInfo implements TypeInfo {
         public Builder superTypeInfo(TypeInfo val) {
             Objects.requireNonNull(val);
             this.superTypeInfo = val;
-            return this;
+            return identity();
         }
     }
 

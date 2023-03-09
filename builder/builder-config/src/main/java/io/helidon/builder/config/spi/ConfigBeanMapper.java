@@ -32,8 +32,8 @@ public interface ConfigBeanMapper /* extends ConfigMapper<C> */ {
      *
      * @param config         the config
      * @param configBeanType the config bean type
-     * @param <C> the config type
-     * @param <T> the config bean type
+     * @param <C>            the config type
+     * @param <T>            the config bean type
      * @return the config bean generated, or empty if not possible to create
      */
     <C extends Config, T> Optional<T> toConfigBean(C config,

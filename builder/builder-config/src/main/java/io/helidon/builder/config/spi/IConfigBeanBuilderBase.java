@@ -16,8 +16,10 @@
 
 package io.helidon.builder.config.spi;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 import io.helidon.common.config.Config;
 
@@ -70,14 +72,16 @@ public abstract class IConfigBeanBuilderBase implements IConfigBeanBuilder {
      * @param cfg               the config
      * @param resolver          the resolver
      * @param validator         the config bean builder validator
+     * @param mappers           the known config bean mappers related to this config bean context
      * @return the resolution context
      */
     protected ResolutionContext createResolutionContext(Class<?> configBeanType,
                                                         Config cfg,
                                                         ConfigResolver resolver,
-                                                        ConfigBeanBuilderValidator<?> validator) {
+                                                        ConfigBeanBuilderValidator<?> validator,
+                                                        Map<Class<?>, Function<Config, ?>> mappers) {
         // note to self: that in the future we should probably accept a code-generated 'version id' here --jtrent
-        return ResolutionContext.create(configBeanType, cfg, resolver, validator);
+        return ResolutionContext.create(configBeanType, cfg, resolver, validator, mappers);
     }
 
     /**

@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import io.helidon.config.metadata.ConfiguredOption;
+
 /**
  * An implementation of {@link AttributeVisitor} that will validate each attribute to enforce not-null in accordance with
  * {@link io.helidon.config.metadata.ConfiguredOption#required()}.
@@ -78,7 +80,7 @@ public class RequiredAttributeVisitor implements AttributeVisitor<Object> {
         }
 
         Object val = valueSupplier.get();
-        if (val != null) {
+        if (val != null && val != ConfiguredOption.UNCONFIGURED) {
             return;
         }
 

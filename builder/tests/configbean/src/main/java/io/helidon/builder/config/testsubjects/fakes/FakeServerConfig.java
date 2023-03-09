@@ -17,8 +17,11 @@
 package io.helidon.builder.config.testsubjects.fakes;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import io.helidon.builder.Singular;
 import io.helidon.builder.config.ConfigBean;
@@ -27,7 +30,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * aka ServerConfiguration.
  */
-@ConfigBean
+@ConfigBean(drivesActivation = true)
 public interface FakeServerConfig extends FakeSocketConfig {
 
     /**
@@ -92,12 +95,32 @@ public interface FakeServerConfig extends FakeSocketConfig {
     }
 
     /**
+     * A list of all the configured sockets. This maps to the same underlying structure as {@link #sockets()}.
+     *
+     * @return a list of all the configured server sockets, never null
+     */
+    @Singular("socket")
+    @ConfiguredOption(key = "sockets")
+    List<FakeSocketConfig> socketList();
+
+    // note to self: consider supporting mappings to the same underlying attribute for different method names
+//    /**
+//     * A set of all the configured sockets. This maps to the same underlying structure as {@link #sockets()}.
+//     *
+//     * @return a list of all the configured server sockets, never null
+//     */
+//    @Singular("socket")
+//    Set<FakeSocketConfig> socketSet();
+//
+    // TODO: in https://github.com/helidon-io/helidon/issues/6382
+    /**
      * A map of all the configured server sockets; that is the default server socket.
      *
      * @return a map of all the configured server sockets, never null
      */
-    @Singular("socket")
-    Map<String, FakeSocketConfig> sockets();
+    default Map<String, FakeSocketConfig> sockets() {
+        return socketList().stream().collect(Collectors.toMap(FakeSocketConfig::name, Function.identity()));
+    }
 
     /**
      * The maximum amount of time that the server will wait to shut

@@ -77,7 +77,8 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @param value the annotation value
      * @return the new instance
      */
-    public static DefaultAnnotationAndValue create(Class<? extends Annotation> annoType, String value) {
+    public static DefaultAnnotationAndValue create(Class<? extends Annotation> annoType,
+                                                   String value) {
         return create(DefaultTypeName.create(annoType), value);
     }
 
@@ -88,7 +89,8 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @param values the annotation values
      * @return the new instance
      */
-    public static DefaultAnnotationAndValue create(Class<? extends Annotation> annoType, Map<String, String> values) {
+    public static DefaultAnnotationAndValue create(Class<? extends Annotation> annoType,
+                                                   Map<String, String> values) {
         return create(DefaultTypeName.create(annoType), values);
     }
 
@@ -99,7 +101,8 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @param value the annotation value
      * @return the new instance
      */
-    public static DefaultAnnotationAndValue create(TypeName annoTypeName, String value) {
+    public static DefaultAnnotationAndValue create(TypeName annoTypeName,
+                                                   String value) {
         return DefaultAnnotationAndValue.builder().typeName(annoTypeName).value(value).build();
     }
 
@@ -110,7 +113,8 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @param values the annotation values
      * @return the new instance
      */
-    public static DefaultAnnotationAndValue create(TypeName annoTypeName, Map<String, String> values) {
+    public static DefaultAnnotationAndValue create(TypeName annoTypeName,
+                                                   Map<String, String> values) {
         return DefaultAnnotationAndValue.builder().typeName(annoTypeName).values(values).build();
     }
 
@@ -262,4 +266,5 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
             return typeName(DefaultTypeName.create(annoType));
         }
     }
+
 }

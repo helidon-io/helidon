@@ -32,6 +32,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 
+import static io.helidon.builder.processor.tools.BeanUtils.validateAndParseMethodName;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.BUILDER_ANNO_TYPE_NAME;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_INCLUDE_META_ATTRIBUTES;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_LIST_TYPE;
@@ -440,7 +441,7 @@ public class BodyContext {
     protected static String toBeanAttributeName(TypedElementName method,
                                                 boolean isBeanStyleRequired) {
         AtomicReference<Optional<List<String>>> refAttrNames = new AtomicReference<>();
-        BeanUtils.validateAndParseMethodName(method.elementName(), method.typeName().name(), isBeanStyleRequired, refAttrNames);
+        validateAndParseMethodName(method.elementName(), method.typeName().name(), isBeanStyleRequired, refAttrNames);
         List<String> attrNames = (refAttrNames.get().isEmpty()) ? List.of() : refAttrNames.get().get();
         if (!isBeanStyleRequired) {
             return (!attrNames.isEmpty()) ? attrNames.get(0) : method.elementName();
@@ -590,7 +591,7 @@ public class BodyContext {
                     && BeanUtils.isBooleanType(method.typeName().name())
                     && method.elementName().startsWith("is")) {
                 AtomicReference<Optional<List<String>>> alternateNames = new AtomicReference<>();
-                BeanUtils.validateAndParseMethodName(method.elementName(),
+                validateAndParseMethodName(method.elementName(),
                                                      method.typeName().name(), true, alternateNames);
                 assert (Objects.nonNull(alternateNames.get()));
                 final String currentAttrName = beanAttributeName;

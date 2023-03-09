@@ -17,6 +17,7 @@
 package io.helidon.common.types;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -154,6 +155,14 @@ public interface TypeInfo {
      * @return the elements that still make up the type, but are otherwise deemed irrelevant for processing
      */
     List<TypedElementName> otherElementInfo();
+
+    /**
+     * Any Map, List, Set, or method that has {@link TypeName#typeArguments()} will be analyzed and any type arguments will have
+     * its annotations added here. Note that this only applies to non-built-in types.
+     *
+     * @return all referenced types
+     */
+    Map<TypeName, List<AnnotationAndValue>> referencedTypeNamesToAnnotations();
 
     /**
      * The parent/super class for this type info.

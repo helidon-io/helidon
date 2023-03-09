@@ -20,6 +20,7 @@
 module io.helidon.builder.config.processor {
     requires java.compiler;
     requires jakarta.inject;
+    requires io.helidon.builder;
     requires io.helidon.builder.config;
     requires io.helidon.builder.processor.tools;
     requires io.helidon.common.types;

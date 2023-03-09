@@ -46,19 +46,19 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
     protected MapConfigSource.Builder createNested8080TestingConfigSource() {
         return ConfigSources.create(
                 Map.of(
-                        "nested." + FAKE_SERVER_CONFIG_CONFIG + ".name", "nested",
-                        "nested." + FAKE_SERVER_CONFIG_CONFIG + ".port", "8080",
-                        "nested." + FAKE_SERVER_CONFIG_CONFIG + ".worker-count", "1"
+                        "nested." + FAKE_SERVER_CONFIG + ".name", "nested",
+                        "nested." + FAKE_SERVER_CONFIG + ".port", "8080",
+                        "nested." + FAKE_SERVER_CONFIG + ".worker-count", "1"
                 ), "config-nested-default-8080");
     }
 
     public MapConfigSource.Builder createRootPlusOneSocketTestingConfigSource() {
         return ConfigSources.create(
                 Map.of(
-                        FAKE_SERVER_CONFIG_CONFIG + ".name", "root",
-                        FAKE_SERVER_CONFIG_CONFIG + ".port", "8080",
-                        FAKE_SERVER_CONFIG_CONFIG + "." + FAKE_SOCKET_CONFIG + ".name", "first",
-                        FAKE_SERVER_CONFIG_CONFIG + "." + FAKE_SOCKET_CONFIG + ".port", "8081"
+                        FAKE_SERVER_CONFIG + ".name", "root",
+                        FAKE_SERVER_CONFIG + ".port", "8080",
+                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".name", "first",
+                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".port", "8081"
                 ), "config-root-plus-one-socket");
     }
 
@@ -103,10 +103,7 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
 
         FakeServerConfig cfg = (FakeServerConfig) configBeans.iterator().next();
         Map<String, FakeSocketConfig> sockets = cfg.sockets();
-
-        // TODO:
-//        assertThat(sockets.toString(), sockets.size(), is(1));
-        // TODO: more testing here
+        assertThat(sockets.toString(), sockets.size(), is(1));
     }
 
 }

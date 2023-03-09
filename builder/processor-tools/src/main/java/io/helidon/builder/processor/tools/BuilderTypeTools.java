@@ -56,6 +56,8 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 
+import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
+
 /**
  * The default implementation for {@link io.helidon.builder.processor.spi.TypeInfoCreatorProvider}. This also contains an abundance of
  * other useful methods used for annotation processing.
@@ -74,6 +76,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Optional<TypeInfo> createTypeInfo(TypeName annotationTypeName,
                                              TypeName typeName,
                                              TypeElement element,
@@ -105,15 +108,53 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
         return Optional.of(DefaultTypeInfo.builder()
                                    .typeName(typeName)
                                    .typeKind(String.valueOf(element.getKind()))
-                                   .annotations(BuilderTypeTools
-                                                        .createAnnotationAndValueListFromElement(element,
-                                                                                         processingEnv.getElementUtils()))
+                                   .annotations(
+                                           createAnnotationAndValueListFromElement(element, processingEnv.getElementUtils()))
                                    .elementInfo(elementInfo)
                                    .otherElementInfo(otherElementInfo)
+                                   .referencedTypeNamesToAnnotations(
+                                           toReferencedTypeNamesAndAnnotations(
+                                                   processingEnv, typeName, elementInfo, otherElementInfo))
                                    .modifierNames(modifierNames)
                                    .update(it -> toTypeInfo(annotationTypeName, element, processingEnv, wantDefaultMethods)
                                            .ifPresent(it::superTypeInfo))
                                    .build());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<TypeName, List<AnnotationAndValue>> toReferencedTypeNamesAndAnnotations(ProcessingEnvironment processingEnv,
+                                                                                        TypeName typeName,
+                                                                                        Collection<TypedElementName>... refs) {
+        Map<TypeName, List<AnnotationAndValue>> result = new LinkedHashMap<>();
+        for (Collection<TypedElementName> ref : refs) {
+            for (TypedElementName typedElementName : ref) {
+                collectReferencedTypeNames(result, processingEnv, typeName, List.of(typedElementName.typeName()));
+                collectReferencedTypeNames(result, processingEnv, typeName, typedElementName.typeName().typeArguments());
+            }
+        }
+        return result;
+    }
+
+    private void collectReferencedTypeNames(Map<TypeName, List<AnnotationAndValue>> result,
+                                            ProcessingEnvironment processingEnv,
+                                            TypeName typeName,
+                                            Collection<TypeName> referencedColl) {
+        for (TypeName referenced : referencedColl) {
+            if (isBuiltInJavaType(referenced) || typeName.equals(referenced)) {
+                continue;
+            }
+
+            result.compute(referenced, (k, v) -> {
+                if (v == null) {
+                    // first time processing, we only need to do this on pass #1
+                    TypeElement typeElement = processingEnv.getElementUtils().getTypeElement(k.name());
+                    if (typeElement != null) {
+                        v = createAnnotationAndValueListFromElement(typeElement, processingEnv.getElementUtils());
+                    }
+                }
+                return v;
+            });
+        }
     }
 
     /**

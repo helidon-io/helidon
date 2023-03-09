@@ -17,15 +17,17 @@
 package io.helidon.builder.config.testsubjects.fakes;
 
 import java.security.SecureRandom;
-import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
-import io.helidon.common.LazyValue;
 import io.helidon.builder.Singular;
 import io.helidon.builder.config.ConfigBean;
+import io.helidon.common.LazyValue;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * aka WebServerTls.
@@ -33,7 +35,7 @@ import io.helidon.builder.config.ConfigBean;
  * A class wrapping transport layer security (TLS) configuration for
  * WebServer sockets.
  */
-@ConfigBean(drivesActivation = false)
+@ConfigBean(value = "tls", drivesActivation = false)
 public interface FakeWebServerTlsConfig {
     String PROTOCOL = "TLS";
     // secure random cannot be stored in native image, it must be initialized at runtime
@@ -45,12 +47,15 @@ public interface FakeWebServerTlsConfig {
      */
     String CLIENT_X509_CERTIFICATE = FakeWebServerTlsConfig.class.getName() + ".client-x509-certificate";
 
-    Collection<String> enabledTlsProtocols();
+    Set<String> enabledTlsProtocols();
 
-    SSLContext sslContext();
+    // TODO: had to make this Optional - we might need something like 'ExternalConfigBean' for this case ?
+    Optional<SSLContext> sslContext();
 
     @Singular("cipher")
-    Set<String> cipherSuite();
+    @ConfiguredOption(key = "cipher")
+//    Set<String> cipherSuite();
+    List<String> cipherSuite();
 
     /**
      * Whether this TLS config has security enabled (and the socket is going to be

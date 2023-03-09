@@ -25,7 +25,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import io.helidon.builder.config.ConfigBean;
 import io.helidon.builder.config.spi.ConfigBeanBuilderValidator;
@@ -56,6 +58,7 @@ import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_KEY;
 import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_LEVEL_TYPE;
 import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_REPEATABLE;
 import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_WANT_DEFAULT_CONFIG_BEAN;
+import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
 
 /**
  * A specialization of {@link io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider} that supports the additional
@@ -66,7 +69,6 @@ import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_WANT_DEFAULT_CONF
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
-
     static final String PICO_CONTRACT_TYPENAME = "io.helidon.pico.Contract";
     static final String PICO_EXTERNAL_CONTRACT_TYPENAME = "io.helidon.pico.ExternalContracts";
     static final String PICO_CONFIGUREDBY_TYPENAME = "io.helidon.pico.configdriven.ConfiguredBy";
@@ -112,6 +114,34 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                                                     + typeInfo.typeName());
         }
 
+         assertNoMaps(typeInfo);
+
+        super.preValidate(implTypeName, typeInfo, configBeanAnno);
+    }
+
+    /**
+     * Maps are not currently supported on config beans.
+     * Tracked by https://github.com/helidon-io/helidon/issues/6382
+     */
+    private void assertNoMaps(TypeInfo typeInfo) {
+        List<TypedElementName> list = typeInfo.elementInfo().stream()
+                .filter(it -> it.typeName().isMap())
+                .filter(it -> {
+                    TypeName typeName = it.typeName();
+                    List<TypeName> componentArgs = typeName.typeArguments();
+                    boolean bad = (componentArgs.size() != 2);
+                    if (!bad) {
+                        bad = !isBuiltInJavaType(componentArgs.get(0))
+                                || !isBuiltInJavaType(componentArgs.get(1));
+                    }
+                    return bad;
+                })
+                .collect(Collectors.toList());
+
+        if (!list.isEmpty()) {
+            throw new IllegalStateException("methods returning Map<...sub ConfigBean...> " + list + " are not supported for: "
+                                                    + typeInfo.typeName());
+        }
     }
 
     @Override
@@ -138,7 +168,9 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     protected void appendExtraImports(StringBuilder builder,
                                       BodyContext ctx) {
         builder.append("\nimport ").append(AtomicInteger.class.getName()).append(";\n");
+
         builder.append("import ").append(Optional.class.getName()).append(";\n");
+        builder.append("import ").append(Function.class.getName()).append(";\n\n");
         builder.append("import ").append(Supplier.class.getName()).append(";\n\n");
 
         super.appendExtraImports(builder, ctx);
@@ -236,7 +268,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
             builder.append("\t\tpublic void acceptConfig"
                                    + "(Config cfg, ConfigResolver resolver, ConfigBeanBuilderValidator<?> validator) {\n");
             builder.append("\t\t\t").append(ResolutionContext.class.getName())
-                    .append(" ctx = createResolutionContext(__configBeanType(), cfg, resolver, validator);\n");
+                    .append(" ctx = createResolutionContext(__configBeanType(), cfg, resolver, validator, __mappers());\n");
             builder.append("\t\t\t__config(ctx.config());\n");
             builder.append("\t\t\t__acceptAndResolve(ctx);\n");
             builder.append("\t\t\tsuper.finishedResolution(ctx);\n");
@@ -313,16 +345,46 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                 builder.append(outerTypeName).append(") val));\n");
                 i++;
             }
+            builder.append("\t\t}\n\n");
 
+            builder.append("\t\t@Override\n");
+            builder.append("\t\tpublic Class<?> __configBeanType() {\n"
+                                   + "\t\t\treturn ")
+                    .append(ctx.typeInfo().typeName().name()).append(".class;\n\t\t}\n\n");
+
+            builder.append("\t\t@Override\n");
+            builder.append("\t\tpublic Map<Class<?>, Function<Config, ?>> __mappers() {\n"
+                                   + "\t\t\tMap<Class<?>, Function<Config, ?>> result = ");
+            if (ctx.hasParent()) {
+                builder.append("super.__mappers();\n");
+            } else {
+                builder.append("new java.util.LinkedHashMap<>();\n");
+            }
+            appendAvailableReferencedBuilders(builder, "\t\t\tresult.", ctx.typeInfo());
+            builder.append("\t\t\treturn result;\n");
             builder.append("\t\t}\n\n");
         }
 
-        builder.append("\t\t@Override\n");
-        builder.append("\t\tpublic Class<?> __configBeanType() {\n"
-                               + "\t\t\treturn ")
-                .append(ctx.typeInfo().typeName().name()).append(".class;\n\t\t}\n\n");
-
         super.appendExtraBuilderMethods(builder, ctx);
+    }
+
+    private void appendAvailableReferencedBuilders(StringBuilder builder,
+                                                   String prefix,
+                                                   TypeInfo typeInfo) {
+        typeInfo.referencedTypeNamesToAnnotations().forEach((k, v) -> {
+            AnnotationAndValue builderAnnotation = DefaultAnnotationAndValue
+                    .findFirst(io.helidon.builder.Builder.class.getName(), v).orElse(null);
+            if (builderAnnotation == null) {
+                builderAnnotation = DefaultAnnotationAndValue
+                        .findFirst(ConfigBean.class.getName(), v).orElse(null);
+            }
+
+            if (builderAnnotation != null) {
+                TypeName referencedBuilderTypeName = toBuilderImplTypeName(k, builderAnnotation);
+                builder.append(prefix).append("put(").append(k.name()).append(".class, ");
+                builder.append(referencedBuilderTypeName).append("::toBuilder);\n");
+            }
+        });
     }
 
     @Override

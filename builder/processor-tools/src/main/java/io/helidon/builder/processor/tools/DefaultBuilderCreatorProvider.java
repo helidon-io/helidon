@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -88,7 +89,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                     AnnotationAndValue builderAnnotation) {
         try {
             TypeName abstractImplTypeName = toAbstractImplTypeName(typeInfo.typeName(), builderAnnotation);
-            TypeName implTypeName = toImplTypeName(typeInfo.typeName(), builderAnnotation);
+            TypeName implTypeName = toBuilderImplTypeName(typeInfo.typeName(), builderAnnotation);
             preValidate(implTypeName, typeInfo, builderAnnotation);
 
             List<TypeAndBody> builds = new ArrayList<>();
@@ -117,6 +118,25 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     protected void preValidate(TypeName implTypeName,
                                TypeInfo typeInfo,
                                AnnotationAndValue builderAnnotation) {
+        assertNoDuplicateSingularNames(typeInfo);
+    }
+
+    private void assertNoDuplicateSingularNames(TypeInfo typeInfo) {
+        Set<String> names = new LinkedHashSet<>();
+        Set<String> duplicateNames = new LinkedHashSet<>();
+
+        typeInfo.elementInfo().stream()
+                .map(DefaultBuilderCreatorProvider::nameOf)
+                .forEach(name -> {
+                    if (!names.add(name)) {
+                        duplicateNames.add(name);
+                    }
+                });
+
+        if (!duplicateNames.isEmpty()) {
+            throw new IllegalStateException("duplicate methods are using the same names " + duplicateNames + " for: "
+                                                    + typeInfo.typeName());
+        }
     }
 
     /**
@@ -145,14 +165,14 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     /**
-     * Constructs the default implementation type name for what is code generated.
+     * Returns the default implementation Builder's class name for what is code generated.
      *
      * @param typeName          the target interface that the builder applies to
      * @param builderAnnotation the builder annotation triggering the build
      * @return the type name of the implementation
      */
-    protected TypeName toImplTypeName(TypeName typeName,
-                                      AnnotationAndValue builderAnnotation) {
+    public static TypeName toBuilderImplTypeName(TypeName typeName,
+                                                 AnnotationAndValue builderAnnotation) {
         String toPackageName = toPackageName(typeName.packageName(), builderAnnotation);
         String prefix = toImplTypePrefix(builderAnnotation);
         String suffix = toImplTypeSuffix(builderAnnotation);
@@ -812,6 +832,23 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     /**
+     * Attempts to use the singular name of the element, defaulting to the element name if no singular annotation exists.
+     *
+     * @param elem the element
+     * @return the (singular) name of the element
+     */
+    protected static String nameOf(TypedElementName elem) {
+        AnnotationAndValue singular = DefaultAnnotationAndValue.findFirst(Singular.class.getName(), elem.annotations())
+                        .orElse(null);
+        String name = (singular == null) ? null : singular.value().orElse(null);
+        if (hasNonBlankValue(name)) {
+            return name;
+        }
+
+        return elem.elementName();
+    }
+
+    /**
      * Append the setters for the given bean attribute name.
      *
      * @param mainBuilder       the builder
@@ -1090,8 +1127,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     /**
      * In support of {@link io.helidon.builder.Builder#packageName()}.
      */
-    private String toPackageName(String packageName,
-                                 AnnotationAndValue builderAnnotation) {
+    private static String toPackageName(String packageName,
+                                        AnnotationAndValue builderAnnotation) {
         String packageNameFromAnno = builderAnnotation.value("packageName").orElse(null);
         if (packageNameFromAnno == null || packageNameFromAnno.isBlank()) {
             return packageName;
@@ -1112,14 +1149,14 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     /**
      * In support of {@link io.helidon.builder.Builder#implPrefix()}.
      */
-    private String toImplTypePrefix(AnnotationAndValue builderAnnotation) {
+    private static String toImplTypePrefix(AnnotationAndValue builderAnnotation) {
         return builderAnnotation.value("implPrefix").orElse(DEFAULT_IMPL_PREFIX);
     }
 
     /**
      * In support of {@link io.helidon.builder.Builder#implSuffix()}.
      */
-    private String toImplTypeSuffix(AnnotationAndValue builderAnnotation) {
+    private static String toImplTypeSuffix(AnnotationAndValue builderAnnotation) {
         return builderAnnotation.value("implSuffix").orElse(DEFAULT_SUFFIX);
     }
 
