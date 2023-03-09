@@ -50,7 +50,7 @@ public class WriteableMultiPart {
     public static WriteableMultiPart create(WriteableBodyPart... entities) {
         Builder builder = builder();
         for (WriteableBodyPart entity : entities) {
-            builder.bodyPart(WriteableBodyPart.create(entity));
+            builder.bodyPart(entity);
         }
         return builder.build();
     }
@@ -65,7 +65,7 @@ public class WriteableMultiPart {
     public static WriteableMultiPart create(Collection<WriteableBodyPart> entities) {
         Builder builder = builder();
         for (WriteableBodyPart entity : entities) {
-            builder.bodyPart(WriteableBodyPart.create(entity));
+            builder.bodyPart(entity);
         }
         return builder.build();
     }
