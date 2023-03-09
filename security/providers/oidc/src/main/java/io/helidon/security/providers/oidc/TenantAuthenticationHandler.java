@@ -399,7 +399,7 @@ class TenantAuthenticationHandler {
             URI targetUri = providerRequest.env().targetUri();
             String query = targetUri.getQuery();
             String path = targetUri.getPath();
-            if ((null == query) || query.isEmpty()) {
+            if (query == null || query.isEmpty()) {
                 return path;
             } else {
                 return path + "?" + query;
