@@ -9,6 +9,35 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.0]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+This release upgrades SnakeYaml from 1.32 to 2.0. Because of incompatible API changes in SnakeYaml 2 it is possible your application might be impacted if you use SnakeYaml directly. While we reccomend you do the upgrade, if that is not possible you may force downgrade SnakeYaml to 1.32 and Helidon 2.6.0 will still work.
+
+### CHANGES
+
+- Config: Configuration fixes [6159](https://github.com/helidon-io/helidon/pull/6159)
+- Examples: OpenApi Generator examples [5722](https://github.com/helidon-io/helidon/pull/5722)
+- Media: Fix MultiPartDecoder lazy inner publisher subscription [6223](https://github.com/helidon-io/helidon/pull/6223)
+- Metrics: Change default exemplar behavior to conform to OpenMetrics spec [6333](https://github.com/helidon-io/helidon/pull/6333)
+- OCI: Register OciMetricsSupport service only when enable flag is set to true [6054](https://github.com/helidon-io/helidon/pull/6054)
+- OpenAPI: Fix UI option handling [6132](https://github.com/helidon-io/helidon/pull/6132)
+- Security: OIDC logout functionality fixed [6126](https://github.com/helidon-io/helidon/pull/6126)
+- Tracing: Fix multiple registration of Jaeger-related gauges [6013](https://github.com/helidon-io/helidon/pull/6013)
+- WebServer: 100 continue triggered by content request [5912](https://github.com/helidon-io/helidon/pull/5912)
+- WebServer: Switch default back-pressure strategy to AUTO_FLUSH from LINEAR [5943](https://github.com/helidon-io/helidon/pull/5943)
+- Build: Cleanup Helidon BOM by removing artifacts that we do not deploy [6046](https://github.com/helidon-io/helidon/pull/6046)
+- Build: Use https in pom.xml schemaLocation [6360](https://github.com/helidon-io/helidon/pull/6360) and others
+- Dependencies: Adopt SnakeYAML 2.0 [6384](https://github.com/helidon-io/helidon/pull/6384)
+- Docs: Describe disabling config token replacement [6169](https://github.com/helidon-io/helidon/pull/6169)
+- Docs: Documentation updates to correct wrong instructions for HOCON config parsing [5958](https://github.com/helidon-io/helidon/pull/5958)
+- Docs: Fix typo in docs for enabling/disabling metrics by registry type (#5809) [5926](https://github.com/helidon-io/helidon/pull/5926)
+- Docs: Remove claim that metrics are propagated from server to client [6362](https://github.com/helidon-io/helidon/pull/6362)
+- Test: Fix intermittent issue on OciMetricsSupportTest [6178](https://github.com/helidon-io/helidon/pull/6178)
+- Test: Remove FileHandler from logging.properties [6365](https://github.com/helidon-io/helidon/pull/6365)
+- Test: Use Hamcrest assertions instead of JUnit in microprofile/lra/jax-rs (#1749) [6335](https://github.com/helidon-io/helidon/pull/6335) and others
+
 ## [2.5.6]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
@@ -2064,6 +2093,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.0]: https://github.com/oracle/helidon/compare/2.5.6...2.6.0
 [2.5.6]: https://github.com/oracle/helidon/compare/2.5.5...2.5.6
 [2.5.5]: https://github.com/oracle/helidon/compare/2.5.4...2.5.5
 [2.5.4]: https://github.com/oracle/helidon/compare/2.5.3...2.5.4
