@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package io.helidon.webserver.http2;
 
+import java.util.Map;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpScheme;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
@@ -61,20 +62,29 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof HttpServerUpgradeHandler.UpgradeEvent upgradeEvent) {
-
-            // Map initial request headers to HTTP2
             FullHttpRequest request = upgradeEvent.upgradeRequest();
+
+            // Create HTTP/2 headers from HTTP upgrade request
             Http2Headers headers = new DefaultHttp2Headers()
-                    .method(HttpMethod.GET.asciiName())
+                    .method(request.method().asciiName())
                     .path(request.uri())
                     .scheme(HttpScheme.HTTP.name());
             CharSequence host = request.headers().get(HttpHeaderNames.HOST);
             if (host != null) {
                 headers.authority(host);
             }
+            for (Map.Entry<String, String> e : request.headers()) {
+                headers.add(e.getKey().toLowerCase(), e.getValue());
+            }
 
-            // Process mapped headers
-            onHeadersRead(ctx, 1, headers, 0, true);
+            // Support non-GET upgrade requests possibly with non-empty payloads
+            ByteBuf payload = request.content();
+            if (payload.readableBytes() > 0) {
+                onHeadersRead(ctx, 1, headers, 0, false);
+                onDataRead(ctx, 1, payload, 0, true);
+            } else {
+                onHeadersRead(ctx, 1, headers, 0, true);
+            }
         }
         super.userEventTriggered(ctx, evt);
     }
