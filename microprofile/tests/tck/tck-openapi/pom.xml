@@ -30,6 +30,22 @@
     <artifactId>tck-openapi</artifactId>
     <name>Helidon Microprofile Tests TCK OpenAPI</name>
 
+    <properties>
+        <selectedSnakeYamlVersion>1.32</selectedSnakeYamlVersion>
+    </properties>
+
+    <!-- The TCK uses Jackson which in turn uses SnakeYAML APIs that have disappeared in 2.0. So, for running the TCK
+         use the earlier SnakeYAML release (until an updated Jackson release becomes available). -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${selectedSnakeYamlVersion}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
@@ -84,19 +100,6 @@
             <artifactId>jaxb-runtime</artifactId>
             <version>2.3.2</version>
             <scope>test</scope>
-        </dependency>
-
-        <!-- Jackson delegates to SnakeYaml so use a very recent version that also uses SnakeYAML 2.0 -->
-        <dependency>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>1.32</version>
         </dependency>
     </dependencies>
 
