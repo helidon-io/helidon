@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
  * @see io.helidon.pico.ServiceInfo#externalContractsImplemented()
  */
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Target(java.lang.annotation.ElementType.TYPE)
 public @interface Contract {
 

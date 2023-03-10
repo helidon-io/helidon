@@ -28,7 +28,7 @@ import static java.lang.annotation.ElementType.TYPE;
  * Indicates the desired startup sequence for a service class.
  */
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Target(TYPE)
 @Inherited
 public @interface RunLevel {

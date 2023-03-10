@@ -22,13 +22,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import io.helidon.pico.tools.CommonUtils;
 import io.helidon.pico.tools.ToolsException;
 
 /**
  * Testing utilities.
  */
-public class TestUtils {
+public final class TestUtils {
 
     private TestUtils() {
     }
@@ -42,7 +41,7 @@ public class TestUtils {
     // same as from CommonUtils.
     public static String loadStringFromResource(String resourceNamePath) {
         try {
-            try (InputStream in = CommonUtils.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
+            try (InputStream in = TestUtils.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
             }
         } catch (Exception e) {

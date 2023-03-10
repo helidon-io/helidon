@@ -45,7 +45,6 @@ import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.CodeGenFiler;
-import io.helidon.pico.tools.CommonUtils;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.DefaultActivatorCreator;
@@ -136,10 +135,10 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
         } catch (Throwable t) {
             error(getClass().getSimpleName() + " error during processing; " + t + " @ "
-                          + CommonUtils.rootStackTraceElementOf(t), t);
+                          + Utils.rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
             throw new ToolsException("error during processing: " + t + " @ "
-                                             + CommonUtils.rootStackTraceElementOf(t), t);
+                                             + Utils.rootStackTraceElementOf(t), t);
         }
     }
 

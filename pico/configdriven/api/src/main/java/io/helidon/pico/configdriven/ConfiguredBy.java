@@ -41,7 +41,7 @@ import jakarta.inject.Qualifier;
  * @see io.helidon.builder.config.ConfigBean
  */
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Target(java.lang.annotation.ElementType.TYPE)
 @Qualifier
 public @interface ConfiguredBy {

@@ -52,7 +52,7 @@ class DefaultInterceptorCreatorTest extends AbstractBaseCreator {
         assertThat(resolver.resolve(InterceptedTrigger.class.getName()),
                    containsInAnyOrder(
                            DefaultAnnotationAndValue.create(Documented.class),
-                           DefaultAnnotationAndValue.create(Retention.class, "java.lang.annotation.RetentionPolicy.RUNTIME"),
+                           DefaultAnnotationAndValue.create(Retention.class, "java.lang.annotation.RetentionPolicy.CLASS"),
                            DefaultAnnotationAndValue.create(Target.class, "{java.lang.annotation.ElementType.ANNOTATION_TYPE}")
                    ));
     }

@@ -23,7 +23,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * For Testing.
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Documented
 public @interface ExtensibleGET {
 

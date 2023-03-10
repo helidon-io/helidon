@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
  * @see io.helidon.pico.Intercepted
  */
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Target(ElementType.ANNOTATION_TYPE)
 public @interface InterceptedTrigger {
 

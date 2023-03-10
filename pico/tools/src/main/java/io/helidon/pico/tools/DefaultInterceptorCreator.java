@@ -249,6 +249,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      */
     private static class AllRuntimeStrategy extends TriggerFilter {
         protected static final AnnotationAndValue RUNTIME = create(Retention.class, RetentionPolicy.RUNTIME.name());
+        protected static final AnnotationAndValue CLASS = create(Retention.class, RetentionPolicy.CLASS.name());
 
         protected AllRuntimeStrategy(InterceptorCreator creator,
                                      AnnotationTypeNameResolver resolver) {
@@ -259,7 +260,9 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         public boolean isQualifyingTrigger(String annotationTypeName) {
             Objects.requireNonNull(resolver);
             Objects.requireNonNull(annotationTypeName);
-            return (resolver.resolve(annotationTypeName).contains(RUNTIME) || MANUALLY_WHITE_LISTED.contains(annotationTypeName));
+            return (resolver.resolve(annotationTypeName).contains(RUNTIME)
+                            || resolver.resolve(annotationTypeName).contains(CLASS)
+                            || MANUALLY_WHITE_LISTED.contains(annotationTypeName));
         }
     }
 
@@ -833,52 +836,12 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
         String methodDecl = builder.toString();
         builder.append(" {\n");
-//        if (hasArgs) {
-//            builder.append("\t\tObject[] args = new Object[] {" + args + "};\n");
-//        }
         TypeName supplierType = (hasReturn) ? toObjectTypeName(mi.elementTypeName()) : DefaultTypeName.create(Void.class);
-        if (hasReturn) {
-//            builder.append("\t\tSupplier<" + supplierType + "> call = () -> {\n" +
-//                                   "\t\t\ttry {\n" +
-//                                   "\t\t\t\treturn __impl." + mi.elementName() + "(" + objArrayArgs + ");\n" +
-//                                   "\t\t\t} catch (RuntimeException e) {\n" +
-//                                   "\t\t\t\tthrow e;\n" +
-//                                   "\t\t\t} catch (Throwable t) {\n" +
-//                                   "\t\t\t\tthrow new InvocationException(t.getMessage(), t, __sp);\n" +
-//                                   "\t\t\t}\n" +
-//                                   "\t\t};\n");
-//            builder.append("\t\t" + supplierType + " result = createInvokeAndSupply(\n");
-        } else {
-//            builder.append("\t\tRunnable call = () -> {\n" +
-//                                   "\t\t\ttry {\n" +
-//                                   "\t\t\t\t__impl." + mi.elementName() + "(" + objArrayArgs + ");\n" +
-//                                   "\t\t\t} catch (RuntimeException e) {\n" +
-//                                   "\t\t\t\tthrow e;\n" +
-//                                   "\t\t\t} catch (Throwable t) {\n" +
-//                                   "\t\t\t\tthrow new InvocationException(t.getMessage(), t, __sp);\n" +
-//                                   "\t\t\t}\n" +
-//                                   "\t\t};\n");
-//            builder.append("\t\tcreateAndInvoke(\n");
-        }
-//        builder.append("\t\t\t").append(DefaultInvocationContext.class.getName()).append(".builder()\n");
-//        builder.append("\t\t\t\t.serviceProvider(__sp)\n");
-//        builder.append("\t\t\t\t.serviceTypeName(__serviceTypeName)\n");
-//        builder.append("\t\t\t\t.classAnnotations(__serviceLevelAnnotations)\n");
-//        builder.append("\t\t\t\t.interceptors(__").append(mi.elementName()).append("__interceptors)\n");
-//        builder.append("\t\t\t\t.elementInfo(__").append(mi.elementName()).append(")\n");
 
         String elementArgInfo = "";
         if (hasArgs) {
             elementArgInfo = ",\n\t\t\t\tnew TypedElementName[] {" + typedElementArgs + "}";
         }
-//        builder.append("\t\t\t/*.build()*/,\n");
-//        builder.append("\t\t\tcall);\n");
-//
-//        if (hasReturn) {
-//            builder.append("\t\treturn " + argDecls + "\n");
-//        }
-//        builder.append("\t}\n");
-
         return new InterceptedMethodCodeGen(name, methodDecl, hasReturn, supplierType, elementArgInfo, args,
                                             objArrayArgs, untypedElementArgs,
                                             method.interceptedTriggerTypeNames(), builder);

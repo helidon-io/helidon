@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * For Testing.
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Documented
 public @interface BasicPath {
 

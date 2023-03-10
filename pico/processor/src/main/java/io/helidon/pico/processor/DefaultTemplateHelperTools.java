@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.tools.CommonUtils;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.DefaultCustomAnnotationTemplateResponse;
@@ -134,7 +133,7 @@ class DefaultTemplateHelperTools implements TemplateHelperTools {
         substitutions.put("elementAnnotations", req.targetElement().annotations());
         substitutions.put("elementEnclosingTypeName", req.targetElement().typeName());
         substitutions.put("elementArgs", req.targetElementArgs());
-        substitutions.put("elementArgs-declaration", CommonUtils.toString(req.targetElementArgs()));
+        substitutions.put("elementArgs-declaration", Utils.toString(req.targetElementArgs()));
 
         if (propertiesFn != null) {
             substitutions = Objects.requireNonNull(propertiesFn.apply(substitutions));

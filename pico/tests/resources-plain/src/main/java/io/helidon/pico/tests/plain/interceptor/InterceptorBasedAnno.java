@@ -22,7 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import io.helidon.pico.InterceptedTrigger;
 
 @InterceptedTrigger
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 public @interface InterceptorBasedAnno {
 
     String value() default "";

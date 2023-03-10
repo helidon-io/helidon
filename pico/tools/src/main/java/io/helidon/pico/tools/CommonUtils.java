@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 /**
  * General utils.
  */
-public final class CommonUtils {
+final class CommonUtils {
 
     private CommonUtils() {
     }
@@ -88,7 +88,7 @@ public final class CommonUtils {
      * @param coll the collection
      * @return the concatenated, delimited string value
      */
-    public static String toString(Collection<?> coll) {
+    static String toString(Collection<?> coll) {
         return toString(coll, null, null);
     }
 
@@ -116,7 +116,7 @@ public final class CommonUtils {
      * @param str the string to split
      * @return the list of string values
      */
-    public static List<String> toList(String str) {
+    static List<String> toList(String str) {
         return toList(str, ",");
     }
 
@@ -209,19 +209,6 @@ public final class CommonUtils {
      */
     static String toFlatName(String className) {
         return className.replace('.', '$');
-    }
-
-    /**
-     * Determines the root throwable stack trace element from a chain of throwable causes.
-     *
-     * @param t the throwable
-     * @return the root throwable error stack trace element
-     */
-    public static StackTraceElement rootStackTraceElementOf(Throwable t) {
-        while (t.getCause() != null && t.getCause() != t) {
-            t = t.getCause();
-        }
-        return t.getStackTrace()[0];
     }
 
 }

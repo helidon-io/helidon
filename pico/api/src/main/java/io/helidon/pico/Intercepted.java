@@ -30,7 +30,7 @@ import jakarta.inject.Qualifier;
  * @see io.helidon.pico.Interceptor
  */
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Inherited
 @Qualifier
 @Target(java.lang.annotation.ElementType.TYPE)

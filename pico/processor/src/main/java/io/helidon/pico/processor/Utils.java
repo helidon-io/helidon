@@ -16,15 +16,82 @@
 
 package io.helidon.pico.processor;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-class Utils {
+final class Utils {
     private Utils() {
     }
 
     static <T> Collection<T> nonNull(Collection<T> coll) {
         return (coll == null) ? List.of() : coll;
+    }
+
+    /**
+     * Determines the root throwable stack trace element from a chain of throwable causes.
+     *
+     * @param t the throwable
+     * @return the root throwable error stack trace element
+     */
+    static StackTraceElement rootStackTraceElementOf(Throwable t) {
+        while (t.getCause() != null && t.getCause() != t) {
+            t = t.getCause();
+        }
+        return t.getStackTrace()[0];
+    }
+
+    /**
+     * Converts a collection to a comma delimited string.
+     *
+     * @param coll the collection
+     * @return the concatenated, delimited string value
+     */
+    static String toString(Collection<?> coll) {
+        return toString(coll, null, null);
+    }
+
+    /**
+     * Provides specialization in concatenation, allowing for a function to be called for each element as well as to
+     * use special separators.
+     *
+     * @param coll      the collection
+     * @param fnc       the optional function to translate the collection item to a string
+     * @param separator the optional separator
+     * @param <T> the type held by the collection
+     * @return the concatenated, delimited string value
+     */
+    static <T> String toString(Collection<T> coll,
+                               Function<T, String> fnc,
+                               String separator) {
+        Function<T, String> fn = (fnc == null) ? String::valueOf : fnc;
+        separator = (separator == null) ? ", " : separator;
+        return coll.stream().map(fn::apply).collect(Collectors.joining(separator));
+    }
+
+    /**
+     * Splits given using a comma-delimiter, and returns a trimmed list of string for each item.
+     *
+     * @param str the string to split
+     * @return the list of string values
+     */
+    static List<String> toList(String str) {
+        return toList(str, ",");
+    }
+
+    /**
+     * Splits a string given a delimiter, and returns a trimmed list of string for each item.
+     *
+     * @param str the string to split
+     * @param delim the delimiter
+     * @return the list of string values
+     */
+    static List<String> toList(String str,
+                               String delim) {
+        String[] split = str.split(delim);
+        return Arrays.stream(split).map(String::trim).collect(Collectors.toList());
     }
 
 }

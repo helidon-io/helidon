@@ -28,7 +28,6 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
-import io.helidon.pico.tools.CommonUtils;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.ModuleUtils;
 import io.helidon.pico.tools.Options;
@@ -103,10 +102,10 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             return super.process(annotations, roundEnv);
         } catch (Throwable t) {
             error(getClass().getSimpleName() + " error during processing; " + t
-                          + " @ " + CommonUtils.rootStackTraceElementOf(t), t);
+                          + " @ " + Utils.rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
             throw new ToolsException("error during processing: " + t
-                                             + " @ " + CommonUtils.rootStackTraceElementOf(t), t);
+                                             + " @ " + Utils.rootStackTraceElementOf(t), t);
         } finally {
             if (roundEnv.processingOver()) {
                 servicesToProcess().clearModuleName();

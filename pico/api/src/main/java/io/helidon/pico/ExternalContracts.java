@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
  * from a 3rd party library provider.
  */
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Target(java.lang.annotation.ElementType.TYPE)
 public @interface ExternalContracts {
 

@@ -68,7 +68,6 @@ import io.helidon.pico.tools.ActivatorCreatorProvider;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
 import io.helidon.pico.tools.CodeGenFiler;
-import io.helidon.pico.tools.CommonUtils;
 import io.helidon.pico.tools.DefaultActivatorCreator;
 import io.helidon.pico.tools.DefaultActivatorCreatorConfigOptions;
 import io.helidon.pico.tools.DefaultGeneralCreatorRequest;
@@ -93,6 +92,8 @@ import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValue;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
 import static io.helidon.pico.processor.Utils.nonNull;
+import static io.helidon.pico.processor.Utils.rootStackTraceElementOf;
+import static io.helidon.pico.processor.Utils.toList;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromElement;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
 import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
@@ -208,10 +209,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             return claimedResult;
         } catch (Throwable t) {
             error(getClass().getSimpleName() + " error during processing; " + t + " @ "
-                          + CommonUtils.rootStackTraceElementOf(t), t);
+                          + rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
             throw new ToolsException("error during processing: " + t + " @ "
-                                             + CommonUtils.rootStackTraceElementOf(t), t);
+                                             + rootStackTraceElementOf(t), t);
         }
     }
 
@@ -726,7 +727,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 Optional<? extends AnnotationAndValue> annotation = DefaultAnnotationAndValue
                         .findFirst(ExternalContracts.class.getName(), annotations);
                 List<String> values = (annotation.isPresent() && annotation.get().value().isPresent())
-                        ? CommonUtils.toList(annotation.get().value().get()) : List.of();
+                        ? toList(annotation.get().value().get()) : List.of();
                 for (String externalContract : values) {
                     result.add(DefaultTypeName.createFromTypeName(externalContract));
                 }

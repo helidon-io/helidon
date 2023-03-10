@@ -53,6 +53,7 @@ module io.helidon.nima.webserver {
     requires static jakarta.inject;
 
     // needed to compile pico generated classes
+    requires io.helidon.pico.api;
     requires static io.helidon.pico.services;
 
     // provides multiple packages due to intentional cyclic dependency
