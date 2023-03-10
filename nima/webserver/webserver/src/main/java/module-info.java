@@ -17,9 +17,6 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.webserver.http.spi.SinkProvider;
-import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
 /**
  * Loom based WebServer.
@@ -54,6 +51,7 @@ module io.helidon.nima.webserver {
     requires static io.helidon.config.metadata;
     requires static io.helidon.pico.configdriven.services;
     requires static jakarta.inject;
+
     // needed to compile pico generated classes
     requires static io.helidon.pico.services;
 

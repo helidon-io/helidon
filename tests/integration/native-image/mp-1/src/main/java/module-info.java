@@ -41,6 +41,9 @@ module helidon.tests.nimage.mp {
     requires io.opentracing.api;
     requires io.opentracing.util;
 
+    // needed to compile pico generated classes
+    requires static io.helidon.pico.services;
+
     exports io.helidon.tests.integration.nativeimage.mp1;
     exports io.helidon.tests.integration.nativeimage.mp1.other;
 
