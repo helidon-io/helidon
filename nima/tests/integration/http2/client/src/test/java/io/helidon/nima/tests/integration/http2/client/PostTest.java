@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,8 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.nima.http2.webclient.Http2;
-import io.helidon.nima.http2.webclient.Http2ClientRequest;
+import io.helidon.nima.http2.webclient.Http2Client;
 import io.helidon.nima.http2.webclient.Http2ClientResponse;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webserver.WebServer;
@@ -41,15 +40,12 @@ import io.helidon.nima.webserver.http.ServerResponse;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-// todo implement http/2 client
-@Disabled
 class PostTest {
     private static final byte[] BYTES = new byte[256];
     private static final HeaderName REQUEST_HEADER_NAME = Header.create("X-REquEst-HEADeR");
@@ -61,7 +57,7 @@ class PostTest {
                                                                            RESPONSE_HEADER_VALUE_STRING);
 
     private static WebServer server;
-    private static Http2ClientRequest request;
+    private static Http2Client client;
 
     static {
         Random random = new Random();
@@ -72,6 +68,7 @@ class PostTest {
     static void startServer() {
         server = WebServer.builder()
                 .host("localhost")
+                .port(8080)
                 .addRouting(HttpRouting.builder()
                                     .route(Http.Method.POST, "/string", Handler.create(String.class, Routes::string))
                                     .route(Http.Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))
@@ -82,11 +79,10 @@ class PostTest {
                 .build()
                 .start();
 
-        request = WebClient.builder(Http2.PROTOCOL)
+        client = WebClient.builder(Http2.PROTOCOL)
                 .baseUri("http://localhost:" + server.port())
                 .priorKnowledge(true)
-                .build()
-                .method(Http.Method.POST);
+                .build();
     }
 
     @AfterAll
@@ -98,7 +94,9 @@ class PostTest {
 
     @Test
     void testStringRoute() {
-        Http2ClientResponse response = request.uri("/string")
+        Http2ClientResponse response = client
+                .method(Http.Method.POST)
+                .uri("/string")
                 .submit("Hello");
 
         assertThat(response.status(), is(Http.Status.OK_200));
@@ -106,12 +104,13 @@ class PostTest {
         assertThat(entity, is("Hello"));
         Headers headers = response.headers();
         assertThat("Should have correct length", headers.contentLength(), is(OptionalLong.of(5)));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
     void testByteRoute() {
-        Http2ClientResponse response = request.uri("/bytes")
+        Http2ClientResponse response = client
+                .method(Http.Method.POST)
+                .uri("/bytes")
                 .submit(BYTES);
 
         assertThat(response.status(), is(Http.Status.OK_200));
@@ -119,12 +118,13 @@ class PostTest {
         assertThat(entity, is(BYTES));
         Headers headers = response.headers();
         assertThat(headers.contentLength(), is(OptionalLong.of(BYTES.length)));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
     void testChunkedRoute() {
-        Http2ClientResponse response = request.uri("/chunked")
+        Http2ClientResponse response = client
+                .method(Http.Method.POST)
+                .uri("/chunked")
                 .outputStream(outputStream -> {
                     outputStream.write(BYTES);
                     outputStream.close();
@@ -133,14 +133,13 @@ class PostTest {
         assertThat(response.status(), is(Http.Status.OK_200));
         byte[] entity = response.entity().as(byte[].class);
         assertThat(entity, is(BYTES));
-        Headers headers = response.headers();
-        assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
     void testHeadersRoute() {
-        Http2ClientResponse response = request.uri("/headers")
+        Http2ClientResponse response = client
+                .method(Http.Method.POST)
+                .uri("/headers")
                 .header(REQUEST_HEADER_VALUE)
                 .submit("Hello");
 
@@ -149,26 +148,24 @@ class PostTest {
         assertThat(entity, is("Hello"));
         Headers headers = response.headers();
         assertThat(headers.contentLength(), is(OptionalLong.of(5)));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         assertThat(headers, hasHeader(REQUEST_HEADER_VALUE));
         assertThat(headers, hasHeader(RESPONSE_HEADER_VALUE));
     }
 
     @Test
     void testCloseRoute() {
-        Http2ClientResponse response = request.uri("/close")
+        Http2ClientResponse response = client
+                .method(Http.Method.POST)
+                .uri("/close")
                 .submit("Hello");
 
         assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
         String entity = response.entity().as(String.class);
         assertThat(entity, is(""));
-        Headers headers = response.headers();
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_CLOSE));
     }
 
     private static class Routes {
         public static void close(ServerRequest req, ServerResponse res) {
-            res.header(HeaderValues.CONNECTION_CLOSE);
             res.status(Http.Status.NO_CONTENT_204);
             res.send();
         }

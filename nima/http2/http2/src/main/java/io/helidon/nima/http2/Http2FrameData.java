@@ -46,7 +46,7 @@ public record Http2FrameData(Http2FrameHeader header, BufferData data) {
         }
 
         // End of stream flag is set only to the last frame in the array
-        boolean endOfStream = this.header.flags(Http2FrameTypes.DATA).endOfStream();
+        boolean endOfStream = this.header().flags(Http2FrameTypes.DATA).endOfStream();
 
         int lastFrameSize = length % size;
 

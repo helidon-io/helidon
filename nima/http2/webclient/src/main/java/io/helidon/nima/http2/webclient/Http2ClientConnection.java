@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,8 @@ class Http2ClientConnection {
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
     private Future<?> handleTask;
     private int streamInitialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
-    private final WindowSize outboundConnectionWindowSize = new WindowSize();
+    private final WindowSize.Outbound outboundConnectionWindowSize = WindowSize.createOutbound();
+    private int maxFrameSize = 16_384;
 
     Http2ClientConnection(ExecutorService executor,
                           SocketOptions socketOptions,
@@ -150,8 +151,7 @@ class Http2ClientConnection {
             // Don't let streams to steal frame parts
             // Always read whole frame(frameHeader+data) at once
             connectionLock.lock();
-            Http2FrameData polled = buffer(streamId).poll();
-            return polled;
+            return buffer(streamId).poll();
         } finally {
             connectionLock.unlock();
         }
@@ -168,68 +168,80 @@ class Http2ClientConnection {
         } else {
             data = BufferData.empty();
         }
-            if (0 == frameHeader.streamId()) {
-                switch (frameHeader.type()) {
-                    case GO_AWAY:
-                        Http2GoAway http2GoAway = Http2GoAway.create(data);
-                        recvListener.frameHeader(helidonSocket, frameHeader);
-                        recvListener.frame(helidonSocket, http2GoAway);
-                        this.close();
-                        throw new IllegalStateException("Connection closed by the other side, error code: "
-                                + http2GoAway.errorCode()
-                                + " lastStreamId: " + http2GoAway.lastStreamId());
+        switch (frameHeader.type()) {
+        case GO_AWAY:
+            Http2GoAway http2GoAway = Http2GoAway.create(data);
+            recvListener.frameHeader(helidonSocket, frameHeader);
+            recvListener.frame(helidonSocket, http2GoAway);
+            this.close();
+            throw new IllegalStateException("Connection closed by the other side, error code: "
+                                                    + http2GoAway.errorCode()
+                                                    + " lastStreamId: " + http2GoAway.lastStreamId());
 
-                    case SETTINGS:
-                        Http2Settings http2Settings = Http2Settings.create(data);
-                        recvListener.frameHeader(helidonSocket, frameHeader);
-                        recvListener.frame(helidonSocket, http2Settings);
-                        // §4.3.1 Endpoint communicates the size chosen by its HPACK decoder context
-                        inboundDynamicTable.protocolMaxTableSize(http2Settings.value(Http2Setting.HEADER_TABLE_SIZE));
-                        // §6.5.2 Update initial window size for new streams
-                        Long initWinSize = http2Settings.value(Http2Setting.INITIAL_WINDOW_SIZE);
-                        if(initWinSize > WindowSize.MAX_WIN_SIZE){
-                            goAway(frameHeader.streamId(), Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
-                            //FIXME: close connection?
-                            return;
-                        }
-                        streamInitialWindowSize = Math.toIntExact(initWinSize);
-
-                        // §6.5.3 Settings Synchronization
-                        ackSettings();
-                        //FIXME: Other settings
-                        return;
-
-                    case WINDOW_UPDATE:
-                        Http2WindowUpdate http2WindowUpdate = Http2WindowUpdate.create(data);
-                        recvListener.frameHeader(helidonSocket, frameHeader);
-                        recvListener.frame(helidonSocket, http2WindowUpdate);
-                        // Outbound flow-control window update
-                        int increment = http2WindowUpdate.windowSizeIncrement();
-                        if (frameHeader.streamId() == 0) {
-                            outboundConnectionWindowSize.incrementWindowSize(increment);
-                        } else {
-                            streams.get(frameHeader.streamId())
-                                    .flowControl()
-                                    .incrementStreamWindowSize(increment);
-                        }
-                        return;
-
-                    default:
-                        //FIXME: other frame types
-                        LOGGER.log(WARNING, "Unsupported frame type!! " + frameHeader.type());
-                        return;
-
-                }
+        case SETTINGS:
+            Http2Settings http2Settings = Http2Settings.create(data);
+            recvListener.frameHeader(helidonSocket, frameHeader);
+            recvListener.frame(helidonSocket, http2Settings);
+            // §4.3.1 Endpoint communicates the size chosen by its HPACK decoder context
+            inboundDynamicTable.protocolMaxTableSize(http2Settings.value(Http2Setting.HEADER_TABLE_SIZE));
+            //FIXME: MAX_FRAME_SIZE can be only int
+            if (http2Settings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
+                maxFrameSize = Math.toIntExact(http2Settings.value(Http2Setting.MAX_FRAME_SIZE));
             }
-            buffer(frameHeader.streamId()).add(new Http2FrameData(frameHeader, data));
+            // §6.5.2 Update initial window size for new streams
+            if (http2Settings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
+                Long initWinSize = http2Settings.value(Http2Setting.INITIAL_WINDOW_SIZE);
+                if (initWinSize > WindowSize.MAX_WIN_SIZE) {
+                    goAway(frameHeader.streamId(), Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
+                    //FIXME: close connection?
+                    return;
+                }
+                streamInitialWindowSize = Math.toIntExact(initWinSize);
+            }
+            // §6.5.3 Settings Synchronization
+            ackSettings();
+            //FIXME: Other settings
+            return;
+
+        case WINDOW_UPDATE:
+            Http2WindowUpdate http2WindowUpdate = Http2WindowUpdate.create(data);
+            recvListener.frameHeader(helidonSocket, frameHeader);
+            recvListener.frame(helidonSocket, http2WindowUpdate);
+            // Outbound flow-control window update
+            int increment = http2WindowUpdate.windowSizeIncrement();
+            if (frameHeader.streamId() == 0) {
+                outboundConnectionWindowSize.incrementWindowSize(increment);
+            } else {
+                streams.get(frameHeader.streamId())
+                        .outboundFlowControl()
+                        .incrementStreamWindowSize(increment);
+            }
+            return;
+
+        default:
+            if (frameHeader.streamId() != 0) {
+                try {
+                    // Don't let streams to steal frame parts
+                    // Always read whole frame(frameHeader+data) at once
+                    connectionLock.lock();
+                    buffer(frameHeader.streamId()).add(new Http2FrameData(frameHeader, data));
+                } finally {
+                    connectionLock.unlock();
+                }
+                return;
+            }
+
+            //FIXME: other frame types
+            LOGGER.log(WARNING, "Unsupported frame type!! " + frameHeader.type());
+        }
+
     }
 
     Http2ClientStream stream(int priority) {
-        //TODO: priority
+        //FIXME: priority
         return new Http2ClientStream(this,
                                      helidonSocket,
-                                     streamIdSeq,
-                                     FlowControl.create(streamInitialWindowSize, outboundConnectionWindowSize));
+                                     streamIdSeq);
     }
 
     void addStream(int streamId, Http2ClientStream stream){
@@ -299,10 +311,12 @@ class Http2ClientConnection {
             sendPreface(true);
         }
 
-        handleTask = executor.submit(() -> {
+        handleTask = java.util.concurrent.Executors.newSingleThreadExecutor().submit(() -> {
+//        handleTask = executor.submit(() -> {
             while (!Thread.interrupted()) {
                 handle();
             }
+            System.out.println("Client listener interrupted!!!");
         });
     }
 
@@ -312,13 +326,13 @@ class Http2ClientConnection {
         Http2FrameData frameData = http2Settings.toFrameData(null, 0, flags);
         sendListener.frameHeader(helidonSocket, frameData.header());
         sendListener.frame(helidonSocket, http2Settings);
-        writer.write(frameData, FlowControl.NOOP);
+        writer.write(frameData, FlowControl.Outbound.NOOP);
     }
 
     private void goAway(int streamId, Http2ErrorCode errorCode, String msg) {
         Http2Settings http2Settings = Http2Settings.create();
         Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
-        writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()), FlowControl.NOOP);
+        writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()), FlowControl.Outbound.NOOP);
     }
 
     private void sendPreface(boolean sendSettings){
@@ -334,7 +348,7 @@ class Http2ClientConnection {
             Http2FrameData frameData = http2Settings.toFrameData(null, 0, flags);
             sendListener.frameHeader(helidonSocket, frameData.header());
             sendListener.frame(helidonSocket, http2Settings);
-            writer.write(frameData, FlowControl.NOOP);
+            writer.write(frameData, FlowControl.Outbound.NOOP);
         }
         // todo win update it needed after prolog?
         // win update
@@ -343,7 +357,7 @@ class Http2ClientConnection {
         Http2FrameData frameData = windowUpdate.toFrameData(null, 0, flags);
         sendListener.frameHeader(helidonSocket, frameData.header());
         sendListener.frame(helidonSocket, windowUpdate);
-        writer.write(frameData, FlowControl.NOOP);
+        writer.write(frameData, FlowControl.Outbound.NOOP);
     }
 
     private void httpUpgrade() {
@@ -436,5 +450,17 @@ class Http2ClientConnection {
 
     public Http2Headers.DynamicTable getInboundDynamicTable() {
         return this.inboundDynamicTable;
+    }
+
+    int streamInitialWindowSize() {
+        return streamInitialWindowSize;
+    }
+
+    WindowSize.Outbound outboundConnectionWindowSize() {
+        return outboundConnectionWindowSize;
+    }
+
+    public int maxFrameSize() {
+        return maxFrameSize;
     }
 }

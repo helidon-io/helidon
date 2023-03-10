@@ -58,10 +58,11 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
     @Override
     public void write(Http2FrameData frame, FlowControl.Outbound flowControl) {
-        withStreamLock(() -> {
-            noLockWrite(flowControl, frame);
-            return null;
-        });
+        if (frame.header().type() == Http2FrameTypes.DATA.type()) {
+            splitAndWrite(frame, flowControl);
+        } else {
+           lockedWrite(frame);
+        }
     }
 
     @Override
@@ -81,7 +82,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             written += frameHeader.length();
             written += Http2FrameHeader.LENGTH;
 
-            noLockWrite(flowControl, new Http2FrameData(frameHeader, headerBuffer));
+            noLockWrite(new Http2FrameData(frameHeader, headerBuffer));
 
             return written;
         });
@@ -110,8 +111,8 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                                                                    streamId);
             bytesWritten += Http2FrameHeader.LENGTH;
 
-            noLockWrite(flowControl, new Http2FrameData(frameHeader, headerBuffer));
-            noLockWrite(flowControl, dataFrame);
+            noLockWrite(new Http2FrameData(frameHeader, headerBuffer));
+            noLockWrite(dataFrame);
             bytesWritten += Http2FrameHeader.LENGTH;
             bytesWritten += dataFrame.header().length();
 
@@ -132,6 +133,13 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         });
     }
 
+    private void lockedWrite(Http2FrameData frame) {
+        withStreamLock(() -> {
+            noLockWrite(frame);
+            return null;
+        });
+    }
+
     private <T> T withStreamLock(Callable<T> callable) {
         try {
             streamLock.lockInterruptibly();
@@ -145,34 +153,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
-    private void noLockWrite(FlowControl.Outbound flowControl, Http2FrameData frame) {
-        if (frame.header().type() == Http2FrameTypes.DATA.type()) {
-            splitAndWrite(frame, flowControl);
-        } else {
-            writeFrameInternal(frame);
-        }
-    }
-
-    private void splitAndWrite(Http2FrameData frame, FlowControl.Outbound flowControl) {
-        Http2FrameData[] splitFrames = flowControl.cut(frame);
-        if (splitFrames.length == 1) {
-            // windows are wide enough
-            writeFrameInternal(frame);
-            flowControl.decrementWindowSize(frame.header().length());
-        } else if (splitFrames.length == 0) {
-            // block until window update
-            flowControl.blockTillUpdate();
-            splitAndWrite(frame, flowControl);
-        } else if (splitFrames.length == 2) {
-            // write send-able part and block until window update with the rest
-            writeFrameInternal(splitFrames[0]);
-            flowControl.decrementWindowSize(frame.header().length());
-            flowControl.blockTillUpdate();
-            splitAndWrite(splitFrames[1], flowControl);
-        }
-    }
-
-    private void writeFrameInternal(Http2FrameData frame) {
+    private void noLockWrite(Http2FrameData frame) {
         Http2FrameHeader frameHeader = frame.header();
         listener.frameHeader(ctx, frameHeader);
 
@@ -185,6 +166,28 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             BufferData data = frame.data().copy();
             listener.frame(ctx, data);
             writer.write(BufferData.create(headerData, data));
+        }
+    }
+
+    private void splitAndWrite(Http2FrameData frame, FlowControl.Outbound flowControl) {
+        Http2FrameData currFrame = frame;
+        while (true) {
+            Http2FrameData[] splitFrames = flowControl.cut(currFrame);
+            if (splitFrames.length == 1) {
+                // windows are wide enough
+                lockedWrite(currFrame);
+                flowControl.decrementWindowSize(currFrame.header().length());
+                break;
+            } else if (splitFrames.length == 0) {
+                // block until window update
+                flowControl.blockTillUpdate();
+            } else if (splitFrames.length == 2) {
+                // write send-able part and block until window update with the rest
+                lockedWrite(splitFrames[0]);
+                flowControl.decrementWindowSize(currFrame.header().length());
+                flowControl.blockTillUpdate();
+                currFrame = splitFrames[1];
+            }
         }
     }
 

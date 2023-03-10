@@ -44,7 +44,10 @@ abstract class WindowSizeImpl implements WindowSize {
 
     @Override
     public boolean incrementWindowSize(int increment) {
-        int remaining = remainingWindowSize.getAndUpdate(r -> MAX_WIN_SIZE - r > increment ? increment + r : MAX_WIN_SIZE);
+        int remaining = remainingWindowSize
+                .getAndUpdate(r -> r < 0 || MAX_WIN_SIZE - r > increment
+                        ? increment + r
+                        : MAX_WIN_SIZE);
         return MAX_WIN_SIZE - remaining <= increment;
     }
 
@@ -80,7 +83,12 @@ abstract class WindowSizeImpl implements WindowSize {
         @Override
         public boolean incrementWindowSize(int increment) {
             boolean result = super.incrementWindowSize(increment);
-            strategy.windowUpdate(increment);
+            // 6.9
+            // A receiver MUST treat the receipt of a WINDOW_UPDATE frame
+            // with a flow-control window increment of 0 as a stream error
+            if (increment > 0) {
+                strategy.windowUpdate(increment);
+            }
             return result;
         }
 
@@ -111,7 +119,7 @@ abstract class WindowSizeImpl implements WindowSize {
 
         @Override
         public void blockTillUpdate() {
-            while (getRemainingWindowSize() == 0){
+            while (getRemainingWindowSize() < 1){
                 try {
                     //TODO configurable timeout
                     updated.get().get(100, TimeUnit.MILLISECONDS);
@@ -218,7 +226,9 @@ abstract class WindowSizeImpl implements WindowSize {
 
             private static Type select(Context context) {
                 // Bisection strategy requires at least 4 frames to be placed inside window
-                return context.maxFrameSize * 4 < context.maxWindowsize ? BISECTION : SIMPLE;
+                //FIXME: Find out why bisection strategy gets deadlocked
+//                return context.maxFrameSize * 4 < context.maxWindowsize ? BISECTION : SIMPLE;
+                return SIMPLE;
             }
 
         }

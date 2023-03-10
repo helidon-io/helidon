@@ -141,7 +141,7 @@ public interface FlowControl {
              * @param windowSize HTTP/2 connection window size
              * @return this builder
              */
-            public Builder connectionWindowsize(WindowSize.Inbound windowSize) {
+            public Builder connectionWindowSize(WindowSize.Inbound windowSize) {
                 this.connectionWindowSize = windowSize;
                 return this;
             }
@@ -152,7 +152,7 @@ public interface FlowControl {
              * @param windowSize HTTP/2 stream window size
              * @return this builder
              */
-            public Builder streamWindowsize(int windowSize) {
+            public Builder streamWindowSize(int windowSize) {
                 this.streamWindowSize = windowSize;
                 return this;
             }

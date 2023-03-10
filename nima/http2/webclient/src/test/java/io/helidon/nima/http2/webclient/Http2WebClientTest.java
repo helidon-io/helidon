@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
-
 package io.helidon.nima.http2.webclient;
 
 import java.io.IOException;
@@ -26,10 +24,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -39,6 +39,8 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.http2.webserver.DefaultHttp2Config;
+import io.helidon.nima.http2.webserver.Http2ConnectionProvider;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
@@ -85,7 +87,13 @@ class Http2WebClientTest {
 
         serverBuilder
                 .defaultSocket(builder -> builder.port(-1)
-                        .host("localhost"))
+                        .host("localhost")
+                )
+                .addConnectionProvider(Http2ConnectionProvider.builder()
+                                               .http2Config(DefaultHttp2Config.builder()
+                                                                    .flowControlEnabled(true)
+                                                                    .maxStreamWindowSize(10))
+                                               .build())
                 .socket("https",
                         builder -> builder.port(-1)
                                 .host("localhost")
@@ -163,9 +171,9 @@ class Http2WebClientTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is("HTTP/2 route"));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                    is(ClientRequestImpl.USER_AGENT_HEADER.value()));
+                       is(ClientRequestImpl.USER_AGENT_HEADER.value()));
             assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),
-                    is("test-get"));
+                       is("test-get"));
         }
     }
 
@@ -185,11 +193,11 @@ class Http2WebClientTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is("PUT " + payload));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                    is(ClientRequestImpl.USER_AGENT_HEADER.value()));
+                       is(ClientRequestImpl.USER_AGENT_HEADER.value()));
             assertThat(response.headers().get(SERVER_CUSTOM_HEADER_NAME).value(),
-                    is(custHeaderValue));
+                       is(custHeaderValue));
             assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),
-                    is("test-put"));
+                       is("test-put"));
         }
     }
 
@@ -209,11 +217,11 @@ class Http2WebClientTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is("POST " + payload));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                    is(ClientRequestImpl.USER_AGENT_HEADER.value()));
+                       is(ClientRequestImpl.USER_AGENT_HEADER.value()));
             assertThat(response.headers().get(SERVER_CUSTOM_HEADER_NAME).value(),
-                    is(custHeaderValue));
+                       is(custHeaderValue));
             assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),
-                    is("test-post"));
+                       is("test-post"));
         }
     }
 
@@ -229,7 +237,7 @@ class Http2WebClientTest {
             ) {
 
                 InputStream is = response.inputStream();
-                for (int i = 0;;i++) {
+                for (int i = 0; ; i++) {
                     byte[] bytes = is.readNBytes("0BAF000".getBytes().length);
                     if (bytes.length == 0) break;
                     String message = new String(bytes);
@@ -243,12 +251,11 @@ class Http2WebClientTest {
 
         CompletableFuture.allOf(
                 CompletableFuture.runAsync(() -> callable.accept(1), executorService)
-                ,CompletableFuture.runAsync(() -> callable.accept(2), executorService)
-                ,CompletableFuture.runAsync(() -> callable.accept(3), executorService)
-                ,CompletableFuture.runAsync(() -> callable.accept(4), executorService)
+                , CompletableFuture.runAsync(() -> callable.accept(2), executorService)
+                , CompletableFuture.runAsync(() -> callable.accept(3), executorService)
+                , CompletableFuture.runAsync(() -> callable.accept(4), executorService)
         ).get(5, TimeUnit.MINUTES);
     }
-
 
     @AfterAll
     static void afterAll() throws InterruptedException {

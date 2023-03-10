@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -66,7 +65,7 @@ class Http2ClientTest {
                 .tls(insecureTls)
                 .build();
         this.plainClient = WebClient.builder(Http2.PROTOCOL)
-                .baseUri("https://localhost:" + plainPort + "/")
+                .baseUri("http://localhost:" + plainPort + "/")
                 .build();
     }
 
@@ -104,7 +103,6 @@ class Http2ClientTest {
     }
 
     @Test
-    @Disabled("HTTP/2 Client not yet implemented")
     void testUpgrade() {
         Http2ClientResponse response = plainClient.get("/")
                 .request();
@@ -116,7 +114,6 @@ class Http2ClientTest {
     }
 
     @Test
-    @Disabled("HTTP/2 Client not yet implemented")
     void testAppProtocol() {
         Http2ClientResponse response = tlsClient.get("/")
                 .request();
@@ -128,7 +125,6 @@ class Http2ClientTest {
     }
 
     @Test
-    @Disabled("HTTP/2 Client not yet implemented")
     void testPriorKnowledge() {
         Http2ClientResponse response = tlsClient.get("/")
                 .priorKnowledge(true)

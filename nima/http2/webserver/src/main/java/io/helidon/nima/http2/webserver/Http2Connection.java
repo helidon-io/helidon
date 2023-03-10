@@ -268,27 +268,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 }
                 dispatchHandler();
 
-                // Flow-control: frame processing is done, free space reserved for frame in window
-                int length = frameHeader.length();
-                if (length > 0) {
-                    int streamId = frameHeader.streamId();
-                    if (streamId > 0 && frameHeader.type() != Http2FrameType.HEADERS) {
-                        // Stream ID > 0: update conenction and stream
-                        FlowControl.Inbound inboundFlowControl = stream(streamId)
-                                .stream()
-                                .inboundFlowControl();
-                        inboundFlowControl.incrementWindowSize(length);
-                        LOGGER.log(System.Logger.Level.INFO, () -> String.format(
-                                "SRV IFC: Full increment %d-> %d", length,
-                                inboundFlowControl.getRemainingWindowSize()));
-                    } else {
-                        // Stream ID == 0: update connection only
-                        inboundWindowSize.incrementWindowSize(length);
-                        LOGGER.log(System.Logger.Level.INFO, () -> String.format(
-                                "SRV IFC: Conn increment %d -> %d",
-                                length, inboundWindowSize.getRemainingWindowSize()));
-                    }
-                }
             } else {
                 dispatchHandler();
             }
@@ -346,28 +325,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         if (frameHeader.length() == 0) {
             frameInProgress = BufferData.empty();
         } else {
-            // Flow-control: reading frameHeader.length() bytes from HTTP2 socket for known stream ID.
-            int length = frameHeader.length();
-            if (length > 0) {
-                int streamId = frameHeader.streamId();
-                if (streamId > 0 && frameHeader.type() != Http2FrameType.HEADERS) {
-                    // Stream ID > 0: update conenction and stream
-                    FlowControl.Inbound inboundFlowControl = stream(streamId)
-                            .stream()
-                            .inboundFlowControl();
-                    inboundFlowControl.decrementWindowSize(length);
-                    LOGGER.log(System.Logger.Level.INFO, () -> String.format(
-                            "SRV IFC: Full decrement %d-> %d", length,
-                            inboundFlowControl.getRemainingWindowSize()));
-                } else {
-                    // Stream ID == 0: update connection only
-                    inboundWindowSize.decrementWindowSize(length);
-                    LOGGER.log(System.Logger.Level.INFO, () -> String.format(
-                            "SRV IFC: Conn decrement %d -> %d",
-                            length, inboundWindowSize.getRemainingWindowSize()));
-                }
-            }
-
             frameInProgress = reader.readBuffer(frameHeader.length());
         }
 
@@ -457,9 +414,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     // Used in inbound flow control instance to write WINDOW_UPDATE frame.
     private void writeWindowUpdateFrame(Http2WindowUpdate windowUpdateFrame) {
+        LOGGER.log(DEBUG, () -> String.format("SRV IFC: Sending WINDOW_UPDATE %s", windowUpdateFrame));
         connectionWriter.write(windowUpdateFrame
                 .toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()), FlowControl.Outbound.NOOP);
-        LOGGER.log(System.Logger.Level.INFO, () -> String.format("SRV IFC: Connection WINDOW_UPDATE %s", windowUpdateFrame));
     }
 
     private void doSettings() {
@@ -570,6 +527,20 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         // todo we need to have some information about how much data is buffered for a stream
         // to prevent OOM (use flow control!)
+        // Flow-control: reading frameHeader.length() bytes from HTTP2 socket for known stream ID.
+        int length = frameHeader.length();
+        if (length > 0) {
+            int streamId = frameHeader.streamId();
+            if (streamId > 0 && frameHeader.type() != Http2FrameType.HEADERS) {
+                // Stream ID > 0: update conenction and stream
+                FlowControl.Inbound inboundFlowControl = stream(streamId)
+                        .stream()
+                        .inboundFlowControl();
+                inboundFlowControl.decrementWindowSize(length);
+            }
+        }
+
+
         if (frameHeader.flags(Http2FrameTypes.DATA).padded()) {
             BufferData frameData = inProgressFrame();
             int padLength = frameData.read();
@@ -777,12 +748,12 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             FlowControl.Inbound.Builder inboundFlowControlBuilder = http2Config.flowControlEnabled()
                     ? FlowControl.builderInbound()
                             .streamId(streamId)
-                            .connectionWindowsize(inboundWindowSize)
-                            .streamWindowsize(inboundInitialWindowSize)
+                            .connectionWindowSize(inboundWindowSize)
+                            .streamWindowSize(inboundInitialWindowSize)
                             .streamMaxFrameSize(http2Config.maxFrameSize())
                     // Pass NOOP when flow control is turned off (but we still have to send WINDOW_UPDATE frames)
                     : FlowControl.builderInbound()
-                            .connectionWindowsize(inboundWindowSize)
+                            .connectionWindowSize(inboundWindowSize)
                             .noop();
             streamContext = new StreamContext(streamId,
                                               new Http2Stream(ctx,

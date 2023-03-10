@@ -266,7 +266,7 @@ class Http2HeadersTest {
         return new Http2Stream() {
             private static final FlowControl.Inbound FC_IN_NOOP = FlowControl.builderInbound()
                     .noop()
-                    .connectionWindowsize(WindowSize.createInboundNoop(http2WindowUpdate -> {}))
+                    .connectionWindowSize(WindowSize.createInboundNoop(http2WindowUpdate -> {}))
                     .windowUpdateStreamWriter(http2WindowUpdate -> {})
                     .build();
 
