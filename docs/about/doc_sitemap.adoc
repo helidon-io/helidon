@@ -16,8 +16,33 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Documentation Overview
-:description: Helidon
-:keywords: helidon, java, microservices, microprofile
+= Helidon Documentation Overview
+:description: Helidon Documentation Sitemap
+:keywords: helidon, java, microservices, microprofile, documentation, nima
 :rootdir: {docdir}/..
+
+== Using This Site
+
+Welcome to the Helidon documentation site. Here you will find general concepts, quickstart guides, tutorials and reference material.  Existing Helidon users can go directly to their preferred programming flavor in the navigation panel to the left. 
+
+=== New Users
+
+New to Helidon? Start with the xref:{rootdir}/about/introduction.adoc[Helidon Documentation] page. Here you will find some of the most common topics for getting started as well as easy first steps for building your first project or application.
+
+Once you've settled on your preferred programming framework, visit the Helidon flavor sections of this site for more information. 
+
+* xref:{rootdir}/nima/introduction.adoc[Helidon Nima]
+* xref:{rootdir}/se/introduction.adoc[Helidon SE]
+* xref:{rootdir}/mp/introduction.adoc[Helidon MP]
+
+
+=== Existing Helidon Users
+
+Welcome back! The documentation site has a couple of new features that we hope will make your experience here a bit easier. 
+
+The new xref:{rootdir}/about/introduction.adoc[Helidon Documentation] page offers quick links to some of our most popular topics, including our new training and certification programs. 
+
+Check out the xref:{rootdir}/about/intro.adoc[What's New in Helidon 4] for a list of new features and functionality. 
+
+
 

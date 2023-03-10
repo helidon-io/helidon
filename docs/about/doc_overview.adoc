@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,12 +18,14 @@
 
 = Helidon Documentation
 :description: Helidon
-:keywords: helidon, java, microservices, microprofile
+:keywords: helidon, java, microservices, microprofile, documentation, nima
 :rootdir: {docdir}/..
+
+Check out the xref:{rootdir}/about/doc_sitemap.adoc[Documentation Overview] for information abouthis site and the materials we provide.
 
 include::{rootdir}/includes/attributes.adoc[]
 
-This is test to see if this displays. Can we add some text about what's included in the docs?
+
 
 [PILLARS]
 ====
@@ -40,7 +42,7 @@ xref:{rootdir}/about/benefits.adoc[Features and Benefits]
 
 xref:{rootdir}/about/archetype.adoc[Helidon Archetypes]
 
-xref:{rootdir}/about/additional_info.adoc[Reference and Community Resources]
+xref:{rootdir}/about/additional_info.adoc[Helidon Community and Support]
 
 xref:{rootdir}/about/intro.adoc[What's New in Helidon 4]
 
@@ -49,9 +51,9 @@ xref:{rootdir}/about/intro.adoc[What's New in Helidon 4]
 //Getting Started
 [CARD]
 .Getting Started
-[icon=settings]
+[icon=rocket_launch]
 --
-There are several ways to generate your first Helidon project. In a hurry? The Helidon CLI and Project Starter provide a set of predefined archetypes to choose from. Or try the Quickstart guides for the standard Helidon Maven archetypes.   
+There are several ways to generate your first Helidon project. In a hurry? Try the Helidon CLI or Project Starter which provide a set of predefined archetypes to choose from.    
 
 xref:{rootdir}/about/prerequisites.adoc[Prerequisites and System Requirements]
 
@@ -88,7 +90,7 @@ xref:{rootdir}/se/guides/migration.adoc[Upgrade From Helidon SE 2.x]
 //Developing Your First Application
 [CARD]
 .Developing Your First Application From Scratch
-[icon=share]
+[icon=terminal]
 --
 Use these hands-on development tutorials to learn how to generate a small "Hello World!" greeting service that demonstrates some of Helidon's core features. 
 
@@ -101,27 +103,27 @@ xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon SE Tutorial]
 //How-To Guides
 [CARD]
 .How-To Guides
-[icon=graphic_eq]
+[icon=library_books]
 --
 Ready for more hands-on learning? Explore the features of Helidon with these quick step-by-step guides.
 
-xref:{rootdir}/nima/guides/overview.adoc[Nima Guides]
+xref:{rootdir}/nima/guides/overview.adoc[N&iacute;ma Guides]
 
 xref:{rootdir}/se/guides/overview.adoc[SE Guides]
 
 xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 
 --
-//Helidon Nima
+//Advanced Features
 [CARD]
-.Helidon Nima 
+.Advanced Features 
 [icon=swap_horiz]
 --
 
 --
 
 
-//Helidon MP
+//Training and Certification
 [CARD]
 .Helidon MP
 [icon=swap_horiz]
@@ -129,9 +131,9 @@ xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 
 --
 
-//Advanced Features and FAQs
+//Helidon N&iacute;ma
 [CARD]
-.Advanced Features and FAQs
+.Helidon N&iacute;ma
 [icon=swap_horiz]
 --
 
