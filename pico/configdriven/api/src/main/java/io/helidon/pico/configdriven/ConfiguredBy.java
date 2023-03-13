@@ -49,7 +49,7 @@ public @interface ConfiguredBy {
     /**
      * The {@link io.helidon.builder.config.ConfigBean}-annotated type.
      *
-     * @return the {@code ConfigBean}-annotated type.
+     * @return the {@code ConfigBean}-annotated type
      */
     Class<?> value();
 

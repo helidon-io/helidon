@@ -42,8 +42,8 @@ class DefaultInterceptorCreatorTest extends AbstractBaseCreator {
     void sanity() {
         assertThat(interceptorCreator.getClass(), equalTo(DefaultInterceptorCreator.class));
         assertThat(interceptorCreator.strategy(), is(InterceptorCreator.Strategy.BLENDED));
-        assertThat(interceptorCreator.whiteListedAnnotationTypes().size(), is(0));
-        assertThat(interceptorCreator.isWhiteListed(Named.class.getName()), is(false));
+        assertThat(interceptorCreator.allowListedAnnotationTypes().size(), is(0));
+        assertThat(interceptorCreator.isAllowListed(Named.class.getName()), is(false));
     }
 
     @Test

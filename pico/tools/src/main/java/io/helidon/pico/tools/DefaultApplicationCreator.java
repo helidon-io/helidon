@@ -113,9 +113,9 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         if (!providersInUseThatAreAllowed.isEmpty()) {
             return handleError(req,
                    new ToolsException("There are dynamic " + Provider.class.getSimpleName()
-                                              + "s being used that are not whitelisted: "
+                                              + "s being used that are not allow-listed: "
                                               + providersInUseThatAreAllowed
-                                              + "; see the documentation for examples of whitelisting."), builder);
+                                              + "; see the documentation for examples of allow-listing."), builder);
         }
 
         try {
@@ -140,16 +140,16 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
 
         List<TypeName> providersInUseThatAreNotAllowed = new ArrayList<>();
         for (TypeName typeName : req.serviceTypeNames()) {
-            if (!isWhiteListedProviderName(req.configOptions(), typeName)
+            if (!isAllowListedProviderName(req.configOptions(), typeName)
                     && isProvider(typeName, services)
-                    && !isWhiteListedProviderQualifierTypeName(req.configOptions(), typeName, services)) {
+                    && !isAllowListedProviderQualifierTypeName(req.configOptions(), typeName, services)) {
                 providersInUseThatAreNotAllowed.add(typeName);
             }
         }
         return providersInUseThatAreNotAllowed;
     }
 
-    static boolean isWhiteListedProviderName(ApplicationCreatorConfigOptions configOptions,
+    static boolean isAllowListedProviderName(ApplicationCreatorConfigOptions configOptions,
                                              TypeName typeName) {
         ApplicationCreatorConfigOptions.PermittedProviderType opt = configOptions.permittedProviderTypes();
         if (ApplicationCreatorConfigOptions.PermittedProviderType.ALL == opt) {
@@ -176,7 +176,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         return sp.isProvider();
     }
 
-    static boolean isWhiteListedProviderQualifierTypeName(ApplicationCreatorConfigOptions configOptions,
+    static boolean isAllowListedProviderQualifierTypeName(ApplicationCreatorConfigOptions configOptions,
                                                           TypeName typeName,
                                                           Services services) {
         Set<TypeName> permittedTypeNames = configOptions.permittedProviderQualifierTypeNames();

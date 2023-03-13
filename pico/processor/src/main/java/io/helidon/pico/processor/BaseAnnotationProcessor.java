@@ -75,7 +75,6 @@ import io.helidon.pico.tools.GeneralCreatorRequest;
 import io.helidon.pico.tools.InterceptionPlan;
 import io.helidon.pico.tools.InterceptorCreatorProvider;
 import io.helidon.pico.tools.Messager;
-import io.helidon.pico.tools.ModuleUtils;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ServicesToProcess;
 import io.helidon.pico.tools.ToolsException;
@@ -91,9 +90,10 @@ import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeName
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValue;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
-import static io.helidon.pico.processor.Utils.nonNull;
 import static io.helidon.pico.processor.Utils.rootStackTraceElementOf;
 import static io.helidon.pico.processor.Utils.toList;
+import static io.helidon.pico.processor.Utils.toPath;
+import static io.helidon.pico.tools.ModuleUtils.toSourcePath;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromElement;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
 import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
@@ -328,7 +328,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 .serviceTypeName(serviceTypeName.name())
                 .declaredWeight(Optional.ofNullable(services.weightedPriorities().get(serviceTypeName)))
                 .declaredRunLevel(Optional.ofNullable(services.runLevels().get(serviceTypeName)))
-                .scopeTypeNames(nonNull(services.scopeTypeNames().get(serviceTypeName)))
+                .scopeTypeNames(services.scopeTypeNames().getOrDefault(serviceTypeName, Set.of()))
                 .build();
     }
 
@@ -499,8 +499,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 return false;
             }
             JavaFileObject sourceFile = path.getCompilationUnit().getSourceFile();
-            Optional<Path> filePath = ModuleUtils.toPath(sourceFile.toUri());
-            Optional<Path> srcPath = ModuleUtils.toSourcePath(filePath, type);
+            Optional<Path> filePath = toPath(sourceFile.toUri());
+            Optional<Path> srcPath = toSourcePath(filePath, type);
             srcPath.ifPresent(services::lastKnownSourcePathBeingProcessed);
             return true;
         } catch (Throwable t) {

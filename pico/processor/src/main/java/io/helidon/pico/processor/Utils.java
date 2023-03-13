@@ -16,18 +16,18 @@
 
 package io.helidon.pico.processor;
 
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 final class Utils {
     private Utils() {
-    }
-
-    static <T> Collection<T> nonNull(Collection<T> coll) {
-        return (coll == null) ? List.of() : coll;
     }
 
     /**
@@ -92,6 +92,19 @@ final class Utils {
                                String delim) {
         String[] split = str.split(delim);
         return Arrays.stream(split).map(String::trim).collect(Collectors.toList());
+    }
+
+    /**
+     * Will return non-empty File if the uri represents a local file on the fs.
+     *
+     * @param uri the uri of the artifact
+     * @return the file instance, or empty if not local
+     */
+    static Optional<Path> toPath(URI uri) {
+        if (uri.getHost() != null) {
+            return Optional.empty();
+        }
+        return Optional.of(Paths.get(uri));
     }
 
 }

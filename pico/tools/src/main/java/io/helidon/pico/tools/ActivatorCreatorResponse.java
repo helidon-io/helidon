@@ -54,7 +54,7 @@ public interface ActivatorCreatorResponse extends GeneralCreatorResponse {
     /**
      * Set if the application stub was requested to have been created.
      *
-     * @return the application name that was created.
+     * @return the application name that was created
      */
     Optional<TypeName> applicationTypeName();
 

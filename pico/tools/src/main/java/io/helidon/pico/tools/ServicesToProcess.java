@@ -190,7 +190,7 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return the map of service type names to each respective super class / parent types.
+     * @return the map of service type names to each respective super class / parent types
      */
     Map<TypeName, TypeName> parentServiceTypes() {
         return Map.copyOf(servicesToParentServiceTypeNames);
@@ -211,7 +211,7 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return the map of service type names to activator generic declarations.
+     * @return the map of service type names to activator generic declarations
      */
     Map<TypeName, String> activatorGenericDecls() {
         return Map.copyOf(servicesToActivatorGenericDecl);
@@ -235,7 +235,7 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return the map of service type names to each respective access level.
+     * @return the map of service type names to each respective access level
      */
     Map<TypeName, InjectionPointInfo.Access> accessLevels() {
         return servicesToAccess;
@@ -254,14 +254,14 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return the map of service type names to whether they are abstract. If not found then assume concrete.
+     * @return the map of service type names to whether they are abstract. If not found then assume concrete
      */
     Map<TypeName, Boolean> isAbstractMap() {
         return servicesToIsAbstract;
     }
 
     /**
-     * @return the map of service type names to the super class hierarchy.
+     * @return the map of service type names to the super class hierarchy
      */
     Map<TypeName, List<TypeName>> serviceTypeToHierarchy() {
         return serviceTypeHierarchy;
@@ -359,7 +359,7 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return the extra code gen to add for each service type.
+     * @return the extra code gen to add for each service type
      */
     Map<TypeName, List<String>> extraCodeGen() {
         return extraCodeGen;
@@ -557,35 +557,35 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Fetches the map of service types to their set of contracts for that service type.
+     * @return fetches the map of service types to their set of contracts for that service type
      */
     Map<TypeName, Set<TypeName>> contracts() {
         return new TreeMap<>(servicesToContracts);
     }
 
     /**
-     * @return Fetches the map of service types to their set of contracts for that service type.
+     * @return fetches the map of service types to their set of contracts for that service type
      */
     Map<TypeName, Set<TypeName>> externalContracts() {
         return new TreeMap<>(servicesToExternalContracts);
     }
 
     /**
-     * @return Fetches the map of service types to their injection point dependencies.
+     * @return fetches the map of service types to their injection point dependencies
      */
     Map<TypeName, DependenciesInfo> injectionPointDependencies() {
         return new TreeMap<>(servicesToDependencies);
     }
 
     /**
-     * @return Fetches the map of service types to their post construct methods.
+     * @return fetches the map of service types to their post construct methods
      */
     Map<TypeName, String> postConstructMethodNames() {
         return new TreeMap<>(servicesToPostConstructMethod);
     }
 
     /**
-     * @return Fetches the map of service types to their pre destroy methods.
+     * @return fetches the map of service types to their pre destroy methods
      */
     Map<TypeName, String> preDestroyMethodNames() {
         return new TreeMap<>(servicesToPreDestroyMethod);
@@ -619,14 +619,14 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Fetches the map of service types to the set of services they provide.
+     * @return fetches the map of service types to the set of services they provide
      */
     Map<TypeName, Set<TypeName>> providerForTypeNames() {
         return new TreeMap<>(servicesToProviderFor);
     }
 
     /**
-     * @return Fetches the map of service types to the set of qualifiers associated with each.
+     * @return fetches the map of service types to the set of qualifiers associated with each
      */
     Map<TypeName, Set<QualifierAndValue>> qualifiers() {
         return new TreeMap<>(servicesToQualifiers);
@@ -646,7 +646,7 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return the set of required (external) module names.
+     * @return the set of required (external) module names
      */
     Set<String> requiredModules() {
         return new TreeSet<>(requiredModules);
@@ -697,7 +697,7 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Fetches the last known module info descriptor.
+     * @return fetches the last known module info descriptor
      */
     ModuleInfoDescriptor lastKnownModuleInfoDescriptor() {
         return lastKnownModuleInfoDescriptor;
@@ -713,7 +713,7 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Fetches the last known module info file path.
+     * @return fetches the last known module info file path
      */
     Path lastKnownModuleInfoFilePath() {
         return lastKnownModuleInfoFilePath;
@@ -732,14 +732,14 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Fetches the last generated module descriptor.
+     * @return fetches the last generated module descriptor
      */
     ModuleInfoDescriptor getLastGeneratedModuleInfoDescriptor() {
         return lastGeneratedModuleInfoDescriptor;
     }
 
     /**
-     * @return Fetches the last generated module descriptor location.
+     * @return fetches the last generated module descriptor location
      */
     Path lastGeneratedModuleInfoFilePath() {
         return lastGeneratedModuleInfoFilePath;
@@ -755,7 +755,7 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Fetches the last known source path being processed.
+     * @return fetches the last known source path being processed
      */
     Path lastKnownSourcePathBeingProcessed() {
         return lastKnownSourcePathBeingProcessed;
@@ -771,7 +771,7 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Fetches the last known type suffix.
+     * @return fetches the last known type suffix
      */
     String lastKnownTypeSuffix() {
         return lastKnownTypeSuffix;

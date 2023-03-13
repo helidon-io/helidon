@@ -120,8 +120,8 @@ public class ResolutionContext {
     public static ResolutionContext create(Class<?> configBeanType,
                                            Config cfg,
                                            ConfigResolver resolver,
-                                           ConfigBeanBuilderValidator<?> validator, Map<Class<?>,
-            Function<Config, ?>> mappers) {
+                                           ConfigBeanBuilderValidator<?> validator,
+                                           Map<Class<?>, Function<Config, ?>> mappers) {
         return ResolutionContext.builder()
                 .configBeanType(configBeanType)
                 .config(cfg)
@@ -135,11 +135,11 @@ public class ResolutionContext {
      * Fluent builder for {@link ResolutionContext}.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, ResolutionContext> {
+        private final Map<Class<?>, Function<Config, ?>> mappers = new LinkedHashMap<>();
         private Class<?> configBeanType;
         private Config cfg;
         private ConfigResolver resolver;
         private ConfigBeanBuilderValidator<?> validator;
-        private final Map<Class<?>, Function<Config, ?>> mappers = new LinkedHashMap<>();
 
         /**
          * Constructor for the fluent builder.
@@ -221,7 +221,8 @@ public class ResolutionContext {
          * @param val the value
          * @return this fluent builder
          */
-        public Builder addMapper(Class<?> key, Function<Config, ?> val) {
+        public Builder addMapper(Class<?> key,
+                                 Function<Config, ?> val) {
             Objects.requireNonNull(val);
             this.mappers.put(key, val);
             return identity();

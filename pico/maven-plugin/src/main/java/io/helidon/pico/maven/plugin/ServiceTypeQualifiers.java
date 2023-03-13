@@ -46,7 +46,7 @@ public class ServiceTypeQualifiers {
     }
 
     /**
-     * @return the map representation for this instance.
+     * @return the map representation for this instance
      */
     Map<String, Set<QualifierAndValue>> toMap() {
         return Map.of(Objects.requireNonNull(serviceTypeName), new LinkedHashSet<>(Objects.requireNonNull(qualifiers)));

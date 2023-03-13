@@ -40,12 +40,12 @@ import static java.lang.annotation.ElementType.TYPE;
 public @interface MyTestQualifier {
 
     /**
-     * @return the name.
+     * @return the name
      */
     String value() default "";
 
     /**
-     * @return just for testing.
+     * @return just for testing
      */
     String[] extendedValue() default "";
 

@@ -40,7 +40,7 @@ public interface ModuleDetail {
     /**
      * The name of this module.
      *
-     * @return name of this module.
+     * @return name of this module
      */
     String moduleName();
 

@@ -130,7 +130,7 @@ public interface ModuleInfoItem {
     /**
      * Provides the content of the description item appropriate to write out.
      *
-     * @return The contents (source code body) for this descriptor item.
+     * @return the contents (source code body) for this descriptor item
      */
     default String contents() {
         StringBuilder builder = new StringBuilder();

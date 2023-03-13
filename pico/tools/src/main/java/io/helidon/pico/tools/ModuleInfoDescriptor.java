@@ -408,7 +408,7 @@ public interface ModuleInfoDescriptor {
     /**
      * Provides the content of the description appropriate to write out.
      *
-     * @return The contents (source code body) for this descriptor.
+     * @return the contents (source code body) for this descriptor
      */
     default String contents() {
         return contents(true);
@@ -418,7 +418,7 @@ public interface ModuleInfoDescriptor {
      * Provides the content of the description appropriate to write out.
      *
      * @param wantAnnotation flag determining whether the Generated annotation comment should be present
-     * @return The contents (source code body) for this descriptor.
+     * @return the contents (source code body) for this descriptor
      */
     default String contents(boolean wantAnnotation) {
         TemplateHelper helper = TemplateHelper.create();

@@ -51,7 +51,7 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
     /**
      * Tag that represents the component type.
      */
-    static final String TAG_COMPONENT_TYPE = "componentType";
+    protected static final String TAG_COMPONENT_TYPE = "componentType";
 
     /**
      * Default constructor, service loader invoked.
@@ -117,7 +117,7 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
         boolean isSet = Set.class.isAssignableFrom(type);
         boolean isMap = Map.class.isAssignableFrom(type);
 
-        boolean isCharArray = (type.isArray() && char.class == type.getComponentType());
+        boolean isCharArray = (char[].class == type);
         if (isCharArray) {
             type = String.class;
         }
@@ -142,9 +142,7 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
                     }
 
                     if (isSet) {
-                        Set<Object> set = new LinkedHashSet<>();
-                        set.addAll(cfgList);
-                        val = set;
+                        val = new LinkedHashSet<>(cfgList);
                     } else {
                         val = cfgList;
                     }
@@ -197,21 +195,6 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
                                                     + " for attribute: " + request.attributeName()
                                                     + " and config key: " + configKey, e);
         }
-    }
-
-    /**
-     * Extracts the component type from the meta attributes provided for a particular bean attribute name.
-     *
-     * @param request   the request
-     * @param meta      the meta attributes
-     * @param <T> the attribute value type being resolved in the request
-     * @return the component type
-     */
-    public static <T> Optional<Class<T>> toComponentType(Map<String, Map<String, Object>> meta,
-                                                         ConfigResolverRequest<T> request) {
-        Map<String, Object> thisMeta = meta.get(request.attributeName());
-        return Optional.ofNullable((Class<T>) (thisMeta == null
-                                                       ? request.valueComponentType() : thisMeta.get(TAG_COMPONENT_TYPE)));
     }
 
     private static String toTypeNameDescription(Class<?> type,

@@ -70,7 +70,6 @@ jtrent@jtrent-mac logger % find pico -type f  -not -path '*/.*' | grep -v target
 
 9. Pico generates a suggested <i>module-info.java</i> based upon analysis of your injection/dependency model (see /target/classes/module-info.java.pico).
 
-TODO: replace this
 ```./target/classes/module-info.java.pico
 // @Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
 module helidon.examples.pico.logger.common {
@@ -84,7 +83,7 @@ module helidon.examples.pico.logger.common {
     uses jakarta.inject.Provider;
     uses javax.inject.Provider;
     // pico services - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
-    requires transitive io.helidon.pico;
+    requires transitive io.helidon.pico.services;
 }
 ```
 

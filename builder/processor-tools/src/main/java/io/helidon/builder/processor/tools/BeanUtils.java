@@ -124,9 +124,16 @@ public class BeanUtils {
      */
     public static boolean isReservedWord(String word) {
         word = word.toUpperCase();
-        return word.equals(KIND_CLASS) || word.equals(KIND_INTERFACE) || word.equals(KIND_PACKAGE) || word.equals(KIND_ENUM)
-                || word.equals(MODIFIER_STATIC) || word.equals(MODIFIER_FINAL) || word.equals(MODIFIER_PUBLIC)
-                || word.equals(MODIFIER_PROTECTED) || word.equals(MODIFIER_PRIVATE) || word.equalsIgnoreCase(KIND_RECORD)
+        return word.equals(KIND_CLASS)
+                || word.equals(KIND_INTERFACE)
+                || word.equals(KIND_PACKAGE)
+                || word.equals(KIND_ENUM)
+                || word.equals(MODIFIER_STATIC)
+                || word.equals(MODIFIER_FINAL)
+                || word.equals(MODIFIER_PUBLIC)
+                || word.equals(MODIFIER_PROTECTED)
+                || word.equals(MODIFIER_PRIVATE)
+                || word.equalsIgnoreCase(KIND_RECORD)
                 || word.equals(MODIFIER_ABSTRACT);
     }
 

@@ -24,8 +24,9 @@ module io.helidon.builder.config {
     requires io.helidon.common;
     requires io.helidon.common.config;
 
-    uses io.helidon.builder.config.spi.ConfigBeanMapperProvider;
     uses io.helidon.builder.config.spi.ConfigBeanBuilderValidatorProvider;
+    uses io.helidon.builder.config.spi.ConfigBeanMapperProvider;
+    uses io.helidon.builder.config.spi.ConfigBeanRegistryProvider;
     uses io.helidon.builder.config.spi.ConfigResolverProvider;
     uses io.helidon.builder.config.spi.StringValueParserProvider;
 

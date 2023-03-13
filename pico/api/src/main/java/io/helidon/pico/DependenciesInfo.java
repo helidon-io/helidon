@@ -17,13 +17,13 @@
 package io.helidon.pico;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
@@ -55,9 +55,8 @@ public interface DependenciesInfo {
      *
      * @return the flattened set of all dependencies
      */
-    // note to self: dependencies should be ordered by injection point info
     default Set<DependencyInfo> allDependencies() {
-        Set<DependencyInfo> all = new LinkedHashSet<>();
+        Set<DependencyInfo> all = new TreeSet<>(comparator());
         serviceInfoDependencies().values()
                 .forEach(all::addAll);
         return all;
@@ -71,17 +70,14 @@ public interface DependenciesInfo {
      */
     default List<DependencyInfo> allDependenciesFor(String elemName) {
         Objects.requireNonNull(elemName);
-        List<DependencyInfo> result = new ArrayList<>();
-        allDependencies().forEach(dep -> dep.injectionPointDependencies().stream()
-                .forEach(it -> {
-                    if (Objects.equals(elemName, it.elementName())) {
-                        result.add(DefaultDependencyInfo.toBuilder(dep).injectionPointDependencies(Set.of(it)).build());
-                    }
-                }));
-        if (result.size() > 1) {
-            result.sort(comparator());
-        }
-        return result;
+        return allDependencies().stream()
+                .flatMap(dep -> dep.injectionPointDependencies().stream()
+                        .filter(ipi -> elemName.equals(ipi.elementName()))
+                        .map(ipi -> DefaultDependencyInfo.toBuilder(dep)
+                                .injectionPointDependencies(Set.of(ipi))
+                                .build()))
+                .sorted(comparator())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -94,16 +90,24 @@ public interface DependenciesInfo {
         @Override
         public int compare(DependencyInfo o1,
                            DependencyInfo o2) {
-            int pos1 = o1.injectionPointDependencies().iterator().next().elementOffset().orElse(0);
-            int pos2 = o2.injectionPointDependencies().iterator().next().elementOffset().orElse(0);
-            return Integer.compare(pos1, pos2);
+            InjectionPointInfo ipi1 = o1.injectionPointDependencies().iterator().next();
+            InjectionPointInfo ipi2 = o2.injectionPointDependencies().iterator().next();
+
+            java.util.Comparator<InjectionPointInfo> idComp = java.util.Comparator.comparing(InjectionPointInfo::baseIdentity);
+            java.util.Comparator<InjectionPointInfo> posComp = java.util.Comparator.comparing(Comparator::elementOffsetOf);
+
+            return idComp.thenComparing(posComp).compare(ipi1, ipi2);
+        }
+
+        private static int elementOffsetOf(InjectionPointInfo ipi) {
+            return ipi.elementOffset().orElse(0);
         }
     }
 
     /**
      * Provides a comparator appropriate for {@link io.helidon.pico.DependencyInfo}.
      *
-     * @return a comparator for dependency info.
+     * @return a comparator for dependency info
      */
     static java.util.Comparator<DependencyInfo> comparator() {
         return new Comparator();

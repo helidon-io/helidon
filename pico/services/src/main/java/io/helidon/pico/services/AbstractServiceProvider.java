@@ -595,7 +595,7 @@ public abstract class AbstractServiceProvider<T>
     public void onPhaseEvent(Event event,
                              Phase phase) {
         // NOP
-        int debugMe = 0;
+        assert (true); // for setting breakpoints in debug
     }
 
     private void onInitialized() {
@@ -967,7 +967,7 @@ public abstract class AbstractServiceProvider<T>
                                      Set<String> injections,
                                      String forServiceType) {
         // NOP; meant to be overridden
-        boolean debugMe = true;
+        assert (true); // for setting breakpoints in debug
     }
 
     /**
@@ -983,7 +983,7 @@ public abstract class AbstractServiceProvider<T>
                                       Set<String> injections,
                                       String forServiceType) {
         // NOP; meant to be overridden
-        boolean debugMe = true;
+        assert (true); // for setting breakpoints in debug
     }
 
     /**

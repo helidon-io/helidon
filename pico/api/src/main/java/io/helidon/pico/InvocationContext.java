@@ -63,7 +63,7 @@ public interface InvocationContext {
     /**
      * The method/element argument info.
      *
-     * @return the method/element argument info.
+     * @return the method/element argument info
      */
     TypedElementName[] elementArgInfo();
 

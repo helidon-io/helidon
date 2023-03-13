@@ -53,13 +53,13 @@ public interface InterceptorCreator {
         ALL_RUNTIME,
 
         /**
-         * A call to {@link #whiteListedAnnotationTypes()} will be used to determine which annotations qualify. The
+         * A call to {@link #allowListedAnnotationTypes()} will be used to determine which annotations qualify. The
          * implementation may then cache this result internally for optimal processing.
          */
-        WHITE_LISTED,
+        ALLOW_LISTED,
 
         /**
-         * A call to {@link #isWhiteListed(String)} will be used on a case-by-case basis to check which annotation
+         * A call to {@link #isAllowListed(String)} will be used on a case-by-case basis to check which annotation
          * types qualify.
          */
         CUSTOM,
@@ -71,7 +71,7 @@ public interface InterceptorCreator {
 
         /**
          * Applies a blend of {@link #EXPLICIT} and {@link #CUSTOM} to determine which annotations qualify (i.e., if
-         * the annotation is not explicitly marked, then a call is still issued to {@link #isWhiteListed(String)}. This
+         * the annotation is not explicitly marked, then a call is still issued to {@link #isAllowListed(String)}. This
          * strategy is typically the default strategy type in use.
          */
         BLENDED
@@ -88,11 +88,11 @@ public interface InterceptorCreator {
     }
 
     /**
-     * Applicable when {@link Strategy#WHITE_LISTED} is in use.
+     * Applicable when {@link Strategy#ALLOW_LISTED} is in use.
      *
      * @return the set of type names that should trigger creation
      */
-    default Set<String> whiteListedAnnotationTypes() {
+    default Set<String> allowListedAnnotationTypes() {
         return Set.of();
     }
 
@@ -102,9 +102,9 @@ public interface InterceptorCreator {
      * @param annotationType the annotation type name
      * @return true if the annotation type should trigger interceptor creation
      */
-    default boolean isWhiteListed(String annotationType) {
+    default boolean isAllowListed(String annotationType) {
         Objects.requireNonNull(annotationType);
-        return whiteListedAnnotationTypes().contains(annotationType);
+        return allowListedAnnotationTypes().contains(annotationType);
     }
 
     /**

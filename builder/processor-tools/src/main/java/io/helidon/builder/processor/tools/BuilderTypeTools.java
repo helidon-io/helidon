@@ -64,8 +64,6 @@ import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 1)
 public class BuilderTypeTools implements TypeInfoCreatorProvider {
-    private static final boolean ACCEPT_ABSTRACT_CLASS_TARGETS = true;
-
     /**
      * Default constructor. Service loaded.
      *
@@ -144,34 +142,13 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                 continue;
             }
 
-            result.compute(referenced, (k, v) -> {
-                if (v == null) {
-                    // first time processing, we only need to do this on pass #1
-                    TypeElement typeElement = processingEnv.getElementUtils().getTypeElement(k.name());
-                    if (typeElement != null) {
-                        v = createAnnotationAndValueListFromElement(typeElement, processingEnv.getElementUtils());
-                    }
-                }
-                return v;
+            // first time processing, we only need to do this on pass #1
+            result.computeIfAbsent(referenced, (k) -> {
+                TypeElement typeElement = processingEnv.getElementUtils().getTypeElement(k.name());
+                return (typeElement == null)
+                        ? null :  createAnnotationAndValueListFromElement(typeElement, processingEnv.getElementUtils());
             });
         }
-    }
-
-    /**
-     * Determines if the target element with the {@link io.helidon.builder.Builder} annotation is an acceptable element type.
-     * If it is not acceptable then the caller is expected to throw an exception or log an error, etc.
-     *
-     * @param element the element
-     * @return true if the element is acceptable
-     */
-    public static boolean isAcceptableBuilderTarget(Element element) {
-        final ElementKind kind = element.getKind();
-        final Set<Modifier> modifiers = element.getModifiers();
-        boolean isAcceptable = (kind == ElementKind.INTERFACE
-                                        || kind == ElementKind.ANNOTATION_TYPE
-                                        || (ACCEPT_ABSTRACT_CLASS_TARGETS
-                                                    && (kind == ElementKind.CLASS && modifiers.contains(Modifier.ABSTRACT))));
-        return isAcceptable;
     }
 
     /**
@@ -519,7 +496,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * Helper method to determine if the value is present (i.e., non-null and non-blank).
      *
      * @param val the value to check
-     * @return true if the value provided is non-null and non-blank.
+     * @return true if the value provided is non-null and non-blank
      */
     static boolean hasNonBlankValue(String val) {
         return (val != null) && !val.isBlank();
@@ -541,10 +518,10 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     /**
      * Produces the generated copy right header on code generated artifacts.
      *
-     * @param ignoredGeneratorClassTypeName the generator class type name
+     * @param generatorClassTypeName the generator class type name
      * @return the generated comments
      */
-    public static String copyrightHeaderFor(String ignoredGeneratorClassTypeName) {
+    public static String copyrightHeaderFor(String generatorClassTypeName) {
         return "// This is a generated file (powered by Helidon). "
                     + "Do not edit or extend from this artifact as it is subject to change at any time!";
     }

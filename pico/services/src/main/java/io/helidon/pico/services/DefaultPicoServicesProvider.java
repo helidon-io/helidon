@@ -48,7 +48,7 @@ public class DefaultPicoServicesProvider implements PicoServicesProvider, Reseta
      */
     @Deprecated
     public DefaultPicoServicesProvider() {
-        int debugMe = 0;
+        assert (true); // for setting breakpoints in debug
     }
 
     @Override

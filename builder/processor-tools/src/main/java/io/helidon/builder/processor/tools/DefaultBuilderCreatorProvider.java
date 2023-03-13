@@ -838,14 +838,10 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      * @return the (singular) name of the element
      */
     protected static String nameOf(TypedElementName elem) {
-        AnnotationAndValue singular = DefaultAnnotationAndValue.findFirst(Singular.class.getName(), elem.annotations())
-                        .orElse(null);
-        String name = (singular == null) ? null : singular.value().orElse(null);
-        if (hasNonBlankValue(name)) {
-            return name;
-        }
-
-        return elem.elementName();
+        return DefaultAnnotationAndValue.findFirst(Singular.class.getName(), elem.annotations())
+                .flatMap(AnnotationAndValue::value)
+                .filter(BuilderTypeTools::hasNonBlankValue)
+                .orElseGet(elem::elementName);
     }
 
     /**
@@ -1832,7 +1828,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             val = valType + "." + val;
         } else if (key.equals("value") && val.startsWith(ConfiguredOption.class.getName())) {
             // NOP; process this as-is
-            int debugMe = 0;
+            assert (true); // for setting breakpoints in debug
         } else {
             val = quotedValueOf(val);
         }

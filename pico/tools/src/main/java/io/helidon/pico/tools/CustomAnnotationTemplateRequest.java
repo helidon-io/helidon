@@ -65,7 +65,7 @@ public interface CustomAnnotationTemplateRequest {
     /**
      * Returns true if the element is declared to be static.
      *
-     * @return returns true if the element is declared to be private.
+     * @return returns true if the element is declared to be private
      */
     boolean isElementStatic();
 

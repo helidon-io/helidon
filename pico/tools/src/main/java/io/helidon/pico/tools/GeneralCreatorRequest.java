@@ -32,7 +32,7 @@ public interface GeneralCreatorRequest extends GeneralCodeGenNames {
     /**
      * Set to true to avoid code-generating, and instead provide the plan for what would be built.
      *
-     * @return if set to true then no codegen will occur on disk.
+     * @return if set to true then no codegen will occur on disk
      */
     boolean analysisOnly();
 

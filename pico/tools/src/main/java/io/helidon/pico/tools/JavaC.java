@@ -45,7 +45,7 @@ class JavaC {
     private Messager messager;
 
     /**
-     * @return The fluent builder for eventual compilation.
+     * @return The fluent builder for eventual compilation
      */
     static Builder builder() {
         JavaC compiler = new JavaC();

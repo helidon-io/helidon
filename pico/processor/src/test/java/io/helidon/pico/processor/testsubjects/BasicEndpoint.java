@@ -29,7 +29,7 @@ public class BasicEndpoint {
      * For testing.
      *
      * @param header for testing
-     * @return for testing.
+     * @return for testing
      */
     @ExtensibleGET
     public String itWorks(String header) {

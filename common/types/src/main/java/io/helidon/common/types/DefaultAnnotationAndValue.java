@@ -167,7 +167,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
         if (!Objects.equals(typeName(), ((AnnotationAndValue) another).typeName())) {
             return false;
         }
-        if (!Objects.equals(values, ((DefaultAnnotationAndValue) another).values())) {
+        if (!Objects.equals(values, ((AnnotationAndValue) another).values())) {
             return false;
         }
         return true;

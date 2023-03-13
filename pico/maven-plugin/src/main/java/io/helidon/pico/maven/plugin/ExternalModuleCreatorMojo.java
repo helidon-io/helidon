@@ -112,7 +112,7 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
     }
 
     /**
-     * @return the package names that should be targeted for activator creation.
+     * @return the package names that should be targeted for activator creation
      */
     List<String> getPackageNames() {
         return packageNames;

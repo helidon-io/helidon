@@ -44,7 +44,7 @@ public interface ExternalModuleCreatorRequest extends GeneralCreatorRequest {
     /**
      * Optionally, provides a means to map additional qualifiers to service types.
      *
-     * @return any qualifiers that should be mapped into the generated services.
+     * @return any qualifiers that should be mapped into the generated services
      */
     @Singular
     Map<String, Set<QualifierAndValue>> serviceTypeToQualifiersMap();

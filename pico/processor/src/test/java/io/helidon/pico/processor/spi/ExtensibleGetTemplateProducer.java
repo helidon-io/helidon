@@ -44,7 +44,7 @@ public class ExtensibleGetTemplateProducer implements CustomAnnotationTemplateCr
      */
     @Deprecated
     public ExtensibleGetTemplateProducer() {
-        int debugMe = 1;
+        assert(true); // for setting breakpoints in debug
     }
 
     @Override

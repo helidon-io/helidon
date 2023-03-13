@@ -85,7 +85,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     private static final CBInstanceComparator BEAN_INSTANCE_ID_COMPARATOR = new CBInstanceComparator();
     private static final System.Logger LOGGER = System.getLogger(AbstractConfiguredServiceProvider.class.getName());
     private static final LazyValue<InternalConfigBeanRegistry> CONFIG_BEAN_REGISTRY
-            = LazyValue.create(() -> resolveConfigBeanRegistry());
+            = LazyValue.create(AbstractConfiguredServiceProvider::resolveConfigBeanRegistry);
 
     private final AtomicReference<Boolean> isRootProvider = new AtomicReference<>();
     private final AtomicReference<ConfiguredServiceProvider<T, CB>> rootProvider = new AtomicReference<>();

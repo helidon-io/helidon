@@ -37,7 +37,7 @@ public class HelloPicoApplication implements Application {
     static final String NAME = "HelloPicoApplication";
 
     public HelloPicoApplication() {
-        boolean debugMe = true;
+        assert(true); // for setting breakpoints in debug
     }
 
     @Override

@@ -83,7 +83,7 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
     /**
      * Returns true if this provider is the root provider.
      *
-     * @return indicates whether this provider is a root provider - the default is true.
+     * @return indicates whether this provider is a root provider - the default is true
      */
     default boolean isRootProvider() {
         return rootProvider().isEmpty();

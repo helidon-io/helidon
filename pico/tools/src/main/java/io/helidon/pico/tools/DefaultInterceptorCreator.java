@@ -84,9 +84,9 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
     private static final String COMPLEX_INTERCEPTOR_HBS = "complex-interceptor.hbs";
     private static final double INTERCEPTOR_PRIORITY_DELTA = 0.001;
     private static final String CTOR_ALIAS = "ctor";
-    private static final Set<String> MANUALLY_WHITE_LISTED = new LinkedHashSet<>();
+    private static final Set<String> ALLOW_LIST = new LinkedHashSet<>();
 
-    private Set<String> whiteListedAnnoTypeNames;
+    private Set<String> allowListedAnnoTypeNames;
 
     /**
      * Service loader based constructor.
@@ -100,24 +100,24 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
 
     @Override
     public boolean reset(boolean deep) {
-        whiteListedAnnoTypeNames = null;
+        allowListedAnnoTypeNames = null;
         return true;
     }
 
     /**
-     * Sets the white listed annotation types triggering interception creation for the default interceptor creator.
+     * Sets the allow-listed annotation types triggering interception creation for the default interceptor creator.
      *
-     * @param whiteListedAnnotationTypes the whitelisted annotation types
+     * @param allowListedAnnotationTypes the allow-listed annotation types
      * @return this instance
      */
-    public DefaultInterceptorCreator whiteListed(Set<String> whiteListedAnnotationTypes) {
-        this.whiteListedAnnoTypeNames = whiteListedAnnotationTypes;
+    public DefaultInterceptorCreator allowListedAnnotationTypes(Set<String> allowListedAnnotationTypes) {
+        this.allowListedAnnoTypeNames = allowListedAnnotationTypes;
         return this;
     }
 
     @Override
-    public Set<String> whiteListedAnnotationTypes() {
-        return (whiteListedAnnoTypeNames != null) ? whiteListedAnnoTypeNames : Collections.emptySet();
+    public Set<String> allowListedAnnotationTypes() {
+        return (allowListedAnnoTypeNames != null) ? allowListedAnnoTypeNames : Collections.emptySet();
     }
 
     @Override
@@ -221,10 +221,10 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
          * Returns true if the annotation qualifies/triggers interceptor creation.
          *
          * @param annotationTypeName the annotation type name
-         * @return true if the annotation qualifies/triggers interceptor creation.
+         * @return true if the annotation qualifies/triggers interceptor creation
          */
         public boolean isQualifyingTrigger(String annotationTypeName) {
-            return (creator != null) && creator.isWhiteListed(annotationTypeName);
+            return (creator != null) && creator.isAllowListed(annotationTypeName);
         }
     }
 
@@ -262,25 +262,25 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             Objects.requireNonNull(annotationTypeName);
             return (resolver.resolve(annotationTypeName).contains(RUNTIME)
                             || resolver.resolve(annotationTypeName).contains(CLASS)
-                            || MANUALLY_WHITE_LISTED.contains(annotationTypeName));
+                            || ALLOW_LIST.contains(annotationTypeName));
         }
     }
 
     /**
-     * Enforces {@link Strategy#WHITE_LISTED}.
+     * Enforces {@link Strategy#ALLOW_LISTED}.
      */
-    private static class WhiteListedStrategy extends TriggerFilter {
-        private final Set<String> whiteListed;
+    private static class AllowListedStrategy extends TriggerFilter {
+        private final Set<String> allowListed;
 
-        protected WhiteListedStrategy(InterceptorCreator creator) {
+        protected AllowListedStrategy(InterceptorCreator creator) {
             super(creator);
-            this.whiteListed = Objects.requireNonNull(creator.whiteListedAnnotationTypes());
+            this.allowListed = Objects.requireNonNull(creator.allowListedAnnotationTypes());
         }
 
         @Override
         public boolean isQualifyingTrigger(String annotationTypeName) {
             Objects.requireNonNull(annotationTypeName);
-            return whiteListed.contains(annotationTypeName) || MANUALLY_WHITE_LISTED.contains(annotationTypeName);
+            return allowListed.contains(annotationTypeName) || ALLOW_LIST.contains(annotationTypeName);
         }
     }
 
@@ -296,7 +296,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         public boolean isQualifyingTrigger(String annotationTypeName) {
             Objects.requireNonNull(creator);
             Objects.requireNonNull(annotationTypeName);
-            return (creator.isWhiteListed(annotationTypeName) || MANUALLY_WHITE_LISTED.contains(annotationTypeName));
+            return (creator.isAllowListed(annotationTypeName) || ALLOW_LIST.contains(annotationTypeName));
         }
     }
 
@@ -341,8 +341,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             return new ExplicitStrategy(creator, resolver);
         } else if (Strategy.ALL_RUNTIME == strategy) {
             return new AllRuntimeStrategy(creator, resolver);
-        }  else if (Strategy.WHITE_LISTED == strategy) {
-            return new WhiteListedStrategy(creator);
+        }  else if (Strategy.ALLOW_LISTED == strategy) {
+            return new AllowListedStrategy(creator);
         } else if (Strategy.CUSTOM == strategy) {
             return new CustomStrategy(creator);
         } else if (Strategy.NONE == strategy) {
@@ -389,14 +389,14 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
 
         /**
-         * @return the annotation resolver in use.
+         * @return the annotation resolver in use
          */
         AnnotationTypeNameResolver resolver() {
             return resolver;
         }
 
         /**
-         * @return the trigger filter in use.
+         * @return the trigger filter in use
          */
         TriggerFilter triggerFilter() {
             return triggerFilter;
@@ -446,18 +446,19 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
 
         /**
-         * @return the cumulative annotations referenced by this type.
+         * @return the cumulative annotations referenced by this type
          */
         abstract Set<String> getAllAnnotations();
 
         /**
-         * @return only the service level annotations referenced by this type.
+         * @return only the service level annotations referenced by this type
          */
         abstract Set<AnnotationAndValue> getServiceLevelAnnotations();
 
         /**
          * Intercepted classes must have a no-arg constructor (current restriction).
-         * @return true if there is a no-arg constructor present.
+         *
+         * @return true if there is a no-arg constructor present
          */
         abstract boolean hasNoArgConstructor();
 
@@ -628,7 +629,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      * Create an annotation resolver based on annotation processing.
      *
      * @param processEnv the processing env
-     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AnnotationTypeNameResolver} to use.
+     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AnnotationTypeNameResolver} to use
      */
     static AnnotationTypeNameResolver createResolverFromProcessor(ProcessingEnvironment processEnv) {
         return new ProcessorResolver(processEnv.getElementUtils());
@@ -637,7 +638,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
     /**
      * Create an annotation resolver based on reflective processing.
      *
-     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AnnotationTypeNameResolver} to use.
+     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AnnotationTypeNameResolver} to use
      */
     static AnnotationTypeNameResolver createResolverFromReflection() {
         return new ReflectionResolver(SCAN.get());
@@ -660,13 +661,13 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      * @param interceptedService the service being processed
      * @param realCreator     the real/delegate creator
      * @param processEnv the processing env
-     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AbstractInterceptorProcessor} to use.
+     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AbstractInterceptorProcessor} to use
      */
     AbstractInterceptorProcessor createInterceptorProcessorFromProcessor(ServiceInfoBasics interceptedService,
                                                                          InterceptorCreator realCreator,
                                                                          ProcessingEnvironment processEnv) {
         Options.init(processEnv);
-        MANUALLY_WHITE_LISTED.addAll(Options.getOptionStringList(Options.TAG_WHITE_LISTED_INTERCEPTOR_ANNOTATIONS));
+        ALLOW_LIST.addAll(Options.getOptionStringList(Options.TAG_ALLOW_LISTED_INTERCEPTOR_ANNOTATIONS));
         return new ProcessorBased(Objects.requireNonNull(interceptedService),
                                   Objects.requireNonNull(realCreator),
                                   Objects.requireNonNull(processEnv),
@@ -678,7 +679,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      *
      * @param interceptedService the service being processed
      * @param realCreator     the real/delegate creator
-     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AbstractInterceptorProcessor} to use.
+     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AbstractInterceptorProcessor} to use
      */
     AbstractInterceptorProcessor createInterceptorProcessorFromReflection(ServiceInfoBasics interceptedService,
                                                                           InterceptorCreator realCreator) {
@@ -805,27 +806,32 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         String name = (mi.elementKind() == ElementInfo.ElementKind.CONSTRUCTOR) ? CTOR_ALIAS : mi.elementName();
         StringBuilder builder = new StringBuilder();
         builder.append("public ").append(mi.elementTypeName()).append(" ").append(mi.elementName()).append("(");
-        String args = CommonUtils.toString(mi.parameterInfo().stream().map(ElementInfo::elementName)
-                                     .collect(Collectors.toList()));
+        String args = mi.parameterInfo().stream().map(ElementInfo::elementName).collect(Collectors.joining(", "));
         String argDecls = "";
         String objArrayArgs = "";
         String typedElementArgs = "";
         String untypedElementArgs = "";
         boolean hasArgs = (args.length() > 0);
         if (hasArgs) {
-            argDecls = CommonUtils.toString(IdAndToString.toList(mi.parameterInfo(), DefaultInterceptorCreator::toDecl));
+            argDecls = mi.parameterInfo().stream()
+                    .map(DefaultInterceptorCreator::toDecl)
+                    .map(IdAndToString::toString)
+                    .collect(Collectors.joining(", "));
             AtomicInteger count = new AtomicInteger();
-            objArrayArgs = CommonUtils.toString(mi.parameterInfo().stream()
-                                       .map(ei -> ("(" + toObjectTypeName(ei.elementTypeName())) + ") "
-                                               + "args[" + count.getAndIncrement() + "]")
-                                       .collect(Collectors.toList()));
-            typedElementArgs = CommonUtils.toString(mi.parameterInfo().stream()
-                                       .map(ei -> "__" + mi.elementName() + "__" + ei.elementName())
-                                       .collect(Collectors.toList()), null, ", ");
+            objArrayArgs = mi.parameterInfo().stream()
+                    .map(ElementInfo::elementTypeName)
+                    .map(TypeTools::toObjectTypeName)
+                    .map(typeName -> "(" + typeName + ") " + "args[" + count.getAndIncrement() + "]")
+                    .collect(Collectors.joining(", "));
+
+            typedElementArgs = mi.parameterInfo().stream()
+                    .map(ei -> "__" + mi.elementName() + "__" + ei.elementName())
+                    .collect(Collectors.joining(", "));
+
             count.set(0);
-            untypedElementArgs = CommonUtils.toString(mi.parameterInfo().stream()
-                                       .map(ei -> "args[" + count.getAndIncrement() + "]")
-                                       .collect(Collectors.toList()));
+            untypedElementArgs = mi.parameterInfo().stream()
+                    .map(ei -> "args[" + count.getAndIncrement() + "]")
+                    .collect(Collectors.joining(", "));
         }
 
         boolean hasReturn = !mi.elementTypeName().equals(void.class.getName());

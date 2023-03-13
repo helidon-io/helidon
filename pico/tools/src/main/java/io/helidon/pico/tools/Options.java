@@ -67,8 +67,8 @@ public class Options {
     /**
      * Identify the additional annotation type names that will trigger interception.
      */
-    static final String TAG_WHITE_LISTED_INTERCEPTOR_ANNOTATIONS = PicoServicesConfig.NAME
-            + ".whiteListedInterceptorAnnotations";
+    static final String TAG_ALLOW_LISTED_INTERCEPTOR_ANNOTATIONS = PicoServicesConfig.NAME
+            + ".allowListedInterceptorAnnotations";
 
     /**
      * Identify whether any application scopes (from ee) is translated to {@link jakarta.inject.Singleton}.
@@ -112,8 +112,8 @@ public class Options {
                      getOption(TAG_MODULE_NAME, null, processingEnv));
             OPTS.put(TAG_PICO_MODULE_NAME,
                      getOption(TAG_PICO_MODULE_NAME, null, processingEnv));
-            OPTS.put(TAG_WHITE_LISTED_INTERCEPTOR_ANNOTATIONS,
-                     getOption(TAG_WHITE_LISTED_INTERCEPTOR_ANNOTATIONS, null, processingEnv));
+            OPTS.put(TAG_ALLOW_LISTED_INTERCEPTOR_ANNOTATIONS,
+                     getOption(TAG_ALLOW_LISTED_INTERCEPTOR_ANNOTATIONS, null, processingEnv));
             OPTS.put(TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE,
                      getOption(TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE, null, processingEnv));
             OPTS.put(TAG_IGNORE_UNSUPPORTED_ANNOTATIONS,

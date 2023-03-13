@@ -74,6 +74,8 @@ public @interface ConfigBean {
      * {@code ConfiguredBy} this bean to be activated.
      * <p>
      * As of the current release, only {@link LevelType#ROOT} level config beans can drive activation.
+     * <p>
+     * The default value is {@code false}.
      *
      * @return true if this config bean should drive {@code ConfiguredBy} service activation
      */
@@ -82,6 +84,8 @@ public @interface ConfigBean {
     /**
      * An instance of this bean will be created if there are no instances discovered by the configuration provider(s) post
      * startup, and will use all default values annotated using {@code ConfiguredOptions} from the bean interface methods.
+     * <p>
+     * The default value is {@code false}.
      *
      * @return the default config bean instance using defaults
      */
@@ -91,10 +95,12 @@ public @interface ConfigBean {
      * Determines whether there can be more than one bean instance of this type.
      * <p>
      * If false then only 0..1 behavior will be permissible for active beans in the config registry. If true then {@code > 1}
-     * instances will be permitted. The default values is {@code true}.
+     * instances will be permitted.
      * <p>
      * Note: this attribute is dynamic in nature, and therefore cannot be validated at compile time. All violations found to this
      * policy will be observed during PicoServices activation.
+     * <p>
+     * The default value is {@code true}.
      *
      * @return true if repeatable
      */
@@ -105,13 +111,17 @@ public @interface ConfigBean {
      * startup, and will use all default values annotated on the bean interface.
      * <p>
      * As of the current release, only {@link LevelType#ROOT} level config beans can be defaulted.
+     * <p>
+     * The default value is {@code false}.
      *
      * @return use the default config instance
      */
     boolean wantDefaultConfigBean() default false;
 
     /**
-     * The {@link LevelType} of this config bean. The default level type is {@link LevelType#ROOT}.
+     * The {@link LevelType} of this config bean.
+     * <p>
+     * The default level type is {@link LevelType#ROOT}.
      *
      * @return the level type of this config bean
      */

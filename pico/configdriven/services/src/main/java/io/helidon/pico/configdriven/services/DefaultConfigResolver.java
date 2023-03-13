@@ -130,6 +130,21 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return validatedDefaults(thisMeta, request.attributeName(), request.valueType(), componentType);
     }
 
+    /**
+     * Extracts the component type from the meta attributes provided for a particular bean attribute name.
+     *
+     * @param request   the request
+     * @param meta      the meta attributes
+     * @param <T> the attribute value type being resolved in the request
+     * @return the component type
+     */
+    static <T> Optional<Class<T>> toComponentType(Map<String, Map<String, Object>> meta,
+                                                  ConfigResolverRequest<T> request) {
+        Map<String, Object> thisMeta = meta.get(request.attributeName());
+        return Optional.ofNullable((Class<T>) (thisMeta == null
+                                                       ? request.valueComponentType() : thisMeta.get(TAG_COMPONENT_TYPE)));
+    }
+
     static Optional validatedDefaults(Map<String, Object> meta,
                                       String attrName,
                                       Class<?> type,

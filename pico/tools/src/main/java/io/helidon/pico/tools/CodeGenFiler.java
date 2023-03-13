@@ -25,7 +25,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -192,7 +191,7 @@ public class CodeGenFiler {
                 }
             }
 
-            codegenResourceFilerOut(outPath, baos.toString(Charset.defaultCharset()), Optional.empty());
+            codegenResourceFilerOut(outPath, baos.toString(StandardCharsets.UTF_8), Optional.empty());
         }
     }
 
@@ -205,7 +204,7 @@ public class CodeGenFiler {
             Path scratchName = (parent == null) ? null : parent.getFileName();
             this.scratchPathName = (scratchName == null) ? null : scratchName.toString();
         } catch (Exception e) {
-            int debugMe = 0;
+            assert (true); // for setting breakpoints in debug
         }
     }
 
@@ -333,7 +332,7 @@ public class CodeGenFiler {
         }
 
         try {
-            String actual = Files.readString(file.toPath(), Charset.defaultCharset());
+            String actual = Files.readString(file.toPath(), StandardCharsets.UTF_8);
             if (!actual.equals(expected)) {
                 String error = "expected contents to match for file: " + file
                         + "\nexpected:\n" + expected

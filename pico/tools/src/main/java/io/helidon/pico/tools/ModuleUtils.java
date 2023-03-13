@@ -19,7 +19,7 @@ package io.helidon.pico.tools;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -150,7 +150,7 @@ public class ModuleUtils {
      * @param moduleName the module name (base or test)
      * @return the base module name
      */
-    public static String normalizedBaseModuleName(String moduleName) {
+    static String normalizedBaseModuleName(String moduleName) {
         if (!hasValue(moduleName)) {
             return moduleName;
         }
@@ -329,32 +329,12 @@ public class ModuleUtils {
     }
 
     /**
-     * Returns the target output path.
-     *
-     * @param sourcePath the source path
-     * @return the target output path
-     */
-    public static Path toTargetPath(String sourcePath) {
-        return toBasePath(sourcePath).resolve(TARGET_DIR);
-    }
-
-    /**
-     * Returns the target output path (i.e., ./target/pico).
-     *
-     * @param sourcePath the source path
-     * @return the scratch path
-     */
-    public static Path toPicoScratchPath(String sourcePath) {
-        return toTargetPath(sourcePath).resolve(PicoServicesConfig.NAME);
-    }
-
-    /**
      * Will return non-empty File if the uri represents a local file on the fs.
      *
      * @param uri the uri of the artifact
      * @return the file instance, or empty if not local
      */
-    public static Optional<Path> toPath(URI uri) {
+    static Optional<Path> toPath(URI uri) {
         if (uri.getHost() != null) {
             return Optional.empty();
         }
@@ -438,7 +418,7 @@ public class ModuleUtils {
         if (packageFileName.exists()) {
             String packageName;
             try {
-                packageName = Files.readString(packageFileName.toPath(), Charset.defaultCharset());
+                packageName = Files.readString(packageFileName.toPath(), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 throw new ToolsException("unable to load: " + packageFileName, e);
             }
@@ -462,7 +442,7 @@ public class ModuleUtils {
         File packageFileName = new File(scratchDir, APPLICATION_PACKAGE_FILE_NAME);
         try {
             Files.createDirectories(packageFileName.getParentFile().toPath());
-            Files.writeString(packageFileName.toPath(), packageName);
+            Files.writeString(packageFileName.toPath(), packageName, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new ToolsException("unable to save: " + packageFileName, e);
         }

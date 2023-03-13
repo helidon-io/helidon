@@ -65,7 +65,7 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
      * {@link InjectionPointProvider#first(ContextualServiceQuery)} so that this provider can properly
      * service the "provide" request.
      *
-     * @return true if the service provider provides per-request instances for each caller.
+     * @return true if the service provider provides per-request instances for each caller
      */
     boolean isProvider();
 

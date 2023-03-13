@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,12 +51,11 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 
 import io.helidon.builder.processor.tools.BuilderTypeTools;
+import io.helidon.common.LazyValue;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
-import io.helidon.common.types.DefaultTypedElementName;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.DefaultElementInfo;
 import io.helidon.pico.DefaultInjectionPointInfo;
 import io.helidon.pico.DefaultQualifierAndValue;
@@ -89,7 +89,19 @@ import static io.helidon.pico.tools.CommonUtils.hasValue;
 /**
  * Generically handles Pico generated artifact creation via APT.
  */
-public class TypeTools extends BuilderTypeTools {
+public final class TypeTools extends BuilderTypeTools {
+    private static final LazyValue<Map<String, TypeName>> OBJ_TYPES = LazyValue.create(() -> {
+        Map<String, TypeName> map = new LinkedHashMap<>();
+        map.put(boolean.class.getName(), DefaultTypeName.create(Boolean.class));
+        map.put(byte.class.getName(), DefaultTypeName.create(Byte.class));
+        map.put(char.class.getName(), DefaultTypeName.create(Character.class));
+        map.put(short.class.getName(), DefaultTypeName.create(Short.class));
+        map.put(int.class.getName(), DefaultTypeName.create(Integer.class));
+        map.put(long.class.getName(), DefaultTypeName.create(Long.class));
+        map.put(float.class.getName(), DefaultTypeName.create(Float.class));
+        map.put(double.class.getName(), DefaultTypeName.create(Double.class));
+        return map;
+    });
 
     private TypeTools() {
     }
@@ -148,25 +160,8 @@ public class TypeTools extends BuilderTypeTools {
      * @return the Object type name for the given type (e.g., "int.class" -> "Integer.class")
      */
     static TypeName toObjectTypeName(String type) {
-        if (boolean.class.getName().equals(type)) {
-            return DefaultTypeName.create(Boolean.class);
-        } else if (byte.class.getName().equals(type)) {
-            return DefaultTypeName.create(Byte.class);
-        } else if (short.class.getName().equals(type)) {
-            return DefaultTypeName.create(Short.class);
-        } else if (int.class.getName().equals(type)) {
-            return DefaultTypeName.create(Integer.class);
-        } else if (long.class.getName().equals(type)) {
-            return DefaultTypeName.create(Long.class);
-        } else if (char.class.getName().equals(type)) {
-            return DefaultTypeName.create(Character.class);
-        } else if (float.class.getName().equals(type)) {
-            return DefaultTypeName.create(Float.class);
-        } else if (double.class.getName().equals(type)) {
-            return DefaultTypeName.create(Double.class);
-        } else {
-            return DefaultTypeName.createFromTypeName(type);
-        }
+        TypeName result = OBJ_TYPES.get().get(type);
+        return (result == null) ? DefaultTypeName.createFromTypeName(type) : result;
     }
 
     /**
@@ -179,30 +174,6 @@ public class TypeTools extends BuilderTypeTools {
     @Deprecated
     static AnnotationAndValue createAnnotationAndValueFromAnnotation(Annotation annotation) {
         return DefaultAnnotationAndValue.create(DefaultTypeName.create(annotation.annotationType()), extractValues(annotation));
-    }
-
-    /**
-     * Creates a collection of {@link TypedElementName} instances given a method definition.
-     *
-     * @param m the method definition (from introspection)
-     * @return the created instance
-     */
-    static List<TypedElementName> createTypedElementNameListFromMethodArgs(Method m) {
-        List<TypedElementName> result = new ArrayList<>(m.getParameterCount());
-        for (int i = 0; i < m.getParameterCount(); i++) {
-            Class<?> pType = m.getParameterTypes()[i];
-            TypeName pTypeName = DefaultTypeName.create(pType);
-            TypeName componentType = DefaultTypeName.create(pType.getComponentType());
-            List<AnnotationAndValue> annotations = createAnnotationAndValueListFromAnnotations(m.getAnnotations());
-            DefaultTypedElementName param = DefaultTypedElementName.builder()
-                    .typeName(pTypeName)
-                    .componentTypeNames(List.of(componentType))
-                    .elementName("p" + i)
-                    .annotations(annotations)
-                    .build();
-            result.add(param);
-        }
-        return result;
     }
 
     /**
@@ -267,7 +238,7 @@ public class TypeTools extends BuilderTypeTools {
                     result.put(propertyName, stringValue);
                 }
             } catch (Throwable ignored) {
-                boolean debugMe = true;
+                assert (true); // for setting breakpoints in debug
             }
         }
         return result;
@@ -350,16 +321,6 @@ public class TypeTools extends BuilderTypeTools {
      */
     static Set<QualifierAndValue> createQualifierAndValueSet(FieldInfo fieldInfo) {
         return createQualifierAndValueSet(fieldInfo.getAnnotationInfo());
-    }
-
-    /**
-     * Creates an instance for an annotation with a value.
-     *
-     * @param annotation the annotation
-     * @return the new instance
-     */
-    static QualifierAndValue createQualifierAndValue(Annotation annotation) {
-        return DefaultQualifierAndValue.create(DefaultTypeName.create(annotation.annotationType()), extractValues(annotation));
     }
 
     /**
@@ -995,7 +956,6 @@ public class TypeTools extends BuilderTypeTools {
                 .elementOffset(elemOffset)
                 .access(toAccess(elemInfo.getModifiers()))
                 .staticDeclaration(isStatic(elemInfo.getModifiers()))
-//                .qualifiers(qualifiers)
                 .annotations(annotations)
                 .build();
     }
@@ -1013,7 +973,6 @@ public class TypeTools extends BuilderTypeTools {
                                                   int elemOffset) {
         VariableElement paramInfo = elemInfo.getParameters().get(elemOffset - 1);
         String elemType = paramInfo.asType().toString();
-        //        Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(paramInfo.getAnnotationInfo());
         Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(paramInfo.getAnnotationMirrors());
         return DefaultElementInfo.builder()
                 .serviceTypeName(serviceTypeName.name())
@@ -1025,7 +984,6 @@ public class TypeTools extends BuilderTypeTools {
                 .elementOffset(elemOffset)
                 .access(toAccess(elemInfo))
                 .staticDeclaration(isStatic(elemInfo))
-                //                .qualifiers(qualifiers)
                 .annotations(annotations)
                 .build();
     }
@@ -1045,7 +1003,7 @@ public class TypeTools extends BuilderTypeTools {
         String elemType = extractInjectionPointTypeInfo(elemInfo, isProviderWrapped, isListWrapped, isOptionalWrapped);
         Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(elemInfo);
         String elemName = elemInfo.getName();
-        String id = Dependencies.toFieldIdentity(elemName, () -> serviceTypeName.packageName());
+        String id = Dependencies.toFieldIdentity(elemName, serviceTypeName::packageName);
         ServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
                 .serviceTypeName(elemType)
                 .build();

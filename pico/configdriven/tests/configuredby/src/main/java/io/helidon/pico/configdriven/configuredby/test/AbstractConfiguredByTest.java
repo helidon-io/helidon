@@ -74,7 +74,6 @@ public abstract class AbstractConfiguredByTest {
         PicoTestingSupport.resetAll();
         this.picoServices = testableServices(config);
         this.services = picoServices.services();
-//        assertThat(picoServices.metrics().orElseThrow().lookupCount().orElseThrow(), greaterThan(1));
     }
 
     public MapConfigSource.Builder createBasicTestingConfigSource() {
@@ -158,7 +157,7 @@ public abstract class AbstractConfiguredByTest {
                    contains("FakeTlsWSNotDrivenByCB{root}:PENDING"));
 
         ServiceProvider<Object> fakeTlsProvider = list.get(0);
-        PicoServiceProviderException e = assertThrows(PicoServiceProviderException.class, () -> fakeTlsProvider.get());
+        PicoServiceProviderException e = assertThrows(PicoServiceProviderException.class, fakeTlsProvider::get);
         assertThat("there is no configuration, so cannot activate this service", e.getMessage(),
                    equalTo("expected to find a match: service provider: FakeTlsWSNotDrivenByCB{root}:PENDING"));
 

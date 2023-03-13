@@ -99,8 +99,7 @@ public enum Phase {
     /**
      * Determines whether this phase passes the gate for whether deactivation (PreDestroy) can be called.
      *
-     * @return true if this phase is eligible to be included in shutdown processing.
-     *
+     * @return true if this phase is eligible to be included in shutdown processing
      * @see PicoServices#shutdown()
      */
     public boolean eligibleForDeactivation() {

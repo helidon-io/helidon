@@ -27,7 +27,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -302,17 +302,17 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
 
         @Override
         public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
-            return new InputStreamReader(openInputStream(), Charset.defaultCharset());
+            return new InputStreamReader(openInputStream(), StandardCharsets.UTF_8);
         }
 
         @Override
         public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-            return Files.readString(file.toPath());
+            return Files.readString(file.toPath(), StandardCharsets.UTF_8);
         }
 
         @Override
         public Writer openWriter() throws IOException {
-            return new OutputStreamWriter(openOutputStream(), Charset.defaultCharset());
+            return new OutputStreamWriter(openOutputStream(), StandardCharsets.UTF_8);
         }
 
         @Override

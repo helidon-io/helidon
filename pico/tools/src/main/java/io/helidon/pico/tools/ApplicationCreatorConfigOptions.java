@@ -41,7 +41,7 @@ public interface ApplicationCreatorConfigOptions {
         NONE,
 
         /**
-         * Each individual provider needs to be white-listed.
+         * Each individual provider needs to be allow-listed.
          */
         NAMED,
 
@@ -64,7 +64,7 @@ public interface ApplicationCreatorConfigOptions {
      * {@link ApplicationCreatorConfigOptions.PermittedProviderType#NAMED}. This is the set of provider names that are explicitly
      * permitted to be generated.
      *
-     * @return the white-listed named providers (which is the FQN of the underlying service type)
+     * @return the allow-listed named providers (which is the FQN of the underlying service type)
      */
     @Singular
     Set<String> permittedProviderNames();
@@ -74,7 +74,7 @@ public interface ApplicationCreatorConfigOptions {
      * {@link ApplicationCreatorConfigOptions.PermittedProviderType#NAMED}. This is the set of qualifier types that are explicitly
      * permitted to be generated.
      *
-     * @return the white-listed qualifier type names
+     * @return the allow-listed qualifier type names
      */
     @Singular
     Set<TypeName> permittedProviderQualifierTypeNames();

@@ -1,6 +1,6 @@
 # helidon-pico
 
-<b>Helidon Pico</b> is an optional feature in Helidon. At its core it simply provides these main features:
+<b>Helidon Pico</b> is an optional feature in Helidon. At its core it provides these main features:
 
 1. A service registry. The service registry holds service providers and are (or otherwise can produce) services. Each service provider in the registry advertises its meta-information for what each service provides, and what it requires in the way of dependencies.
 
@@ -8,7 +8,7 @@
 
 3. Integrations and Extensibility. More will be mentioned on this later.
 
-Over the foundation of these main features of "services registry", "lifecycle", and "extensibility" there are a number of other tooling and layers that are delivered from various Pico submodules delivering the following:
+Over the foundation of these three main features of "services registry", "lifecycle", and "extensibility" there are a number of other tooling and layers that are delivered from various Pico submodules that provide the following additional features and benefits:
 
 1. A minimalist, compile-time generated dependency injection framework that is free from reflection, and compliant to the JSR-330 injection specification. Compile-time source code generation has a number of advantages, including: (a) pre-runtime validation of the DI model, (b) visibility into your application by providing "less magic", which in turn fosters understandability and debug-ability of your application, (c) deterministic behavior (instead of depending on reflection and classpath ordering, etc.) and (c) performance, since binding the model at compile-time is more efficient than computing it at runtime. Pico (through its tooling) provides you with a mix of declarative and programmatic ways to build your application. It doesn't have to be just one or the other like other popular frameworks in use today require. Inspiration for Pico, however, did come from many libraries and frameworks that came before it (e.g., Jakarta Hk2, Google Guice, Spring, CDI, and even OSGi). Foundationally, Pico provides a way to develop declarative code using standard (i.e., javax/jakarta, not Helidon specific) annotation types.
 
@@ -220,6 +220,8 @@ public class SmsCommunicationMode$$Pico$$Activator
 
 }
 ```
+
+* As you can see from above example, the <i>Activators</i> are effectively managing the lifecycle and injection of your classes. These generated <i>Activator</i> types are placed in the same package as your class(es). Since Pico is avoiding reflection, however, it means that only public, protected, and package private injection points are supported. <b>private</b> and <b>static</b> injection points are not supported by the framework.
 
 * If an annotation in your service is meta-annotated with <i>InterceptedTrigger</i>, then an extra service type is created that will trigger interceptor service code generation. For example, if FooImpl was found to have one such annotation then FooImpl$$Pico$$Interceptor would also be created along with an activator for that interceptor. The interceptor would be created with a higher weight than your FooImpl, and would therefore be "preferred" when a single <i>@Inject</i> is used for Foo or FooImpl. If a list is injected then it would appear towards the head of the list.  Once again, all reflection is avoided in these generated classes. Any calls to Foo/FooImpl will be interceptable for any <i>Interceptor</i> that is <i>@Named</i> to handle that type name. Search the test code and Nima code for such examples as this is an advanced feature.
 
