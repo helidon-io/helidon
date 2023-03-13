@@ -23,7 +23,7 @@
 
 include::{rootdir}/includes/nima.adoc[]
 
-This guide describes how to setup Keycloak and Helidon
+REVIEW FOR NIMA --This guide describes how to setup Keycloak and Helidon
 to secure your application with OIDC security provider.
 
 == What You Need

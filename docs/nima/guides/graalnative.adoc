@@ -23,6 +23,6 @@
 
 include::{rootdir}/includes/nima.adoc[]
 
-This guide describes how to build a GraalVM native image for a Helidon SE application.
+This guide describes how to build a GraalVM native image for a Helidon Nima application.
 
 include::{rootdir}/includes/guides/graalnative.adoc[]

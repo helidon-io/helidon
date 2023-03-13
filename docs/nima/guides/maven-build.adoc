@@ -21,7 +21,7 @@
 :keywords: helidon, guide, maven, build
 :rootdir: {docdir}/../..
 
-include::{rootdir}/includes/se.adoc[]
+include::{rootdir}/includes/nima.adoc[]
 
 This guide describes Helidon's support for Maven projects.
 
