@@ -24,7 +24,5 @@
 
 include::{rootdir}/includes/nima.adoc[]
 
-include::{rootdir}/includes/guides/metrics.adoc[tag=intro]
-include::{rootdir}/includes/guides/metrics.adoc[tag=create-sample-project]
-include::{rootdir}/includes/guides/metrics.adoc[tag=using-built-in-metrics-intro]
+== To do for Nima
 
