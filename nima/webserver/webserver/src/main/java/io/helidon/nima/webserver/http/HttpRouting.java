@@ -33,7 +33,6 @@ import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.NotFoundException;
 import io.helidon.common.http.PathMatcher;
-import io.helidon.common.http.PathMatchers;
 import io.helidon.common.http.RequestException;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Routing;
@@ -180,6 +179,13 @@ public final class HttpRouting implements Routing {
         }
 
         @Override
+        default Builder route(Http.Method method, Handler handler) {
+            return route(HttpRoute.builder()
+                                 .methods(method)
+                                 .handler(handler));
+        }
+
+        @Override
         default Builder get(String pathPattern, Handler... handlers) {
             for (Handler handler : handlers) {
                 route(Http.Method.GET, pathPattern, handler);
@@ -190,7 +196,55 @@ public final class HttpRouting implements Routing {
         @Override
         default Builder get(Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.GET, PathMatchers.any(), handler);
+                route(Http.Method.GET, handler);
+            }
+            return this;
+        }
+
+        @Override
+        default Builder post(String pathPattern, Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Http.Method.POST, pathPattern, handler);
+            }
+            return this;
+        }
+
+        @Override
+        default Builder post(Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Http.Method.POST, handler);
+            }
+            return this;
+        }
+
+        @Override
+        default Builder put(String pathPattern, Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Http.Method.PUT, pathPattern, handler);
+            }
+            return this;
+        }
+
+        @Override
+        default Builder put(Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Http.Method.PUT, handler);
+            }
+            return this;
+        }
+
+        @Override
+        default Builder delete(String pathPattern, Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Http.Method.DELETE, pathPattern, handler);
+            }
+            return this;
+        }
+
+        @Override
+        default Builder delete(Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Http.Method.DELETE, handler);
             }
             return this;
         }
@@ -204,6 +258,14 @@ public final class HttpRouting implements Routing {
         }
 
         @Override
+        default Builder head(Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Http.Method.HEAD, handler);
+            }
+            return this;
+        }
+
+        @Override
         default Builder options(String pathPattern, Handler... handlers) {
             for (Handler handler : handlers) {
                 route(Http.Method.OPTIONS, pathPattern, handler);
@@ -212,30 +274,62 @@ public final class HttpRouting implements Routing {
         }
 
         @Override
-        default Builder put(String pathPattern, Handler handler) {
-            return route(Http.Method.PUT, pathPattern, handler);
-        }
-
-        @Override
-        default Builder post(String pathPattern, Handler... handlers) {
+        default Builder options(Handler... handlers) {
             for (Handler handler : handlers) {
-                route(Http.Method.POST, pathPattern, handler);
+                route(Http.Method.OPTIONS, handler);
             }
             return this;
         }
 
         @Override
-        default Builder post(String pathPattern, Handler handler) {
-            return route(HttpRoute.builder()
-                                 .methods(Http.Method.POST)
-                                 .path(pathPattern)
-                                 .handler(handler));
+        default Builder trace(String pathPattern, Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Http.Method.TRACE, pathPattern, handler);
+            }
+            return this;
         }
 
         @Override
-        default Builder any(Handler handler) {
-            return route(HttpRoute.builder()
-                                 .handler(handler));
+        default Builder trace(Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Http.Method.TRACE, handler);
+            }
+            return this;
+        }
+
+        @Override
+        default Builder patch(String pathPattern, Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Http.Method.PATCH, pathPattern, handler);
+            }
+            return this;
+        }
+
+        @Override
+        default Builder patch(Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Http.Method.PATCH, handler);
+            }
+            return this;
+        }
+
+        @Override
+        default Builder any(String pathPattern, Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(HttpRoute.builder()
+                              .path(pathPattern)
+                              .handler(handler));
+            }
+            return this;
+        }
+
+        @Override
+        default Builder any(Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(HttpRoute.builder()
+                              .handler(handler));
+            }
+            return this;
         }
 
         @Override
