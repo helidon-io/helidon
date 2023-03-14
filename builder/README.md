@@ -55,7 +55,7 @@ The result of this will create (under ./target/generated-sources/annotations):
 * [processor-spi](./processor-spi) - defines the Builder Processor SPI runtime definitions used by builder tooling. This module is only needed at compile time.
 * [processor-tools](./processor-tools) - provides the concrete creators & code generators. This module is only needed at compile time.
 * [processor](./processor) - the annotation processor which delegates to the processor-tools module for the main processing logic. This module is only needed at compile time.
-* [builder-config](./builder-config) - extension to the builder to additionally support [Helidon (Common) Config](../common/config).
+* [builder-config](./builder-config) - extension to the builder to additionally support [Helidon (Common) Config](../common/config) and [@ConfigBean](./builder-config/src/main/java/io/helidon/builder/config/ConfigBean.java).
 * [builder-config-processor](./builder-config-processor) - defines the ConfigBean builder.
 * [tests](./tests) - tests that can also serve as examples for usage.
 

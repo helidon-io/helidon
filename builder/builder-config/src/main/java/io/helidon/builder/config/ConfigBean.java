@@ -24,18 +24,22 @@ import java.lang.annotation.Target;
 import io.helidon.builder.BuilderTrigger;
 
 /**
- * A {@code ConfigBean} is another {@link io.helidon.builder.BuilderTrigger} which extends the
- * {@link io.helidon.builder.Builder} concept in support of integration to Helidon's configuration sub-system. It provides
- * everything that {@link io.helidon.builder.Builder} provides. However, unlike the base
- * {@link io.helidon.builder.Builder} generated classes which can handle any object type, the types used within your target
+ * A {@code ConfigBean} is another {@link io.helidon.builder.BuilderTrigger} that extends the
+ * {@link io.helidon.builder.Builder} concept to support the integration to Helidon's configuration sub-system. It basically
+ * provides everything that {@link io.helidon.builder.Builder} provides. However, unlike the base
+ * {@link io.helidon.builder.Builder} generated classes that can handle any object type, the types used within your target
  * {@code ConfigBean}-annotated interface must have all of its attribute getter method types resolvable by Helidon's configuration
  * sub-system.
  * <p>
+ * The @code ConfigBean} is therefore a logical grouping for the "pure configuration" set of attributes (and
+ * sub-<i>ConfigBean</i> attributes) that typically originate from an external media store (e.g., property files, config maps,
+ * etc.), and are integrated via Helidon's {@link io.helidon.common.config.Config} subsystem at runtime.
+ * <p>
  * One should write a {@code ConfigBean}-annotated interface in such a way as to group the collection of configurable elements
- * that logically belong together to then be delivered (and perhaps trigger an activation of) one or more java service types that
+ * that logically belong together to then be delivered (and perhaps drive an activation of) one or more java service types that
  * are said to be {@code ConfiguredBy} the given {@link ConfigBean} instance.
  * <p>
- * The {@code helidon-builder-config-processor} module is required to be on the APT classpath to code-generate the implementation
+ * The {@code builder-config-processor} module is required to be on the APT classpath to code-generate the implementation
  * classes for the {@code ConfigBean}.
  * <p>
  * Example:
@@ -47,11 +51,11 @@ import io.helidon.builder.BuilderTrigger;
  * }
  * }</pre>
  * <p>
- * When {@code Pico} services are incorporated into the application lifecycle, the configuration
+ * When {@code Pico} services are incorporated into the application lifecycle at runtime, the configuration
  * sub-system is scanned at startup and {@code ConfigBean} instances are created and fed into the {@code ConfigBeanRegistry}.
- * This mapping occurs based upon the {@link io.helidon.config.metadata.ConfiguredOption#key()} applied on the {@code ConfigBean}
- * interface type. If no such declaration is found, then the type name is used as the key (e.g., MyConfigBean would map to
- * "my-config-bean").
+ * This mapping occurs based upon the {@link io.helidon.config.metadata.ConfiguredOption#key()} on each of
+ * the {@code ConfigBean}'s attributes. If no such {@code ConfiguredOption} is found then the type name is used as the key
+ * (e.g., MyConfigBean would map to "my-config-bean").
  * <p>
  * Also see {@code ConfiguredBy} in Pico's config-driven module.
  */
