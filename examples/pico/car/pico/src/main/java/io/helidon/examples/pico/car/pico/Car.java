@@ -26,7 +26,7 @@ public class Car implements Vehicle {
     private Brand brand;
 
     @Inject
- public Car(Engine engine, Brand brand) {
+    public Car(Engine engine, Brand brand) {
         this.engine = engine;
         this.brand = brand;
     }

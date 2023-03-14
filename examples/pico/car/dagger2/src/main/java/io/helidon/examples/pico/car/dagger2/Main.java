@@ -23,7 +23,7 @@ public class Main {
         final long start = System.currentTimeMillis();
 
         if (args.length > 0) {
-            VehiclesModule.BRAND_NAME = args[0];
+            VehiclesModule.brandName = args[0];
         }
         VehiclesComponent component = DaggerVehiclesComponent.create();
         System.out.println("found a car component: " + component);

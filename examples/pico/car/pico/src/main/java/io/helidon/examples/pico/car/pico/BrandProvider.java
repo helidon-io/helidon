@@ -21,11 +21,11 @@ import jakarta.inject.Singleton;
 
 @Singleton
 public class BrandProvider implements Provider<Brand> {
-    static String BRAND_NAME;
+    static String brandName;
 
     @Override
     public Brand get() {
-        return DefaultBrand.builder().name(BRAND_NAME).build();
+        return DefaultBrand.builder().name(brandName).build();
     }
 
 }

@@ -24,7 +24,7 @@ import dagger.Provides;
 @Module
 public class VehiclesModule {
 
-    static String BRAND_NAME;
+    static String brandName;
 
     @Provides
     public Engine provideEngine() {
@@ -34,7 +34,7 @@ public class VehiclesModule {
     @Provides
     @Singleton
     public Brand provideBrand() {
-        return DefaultBrand.builder().name(BRAND_NAME).build();
+        return DefaultBrand.builder().name(brandName).build();
     }
 
     @Override

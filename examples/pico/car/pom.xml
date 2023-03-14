@@ -35,10 +35,7 @@
     <packaging>pom</packaging>
 
     <properties>
-<!--        <version.lib.lombok>1.18.24</version.lib.lombok>-->
         <version.lib.dagger>2.43</version.lib.dagger>
-
-        <!--        <checkstyle.skip>true</checkstyle.skip>-->
     </properties>
 
     <modules>
