@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,8 +55,9 @@ interface HelidonMetric extends io.helidon.metrics.api.HelidonMetric {
      * @param sb the {@code StringBuilder} used to accumulate the output
      * @param metricID the {@code MetricID} for the metric to be formatted
      * @param withHelpType flag to control if TYPE and HELP are to be included
+     * @param isStrictExemplars whether strict exemplar handling is in force
      */
-    void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType);
+    void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType, boolean isStrictExemplars);
 
     /**
      * Return a name for this metric, possibly including a unit suffix.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ class TestPrometheusOutputWithTags {
 
         HelidonTimer hTimer = (HelidonTimer) timer;
         StringBuilder sb = new StringBuilder();
-        hTimer.prometheusData(sb, metricID, false);
+        hTimer.prometheusData(sb, metricID, false, false);
 
         LineNumberReader reader = new LineNumberReader(new StringReader(sb.toString()));
 
@@ -81,7 +81,7 @@ class TestPrometheusOutputWithTags {
 
         HelidonHistogram hHistogram = (HelidonHistogram) histogram;
         StringBuilder sb = new StringBuilder();
-        hHistogram.prometheusData(sb, metricID, false);
+        hHistogram.prometheusData(sb, metricID, false, false);
 
         LineNumberReader reader = new LineNumberReader(new StringReader(sb.toString()));
 

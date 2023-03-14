@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -246,7 +246,7 @@ class HelidonSimpleTimerTest {
                                         """, Pattern.MULTILINE);
         StringBuilder sb = new StringBuilder();
         ensureDataSetTimerClockAdvanced();
-        dataSetTimer.prometheusData(sb, dataSetTimerID, true);
+        dataSetTimer.prometheusData(sb, dataSetTimerID, true, false);
         String prometheusData = sb.toString();
         Matcher m = responseTimePattern.matcher(prometheusData);
         if (!m.find()) {
@@ -267,7 +267,7 @@ class HelidonSimpleTimerTest {
 
         clock.add(1, TimeUnit.MINUTES);
         sb = new StringBuilder();
-        simpleTimer.prometheusData(sb, dataSetTimerID, true);
+        simpleTimer.prometheusData(sb, dataSetTimerID, true, false);
         prometheusData = sb.toString();
 
         m = responseTimePattern.matcher(prometheusData);

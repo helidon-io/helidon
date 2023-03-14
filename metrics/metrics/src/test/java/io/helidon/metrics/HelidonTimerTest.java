@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -214,7 +214,7 @@ class HelidonTimerTest {
     @Test
     void testPrometheus() {
         final StringBuilder sb = new StringBuilder();
-        dataSetTimer.prometheusData(sb, dataSetTimerID, true);
+        dataSetTimer.prometheusData(sb, dataSetTimerID, true, false);
         final String prometheusData = sb.toString();
         assertThat(prometheusData, startsWith("# TYPE application_response_time_rate_per_second gauge\n"
                                                       + "application_response_time_rate_per_second 200.0\n"

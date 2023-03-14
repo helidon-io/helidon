@@ -31,9 +31,9 @@ import io.helidon.webserver.WebServer;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -42,8 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 
 public class MainTest {
 
-    private static WebServer webServer;
-    private static WebClient webClient;
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonObject TEST_JSON_OBJECT;
 
@@ -53,105 +51,165 @@ public class MainTest {
                 .build();
     }
 
-    @BeforeAll
-    public static void startTheServer() {
-        webServer = Main.startServer().await();
+    private static WebServer startTheServer(boolean isStrictExemplars) {
+        return Main.startServer(isStrictExemplars).await();
+    }
 
-        webClient = WebClient.builder()
+    private static WebServer startTheServer() {
+        return Main.startServer("test-app.yaml").await();
+    }
+
+    private static void shutdownServer(WebServer webServer) {
+        webServer.shutdown()
+                .await(10, TimeUnit.SECONDS);
+    }
+
+    private static WebClient webClient(WebServer webServer) {
+        return WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
                 .addMediaSupport(JsonpSupport.create())
                 .build();
     }
 
-    @AfterAll
-    public static void stopServer() {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .await(10, TimeUnit.SECONDS);
+    @Test
+    public void testHelloWorld() {
+        WebServer webServer = startTheServer(true);
+        WebClient webClient = webClient(webServer);
+        try {
+            JsonObject jsonObject;
+            WebClientResponse response;
+
+            jsonObject = webClient.get()
+                    .path("/greet")
+                    .request(JsonObject.class)
+                    .await();
+            assertThat(jsonObject.getString("message"), is("Hello World!"));
+
+            jsonObject = webClient.get()
+                    .path("/greet/Joe")
+                    .request(JsonObject.class)
+                    .await();
+            assertThat(jsonObject.getString("message"), is("Hello Joe!"));
+
+            response = webClient.put()
+                    .path("/greet/greeting")
+                    .submit(TEST_JSON_OBJECT)
+                    .await();
+            assertThat(response.status().code(), is(204));
+
+            jsonObject = webClient.get()
+                    .path("/greet/Joe")
+                    .request(JsonObject.class)
+                    .await();
+            assertThat(jsonObject.getString("message"), is("Hola Joe!"));
+
+            response = webClient.get()
+                    .path("/metrics")
+                    .request()
+                    .await();
+            assertThat(response.status().code(), is(200));
+        } finally {
+            shutdownServer(webServer);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testMetricsExemplars(boolean isStrictExemplars) {
+        WebServer webServer = startTheServer(isStrictExemplars);
+        WebClient webClient = webClient(webServer);
+        try {
+            WebClientResponse response;
+
+            String get = webClient.get()
+                    .path("/greet")
+                    .request(String.class)
+                    .await();
+
+            assertThat(get, containsString("Hello World!"));
+
+            get = webClient.get()
+                    .path("/greet/Joe")
+                    .request(String.class)
+                    .await();
+
+            assertThat(get, containsString("Hello Joe!"));
+
+            String openMetricsOutput = webClient.get()
+                    .path("/metrics/application")
+                    .request(String.class)
+                    .await();
+
+            LineNumberReader reader = new LineNumberReader(new StringReader(openMetricsOutput));
+            List<String> returnedLines = reader.lines()
+                    .collect(Collectors.toList());
+
+            List<String> expected = List.of(">> skip to timer total >>",
+                                            "# TYPE application_" + GreetService.TIMER_FOR_GETS + "_mean_seconds gauge",
+                                            valueMatcher("mean", isStrictExemplars),
+                                            ">> end of output >>");
+            assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_mean_seconds TYPE and value");
+
+            expected = List.of(">> skip to max >>",
+                               "# TYPE application_" + GreetService.TIMER_FOR_GETS + "_max_seconds gauge",
+                               valueMatcher("max", isStrictExemplars),
+                               ">> end of output >>");
+            assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_max_seconds TYPE and value");
+        } finally {
+            webServer.shutdown().await(10, TimeUnit.SECONDS);
         }
     }
 
     @Test
-    public void testHelloWorld() {
-        JsonObject jsonObject;
-        WebClientResponse response;
+    void testConfiguredLaxExemplars() {
+        WebServer webServer = startTheServer();
+        WebClient webClient = webClient(webServer);
+        try {
+            WebClientResponse response;
 
-        jsonObject = webClient.get()
-                .path("/greet")
-                .request(JsonObject.class)
-                .await();
-        assertThat(jsonObject.getString("message"), is("Hello World!"));
+            String get = webClient.get()
+                    .path("/greet")
+                    .request(String.class)
+                    .await();
 
-        jsonObject = webClient.get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .await();
-        assertThat(jsonObject.getString("message"), is("Hello Joe!"));
+            assertThat(get, containsString("Hello World!"));
 
-        response = webClient.put()
-                .path("/greet/greeting")
-                .submit(TEST_JSON_OBJECT)
-                .await();
-        assertThat(response.status().code(), is(204));
+            get = webClient.get()
+                    .path("/greet/Joe")
+                    .request(String.class)
+                    .await();
 
-        jsonObject = webClient.get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .await();
-        assertThat(jsonObject.getString("message"), is("Hola Joe!"));
+            assertThat(get, containsString("Hello Joe!"));
 
-        response = webClient.get()
-                .path("/metrics")
-                .request()
-                .await();
-        assertThat(response.status().code(), is(200));
+            String openMetricsOutput = webClient.get()
+                    .path("/metrics/application")
+                    .request(String.class)
+                    .await();
+
+            LineNumberReader reader = new LineNumberReader(new StringReader(openMetricsOutput));
+            List<String> returnedLines = reader.lines()
+                    .collect(Collectors.toList());
+
+            List<String> expected = List.of(">> skip to timer total >>",
+                                            "# TYPE application_" + GreetService.TIMER_FOR_GETS + "_mean_seconds gauge",
+                                            valueMatcher("mean", false),
+                                            ">> end of output >>");
+            assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_mean_seconds TYPE and value");
+
+            expected = List.of(">> skip to max >>",
+                               "# TYPE application_" + GreetService.TIMER_FOR_GETS + "_max_seconds gauge",
+                               valueMatcher("max", false),
+                               ">> end of output >>");
+            assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_max_seconds TYPE and value");
+        } finally {
+            webServer.shutdown().await(10, TimeUnit.SECONDS);
+        }
     }
 
-    @Test
-    public void testMetrics() {
-        WebClientResponse response;
-
-        String get = webClient.get()
-                .path("/greet")
-                .request(String.class)
-                .await();
-
-        assertThat(get, containsString("Hello World!"));
-
-        get = webClient.get()
-                .path("/greet/Joe")
-                .request(String.class)
-                .await();
-
-        assertThat(get, containsString("Hello Joe!"));
-
-        String openMetricsOutput = webClient.get()
-                .path("/metrics/application")
-                .request(String.class)
-                .await();
-
-        LineNumberReader reader = new LineNumberReader(new StringReader(openMetricsOutput));
-        List<String> returnedLines = reader.lines()
-                .collect(Collectors.toList());
-
-        List<String> expected = List.of(">> skip to timer total >>",
-                "# TYPE application_" + GreetService.TIMER_FOR_GETS + "_mean_seconds gauge",
-                valueMatcher("mean"),
-                ">> end of output >>");
-        assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_mean_seconds TYPE and value");
-
-        expected = List.of(">> skip to max >>",
-                "# TYPE application_" + GreetService.TIMER_FOR_GETS + "_max_seconds gauge",
-                valueMatcher("max"),
-                ">> end of output >>");
-        assertLinesMatch(expected, returnedLines, GreetService.TIMER_FOR_GETS + "_max_seconds TYPE and value");
-
-    }
-
-    private static String valueMatcher(String statName) {
+    private static String valueMatcher(String statName, boolean isStrictExemplar) {
         // application_timerForGets_mean_seconds 0.010275403147594316 # {trace_id="cfd13196e6a9fb0c"} 0.002189822 1617799841.963000
         return "application_" + GreetService.TIMER_FOR_GETS
-                + "_" + statName + "_seconds [\\d\\.]+ # \\{trace_id=\"[^\"]+\"\\} [\\d\\.]+ [\\d\\.]+";
+                + "_" + statName + "_seconds [\\d\\.]+"
+                + (isStrictExemplar ? "" : " # \\{trace_id=\"[^\"]+\"} .+");
     }
-
 }

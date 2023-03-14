@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.metrics;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -44,8 +43,6 @@ import org.eclipse.microprofile.metrics.Timer;
  */
 public class Registry extends AbstractRegistry<HelidonMetric> {
 
-    private final AtomicReference<RegistrySettings> registrySettings = new AtomicReference<>();
-
     /**
      * Create a registry of a certain type.
      *
@@ -60,12 +57,11 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
     @Override
     public void update(RegistrySettings registrySettings) {
         super.update(registrySettings);
-        this.registrySettings.set(registrySettings);
     }
 
     @Override
     protected boolean isMetricEnabled(String metricName) {
-        return registrySettings.get().isMetricEnabled(metricName);
+        return registrySettings().isMetricEnabled(metricName);
     }
 
     @Override
@@ -102,7 +98,6 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
      */
     protected Registry(Type type, RegistrySettings registrySettings) {
         super(type, HelidonMetric.class, registrySettings);
-        this.registrySettings.set(registrySettings);
     }
 
     @Override

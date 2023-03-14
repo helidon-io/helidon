@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ public class OutputUnitConversionTest {
 
         StringBuilder prometheusSB = new StringBuilder();
         HelidonTimer hTimer = prepTimer();
-        hTimer.prometheusData(prometheusSB, TIMER_METRIC_ID, false);
+        hTimer.prometheusData(prometheusSB, TIMER_METRIC_ID, false, false);
         double expectedValue = 0.000120D;
         // The Prometheus exposition format always represents time in seconds.
         for (String suffix : new String[] {"_mean_seconds",
@@ -105,7 +105,7 @@ public class OutputUnitConversionTest {
     void testPrometheusSimpleTimerConversion() {
         StringBuilder prometheusSB = new StringBuilder();
         HelidonSimpleTimer hSimpleTimer = prepSimpleTimer();
-        hSimpleTimer.prometheusData(prometheusSB, SIMPLE_TIMER_METRIC_ID, false);
+        hSimpleTimer.prometheusData(prometheusSB, SIMPLE_TIMER_METRIC_ID, false, false);
         // We updated the simple timer by 120 microseconds. Although the simple timer units were set to ms, Prometheus output
         // always is in seconds (for times).
         Duration expectedElapsedTime = Duration.of(TIMER_UPDATE_INCREMENT_MICRO_SECONDS, ChronoUnit.MICROS);

@@ -30,6 +30,7 @@ ifndef::flavor-lc[:flavor-lc: se]
 - <<Usage, Usage>>
 ** <<Interpreting Exemplars, Interpreting Exemplars>>
 ** <<Output Format, Output Format>>
+** <<Controlling Exemplar Output, Controlling Exemplar Output>>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
 
@@ -84,34 +85,14 @@ Once you add the appropriate dependencies to your project, exemplar support runs
 
 === Interpreting Exemplars
 
-Helidon automatically records a sample (label, value, and timestamp) with each update to a histogram, simple timer, or counter. When a client accesses the `/metrics` endpoint, Helidon adds the label, value, and timestamp to the OpenMetrics response.
+Helidon automatically records a sample (label, value, and timestamp) with each update to certain metrics. When a client accesses the `/metrics` endpoint, Helidon adds the label, value, and timestamp to the OpenMetrics response for those metrics.
 
-Helidon adds an exemplar to the output for each statistical value--such as minimum, maximum, mean, and quantiles--for histograms, timers, simple times, and for counters. The exemplar information in the output describes a single, actual sample that is representative of the statistical value.
-Helidon chooses the representative examplar for each value using information that is already recorded for each type of metric:
+By default, Helidon adds exemplars only to counters and the counter portion of simple timers.
+The OpenMetrics specification allows exemplars only on counters and buckets.
+(Helidon's histogram output, consistent with the MicroProfile Metrics spec, includes the quantiles but not the buckets.)
 
-.Selection of exemplars for types of metrics
-[%autowidth]
-|====
-|Metric Value Type| Example | Sample Selected as Exemplar
-
-| corresponds directly to a specific sample
-| minimum or maximum of a value
-| any sample with that exact value
-
-| collects samples into bins (quantiles)
-| histogram (as with timers)
-| any sample from the bin
-
-| maintains running statistics
-| counts, totals
-| most recent sample
-
-| computes its value from multiple samples
-| mean
-| sample for which its value is at least as close as other samples to the statistical calculation
-|====
-
-In cases with multiple representative samples (for example, two samples' values are equally close to the mean), Helidon chooses one of them arbitrarily.
+[NOTE]
+Earlier releases of Helidon included exemplars on other metric types as well. If you must keep the prior behavior for compatibility reasons, see the xref:controlling-exemplar-output[Controlling Exemplar Output] section below.
 
 === Output Format
 In the OpenMetrics output, an exemplar actually appears as a comment appended to the normal OpenMetrics output.
@@ -125,6 +106,48 @@ Even downstream consumers of OpenMetrics output that do not recognize the exempl
 
 But some consumers, such as trace collectors and their U/Is, understand the exemplar format, and they allow you to browse metrics and then navigate directly to the trace for the metric's exemplar.
 
+[[controlling-exemplar-output]]
+=== Controlling Exemplar Output
+Once you add dependencies on `helidon-metrics-trace-exemplar` and one of the Helidon tracing integration libraries to your project, Helidon automatically adds exemplars to those metrics which the OpenMetrics specification permits to have exemplars.
+
+Earlier releases of Helidon added exemplars to other, non-standard metric types. If you require the former behavior for compatibility reasons,  you can enable exemplars on non-standard metric types.
+In this context, with _strict_ exemplar behavior Helidon adds exemplars only to those metrics allowed by the OpenMetrics spec.  With _lax_ behavior Helidon also adds exemplars to simple timer and meter output.
+
+[NOTE]
+The lax exemplar behavior is non-standard. Some downstream consumers of the resulting OpenMetrics output might reject it because it contains non-standard content.
+
+You control strict vs. lax exemplar support separately for each registry type.
+
+ifdef::se-flavor[]
+=== Using Configuration
+endif::[]
+ifdef::se-flavor[]
+[source,yaml]
+.Enabling non-standard exemplar behavior in `application.yaml`
+----
+metrics:
+  registries:
+    - type: application
+      exemplars:
+        strict: false
+----
+endif::[]
+ifdef::mp-flavor[]
+[source,properties]
+.Enabling non-standard exemplar behavior in `META-INF/microprofile-config.properties`
+----
+metrics.registries.0.type=application
+metrics.registries.0.exemplars.strict = false
+----
+endif::[]
+The `exemplars.strict` setting defaults to `true` for all registry types.
+
+ifdef::se-flavor[]
+
+=== Using `RegistrySettings` Programmatically
+The `MetricsSettings.Builder` interface exposes `registrySettings(MetricRegistry.Type, RegistrySettings)` with which your code can assign registry settings for each registry type separately. The `RegistrySettings.Builder` interface has the `strictExemplars(boolean)` method with which you can programmatically choose whether to use strict or lax exemplar support. The default is `true`.
+endif::[]
+
 == Examples
 
 ifdef::se-flavor[]
@@ -133,33 +156,14 @@ endif::[]
 
 Once you enable exemplar support you can see the exemplars in the metrics output.
 
-.Exemplar output - `Timer`
-[listing,subs="quotes"]
-----
-# TYPE application_getTimer_mean_seconds gauge
-application_getTimer_mean_seconds 8.303030623354298E-4 *# {trace_id="067632454fe4e8d1"} 1.14701E-4 1617723032.570000*
-
-# TYPE application_getTimer_max_seconds gauge
-application_getTimer_max_seconds 0.003952636 *# {trace_id="fce183094e471633"} 0.003952636 1617723030.108000*
-
-# TYPE application_getTimer_min_seconds gauge
-application_getTimer_min_seconds 5.5254E-5 *# {trace_id="0b1a4bf22b4e47fd"} 5.5254E-5 1617723033.311000*
-----
-The first exemplar is a sample with value at least as close to the mean for that timer as any other sample.
-
-This second exemplar is for an exact sample with value the same as the maximum value the timer has observed.
-
-.Exemplar output - `SimpleTimer`
-[listing,subs="quotes"]
+.Exemplar output - `Counter`
+[listing,subs="+quotes"]
 ----
 # TYPE application_globalRequestTracker_total counter
 # HELP application_globalRequestTracker_total
 application_globalRequestTracker_total 4 *# {trace_id="daf26fe35fee9917"} 0.001183992 1617725180.234000*
-
-# TYPE application_globalRequestTracker_elapsedTime_seconds gauge
-application_globalRequestTracker_elapsedTime_seconds 0.030309068 *# {trace_id="daf26fe35fee9917"} 0.001183992 1617725180.234000*
 ----
-The exemplar for a `SimpleTimer` is the same for the `total` and the `elapsedTime` sub metrics: always the most recent sample which updated the `SimpleTimer`.
+This exemplar in this case is the most recent sample.
 
 == Additional Information
 

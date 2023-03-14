@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
     private final Map<MetricType, BiFunction<String, Metadata, M>> metricFactories = prepareMetricFactories();
 
     private final MetricStore<M> metricStore;
+    private RegistrySettings registrySettings;
 
     /**
      * Create a registry of a certain type.
@@ -80,6 +81,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
                                          type,
                                          metricClass,
                                          this::toImpl);
+        this.registrySettings = registrySettings;
     }
 
     /**
@@ -484,6 +486,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
      */
     public void update(RegistrySettings registrySettings) {
         metricStore.update(registrySettings);
+        this.registrySettings = registrySettings;
     }
 
 
@@ -523,6 +526,23 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
      */
     public Map.Entry<Metadata, List<MetricID>> metadataWithIDs(String metricName) {
         return metricStore.metadataWithIDs(metricName);
+    }
+
+    /**
+     *
+     * @return the registry settings used to set up the registry
+     */
+    public RegistrySettings registrySettings() {
+        return registrySettings;
+    }
+
+
+    /**
+     *
+     * @return whether exemplars are to be implemented strictly
+     */
+    protected boolean isStrictExemplars() {
+        return registrySettings.isStrictExemplars();
     }
 
     /**

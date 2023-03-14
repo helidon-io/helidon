@@ -153,6 +153,11 @@ public interface MetricsSettings {
         String DEFAULT_CONTEXT = "/metrics";
 
         /**
+         * Config key within {@code metrics} for strict (vs. lax) exemplar behavior.
+         */
+        String EXEMPLARS_STRICT_CONFIG_KEY = "exemplars.strict";
+
+        /**
          * Config key for comma-separated, {@code tag=value} global tag settings.
          */
         String GLOBAL_TAGS_CONFIG_KEY = "tags";
