@@ -43,8 +43,8 @@ import java.util.Set;
  */
 @SuppressWarnings("rawtypes")
 @Target(ElementType.TYPE)
-// note: runtime retention needed for cases when derived builders are inherited across modules
-@Retention(RetentionPolicy.RUNTIME)
+// note: class retention needed for cases when derived builders are inherited across modules
+@Retention(RetentionPolicy.CLASS)
 @BuilderTrigger
 public @interface Builder {
 

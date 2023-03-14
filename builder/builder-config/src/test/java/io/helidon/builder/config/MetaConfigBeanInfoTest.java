@@ -17,6 +17,7 @@
 package io.helidon.builder.config;
 
 import java.util.Map;
+import java.util.Objects;
 
 import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
@@ -27,15 +28,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ConfigBean()
 class MetaConfigBeanInfoTest {
 
     @Test
     void testToMetaConfigBeanInfoFromConfigBean() {
-        ConfigBean cfg = getClass().getAnnotation(ConfigBean.class);
-        assertNotNull(cfg);
+        ConfigBean cfg = Objects.requireNonNull(getClass().getAnnotation(ConfigBean.class));
         MetaConfigBeanInfo metaCfg = ConfigBeanInfo.toMetaConfigBeanInfo(cfg, ConfigBean.class);
         assertThat(metaCfg.annotationType(), sameInstance(ConfigBean.class));
         assertThat(metaCfg.repeatable(), is(true));

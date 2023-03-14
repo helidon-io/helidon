@@ -7,7 +7,7 @@ A {@code ConfigBean} is another {@link io.helidon.builder.BuilderTrigger} that e
 
 One should write a <i>ConfigBean</i>-annotated interface in such a way as to group the collection of configurable elements that logically belong together to then be delivered (and perhaps drive an activation of) one or more java service types that are said to be "[ConfiguredBy](../../pico/configdriven)" the given <i>ConfigBean</i> instance.
 
-The <i>ConfigBean</i> is therefore a logical grouping for the "pure configuration set of attributes (and sub-<i>ConfigBean</i> attributes) that typically originate from an external media store (e.g., property files, config maps, etc.), and are integrated via Heldion's [Config](../../common/config) subsystem at runtime.
+The <i>ConfigBean</i> is therefore a logical grouping for the "pure configuration set of attributes (and sub-<i>ConfigBean</i> attributes) that typically originate from an external media store (e.g., property files, config maps, etc.), and are integrated via Helidon's [Config](../../common/config) subsystem at runtime.
 
 The [builder-config-processor](../builder-config-processor) module is required to be on the APT classpath in order to code-generate the implementation classes for the {@code ConfigBean}. This can replace the normal use of the [builder-processor](../processor) that supports just the <i>Builder</i> annotation. Using the builder-config-processor will support both <i>Builder</i> and <i>ConfigBean</i> annotation types as part of its processing.
 
