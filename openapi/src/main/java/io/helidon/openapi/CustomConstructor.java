@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.eclipse.microprofile.openapi.models.media.MediaType;
 import org.eclipse.microprofile.openapi.models.responses.APIResponse;
 import org.eclipse.microprofile.openapi.models.responses.APIResponses;
 import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.error.Mark;
@@ -149,7 +150,7 @@ final class CustomConstructor extends Constructor {
                               Function<Class<?>, ExpandedTypeDescription.MapLikeTypeDescription<P, C>> typeDescriptionFactory) { }
 
     /**
-     * Type information about a map-resembling interface in which a child can have 0, 1, or more values i.e., the child is
+     * Type information about a map-resembling interface in which a child can have 0, 1, or more values (i.e., the child is
      * a list).
      *
      * @param <P> parent type
@@ -166,7 +167,7 @@ final class CustomConstructor extends Constructor {
     private static final Logger LOGGER = Logger.getLogger(CustomConstructor.class.getName());
 
     CustomConstructor(TypeDescription td) {
-        super(td);
+        super(td, new LoaderOptions());
         yamlClassConstructors.put(NodeId.mapping, new ConstructMapping());
     }
 
