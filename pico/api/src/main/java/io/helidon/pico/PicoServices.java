@@ -135,11 +135,40 @@ public interface PicoServices {
     }
 
     /**
-     * The service registry.
+     * Similar to {@link #services()}, but here if Pico is not available or the services registry has not yet been initialized
+     * then this method will return {@code Optional.empty()}. This is convenience for users who conditionally want to use Pico's
+     * service registry if it is currently available and in active use, but if not do alternative processing or allocations
+     * directly, etc.
+     *
+     * @return true if pico is available and the services instance if it has already been activated and initialized, empty otherwise
+     */
+    @SuppressWarnings("unchecked")
+    static Optional<Services> unrealizedServices() {
+        PicoServices picoServices = picoServices().orElse(null);
+        if (picoServices == null) {
+            return Optional.empty();
+        }
+
+        return (Optional<Services>) picoServices.services(false);
+    }
+
+    /**
+     * The service registry. The first call typically loads and initializes the service registry. To avoid automatic loading
+     * and initialization on any first request then consider using {@link #unrealizedServices()} or {@link #services(boolean)}.
      *
      * @return the services registry
      */
-    Services services();
+    default Services services() {
+        return services(true).orElseThrow();
+    }
+
+    /**
+     * The service registry. The first call typically loads and initializes the service registry.
+     *
+     * @param initialize true to allow initialization applicable for the 1st request, false to prevent 1st call initialization
+     * @return the services registry if it is available and already has been initialized, empty if not yet initialized
+     */
+    Optional<? extends Services> services(boolean initialize);
 
     /**
      * The governing configuration.

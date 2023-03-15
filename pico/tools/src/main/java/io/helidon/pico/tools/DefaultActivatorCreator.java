@@ -600,7 +600,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         Map<String, Object> subst = new HashMap<>();
         subst.put("classname", applicationTypeName.className());
         subst.put("packagename", applicationTypeName.packageName());
-        subst.put("description", applicationTypeName + " - Generated " + PicoServicesConfig.NAME + " Application.");
+        subst.put("description", "Generated " + PicoServicesConfig.NAME + " Application.");
         subst.put("generatedanno", toGeneratedSticker(req));
         subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
         subst.put("modulename", moduleName);

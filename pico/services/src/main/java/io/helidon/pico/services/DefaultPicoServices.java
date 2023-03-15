@@ -151,7 +151,11 @@ class DefaultPicoServices implements PicoServices, Resetable {
     }
 
     @Override
-    public DefaultServices services() {
+    public Optional<DefaultServices> services(boolean initialize) {
+        if (!initialize) {
+            return Optional.ofNullable(services.get());
+        }
+
         if (!initializingServicesStarted.getAndSet(true)) {
             try {
                 initializeServices();
@@ -173,7 +177,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
         if (thisServices == null) {
             throw new PicoException("must reset() after shutdown()");
         }
-        return thisServices;
+        return Optional.of(thisServices);
     }
 
     @Override

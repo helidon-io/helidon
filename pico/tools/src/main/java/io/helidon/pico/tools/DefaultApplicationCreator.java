@@ -221,7 +221,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         Map<String, Object> subst = new HashMap<>();
         subst.put("classname", application.className());
         subst.put("packagename", application.packageName());
-        subst.put("description", null);
+        subst.put("description", application + " - Generated " + PicoServicesConfig.NAME + " Application.");
         subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
         subst.put("generatedanno", toGeneratedSticker(req));
         subst.put("modulename", moduleName);

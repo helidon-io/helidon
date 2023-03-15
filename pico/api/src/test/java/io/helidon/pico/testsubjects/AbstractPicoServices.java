@@ -39,6 +39,11 @@ abstract class AbstractPicoServices implements PicoServices {
     }
 
     @Override
+    public Optional<? extends Services> services(boolean initialize) {
+        return Optional.empty();
+    }
+
+    @Override
     public Services services() {
         return null;
     }

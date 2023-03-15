@@ -63,4 +63,9 @@ class PicoServicesTest {
         assertThat(picoServices.bootstrap(), sameInstance(bootstrap));
     }
 
+    @Test
+    void unrealizedServices() {
+        assertThat(PicoServices.unrealizedServices(), optionalEmpty());
+    }
+
 }

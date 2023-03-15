@@ -32,7 +32,7 @@ import jakarta.inject.Singleton;
 */
 @Generated({{{generatedanno}}})
 @Singleton {{#modulename}}@Named({{classname}}.NAME){{/modulename}}
-public class {{classname}} implements Application {
+public final class {{classname}} implements Application {
 {{#modulename}}
     static final String NAME = "{{{.}}}";
 {{/modulename}}{{^modulename}}
