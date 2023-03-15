@@ -166,7 +166,8 @@ public interface WebServer {
                 = HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
 
         private Config providersConfig = Config.empty();
-        private MediaContext mediaContext = MediaContext.create();
+        // Config processing is always called so value will be initialized there.
+        private MediaContext mediaContext;
         private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         private boolean shutdownHook = true;
@@ -254,6 +255,11 @@ public interface WebServer {
             config.get("content-encoding")
                     .as(ContentEncodingContext::create)
                     .ifPresent(this::contentEncodingContext);
+            // Configure media support
+            config.get("media-support")
+                    .as(MediaContext::create)
+                    // MediaContext always needs to be refreshed after config change
+                    .ifPresentOrElse(this::mediaContext, () -> mediaContext(MediaContext.create()));
             // Store providers config node for later usage.
             providersConfig = config.get("connection-providers");
             return this;
