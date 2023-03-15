@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
     public static WriteableMultiPart create(WriteableBodyPart... entities) {
         Builder builder = builder();
         for (WriteableBodyPart entity : entities) {
-            builder.bodyPart(WriteableBodyPart.create(entity));
+            builder.bodyPart(entity);
         }
         return builder.build();
     }
@@ -61,7 +61,7 @@ public class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
     public static WriteableMultiPart create(Collection<WriteableBodyPart> entities) {
         Builder builder = builder();
         for (WriteableBodyPart entity : entities) {
-            builder.bodyPart(WriteableBodyPart.create(entity));
+            builder.bodyPart(entity);
         }
         return builder.build();
     }
