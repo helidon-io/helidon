@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -390,12 +391,19 @@ class TenantAuthenticationHandler {
         return "Bearer realm=\"" + tenantConfig.realm() + "\", error=\"" + code + "\", error_description=\"" + description + "\"";
     }
 
-    private String origUri(ProviderRequest providerRequest) {
+    String origUri(ProviderRequest providerRequest) {
         List<String> origUri = providerRequest.env().headers()
                 .getOrDefault(Security.HEADER_ORIG_URI, List.of());
 
         if (origUri.isEmpty()) {
-            origUri = List.of(providerRequest.env().targetUri().getPath());
+            URI targetUri = providerRequest.env().targetUri();
+            String query = targetUri.getQuery();
+            String path = targetUri.getPath();
+            if (query == null || query.isEmpty()) {
+                return path;
+            } else {
+                return path + "?" + query;
+            }
         }
 
         return origUri.get(0);
