@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public interface HttpRules {
     /**
      * Register a service on sub-path of the current path.
      *
-     * @param pathPattern path pattern
+     * @param pathPattern URI path pattern
      * @param service     service to register
      * @return updated rules
      */
@@ -68,9 +68,9 @@ public interface HttpRules {
     /**
      * Add a route.
      *
-     * @param method      method to handle
-     * @param pathPattern path pattern
-     * @param handler     handler to use
+     * @param method      HTTP method to handle
+     * @param pathPattern URI path pattern
+     * @param handler     handler to process HTTP request
      * @return updated rules
      */
     default HttpRules route(Http.Method method, String pathPattern, Handler handler) {
@@ -80,9 +80,9 @@ public interface HttpRules {
     /**
      * Add a route.
      *
-     * @param method      method to handle
-     * @param pathMatcher path matcher
-     * @param handler     handler
+     * @param method      HTTP method to handle
+     * @param pathMatcher URI path matcher, see {@link io.helidon.common.http.PathMatchers#create(String)}
+     * @param handler     handler to process HTTP request
      * @return updated rules
      */
     default HttpRules route(Http.Method method, PathMatcher pathMatcher, Handler handler) {
@@ -92,9 +92,9 @@ public interface HttpRules {
     /**
      * Add a route.
      *
-     * @param methodPredicate method predicate, see {@link Http.Method#predicate(io.helidon.common.http.Http.Method...)}
-     * @param pathMatcher     path matcher, see {@link io.helidon.common.http.PathMatchers#create(String)}
-     * @param handler         handler
+     * @param methodPredicate HTTP method predicate, see {@link Http.Method#predicate(io.helidon.common.http.Http.Method...)}
+     * @param pathMatcher     URI path matcher, see {@link io.helidon.common.http.PathMatchers#create(String)}
+     * @param handler         handler to process HTTP request
      * @return updated rules
      */
     default HttpRules route(Predicate<Http.Method> methodPredicate, PathMatcher pathMatcher, Handler handler) {
@@ -106,10 +106,24 @@ public interface HttpRules {
     }
 
     /**
+     * Add a route.
+     *
+     * @param method  HTTP method to handle
+     * @param handler handler to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules route(Http.Method method, Handler handler) {
+        return route(HttpRoute.builder()
+                             .methods(method)
+                             .handler(handler)
+                             .build());
+    }
+
+    /**
      * Add a get route.
      *
-     * @param pathPattern path pattern
-     * @param handlers    handlers
+     * @param pathPattern URI path pattern
+     * @param handlers    handlers to process HTTP request
      * @return updated rules
      */
     default HttpRules get(String pathPattern, Handler... handlers) {
@@ -122,60 +136,21 @@ public interface HttpRules {
     /**
      * Add a get route.
      *
-     * @param handlers handlers
+     * @param handlers handlers to process HTTP request
      * @return updated rules
      */
     default HttpRules get(Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.GET, PathMatchers.any(), handler);
+            route(Http.Method.GET, handler);
         }
         return this;
-    }
-
-    /**
-     * Add a head route.
-     *
-     * @param pathPattern path pattern
-     * @param handlers    handlers
-     * @return updated rules
-     */
-    default HttpRules head(String pathPattern, Handler... handlers) {
-        for (Handler handler : handlers) {
-            route(Http.Method.HEAD, pathPattern, handler);
-        }
-        return this;
-    }
-
-    /**
-     * Add an options route.
-     *
-     * @param pathPattern path pattern
-     * @param handlers    handlers
-     * @return updated rules
-     */
-    default HttpRules options(String pathPattern, Handler... handlers) {
-        for (Handler handler : handlers) {
-            route(Http.Method.OPTIONS, pathPattern, handler);
-        }
-        return this;
-    }
-
-    /**
-     * Add a put route.
-     *
-     * @param pathPattern path pattern
-     * @param handler     handler
-     * @return updated rules
-     */
-    default HttpRules put(String pathPattern, Handler handler) {
-        return route(Http.Method.PUT, pathPattern, handler);
     }
 
     /**
      * Add a post route.
      *
-     * @param pathPattern path pattern
-     * @param handlers    handlers
+     * @param pathPattern URI path pattern
+     * @param handlers    handlers to process HTTP request
      * @return updated rules
      */
     default HttpRules post(String pathPattern, Handler... handlers) {
@@ -188,33 +163,183 @@ public interface HttpRules {
     /**
      * Add a post route.
      *
-     * @param pathPattern path pattern
-     * @param handler     handler
-     * @return updated builder
-     */
-    default HttpRules post(String pathPattern, Handler handler) {
-        return route(HttpRoute.builder()
-                             .methods(Http.Method.POST)
-                             .path(pathPattern)
-                             .handler(handler));
-    }
-
-    /**
-     * Add a route that executes on any HTTP method and any path.
-     *
-     * @param handler handler
+     * @param handlers handlers to process HTTP request
      * @return updated rules
      */
-    default HttpRules any(Handler handler) {
-        return route(HttpRoute.builder()
-                             .handler(handler));
+    default HttpRules post(Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.POST, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add a put route.
+     *
+     * @param pathPattern URI path pattern
+     * @param handlers    handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules put(String pathPattern, Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.PUT, pathPattern, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add a put route.
+     *
+     * @param handlers handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules put(Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.PUT, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add a delete route.
+     *
+     * @param pathPattern URI path pattern
+     * @param handlers    handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules delete(String pathPattern, Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.DELETE, pathPattern, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add a delete route.
+     *
+     * @param handlers handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules delete(Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.DELETE, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add a head route.
+     *
+     * @param pathPattern URI path pattern
+     * @param handlers    handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules head(String pathPattern, Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.HEAD, pathPattern, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add a head route.
+     *
+     * @param handlers handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules head(Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.HEAD, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add an options route.
+     *
+     * @param pathPattern URI path pattern
+     * @param handlers    handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules options(String pathPattern, Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.OPTIONS, pathPattern, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add an options route.
+     *
+     * @param handlers handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules options(Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.OPTIONS, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add an options route.
+     *
+     * @param pathPattern URI path pattern
+     * @param handlers    handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules trace(String pathPattern, Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.TRACE, pathPattern, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add an options route.
+     *
+     * @param handlers handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules trace(Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.TRACE, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add an options route.
+     *
+     * @param pathPattern URI path pattern
+     * @param handlers    handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules patch(String pathPattern, Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.PATCH, pathPattern, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add an options route.
+     *
+     * @param handlers handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules patch(Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.PATCH, handler);
+        }
+        return this;
     }
 
     /**
      * Add a route that executes on any HTTP method and any path.
      *
-     * @param pathPattern path pattern
-     * @param handlers    handlers
+     * @param pathPattern URI path pattern
+     * @param handlers    handlers to process HTTP request
      * @return updated rules
      */
     default HttpRules any(String pathPattern, Handler... handlers) {
@@ -227,44 +352,14 @@ public interface HttpRules {
     }
 
     /**
-     * Add a delete route.
+     * Add a route that executes on any HTTP method and any path.
      *
-     * @param handlers handlers
+     * @param handlers handlers to process HTTP request
      * @return updated rules
      */
-    default HttpRules delete(Handler... handlers) {
+    default HttpRules any(Handler... handlers) {
         for (Handler handler : handlers) {
             route(HttpRoute.builder()
-                          .methods(Http.Method.DELETE)
-                          .handler(handler));
-        }
-        return this;
-    }
-
-    /**
-     * Add a delete route.
-     *
-     * @param pathPattern path pattern to register the handler(s) on
-     * @param handlers    handlers
-     * @return updated rules
-     */
-    default HttpRules delete(String pathPattern, Handler... handlers) {
-        for (Handler handler : handlers) {
-            route(Http.Method.DELETE, pathPattern, handler);
-        }
-        return this;
-    }
-
-    /**
-     * Add a put route.
-     *
-     * @param handlers handlers
-     * @return updated rules
-     */
-    default HttpRules put(Handler... handlers) {
-        for (Handler handler : handlers) {
-            route(HttpRoute.builder()
-                          .methods(Http.Method.PUT)
                           .handler(handler));
         }
         return this;
@@ -273,8 +368,8 @@ public interface HttpRules {
     /**
      * Add a route.
      *
-     * @param method      method to handle
-     * @param pathPattern path pattern
+     * @param method      HTTP method to handle
+     * @param pathPattern URI path pattern
      * @param handler     handler as a consumer of {@link ServerRequest}
      * @return updated builder
      */
@@ -288,8 +383,8 @@ public interface HttpRules {
     /**
      * Add a route.
      *
-     * @param method      method to handle
-     * @param pathPattern path pattern
+     * @param method      HTTP method to handle
+     * @param pathPattern URI path pattern
      * @param handler     handler as a function that gets {@link ServerRequest} and returns an entity
      * @return updated builder
      */
@@ -303,8 +398,8 @@ public interface HttpRules {
     /**
      * Add a route.
      *
-     * @param method      method to handle
-     * @param pathPattern path pattern
+     * @param method      HTTP method to handle
+     * @param pathPattern URI path pattern
      * @param handler     supplier of entity
      * @return updated builder
      */
@@ -314,6 +409,5 @@ public interface HttpRules {
                              .path(pathPattern)
                              .handler(Handler.create(handler)));
     }
-
 
 }
