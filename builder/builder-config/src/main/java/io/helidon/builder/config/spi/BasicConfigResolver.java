@@ -136,7 +136,7 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
                     for (Config subCfg : nodeList) {
                         Object subVal = Objects.requireNonNull(mapper.apply(subCfg));
                         Builder builder = (Builder) subVal;
-                        subVal = Objects.requireNonNull(builder.build());
+                        subVal = builder.build();
 
                         cfgList.add(subVal);
                     }
@@ -149,7 +149,7 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
                 } else {
                     val = Objects.requireNonNull(mapper.apply(attrCfg));
                     Builder builder = (Builder) val;
-                    val = Objects.requireNonNull(builder.build());
+                    val = builder.build();
 
                     if (isList) {
                         val = List.of(val);
