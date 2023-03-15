@@ -56,6 +56,7 @@ public @interface ConfiguredBy {
     /**
      * Required to be set to true if {@link #drivesActivation()} is
      * applied, thereby overriding the defaults in {@link io.helidon.builder.config.ConfigBean} annotation.
+     * The default value is {@code false}.
      *
      * @return true to override the config bean attributes, false to defer to the bean
      */
@@ -63,7 +64,8 @@ public @interface ConfiguredBy {
 
     /**
      * Determines whether an instance of this config bean in the registry will cause the backing service to be activated.
-     * Note that {@link #overrideBean()} must be set to true for this to be applied.
+     * The default value is {@code true}.
+     * Note, however, that {@link #overrideBean()} must be set to true for this to be applied.
      *
      * @return true if the presence of the config bean has an activation affect (aka, "config-driven services")
      */

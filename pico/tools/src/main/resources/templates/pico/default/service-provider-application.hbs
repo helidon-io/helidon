@@ -26,7 +26,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
 /**{{#description}}
- * {{.}}{{/description}}
+ * {{{.}}}{{/description}}
  */
 @Generated({{{generatedanno}}})
 @Singleton {{#modulename}}@Named({{classname}}.NAME){{/modulename}}
@@ -35,6 +35,15 @@ public class {{classname}} implements Application {
     static final String NAME = "{{{.}}}";{{/modulename}}{{^modulename}}
     static final String NAME = "unnamed";{{/modulename}}
     static boolean enabled = true;
+
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
+     */
+    @Deprecated
+    public {{classname}}() {
+    }
 
     @Override
     public Optional<String> named() {

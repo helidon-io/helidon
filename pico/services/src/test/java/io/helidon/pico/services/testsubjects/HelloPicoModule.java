@@ -28,7 +28,7 @@ import jakarta.inject.Singleton;
 @Generated(value = "example", comments = "API Version: n")
 @Singleton
 @Named(HelloPicoModule.NAME)
-public class HelloPicoModule implements Module {
+public final class HelloPicoModule implements Module {
 
     public static final String NAME = "example";
 

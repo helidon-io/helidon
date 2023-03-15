@@ -45,6 +45,7 @@ import io.helidon.pico.DependencyInfo;
 import io.helidon.pico.ElementInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.Module;
+import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.RunLevel;
 import io.helidon.pico.ServiceInfo;
@@ -211,7 +212,6 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         String className = moduleTypeName.className();
         String packageName = moduleTypeName.packageName();
         String moduleName = req.moduleName().orElse(null);
-//        String generator = req.generator();
 
         ActivatorCreatorCodeGen codeGen = req.codeGen();
         String typePrefix = codeGen.classPrefixName();
@@ -417,6 +417,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         String preDestroyMethodName = toPreDestroyMethodName(serviceTypeName, codeGen);
         List<?> serviceTypeInjectionOrder = toServiceTypeHierarchy(serviceTypeName, codeGen, scan);
         List<String> extraCodeGen = toExtraCodeGen(serviceTypeName, codeGen);
+        List<String> extraClassComments = toExtraClassComments(serviceTypeName, codeGen);
         boolean isProvider = toIsProvider(serviceTypeName, codeGen);
         boolean isConcrete = toIsConcrete(serviceTypeName, codeGen);
         boolean isSupportsJsr330InStrictMode = req.configOptions().isSupportsJsr330InStrictMode();
@@ -442,6 +443,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                 .postConstructMethodName(Optional.ofNullable(postConstructMethodName))
                 .preDestroyMethodName(Optional.ofNullable(preDestroyMethodName))
                 .extraCodeGen(extraCodeGen)
+                .extraClassComments(extraClassComments)
                 .concrete(isConcrete)
                 .provider(isProvider)
                 .supportsJsr330InStrictMode(isSupportsJsr330InStrictMode)
@@ -504,6 +506,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                                          : ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME)
                 .serviceTypeInterceptionPlan(services.interceptorPlans())
                 .extraCodeGen(services.extraCodeGen())
+                .extraClassComments(services.extraActivatorClassComments())
                 .build());
     }
 
@@ -597,11 +600,10 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         Map<String, Object> subst = new HashMap<>();
         subst.put("classname", applicationTypeName.className());
         subst.put("packagename", applicationTypeName.packageName());
-        subst.put("description", null);
+        subst.put("description", applicationTypeName + " - Generated " + PicoServicesConfig.NAME + " Application.");
         subst.put("generatedanno", toGeneratedSticker(req));
         subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
         subst.put("modulename", moduleName);
-
         return templateHelper().applySubstitutions(template, subst, true).trim();
     }
 
@@ -615,7 +617,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         Map<String, Object> subst = new HashMap<>();
         subst.put("classname", className);
         subst.put("packagename", packageName);
-        subst.put("description", null);
+        subst.put("description", "Generated " + PicoServicesConfig.NAME + " Module.");
         subst.put("generatedanno", toGeneratedSticker(req));
         subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
         subst.put("modulename", moduleName);
@@ -669,6 +671,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         subst.put("injectedmethods", toCodegenInjectMethods(args.activatorTypeName(), args.dependencies().orElse(null)));
         subst.put("injectedmethodsskippedinparent", args.injectionPointsSkippedInParent());
         subst.put("extracodegen", args.extraCodeGen());
+        subst.put("extraclasscomments", args.extraClassComments());
         subst.put("injectionorder", args.serviceTypeInjectionOrder());
         subst.put("issupportsjsr330instrictmode", args.isSupportsJsr330InStrictMode());
 
@@ -683,21 +686,16 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                          TypeName parentTypeName) {
         String result;
         if (parentTypeName == null || Object.class.getName().equals(parentTypeName.name())) {
-//            getFiler().getMessager().log(activatorTypeName + " path is: 1: "
-//            + ServicesToProcess.getServicesInstance().getServiceTypeToParentServiceTypes());
             result = AbstractServiceProvider.class.getName() + "<" + activatorTypeName.className() + ">";
         } else if (parentTypeName.typeArguments() == null || parentTypeName.typeArguments().isEmpty()) {
-//            getFiler().getMessager().log(activatorTypeName + " path is: 2");
             result = parentTypeName.packageName()
                     + (Objects.isNull(parentTypeName.packageName()) ? "" : ".")
                     + parentTypeName.className().replace(".", "$")
                     + INNER_ACTIVATOR_CLASS_NAME;
         } else {
-//            getFiler().getMessager().log(activatorTypeName + " path is: 3");
             result = parentTypeName.fqName();
         }
 
-//        getFiler().getMessager().log(activatorTypeName + " parent is: " + result);
         return result;
     }
 
@@ -1208,6 +1206,13 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         Map<TypeName, List<String>> map = codeGen.extraCodeGen();
         List<String> extraCodeGen = (map != null) ? map.get(serviceTypeName) : List.of();
         return (extraCodeGen == null) ? List.of() : extraCodeGen;
+    }
+
+    List<String> toExtraClassComments(TypeName serviceTypeName,
+                                      ActivatorCreatorCodeGen codeGen) {
+        Map<TypeName, List<String>> map = codeGen.extraClassComments();
+        List<String> extraClassComments = (map != null) ? map.get(serviceTypeName) : List.of();
+        return (extraClassComments == null) ? List.of() : extraClassComments;
     }
 
     static List<TypeName> serviceTypeHierarchy(TypeName serviceTypeName,

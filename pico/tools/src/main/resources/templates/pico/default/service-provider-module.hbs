@@ -25,13 +25,22 @@ import jakarta.inject.Singleton;
 import java.util.Optional;
 
 /**{{#description}}
- * {{.}}{{/description}}
+ * {{{.}}}{{/description}}
  */
 @Generated({{{generatedanno}}})
 @Singleton {{#modulename}}@Named({{classname}}.NAME){{/modulename}}
-public class {{classname}} implements Module { {{#modulename}}
+public final class {{classname}} implements Module { {{#modulename}}
     static final String NAME = "{{{.}}}";{{/modulename}}{{^modulename}}
     static final String NAME = "unnamed";{{/modulename}}
+
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
+     */
+    @Deprecated
+    public {{classname}}() {
+    }
 
     @Override
     public Optional<String> named() {

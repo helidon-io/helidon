@@ -49,6 +49,7 @@ abstract class ActivatorCreatorArgs {
     abstract Optional<String> postConstructMethodName();
     abstract Optional<String> preDestroyMethodName();
     abstract List<String> extraCodeGen();
+    abstract List<String> extraClassComments();
     abstract boolean isConcrete();
     abstract boolean isProvider();
     abstract boolean isSupportsJsr330InStrictMode();

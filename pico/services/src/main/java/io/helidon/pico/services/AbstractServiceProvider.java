@@ -780,7 +780,7 @@ public abstract class AbstractServiceProvider<T>
             dependencies(dependencies());
         }
 
-        final Map<String, InjectionPlan> plan =
+        Map<String, InjectionPlan> plan =
                 DefaultInjectionPlans.createInjectionPlans(picoServices(), this, dependencies, resolveIps, logger());
         assert (this.injectionPlan == null);
         this.injectionPlan = Objects.requireNonNull(plan);

@@ -34,13 +34,21 @@ import static java.lang.annotation.ElementType.TYPE;
 public @interface RunLevel {
 
     /**
-     * Represents an eager singleton.
+     * Represents an eager singleton that should be started at "startup". Note, however, that callers control the actual
+     * activation for these services, not the framework itself, as shown below:
+     * <pre>
+     * {@code
+     * List<ServiceProvider<Object>> startupServices = services
+     *               .lookup(DefaultServiceInfoCriteria.builder().runLevel(RunLevel.STARTUP).build());
+     *       startupServices.stream().forEach(ServiceProvider::get);
+     * }
+     * </pre>
      */
-    int STARTUP = 0;
+    int STARTUP = 10;
 
     /**
-     * Anything > 0 is left to the underlying provider implementation's discretion for meaning; this is just a default for something
-     * that is deemed "other than startup".
+     * Anything > 0 is left to the underlying provider implementation's discretion for meaning; this is just a default for
+     * something that is deemed "other than startup".
      */
     int NORMAL = 100;
 

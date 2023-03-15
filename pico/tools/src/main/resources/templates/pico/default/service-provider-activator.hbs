@@ -41,7 +41,8 @@ import static io.helidon.pico.ElementInfo.ElementKind;
 import static io.helidon.pico.InjectionPointInfo.CONSTRUCTOR;
 
 /**{{#description}}
- * {{.}}{{/description}}
+ * {{{.}}}{{/description}}{{#extraclasscomments}}
+ * {{{.}}}{{/extraclasscomments}}
  */
 // @Singleton{{#weight}}
 @Weight({{{.}}}){{/weight}} {{#isrunlevelset}}@RunLevel({{runlevel}}){{/isrunlevelset}}

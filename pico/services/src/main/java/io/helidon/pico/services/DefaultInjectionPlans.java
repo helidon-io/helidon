@@ -101,9 +101,9 @@ class DefaultInjectionPlans {
         if (self instanceof InjectionResolver) {
             dep.injectionPointDependencies()
                     .stream()
-                    .filter((ipInfo) -> (isPrivateSupported || ipInfo.access() != InjectionPointInfo.Access.PRIVATE)
+                    .filter(ipInfo -> (isPrivateSupported || ipInfo.access() != InjectionPointInfo.Access.PRIVATE)
                             && (isStaticSupported || !ipInfo.staticDeclaration()))
-                    .forEach((ipInfo) -> {
+                    .forEach(ipInfo -> {
                         String id = ipInfo.id();
                         if (!result.containsKey(id)) {
                             Object resolved = ((InjectionResolver) self)
@@ -116,7 +116,7 @@ class DefaultInjectionPlans {
                                     .injectionPointInfo(ipInfo)
                                     .injectionPointQualifiedServiceProviders(toIpQualified(target))
                                     .unqualifiedProviders(toIpUnqualified(target))
-                                    .wasResolved(true);
+                                    .wasResolved(resolved != null);
                             if (target != null) {
                                 if (ipInfo.optionalWrapped()) {
                                     planBuilder.resolved((target instanceof Optional && ((Optional<?>) target).isEmpty())
@@ -151,10 +151,10 @@ class DefaultInjectionPlans {
 
         dep.injectionPointDependencies()
                 .stream()
-                .filter((ipInfo) ->
+                .filter(ipInfo ->
                                 (isPrivateSupported || ipInfo.access() != InjectionPointInfo.Access.PRIVATE)
                                         && (isStaticSupported || !ipInfo.staticDeclaration()))
-                .forEach((ipInfo) -> {
+                .forEach(ipInfo -> {
                     String id = ipInfo.id();
                     if (!result.containsKey(id)) {
                         Object resolved = (resolveIps)
@@ -174,7 +174,7 @@ class DefaultInjectionPlans {
                                                 ? Optional.empty() : Optional.ofNullable(resolved))
                                 .build();
                         Object prev = result.put(id, plan);
-                        assert (Objects.isNull(prev)) : ipInfo;
+                        assert (prev == null) : ipInfo;
                     }
                 });
     }

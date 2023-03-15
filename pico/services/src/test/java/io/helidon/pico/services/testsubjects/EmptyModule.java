@@ -24,7 +24,7 @@ import jakarta.inject.Singleton;
  * For testing.
  */
 @Singleton
-public class EmptyModule implements io.helidon.pico.Module {
+public final class EmptyModule implements io.helidon.pico.Module {
 
     @Override
     public void configure(ServiceBinder binder) {

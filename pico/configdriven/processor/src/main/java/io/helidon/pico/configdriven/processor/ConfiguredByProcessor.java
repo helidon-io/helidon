@@ -159,6 +159,9 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         servicesToProcess.addActivatorGenericDecl(serviceTypeName, "<" + genericExtendsCB.fqName() + ">");
         extraCodeGen.forEach(fn -> servicesToProcess.addExtraCodeGen(serviceTypeName, fn));
 
+        List<String> extraActivatorClassComments = createExtraActivatorClassComments();
+        extraActivatorClassComments.forEach(fn -> servicesToProcess.addExtraActivatorClassComments(serviceTypeName, fn));
+
         processServiceType(serviceTypeName, (TypeElement) element);
     }
 
@@ -314,6 +317,10 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         }
 
         return result;
+    }
+
+    List<String> createExtraActivatorClassComments() {
+        return List.of("@param <CB> the config bean type");
     }
 
     TypeName toDefaultImpl(TypeName configBeanType) {

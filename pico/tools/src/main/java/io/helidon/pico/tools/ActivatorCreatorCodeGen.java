@@ -167,6 +167,13 @@ public interface ActivatorCreatorCodeGen {
     Map<TypeName, List<String>> extraCodeGen();
 
     /**
+     * The extra source code class comments that needs to be appended to the implementation.
+     *
+     * @return the map of service type names to the extra source code class comments that should be added
+     */
+    Map<TypeName, List<String>> extraClassComments();
+
+    /**
      * The set of external modules used and/or required.
      *
      * @return the set of external modules used and/or required

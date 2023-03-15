@@ -79,6 +79,7 @@ public class ServicesToProcess implements Resetable {
     private final Map<TypeName, Set<TypeName>> servicesToProviderFor = new LinkedHashMap<>();
     private final Map<TypeName, InterceptionPlan> interceptorPlanFor = new LinkedHashMap<>();
     private final Map<TypeName, List<String>> extraCodeGen = new LinkedHashMap<>();
+    private final Map<TypeName, List<String>> extraActivatorClassComments = new LinkedHashMap<>();
     private final Map<TypeName, List<TypeName>> serviceTypeHierarchy = new LinkedHashMap<>();
 
     private Path lastKnownSourcePathBeingProcessed;
@@ -128,6 +129,7 @@ public class ServicesToProcess implements Resetable {
         interceptorPlanFor.clear();
         serviceTypeHierarchy.clear();
         extraCodeGen.clear();
+        extraActivatorClassComments.clear();
         return true;
     }
 
@@ -369,12 +371,37 @@ public class ServicesToProcess implements Resetable {
      * Adds extra code gen per service type.
      *
      * @param serviceTypeName the service type name
-     * @param codeGen the extra code gen to tack onto the activation implementation
+     * @param codeGen the extra code gen to tack onto the activator implementation
      */
     public void addExtraCodeGen(TypeName serviceTypeName,
                                 String codeGen) {
         Objects.requireNonNull(codeGen);
         extraCodeGen.compute(serviceTypeName, (key, val) -> {
+            if (val == null) {
+                val = new ArrayList<>();
+            }
+            val.add(codeGen);
+            return val;
+        });
+    }
+
+    /**
+     * @return the extra activator class level comments for code generated types
+     */
+    Map<TypeName, List<String>> extraActivatorClassComments() {
+        return extraActivatorClassComments;
+    }
+
+    /**
+     * Adds extra cactivator class level comments.
+     *
+     * @param serviceTypeName the service type name
+     * @param codeGen the extra comments tack onto the activator implementation
+     */
+    public void addExtraActivatorClassComments(TypeName serviceTypeName,
+                                               String codeGen) {
+        Objects.requireNonNull(codeGen);
+        extraActivatorClassComments.compute(serviceTypeName, (key, val) -> {
             if (val == null) {
                 val = new ArrayList<>();
             }

@@ -24,7 +24,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * There is a generated {@link io.helidon.nima.webserver.DefaultServerConfig} implementing this type, that can be used
  * to create an instance manually through a builder, or using configuration.
  */
-@ConfigBean("server")
+@ConfigBean(value = "server", levelType = ConfigBean.LevelType.ROOT, drivesActivation = true)
 public interface ServerConfig {
     /**
      * Host of the default socket. Defaults to all host addresses ({@code 0.0.0.0}).

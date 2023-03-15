@@ -26,6 +26,7 @@ The Helidon Team believes that the above features help developers achieve the fo
 * More IoC options. With Pico... developers can choose to use an imperative coding style or a declarative IoC style previously only available with CDI using Helidon MP. At the initial release (Helidon 4.0), however, Pico will only be available with Helidon Nima support.
 * Compile-time benefits. With Pico... developers can decide to use compile-time code generation into their build process, thereby statically and deterministically wiring their injection model while still enjoying the benefits of a declarative approach for writing their application. Added to this, all code-generated artifacts are in source form instead of bytecode thereby making your application more readable, understandable, consistent, and debuggable. Furthermore, DI model inconsistencies can be found during compile-time instead of at runtime.
 * Improved performance. Pushing more into compile-time helps reduce what otherwise would need to occur (often times via reflection) to built/compile-time processing. Native code is generated that is further optimized by the compiler. Additionally, with lazy activation of services, only what is needed is activated. Anything not used may be in the classpath is available, but unless and until there is demand for those services they remain dormant. You control the lifecycle in your application code.
+* Additional lifecycle options. Pico can handle micro, service-level activations for your services, as well as offer controlled shutdown if desired.
 
 Many DI frameworks start simple and over time become bloated with "bells and whistle" type features - the majority of which most developers don't need and will never use; especially in today's world of microservices where the application scope is the JVM process itself.
 
@@ -69,7 +70,7 @@ Compile-time dependency:
 ```
   <dependency>
     <groupId>io.helidon.pico</groupId>
-    <artifactId>helidon-pico</artifactId>
+    <artifactId>helidon-pico-services</artifactId>
     <version>${helidon.version}</version>
   </dependency>
 ```
