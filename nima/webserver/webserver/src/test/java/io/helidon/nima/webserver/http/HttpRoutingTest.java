@@ -16,85 +16,88 @@
 
 package io.helidon.nima.webserver.http;
 
-import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import io.helidon.common.http.Http;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class HttpRoutingTest {
-    private final Handler handler = (req, res) -> res.send("done");
+    private static final Handler handler = (req, res) -> res.send("done");
 
-    @Test
-    void HttpMethodShortcuts() {
-        Map<Http.Method, FakeHttpRoutingBuilder> map = Map.of(Http.Method.GET,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .get(handler),
-                                                              Http.Method.POST,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .post(handler),
-                                                              Http.Method.PUT,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .put(handler),
-                                                              Http.Method.DELETE,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .delete(handler),
-                                                              Http.Method.HEAD,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .head(handler),
-                                                              Http.Method.OPTIONS,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .options(handler),
-                                                              Http.Method.TRACE,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .trace(handler),
-                                                              Http.Method.PATCH,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .patch(handler));
-        for (Map.Entry<Http.Method, FakeHttpRoutingBuilder> entry : map.entrySet()) {
-            assertThat(entry.getValue().getPathPattern(), is(nullValue()));
-            assertThat(entry.getValue().getMethod(), is(entry.getKey()));
-            assertThat(entry.getValue().getHandler(), is(handler));
-        }
+    // Functions that will be used to execute Routing http method shortcuts
+    private static Function<String, FakeHttpRoutingBuilder> get = x ->
+            (FakeHttpRoutingBuilder) (x == null ? new FakeHttpRoutingBuilder().get(handler) : new FakeHttpRoutingBuilder().get(x, handler));
+    private static Function<String, FakeHttpRoutingBuilder> post = x ->
+            (FakeHttpRoutingBuilder) (x == null ? new FakeHttpRoutingBuilder().post(handler) : new FakeHttpRoutingBuilder().post(x, handler));
+    private static Function<String, FakeHttpRoutingBuilder> put = x ->
+            (FakeHttpRoutingBuilder) (x == null ? new FakeHttpRoutingBuilder().put(handler) : new FakeHttpRoutingBuilder().put(x, handler));
+    private static Function<String, FakeHttpRoutingBuilder> delete = x ->
+            (FakeHttpRoutingBuilder) (x == null ? new FakeHttpRoutingBuilder().delete(handler) : new FakeHttpRoutingBuilder().delete(x, handler));
+    private static Function<String, FakeHttpRoutingBuilder> head = x ->
+            (FakeHttpRoutingBuilder) (x == null ? new FakeHttpRoutingBuilder().head(handler) : new FakeHttpRoutingBuilder().head(x, handler));
+    private static Function<String, FakeHttpRoutingBuilder> options = x ->
+            (FakeHttpRoutingBuilder) (x == null ? new FakeHttpRoutingBuilder().options(handler) : new FakeHttpRoutingBuilder().options(x, handler));
+    private static Function<String, FakeHttpRoutingBuilder> trace = x ->
+            (FakeHttpRoutingBuilder) (x == null ? new FakeHttpRoutingBuilder().trace(handler) : new FakeHttpRoutingBuilder().trace(x, handler));
+    private static Function<String, FakeHttpRoutingBuilder> patch = x ->
+            (FakeHttpRoutingBuilder) (x == null ? new FakeHttpRoutingBuilder().patch(handler) : new FakeHttpRoutingBuilder().patch(x, handler));
+
+    @ParameterizedTest
+    @MethodSource("httpMethodShortcut")
+    void testHttpMethodShortcut(Http.Method method,
+                                Function<String, FakeHttpRoutingBuilder> request) {
+        FakeHttpRoutingBuilder rule = request.apply(null);
+        assertThat(rule.getMethod(), is(method));
+        assertThat(rule.getPathPattern(), is(nullValue()));
+        assertThat(rule.getHandler(), is(handler));
     }
 
-    @Test
-    void HttpMethodShortcutsWithPathPattern() {
-        String pathPattern = "/test/*";
-        Map<Http.Method, FakeHttpRoutingBuilder> map = Map.of(Http.Method.GET,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .get(pathPattern, handler),
-                                                              Http.Method.POST,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .post(pathPattern, handler),
-                                                              Http.Method.PUT,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .put(pathPattern, handler),
-                                                              Http.Method.DELETE,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .delete(pathPattern, handler),
-                                                              Http.Method.HEAD,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .head(pathPattern, handler),
-                                                              Http.Method.OPTIONS,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .options(pathPattern, handler),
-                                                              Http.Method.TRACE,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .trace(pathPattern, handler),
-                                                              Http.Method.PATCH,
-                                                              (FakeHttpRoutingBuilder) new FakeHttpRoutingBuilder()
-                                                                      .patch(pathPattern, handler));
-        for (Map.Entry<Http.Method, FakeHttpRoutingBuilder> entry : map.entrySet()) {
-            assertThat(entry.getValue().getPathPattern(), is(pathPattern));
-            assertThat(entry.getValue().getMethod(), is(entry.getKey()));
-            assertThat(entry.getValue().getHandler(), is(handler));
-        }
+    @ParameterizedTest
+    @MethodSource("httpMethodShortcutWithPathPattern")
+    void testHttpMethodShortcutWithPathPattern(Http.Method method,
+                                               Function<String, FakeHttpRoutingBuilder> request,
+                                               String pathPattern) {
+        FakeHttpRoutingBuilder rule = request.apply(pathPattern);
+        assertThat(rule.getMethod(), is(method));
+        assertThat(rule.getPathPattern(), is(pathPattern));
+        assertThat(rule.getHandler(), is(handler));
+
+    }
+
+    private static Stream<Arguments> httpMethodShortcut() {
+        return Stream.of(
+                arguments(Http.Method.GET, get),
+                arguments(Http.Method.POST, post),
+                arguments(Http.Method.PUT, put),
+                arguments(Http.Method.DELETE, delete),
+                arguments(Http.Method.HEAD, head),
+                arguments(Http.Method.OPTIONS, options),
+                arguments(Http.Method.TRACE, trace),
+                arguments(Http.Method.PATCH, patch)
+        );
+    }
+
+    private static Stream<Arguments> httpMethodShortcutWithPathPattern() {
+        return Stream.of(
+                arguments(Http.Method.GET, get, "/get"),
+                arguments(Http.Method.POST, post, "/post"),
+                arguments(Http.Method.PUT, put, "/put"),
+                arguments(Http.Method.DELETE, delete, "/delete"),
+                arguments(Http.Method.HEAD, head, "/head"),
+                arguments(Http.Method.OPTIONS, options, "/options"),
+                arguments(Http.Method.TRACE, trace, "/trace"),
+                arguments(Http.Method.PATCH, patch, "/patch")
+        );
     }
 
     private static class FakeHttpRoutingBuilder implements HttpRouting.Builder {

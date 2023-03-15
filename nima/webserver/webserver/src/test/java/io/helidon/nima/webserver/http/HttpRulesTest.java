@@ -16,70 +16,89 @@
 
 package io.helidon.nima.webserver.http;
 
-import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.PathMatchers;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class HttpRulesTest {
-    private final Handler handler = (req, res) -> res.send("done");
+    private static final Handler handler = (req, res) -> res.send("done");
 
-    @Test
-    void HttpMethodShortcuts() {
-        Map<Http.Method, FakeHttpRules> map = Map.of(Http.Method.GET,
-                                                     (FakeHttpRules) new FakeHttpRules().get(handler),
-                                                     Http.Method.POST,
-                                                     (FakeHttpRules) new FakeHttpRules().post(handler),
-                                                     Http.Method.PUT,
-                                                     (FakeHttpRules) new FakeHttpRules().put(handler),
-                                                     Http.Method.DELETE,
-                                                     (FakeHttpRules) new FakeHttpRules().delete(handler),
-                                                     Http.Method.HEAD,
-                                                     (FakeHttpRules) new FakeHttpRules().head(handler),
-                                                     Http.Method.OPTIONS,
-                                                     (FakeHttpRules) new FakeHttpRules().options(handler),
-                                                     Http.Method.TRACE,
-                                                     (FakeHttpRules) new FakeHttpRules().trace(handler),
-                                                     Http.Method.PATCH,
-                                                     (FakeHttpRules) new FakeHttpRules().patch(handler));
-        for (Map.Entry<Http.Method, FakeHttpRules> entry : map.entrySet()) {
-            assertThat(entry.getValue().getPathPattern(), is(nullValue()));
-            assertThat(entry.getValue().getMethod(), is(entry.getKey()));
-            assertThat(entry.getValue().getHandler(), is(handler));
-        }
+    // Functions that will be used to execute Rule http method shortcuts
+    private static Function<String, FakeHttpRules> get = x ->
+            (FakeHttpRules) (x == null ? new FakeHttpRules().get(handler) : new FakeHttpRules().get(x, handler));
+    private static Function<String, FakeHttpRules> post = x ->
+            (FakeHttpRules) (x == null ? new FakeHttpRules().post(handler) : new FakeHttpRules().post(x, handler));
+    private static Function<String, FakeHttpRules> put = x ->
+            (FakeHttpRules) (x == null ? new FakeHttpRules().put(handler) : new FakeHttpRules().put(x, handler));
+    private static Function<String, FakeHttpRules> delete = x ->
+            (FakeHttpRules) (x == null ? new FakeHttpRules().delete(handler) : new FakeHttpRules().delete(x, handler));
+    private static Function<String, FakeHttpRules> head = x ->
+            (FakeHttpRules) (x == null ? new FakeHttpRules().head(handler) : new FakeHttpRules().head(x, handler));
+    private static Function<String, FakeHttpRules> options = x ->
+            (FakeHttpRules) (x == null ? new FakeHttpRules().options(handler) : new FakeHttpRules().options(x, handler));
+    private static Function<String, FakeHttpRules> trace = x ->
+            (FakeHttpRules) (x == null ? new FakeHttpRules().trace(handler) : new FakeHttpRules().trace(x, handler));
+    private static Function<String, FakeHttpRules> patch = x ->
+            (FakeHttpRules) (x == null ? new FakeHttpRules().patch(handler) : new FakeHttpRules().patch(x, handler));
+
+    @ParameterizedTest
+    @MethodSource("httpMethodShortcut")
+    void testHttpMethodShortcut(Http.Method method,
+                                Function<String, FakeHttpRules> request) {
+        FakeHttpRules rule = request.apply(null);
+        assertThat(rule.getMethod(), is(method));
+        assertThat(rule.getPathPattern(), is(nullValue()));
+        assertThat(rule.getHandler(), is(handler));
     }
 
-    @Test
-    void HttpMethodShortcutsWithPathPattern() {
-        String pathPattern = "/test/*";
-        Map<Http.Method, FakeHttpRules> map = Map.of(Http.Method.GET,
-                                                     (FakeHttpRules) new FakeHttpRules().get(pathPattern, handler),
-                                                     Http.Method.POST,
-                                                     (FakeHttpRules) new FakeHttpRules().post(pathPattern, handler),
-                                                     Http.Method.PUT,
-                                                     (FakeHttpRules) new FakeHttpRules().put(pathPattern, handler),
-                                                     Http.Method.DELETE,
-                                                     (FakeHttpRules) new FakeHttpRules().delete(pathPattern, handler),
-                                                     Http.Method.HEAD,
-                                                     (FakeHttpRules) new FakeHttpRules().head(pathPattern, handler),
-                                                     Http.Method.OPTIONS,
-                                                     (FakeHttpRules) new FakeHttpRules().options(pathPattern, handler),
-                                                     Http.Method.TRACE,
-                                                     (FakeHttpRules) new FakeHttpRules().trace(pathPattern, handler),
-                                                     Http.Method.PATCH,
-                                                     (FakeHttpRules) new FakeHttpRules().patch(pathPattern, handler));
-        for (Map.Entry<Http.Method, FakeHttpRules> entry : map.entrySet()) {
-            assertThat(entry.getValue().getPathPattern(), is(pathPattern));
-            assertThat(entry.getValue().getMethod(), is(entry.getKey()));
-            assertThat(entry.getValue().getHandler(), is(handler));
-        }
+    @ParameterizedTest
+    @MethodSource("httpMethodShortcutWithPathPattern")
+    void testHttpMethodShortcutWithPathPattern(Http.Method method,
+                                               Function<String, FakeHttpRules> request,
+                                               String pathPattern) {
+        FakeHttpRules rule = request.apply(pathPattern);
+        assertThat(rule.getMethod(), is(method));
+        assertThat(rule.getPathPattern(), is(pathPattern));
+        assertThat(rule.getHandler(), is(handler));
+
+    }
+
+    private static Stream<Arguments> httpMethodShortcut() {
+        return Stream.of(
+                arguments(Http.Method.GET, get),
+                arguments(Http.Method.POST, post),
+                arguments(Http.Method.PUT, put),
+                arguments(Http.Method.DELETE, delete),
+                arguments(Http.Method.HEAD, head),
+                arguments(Http.Method.OPTIONS, options),
+                arguments(Http.Method.TRACE, trace),
+                arguments(Http.Method.PATCH, patch)
+        );
+    }
+
+    private static Stream<Arguments> httpMethodShortcutWithPathPattern() {
+        return Stream.of(
+                arguments(Http.Method.GET, get, "/get"),
+                arguments(Http.Method.POST, post, "/post"),
+                arguments(Http.Method.PUT, put, "/put"),
+                arguments(Http.Method.DELETE, delete, "/delete"),
+                arguments(Http.Method.HEAD, head, "/head"),
+                arguments(Http.Method.OPTIONS, options, "/options"),
+                arguments(Http.Method.TRACE, trace, "/trace"),
+                arguments(Http.Method.PATCH, patch, "/patch")
+        );
     }
 
     private static class FakeHttpRules implements HttpRules {

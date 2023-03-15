@@ -19,6 +19,8 @@ package io.helidon.nima.tests.integration.server;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -33,15 +35,28 @@ import io.helidon.nima.webserver.http.ServerResponse;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 // Use by both RoutingTest and RulesTest to share the same test methods
 class RoutingTestBase {
     private static final Http.HeaderValue MULTI_HANDLER = Http.Header.createCached(
             Http.Header.create("X-Multi-Handler"), "true");
-    Http1Client client;
+    static Http1Client client;
+    // Functions that will be used to execute http webclient shortcut methods
+    private static Function<String, Http1ClientRequest> get = x -> client.get(x);
+    private static Function<String, Http1ClientRequest> post = x -> client.post(x);
+    private static Function<String, Http1ClientRequest> put = x -> client.put(x);
+    private static Function<String, Http1ClientRequest> delete = x -> client.delete(x);
+    private static Function<String, Http1ClientRequest> head = x -> client.head(x);
+    private static Function<String, Http1ClientRequest> options = x -> client.options(x);
+    private static Function<String, Http1ClientRequest> trace = x -> client.trace(x);
+    private static Function<String, Http1ClientRequest> patch = x -> client.patch(x);
 
     // Add header to indicate that this is a multi handler routing
     static void multiHandler(ServerRequest req, ServerResponse res) {
@@ -71,81 +86,95 @@ class RoutingTestBase {
         }
     }
 
-    @Test
-    void testHttpShortcutMethods() {
-        List<Map<String, Http1ClientRequest>> requests = Arrays.asList(Map.of("get", client.get("/get")),
-                                                                       Map.of("post", client.post("/post")),
-                                                                       Map.of("put", client.put("/put")),
-                                                                       Map.of("delete", client.delete("/delete")),
-                                                                       Map.of("head", client.head("/head")),
-                                                                       Map.of("options", client.options("/options")),
-                                                                       Map.of("trace", client.trace("/trace")),
-                                                                       Map.of("patch", client.patch("/patch")),
-                                                                       Map.of("any", client.delete("/any")),
-                                                                       Map.of("any", client.post("/any")),
-                                                                       Map.of("any", client.delete("/any")));
-
-        validateHttpShortCutMethods(requests);
-    }
-
-    @Test
-    void testHttpShortcutMethodsWithoutPathPattern() {
-        List<Map<String, Http1ClientRequest>> requests = Arrays.asList(Map.of("get_catchall", client.get("/get_catchall")),
-                                                                       Map.of("post_catchall", client.post("/post_catchall")),
-                                                                       Map.of("put_catchall", client.put("/put_catchall")),
-                                                                       Map.of("delete_catchall",
-                                                                              client.delete("/delete_catchall")),
-                                                                       Map.of("head_catchall", client.head("/head_catchall")),
-                                                                       Map.of("options_catchall",
-                                                                              client.options("/options_catchall")),
-                                                                       Map.of("trace_catchall", client.trace("/trace_catchall")),
-                                                                       Map.of("patch_catchall", client.patch("/patch_catchall")));
-
-        validateHttpShortCutMethods(requests);
-    }
-
-    @Test
-    void testHttpShortcutMethodsWithPatchMatcher() {
-        List<Map<String, Http1ClientRequest>> requests = Arrays.asList(Map.of("wildcard_test1", client.get("/wildcard_any")),
-                                                                       Map.of("wildcard_test2", client.post("/wildcard/any")));
-        validateHttpShortCutMethods(requests);
-    }
-
-    @Test
-    void testHttpShortcutMethodsWithMultiHandlers() {
-        List<Map<String, Http1ClientRequest>> requests = Arrays.asList(Map.of("get_multi", client.get("/get_multi")),
-                                                                       Map.of("post_multi", client.post("/post_multi")),
-                                                                       Map.of("put_multi", client.put("/put_multi")),
-                                                                       Map.of("delete_multi",
-                                                                              client.delete("/delete_multi")),
-                                                                       Map.of("head_multi", client.head("/head_multi")),
-                                                                       Map.of("options_multi",
-                                                                              client.options("/options_multi")),
-                                                                       Map.of("trace_multi", client.trace("/trace_multi")),
-                                                                       Map.of("patch_multi", client.patch("/patch_multi")));
-
-        validateHttpShortCutMethods(requests, true);
-    }
-
-    private static void validateHttpShortCutMethods(List<Map<String, Http1ClientRequest>> requests) {
-        validateHttpShortCutMethods(requests, false);
-    }
-
-    // multiHandlerTest set to true adds extra test to validate that a header was added in the first handler
-    private static void validateHttpShortCutMethods(List<Map<String, Http1ClientRequest>> requests, boolean multiHandlerTest) {
-        for (Map<String, Http1ClientRequest> request : requests) {
-            Map.Entry<String, Http1ClientRequest> entry = request.entrySet().iterator().next();
-
-            try (Http1ClientResponse response = entry.getValue().request()) {
-
-                assertThat(response.status(), is(Http.Status.OK_200));
-                if (multiHandlerTest) {
-                    assertThat(response.headers(), hasHeader(MULTI_HANDLER));
-                }
-
-                String message = response.as(String.class);
-                assertThat(message, is(entry.getKey()));
-            }
+    @ParameterizedTest
+    @MethodSource("basic")
+    void testHttpShortcutMethods(Function<String, Http1ClientRequest> request, String path, String responseMessage) {
+        try (Http1ClientResponse response = request.apply(path).request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(String.class), is(responseMessage));
         }
+    }
+
+    @ParameterizedTest
+    @MethodSource("withoutPathPattern")
+    void testHttpShortcutMethodsWithoutPathPattern(Function<String, Http1ClientRequest> request,
+                                                   String path,
+                                                   String responseMessage) {
+        try (Http1ClientResponse response = request.apply(path).request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(String.class), is(responseMessage));
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("withPathMatcher")
+    void testHttpShortcutMethodsWithPathMatcher(Function<String, Http1ClientRequest> request,
+                                                String path,
+                                                String responseMessage) {
+        try (Http1ClientResponse response = request.apply(path).request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(String.class), is(responseMessage));
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("withMultiHandlers")
+    void testHttpShortcutMethodsWithMultiHandlers(Function<String, Http1ClientRequest> request,
+                                                  String path,
+                                                  String responseMessage) {
+        try (Http1ClientResponse response = request.apply(path).request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.headers(), hasHeader(MULTI_HANDLER));
+            assertThat(response.as(String.class), is(responseMessage));
+        }
+    }
+
+    private static Stream<Arguments> basic() {
+        return Stream.of(
+                arguments(get, "/get", "get"),
+                arguments(post, "/post", "post"),
+                arguments(put, "/put", "put"),
+                arguments(delete, "/delete", "delete"),
+                arguments(head, "/head", "head"),
+                arguments(options, "/options", "options"),
+                arguments(trace, "/trace", "trace"),
+                arguments(patch, "/patch", "patch"),
+                arguments(delete, "/any", "any"),
+                arguments(post, "/any", "any"),
+                arguments(get, "/any", "any")
+        );
+    }
+
+    private static Stream<Arguments> withoutPathPattern() {
+        return Stream.of(
+                arguments(get, "/get_catchall", "get_catchall"),
+                arguments(post, "/post_catchall", "post_catchall"),
+                arguments(put, "/put_catchall", "put_catchall"),
+                arguments(delete, "/delete_catchall", "delete_catchall"),
+                arguments(head, "/head_catchall", "head_catchall"),
+                arguments(options, "/options_catchall", "options_catchall"),
+                arguments(trace, "/trace_catchall", "trace_catchall"),
+                arguments(patch, "/patch_catchall", "patch_catchall")
+        );
+    }
+
+    private static Stream<Arguments> withPathMatcher() {
+        return Stream.of(
+                arguments(get, "/wildcard_any", "wildcard_test1"),
+                arguments(post, "/wildcard/any", "wildcard_test2")
+        );
+    }
+
+    private static Stream<Arguments> withMultiHandlers() {
+        return Stream.of(
+                arguments(get, "/get_multi", "get_multi"),
+                arguments(post, "/post_multi", "post_multi"),
+                arguments(put, "/put_multi", "put_multi"),
+                arguments(delete, "/delete_multi", "delete_multi"),
+                arguments(head, "/head_multi", "head_multi"),
+                arguments(options, "/options_multi", "options_multi"),
+                arguments(trace, "/trace_multi", "trace_multi"),
+                arguments(patch, "/patch_multi", "patch_multi")
+        );
     }
 }
