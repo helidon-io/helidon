@@ -37,3 +37,7 @@ server2:
 
   connection-providers:
     discover-services: false
+
+  media-support:
+
+  content-encoding:
