@@ -201,6 +201,7 @@
                                 <buildArgs>
                                     <!-- Some native image features use the svm dependencies which require additional exports -->
                                     <arg>--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.configure=ALL-UNNAMED</arg>
+                                    <arg>--static</arg>
                                 </buildArgs>
                             </configuration>
                         </execution>
