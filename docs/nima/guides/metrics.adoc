@@ -19,8 +19,9 @@
 = Helidon Nima Metrics Guide
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
-:intro-project-name: {h1-prefix}
 :rootdir: {docdir}/../..
+include::{rootdir}/includes/se.adoc[]
+:intro-project-name: {h1-prefix}
 
 include::{rootdir}/includes/nima.adoc[]
 

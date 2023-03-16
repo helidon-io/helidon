@@ -21,7 +21,7 @@
 :keywords: helidon, java, microservices, microprofile, documentation, nima
 :rootdir: {docdir}/..
 
-Check out the xref:{rootdir}/about/doc_sitemap.adoc[Documentation Overview] for information abouthis site and the materials we provide.
+Check out the xref:{rootdir}/about/doc_sitemap.adoc[Documentation Overview] for information about this site and the materials we provide.
 
 include::{rootdir}/includes/attributes.adoc[]
 
