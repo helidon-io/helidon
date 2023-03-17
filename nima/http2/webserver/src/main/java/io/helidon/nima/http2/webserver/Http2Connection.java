@@ -457,7 +457,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 for (StreamContext sctx : streams.values()) {
                     Http2StreamState streamState = sctx.stream.streamState();
                     if (streamState == Http2StreamState.OPEN || streamState == Http2StreamState.HALF_CLOSED_REMOTE) {
-                        sctx.stream.outboundFlowControl().resetStreamWindowSize(it);
+                        sctx.stream.outboundFlowControl().resetStreamWindowSize((int) it);
                     }
                 }
 

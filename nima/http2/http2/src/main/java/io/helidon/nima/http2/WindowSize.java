@@ -78,9 +78,9 @@ public interface WindowSize {
     /**
      * Reset window size.
      *
-     * @param size window size
+     * @param size new window size
      */
-    void resetWindowSize(long size);
+    void resetWindowSize(int size);
 
     /**
      * Increment window size.

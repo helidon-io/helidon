@@ -32,9 +32,9 @@ public interface FlowControl {
     /**
      * Reset stream window size.
      *
-     * @param increment increment
+     * @param size new window size
      */
-    void resetStreamWindowSize(long increment);
+    void resetStreamWindowSize(int size);
 
     /**
      * Remaining window size in bytes.

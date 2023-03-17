@@ -15,6 +15,7 @@
  */
 package io.helidon.nima.http2;
 
+import java.lang.System.Logger.Level;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -28,18 +29,25 @@ import java.util.function.Consumer;
  */
 abstract class WindowSizeImpl implements WindowSize {
 
+    private static final System.Logger LOGGER = System.getLogger(WindowSizeImpl.class.getName());
+
+    private int windowSize;
     private final AtomicInteger remainingWindowSize;
 
     private WindowSizeImpl(int initialWindowSize) {
-        remainingWindowSize = new AtomicInteger(initialWindowSize);
+        this.windowSize = initialWindowSize;
+        this.remainingWindowSize = new AtomicInteger(initialWindowSize);
     }
 
     @Override
-    public void resetWindowSize(long size) {
+    public void resetWindowSize(int size) {
         // When the value of SETTINGS_INITIAL_WINDOW_SIZE changes,
         // a receiver MUST adjust the size of all stream flow-control windows that
         // it maintains by the difference between the new value and the old value
-        remainingWindowSize.updateAndGet(o -> (int) size - o);
+        remainingWindowSize.updateAndGet(o -> o + size - windowSize);
+        windowSize = size;
+        LOGGER.log(Level.DEBUG,
+                   () -> String.format("Reset window size %d, remaining %d", windowSize, remainingWindowSize.get()));
     }
 
     @Override
@@ -48,12 +56,16 @@ abstract class WindowSizeImpl implements WindowSize {
                 .getAndUpdate(r -> r < 0 || MAX_WIN_SIZE - r > increment
                         ? increment + r
                         : MAX_WIN_SIZE);
+        LOGGER.log(Level.DEBUG,
+                   () -> String.format("Increment window size %d, remaining %d", increment, remainingWindowSize.get()));
         return MAX_WIN_SIZE - remaining <= increment;
     }
 
     @Override
     public void decrementWindowSize(int decrement) {
         remainingWindowSize.updateAndGet(operand -> operand - decrement);
+        LOGGER.log(Level.DEBUG,
+                   () -> String.format("Decrement window size %d, remaining %d", decrement, remainingWindowSize.get()));
     }
 
     @Override
@@ -124,6 +136,10 @@ abstract class WindowSizeImpl implements WindowSize {
                     //TODO configurable timeout
                     updated.get().get(100, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    LOGGER.log(Level.WARNING,
+                               () -> String.format("Exception %s caught while waiting for window update: %s",
+                                                   e.getClass().getName(),
+                                                   e.getMessage()));
                 }
             }
         }
@@ -156,7 +172,7 @@ abstract class WindowSizeImpl implements WindowSize {
         }
 
         @Override
-        public void resetWindowSize(long size) {
+        public void resetWindowSize(int size) {
         }
 
         @Override
@@ -226,9 +242,7 @@ abstract class WindowSizeImpl implements WindowSize {
 
             private static Type select(Context context) {
                 // Bisection strategy requires at least 4 frames to be placed inside window
-                //FIXME: Find out why bisection strategy gets deadlocked
-//                return context.maxFrameSize * 4 < context.maxWindowsize ? BISECTION : SIMPLE;
-                return SIMPLE;
+                return context.maxFrameSize * 4 <= context.maxWindowsize ? BISECTION : SIMPLE;
             }
 
         }
@@ -251,8 +265,9 @@ abstract class WindowSizeImpl implements WindowSize {
             @Override
             void windowUpdate(int increment) {
                 windowUpdateWriter().accept(new Http2WindowUpdate(increment));
+                LOGGER.log(Level.DEBUG,
+                           () -> String.format("Window update increment %d", increment));
             }
-
         }
 
         /**
@@ -274,8 +289,17 @@ abstract class WindowSizeImpl implements WindowSize {
             @Override
             void windowUpdate(int increment) {
                 delayedIncrement += increment;
+                LOGGER.log(Level.DEBUG,
+                           () -> String.format("Window update hidden increment %d, total %d, watermark %d",
+                                               increment,
+                                               delayedIncrement,
+                                               watermark));
                 if (delayedIncrement > watermark) {
                     windowUpdateWriter().accept(new Http2WindowUpdate(delayedIncrement));
+                    LOGGER.log(Level.DEBUG,
+                               () -> String.format("Window update real increment %d, watermark %d",
+                                                   delayedIncrement,
+                                                   watermark));
                     delayedIncrement = 0;
                 }
             }

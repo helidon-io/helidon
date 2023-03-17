@@ -24,13 +24,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
+
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webserver.WebServer;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Method.PUT;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,6 +39,7 @@ import static org.hamcrest.Matchers.is;
 @ServerTest
 public class FlowControlTest {
 
+    private static final System.Logger LOGGER = System.getLogger(FlowControlTest.class.getName());
     private static volatile CompletableFuture<Void> flowControlServerLatch = new CompletableFuture<>();
     private static volatile CompletableFuture<Void> flowControlClientLatch = new CompletableFuture<>();
     private static final ExecutorService exec = Executors.newVirtualThreadPerTaskExecutor();
@@ -103,11 +104,13 @@ public class FlowControlTest {
                             out -> {
                                 for (int i = 0; i < 5; i++) {
                                     byte[] bytes = data10k.getBytes();
+                                    LOGGER.log(System.Logger.Level.INFO, () -> String.format("CL IF: Sending %d bytes", bytes.length));
                                     out.write(bytes);
                                     sentData.updateAndGet(o -> o + bytes.length);
                                 }
                                 for (int i = 0; i < 5; i++) {
                                     byte[] bytes = data10k.toUpperCase().getBytes();
+                                    LOGGER.log(System.Logger.Level.INFO, () -> String.format("CL IF: Sending %d bytes", bytes.length));
                                     out.write(bytes);
                                     sentData.updateAndGet(o -> o + bytes.length);
                                 }

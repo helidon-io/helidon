@@ -24,7 +24,7 @@ class FlowControlNoop implements FlowControl {
     }
 
     @Override
-    public void resetStreamWindowSize(long increment) {
+    public void resetStreamWindowSize(int size) {
     }
 
     @Override

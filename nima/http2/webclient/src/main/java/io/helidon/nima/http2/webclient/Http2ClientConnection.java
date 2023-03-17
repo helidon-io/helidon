@@ -188,15 +188,22 @@ class Http2ClientConnection {
             if (http2Settings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
                 maxFrameSize = Math.toIntExact(http2Settings.value(Http2Setting.MAX_FRAME_SIZE));
             }
-            // §6.5.2 Update initial window size for new streams
+            // §6.5.2 Update initial window size for new streams and window sizes of all already existing streams
             if (http2Settings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
-                Long initWinSize = http2Settings.value(Http2Setting.INITIAL_WINDOW_SIZE);
+                long initWinSize = http2Settings.value(Http2Setting.INITIAL_WINDOW_SIZE);
                 if (initWinSize > WindowSize.MAX_WIN_SIZE) {
                     goAway(frameHeader.streamId(), Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
                     //FIXME: close connection?
                     return;
                 }
+                // Update streams window size
+                streams.values().forEach(stream -> stream.outboundFlowControl().resetStreamWindowSize((int) initWinSize));
                 streamInitialWindowSize = Math.toIntExact(initWinSize);
+                // Update connection window size
+                outboundConnectionWindowSize.resetWindowSize((int) initWinSize);
+                LOGGER.log(DEBUG,
+                           () -> String.format("Http2Settings window size increment on client: %d",
+                                               (initWinSize - WindowSize.DEFAULT_WIN_SIZE)));
             }
             // §6.5.3 Settings Synchronization
             ackSettings();
