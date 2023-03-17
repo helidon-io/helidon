@@ -243,6 +243,9 @@ class LoomServer implements WebServer {
             if (startFutures != null) {
                 startFutures.forEach(future -> future.future().cancel(true));
             }
+
+            running.set(false);
+
             LOGGER.log(System.Logger.Level.INFO, "Shutdown finished");
         }, "nima-shutdown-hook");
 
