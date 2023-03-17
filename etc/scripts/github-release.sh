@@ -85,7 +85,7 @@ fi
 
 readonly GITHUB_API_URL="https://api.github.com"
 readonly MEDIA_TYPE="application/vnd.github.v3+json"
-readonly GITHUB_OWNER="oracle"
+readonly GITHUB_OWNER="helidon-io"
 readonly REPO="helidon"
 
 BODY=$(cat ${CHANGELOG} | awk '{printf "%s\\n", $0;}' | sed -e 's/"/\\"/g')
