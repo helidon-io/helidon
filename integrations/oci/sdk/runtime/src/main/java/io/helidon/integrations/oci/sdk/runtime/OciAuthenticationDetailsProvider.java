@@ -162,7 +162,14 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     }
 
     static String userHomePrivateKeyPath(OciConfig ociConfig) {
-        return Paths.get(System.getProperty("user.home"), ".oci", ociConfig.authKeyFile()).toString();
+        return normalizePath(Paths.get(System.getProperty("user.home"), ".oci", ociConfig.authKeyFile()).toString());
+    }
+
+    private static String normalizePath(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace("\\", "/");
     }
 
 

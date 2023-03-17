@@ -32,8 +32,6 @@ import static io.helidon.webserver.tests.websocket.WsAction.OperationType.BINARY
 import static io.helidon.webserver.tests.websocket.WsAction.OperationType.TEXT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-;
-
 /**
  * A websocket client that is driven by a conversation instance.
  */
