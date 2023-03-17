@@ -46,6 +46,7 @@ import com.oracle.bmc.monitoring.requests.ListAlarmsStatusRequest;
 import com.oracle.bmc.monitoring.requests.ListMetricsRequest;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
 import com.oracle.bmc.monitoring.requests.RemoveAlarmSuppressionRequest;
+import com.oracle.bmc.monitoring.requests.RetrieveDimensionStatesRequest;
 import com.oracle.bmc.monitoring.requests.SummarizeMetricsDataRequest;
 import com.oracle.bmc.monitoring.requests.UpdateAlarmRequest;
 import com.oracle.bmc.monitoring.responses.ChangeAlarmCompartmentResponse;
@@ -58,6 +59,7 @@ import com.oracle.bmc.monitoring.responses.ListAlarmsStatusResponse;
 import com.oracle.bmc.monitoring.responses.ListMetricsResponse;
 import com.oracle.bmc.monitoring.responses.PostMetricDataResponse;
 import com.oracle.bmc.monitoring.responses.RemoveAlarmSuppressionResponse;
+import com.oracle.bmc.monitoring.responses.RetrieveDimensionStatesResponse;
 import com.oracle.bmc.monitoring.responses.SummarizeMetricsDataResponse;
 import com.oracle.bmc.monitoring.responses.UpdateAlarmResponse;
 
@@ -234,6 +236,11 @@ class OciMetricsCdiExtensionTest {
 
         @Override
         public RemoveAlarmSuppressionResponse removeAlarmSuppression(RemoveAlarmSuppressionRequest removeAlarmSuppressionRequest) {
+            return null;
+        }
+
+        @Override
+        public RetrieveDimensionStatesResponse retrieveDimensionStates(RetrieveDimensionStatesRequest retrieveDimensionStatesRequest) {
             return null;
         }
 
