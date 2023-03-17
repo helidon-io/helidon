@@ -376,6 +376,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void writeServerSettings() {
+        LOGGER.log(System.Logger.Level.INFO, () -> "SRV SETTINGS:");
         connectionWriter.write(serverSettings
                 .toFrameData(serverSettings, 0, Http2Flag.SettingsFlags.create(0)), FlowControl.Outbound.NOOP);
         state = State.READ_FRAME;
@@ -457,7 +458,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 for (StreamContext sctx : streams.values()) {
                     Http2StreamState streamState = sctx.stream.streamState();
                     if (streamState == Http2StreamState.OPEN || streamState == Http2StreamState.HALF_CLOSED_REMOTE) {
-                        sctx.stream.outboundFlowControl().resetStreamWindowSize(it);
+                        sctx.stream.outboundFlowControl().resetStreamWindowSize((int) it);
                     }
                 }
 

@@ -35,8 +35,8 @@ abstract class FlowControlImpl implements FlowControl {
     }
 
     @Override
-    public void resetStreamWindowSize(long increment) {
-        streamWindowSize().resetWindowSize(increment);
+    public void resetStreamWindowSize(int size) {
+        streamWindowSize().resetWindowSize(size);
     }
 
     @Override

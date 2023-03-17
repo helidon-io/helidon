@@ -29,6 +29,7 @@ import io.helidon.common.socket.SocketContext;
  * HTTP settings frame.
  */
 public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> {
+    private static final System.Logger LOGGER = System.getLogger(Http2Settings.class.getName());
     private final Map<Integer, SettingValue> values;
 
     Http2Settings(Map<Integer, SettingValue> values) {
@@ -89,9 +90,9 @@ public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> 
         values.values().forEach(it -> {
             Object value = it.value();
             Http2Setting<Object> setting = (Http2Setting<Object>) it.setting();
+            LOGGER.log(System.Logger.Level.INFO, () -> String.format(" - SETTINGS: %s :: %s", it.setting().toString(), it.value().toString()));
             setting.write(data, value);
         });
-
         Http2FrameHeader header = Http2FrameHeader.create(data.available(),
                                                           frameTypes(),
                                                           flags,

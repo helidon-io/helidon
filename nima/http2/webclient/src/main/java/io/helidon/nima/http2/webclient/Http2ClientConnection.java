@@ -67,9 +67,7 @@ import io.helidon.nima.http2.Http2WindowUpdate;
 import io.helidon.nima.http2.WindowSize;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
-import static java.lang.System.Logger.Level.DEBUG;
-import static java.lang.System.Logger.Level.TRACE;
-import static java.lang.System.Logger.Level.WARNING;
+import static java.lang.System.Logger.Level.*;
 
 class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
@@ -188,15 +186,19 @@ class Http2ClientConnection {
             if (http2Settings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
                 maxFrameSize = Math.toIntExact(http2Settings.value(Http2Setting.MAX_FRAME_SIZE));
             }
-            // §6.5.2 Update initial window size for new streams
+            // §6.5.2 Update initial window size for new streams and window sizes of all already existing streams
             if (http2Settings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
-                Long initWinSize = http2Settings.value(Http2Setting.INITIAL_WINDOW_SIZE);
+                int initWinSize = http2Settings.value(Http2Setting.INITIAL_WINDOW_SIZE).intValue();
                 if (initWinSize > WindowSize.MAX_WIN_SIZE) {
                     goAway(frameHeader.streamId(), Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
                     //FIXME: close connection?
                     return;
                 }
+                streams.values().forEach(stream -> stream.outboundFlowControl().resetStreamWindowSize(initWinSize));
                 streamInitialWindowSize = Math.toIntExact(initWinSize);
+                // Update connection window size
+                LOGGER.log(INFO, "CLIENT SETTINGS: window size increment " + (initWinSize - WindowSize.DEFAULT_WIN_SIZE));
+                outboundConnectionWindowSize.resetWindowSize(initWinSize);
             }
             // §6.5.3 Settings Synchronization
             ackSettings();
