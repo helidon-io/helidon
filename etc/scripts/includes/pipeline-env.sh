@@ -21,7 +21,7 @@
 # Arguments: $1 - Script path
 #            $2 - cd to Helidon root directory from script path
 #
-# Atleast WS_DIR or both arguments must be passed.
+# At least WS_DIR or both arguments must be passed.
 
 # WS_DIR variable verification.
 if [ -z "${WS_DIR}" ]; then

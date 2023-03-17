@@ -44,6 +44,7 @@ import io.helidon.inject.api.Application;
 import io.helidon.inject.api.ModuleComponent;
 import io.helidon.inject.tools.spi.ModuleComponentNamer;
 
+import static io.helidon.inject.tools.CommonUtils.normalizePath;
 import static io.helidon.inject.tools.ModuleInfoDescriptorBlueprint.DEFAULT_MODULE_NAME;
 
 /**
@@ -316,7 +317,7 @@ public class ModuleUtils {
                                     Path sourcePath) {
         // create a relative path from the two paths
         URI relativePath = basePath.toUri().relativize(sourcePath.toUri());
-        String path = relativePath.getPath();
+        String path = normalizePath(relativePath.getPath());
         if (!path.startsWith("/")) {
             path = "/" + path;
         }
@@ -352,6 +353,7 @@ public class ModuleUtils {
      * @return the base path
      */
     public static Path toBasePath(String sourcePath) {
+        sourcePath = normalizePath(sourcePath);
         int pos = sourcePath.lastIndexOf(SRC_MAIN_JAVA_DIR);
         if (pos < 0) {
             pos = sourcePath.lastIndexOf(SRC_TEST_JAVA_DIR);

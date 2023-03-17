@@ -42,7 +42,7 @@ public final class TestUtils {
     public static String loadStringFromResource(String resourceNamePath) {
         try {
             try (InputStream in = TestUtils.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
-                return new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
+                return normalizeNewLines(new String(in.readAllBytes(), StandardCharsets.UTF_8).trim());
             }
         } catch (Exception e) {
             throw new ToolsException("Failed to load: " + resourceNamePath, e);
@@ -67,4 +67,10 @@ public final class TestUtils {
         }
     }
 
+    private static String normalizeNewLines(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replaceAll("\r\n", "\n");
+    }
 }

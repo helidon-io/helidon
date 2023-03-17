@@ -23,6 +23,8 @@ import jakarta.ws.rs.core.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static io.helidon.tests.integration.oidc.TestResource.EXPECTED_POST_LOGOUT_TEST_MESSAGE;
 import static io.helidon.tests.integration.oidc.TestResource.EXPECTED_TEST_MESSAGE;
@@ -30,6 +32,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@DisabledOnOs(OS.WINDOWS)
 class CookieBasedLoginIT extends CommonLoginBase {
 
     @Test

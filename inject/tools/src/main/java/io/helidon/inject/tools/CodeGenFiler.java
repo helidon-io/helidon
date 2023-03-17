@@ -51,6 +51,8 @@ import io.helidon.inject.api.Activator;
 import io.helidon.inject.api.Application;
 import io.helidon.inject.api.ModuleComponent;
 
+import static io.helidon.inject.tools.CommonUtils.normalizePath;
+
 /**
  * This class is used to generate the source and resources originating from either annotation processing or maven-plugin
  * invocation. It also provides a circuit breaker in case the filer should be disabled from actually writing out source
@@ -194,6 +196,7 @@ public class CodeGenFiler {
             mergedMap.put(contract, mergedSet);
             String outPath = new File(paths.metaInfServicesPath()
                                               .orElse(CodeGenPaths.DEFAULT_META_INF_SERVICES_PATH), contract).getPath();
+            outPath = normalizePath(outPath);
             try {
                 messager.debug("Reading " + outPath);
                 FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", outPath);
@@ -475,6 +478,7 @@ public class CodeGenFiler {
     private Optional<Path> codegenResourceFilerOut(String outPath,
                                                    String body,
                                                    Optional<Function<InputStream, String>> optFnUpdater) {
+        outPath = normalizePath(outPath);
         Messager messager = messager();
         if (!filerWriterEnabled()) {
             messager.log("(disabled) Writing " + outPath + " with:\n" + body);

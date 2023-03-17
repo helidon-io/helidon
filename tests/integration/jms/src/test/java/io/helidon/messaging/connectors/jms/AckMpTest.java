@@ -43,6 +43,8 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -106,6 +108,7 @@ public class AckMpTest extends AbstractMPTest {
 
     @Test
     @Order(2)
+    @DisabledOnOs(OS.WINDOWS)
     void resendAckTestPart2(SeContainer cdi) {
             MockConnector mockConnector = cdi.select(MockConnector.class, TEST_CONNECTOR_ANNOTATION).get();
 

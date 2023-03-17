@@ -48,7 +48,7 @@ final class CommonUtils {
     static String loadStringFromResource(String resourceNamePath) {
         try {
             try (InputStream in = CommonUtils.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
-                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+                return normalizeNewLines(new String(in.readAllBytes(), StandardCharsets.UTF_8));
             }
         } catch (Exception e) {
             throw new ToolsException("Failed to load: " + resourceNamePath, e);
@@ -66,7 +66,7 @@ final class CommonUtils {
         try {
             Path filePath = Path.of(fileName);
             String content = Files.readString(filePath);
-            return content;
+            return normalizeNewLines(content);
         } catch (IOException e) {
             throw new ToolsException("Unable to load from file: " + fileName, e);
         }
@@ -171,7 +171,7 @@ final class CommonUtils {
         } catch (IOException e) {
             throw new ToolsException("failed to read", e);
         }
-        return builder.toString().trim();
+        return normalizeNewLines(builder.toString().trim());
     }
 
     /**
@@ -209,6 +209,20 @@ final class CommonUtils {
      */
     static String toFlatName(String className) {
         return className.replace('.', '$');
+    }
+
+    private static String normalizeNewLines(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replaceAll("\r\n", "\n");
+    }
+
+    static String normalizePath(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace("\\", "/");
     }
 
 }
