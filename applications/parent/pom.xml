@@ -210,7 +210,7 @@
     </build>
     <profiles>
         <profile>
-            <id>static</id>
+            <id>linux-native</id>
             <activation>
                 <os>
                     <family>Linux</family>
@@ -221,11 +221,16 @@
                     <plugin>
                         <groupId>org.graalvm.buildtools</groupId>
                         <artifactId>native-maven-plugin</artifactId>
-                        <configuration>
-                            <buildArgs>
-                                <arg>--static</arg>
-                            </buildArgs>
-                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>build-native-image</id>
+                                <configuration>
+                                    <buildArgs combine.children="append">
+                                        <arg>--static</arg>
+                                    </buildArgs>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
