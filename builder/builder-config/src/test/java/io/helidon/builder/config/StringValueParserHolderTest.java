@@ -17,11 +17,11 @@
 package io.helidon.builder.config;
 
 import io.helidon.builder.config.spi.StringValueParserHolder;
-import io.helidon.common.testing.junit5.OptionalMatcher;
 
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class StringValueParserHolderTest {
@@ -29,7 +29,7 @@ class StringValueParserHolderTest {
     @Test
     void testGlobalInstanceIsEmpty() {
         assertThat(StringValueParserHolder.stringValueParser(),
-                                 CoreMatchers.is(OptionalMatcher.optionalEmpty()));
+                   is(optionalEmpty()));
     }
 
 }

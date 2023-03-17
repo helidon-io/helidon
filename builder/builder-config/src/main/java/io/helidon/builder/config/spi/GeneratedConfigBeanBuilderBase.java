@@ -24,9 +24,9 @@ import java.util.function.Function;
 import io.helidon.common.config.Config;
 
 /**
- * Minimal implementation for the {@link IConfigBeanBuilder}.
+ * Minimal implementation for the {@link GeneratedConfigBeanBuilder}.
  */
-public abstract class IConfigBeanBuilderBase implements IConfigBeanBuilder {
+public abstract class GeneratedConfigBeanBuilderBase implements GeneratedConfigBeanBuilder {
     private Config cfg;
 
     /**
@@ -35,7 +35,7 @@ public abstract class IConfigBeanBuilderBase implements IConfigBeanBuilder {
      * @deprecated not intended to be created directly
      */
     @Deprecated
-    protected IConfigBeanBuilderBase() {
+    protected GeneratedConfigBeanBuilderBase() {
     }
 
     @Override

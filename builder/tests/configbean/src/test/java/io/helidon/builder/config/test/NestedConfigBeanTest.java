@@ -23,12 +23,12 @@ import io.helidon.builder.config.testsubjects.fakes.DefaultFakeSocketConfig;
 import io.helidon.builder.config.testsubjects.fakes.FakeSocketConfig;
 import io.helidon.builder.config.testsubjects.fakes.FakeWebServerTlsConfig;
 import io.helidon.common.config.Config;
-import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.yaml.YamlConfigParser;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,7 +53,8 @@ class NestedConfigBeanTest extends AbstractConfigBeanTest {
                                              .name("first")
                                              .port(8081)
                                              .build()));
-        assertThat(serverConfig.sockets().get("first").tls(), OptionalMatcher.optionalEmpty());
+        assertThat(serverConfig.sockets().get("first").tls(),
+                   optionalEmpty());
     }
 
     @Test

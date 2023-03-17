@@ -44,7 +44,8 @@
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope> <!-- to support the Generated annotation -->
+            <scope>provided</scope> <!-- to support the Generated annotation (we use Builder internally) -->
+            <optional>true</optional>
         </dependency>
         <!-- note that this builder-config module should only have a dependency on common config -->
         <dependency>
@@ -52,14 +53,10 @@
             <artifactId>helidon-common-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
-            <scope>provided</scope>
+            <scope>provided</scope> <!-- to support the Singleton annotation (we use on default SPI impls) -->
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>

@@ -34,8 +34,10 @@ import io.helidon.builder.config.spi.ConfigBeanBuilderValidator;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.config.spi.ConfigResolver;
 import io.helidon.builder.config.spi.DefaultConfigResolverRequest;
-import io.helidon.builder.config.spi.IConfigBeanBase;
-import io.helidon.builder.config.spi.IConfigBeanBuilderBase;
+import io.helidon.builder.config.spi.GeneratedConfigBean;
+import io.helidon.builder.config.spi.GeneratedConfigBeanBase;
+import io.helidon.builder.config.spi.GeneratedConfigBeanBuilder;
+import io.helidon.builder.config.spi.GeneratedConfigBeanBuilderBase;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.builder.config.spi.ResolutionContext;
 import io.helidon.builder.processor.tools.BodyContext;
@@ -64,8 +66,8 @@ import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
  * A specialization of {@link io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider} that supports the additional
  * add-ons to the builder generated classes that binds to the config sub-system.
  *
- * @see io.helidon.builder.config.spi.IConfigBean
- * @see io.helidon.builder.config.spi.IConfigBeanBuilder
+ * @see GeneratedConfigBean
+ * @see GeneratedConfigBeanBuilder
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
@@ -151,12 +153,12 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
 
     @Override
     protected Optional<TypeName> baseExtendsTypeName(BodyContext ctx) {
-        return Optional.of(DefaultTypeName.create(IConfigBeanBase.class));
+        return Optional.of(DefaultTypeName.create(GeneratedConfigBeanBase.class));
     }
 
     @Override
     protected Optional<TypeName> baseExtendsBuilderTypeName(BodyContext ctx) {
-        return Optional.of(DefaultTypeName.create(IConfigBeanBuilderBase.class));
+        return Optional.of(DefaultTypeName.create(GeneratedConfigBeanBuilderBase.class));
     }
 
     @Override

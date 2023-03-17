@@ -21,7 +21,7 @@ import io.helidon.common.config.Config;
 /**
  * Every {@link io.helidon.builder.config.ConfigBean}-annotated *builder* type will implement this contract.
  */
-public interface IConfigBeanBuilder extends IConfigBeanCommon, IConfigBeanMappers {
+public interface GeneratedConfigBeanBuilder extends GeneratedConfigBeanCommon, GeneratedConfigBeanMappers {
 
 /*
   Important Note: caution should be exercised to avoid any 0-arg or 1-arg method. This is because it might clash with generated

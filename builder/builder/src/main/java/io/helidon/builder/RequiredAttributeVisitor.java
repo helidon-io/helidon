@@ -80,7 +80,7 @@ public class RequiredAttributeVisitor implements AttributeVisitor<Object> {
         }
 
         Object val = valueSupplier.get();
-        if (val != null && val != ConfiguredOption.UNCONFIGURED) {
+        if (val != null && !val.equals(ConfiguredOption.UNCONFIGURED)) {
             return;
         }
 

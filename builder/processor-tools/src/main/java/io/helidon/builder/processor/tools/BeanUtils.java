@@ -18,8 +18,10 @@ package io.helidon.builder.processor.tools;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.common.types.TypeInfo.KIND_CLASS;
@@ -38,6 +40,19 @@ import static io.helidon.common.types.TypeInfo.MODIFIER_STATIC;
  * Provides functions to aid with bean naming and parsing.
  */
 public class BeanUtils {
+    private static final LazyValue<Set<String>> RESERVED = LazyValue.create(
+            Set.of(KIND_CLASS,
+                   KIND_INTERFACE,
+                   KIND_PACKAGE,
+                   KIND_ENUM,
+                   MODIFIER_STATIC,
+                   MODIFIER_FINAL,
+                   MODIFIER_PUBLIC,
+                   MODIFIER_PROTECTED,
+                   MODIFIER_PRIVATE,
+                   KIND_RECORD,
+                   MODIFIER_ABSTRACT
+            ));
 
     private BeanUtils() {
     }
@@ -123,18 +138,7 @@ public class BeanUtils {
      * @return true if it appears to be a reserved word
      */
     public static boolean isReservedWord(String word) {
-        word = word.toUpperCase();
-        return word.equals(KIND_CLASS)
-                || word.equals(KIND_INTERFACE)
-                || word.equals(KIND_PACKAGE)
-                || word.equals(KIND_ENUM)
-                || word.equals(MODIFIER_STATIC)
-                || word.equals(MODIFIER_FINAL)
-                || word.equals(MODIFIER_PUBLIC)
-                || word.equals(MODIFIER_PROTECTED)
-                || word.equals(MODIFIER_PRIVATE)
-                || word.equalsIgnoreCase(KIND_RECORD)
-                || word.equals(MODIFIER_ABSTRACT);
+        return RESERVED.get().contains(word.toUpperCase());
     }
 
     /**
@@ -166,8 +170,8 @@ public class BeanUtils {
     }
 
     private static boolean validBooleanIsMethod(String name,
-                                       AtomicReference<Optional<List<String>>> attributeNameRef,
-                                       boolean throwIfInvalid) {
+                                                AtomicReference<Optional<List<String>>> attributeNameRef,
+                                                boolean throwIfInvalid) {
         assert (name.trim().equals(name));
         char c = name.charAt(2);
 

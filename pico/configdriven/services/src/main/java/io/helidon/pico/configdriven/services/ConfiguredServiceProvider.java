@@ -22,7 +22,7 @@ import java.util.function.Function;
 
 import io.helidon.builder.AttributeVisitor;
 import io.helidon.builder.config.spi.ConfigBeanMapper;
-import io.helidon.builder.config.spi.IConfigBeanBuilderBase;
+import io.helidon.builder.config.spi.GeneratedConfigBeanBuilderBase;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.config.Config;
 import io.helidon.pico.ServiceProvider;
@@ -79,7 +79,7 @@ public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, Co
      * @param config the backing configuration
      * @return the generated config bean instance
      */
-    IConfigBeanBuilderBase toConfigBeanBuilder(io.helidon.common.config.Config config);
+    GeneratedConfigBeanBuilderBase toConfigBeanBuilder(io.helidon.common.config.Config config);
 
     /**
      * The mapper associated with this service's config bean types.

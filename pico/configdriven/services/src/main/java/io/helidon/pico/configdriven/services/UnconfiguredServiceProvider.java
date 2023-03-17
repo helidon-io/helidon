@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.AttributeVisitor;
-import io.helidon.builder.config.spi.IConfigBeanBuilderBase;
+import io.helidon.builder.config.spi.GeneratedConfigBeanBuilderBase;
 import io.helidon.common.config.Config;
 import io.helidon.pico.ContextualServiceQuery;
 import io.helidon.pico.DependenciesInfo;
@@ -135,7 +135,7 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
     }
 
     @Override
-    public IConfigBeanBuilderBase toConfigBeanBuilder(Config config) {
+    public GeneratedConfigBeanBuilderBase toConfigBeanBuilder(Config config) {
         return delegate.toConfigBeanBuilder(config);
     }
 

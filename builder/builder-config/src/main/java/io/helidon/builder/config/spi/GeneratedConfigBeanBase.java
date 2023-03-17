@@ -21,9 +21,9 @@ import java.util.Optional;
 import io.helidon.common.config.Config;
 
 /**
- * Minimal implementation for the {@link IConfigBeanCommon}. This is the base for generated config beans.
+ * Minimal implementation for the {@link GeneratedConfigBeanCommon}. This is the base for generated config beans.
  */
-public abstract class IConfigBeanBase implements IConfigBeanCommon {
+public abstract class GeneratedConfigBeanBase implements GeneratedConfigBeanCommon {
     private final Config config;
     private String instanceId;
 
@@ -35,8 +35,8 @@ public abstract class IConfigBeanBase implements IConfigBeanCommon {
      * @deprecated not intended to be created directly
      */
     @Deprecated
-    protected IConfigBeanBase(IConfigBeanBuilder b,
-                              String instanceId) {
+    protected GeneratedConfigBeanBase(GeneratedConfigBeanBuilder b,
+                                      String instanceId) {
         this.config = b.__config().orElse(null);
         this.instanceId = instanceId;
     }

@@ -16,13 +16,10 @@
 
 package io.helidon.builder.config.spi;
 
-import io.helidon.builder.AttributeVisitor;
-
 /**
- * These methods are common between generated {@link io.helidon.builder.config.ConfigBean}-annotated type, as well
- * as the associated builder for the same.
+ * Every {@link io.helidon.builder.config.ConfigBean}-annotated type will also implement this contract.
  */
-public interface IConfigBeanCommon extends ConfigProvider {
+public interface GeneratedConfigBean extends GeneratedConfigBeanCommon {
 
 /*
   Important Note: caution should be exercised to avoid any 0-arg or 1-arg method. This is because it might clash with generated
@@ -31,20 +28,17 @@ public interface IConfigBeanCommon extends ConfigProvider {
  */
 
     /**
-     * Returns the {@link io.helidon.builder.config.ConfigBean}-annotated type.
+     * Set the instance id of this config bean.
      *
-     * @return the config bean type
+     * @param val the new instance identifier
      */
-    Class<?> __configBeanType();
+    void __instanceId(String val);
 
     /**
-     * Visits all attributes with the provided {@link io.helidon.builder.AttributeVisitor}.
+     * Returns the existing instance identifier.
      *
-     * @param visitor        the visitor
-     * @param userDefinedCtx any user-defined context
-     * @param <T> type of the user defined context
+     * @return the instance identifier
      */
-    <T> void visitAttributes(AttributeVisitor<T> visitor,
-                             T userDefinedCtx);
+    String __instanceId();
 
 }

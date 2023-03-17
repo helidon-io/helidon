@@ -90,7 +90,7 @@
             checks=".*"/>
 
     <!-- interfaces implemented by generated code, ensuring methods don't interfere with the interlaced methods from the user -->
-    <suppress files="builder/builder-config/src/main/java/io/helidon/builder/config/spi/IConfig.*.java"
+    <suppress files="builder/builder-config/src/main/java/io/helidon/builder/config/spi/GeneratedConfig.*.java"
             checks="MethodName"/>
     <suppress files="builder/builder-config/src/main/java/io/helidon/builder/config/spi/ConfigProvider.java"
             checks="MethodName"/>

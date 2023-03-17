@@ -27,7 +27,7 @@ import io.helidon.common.config.Config;
  *
  * @see ConfigBeanMapper
  */
-public interface IConfigBeanMappers {
+public interface GeneratedConfigBeanMappers {
 
 /*
   Important Note: caution should be exercised to avoid any 0-arg or 1-arg method. This is because it might clash with generated

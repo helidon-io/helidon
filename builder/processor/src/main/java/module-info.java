@@ -18,7 +18,6 @@
  * The Builder annotation processor module.
  */
 module io.helidon.builder.processor {
-    requires jakarta.annotation;
     requires java.compiler;
     requires io.helidon.common;
     requires io.helidon.builder;

@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.tools.spi.ActivatorCreator;
@@ -31,6 +30,7 @@ import org.atinject.tck.auto.DriversSeat;
 import org.atinject.tck.auto.accessories.SpareTire;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -95,7 +95,7 @@ class DefaultExternalModuleCreatorTest extends AbstractBaseCreator {
                 "org.atinject.tck.auto.accessories.RoundThing",
                 "org.atinject.tck.auto.accessories.SpareTire"
         ));
-        assertThat(res.moduleName(), OptionalMatcher.optionalValue(equalTo("jakarta.inject.tck")));
+        assertThat(res.moduleName(), optionalValue(equalTo("jakarta.inject.tck")));
         assertThat(res.activatorCreatorRequest(), notNullValue());
 
         ActivatorCreator activatorCreator = loadAndCreate(ActivatorCreator.class);

@@ -17,10 +17,10 @@
 package io.helidon.builder.config;
 
 import io.helidon.builder.config.spi.ConfigResolverHolder;
-import io.helidon.common.testing.junit5.OptionalMatcher;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -29,7 +29,7 @@ class ConfigResolverHolderTest {
     @Test
     void testGlobalInstanceIsEmpty() {
         assertThat(ConfigResolverHolder.configResolver(),
-                                 is(OptionalMatcher.optionalPresent()));
+                   is(optionalPresent()));
     }
 
 }
