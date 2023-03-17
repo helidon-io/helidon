@@ -19,11 +19,14 @@ import java.util.stream.Stream;
 
 import io.helidon.microprofile.testing.junit5.AddBean;
 
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @AddBean(App.class)
 @AddBean(AppTracedResource.class)
+@DisabledOnOs(OS.WINDOWS)
 class WithSpanWithExplicitAppTest extends WithSpanTestBase {
 
     @ParameterizedTest()

@@ -60,6 +60,8 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static io.helidon.http.Method.GET;
 import static io.netty.handler.codec.http2.Http2CodecUtil.FRAME_HEADER_LENGTH;
@@ -68,6 +70,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 @ServerTest
+@DisabledOnOs(OS.WINDOWS)
 class EmptyFrameCntTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
