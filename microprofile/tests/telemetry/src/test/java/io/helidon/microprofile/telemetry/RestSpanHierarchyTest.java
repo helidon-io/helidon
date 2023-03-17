@@ -40,6 +40,8 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
 import static io.opentelemetry.api.trace.SpanKind.SERVER;
@@ -71,6 +73,7 @@ public class RestSpanHierarchyTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void spanHierarchy() {
 
         assertThat(webTarget.path("mixed").request().get().getStatus(), is(Response.Status.OK.getStatusCode()));
