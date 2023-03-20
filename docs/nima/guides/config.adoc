@@ -23,7 +23,7 @@
 :rootdir: {docdir}/../..
 include::{rootdir}/includes/nima.adoc[]
 
-This guide describes how to create a sample Helidon Nima project that can be usead to run some
+This guide describes how to create a sample Helidon Nima project that can be used to run some
 basic examples using both default and custom configuration.
 
 == What you need

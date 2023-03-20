@@ -72,7 +72,7 @@ You can do both. CORS configuration for a resource overrides any CORS settings d
 
 Adding CORS behavior to your Helidon MP application involves just a few simple steps.
 
-For reach resource class in your application:
+For each resource class in your application:
 
 . Identify the resources and subresources--in other words, the paths--declared in the resource class which you want to support CORS.
 . For each of those resources and subresources which should support CORS:
