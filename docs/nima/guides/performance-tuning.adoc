@@ -16,13 +16,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= Performance Tuning
+:description: Helidon Nima Performance Tuning
+:feature-name: Performance Tuning
+:microprofile-bundle: false
+:keywords: helidon, nima, performance, tuning
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
+In this guide you will find basic advice for performance tuning of your Helidon application. 
 
 

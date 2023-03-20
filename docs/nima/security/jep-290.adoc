@@ -16,13 +16,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= JEP-290
+
+:description: Helidon Security Java Serialization (JEP-290)
+:keywords: helidon, security, serialization, java, JEP-290
+:metainf: META-INF/helidon/serial-config.properties
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
+include::{rootdir}/includes/security/jep-290.adoc[lines=26..]
 
-
+== TO DO FOR NIMA

@@ -16,13 +16,24 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= Security Introduction
+:description: Helidon Security introduction
+:keywords: helidon, security
+:feature-name: Security
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
+Helidon Security provides authentication, authorization and auditing for your Helidon application.
 
+include::{rootdir}/includes/dependencies.adoc[]
 
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.security</groupId>
+    <artifactId>helidon-security</artifactId>
+</dependency>
+----
+
+== TO DO FOR NIMA

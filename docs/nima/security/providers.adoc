@@ -16,13 +16,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= Security Providers
+:description: Helidon Security providers
+:keywords: helidon, security
+:feature-name: Security Providers
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
-
-
+== TO DO FOR NIMA

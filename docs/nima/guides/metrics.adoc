@@ -16,13 +16,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= Helidon Nima Metrics Guide
+:description: Helidon metrics
+:keywords: helidon, metrics, microprofile, guide
 :rootdir: {docdir}/../..
+include::{rootdir}/includes/se.adoc[]
+:intro-project-name: {h1-prefix}
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
-
+== To do for Nima
 

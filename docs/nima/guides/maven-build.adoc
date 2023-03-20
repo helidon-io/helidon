@@ -16,13 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= Maven Guide
+:description: Helidon Maven Guide
+:keywords: helidon, guide, maven, build
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
+This guide describes Helidon's support for Maven projects.
 
-
+include::{rootdir}/includes/guides/maven-build.adoc[]

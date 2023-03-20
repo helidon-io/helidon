@@ -25,6 +25,7 @@ The link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI spec] explains ho
 
 ifdef::mp-flavor[Helidon {flavor-uc} implements the MicroProfile OpenAPI specification.]
 ifdef::se-flavor[OpenAPI support in Helidon {flavor-uc} draws its inspiration from MicroProfile OpenAPI but does not implement the spec because Helidon {flavor-uc} does not support annotations.]
+ifdef::nima-flavor[OpenAPI support in Helidon {flavor-uc} draws its inspiration from MicroProfile OpenAPI but does not implement the spec because Helidon {flavor-uc} does not support annotations.]
 
 The OpenAPI support in Helidon {flavor-uc} performs two main tasks:
 

@@ -16,13 +16,19 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= Helidon Nima Config Guide
+:description: Helidon configuration
+:keywords: helidon, configuration, microprofile, guide, Nima
+:toc:
 :rootdir: {docdir}/../..
-
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
+This guide describes how to create a sample Helidon Nima project that can be used to run some
+basic examples using both default and custom configuration.
 
+== What you need
+
+For this 20 minute tutorial, you will need the following:
+
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 

@@ -16,13 +16,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= Custom Runtime Images with `jlink`
+:description: Helidon Custom Runtime Images
+:keywords: helidon, guide, jlink, image
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
+This guide describes how to build a custom runtime image for your Helidon application
+using Helidon's support for the JDK's `jlink` tool.
 
-
+include::{rootdir}/includes/guides/jlink-image.adoc[]

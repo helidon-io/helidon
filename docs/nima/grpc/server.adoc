@@ -16,13 +16,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= gRPC Server
+:description: Helidon gRPC Server
+:keywords: helidon, grpc, java, nima
+:feature-name: gRPC Server
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
-
-
+== TO DO FOR NIMA

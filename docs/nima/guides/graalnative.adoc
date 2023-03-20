@@ -16,13 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= GraalVM Native Images
+:description:  Helidon Native Image
+:keywords: helidon, guide, graalvm, native-image
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
+This guide describes how to build a GraalVM native image for a Helidon Nima application.
 
-
+include::{rootdir}/includes/guides/graalnative.adoc[]

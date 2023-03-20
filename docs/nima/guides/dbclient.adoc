@@ -16,13 +16,19 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= Helidon Nima DB Client Guide
+:description: Helidon db-client
+:keywords: helidon, db, client
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
+This guide describes Helidon DB Client features and how to create a sample Helidon Nima project
+that can be used to run some basic example using Helidon database client.
 
+== What You Need
+
+For this 15 minute tutorial, you will need the following:
+
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 

@@ -16,13 +16,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= Oracle Cloud Infrastructure Integration
+:description: Helidon OCI Integration
+:keywords: oci
+:feature-name: OCI Integration
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
-
-
+== TO DO FOR NIMA

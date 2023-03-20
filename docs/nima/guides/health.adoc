@@ -16,13 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= Helidon Nima Health Check Guide
+:description: Helidon health checks
+:keywords: helidon, health check, health check, health, check
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
-
+This guide describes how to create a sample Helidon Nima project
+that can be used to run some basic examples using both built-in and custom health checks.
 

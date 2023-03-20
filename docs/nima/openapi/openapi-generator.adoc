@@ -16,13 +16,4 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
-:rootdir: {docdir}/../..
-
-include::{rootdir}/includes/nima.adoc[]
-
-== Getting Started
-
-
+= OpenAPI-based Code Generation

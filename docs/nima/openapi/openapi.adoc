@@ -16,13 +16,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Nima Guides
-:description: Helidon Nima Guides
-:keywords: helidon, java, microservices, microprofile, guides
+= OpenAPI in Helidon
+:description: Helidon Nima OpenAPI Support
+:keywords: helidon, nima, openapi
+:feature-name: OpenAPI
 :rootdir: {docdir}/../..
 
-include::{rootdir}/includes/nima.adoc[]
 
-== Getting Started
 
+
+
+== TO DO FOR NIMA
 
