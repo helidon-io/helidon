@@ -734,7 +734,7 @@ public abstract class AbstractServiceProvider<T>
 
             private InjectionPointInfo safeGetIpInfo(String id) {
                 InjectionPointInfo ipInfo = idToIpInfo.remove(id);
-                if (Objects.isNull(ipInfo)) {
+                if (ipInfo == null) {
                     throw new InjectionException("expected to find a dependency for '" + id + "' from "
                                                          + this + " in " + idToIpInfo, null, self);
                 }

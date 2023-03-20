@@ -192,7 +192,11 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                             TypeName typeName,
                                             TypeInfo typeInfo,
                                             AnnotationAndValue builderAnnotation) {
-        return new BodyContext(doingConcreteType, typeName, typeInfo, builderAnnotation);
+        try {
+            return new BodyContext(doingConcreteType, typeName, typeInfo, builderAnnotation);
+        } catch (Throwable t) {
+            throw new IllegalStateException("Failed while processing: " + typeName, t);
+        }
     }
 
     /**
@@ -1485,7 +1489,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             i++;
         }
 
-        if (Objects.nonNull(ctx.parentAnnotationType().get())) {
+        if (ctx.parentAnnotationType().get() != null) {
             builder.append(prefix)
                     .append("\t@Override\n");
             builder.append(prefix)
@@ -1843,7 +1847,6 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         return "\"" + val + "\"";
     }
 
-    // note to self: this is not a bullet-proof heuristic since we have no real way to know if valType/val combination is an enum
     private boolean isEnumLikeType(TypeName valType,
                                    String key,
                                    String val) {

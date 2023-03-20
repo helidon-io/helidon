@@ -25,11 +25,12 @@ import java.util.Optional;
 public interface StringValueParser {
 
     /**
-     * Parse the string into a type R instance.
+     * Parse the string into a type R instance. Note that this method returns an optional since some parsers may choose to
+     * map to null for certain types and value combinations (e.g., empty string "" mapping to {@code null} value).
      *
-     * @param val the string value to parse
-     * @param type the type of the result expected
-     * @param <R> the return type
+     * @param val   the string value to parse
+     * @param type  the type of the result expected
+     * @param <R>   the return type
      * @return the optional nullable parsed value
      * @throws java.lang.IllegalArgumentException if the format is not parsable or the return type is not supported
      */

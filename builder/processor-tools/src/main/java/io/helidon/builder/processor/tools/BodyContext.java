@@ -32,6 +32,8 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 
+import static io.helidon.builder.processor.tools.BeanUtils.isBooleanType;
+import static io.helidon.builder.processor.tools.BeanUtils.isReservedWord;
 import static io.helidon.builder.processor.tools.BeanUtils.validateAndParseMethodName;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.BUILDER_ANNO_TYPE_NAME;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_INCLUDE_META_ATTRIBUTES;
@@ -104,18 +106,14 @@ public class BodyContext {
         this.listType = toListImplType(builderTriggerAnnotation, typeInfo);
         this.mapType = toMapImplType(builderTriggerAnnotation, typeInfo);
         this.setType = toSetImplType(builderTriggerAnnotation, typeInfo);
-        try {
-            gatherAllAttributeNames(this, typeInfo);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed while processing: " + typeInfo.typeName(), e);
-        }
+        gatherAllAttributeNames(typeInfo);
         assert (allTypeInfos.size() == allAttributeNames.size());
         this.hasParent = (parentTypeName.get() != null && hasBuilder(typeInfo.superTypeInfo(), builderTriggerAnnotation));
         this.hasAnyBuilderClashingMethodNames = determineIfHasAnyClashingMethodNames();
         this.isExtendingAnAbstractClass = typeInfo.typeKind().equals(TypeInfo.KIND_CLASS);
         this.ctorBuilderAcceptTypeName = (hasParent)
                 ? typeInfo.typeName()
-                : (Objects.nonNull(parentAnnotationType.get()) && typeInfo.elementInfo().isEmpty()
+                : (parentAnnotationType.get() != null && typeInfo.elementInfo().isEmpty()
                                 ? typeInfo.superTypeInfo().orElseThrow().typeName() : typeInfo.typeName());
         this.genericBuilderClassDecl = "Builder";
         this.genericBuilderAliasDecl = ("B".equals(typeInfo.typeName().className())) ? "BU" : "B";
@@ -551,7 +549,7 @@ public class BodyContext {
         if (!builderTriggerAnnotation.typeName().equals(BUILDER_ANNO_TYPE_NAME)) {
             AnnotationAndValue builderAnnotation = DefaultAnnotationAndValue
                     .findFirst(BUILDER_ANNO_TYPE_NAME.name(), typeInfo.annotations()).orElse(null);
-            if (Objects.nonNull(builderAnnotation)) {
+            if (builderAnnotation != null) {
                 val = builderAnnotation.value(key).orElse(null);
             }
         }
@@ -563,70 +561,68 @@ public class BodyContext {
         return val;
     }
 
-    private static void gatherAllAttributeNames(BodyContext ctx,
-                                                TypeInfo typeInfo) {
+    private void gatherAllAttributeNames(TypeInfo typeInfo) {
         TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
-        if (Objects.nonNull(superTypeInfo)) {
+        if (superTypeInfo != null) {
             Optional<? extends AnnotationAndValue> superBuilderAnnotation = DefaultAnnotationAndValue
-                    .findFirst(ctx.builderTriggerAnnotation.typeName().name(), superTypeInfo.annotations());
+                    .findFirst(builderTriggerAnnotation.typeName().name(), superTypeInfo.annotations());
             if (superBuilderAnnotation.isEmpty()) {
-                gatherAllAttributeNames(ctx, superTypeInfo);
+                gatherAllAttributeNames(superTypeInfo);
             } else {
-                populateMap(ctx.map, superTypeInfo, ctx.beanStyleRequired);
+                populateMap(map, superTypeInfo, beanStyleRequired);
             }
 
-            if (Objects.isNull(ctx.parentTypeName.get())
+            if ((parentTypeName.get() == null)
                     && superTypeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
-                ctx.parentTypeName.set(superTypeInfo.typeName());
-            } else if (Objects.isNull(ctx.parentAnnotationType.get())
+                parentTypeName.set(superTypeInfo.typeName());
+            } else if ((parentAnnotationType.get() == null)
                     && superTypeInfo.typeKind().equals(TypeInfo.KIND_ANNOTATION_TYPE)) {
-                ctx.parentAnnotationType.set(superTypeInfo.typeName());
+                parentAnnotationType.set(superTypeInfo.typeName());
             }
         }
 
         for (TypedElementName method : typeInfo.elementInfo()) {
-            String beanAttributeName = toBeanAttributeName(method, ctx.beanStyleRequired);
-            TypedElementName existing = ctx.map.get(beanAttributeName);
-            if (Objects.nonNull(existing)
-                    && BeanUtils.isBooleanType(method.typeName().name())
+            String beanAttributeName = toBeanAttributeName(method, beanStyleRequired);
+            TypedElementName existing = map.get(beanAttributeName);
+            if (existing != null
+                    && isBooleanType(method.typeName().name())
                     && method.elementName().startsWith("is")) {
                 AtomicReference<Optional<List<String>>> alternateNames = new AtomicReference<>();
                 validateAndParseMethodName(method.elementName(),
                                                      method.typeName().name(), true, alternateNames);
-                assert (Objects.nonNull(alternateNames.get()));
-                final String currentAttrName = beanAttributeName;
+                String currentAttrName = beanAttributeName;
                 Optional<String> alternateName = alternateNames.get().orElse(List.of()).stream()
                         .filter(it -> !it.equals(currentAttrName))
                         .findFirst();
-                if (alternateName.isPresent() && !ctx.map.containsKey(alternateName.get())
-                        && !BeanUtils.isReservedWord(alternateName.get())) {
+                if (alternateName.isPresent() && !map.containsKey(alternateName.get())
+                        && !isReservedWord(alternateName.get())) {
                     beanAttributeName = alternateName.get();
-                    existing = ctx.map.get(beanAttributeName);
+                    existing = map.get(beanAttributeName);
                 }
             }
 
-            if (Objects.nonNull(existing)) {
+            if (existing != null) {
                 if (!existing.typeName().equals(method.typeName())) {
                     throw new IllegalStateException(method + " cannot redefine types from super for " + beanAttributeName);
                 }
 
                 // allow the subclass to override the defaults, etc.
-                Objects.requireNonNull(ctx.map.put(beanAttributeName, method));
-                int pos = ctx.allAttributeNames.indexOf(beanAttributeName);
+                Objects.requireNonNull(map.put(beanAttributeName, method));
+                int pos = allAttributeNames.indexOf(beanAttributeName);
                 if (pos >= 0) {
-                    ctx.allTypeInfos.set(pos, method);
+                    allTypeInfos.set(pos, method);
                 }
                 continue;
             }
 
-            Object prev = ctx.map.put(beanAttributeName, method);
-            assert (Objects.isNull(prev));
+            Object prev = map.put(beanAttributeName, method);
+            assert (prev == null);
 
-            ctx.allTypeInfos.add(method);
-            if (ctx.allAttributeNames.contains(beanAttributeName)) {
+            allTypeInfos.add(method);
+            if (allAttributeNames.contains(beanAttributeName)) {
                 throw new IllegalStateException("duplicate attribute name: " + beanAttributeName + " processing " + typeInfo);
             }
-            ctx.allAttributeNames.add(beanAttributeName);
+            allAttributeNames.add(beanAttributeName);
         }
     }
 
@@ -640,7 +636,7 @@ public class BodyContext {
         for (TypedElementName method : typeInfo.elementInfo()) {
             String beanAttributeName = toBeanAttributeName(method, isBeanStyleRequired);
             TypedElementName existing = map.get(beanAttributeName);
-            if (Objects.nonNull(existing)) {
+            if (existing != null) {
                 if (!existing.typeName().equals(method.typeName())) {
                     throw new IllegalStateException(method + " cannot redefine types from super for " + beanAttributeName);
                 }
@@ -649,7 +645,7 @@ public class BodyContext {
                 Objects.requireNonNull(map.put(beanAttributeName, method));
             } else {
                 Object prev = map.put(beanAttributeName, method);
-                assert (Objects.isNull(prev));
+                assert (prev == null);
             }
         }
     }

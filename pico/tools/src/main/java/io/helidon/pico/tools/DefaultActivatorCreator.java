@@ -689,7 +689,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             result = AbstractServiceProvider.class.getName() + "<" + activatorTypeName.className() + ">";
         } else if (parentTypeName.typeArguments() == null || parentTypeName.typeArguments().isEmpty()) {
             result = parentTypeName.packageName()
-                    + (Objects.isNull(parentTypeName.packageName()) ? "" : ".")
+                    + (parentTypeName.packageName() == null ? "" : ".")
                     + parentTypeName.className().replace(".", "$")
                     + INNER_ACTIVATOR_CLASS_NAME;
         } else {
@@ -1010,7 +1010,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         ClassInfo parentClassInfo = toClassInfo(parentTypeName, scan);
         MethodInfoList parentMethods = parentClassInfo.getDeclaredMethodInfo();
         Map<IdAndToString, MethodInfo> injectedParentMethods = parentMethods.stream()
-                .filter(m -> Objects.nonNull(m.getAnnotationInfo(TypeNames.JAKARTA_INJECT)))
+                .filter(m -> (m.getAnnotationInfo(TypeNames.JAKARTA_INJECT) != null))
                 .filter(m -> DefaultExternalModuleCreator.isPicoSupported(parentTypeName, m, logger()))
                 .collect(Collectors.toMap(DefaultActivatorCreator::toBaseIdTag, Function.identity()));
         if (injectedParentMethods.isEmpty()) {

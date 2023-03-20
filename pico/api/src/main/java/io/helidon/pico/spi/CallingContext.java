@@ -22,8 +22,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.Builder;
+import io.helidon.pico.PicoServices;
 
-import static io.helidon.pico.PicoServices.isDebugEnabled;
 import static io.helidon.pico.PicoServicesConfig.TAG_DEBUG;
 
 /**
@@ -78,7 +78,7 @@ public abstract class CallingContext {
      * @param trace the trace
      * @return the list of strings for the stack trace
      */
-    public static List<String> stackTraceOf(StackTraceElement[] trace) {
+    static List<String> stackTraceOf(StackTraceElement[] trace) {
         List<String> result = new ArrayList<>();
         for (StackTraceElement e : trace) {
             result.add(e.toString());
@@ -92,7 +92,7 @@ public abstract class CallingContext {
      * @param trace the trace
      * @return the stringified stack trace
      */
-    public static String prettyPrintStackTraceOf(StackTraceElement[] trace) {
+    static String prettyPrintStackTraceOf(StackTraceElement[] trace) {
         return String.join("\n", stackTraceOf(trace));
     }
 
@@ -104,9 +104,9 @@ public abstract class CallingContext {
      * @return a new calling context if there is indication that debug mode is enabled
      * @see io.helidon.pico.PicoServices#isDebugEnabled()
      */
-    public static Optional<CallingContext> maybeCreate(Optional<String> moduleName,
-                                                       Optional<Boolean> isDebugEnabled) {
-        boolean debug = isDebugEnabled.orElseGet(() -> isDebugEnabled());
+    static Optional<CallingContext> maybeCreate(Optional<String> moduleName,
+                                                Optional<Boolean> isDebugEnabled) {
+        boolean debug = isDebugEnabled.orElseGet(PicoServices::isDebugEnabled);
         if (!debug) {
             return Optional.empty();
         }

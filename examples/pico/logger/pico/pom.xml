@@ -85,32 +85,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- strictly speaking the pico annotation processor is not needed for this case since we are using the maven plugin approach -->
-            <!-- note to self: align maven-plugin pico-app-package-name convergence with processor generated name -->
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-compiler-plugin</artifactId>-->
-<!--                <configuration>-->
-<!--                    <forceJavacCompilerUse>true</forceJavacCompilerUse>-->
-<!--                    <annotationProcessorPaths>-->
-<!--                        <path>-->
-<!--                            <groupId>io.helidon.pico</groupId>-->
-<!--                            <artifactId>helidon-pico-processor</artifactId>-->
-<!--                            <version>${helidon.version}</version>-->
-<!--                        </path>-->
-<!--                        <path>-->
-<!--                            <groupId>javax.inject</groupId>-->
-<!--                            <artifactId>javax.inject</artifactId>-->
-<!--                            <version>${javax.injection.version}</version>-->
-<!--                        </path>-->
-<!--                        <path>-->
-<!--                            <groupId>javax.annotation</groupId>-->
-<!--                            <artifactId>javax.annotation-api</artifactId>-->
-<!--                            <version>${javax.annotations.version}</version>-->
-<!--                        </path>-->
-<!--                    </annotationProcessorPaths>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
             <plugin>
                 <groupId>io.helidon.pico</groupId>
                 <artifactId>helidon-pico-maven-plugin</artifactId>

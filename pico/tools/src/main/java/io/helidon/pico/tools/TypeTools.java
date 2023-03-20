@@ -210,9 +210,7 @@ public final class TypeTools extends BuilderTypeTools {
             String propertyName = declaredMethod.getName();
             try {
                 Object value = declaredMethod.invoke(annotation);
-                if (value instanceof Annotation) {
-                    // note to self: ignored for now
-                } else {
+                if (!(value instanceof Annotation)) {
                     String stringValue;
                     // check if array
                     if (value.getClass().isArray()) {
@@ -944,7 +942,6 @@ public final class TypeTools extends BuilderTypeTools {
                                                   int elemOffset) {
         MethodParameterInfo paramInfo = elemInfo.getParameterInfo()[elemOffset - 1];
         String elemType = paramInfo.getTypeDescriptor().toString();
-//        Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(paramInfo.getAnnotationInfo());
         Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(paramInfo.getAnnotationInfo());
         return DefaultElementInfo.builder()
                 .serviceTypeName(serviceTypeName.name())

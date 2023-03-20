@@ -16,6 +16,8 @@
 
 package io.helidon.pico;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -27,7 +29,6 @@ import io.helidon.pico.spi.PicoServicesProvider;
 import io.helidon.pico.spi.Resetable;
 
 import static io.helidon.pico.spi.CallingContext.DEBUG_HINT;
-import static io.helidon.pico.spi.CallingContext.prettyPrintStackTraceOf;
 
 /**
  * The holder for the globally active {@link PicoServices} singleton instance, as well as its associated
@@ -130,6 +131,30 @@ public abstract class PicoServicesHolder {
                 ((Resetable) picoServices).reset(true);
             }
         }
+    }
+
+    /**
+     * Returns a stack trace as a list of strings.
+     *
+     * @param trace the trace
+     * @return the list of strings for the stack trace
+     */
+    static List<String> stackTraceOf(StackTraceElement[] trace) {
+        List<String> result = new ArrayList<>();
+        for (StackTraceElement e : trace) {
+            result.add(e.toString());
+        }
+        return result;
+    }
+
+    /**
+     * Returns a stack trace as a CRLF joined string.
+     *
+     * @param trace the trace
+     * @return the stringified stack trace
+     */
+    static String prettyPrintStackTraceOf(StackTraceElement[] trace) {
+        return String.join("\n", stackTraceOf(trace));
     }
 
 }

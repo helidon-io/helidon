@@ -80,7 +80,6 @@ public abstract class GeneratedConfigBeanBuilderBase implements GeneratedConfigB
                                                         ConfigResolver resolver,
                                                         ConfigBeanBuilderValidator<?> validator,
                                                         Map<Class<?>, Function<Config, ?>> mappers) {
-        // note to self: that in the future we should probably accept a code-generated 'version id' here --jtrent
         return ResolutionContext.create(configBeanType, cfg, resolver, validator, mappers);
     }
 

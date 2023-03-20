@@ -18,7 +18,6 @@ package io.helidon.builder.processor.tools;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -109,7 +108,7 @@ class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<String, O
 
     @Override
     public String visitString(String s, Object o) {
-        if (mapEmptyStringToNull && Objects.nonNull(s) && s.isBlank()) {
+        if (mapEmptyStringToNull && s != null && s.isBlank()) {
             return null;
         }
 
@@ -154,7 +153,7 @@ class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<String, O
         String result = String.join(", ", values);
         if (mapBlankArrayToNull && result.isBlank()) {
             result = null;
-        } else if (Objects.nonNull(result) && mapToSourceDeclaration) {
+        } else if (mapToSourceDeclaration) {
             result = "{";
             for (AnnotationValue val : vals) {
                 String stringVal = val.accept(this, null);

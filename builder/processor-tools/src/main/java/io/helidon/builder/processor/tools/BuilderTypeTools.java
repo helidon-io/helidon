@@ -261,7 +261,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
 
         List<String> classNames = new ArrayList<>();
         classNames.add(type.getSimpleName().toString());
-        while (Objects.nonNull(type.getEnclosingElement())
+        while (type.getEnclosingElement() != null
                 && ElementKind.PACKAGE != type.getEnclosingElement().getKind()) {
             classNames.add(type.getEnclosingElement().getSimpleName().toString());
             type = type.getEnclosingElement();
@@ -416,7 +416,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
         values.forEach((el, val) -> {
             String name = el.getSimpleName().toString();
             String value = val.accept(new ToStringAnnotationValueVisitor(), null);
-            if (Objects.nonNull(value)) {
+            if (value != null) {
                 result.put(name, value);
             }
         });

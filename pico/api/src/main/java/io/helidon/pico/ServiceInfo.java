@@ -175,7 +175,6 @@ public interface ServiceInfo extends ServiceInfoBasics {
      * @param val the instance to copy
      * @return the fluent builder
      */
-    // note to self: the builders framework should probably code-generate this automatically
     static DefaultServiceInfo.Builder toBuilder(ServiceInfoBasics val) {
         if (val instanceof ServiceInfo) {
             return DefaultServiceInfo.toBuilder((ServiceInfo) val);
@@ -188,7 +187,6 @@ public interface ServiceInfo extends ServiceInfoBasics {
         result.contractsImplemented(val.contractsImplemented());
         result.declaredRunLevel(val.declaredRunLevel());
         result.declaredWeight(val.declaredWeight());
-
         return result;
     }
 

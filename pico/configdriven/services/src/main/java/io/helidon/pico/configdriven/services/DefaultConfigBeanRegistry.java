@@ -502,7 +502,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                     }
                 }
 
-                // note to self: _todo_: "allowed values" check needed here also!
+                // https://github.com/helidon-io/helidon/issues/6403 : "allowed values" check needed here also!
             }
         };
 

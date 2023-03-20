@@ -108,8 +108,6 @@
                             <artifactId>helidon-pico-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
-                        <!-- note to self: needs some consideration, since we would like to just process jakarta annotations
-                            like ApplicationScoped, but yet we don't want to force it on the classpath as we do here -->
                         <path>
                             <groupId>jakarta.enterprise</groupId>
                             <artifactId>jakarta.enterprise.cdi-api</artifactId>

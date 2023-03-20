@@ -36,11 +36,11 @@ public class Level2ManualImpl extends Level1ManualImpl implements Level2 {
 
     protected Level2ManualImpl(Builder builder) {
         super(builder);
-        this.level2Level0Info = Objects.isNull(builder.level2Level0Info)
+        this.level2Level0Info = (builder.level2Level0Info == null)
                 ? List.of() : Collections.unmodifiableList(new ArrayList<>(builder.level2Level0Info));
-        this.level2ListOfLevel0s = Objects.isNull(builder.level2ListOfLevel0s)
+        this.level2ListOfLevel0s = (builder.level2ListOfLevel0s == null)
                 ? List.of() : Collections.unmodifiableList(new ArrayList<>(builder.level2ListOfLevel0s));
-        this.level2MapOfStringToLevel1s = Objects.isNull(builder.level2MapOfStringToLevel1s)
+        this.level2MapOfStringToLevel1s = (builder.level2MapOfStringToLevel1s == null)
                 ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(builder.level2MapOfStringToLevel1s));
     }
 
@@ -172,7 +172,7 @@ public class Level2ManualImpl extends Level1ManualImpl implements Level2 {
         }
 
         private void acceptThis(T val) {
-            if (Objects.isNull(val)) {
+            if (val == null) {
                 return;
             }
 
@@ -205,31 +205,8 @@ public class Level2ManualImpl extends Level1ManualImpl implements Level2 {
          *
          * @return ignored, here for testing only
          */
-        public B addlevel2Level0Info(Level0 val) {
-            if (Objects.isNull(level2Level0Info)) {
-                level2Level0Info = new ArrayList<>();
-            }
-            level2Level0Info.add(val);
-            return identity();
-        }
-
-        /**
-         * Used for testing purposes only.
-         *
-         * @return ignored, here for testing only
-         */
-        public B level2ListOfLevel0s(Collection<Level0> val) {
-            this.level2ListOfLevel0s = (val == null) ? null : new ArrayList<>(val);
-            return identity();
-        }
-
-        /**
-         * Used for testing purposes only.
-         *
-         * @return ignored, here for testing only
-         */
         public B addLevel0(Level0 val) {
-            if (Objects.isNull(level2ListOfLevel0s)) {
+            if (level2ListOfLevel0s == null) {
                 level2ListOfLevel0s = new ArrayList<>();
             }
             level2ListOfLevel0s.add(val);
@@ -241,18 +218,8 @@ public class Level2ManualImpl extends Level1ManualImpl implements Level2 {
          *
          * @return ignored, here for testing only
          */
-        public B level2MapOfStringToLevel1s(Map<String, Level1> val) {
-            this.level2MapOfStringToLevel1s = Objects.isNull(val) ? null : new LinkedHashMap<>(val);
-            return identity();
-        }
-
-        /**
-         * Used for testing purposes only.
-         *
-         * @return ignored, here for testing only
-         */
         public B addStringToLevel1(String key, Level1 val) {
-            if (Objects.isNull(level2MapOfStringToLevel1s)) {
+            if (level2MapOfStringToLevel1s == null) {
                 level2MapOfStringToLevel1s = new LinkedHashMap<>();
             }
             level2MapOfStringToLevel1s.put(key, val);

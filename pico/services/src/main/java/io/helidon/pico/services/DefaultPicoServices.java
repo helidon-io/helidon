@@ -210,7 +210,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
         long finish;
         try {
             return es.submit(shutdown)
-                    // note to self: have an appropriate timeout config for this
+                    // https://github.com/helidon-io/helidon/issues/6434: have an appropriate timeout config for this
 //                    .get(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS);
                     .get();
         } catch (Throwable t) {

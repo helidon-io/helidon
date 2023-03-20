@@ -349,7 +349,7 @@ public class ServicesToProcess implements Resetable {
      */
     public Map<TypeName, InterceptionPlan> interceptorPlans() {
         return interceptorPlanFor.entrySet().stream()
-                .filter(e -> Objects.nonNull(e.getValue()))
+                .filter(e -> e.getValue() != null)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> b, TreeMap::new));
     }
 
@@ -685,12 +685,6 @@ public class ServicesToProcess implements Resetable {
      * @param moduleName the module name
      */
     public void moduleName(String moduleName) {
-        // special note: the compiler uses the same jvm instance for each round, including source and test, so we
-        // cannot guard against changes here!!
-        //        if (Objects.nonNull(this.moduleName) && !this.moduleName.equals(moduleName)) {
-        //            throw new ToolsException("can only support setting module name once: " + this.moduleName + "
-        //            and " + moduleName);
-        //        }
         this.moduleName = moduleName;
         this.lastKnownModuleName = moduleName;
     }

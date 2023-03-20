@@ -19,7 +19,6 @@ package io.helidon.builder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 import io.helidon.config.metadata.ConfiguredOption;
@@ -69,7 +68,7 @@ public class RequiredAttributeVisitor implements AttributeVisitor<Object> {
                       Class<?> type,
                       Class<?>... typeArgument) {
         String requiredStr = (String) meta.get("required");
-        boolean requiredPresent = Objects.nonNull(requiredStr);
+        boolean requiredPresent = (requiredStr != null);
         boolean required = Boolean.parseBoolean(requiredStr);
         if (!required && requiredPresent) {
             return;

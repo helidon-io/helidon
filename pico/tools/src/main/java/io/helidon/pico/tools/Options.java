@@ -193,12 +193,7 @@ public class Options {
             }
         }
 
-//        try {
-//            return CommonUtils.getProp(option, defaultVal);
-//        } catch (Throwable t) {
-//            // eat it
-            return defaultVal;
-//        }
+        return defaultVal;
     }
 
 }

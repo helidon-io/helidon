@@ -415,7 +415,6 @@ public class Dependencies {
                 ? (DefaultDependenciesInfo.Builder) deps
                 : DefaultDependenciesInfo.toBuilder(deps);
         parentDeps.serviceInfoDependencies().forEach(builder::addServiceInfoDependency);
-        // note to self: consider deferring this step
         return forceBuild(builder);
     }
 

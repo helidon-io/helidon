@@ -88,7 +88,7 @@ final class GenerateVisitorSupport {
                                    + "\t\t\t\t\t\t  Class<?> type,\n"
                                    + "\t\t\t\t\t\t  Class<?>... typeArgument) {\n"
                                    + "\t\t\tString requiredStr = (String) meta.get(\"required\");\n"
-                                   + "\t\t\tboolean requiredPresent = Objects.nonNull(requiredStr);\n"
+                                   + "\t\t\tboolean requiredPresent = (requiredStr != null);\n"
                                    + "\t\t\tboolean required = Boolean.parseBoolean(requiredStr);\n"
                                    + "\t\t\tif (!required && requiredPresent) {\n"
                                    + "\t\t\t\treturn;\n"

@@ -51,7 +51,7 @@ public interface GeneratedConfigBeanBuilder extends GeneratedConfigBeanCommon, G
      * @throws java.lang.IllegalStateException if there are any resolution or validation errors
      */
     void acceptConfig(Config cfg,
-                    ConfigResolver resolver,
-                    ConfigBeanBuilderValidator<?> validator);
+                      ConfigResolver resolver,
+                      ConfigBeanBuilderValidator<?> validator);
 
 }
