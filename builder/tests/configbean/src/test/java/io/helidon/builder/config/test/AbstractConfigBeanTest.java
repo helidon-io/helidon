@@ -27,14 +27,6 @@ class AbstractConfigBeanTest {
     static final String FAKE_SOCKET_CONFIG = "sockets";
     static final String FAKE_SERVER_CONFIG = "fake-server";
 
-    MapConfigSource.Builder createRootDefault8080TestingConfigSource() {
-        return ConfigSources.create(
-                Map.of(
-                        FAKE_SERVER_CONFIG + ".port", "8080",
-                        FAKE_SERVER_CONFIG + ".worker-count", "1"
-                ), "config-root-default-8080");
-    }
-
     MapConfigSource.Builder createRootPlusOneSocketTestingConfigSource() {
         return ConfigSources.create(
                 Map.of(
@@ -57,21 +49,6 @@ class AbstractConfigBeanTest {
                         NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.tls.cipher", "cipher-1",
                         NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.tls.enabled-tls-protocols",
                                         FakeWebServerTlsConfig.PROTOCOL
-                ), "config-nested-plus-one-socket-and-tls");
-    }
-
-    MapConfigSource.Builder createFakeServerConfigFromYamlResourceTestingSource() {
-        return ConfigSources.create(
-                Map.of(
-                        NESTED + "." + FAKE_SERVER_CONFIG + ".name", "nested",
-                        NESTED + "." + FAKE_SERVER_CONFIG + ".port", "8080",
-                        NESTED + "." + FAKE_SERVER_CONFIG + ".worker-count", "2",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.name", "first",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.port", "8081",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.tls.enabled", "true",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.tls.cipher", "cipher-1",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.tls.enabled-tls-protocols",
-                        FakeWebServerTlsConfig.PROTOCOL
                 ), "config-nested-plus-one-socket-and-tls");
     }
 

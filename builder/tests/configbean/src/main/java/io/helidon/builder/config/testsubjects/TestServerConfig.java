@@ -25,7 +25,7 @@ import io.helidon.builder.config.ConfigBean;
  * For testing purpose.
  */
 @ConfigBean(atLeastOne = true)
-public interface ServerConfig extends CommonConfig {
+public interface TestServerConfig extends TestCommonConfig {
 
     /**
      * For testing purpose.

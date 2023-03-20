@@ -39,9 +39,12 @@ class DefaultPicoServicesTest {
     @BeforeEach
     void setUp() {
         tearDown();
-        Config config = Config.create(
+        Config config = Config.builder(
                 ConfigSources.create(
-                        Map.of(PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true"), "config-1"));
+                        Map.of(PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true"), "config-1"))
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
         PicoServices.globalBootstrap(DefaultBootstrap.builder().config(config).build());
     }
 

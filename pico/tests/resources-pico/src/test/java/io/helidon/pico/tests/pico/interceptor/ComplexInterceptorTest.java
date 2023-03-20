@@ -122,12 +122,15 @@ class ComplexInterceptorTest {
     @Test
     void runtimeWithInterception() throws Exception {
         // disable application and modules to affectively start with an empty registry.
-        Config config = Config.create(
+        Config config = Config.builder(
                 ConfigSources.create(
                         Map.of(NAME + "." + KEY_PERMITS_DYNAMIC, "true",
                                NAME + "." + KEY_USES_COMPILE_TIME_APPLICATIONS, "false",
                                NAME + "." + KEY_USES_COMPILE_TIME_MODULES, "true"),
-                        "config-1"));
+                        "config-1"))
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
         tearDown();
         setUp(config);
         bind(picoServices, BasicSingletonServiceProvider

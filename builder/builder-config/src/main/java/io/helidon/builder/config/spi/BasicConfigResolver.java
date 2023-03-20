@@ -127,7 +127,7 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
         try {
             Function<Config, ?> mapper = (componentType == null) ? null : ctx.mappers().get(componentType);
             if (mapper != null) {
-                if (attrCfg.isList()) {
+                if (attrCfg.isList() || isMap) {
                     if (!isList && !isSet && !isMap) {
                         throw new IllegalStateException("unable to convert node list to " + type + " for " + attrCfg);
                     }
@@ -151,17 +151,6 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
                     } else {
                         val = cfgList;
                     }
-                } else if (isMap) {
-                    Map<String, Object> cfgMap = new LinkedHashMap();
-                    List<Config> nodeList = attrCfg.asNodeList().get();
-                    for (Config subCfg : nodeList) {
-                        Object subVal = Objects.requireNonNull(mapper.apply(subCfg));
-                        Builder builder = (Builder) subVal;
-                        subVal = builder.build();
-                        Object prev = cfgMap.put(subCfg.key().name(), subVal);
-                        assert (prev == null) : subCfg;
-                    }
-                    val = cfgMap;
                 } else {
                     val = Objects.requireNonNull(mapper.apply(attrCfg));
                     Builder builder = (Builder) val;

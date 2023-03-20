@@ -45,7 +45,10 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
      */
     @Test
     void verifyNoLookups() {
-        resetWith(io.helidon.config.Config.create(createBasicTestingConfigSource(), createRootDefault8080TestingConfigSource()));
+        resetWith(io.helidon.config.Config.builder(createBasicTestingConfigSource(), createRootDefault8080TestingConfigSource())
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build());
 
         Metrics metrics = picoServices.metrics().orElseThrow();
         Set<ServiceInfoCriteria> criteriaSearchLog = picoServices.lookups().orElseThrow();
@@ -57,40 +60,51 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
                            // config beans are always looked up
                            "io.helidon.builder.config.testsubjects.fakes.FakeServerConfig",
                            // tracer doesn't really exist, so it is looked up out of best-effort (as an optional injection dep)
-                           "io.helidon.builder.config.testsubjects.fakes.FakeTracer"
-                           ));
+                           "io.helidon.builder.config.testsubjects.fakes.FakeTracer"));
         assertThat("lookup log: " + criteriaSearchLog,
-                   metrics.lookupCount().get(), is(2));
+                   metrics.lookupCount().get(),
+                   is(2));
     }
 
     @Test
     public void startupAndShutdownRunLevelServices() {
-        resetWith(io.helidon.config.Config.create(createBasicTestingConfigSource(), createRootDefault8080TestingConfigSource()));
+        resetWith(io.helidon.config.Config.builder(createBasicTestingConfigSource(), createRootDefault8080TestingConfigSource())
+                          .disableEnvironmentVariablesSource()
+                          .disableSystemPropertiesSource()
+                          .build());
 
         Metrics metrics = picoServices.metrics().orElseThrow();
         int startingLookupCount = metrics.lookupCount().orElseThrow();
 
-        assertThat(ASimpleRunLevelService.getPostConstructCount(), is(0));
-        assertThat(ASimpleRunLevelService.getPreDestroyCount(), is(0));
+        assertThat(ASimpleRunLevelService.getPostConstructCount(),
+                   is(0));
+        assertThat(ASimpleRunLevelService.getPreDestroyCount(),
+                   is(0));
 
         ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
                 .runLevel(RunLevel.STARTUP)
                 .build();
         List<ServiceProvider<Object>> startups = services.lookupAll(criteria);
         List<String> desc = startups.stream().map(ServiceProvider::description).collect(Collectors.toList());
-        assertThat(desc, contains(ASimpleRunLevelService.class.getSimpleName() + ":INIT"));
+        assertThat(desc,
+                   contains(ASimpleRunLevelService.class.getSimpleName() + ":INIT"));
         startups.forEach(ServiceProvider::get);
 
         metrics = picoServices.metrics().orElseThrow();
         int endingLookupCount = metrics.lookupCount().orElseThrow();
-        assertThat(endingLookupCount - startingLookupCount, is(1));
+        assertThat(endingLookupCount - startingLookupCount,
+                   is(1));
 
-        assertThat(ASimpleRunLevelService.getPostConstructCount(), is(1));
-        assertThat(ASimpleRunLevelService.getPreDestroyCount(), is(0));
+        assertThat(ASimpleRunLevelService.getPostConstructCount(),
+                   is(1));
+        assertThat(ASimpleRunLevelService.getPreDestroyCount(),
+                   is(0));
 
         picoServices.shutdown();
-        assertThat(ASimpleRunLevelService.getPostConstructCount(), is(1));
-        assertThat(ASimpleRunLevelService.getPreDestroyCount(), is(1));
+        assertThat(ASimpleRunLevelService.getPostConstructCount(),
+                   is(1));
+        assertThat(ASimpleRunLevelService.getPreDestroyCount(),
+                   is(1));
     }
 
 }

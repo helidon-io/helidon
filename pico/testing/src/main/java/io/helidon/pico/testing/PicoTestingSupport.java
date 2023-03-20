@@ -90,12 +90,15 @@ public class PicoTestingSupport {
      * @return testable config
      */
     public static Config basicTestableConfig() {
-        return Config.create(
+        return Config.builder(
                     ConfigSources.create(
                             Map.of(
                                     PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
                                     PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_SERVICE_LOOKUP_CACHING, "true"),
-                            "config-1"));
+                            "config-1"))
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
     }
 
     /**

@@ -168,7 +168,7 @@ class ConfigBeanBuilderCreatorTest {
 //                                               () -> creator.preValidate(implTypeName, typeInfo, configBeanAnno));
 //        assertThat(e.getMessage(), startsWith(
 //                "[java.util.Map<java.lang.String, java.lang.String> socket]: only methods returning Map<String, "
-//                        + "<ConfigBean-Type>> are supported for: "));
+//                        + "<any-non-generic-type>> are supported for: "));
         creator.preValidate(implTypeName, typeInfo, configBeanAnno);
 
         // now we will validate the exceptions when ConfigBeans are attempted to be embedded
@@ -202,7 +202,7 @@ class ConfigBeanBuilderCreatorTest {
         IllegalStateException e = assertThrows(IllegalStateException.class,
                                                () -> creator.preValidate(implTypeName, typeInfo2, configBeanAnno));
         assertThat(e.getMessage(), startsWith(
-                "[java.util.Map unsupported2]: only methods returning Map<String, <ConfigBean-Type>> are supported for: "));
+                "[java.util.Map unsupported2]: only methods returning Map<String, <any-non-generic-type>> are supported for: "));
     }
 
 }

@@ -64,12 +64,16 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
 
     @Test
     void onlyRootConfigBeansAreCreated() {
-        resetWith(io.helidon.config.Config.create(createBasicTestingConfigSource(),
-                                                  createRootDefault8080TestingConfigSource(),
-                                                  createNested8080TestingConfigSource()));
+        resetWith(io.helidon.config.Config.builder(createBasicTestingConfigSource(),
+                                                   createRootDefault8080TestingConfigSource(),
+                                                   createNested8080TestingConfigSource())
+                          .disableEnvironmentVariablesSource()
+                          .disableSystemPropertiesSource()
+                          .build());
 
         ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
-        assertThat(cbr.ready(), is(true));
+        assertThat(cbr.ready(),
+                   is(true));
 
         Set<String> set = cbr.allConfigBeans().keySet();
         assertThat(set, containsInAnyOrder(
@@ -80,30 +84,36 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
 
     @Test
     void serverConfigWithOneSocketConfigNested() {
-        resetWith(io.helidon.config.Config.create(createBasicTestingConfigSource(),
-                                                  createRootPlusOneSocketTestingConfigSource()));
+        resetWith(io.helidon.config.Config.builder(createBasicTestingConfigSource(),
+                                                   createRootPlusOneSocketTestingConfigSource())
+                          .disableEnvironmentVariablesSource()
+                          .disableSystemPropertiesSource()
+                          .build());
 
         ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
-        assertThat(cbr.ready(), is(true));
+        assertThat(cbr.ready(),
+                   is(true));
 
         Set<String> set = cbr.allConfigBeans().keySet();
-        assertThat(set, containsInAnyOrder(
-                "@default",
-                "fake-server"
+        assertThat(set,
+                   containsInAnyOrder("@default",
+                                      "fake-server"
         ));
 
         Set<?> configBeans = cbr.configBeansByConfigKey("fake-server", Optional.empty());
-        assertThat(configBeans.toString(), configBeans.size(), is(1));
+        assertThat(configBeans.toString(), configBeans.size(),
+                   is(1));
 
         List<ConfiguredServiceProvider<?, ?>> list = cbr.configuredServiceProvidersConfiguredBy("fake-server");
         List<String> desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
-        assertThat(desc, contains(
-                "FakeWebServer{root}:ACTIVE",
-                "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{root}:PENDING"));
+        assertThat(desc,
+                   contains("FakeWebServer{root}:ACTIVE",
+                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{root}:PENDING"));
 
         FakeServerConfig cfg = (FakeServerConfig) configBeans.iterator().next();
         Map<String, FakeSocketConfig> sockets = cfg.sockets();
-        assertThat(sockets.toString(), sockets.size(), is(1));
+        assertThat(sockets.toString(), sockets.size(),
+                   is(1));
     }
 
 }

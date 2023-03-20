@@ -118,10 +118,13 @@ class Utils {
     }
 
     static Config basicConfig(boolean apps) {
-        return Config.create(ConfigSources.create(
+        return Config.builder(ConfigSources.create(
                 Map.of(NAME + "." + KEY_PERMITS_DYNAMIC, "true",
                        NAME + "." + KEY_USES_COMPILE_TIME_APPLICATIONS, String.valueOf(apps)),
-                "config-1"));
+                "config-1"))
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
     }
 
     private static class Internal extends PicoServicesHolder {

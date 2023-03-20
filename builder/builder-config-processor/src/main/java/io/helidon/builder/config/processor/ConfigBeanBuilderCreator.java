@@ -132,16 +132,17 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                     boolean bad = (componentArgs.size() != 2);
                     if (!bad) {
                         bad = !componentArgs.get(0).name().equals(String.class.getName());
-                        // right now we will accept any component type - ConfigBean Type or other (but just not generic)
+                        // right now we will accept any component type - ConfigBean Type or other (just not generic)
 //                        bad |= !typeInfo.referencedTypeNamesToAnnotations().containsKey(componentArgs.get(1));
+                        bad |= componentArgs.get(1).generic();
                     }
                     return bad;
                 })
                 .collect(Collectors.toList());
 
         if (!list.isEmpty()) {
-            throw new IllegalStateException(list + ": only methods returning Map<String, <ConfigBean-Type>> are supported for: "
-                                                    + typeInfo.typeName());
+            throw new IllegalStateException(list + ": only methods returning Map<String, <any-non-generic-type>> are supported "
+                                                    + "for: " + typeInfo.typeName());
         }
     }
 

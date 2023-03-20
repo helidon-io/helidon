@@ -96,7 +96,10 @@ public abstract class AbstractConfiguredByTest {
 
     @Test
     void testItAll() {
-        resetWith(io.helidon.config.Config.create(createBasicTestingConfigSource(), createRootDefault8080TestingConfigSource()));
+        resetWith(io.helidon.config.Config.builder(createBasicTestingConfigSource(), createRootDefault8080TestingConfigSource())
+                          .disableEnvironmentVariablesSource()
+                          .disableSystemPropertiesSource()
+                          .build());
 
         // verify the services registry
         testRegistry();

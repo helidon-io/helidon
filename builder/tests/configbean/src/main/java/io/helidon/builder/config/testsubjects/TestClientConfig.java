@@ -25,7 +25,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * For testing purpose.
  */
 @ConfigBean(drivesActivation = false)
-public interface ClientConfig extends CommonConfig {
+public interface TestClientConfig extends TestCommonConfig {
 
     /**
      * For testing purpose.

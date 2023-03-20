@@ -27,7 +27,7 @@ import io.helidon.builder.config.ConfigBean;
  */
 @ConfigBean
 @Builder(allowNulls = true)
-public interface CommonConfig {
+public interface TestCommonConfig {
 
     /**
      * For testing purpose.
@@ -56,6 +56,6 @@ public interface CommonConfig {
      *
      * @return for testing purposes
      */
-    char[] pwd();
+    char[] pswd();
 
 }

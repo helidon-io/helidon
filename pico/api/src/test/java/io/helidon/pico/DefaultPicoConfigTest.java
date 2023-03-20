@@ -73,7 +73,7 @@ class DefaultPicoConfigTest {
 
     @Test
     void withBootStrapConfig() {
-        Config config = io.helidon.config.Config.create(
+        Config config = io.helidon.config.Config.builder(
                 ConfigSources.create(
                         Map.of(PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PROVIDER_NAME, "fake",
                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PROVIDER_VERSION, "fake",
@@ -85,7 +85,10 @@ class DefaultPicoConfigTest {
                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_USES_JSR330, "true",
                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS, "false",
                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_USES_COMPILE_TIME_MODULES, "false"
-                        ), "config-1"));
+                        ), "config-1"))
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
         DefaultBootstrap bootstrap = DefaultBootstrap.builder()
                 .config(config)
                 .build();

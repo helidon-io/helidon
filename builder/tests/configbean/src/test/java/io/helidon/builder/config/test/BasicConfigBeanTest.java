@@ -19,10 +19,10 @@ package io.helidon.builder.config.test;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.builder.config.testsubjects.ClientConfig;
-import io.helidon.builder.config.testsubjects.DefaultClientConfig;
-import io.helidon.builder.config.testsubjects.DefaultServerConfig;
-import io.helidon.builder.config.testsubjects.ServerConfig;
+import io.helidon.builder.config.testsubjects.DefaultTestClientConfig;
+import io.helidon.builder.config.testsubjects.DefaultTestServerConfig;
+import io.helidon.builder.config.testsubjects.TestClientConfig;
+import io.helidon.builder.config.testsubjects.TestServerConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -34,39 +34,74 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasEntry;
 
 class BasicConfigBeanTest {
 
     @Test
     void acceptConfig() {
-        Config cfg = Config.create(
+        Config cfg = Config.builder(
                 ConfigSources.create(
                         Map.of("name", "server",
                                "port", "8080",
                                "description", "test",
-                               "pwd", "pwd1"
-//                               , "cipher-suites", "a,b,c" // no List mapper available --- todo: discuss w/ tlanger
-                        ),
-                        "my-simple-config-1"));
-        ServerConfig serverConfig = DefaultServerConfig.toBuilder(cfg).build();
+                               "pswd", "pwd1",
+                               "cipher-suites.0", "a",
+                               "cipher-suites.1", "b",
+                               "cipher-suites.2", "c",
+                               "headers.0", "header1",
+                               "headers.1", "header2"),
+                        "my-simple-config-1"))
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
+        TestServerConfig serverConfig = DefaultTestServerConfig.toBuilder(cfg).build();
+        assertThat(serverConfig.description(),
+                   optionalValue(equalTo("test")));
+        assertThat(serverConfig.name(),
+                   equalTo("server"));
+        assertThat(serverConfig.port(),
+                   equalTo(8080));
+        assertThat(new String(serverConfig.pswd()),
+                   equalTo("pwd1"));
+        assertThat(serverConfig.toString(),
+                   startsWith("TestServerConfig"));
+        assertThat(serverConfig.cipherSuites(),
+                   contains("a", "b", "c"));
+        assertThat(serverConfig.toString(),
+                   endsWith("(name=server, port=8080, cipherSuites=[a, b, c], pswd=not-null, description=Optional[test])"));
 
-        assertThat(serverConfig.description(), optionalValue(equalTo("test")));
-        assertThat(serverConfig.name(), equalTo("server"));
-        assertThat(serverConfig.port(), equalTo(8080));
-        assertThat(new String(serverConfig.pwd()), equalTo("pwd1"));
-        assertThat(serverConfig.toString(),
-                   startsWith("ServerConfig"));
-        assertThat(serverConfig.toString(),
-                   endsWith("(name=server, port=8080, cipherSuites=[], pwd=not-null, description=Optional[test])"));
+        TestClientConfig clientConfig = DefaultTestClientConfig.toBuilder(cfg).build();
+        assertThat(clientConfig.name(),
+                   equalTo("server"));
+        assertThat(clientConfig.port(),
+                   equalTo(8080));
+        assertThat(new String(clientConfig.pswd()),
+                   equalTo("pwd1"));
+        assertThat(clientConfig.toString(),
+                   startsWith("TestClientConfig"));
+        assertThat(clientConfig.cipherSuites(),
+                   contains("a", "b", "c"));
+        assertThat(clientConfig.headers(),
+                   hasEntry("headers.0", "header1"));
+        assertThat(clientConfig.headers(),
+                   hasEntry("headers.1", "header2"));
+        assertThat(clientConfig.toString(),
+                   endsWith("(name=server, port=8080, cipherSuites=[a, b, c], pswd=not-null, "
+                                    + "serverPort=0, headers={headers.1=header2, headers.0=header1})"));
     }
 
     @Test
     void emptyConfig() {
         Config cfg = Config.create();
-        ServerConfig serverConfig = DefaultServerConfig.toBuilder(cfg).build();
-        assertThat(serverConfig.description(), optionalEmpty());
-        assertThat(serverConfig.name(), equalTo("default"));
-        assertThat(serverConfig.port(), equalTo(0));
+        TestServerConfig serverConfig = DefaultTestServerConfig.toBuilder(cfg).build();
+        assertThat(serverConfig.description(),
+                   optionalEmpty());
+        assertThat(serverConfig.name(),
+                   equalTo("default"));
+        assertThat(serverConfig.port(),
+                   equalTo(0));
     }
 
     /**
@@ -74,29 +109,44 @@ class BasicConfigBeanTest {
      */
     @Test
     void noConfig() {
-        ServerConfig serverConfig = DefaultServerConfig.builder().build();
+        TestServerConfig serverConfig = DefaultTestServerConfig.builder().build();
         assertThat(serverConfig.description(), optionalEmpty());
-        assertThat(serverConfig.name(), equalTo("default"));
-        assertThat(serverConfig.port(), equalTo(0));
-        assertThat(serverConfig.cipherSuites(), equalTo(List.of()));
+        assertThat(serverConfig.name(),
+                   equalTo("default"));
+        assertThat(serverConfig.port(),
+                   equalTo(0));
+        assertThat(serverConfig.cipherSuites(),
+                   equalTo(List.of()));
 
-        serverConfig = DefaultServerConfig.toBuilder(serverConfig).port(123).build();
-        assertThat(serverConfig.description(), optionalEmpty());
-        assertThat(serverConfig.name(), equalTo("default"));
-        assertThat(serverConfig.port(), equalTo(123));
-        assertThat(serverConfig.cipherSuites(), equalTo(List.of()));
+        serverConfig = DefaultTestServerConfig.toBuilder(serverConfig).port(123).build();
+        assertThat(serverConfig.description(),
+                   optionalEmpty());
+        assertThat(serverConfig.name(),
+                   equalTo("default"));
+        assertThat(serverConfig.port(),
+                   equalTo(123));
+        assertThat(serverConfig.cipherSuites(),
+                   equalTo(List.of()));
 
-        ClientConfig clientConfig = DefaultClientConfig.builder().build();
-        assertThat(clientConfig.name(), equalTo("default"));
-        assertThat(clientConfig.port(), equalTo(0));
-        assertThat(clientConfig.headers(), equalTo(Map.of()));
-        assertThat(clientConfig.cipherSuites(), equalTo(List.of()));
+        TestClientConfig clientConfig = DefaultTestClientConfig.builder().build();
+        assertThat(clientConfig.name(),
+                   equalTo("default"));
+        assertThat(clientConfig.port(),
+                   equalTo(0));
+        assertThat(clientConfig.headers(),
+                   equalTo(Map.of()));
+        assertThat(clientConfig.cipherSuites(),
+                   equalTo(List.of()));
 
-        clientConfig = DefaultClientConfig.toBuilder(clientConfig).port(123).build();
-        assertThat(clientConfig.name(), equalTo("default"));
-        assertThat(clientConfig.port(), equalTo(123));
-        assertThat(clientConfig.headers(), equalTo(Map.of()));
-        assertThat(clientConfig.cipherSuites(), equalTo(List.of()));
+        clientConfig = DefaultTestClientConfig.toBuilder(clientConfig).port(123).build();
+        assertThat(clientConfig.name(),
+                   equalTo("default"));
+        assertThat(clientConfig.port(),
+                   equalTo(123));
+        assertThat(clientConfig.headers(),
+                   equalTo(Map.of()));
+        assertThat(clientConfig.cipherSuites(),
+                   equalTo(List.of()));
     }
 
 }
