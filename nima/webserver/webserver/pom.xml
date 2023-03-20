@@ -102,6 +102,17 @@
             <groupId>io.helidon.nima.http.encoding</groupId>
             <scope>test</scope>
         </dependency>
+        <!-- Put JSON media support on test classpath to see whether it's loaded or not. -->
+        <dependency>
+            <artifactId>helidon-nima-http-media-jsonp</artifactId>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
