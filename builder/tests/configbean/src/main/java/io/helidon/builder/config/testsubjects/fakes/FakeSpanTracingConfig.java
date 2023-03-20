@@ -16,8 +16,10 @@
 
 package io.helidon.builder.config.testsubjects.fakes;
 
+import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.Singular;
 import io.helidon.builder.config.ConfigBean;
 
 /**
@@ -35,8 +37,7 @@ public interface FakeSpanTracingConfig extends FakeTraceableConfig {
      */
     Optional<String> newName();
 
-    // TODO: in https://github.com/helidon-io/helidon/issues/6382
-//    @Singular("spanLog") // B addSpanLog(String, FakeSpanLogTracingConfigBean);
-//    Map<String, FakeSpanLogTracingConfig> spanLogMap();
+    @Singular("spanLog") // B addSpanLog(String, FakeSpanLogTracingConfigBean);
+    Map<String, FakeSpanLogTracingConfig> spanLogMap();
 
 }

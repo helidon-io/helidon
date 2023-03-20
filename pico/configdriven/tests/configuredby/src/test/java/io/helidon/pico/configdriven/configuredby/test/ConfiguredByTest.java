@@ -46,9 +46,9 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
     protected MapConfigSource.Builder createNested8080TestingConfigSource() {
         return ConfigSources.create(
                 Map.of(
-                        "nested." + FAKE_SERVER_CONFIG + ".name", "nested",
-                        "nested." + FAKE_SERVER_CONFIG + ".port", "8080",
-                        "nested." + FAKE_SERVER_CONFIG + ".worker-count", "1"
+                        "nested." + FAKE_SERVER_CONFIG + ".0.name", "nested",
+                        "nested." + FAKE_SERVER_CONFIG + ".0.port", "8080",
+                        "nested." + FAKE_SERVER_CONFIG + ".0.worker-count", "1"
                 ), "config-nested-default-8080");
     }
 
@@ -57,8 +57,8 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
                 Map.of(
                         FAKE_SERVER_CONFIG + ".name", "root",
                         FAKE_SERVER_CONFIG + ".port", "8080",
-                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".name", "first",
-                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".port", "8081"
+                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".0.name", "first",
+                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".0.port", "8081"
                 ), "config-root-plus-one-socket");
     }
 

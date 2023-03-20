@@ -18,6 +18,7 @@ package io.helidon.builder.config.spi;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -105,7 +106,7 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
 
     private <T> Optional<T> optionalWrappedConfig(ResolutionContext ctx,
                                                   Config attrCfg,
-                                                  Map<String, Map<String, Object>> ignoredMeta,
+                                                  Map<String, Map<String, Object>> meta,
                                                   ConfigResolverRequest<T> request) {
         Class<?> componentType = request.valueComponentType().orElse(null);
         Class<?> type = request.valueType();
@@ -127,25 +128,40 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
             Function<Config, ?> mapper = (componentType == null) ? null : ctx.mappers().get(componentType);
             if (mapper != null) {
                 if (attrCfg.isList()) {
-                    if (!isList && !isSet) {
+                    if (!isList && !isSet && !isMap) {
                         throw new IllegalStateException("unable to convert node list to " + type + " for " + attrCfg);
                     }
 
                     List<Object> cfgList = new ArrayList<>();
+                    Map<String, Object> cfgMap = new LinkedHashMap();
                     List<Config> nodeList = attrCfg.asNodeList().get();
                     for (Config subCfg : nodeList) {
                         Object subVal = Objects.requireNonNull(mapper.apply(subCfg));
                         Builder builder = (Builder) subVal;
                         subVal = builder.build();
-
                         cfgList.add(subVal);
+                        Object prev = cfgMap.put(subCfg.key().name(), subVal);
+                        assert (prev == null) : subCfg;
                     }
 
                     if (isSet) {
                         val = new LinkedHashSet<>(cfgList);
+                    } else if (isMap) {
+                        val = cfgMap;
                     } else {
                         val = cfgList;
                     }
+                } else if (isMap) {
+                    Map<String, Object> cfgMap = new LinkedHashMap();
+                    List<Config> nodeList = attrCfg.asNodeList().get();
+                    for (Config subCfg : nodeList) {
+                        Object subVal = Objects.requireNonNull(mapper.apply(subCfg));
+                        Builder builder = (Builder) subVal;
+                        subVal = builder.build();
+                        Object prev = cfgMap.put(subCfg.key().name(), subVal);
+                        assert (prev == null) : subCfg;
+                    }
+                    val = cfgMap;
                 } else {
                     val = Objects.requireNonNull(mapper.apply(attrCfg));
                     Builder builder = (Builder) val;
@@ -157,19 +173,15 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
                         Set<Object> set = new LinkedHashSet<>();
                         set.add(val);
                         val = set;
-                    } else if (isMap) {
-                        // https://github.com/helidon-io/helidon/issues/6382
-                        throw new UnsupportedOperationException("map is not supported");
                     }
                 }
-            } else {
+            } else { // no config bean mapper (i.e., unknown component type)
                 ConfigValue<?> attrVal;
                 if (isList) {
                     attrVal = attrCfg.asList(componentType);
                     val = attrVal.get();
                 } else if (isSet) {
                     attrVal = attrCfg.asList(componentType);
-                    // note to tlanger: consider adding support for asSet() in common
                     val = new LinkedHashSet<>((List<?>) attrVal.get());
                 } else if (isMap) {
                     attrVal = attrCfg.asMap();

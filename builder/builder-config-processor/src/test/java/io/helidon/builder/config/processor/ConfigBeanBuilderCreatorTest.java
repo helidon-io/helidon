@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
 import io.helidon.builder.config.ConfigBean;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
@@ -138,11 +139,8 @@ class ConfigBeanBuilderCreatorTest {
                    startsWith("duplicate methods are using the same names [socket] for: "));
     }
 
-    /**
-     * Enhancement tracked in https://github.com/helidon-io/helidon/issues/6382
-     */
     @Test
-    void preValidateConfigBeansMustNotHaveMapTypesWithNestedConfigBeans() {
+    void preValidateConfigBeansMustHaveMapTypesWithNestedConfigBeans() {
         TypedElementName method1 = DefaultTypedElementName.builder()
                 .elementName("socket")
                 .typeName(DefaultTypeName.builder()
@@ -165,7 +163,12 @@ class ConfigBeanBuilderCreatorTest {
                         ConfigBeanInfo.TAG_DRIVES_ACTIVATION, "false",
                         ConfigBeanInfo.TAG_WANT_DEFAULT_CONFIG_BEAN, "false"))
                 .build();
-        // the above should be fine since we declared a simple Map type with no nested configbean components on the map decl
+        // Map<String, any non-generic> is supported
+//        IllegalStateException e = assertThrows(IllegalStateException.class,
+//                                               () -> creator.preValidate(implTypeName, typeInfo, configBeanAnno));
+//        assertThat(e.getMessage(), startsWith(
+//                "[java.util.Map<java.lang.String, java.lang.String> socket]: only methods returning Map<String, "
+//                        + "<ConfigBean-Type>> are supported for: "));
         creator.preValidate(implTypeName, typeInfo, configBeanAnno);
 
         // now we will validate the exceptions when ConfigBeans are attempted to be embedded
@@ -173,6 +176,7 @@ class ConfigBeanBuilderCreatorTest {
                 .elementName("unsupported1")
                 .typeName(DefaultTypeName.builder()
                                   .type(Map.class)
+                                  // here we register a known config bean value (see below)
                                   .typeArguments(List.of(
                                           DefaultTypeName.create(String.class),
                                           DefaultTypeName.create(getClass())))
@@ -182,7 +186,7 @@ class ConfigBeanBuilderCreatorTest {
                 .elementName("unsupported2")
                 .typeName(DefaultTypeName.builder()
                                   .type(Map.class)
-                        // here we will just leave it generic, and this should fail also
+                        // here we will just leave it generic, and this should fail
 //                                  .typeArguments(List.of(
 //                                          DefaultTypeName.create(String.class),
 //                                          DefaultTypeName.create(getClass())))
@@ -191,14 +195,14 @@ class ConfigBeanBuilderCreatorTest {
         TypeInfo typeInfo2 = DefaultTypeInfo.builder()
                 .typeKind(TypeInfo.KIND_INTERFACE)
                 .typeName(DefaultTypeName.create(getClass()))
-                .elementInfo(List.of(method1, method2, method3))
+                .elementInfo(List.of(method2, method3))
+                .referencedTypeNamesToAnnotations(Map.of(DefaultTypeName.create(getClass()),
+                                                         List.of(DefaultAnnotationAndValue.create(Builder.class))))
                 .build();
         IllegalStateException e = assertThrows(IllegalStateException.class,
                                                () -> creator.preValidate(implTypeName, typeInfo2, configBeanAnno));
-        assertThat(e.getMessage(),
-                   startsWith("methods returning Map<...sub ConfigBean...> [java.util.Map<java.lang.String, io.helidon.builder"
-                                   + ".config.processor.ConfigBeanBuilderCreatorTest> unsupported1, java.util.Map unsupported2] "
-                                   + "are not supported for: "));
+        assertThat(e.getMessage(), startsWith(
+                "[java.util.Map unsupported2]: only methods returning Map<String, <ConfigBean-Type>> are supported for: "));
     }
 
 }

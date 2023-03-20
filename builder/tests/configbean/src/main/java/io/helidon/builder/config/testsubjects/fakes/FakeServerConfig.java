@@ -20,8 +20,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 import io.helidon.builder.Singular;
 import io.helidon.builder.config.ConfigBean;
@@ -94,33 +93,37 @@ public interface FakeServerConfig extends FakeSocketConfig {
         return Optional.ofNullable(sockets().get(name));
     }
 
+    //
+    // the socketList, socketSet, and sockets are sharing the same config key. This is atypical but here to ensure that the
+    // underlying builder machinery can handle these variants. We need to ensure that the attribute names do not clash, however,
+    // which is why we've used @Singular to disambiguate the attribute names where necessary.
+    //
+
     /**
-     * A list of all the configured sockets. This maps to the same underlying structure as {@link #sockets()}.
+     * A list of all the configured sockets. This maps to the same underlying config as {@link #sockets()}.
      *
      * @return a list of all the configured server sockets, never null
      */
-    @Singular("socket")
+    @Singular("sock") // note that singular names cannot clash
     @ConfiguredOption(key = "sockets")
     List<FakeSocketConfig> socketList();
 
-    // note to self: consider supporting mappings to the same underlying attribute for different method names
-//    /**
-//     * A set of all the configured sockets. This maps to the same underlying structure as {@link #sockets()}.
-//     *
-//     * @return a list of all the configured server sockets, never null
-//     */
-//    @Singular("socket")
-//    Set<FakeSocketConfig> socketSet();
-//
-    // TODO: in https://github.com/helidon-io/helidon/issues/6382
+    /**
+     * A set of all the configured sockets. This maps to the same underlying config as {@link #sockets()}.
+     *
+     * @return a set of all the configured server sockets, never null
+     */
+    @ConfiguredOption(key = "sockets")
+    Set<FakeSocketConfig> socketSet();
+
     /**
      * A map of all the configured server sockets; that is the default server socket.
      *
      * @return a map of all the configured server sockets, never null
      */
-    default Map<String, FakeSocketConfig> sockets() {
-        return socketList().stream().collect(Collectors.toMap(FakeSocketConfig::name, Function.identity()));
-    }
+    @Singular("socket") // note that singular names cannot clash
+    @ConfiguredOption(key = "sockets")
+    Map<String, FakeSocketConfig> sockets();
 
     /**
      * The maximum amount of time that the server will wait to shut

@@ -16,9 +16,9 @@
 
 fake-server:
   sockets:
-    - name: "admin"
+    - bind-address: "127.0.0.1"
       port: 8086
-    - name: "secure"
+    - bind-address: "localhost"
       port: 8087
       tls:
           enabled: true

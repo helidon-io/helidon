@@ -40,8 +40,8 @@ class AbstractConfigBeanTest {
                 Map.of(
                         FAKE_SERVER_CONFIG + ".name", "root",
                         FAKE_SERVER_CONFIG + ".port", "8080",
-                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".name", "first",
-                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".port", "8081"
+                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.name", "first",
+                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.port", "8081"
                 ), "config-nested-plus-one-socket");
     }
 
@@ -51,11 +51,11 @@ class AbstractConfigBeanTest {
                         NESTED + "." + FAKE_SERVER_CONFIG + ".name", "nested",
                         NESTED + "." + FAKE_SERVER_CONFIG + ".port", "8080",
                         NESTED + "." + FAKE_SERVER_CONFIG + ".worker-count", "2",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".name", "first",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".port", "8081",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".tls.enabled", "true",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".tls.cipher", "cipher-1",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".tls.enabled-tls-protocols",
+                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.name", "first",
+                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.port", "8081",
+                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.tls.enabled", "true",
+                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.tls.cipher", "cipher-1",
+                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.tls.enabled-tls-protocols",
                                         FakeWebServerTlsConfig.PROTOCOL
                 ), "config-nested-plus-one-socket-and-tls");
     }
@@ -66,11 +66,11 @@ class AbstractConfigBeanTest {
                         NESTED + "." + FAKE_SERVER_CONFIG + ".name", "nested",
                         NESTED + "." + FAKE_SERVER_CONFIG + ".port", "8080",
                         NESTED + "." + FAKE_SERVER_CONFIG + ".worker-count", "2",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".name", "first",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".port", "8081",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".tls.enabled", "true",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".tls.cipher", "cipher-1",
-                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".tls.enabled-tls-protocols",
+                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.name", "first",
+                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.port", "8081",
+                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.tls.enabled", "true",
+                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.tls.cipher", "cipher-1",
+                        NESTED + "." + FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".1.tls.enabled-tls-protocols",
                         FakeWebServerTlsConfig.PROTOCOL
                 ), "config-nested-plus-one-socket-and-tls");
     }

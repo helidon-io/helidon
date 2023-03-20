@@ -16,6 +16,9 @@
 
 package io.helidon.builder.config.testsubjects.fakes;
 
+import java.util.Map;
+
+import io.helidon.builder.Singular;
 import io.helidon.builder.config.ConfigBean;
 
 /**
@@ -27,8 +30,7 @@ import io.helidon.builder.config.ConfigBean;
 @ConfigBean("tracing")
 public interface FakeTracingConfig extends FakeTraceableConfig {
 
-    // TODO: in https://github.com/helidon-io/helidon/issues/6382
-//    @Singular("component")  // Builder::addComponent(String component); Impl::getComponent(String component);
-//    Map<String, FakeComponentTracingConfig> components();
+    @Singular("component")  // Builder::addComponent(String component); Impl::getComponent(String component);
+    Map<String, FakeComponentTracingConfig> components();
 
 }

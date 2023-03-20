@@ -32,6 +32,7 @@ import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasEntry;
 
@@ -47,14 +48,30 @@ class NestedConfigBeanTest extends AbstractConfigBeanTest {
                    equalTo("root"));
         assertThat(serverConfig.port(),
                    equalTo(8080));
+
+        // validate the map
         assertThat(serverConfig.sockets(),
-                   hasEntry("first",
-                                     DefaultFakeSocketConfig.builder()
-                                             .name("first")
-                                             .port(8081)
-                                             .build()));
-        assertThat(serverConfig.sockets().get("first").tls(),
+                   hasEntry("1",
+                            DefaultFakeSocketConfig.builder()
+                                    .name("first")
+                                    .port(8081)
+                                    .build()));
+        assertThat(serverConfig.sockets().get("1").tls(),
                    optionalEmpty());
+
+        // validate the list (note: with the ".1." this does not process as a list)
+//        assertThat(serverConfig.socketList(),
+//                   contains(DefaultFakeSocketConfig.builder()
+//                                    .name("first")
+//                                    .port(8081)
+//                                    .build()));
+
+        // validate the set (note: with the ".1." this does not process as a set)
+//        assertThat(serverConfig.socketSet(),
+//                   contains(DefaultFakeSocketConfig.builder()
+//                                    .name("first")
+//                                    .port(8081)
+//                                    .build()));
     }
 
     @Test
@@ -67,16 +84,37 @@ class NestedConfigBeanTest extends AbstractConfigBeanTest {
                    equalTo("nested"));
         assertThat(serverConfig.port(),
                    equalTo(8080));
-        FakeWebServerTlsConfig tls = serverConfig.sockets().get("first").tls().orElseThrow();
-        assertThat(tls.enabled(), is(true));
-        assertThat(tls.cipherSuite(), containsInAnyOrder("cipher-1"));
-        assertThat(tls.enabledTlsProtocols(), containsInAnyOrder(FakeWebServerTlsConfig.PROTOCOL));
+
+        // validate the map
+        FakeWebServerTlsConfig tls = serverConfig.sockets().get("1").tls().orElseThrow();
+        assertThat(tls.enabled(),
+                   is(true));
+        assertThat(tls.cipherSuite(),
+                   containsInAnyOrder("cipher-1"));
+        assertThat(tls.enabledTlsProtocols(),
+                   containsInAnyOrder(FakeWebServerTlsConfig.PROTOCOL));
+
+        // validate the list (note: with the ".1." this does not process as a list)
+//        assertThat(serverConfig.socketList(),
+//                   contains(DefaultFakeSocketConfig.builder()
+//                                    .name("first")
+//                                    .port(8081)
+//                                    .tls(tls)
+//                                    .build()));
+
+        // validate the set (note: with the ".1." this does not process as a set)
+//        assertThat(serverConfig.socketSet(),
+//                   contains(DefaultFakeSocketConfig.builder()
+//                                    .name("first")
+//                                    .port(8081)
+//                                    .tls(tls)
+//                                    .build()));
     }
 
     @Test
-    void fakeServerConfigFromYaml() {
+    void fakeServerConfigFromUnnamedYaml() {
         Config cfg = io.helidon.config.Config.builder()
-                .sources(ConfigSources.classpath("io/helidon/builder/config/test/FakeServerConfigPlusTwoSockets.yaml"))
+                .sources(ConfigSources.classpath("io/helidon/builder/config/test/FakeServerConfigPlusTwoUnnamedSockets.yaml"))
                 .addParser(YamlConfigParser.create())
                 .build();
         DefaultFakeServerConfig serverConfig = DefaultFakeServerConfig
@@ -84,13 +122,113 @@ class NestedConfigBeanTest extends AbstractConfigBeanTest {
 
         assertThat(serverConfig.name(),
                    equalTo("@default"));
-        FakeSocketConfig admin = Objects.requireNonNull(serverConfig.sockets().get("admin"), serverConfig.sockets().toString());
-        assertThat(admin.port(), equalTo(8086));
-        FakeSocketConfig secure = Objects.requireNonNull(serverConfig.sockets().get("secure"));
+
+        // validate the map
+        FakeSocketConfig zero = Objects.requireNonNull(serverConfig.namedSocket("0").orElse(null),
+                                                       serverConfig.sockets().toString());
+        assertThat(zero.bindAddress(),
+                   equalTo("127.0.0.1"));
+        assertThat(zero.port(),
+                   equalTo(8086));
+        assertThat(zero.tls(),
+                   optionalEmpty());
+        FakeSocketConfig one = Objects.requireNonNull(serverConfig.sockets().get("1"),
+                                                      serverConfig.sockets().toString());
+        assertThat(one.bindAddress(),
+                   equalTo("localhost"));
+        assertThat(one.port(),
+                   equalTo(8087));
+        FakeWebServerTlsConfig tls = one.tls().orElseThrow();
+        assertThat(tls.enabled(),
+                   is(true));
+        assertThat(tls.cipherSuite(),
+                   containsInAnyOrder("cipher-1"));
+        assertThat(tls.enabledTlsProtocols(),
+                   containsInAnyOrder(FakeWebServerTlsConfig.PROTOCOL));
+
+        // validate the list
+        assertThat(serverConfig.socketList(),
+                   contains(DefaultFakeSocketConfig.builder()
+                                    .bindAddress("127.0.0.1")
+                                    .port(8086)
+                                    .build(),
+                            DefaultFakeSocketConfig.builder()
+                                    .bindAddress("localhost")
+                                    .port(8087)
+                                    .tls(tls)
+                                    .build()));
+
+        // validate the set
+        assertThat(serverConfig.socketSet(),
+                   containsInAnyOrder(DefaultFakeSocketConfig.builder()
+                                              .bindAddress("127.0.0.1")
+                                              .port(8086)
+                                              .build(),
+                                      DefaultFakeSocketConfig.builder()
+                                              .bindAddress("localhost")
+                                              .port(8087)
+                                              .tls(tls)
+                                              .build()));
+    }
+
+    @Test
+    void fakeServerConfigFromNamedYaml() {
+        Config cfg = io.helidon.config.Config.builder()
+                .sources(ConfigSources.classpath("io/helidon/builder/config/test/FakeServerConfigPlusTwoNamedSockets.yaml"))
+                .addParser(YamlConfigParser.create())
+                .build();
+        DefaultFakeServerConfig serverConfig = DefaultFakeServerConfig
+                .toBuilder(cfg.get(FAKE_SERVER_CONFIG)).build();
+
+        // validate the map
+        assertThat(serverConfig.name(),
+                   equalTo("@default"));
+        FakeSocketConfig admin = serverConfig.namedSocket("admin").orElseThrow();
+        assertThat(admin.port(),
+                   equalTo(8086));
+        assertThat(admin.name(),
+                   equalTo("admin"));
+
+        FakeSocketConfig secure = serverConfig.namedSocket("secure").orElseThrow();
+        assertThat(secure.port(),
+                   equalTo(8087));
+        assertThat(secure.name(),
+                   equalTo("obscure"));
         FakeWebServerTlsConfig tls = secure.tls().orElseThrow();
-        assertThat(tls.enabled(), is(true));
-        assertThat(tls.cipherSuite(), containsInAnyOrder("cipher-1"));
-        assertThat(tls.enabledTlsProtocols(), containsInAnyOrder(FakeWebServerTlsConfig.PROTOCOL));
+        assertThat(tls.enabled(),
+                   is(true));
+        assertThat(tls.cipherSuite(),
+                   containsInAnyOrder("cipher-1"));
+        assertThat(tls.enabledTlsProtocols(),
+                   containsInAnyOrder(FakeWebServerTlsConfig.PROTOCOL));
+
+        // validate the list (note: with the ".admin." and ".secure." this does not process as a list)
+//        assertThat(serverConfig.socketList(),
+//                   contains(DefaultFakeSocketConfig.builder()
+//                                    .bindAddress("127.0.0.1")
+//                                    .name("admin")
+//                                    .port(8086)
+//                                    .build(),
+//                            DefaultFakeSocketConfig.builder()
+//                                    .bindAddress("localhost")
+//                                    .name("obscure")
+//                                    .port(8087)
+//                                    .tls(tls)
+//                                    .build()));
+
+        // validate the set (note: with the ".admin." and ".secure." this does not process as a set)
+//        assertThat(serverConfig.socketSet(),
+//                   containsInAnyOrder(DefaultFakeSocketConfig.builder()
+//                                              .bindAddress("127.0.0.1")
+//                                              .name("admin")
+//                                              .port(8086)
+//                                              .build(),
+//                                      DefaultFakeSocketConfig.builder()
+//                                              .bindAddress("localhost")
+//                                              .name("obscure")
+//                                              .port(8087)
+//                                              .tls(tls)
+//                                              .build()));
     }
 
 }

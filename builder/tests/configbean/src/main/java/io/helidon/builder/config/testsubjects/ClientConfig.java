@@ -18,8 +18,8 @@ package io.helidon.builder.config.testsubjects;
 
 import java.util.Map;
 
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.builder.config.ConfigBean;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * For testing purpose.

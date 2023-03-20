@@ -60,7 +60,6 @@ import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_KEY;
 import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_LEVEL_TYPE;
 import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_REPEATABLE;
 import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_WANT_DEFAULT_CONFIG_BEAN;
-import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
 
 /**
  * A specialization of {@link io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider} that supports the additional
@@ -116,16 +115,15 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                                                     + typeInfo.typeName());
         }
 
-         assertNoMaps(typeInfo);
+        assertNoGenericMaps(typeInfo);
 
         super.preValidate(implTypeName, typeInfo, configBeanAnno);
     }
 
     /**
-     * Maps are not currently supported on config beans.
-     * Tracked by https://github.com/helidon-io/helidon/issues/6382
+     * Generic/simple map types are not supported on config beans, only &lt;String, &lt;Known ConfigBean types&gt;&gt;.
      */
-    private void assertNoMaps(TypeInfo typeInfo) {
+    private void assertNoGenericMaps(TypeInfo typeInfo) {
         List<TypedElementName> list = typeInfo.elementInfo().stream()
                 .filter(it -> it.typeName().isMap())
                 .filter(it -> {
@@ -133,15 +131,16 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                     List<TypeName> componentArgs = typeName.typeArguments();
                     boolean bad = (componentArgs.size() != 2);
                     if (!bad) {
-                        bad = !isBuiltInJavaType(componentArgs.get(0))
-                                || !isBuiltInJavaType(componentArgs.get(1));
+                        bad = !componentArgs.get(0).name().equals(String.class.getName());
+                        // right now we will accept any component type - ConfigBean Type or other (but just not generic)
+//                        bad |= !typeInfo.referencedTypeNamesToAnnotations().containsKey(componentArgs.get(1));
                     }
                     return bad;
                 })
                 .collect(Collectors.toList());
 
         if (!list.isEmpty()) {
-            throw new IllegalStateException("methods returning Map<...sub ConfigBean...> " + list + " are not supported for: "
+            throw new IllegalStateException(list + ": only methods returning Map<String, <ConfigBean-Type>> are supported for: "
                                                     + typeInfo.typeName());
         }
     }

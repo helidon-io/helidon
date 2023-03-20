@@ -16,6 +16,9 @@
 
 package io.helidon.builder.config.testsubjects.fakes;
 
+import java.util.Map;
+
+import io.helidon.builder.Singular;
 import io.helidon.builder.config.ConfigBean;
 
 /**
@@ -33,8 +36,7 @@ import io.helidon.builder.config.ConfigBean;
 @ConfigBean
 public interface FakeComponentTracingConfig extends FakeTraceableConfig {
 
-    // TODO: in https://github.com/helidon-io/helidon/issues/6382
-//    @Singular("span") // Builder::addSpan(String span, FakeSpanLogTracingConfigBean val), Impl::getSpan(String span), etc.
-//    Map<String, FakeSpanTracingConfig> spanLogMap();
+    @Singular("span") // Builder::addSpan(String span, FakeSpanLogTracingConfigBean val), Impl::getSpan(String span), etc.
+    Map<String, FakeSpanTracingConfig> spanLogMap();
 
 }
