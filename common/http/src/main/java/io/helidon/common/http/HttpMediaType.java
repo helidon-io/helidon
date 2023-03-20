@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package io.helidon.common.http;
 
+import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
@@ -189,6 +191,19 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
                 .parameters(parameters())
                 .charset(charset)
                 .build();
+    }
+
+    /**
+     * Create a new {@link io.helidon.common.http.HttpMediaType} instance with the same type, subtype and parameters
+     * copied from the original instance and the supplied {@value #CHARSET_PARAMETER} parameter.
+     *
+     * @param charset the {@value #CHARSET_PARAMETER} parameter value
+     * @return copy of the current {@code MediaType} instance with the {@value #CHARSET_PARAMETER}
+     *         parameter set to the supplied value.
+     */
+    default HttpMediaType withCharset(Charset charset) {
+        Objects.requireNonNull(charset);
+        return withCharset(charset.name());
     }
 
     /**
