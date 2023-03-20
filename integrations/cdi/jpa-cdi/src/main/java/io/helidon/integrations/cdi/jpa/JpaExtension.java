@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -316,7 +316,7 @@ public class JpaExtension implements Extension {
      * persistence unit.  This has implications on how beans are
      * installed.
      *
-     * @see #validate(AfterDeploymentValidation)
+     * @see #validate(AfterDeploymentValidation, BeanManager)
      */
     private boolean defaultPersistenceUnitInEffect;
 
@@ -324,7 +324,7 @@ public class JpaExtension implements Extension {
      * Indicates whether a bean for the default persistence unit
      * has been added.
      *
-     * @see #validate(AfterDeploymentValidation)
+     * @see #validate(AfterDeploymentValidation, BeanManager)
      */
     private boolean addedDefaultPersistenceUnit;
 
@@ -380,8 +380,8 @@ public class JpaExtension implements Extension {
      * field to {@code false}.
      *
      * @param event a {@link ProcessAnnotatedType
-     * ProcessAnnotatedType<}{@link NoTransactionSupport
-     * NoTransactionSupport>} whose presence indicates that JTA
+     * ProcessAnnotatedType&lt;}{@link NoTransactionSupport
+     * NoTransactionSupport&gt;} whose presence indicates that JTA
      * support is not available; must not be {@code null}
      *
      * @exception NullPointerException if {@code event} is {@code

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,23 +24,23 @@ import jakarta.persistence.ParameterMode;
 import jakarta.persistence.StoredProcedureQuery;
 import jakarta.persistence.TemporalType;
 
-abstract class DelegatingStoredProcedureQuery extends DelegatingQuery implements StoredProcedureQuery {
+class DelegatingStoredProcedureQuery extends DelegatingQuery implements StoredProcedureQuery {
 
     private final StoredProcedureQuery delegate;
 
-    DelegatingStoredProcedureQuery(final StoredProcedureQuery delegate) {
+    DelegatingStoredProcedureQuery(StoredProcedureQuery delegate) {
         super(delegate);
         this.delegate = delegate;
     }
 
 
     @Override
-    public Object getOutputParameterValue(final int position) {
+    public Object getOutputParameterValue(int position) {
         return this.delegate.getOutputParameterValue(position);
     }
 
     @Override
-    public Object getOutputParameterValue(final String parameterName) {
+    public Object getOutputParameterValue(String parameterName) {
         return this.delegate.getOutputParameterValue(parameterName);
     }
 
@@ -59,18 +59,18 @@ abstract class DelegatingStoredProcedureQuery extends DelegatingQuery implements
 
     @Override
     @SuppressWarnings("rawtypes")
-    public DelegatingStoredProcedureQuery registerStoredProcedureParameter(final int position,
-                                                                           final Class type,
-                                                                           final ParameterMode mode) {
+    public DelegatingStoredProcedureQuery registerStoredProcedureParameter(int position,
+                                                                           Class type,
+                                                                           ParameterMode mode) {
         this.delegate.registerStoredProcedureParameter(position, type, mode);
         return this;
     }
 
     @Override
     @SuppressWarnings("rawtypes")
-    public DelegatingStoredProcedureQuery registerStoredProcedureParameter(final String parameterName,
-                                                                           final Class type,
-                                                                           final ParameterMode mode) {
+    public DelegatingStoredProcedureQuery registerStoredProcedureParameter(String parameterName,
+                                                                           Class type,
+                                                                           ParameterMode mode) {
         this.delegate.registerStoredProcedureParameter(parameterName, type, mode);
         return this;
     }
@@ -83,71 +83,71 @@ abstract class DelegatingStoredProcedureQuery extends DelegatingQuery implements
 
 
     @Override
-    public DelegatingStoredProcedureQuery setHint(final String hintName,
-                                                  final Object value) {
+    public DelegatingStoredProcedureQuery setHint(String hintName,
+                                                  Object value) {
         return (DelegatingStoredProcedureQuery) super.setHint(hintName, value);
     }
 
 
     @Override
-    public <T> DelegatingStoredProcedureQuery setParameter(final Parameter<T> parameter,
-                                                           final T value) {
+    public <T> DelegatingStoredProcedureQuery setParameter(Parameter<T> parameter,
+                                                           T value) {
         return (DelegatingStoredProcedureQuery) super.setParameter(parameter, value);
     }
 
     @Override
-    public DelegatingStoredProcedureQuery setParameter(final Parameter<Calendar> parameter,
-                                                       final Calendar value,
-                                                       final TemporalType temporalType) {
+    public DelegatingStoredProcedureQuery setParameter(Parameter<Calendar> parameter,
+                                                       Calendar value,
+                                                       TemporalType temporalType) {
         return (DelegatingStoredProcedureQuery) super.setParameter(parameter, value, temporalType);
     }
 
     @Override
-    public DelegatingStoredProcedureQuery setParameter(final Parameter<Date> parameter,
-                                                       final Date value,
-                                                       final TemporalType temporalType) {
+    public DelegatingStoredProcedureQuery setParameter(Parameter<Date> parameter,
+                                                       Date value,
+                                                       TemporalType temporalType) {
         return (DelegatingStoredProcedureQuery) super.setParameter(parameter, value, temporalType);
     }
 
 
     @Override
-    public DelegatingStoredProcedureQuery setParameter(final int position,
-                                                       final Object value) {
+    public DelegatingStoredProcedureQuery setParameter(int position,
+                                                       Object value) {
         return (DelegatingStoredProcedureQuery) super.setParameter(position, value);
     }
 
     @Override
-    public DelegatingStoredProcedureQuery setParameter(final int position,
-                                                       final Calendar value,
-                                                       final TemporalType temporalType) {
+    public DelegatingStoredProcedureQuery setParameter(int position,
+                                                       Calendar value,
+                                                       TemporalType temporalType) {
         return (DelegatingStoredProcedureQuery) super.setParameter(position, value, temporalType);
     }
 
     @Override
-    public DelegatingStoredProcedureQuery setParameter(final int position,
-                                                       final Date value,
-                                                       final TemporalType temporalType) {
+    public DelegatingStoredProcedureQuery setParameter(int position,
+                                                       Date value,
+                                                       TemporalType temporalType) {
         return (DelegatingStoredProcedureQuery) super.setParameter(position, value, temporalType);
     }
 
 
     @Override
-    public DelegatingStoredProcedureQuery setParameter(final String name,
-                                                       final Object value) {
+    public DelegatingStoredProcedureQuery setParameter(String name,
+                                                       Object value) {
         return (DelegatingStoredProcedureQuery) super.setParameter(name, value);
     }
 
     @Override
-    public DelegatingStoredProcedureQuery setParameter(final String name,
-                                                       final Calendar value,
-                                                       final TemporalType temporalType) {
+    public DelegatingStoredProcedureQuery setParameter(String name,
+                                                       Calendar value,
+                                                       TemporalType temporalType) {
         return (DelegatingStoredProcedureQuery) super.setParameter(name, value, temporalType);
     }
 
     @Override
-    public DelegatingStoredProcedureQuery setParameter(final String name,
-                                                       final Date value,
-                                                       final TemporalType temporalType) {
+    public DelegatingStoredProcedureQuery setParameter(String name,
+                                                       Date value,
+                                                       TemporalType temporalType) {
         return (DelegatingStoredProcedureQuery) super.setParameter(name, value, temporalType);
     }
 
