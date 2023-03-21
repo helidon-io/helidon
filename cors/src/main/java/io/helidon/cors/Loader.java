@@ -15,8 +15,8 @@
  */
 package io.helidon.cors;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
+import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigValue;
 
 import static io.helidon.cors.Aggregator.PATHLESS_KEY;
 import static io.helidon.cors.CrossOriginConfig.CORS_PATHS_CONFIG_KEY;
@@ -78,7 +78,7 @@ class Loader {
                 if (!item.exists()) {
                     break;
                 }
-                ConfigValue<CrossOriginConfig.Builder> basicConfigValue = item.as(CrossOriginConfig::builder);
+                ConfigValue<CrossOriginConfig.Builder> basicConfigValue = item.map(CrossOriginConfig::builder);
                 if (!basicConfigValue.isPresent()) {
                     continue;
                 }

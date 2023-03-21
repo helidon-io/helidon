@@ -20,7 +20,7 @@
 module io.helidon.cors {
     requires java.logging;
     requires io.helidon.common.http;
-    requires io.helidon.config;
+    requires io.helidon.common.config;
 
     requires static io.helidon.config.metadata;
 

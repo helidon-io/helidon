@@ -18,7 +18,7 @@ package io.helidon.health.spi;
 
 import java.util.List;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.health.HealthCheck;
 
 /**

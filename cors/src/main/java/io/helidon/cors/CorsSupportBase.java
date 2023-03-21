@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * A Helidon service and handler implementation that implements CORS, for both the application and for built-in Helidon

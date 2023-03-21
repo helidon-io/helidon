@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * Cross-origin {@link CrossOriginConfig} instances linked to paths, plus an {@code enabled} setting. Most developers will not

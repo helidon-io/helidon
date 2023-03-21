@@ -18,7 +18,7 @@
  * Fault tolerance module for Helidon Níma.
  */
 module io.helidon.nima.faulttolerance {
-    requires io.helidon.config;
+    requires io.helidon.common.config;
     requires io.helidon.common.configurable;
 
     exports io.helidon.nima.faulttolerance;

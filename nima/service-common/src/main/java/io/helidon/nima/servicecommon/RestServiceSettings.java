@@ -15,7 +15,7 @@
  */
 package io.helidon.nima.servicecommon;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
@@ -146,7 +146,7 @@ public interface RestServiceSettings {
         Builder crossOriginConfig(CrossOriginConfig crossOriginConfig);
 
         /**
-         * Updates settings using the provided {@link io.helidon.config.Config} node for the service of interest.
+         * Updates settings using the provided {@link io.helidon.common.config.Config;} node for the service of interest.
          *
          * @param serviceConfig config node for the service
          * @return updated builder

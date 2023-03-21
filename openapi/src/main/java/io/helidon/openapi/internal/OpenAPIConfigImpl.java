@@ -25,7 +25,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -421,15 +422,15 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         }
 
         private static void stringFromConfig(Config config,
-                String key,
-                Function<String, Builder> assignment) {
-            config.get(key).ifExists(c -> assignment.apply(c.asString().get()));
+                                             String key,
+                                             Function<String, Builder> assignment) {
+            config.get(key).asString().ifPresent(assignment::apply);
         }
 
         private static void listFromConfig(Config config,
                 String keyPrefix,
                 BiFunction<String, String, Builder> assignment) {
-            config.get(keyPrefix).ifExists(cf -> cf.asNodeList().get().forEach(c -> {
+            config.get(keyPrefix).asNodeList().ifPresent(cf -> cf.forEach(c -> {
                 String key = c.key().name();
                 String value = c.asString().get();
                 assignment.apply(key, value);
@@ -442,15 +443,15 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
             AtomicReference<Map<String, String>> schemas = new AtomicReference<>(new HashMap<>());
             config.get(keyPrefix)
                     .detach()
-                    .ifExists(configNode -> schemas.set(configNode.asMap().get()));
-
+                    .asMap()
+                    .ifPresent(configNodeMap -> schemas.set(configNodeMap));
             assignment.apply(schemas.get());
         }
 
         private static void booleanFromConfig(Config config,
-                String key,
-                Function<Boolean, Builder> assignment) {
-            config.get(key).ifExists(c -> assignment.apply(c.asBoolean().get()));
+                                              String key,
+                                              Function<Boolean, Builder> assignment) {
+            config.get(key).asBoolean().ifPresent(assignment::apply);
         }
 
         /**

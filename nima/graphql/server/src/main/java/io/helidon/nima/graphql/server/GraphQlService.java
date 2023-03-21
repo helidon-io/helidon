@@ -26,7 +26,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.graphql.server.GraphQlConstants;
 import io.helidon.graphql.server.InvocationHandler;
@@ -214,7 +214,7 @@ public class GraphQlService implements HttpService {
          * <tr>
          *     <td>cors</td>
          *     <td>default CORS configuration</td>
-         *     <td>see {@link CrossOriginConfig#create(io.helidon.config.Config)}</td>
+         *     <td>see {@link CrossOriginConfig#create(io.helidon.common.config.Config;)}</td>
          * </tr>
          * <tr>
          *     <td>executor-service</td>

@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.common.NativeImageHelper;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.health.HealthCheck;
 
 /**

@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 import graphql.GraphQL;
 import graphql.execution.SubscriptionExecutionStrategy;

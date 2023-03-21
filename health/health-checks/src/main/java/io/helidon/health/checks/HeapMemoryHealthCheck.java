@@ -19,7 +19,7 @@ package io.helidon.health.checks;
 import java.util.Formatter;
 import java.util.Locale;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;

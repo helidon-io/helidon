@@ -23,7 +23,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.PathMatcher;
 import io.helidon.common.http.PathMatchers;
 import io.helidon.common.uri.UriPath;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.tracing.config.TracingConfig;
 
 /**
@@ -31,7 +31,7 @@ import io.helidon.tracing.config.TracingConfig;
  */
 public interface PathTracingConfig {
     /**
-     * Create a new traced path configuration from {@link io.helidon.config.Config}.
+     * Create a new traced path configuration from {@link io.helidon.common.config.Config;}.
      *
      * @param config config of a path
      * @return traced path configuration
@@ -106,7 +106,7 @@ public interface PathTracingConfig {
         }
 
         /**
-         * Update this builder from provided {@link io.helidon.config.Config}.
+         * Update this builder from provided {@link io.helidon.common.config.Config;}.
          *
          * @param config config to update this builder from
          * @return updated builder instance

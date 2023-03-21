@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.DirectHandler;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;

@@ -19,7 +19,7 @@ package io.helidon.nima.faulttolerance;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.config.ConfigException;
+import io.helidon.common.config.ConfigException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

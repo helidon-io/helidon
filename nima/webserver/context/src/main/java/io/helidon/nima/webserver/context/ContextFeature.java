@@ -18,7 +18,7 @@ package io.helidon.nima.webserver.context;
 
 import io.helidon.common.Weighted;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.nima.webserver.http.FilterChain;
 import io.helidon.nima.webserver.http.HttpFeature;
 import io.helidon.nima.webserver.http.HttpRouting;

@@ -19,7 +19,7 @@ import java.net.HttpURLConnection;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.nima.webserver.WebServer;
 
 import org.junit.jupiter.api.BeforeAll;

@@ -43,7 +43,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
@@ -161,7 +161,7 @@ public class OpenApiService implements HttpService {
     /**
      * Creates a new {@link OpenApiService} instance using the
      * 'openapi' portion of the provided
-     * {@link io.helidon.config.Config} object.
+     * {@link io.helidon.common.config.Config;} object.
      *
      * @param config {@code Config} object containing OpenAPI-related settings
      * @return new {@code OpenAPISupport} instance created using the
@@ -554,7 +554,7 @@ public class OpenApiService implements HttpService {
                     .asString()
                     .ifPresent(this::staticFile);
             config.get(CORS_CONFIG_KEY)
-                    .as(CrossOriginConfig::create)
+                    .map(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
             return identity();
         }

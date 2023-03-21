@@ -20,7 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 

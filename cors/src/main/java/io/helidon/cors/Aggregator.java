@@ -25,8 +25,8 @@ import java.util.logging.Logger;
 import io.helidon.common.http.PathMatcher;
 import io.helidon.common.http.PathMatchers;
 import io.helidon.common.uri.UriPath;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
+import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigValue;
 import io.helidon.cors.LogHelper.MatcherChecks;
 
 /**
@@ -118,7 +118,7 @@ public class Aggregator {
 
         Builder config(Config config) {
             if (config.exists()) {
-                ConfigValue<CrossOriginConfig.Builder> configValue = config.as(CrossOriginConfig::builder);
+                ConfigValue<CrossOriginConfig.Builder> configValue = config.map(CrossOriginConfig::builder);
                 if (configValue.isPresent()) {
                     CrossOriginConfig crossOriginConfig = configValue.get().build();
                     addPathlessCrossOrigin(crossOriginConfig);
@@ -136,7 +136,7 @@ public class Aggregator {
         Builder mappedConfig(Config config) {
 
             if (config.exists()) {
-                ConfigValue<MappedCrossOriginConfig.Builder> mappedConfigValue = config.as(MappedCrossOriginConfig::builder);
+                ConfigValue<MappedCrossOriginConfig.Builder> mappedConfigValue = config.map(MappedCrossOriginConfig::builder);
                 if (mappedConfigValue.isPresent()) {
                     MappedCrossOriginConfig mapped = mappedConfigValue.get().build();
                     /*

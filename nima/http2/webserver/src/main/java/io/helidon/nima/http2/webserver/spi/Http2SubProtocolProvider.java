@@ -16,7 +16,7 @@
 
 package io.helidon.nima.http2.webserver.spi;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for HTTP/2 sub-protocols.
@@ -33,7 +33,7 @@ public interface Http2SubProtocolProvider {
     /**
      * Creates an instance of HTTP/2 sub-protocol selector.
      *
-     * @param config {@link io.helidon.config.Config} configuration node located on the node returned by {@link #configKey()}
+     * @param config {@link io.helidon.common.config.Config;} configuration node located on the node returned by {@link #configKey()}
      * @return new HTTP/2 sub-protocol selector
      */
     Http2SubProtocolSelector create(Config config);

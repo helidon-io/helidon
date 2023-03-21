@@ -26,7 +26,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.nima.webserver.http.Filter;
 import io.helidon.nima.webserver.http.FilterChain;
 import io.helidon.nima.webserver.http.HttpFeature;
@@ -92,7 +92,7 @@ public class TracingFeature implements HttpFeature, Weighted {
     }
 
     /**
-     * Create a new tracing support base on {@link io.helidon.config.Config}.
+     * Create a new tracing support base on {@link io.helidon.common.config.Config;}.
      *
      * @param tracer tracer to use for tracing spans created by this feature
      * @param config to base this support on
@@ -190,7 +190,7 @@ public class TracingFeature implements HttpFeature, Weighted {
         }
 
         /**
-         * Update builder from {@link io.helidon.config.Config}.
+         * Update builder from {@link io.helidon.common.config.Config;}.
          *
          * @param config config to read default configuration and path specific configuration from
          * @return updated builder instance

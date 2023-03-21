@@ -18,7 +18,7 @@ package io.helidon.cors;
 
 import java.util.Arrays;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
