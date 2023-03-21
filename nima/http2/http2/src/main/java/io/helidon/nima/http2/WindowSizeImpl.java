@@ -57,7 +57,7 @@ abstract class WindowSizeImpl implements WindowSize {
                         ? increment + r
                         : MAX_WIN_SIZE);
         LOGGER.log(Level.DEBUG,
-                   () -> String.format("Decrement window size %d, remaining %d", increment, remainingWindowSize.get()));
+                   () -> String.format("Increment window size %d, remaining %d", increment, remainingWindowSize.get()));
         return MAX_WIN_SIZE - remaining <= increment;
     }
 
