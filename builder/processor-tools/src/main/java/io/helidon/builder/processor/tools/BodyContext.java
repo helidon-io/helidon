@@ -57,8 +57,6 @@ public class BodyContext {
     private final Map<String, TypedElementName> map = new LinkedHashMap<>();
     private final List<TypedElementName> allTypeInfos = new ArrayList<>();
     private final List<String> allAttributeNames = new ArrayList<>();
-    private final AtomicReference<TypeName> parentTypeName = new AtomicReference<>();
-    private final AtomicReference<TypeName> parentAnnotationType = new AtomicReference<>();
     private final boolean hasStreamSupportOnImpl;
     private final boolean hasStreamSupportOnBuilder;
     private final boolean includeMetaAttributes;
@@ -79,6 +77,8 @@ public class BodyContext {
     private final String publicOrPackagePrivateDecl;
     private final TypeName interceptorTypeName;
     private final String interceptorCreateMethod;
+    private TypeName parentTypeName;
+    private TypeName parentAnnotationTypeName;
 
     /**
      * Constructor.
@@ -108,13 +108,10 @@ public class BodyContext {
         this.setType = toSetImplType(builderTriggerAnnotation, typeInfo);
         gatherAllAttributeNames(typeInfo);
         assert (allTypeInfos.size() == allAttributeNames.size());
-        this.hasParent = (parentTypeName.get() != null && hasBuilder(typeInfo.superTypeInfo(), builderTriggerAnnotation));
+        this.hasParent = (parentTypeName != null && hasBuilder(typeInfo.superTypeInfo(), builderTriggerAnnotation));
         this.hasAnyBuilderClashingMethodNames = determineIfHasAnyClashingMethodNames();
         this.isExtendingAnAbstractClass = typeInfo.typeKind().equals(TypeInfo.KIND_CLASS);
-        this.ctorBuilderAcceptTypeName = (hasParent)
-                ? typeInfo.typeName()
-                : (parentAnnotationType.get() != null && typeInfo.elementInfo().isEmpty()
-                                ? typeInfo.superTypeInfo().orElseThrow().typeName() : typeInfo.typeName());
+        this.ctorBuilderAcceptTypeName = toCtorBuilderAcceptTypeName(typeInfo, hasParent, parentAnnotationTypeName);
         this.genericBuilderClassDecl = "Builder";
         this.genericBuilderAliasDecl = ("B".equals(typeInfo.typeName().className())) ? "BU" : "B";
         this.genericBuilderAcceptAliasDecl = ("T".equals(typeInfo.typeName().className())) ? "TY" : "T";
@@ -205,17 +202,17 @@ public class BodyContext {
      *
      * @return the parent type name
      */
-    public AtomicReference<TypeName> parentTypeName() {
-        return parentTypeName;
+    public Optional<TypeName> parentTypeName() {
+        return Optional.ofNullable(parentTypeName);
     }
 
     /**
-     * Returns the parent annotation type.
+     * Returns the parent annotation type name.
      *
      * @return the parent annotation type
      */
-    protected AtomicReference<TypeName> parentAnnotationType() {
-        return parentAnnotationType;
+    protected Optional<TypeName> parentAnnotationTypeName() {
+        return Optional.ofNullable(parentAnnotationTypeName);
     }
 
     /**
@@ -572,12 +569,12 @@ public class BodyContext {
                 populateMap(map, superTypeInfo, beanStyleRequired);
             }
 
-            if ((parentTypeName.get() == null)
+            if ((parentTypeName == null)
                     && superTypeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
-                parentTypeName.set(superTypeInfo.typeName());
-            } else if ((parentAnnotationType.get() == null)
+                parentTypeName = superTypeInfo.typeName();
+            } else if ((parentAnnotationTypeName == null)
                     && superTypeInfo.typeKind().equals(TypeInfo.KIND_ANNOTATION_TYPE)) {
-                parentAnnotationType.set(superTypeInfo.typeName());
+                parentAnnotationTypeName = superTypeInfo.typeName();
             }
         }
 
@@ -660,7 +657,8 @@ public class BodyContext {
                 || beanAttributeName.equals("toStringInner");
     }
 
-    private boolean hasBuilder(Optional<TypeInfo> typeInfo, AnnotationAndValue builderTriggerAnnotation) {
+    private boolean hasBuilder(Optional<TypeInfo> typeInfo,
+                               AnnotationAndValue builderTriggerAnnotation) {
         if (typeInfo.isEmpty()) {
             return false;
         }
@@ -670,6 +668,17 @@ public class BodyContext {
                 .map(AnnotationAndValue::typeName)
                 .anyMatch(it -> it.equals(builderAnnoTypeName));
         return hasBuilder || hasBuilder(typeInfo.get().superTypeInfo(), builderTriggerAnnotation);
+    }
+
+    private static TypeName toCtorBuilderAcceptTypeName(TypeInfo typeInfo,
+                                                        boolean hasParent,
+                                                        TypeName parentAnnotationTypeName) {
+        if (hasParent) {
+            return typeInfo.typeName();
+        }
+
+        return (parentAnnotationTypeName != null && typeInfo.elementInfo().isEmpty()
+                        ? typeInfo.superTypeInfo().orElseThrow().typeName() : typeInfo.typeName());
     }
 
 }

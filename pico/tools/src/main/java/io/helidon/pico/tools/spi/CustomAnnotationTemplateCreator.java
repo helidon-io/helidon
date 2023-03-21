@@ -40,7 +40,7 @@ public interface CustomAnnotationTemplateCreator {
      * The implementor should return empty if the request should not be handled.
      *
      * @param request the request
-     * @return the response that will describe what template to produce, or empty to skip
+     * @return the response that will describe what template to produce, or empty to to cause processing to skip
      */
     Optional<CustomAnnotationTemplateResponse> create(CustomAnnotationTemplateRequest request);
 

@@ -20,13 +20,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
+import io.helidon.pico.tools.DefaultGenericTemplateCreatorRequest;
+import io.helidon.pico.tools.GenericTemplateCreatorRequest;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
@@ -56,19 +57,20 @@ public class HttpEndpointCreator implements CustomAnnotationTemplateCreator {
         }
 
         String classname = enclosingType.typeName().className() + "_GeneratedService";
-        TypeName generatedType = DefaultTypeName.create(enclosingType.typeName().packageName(), classname);
+        TypeName generatedTypeName = DefaultTypeName.create(enclosingType.typeName().packageName(), classname);
 
-        Supplier<String> templateSupplier = () -> Templates.loadTemplate("nima", "http-endpoint.java.hbs");
-
-        return request.templateHelperTools().produceStandardCodeGenResponse(request,
-                                                                            generatedType,
-                                                                            templateSupplier,
-                                                                            it -> addProperties(request, it));
+        String template = Templates.loadTemplate("nima", "http-endpoint.java.hbs");
+        GenericTemplateCreatorRequest genericCreatorRequest = DefaultGenericTemplateCreatorRequest.builder()
+                .customAnnotationTemplateRequest(request)
+                .template(template)
+                .generatedTypeName(generatedTypeName)
+                .overrideProperties(addProperties(request))
+                .build();
+        return request.genericTemplateCreator().create(genericCreatorRequest);
     }
 
-    private Map<String, Object> addProperties(CustomAnnotationTemplateRequest request,
-                                              Map<String, Object> currentProperties) {
-        Map<String, Object> response = new HashMap<>(currentProperties);
+    private Map<String, Object> addProperties(CustomAnnotationTemplateRequest request) {
+        Map<String, Object> response = new HashMap<>();
 
         var annots = request.enclosingTypeInfo().annotations();
         for (var annot : annots) {

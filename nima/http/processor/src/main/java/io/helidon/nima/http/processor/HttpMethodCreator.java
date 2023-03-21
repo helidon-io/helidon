@@ -32,7 +32,9 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.TemplateHelperTools;
+import io.helidon.pico.tools.DefaultGenericTemplateCreatorRequest;
+import io.helidon.pico.tools.GenericTemplateCreator;
+import io.helidon.pico.tools.GenericTemplateCreatorRequest;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
@@ -85,19 +87,21 @@ public class HttpMethodCreator implements CustomAnnotationTemplateCreator {
         String classname = enclosingType.typeName().className() + "_"
                 + request.annoTypeName().className() + "_"
                 + request.targetElement().elementName();
-        TypeName generatedType = DefaultTypeName.create(enclosingType.typeName().packageName(), classname);
+        TypeName generatedTypeName = DefaultTypeName.create(enclosingType.typeName().packageName(), classname);
 
-        TemplateHelperTools tools = request.templateHelperTools();
-        return tools.produceStandardCodeGenResponse(request,
-                                                    generatedType,
-                                                    () -> Templates.loadTemplate("nima", "http-method.java.hbs"),
-                                                    it -> addProperties(request, it));
+        GenericTemplateCreator genericTemplateCreator = request.genericTemplateCreator();
+        GenericTemplateCreatorRequest genericCreatorRequest = DefaultGenericTemplateCreatorRequest.builder()
+                .customAnnotationTemplateRequest(request)
+                .template(Templates.loadTemplate("nima", "http-method.java.hbs"))
+                .generatedTypeName(generatedTypeName)
+                .overrideProperties(addProperties(request))
+                .build();
+        return genericTemplateCreator.create(genericCreatorRequest);
     }
 
-    private Map<String, Object> addProperties(CustomAnnotationTemplateRequest request,
-                                              Map<String, Object> currentProperties) {
+    private Map<String, Object> addProperties(CustomAnnotationTemplateRequest request) {
         TypedElementName targetElement = request.targetElement();
-        Map<String, Object> response = new HashMap<>(currentProperties);
+        Map<String, Object> response = new HashMap<>();
 
         HttpDef http = new HttpDef();
         /*

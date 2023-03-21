@@ -87,12 +87,12 @@ public class TemplateHelper {
      *
      * @return the new string, fully resolved with substitutions
      */
-    public String applySubstitutions(String target,
+    public String applySubstitutions(CharSequence target,
                                      Map<String, Object> props,
                                      boolean logErr) {
         Set<String> missingArgs = new LinkedHashSet<>();
         try {
-            return applySubstitutions(target, props, logErr, true, missingArgs, null, null);
+            return applySubstitutions(target.toString(), props, logErr, true, missingArgs, null, null);
         } catch (IOException e) {
             throw new ToolsException("unable to apply substitutions", e);
         }

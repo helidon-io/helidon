@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.processor.spi;
+package io.helidon.pico.processor;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.TemplateHelperTools;
+import io.helidon.pico.tools.DefaultGenericTemplateCreatorRequest;
+import io.helidon.pico.tools.GenericTemplateCreatorRequest;
+import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
  * For Testing (service loaded).
@@ -58,10 +56,15 @@ public class ExtensibleGetTemplateProducer implements CustomAnnotationTemplateCr
         String classname = enclosingTypeInfo.typeName().className() + "_"
                 + request.annoTypeName().className() + "_"
                 + request.targetElement().elementName();
-        TypeName generatedType = DefaultTypeName.create(enclosingTypeInfo.typeName().packageName(), classname);
-        TemplateHelperTools tools = Objects.requireNonNull(request.templateHelperTools());
-        Supplier<CharSequence> resourceSupplier = tools.supplyFromResources("nima", "extensible-get.hbs");
-        return tools.produceStandardCodeGenResponse(request, generatedType, resourceSupplier, Function.identity());
+        TypeName generatedTypeName = DefaultTypeName.create(enclosingTypeInfo.typeName().packageName(), classname);
+        DefaultGenericTemplateCreator genericTemplateCreator = new DefaultGenericTemplateCreator(getClass());
+        CharSequence template = genericTemplateCreator.supplyFromResources("nima", "extensible-get.hbs");
+        GenericTemplateCreatorRequest genericCreatorRequest = DefaultGenericTemplateCreatorRequest.builder()
+                .customAnnotationTemplateRequest(request)
+                .generatedTypeName(generatedTypeName)
+                .template(template)
+                .build();
+        return genericTemplateCreator.create(genericCreatorRequest);
     }
 
 }

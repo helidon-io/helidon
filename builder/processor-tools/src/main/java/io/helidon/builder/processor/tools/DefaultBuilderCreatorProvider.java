@@ -401,7 +401,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             builder.append(toAbstractImplTypeName(ctx.typeInfo().typeName(), ctx.builderTriggerAnnotation()));
         } else {
             if (ctx.hasParent()) {
-                builder.append(toAbstractImplTypeName(ctx.parentTypeName().get(), ctx.builderTriggerAnnotation()));
+                builder.append(toAbstractImplTypeName(ctx.parentTypeName().orElseThrow(), ctx.builderTriggerAnnotation()));
             } else if (baseExtendsTypeName.isPresent()) {
                 builder.append(baseExtendsTypeName.get().fqName());
             }
@@ -1412,7 +1412,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             builder.append(ctx.ctorBuilderAcceptTypeName()).append(">");
             if (ctx.hasParent()) {
                 builder.append(" extends ")
-                        .append(toAbstractImplTypeName(ctx.parentTypeName().get(), ctx.builderTriggerAnnotation()))
+                        .append(toAbstractImplTypeName(ctx.parentTypeName().orElseThrow(), ctx.builderTriggerAnnotation()))
                         .append(".").append(ctx.genericBuilderClassDecl());
                 builder.append("<").append(ctx.genericBuilderAliasDecl())
                         .append(", ").append(ctx.genericBuilderAcceptAliasDecl());
@@ -1489,7 +1489,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             i++;
         }
 
-        if (ctx.parentAnnotationType().get() != null) {
+        if (ctx.parentAnnotationTypeName().isPresent()) {
             builder.append(prefix)
                     .append("\t@Override\n");
             builder.append(prefix)

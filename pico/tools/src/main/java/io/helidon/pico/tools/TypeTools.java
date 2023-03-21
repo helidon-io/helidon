@@ -182,7 +182,7 @@ public final class TypeTools extends BuilderTypeTools {
      *
      * @param annotations the annotations on the type, method, or parameters
      * @return the new instance
-     * @deprecated Switch to use pure annotation processing instead of reflection
+     * @deprecated switch to use pure annotation processing instead of reflection
      */
     @Deprecated
     public static List<AnnotationAndValue> createAnnotationAndValueListFromAnnotations(Annotation[] annotations) {
@@ -198,7 +198,7 @@ public final class TypeTools extends BuilderTypeTools {
      *
      * @param annotation the annotation
      * @return the extracted value
-     * @deprecated Switch to use pure annotation processing instead of reflection
+     * @deprecated switch to use pure annotation processing instead of reflection
      */
     @Deprecated
     static Map<String, String> extractValues(Annotation annotation) {

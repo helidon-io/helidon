@@ -53,14 +53,4 @@ public interface AnnotationAndValue {
      */
     Map<String, String> values();
 
-    /**
-     * Determines whether the {@link #value()} is present and a non-blank String (see {@link String#isBlank()}.
-     *
-     * @return true if our value is present and non-blank
-     */
-    default boolean hasNonBlankValue() {
-        return value()
-                .map(it -> !it.isBlank())
-                .orElse(false);
-    }
 }

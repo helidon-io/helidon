@@ -20,82 +20,74 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.DefaultCustomAnnotationTemplateResponse;
+import io.helidon.pico.tools.GenericTemplateCreator;
+import io.helidon.pico.tools.GenericTemplateCreatorRequest;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.TemplateHelper;
-import io.helidon.pico.tools.TemplateHelperTools;
 import io.helidon.pico.tools.ToolsException;
 
 /**
- * Default implementation for {@link io.helidon.pico.tools.TemplateHelperTools}.
+ * Default implementation for {@link GenericTemplateCreator}.
  */
-class DefaultTemplateHelperTools implements TemplateHelperTools {
-
+class DefaultGenericTemplateCreator implements GenericTemplateCreator {
     private final Class<?> generator;
     private final Messager messager;
 
     /**
      * Constructor.
      *
-     * @param generator the class type for the generator.
+     * @param generator the class type for the generator
      */
-    DefaultTemplateHelperTools(
-            Class<?> generator) {
-        this(generator, new MessagerToLogAdapter(System.getLogger(DefaultTemplateHelperTools.class.getName())));
+    DefaultGenericTemplateCreator(Class<?> generator) {
+        this(generator, new MessagerToLogAdapter(System.getLogger(DefaultGenericTemplateCreator.class.getName())));
     }
 
     /**
      * Constructor.
      *
-     * @param generator the class type for the generator.
-     * @param messager the msgr and error handler.
+     * @param generator the class type for the generator
+     * @param messager  the messager and error handler
      */
-    DefaultTemplateHelperTools(
-            Class<?> generator,
-            Messager messager) {
+    DefaultGenericTemplateCreator(Class<?> generator,
+                                  Messager messager) {
         this.generator = Objects.requireNonNull(generator);
         this.messager = messager;
     }
 
     @Override
-    public Optional<CustomAnnotationTemplateResponse> produceStandardCodeGenResponse(
-            CustomAnnotationTemplateRequest req,
-            TypeName generatedType,
-            Supplier<? extends CharSequence> templateSupplier,
-            Function<Map<String, Object>, Map<String, Object>> propertiesFn) {
+    public Optional<CustomAnnotationTemplateResponse> create(GenericTemplateCreatorRequest req) {
         Objects.requireNonNull(req);
-        if (!DefaultTypeName.isFQN(generatedType)
-                || (templateSupplier == null)
-                || (templateSupplier.get() == null)) {
-            messager.log("skipping custom template production for: " + generatedType + " = " + req);
+        if (!DefaultTypeName.isFQN(req.generatedTypeName())) {
+            messager.debug("skipping custom template production for: " + req.generatedTypeName() + " = " + req);
             return Optional.empty();
         }
 
         TemplateHelper templateHelper = TemplateHelper.create();
-
-        Map<String, Object> substitutions = gatherSubstitutions(req, templateHelper, generatedType, propertiesFn);
-        String template = Objects.requireNonNull(templateSupplier.get()).toString();
-        messager.debug("applying template: " + template);
-
-        String javaBody = Objects.requireNonNull(templateHelper.applySubstitutions(template, substitutions, true));
-        messager.debug("produced body: " + javaBody);
-
+        Map<String, Object> substitutions = gatherSubstitutions(req, templateHelper);
+        String javaBody = templateHelper.applySubstitutions(req.template(), substitutions, true);
         return Optional.of(DefaultCustomAnnotationTemplateResponse.builder()
-                                   .request(req)
-                                   .addGeneratedSourceCode(generatedType, javaBody)
+                                   .request(req.customAnnotationTemplateRequest())
+                                   .addGeneratedSourceCode(req.generatedTypeName(), javaBody)
                                    .build());
     }
 
-    @Override
-    public Supplier<CharSequence> supplyFromResources(String templateProfile,
-                                                      String templateName) {
+    /**
+     * Returns the template that will rely on a resource lookup of resources/pico/{templateProfile}/{templateName}.
+     * Note: This will only work for non-module based usages, and therefore is not recommended for general use.
+     *
+     * @param templateProfile the template profile to apply (must be exported by the spi provider module; "default" is reserved
+     *                        for internal use)
+     * @param templateName    the template name
+     * @return the generic template resource
+     */
+    CharSequence supplyFromResources(String templateProfile,
+                                     String templateName) {
         TemplateHelper templateHelper = TemplateHelper.create();
         String template = templateHelper.loadTemplate(templateProfile, templateName);
         if (template == null) {
@@ -103,24 +95,20 @@ class DefaultTemplateHelperTools implements TemplateHelperTools {
             messager.error(te.getMessage(), te);
             throw te;
         }
-        return supplyUsingLiteralTemplate(template);
+
+        return template;
     }
 
-    @Override
-    public Supplier<CharSequence> supplyUsingLiteralTemplate(CharSequence template) {
-        return () -> template;
-    }
-
-    Map<String, Object> gatherSubstitutions(CustomAnnotationTemplateRequest req,
-                                            TemplateHelper templateHelper,
-                                            TypeName generatedType,
-                                            Function<Map<String, Object>, Map<String, Object>> propertiesFn) {
+    Map<String, Object> gatherSubstitutions(GenericTemplateCreatorRequest genericRequest,
+                                            TemplateHelper templateHelper) {
+        CustomAnnotationTemplateRequest req = genericRequest.customAnnotationTemplateRequest();
+        TypeName generatedTypeName = genericRequest.generatedTypeName();
         Map<String, Object> substitutions = new HashMap<>();
         substitutions.put("generatedSticker", templateHelper.generatedStickerFor(generator.getName()));
         substitutions.put("annoTypeName", req.annoTypeName());
-        substitutions.put("generatedTypeName", generatedType);
-        substitutions.put("packageName", generatedType.packageName());
-        substitutions.put("className", generatedType.className());
+        substitutions.put("generatedTypeName", generatedTypeName);
+        substitutions.put("packageName", generatedTypeName.packageName());
+        substitutions.put("className", generatedTypeName.className());
         substitutions.put("enclosingClassTypeName", req.enclosingTypeInfo().typeName());
         substitutions.put("enclosingAnnotations", req.enclosingTypeInfo().annotations());
         substitutions.put("basicServiceInfo", req.serviceInfo());
@@ -134,10 +122,7 @@ class DefaultTemplateHelperTools implements TemplateHelperTools {
         substitutions.put("elementEnclosingTypeName", req.targetElement().typeName());
         substitutions.put("elementArgs", req.targetElementArgs());
         substitutions.put("elementArgs-declaration", Utils.toString(req.targetElementArgs()));
-
-        if (propertiesFn != null) {
-            substitutions = Objects.requireNonNull(propertiesFn.apply(substitutions));
-        }
+        substitutions.putAll(genericRequest.overrideProperties());
         return substitutions;
     }
 

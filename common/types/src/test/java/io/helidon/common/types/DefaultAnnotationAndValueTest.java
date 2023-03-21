@@ -48,27 +48,4 @@ class DefaultAnnotationAndValueTest {
                    containsString("typeName=" + Test.class.getName() + ", values={a=1}"));
     }
 
-    @Test
-    void testHasNonBlankValue() {
-        AnnotationAndValue value = DefaultAnnotationAndValue.create(Test.class);
-        // no value means blank
-        assertThat(value.hasNonBlankValue(), is(false));
-
-        value = DefaultAnnotationAndValue.create(Test.class, "");
-        // empty string means blank
-        assertThat(value.hasNonBlankValue(), is(false));
-
-        value = DefaultAnnotationAndValue.create(Test.class, "\t");
-        // empty string means blank
-        assertThat(value.hasNonBlankValue(), is(false));
-
-        value = DefaultAnnotationAndValue.create(Test.class, " ");
-        // empty string means blank
-        assertThat(value.hasNonBlankValue(), is(false));
-
-        value = DefaultAnnotationAndValue.create(Test.class, "value");
-        // empty string means blank
-        assertThat(value.hasNonBlankValue(), is(true));
-    }
-
 }

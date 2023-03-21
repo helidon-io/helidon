@@ -25,25 +25,28 @@ import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultTypeInfo;
 import io.helidon.common.types.DefaultTypedElementName;
 import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.DefaultServiceInfo;
 import io.helidon.pico.ElementInfo;
 import io.helidon.pico.ServiceInfoBasics;
-import io.helidon.pico.processor.spi.ExtensibleGetTemplateProducer;
 import io.helidon.pico.processor.testsubjects.BasicEndpoint;
 import io.helidon.pico.processor.testsubjects.ExtensibleGET;
-import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.DefaultCustomAnnotationTemplateRequest;
+import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.types.DefaultTypeName.create;
+import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
+import static io.helidon.pico.processor.TestUtils.loadStringFromResource;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromAnnotations;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 
 class CustomAnnotationProcessorTest {
@@ -75,7 +78,8 @@ class CustomAnnotationProcessorTest {
                 .elementName("header")
                 .build();
         ServiceInfoBasics serviceInfo = DefaultServiceInfo.builder();
-        DefaultTemplateHelperTools tools = new DefaultTemplateHelperTools(ExtensibleGetTemplateProducer.class);
+        DefaultGenericTemplateCreator genericTemplateCreator =
+                new DefaultGenericTemplateCreator(ExtensibleGetTemplateProducer.class);
         CustomAnnotationTemplateRequest req = DefaultCustomAnnotationTemplateRequest.builder()
                 .annoTypeName(create(ExtensibleGET.class))
                 .serviceInfo(serviceInfo)
@@ -83,7 +87,7 @@ class CustomAnnotationProcessorTest {
                 .targetElementArgs(List.of(arg1))
                 .targetElementAccess(ElementInfo.Access.PUBLIC)
                 .enclosingTypeInfo(enclosingTypeInfo)
-                .templateHelperTools(tools)
+                .genericTemplateCreator(genericTemplateCreator)
                 .build();
         assertThat(req.isFilerEnabled(), is(true));
 
@@ -92,37 +96,15 @@ class CustomAnnotationProcessorTest {
 
         CustomAnnotationTemplateResponse res = processor.process(producers.iterator().next(), req);
         assertThat(res.request().annoTypeName().name(), equalTo(ExtensibleGET.class.getName()));
-        assertThat(res.generatedSourceCode().toString(),
-                   equalTo("{io.helidon.pico.processor.testsubjects.BasicEndpoint_ExtensibleGET_itWorks=package io.helidon"
-                             + ".pico.processor.testsubjects;\n"
-                             + "\n"
-                             + "import io.helidon.common.Weight;\n"
-                             + "import io.helidon.common.Weighted;\n"
-                             + "\n"
-                             + "import jakarta.inject.Inject;\n"
-                             + "import jakarta.inject.Named;\n"
-                             + "import jakarta.inject.Provider;\n"
-                             + "import jakarta.inject.Singleton;\n"
-                             + "\n"
-                             + "@javax.annotation.processing.Generated(value = \"io.helidon"
-                             + ".pico.processor.spi.ExtensibleGetTemplateProducer\", comments = \"version=1\")\n"
-                             + "@Singleton\n"
-                             + "@Named(\"io.helidon.pico.processor.testsubjects.ExtensibleGET\")\n"
-                             + "@Weight(100.0)\n"
-                             + "public class BasicEndpoint_ExtensibleGET_itWorks {\n"
-                             + "    private final Provider<BasicEndpoint> target;\n"
-                             + "\n"
-                             + "    @Inject\n"
-                             + "    BasicEndpoint_ExtensibleGET_itWorks(Provider<BasicEndpoint> target) {\n"
-                             + "        this.target = target;\n"
-                             + "    }\n"
-                             + "\n"
-                             + "    public Provider<BasicEndpoint> getBasicEndpoint() {\n"
-                             + "        return target;\n"
-                             + "    }\n"
-                             + "\n"
-                             + "}\n"
-                             + "}"));
+        TypeName generatedTypeName =
+                createFromTypeName("io.helidon.pico.processor.testsubjects.BasicEndpoint_ExtensibleGET_itWorks");
+        assertThat(res.generatedSourceCode(),
+                   hasKey(generatedTypeName));
+        assertThat(res.toString(), res.generatedSourceCode().size(),
+                   is(1));
+        String generatedSource = res.generatedSourceCode().get(generatedTypeName);
+        assertThat(generatedSource,
+                            equalTo(loadStringFromResource("expected/BasicEndpoint_ExtensibleGET._java_")));
     }
 
 }

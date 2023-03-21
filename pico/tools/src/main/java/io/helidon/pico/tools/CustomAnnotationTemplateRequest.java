@@ -92,10 +92,10 @@ public interface CustomAnnotationTemplateRequest {
     boolean isFilerEnabled();
 
     /**
-     * Helper tools.
+     * Generic template creator.
      *
-     * @return helper tools
+     * @return the generic template creator
      */
-    TemplateHelperTools templateHelperTools();
+    GenericTemplateCreator genericTemplateCreator();
 
 }
