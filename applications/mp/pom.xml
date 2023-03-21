@@ -89,9 +89,15 @@
                         <executions>
                             <execution>
                                 <id>resource-config</id>
+                                <goals>
+                                    <goal>generateResourceConfig</goal>
+                                </goals>
                             </execution>
                             <execution>
                                 <id>build-native-image</id>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>
