@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,8 @@ public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> 
         values.values().forEach(it -> {
             Object value = it.value();
             Http2Setting<Object> setting = (Http2Setting<Object>) it.setting();
-            LOGGER.log(System.Logger.Level.INFO, () -> String.format(" - SETTINGS: %s :: %s", it.setting().toString(), it.value().toString()));
+            LOGGER.log(System.Logger.Level.DEBUG,
+                       () -> String.format(" - Http2Settings %s:  %s", it.setting().toString(), it.value().toString()));
             setting.write(data, value);
         });
         Http2FrameHeader header = Http2FrameHeader.create(data.available(),

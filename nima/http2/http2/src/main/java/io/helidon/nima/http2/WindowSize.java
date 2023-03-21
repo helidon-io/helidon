@@ -127,9 +127,6 @@ public interface WindowSize {
          */
         void blockTillUpdate();
 
-
-
-
     }
 
 }

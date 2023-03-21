@@ -376,7 +376,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void writeServerSettings() {
-        LOGGER.log(System.Logger.Level.INFO, () -> "SRV SETTINGS:");
         connectionWriter.write(serverSettings
                 .toFrameData(serverSettings, 0, Http2Flag.SettingsFlags.create(0)), FlowControl.Outbound.NOOP);
         state = State.READ_FRAME;
