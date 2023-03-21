@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@ package io.helidon.nima.webclient.http1;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.ClientRequestHeaders;
@@ -37,6 +40,8 @@ import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http.media.ReadableEntityBase;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ClientResponseEntity;
+import io.helidon.nima.webclient.http.spi.Source;
+import io.helidon.nima.webclient.http.spi.SourceHandlerProvider;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -44,6 +49,9 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 class ClientResponseImpl implements Http1ClientResponse {
     private static final System.Logger LOGGER = System.getLogger(ClientResponseImpl.class.getName());
+
+    private static final List<SourceHandlerProvider> SOURCE_HANDLERS
+            = HelidonServiceLoader.builder(ServiceLoader.load(SourceHandlerProvider.class)).build().asList();
 
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -120,6 +128,18 @@ class ClientResponseImpl implements Http1ClientResponse {
                 }
             }
         }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends Source<?>> void source(GenericType<T> sourceType, T source) {
+        for (SourceHandlerProvider p : SOURCE_HANDLERS) {
+            if (p.supports(sourceType, this)) {
+                p.handle(source, this, mediaContext);
+                return;
+            }
+        }
+        throw new UnsupportedOperationException("No source available for " + sourceType);
     }
 
     private ReadableEntity entity(ClientRequestHeaders requestHeaders,

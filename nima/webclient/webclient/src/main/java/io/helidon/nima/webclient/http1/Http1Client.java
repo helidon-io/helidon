@@ -16,6 +16,11 @@
 
 package io.helidon.nima.webclient.http1;
 
+import java.util.Objects;
+
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.HttpClient;
 import io.helidon.nima.webclient.WebClient;
 
@@ -35,9 +40,151 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
     /**
      * Builder for {@link io.helidon.nima.webclient.http1.Http1Client}.
      */
+    @Configured
     class Http1ClientBuilder extends WebClient.Builder<Http1ClientBuilder, Http1Client> {
+        private int maxHeaderSize = 16384;
+        private int maxStatusLineLength = 256;
+        // todo Enable this once io.helidon.nima.tests.integration.server.KeepAliveTest.sendWithKeepAliveExpectKeepAlive
+        //  is resolved
+        private boolean sendExpect100Continue = false;
+        private boolean validateHeaders = true;
+        private MediaContext mediaContext = MediaContext.create();
+        private int connectionQueueSize = 256;
 
         private Http1ClientBuilder() {
+        }
+
+        /**
+         * Configure the maximum allowed header size of the response.
+         *
+         * @param maxHeaderSize maximum header size
+         * @return updated builder
+         */
+        @ConfiguredOption("16384")
+        public Http1ClientBuilder maxHeaderSize(int maxHeaderSize) {
+            this.maxHeaderSize = maxHeaderSize;
+            return this;
+        }
+
+        /**
+         * Configure the maximum allowed length of the status line from the response.
+         *
+         * @param maxStatusLineLength maximum status line length
+         * @return updated builder
+         */
+        @ConfiguredOption("256")
+        public Http1ClientBuilder maxStatusLineLength(int maxStatusLineLength) {
+            this.maxStatusLineLength = maxStatusLineLength;
+            return this;
+        }
+
+        /**
+         * Sets whether Expect-100-Continue header is sent to verify server availability for a chunked transfer.
+         * <p>
+         *     Defaults to {@code true}.
+         * </p>
+         *
+         * @param sendExpect100Continue whether Expect:100-Continue header should be sent on chunked transfers
+         * @return updated builder
+         */
+        @ConfiguredOption("true")
+        public Http1ClientBuilder sendExpect100Continue(boolean sendExpect100Continue) {
+            this.sendExpect100Continue = sendExpect100Continue;
+            return this;
+        }
+
+        /**
+         * Sets whether the header format is validated or not.
+         * <p>
+         *     Defaults to {@code true}.
+         * </p>
+         *
+         * @param validateHeaders whether header validation should be enabled
+         * @return updated builder
+         */
+        @ConfiguredOption("true")
+        public Http1ClientBuilder validateHeaders(boolean validateHeaders) {
+            this.validateHeaders = validateHeaders;
+            return this;
+        }
+
+        /**
+         * Configure the default {@link MediaContext}.
+         *
+         * @param mediaContext media context for this client
+         * @return updated builder
+         */
+        @ConfiguredOption("io.helidon.nima.http.media.MediaContext")
+        public Http1ClientBuilder mediaContext(MediaContext mediaContext) {
+            Objects.requireNonNull(mediaContext);
+            this.mediaContext = mediaContext;
+            return this;
+        }
+
+        /**
+         * Configure the maximum allowed size of the connection queue.
+         *
+         * @param connectionQueueSize maximum connection queue size
+         * @return updated builder
+         */
+        @ConfiguredOption("256")
+        public Http1ClientBuilder connectionQueueSize(int connectionQueueSize) {
+            this.connectionQueueSize = connectionQueueSize;
+            return this;
+        }
+
+        /**
+         * Maximum allowed header size of the response.
+         *
+         * @return maximum header size
+         */
+        int maxHeaderSize() {
+            return maxHeaderSize;
+        }
+
+        /**
+         * Maximum allowed length of the status line from the response.
+         *
+         * @return maximum status line length
+         */
+        int maxStatusLineLength() {
+            return maxStatusLineLength;
+        }
+
+        /**
+         * Indicates whether Expect:100-Continue header will be sent to verify server availability for chunked transfers.
+         *
+         * @return whether to send Expect:100-Continue header for chunked transfers
+         */
+        boolean sendExpect100Continue() {
+            return sendExpect100Continue;
+        }
+
+        /**
+         * Indicates whether the header format is validated or not.
+         *
+         * @return whether to validate headers
+         */
+        boolean validateHeaders() {
+            return validateHeaders;
+        }
+
+        /**
+         * Media context of this client.
+         *
+         * @return media context, never {@code null}
+         */
+        MediaContext mediaContext() {
+            return mediaContext;
+        }
+
+        /**
+         * Maximum allowed size of the connection queue.
+         *
+         * @return maximum queue size
+         */
+        int connectionQueueSize() {
+            return connectionQueueSize;
         }
 
         @Override

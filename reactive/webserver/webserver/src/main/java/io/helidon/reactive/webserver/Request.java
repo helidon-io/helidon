@@ -28,11 +28,13 @@ import java.util.Optional;
 import java.util.StringTokenizer;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.reactive.Single;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.reactive.media.common.MessageBodyContext;
 import io.helidon.reactive.media.common.MessageBodyReadableContent;
@@ -62,6 +64,7 @@ abstract class Request implements ServerRequest {
     private final RequestHeaders headers;
     private final MessageBodyReadableContent content;
     private final MessageBodyEventListener eventListener;
+    private final LazyValue<UriInfo> requestedUri = LazyValue.create(this::createRequestedUri);
 
     /**
      * Creates new instance.
@@ -195,6 +198,19 @@ abstract class Request implements ServerRequest {
         return this.bareRequest.closeConnection();
     }
 
+    @Override
+    public UriInfo requestedUri() {
+        return requestedUri.get();
+    }
+
+    private UriInfo createRequestedUri() {
+        return bareRequest.socketConfiguration().requestedUriDiscoveryContext().uriInfo(remoteAddress(),
+                                                                                        localAddress(),
+                                                                                        path().toString(),
+                                                                                        headers,
+                                                                                        queryParams,
+                                                                                        isSecure());
+    }
     private final class MessageBodyEventListener implements MessageBodyContext.EventListener {
 
         private Span readSpan;

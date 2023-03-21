@@ -16,6 +16,7 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.nima.webserver.http.spi.SinkProvider;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
@@ -58,11 +59,13 @@ module io.helidon.nima.webserver {
     exports io.helidon.nima.webserver;
     exports io.helidon.nima.webserver.spi;
     exports io.helidon.nima.webserver.http;
+    exports io.helidon.nima.webserver.http.spi;
     exports io.helidon.nima.webserver.http1;
     exports io.helidon.nima.webserver.http1.spi;
 
     uses Http1UpgradeProvider;
     uses ServerConnectionProvider;
+    uses SinkProvider;
 
     provides ServerConnectionProvider with Http1ConnectionProvider;
 }

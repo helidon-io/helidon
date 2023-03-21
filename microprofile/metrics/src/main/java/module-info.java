@@ -33,7 +33,6 @@ module io.helidon.microprofile.metrics {
     requires static jakarta.cdi;
     requires static jakarta.inject;
     requires static jakarta.annotation;
-    requires static jakarta.activation;
 
     requires io.helidon.microprofile.servicecommon;
     requires io.helidon.microprofile.server;

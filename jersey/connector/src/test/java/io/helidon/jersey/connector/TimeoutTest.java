@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class TimeoutTest extends AbstractTest {
     private static TimeoutResource timeoutResource;
@@ -79,8 +82,8 @@ public class TimeoutTest extends AbstractTest {
     @Test
     public void testFast() {
         Response r = target("test").request().get();
-        Assertions.assertEquals(200, r.getStatus());
-        Assertions.assertEquals("GET", r.readEntity(String.class));
+        assertThat(r.getStatus(), is(200));
+        assertThat(r.readEntity(String.class), is("GET"));
     }
 
     @Test

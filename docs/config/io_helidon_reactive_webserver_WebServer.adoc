@@ -52,7 +52,7 @@ This is a standalone configuration type, prefix from configuration root: `server
  Default value is #DEFAULT_BACKLOG_SIZE.
 |`backpressure-buffer-size` |long |{nbsp} |Maximum length of the response data sending buffer can keep without flushing.
  Depends on `backpressure-policy` what happens if max buffer size is reached.
-|`backpressure-strategy` |BackpressureStrategy (LINEAR, AUTO_FLUSH, PREFETCH, UNBOUNDED) |`LINEAR` |Sets a backpressure strategy for the server to apply against user provided response upstream.
+|`backpressure-strategy` |BackpressureStrategy (LINEAR, AUTO_FLUSH, PREFETCH, UNBOUNDED) |`AUTO_FLUSH` |Sets a backpressure strategy for the server to apply against user provided response upstream.
 
 - LINEAR - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.
 - AUTO_FLUSH - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.
@@ -91,6 +91,7 @@ This is a standalone configuration type, prefix from configuration root: `server
  server socket.
 
  If `0` then use implementation default.
+|`requested-uri-discovery` |xref:{rootdir}/config/io_helidon_common_http_RequestedUriDiscoveryContext.adoc[RequestedUriDiscoveryContext] |{nbsp} |Requested URI discovery for the web server's default socket.
 |`sockets` |xref:{rootdir}/config/io_helidon_reactive_webserver_SocketConfiguration.adoc[SocketConfiguration[&#93;] |{nbsp} |Adds an additional named server socket configuration. As a result, the server will listen
  on multiple ports.
 

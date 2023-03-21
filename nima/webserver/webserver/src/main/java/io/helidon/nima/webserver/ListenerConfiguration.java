@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
@@ -52,6 +53,7 @@ public final class ListenerConfiguration {
     private final MediaContext mediaContext;
     private final DirectHandlers directHandlers;
     private final Context context;
+    private final RequestedUriDiscoveryContext discoveryContext;
 
     private ListenerConfiguration(Builder builder) {
         this.socketOptions = new HashMap<>(builder.socketOptions);
@@ -66,6 +68,7 @@ public final class ListenerConfiguration {
         this.mediaContext = builder.mediaContext;
         this.directHandlers = builder.directHandlers.build();
         this.context = builder.context;
+        this.discoveryContext = builder.discoveryContext;
     }
 
     /**
@@ -161,6 +164,15 @@ public final class ListenerConfiguration {
     }
 
     /**
+     * Requuested URI discovery context.
+     *
+     * @return discovery context
+     */
+    public RequestedUriDiscoveryContext requestedUriDiscoveryContext() {
+        return discoveryContext;
+    }
+
+    /**
      * Options for connections accepted by this listener.
      *
      * @return socket options
@@ -215,6 +227,7 @@ public final class ListenerConfiguration {
         private ContentEncodingContext contentEncodingContext;
         private MediaContext mediaContext;
         private Context context;
+        private RequestedUriDiscoveryContext discoveryContext;
 
         private Builder(String socketName) {
             this.socketName = socketName;
@@ -240,6 +253,11 @@ public final class ListenerConfiguration {
             }
             if (mediaContext == null) {
                 mediaContext = MediaContext.create();
+            }
+            if (discoveryContext == null) {
+                discoveryContext = RequestedUriDiscoveryContext.builder()
+                        .socketId(socketName)
+                        .build();
             }
             return new ListenerConfiguration(this);
         }
@@ -412,6 +430,17 @@ public final class ListenerConfiguration {
         public Builder context(Context context) {
             Objects.requireNonNull(context);
             this.context = context;
+            return this;
+        }
+
+        /**
+         * Configure the requested URI discovery context for this listener.
+         *
+         * @param discoveryContext the {@linkplain io.helidon.common.http.RequestedUriDiscoveryContext discovery context}
+         * @return an updated builder
+         */
+        public Builder requestedUriDiscovery(RequestedUriDiscoveryContext discoveryContext) {
+            this.discoveryContext = discoveryContext;
             return this;
         }
 

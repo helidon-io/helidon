@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,23 @@
 
 package io.helidon.nima.tests.integration.server;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
+
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,39 +40,49 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
-class RoutingTest {
-    private final Http1Client client;
+class RoutingTest extends RoutingTestBase {
 
     RoutingTest(Http1Client client) {
         this.client = client;
     }
 
-    @SetUpRoute
-    static void routing(HttpRouting.Builder router) {
-        router.get("/my path", (req, res) -> res.send("done"))
-                .get("/českáCesta", (req, res) -> res.send("done"));
-    }
-
-    @Test
-    void testRouteWithSpace() {
-        try (Http1ClientResponse response = client.get("/my path").request()) {
-
-            assertThat(response.status(), is(Http.Status.OK_200));
-
-            String message = response.as(String.class);
-            assertThat(message, is("done"));
-        }
-    }
-
-    @Test
-    void testRouteWithUtf8() {
-        try (Http1ClientResponse response = client.get("/českáCesta").request()) {
-
-            assertThat(response.status(), is(Http.Status.OK_200));
-
-            String message = response.as(String.class);
-            assertThat(message, is("done"));
-        }
-
+    @SetUpServer
+    static void setUp(WebServer.Builder builder) {
+        builder.addRouting(HttpRouting.builder()
+                                   .get("/my path", (req, res) -> res.send("done"))
+                                   .get("/českáCesta", (req, res) -> res.send("done"))
+                                   // shortcut methods with path matchers
+                                   .get("/wildcard_*", (req, res) -> res.send("wildcard_test1"))
+                                   .post("/wildcard/*", (req, res) -> res.send("wildcard_test2"))
+                                   // shortcut methods with path
+                                   .get("/get", (req, res) -> res.send("get"))
+                                   .post("/post", (req, res) -> res.send("post"))
+                                   .put("/put", (req, res) -> res.send("put"))
+                                   .delete("/delete", (req, res) -> res.send("delete"))
+                                   .head("/head", (req, res) -> res.send("head"))
+                                   .options("/options", (req, res) -> res.send("options"))
+                                   .trace("/trace", (req, res) -> res.send("trace"))
+                                   .patch("/patch", (req, res) -> res.send("patch"))
+                                   .any("/any", (req, res) -> res.send("any"))
+                                   // shortcut methods using multiple handlers
+                                   .get("/get_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("get_multi"))
+                                   .post("/post_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("post_multi"))
+                                   .put("/put_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("put_multi"))
+                                   .delete("/delete_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("delete_multi"))
+                                   .head("/head_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("head_multi"))
+                                   .options("/options_multi",
+                                            RoutingTestBase::multiHandler,
+                                            (req, res) -> res.send("options_multi"))
+                                   .trace("/trace_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("trace_multi"))
+                                   .patch("/patch_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("patch_multi"))
+                                   // shortcut methods with no path pattern
+                                   .get((req, res) -> res.send("get_catchall"))
+                                   .post((req, res) -> res.send("post_catchall"))
+                                   .put((req, res) -> res.send("put_catchall"))
+                                   .delete((req, res) -> res.send("delete_catchall"))
+                                   .head((req, res) -> res.send("head_catchall"))
+                                   .options((req, res) -> res.send("options_catchall"))
+                                   .trace((req, res) -> res.send("trace_catchall"))
+                                   .patch((req, res) -> res.send("patch_catchall")));
     }
 }

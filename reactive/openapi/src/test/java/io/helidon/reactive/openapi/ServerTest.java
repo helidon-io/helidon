@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Starts a server with the default OpenAPI endpoint to test a static OpenAPI
@@ -100,20 +99,20 @@ public class ServerTest {
         ArrayList<Map<String, Object>> servers = TestUtil.as(
                 ArrayList.class, openAPIDocument.get("servers"));
         Map<String, Object> server = servers.get(0);
-        assertEquals("http://localhost:8000", server.get("url"), "unexpected URL");
-        assertEquals("Local test server", server.get("description"), "unexpected description");
+        assertThat("unexpected URL", server.get("url"), is("http://localhost:8000"));
+        assertThat("unexpected description", server.get("description"), is("Local test server"));
 
         Map<String, Object> paths = TestUtil.as(Map.class, openAPIDocument.get("paths"));
         Map<String, Object> setGreetingPath = TestUtil.as(Map.class, paths.get("/greet/greeting"));
         Map<String, Object> put = TestUtil.as(Map.class, setGreetingPath.get("put"));
-        assertEquals("Sets the greeting prefix", put.get("summary"));
+        assertThat(put.get("summary"), is("Sets the greeting prefix"));
         Map<String, Object> requestBody = TestUtil.as(Map.class, put.get("requestBody"));
-        assertTrue(Boolean.class.cast(requestBody.get("required")));
+        assertThat(Boolean.class.cast(requestBody.get("required")), is(true));
         Map<String, Object> content = TestUtil.as(Map.class, requestBody.get("content"));
         Map<String, Object> applicationJson = TestUtil.as(Map.class, content.get("application/json"));
         Map<String, Object> schema = TestUtil.as(Map.class, applicationJson.get("schema"));
 
-        assertEquals("object", schema.get("type"));
+        assertThat(schema.get("type"), is("object"));
     }
 
     /**
@@ -132,12 +131,12 @@ public class ServerTest {
                 GREETING_PATH,
                 MediaTypes.APPLICATION_OPENAPI_YAML);
         Config c = TestUtil.configFromResponse(cnx);
-        assertEquals("Sets the greeting prefix",
-                                TestUtil.fromConfig(c, "paths./greet/greeting.put.summary"));
-        assertEquals("string",
-                                TestUtil.fromConfig(c,
+        assertThat(TestUtil.fromConfig(c, "paths./greet/greeting.put.summary"),
+                is("Sets the greeting prefix"));
+        assertThat(TestUtil.fromConfig(c,
                         "paths./greet/greeting.put.requestBody.content."
-                            + "application/json.schema.properties.greeting.type"));
+                            + "application/json.schema.properties.greeting.type"),
+                is("string"));
     }
 
     /**
@@ -204,12 +203,12 @@ public class ServerTest {
             headerSetter.accept(cnx);
         }
         Config c = TestUtil.configFromResponse(cnx);
-        assertEquals("Returns the current time",
-                                TestUtil.fromConfig(c, "paths./timecheck.get.summary"));
-        assertEquals("string",
-                                TestUtil.fromConfig(c,
+        assertThat(TestUtil.fromConfig(c, "paths./timecheck.get.summary"),
+                is("Returns the current time"));
+        assertThat(TestUtil.fromConfig(c,
                         "paths./timecheck.get.responses.200.content."
-                                + "application/json.schema.properties.message.type"));
+                                + "application/json.schema.properties.message.type"),
+                is("string"));
     }
 
     @Test
@@ -226,10 +225,10 @@ public class ServerTest {
                 MediaTypes.APPLICATION_OPENAPI_YAML);
         Config greetingConfig = TestUtil.configFromResponse(greetingCnx);
         Config timeConfig = TestUtil.configFromResponse(timeCnx);
-        assertFalse(timeConfig.get("paths./greet/greeting.put.summary").exists(),
-                               "Incorrectly found greeting-related item in time OpenAPI document");
-        assertFalse(greetingConfig.get("paths./timecheck.get.summary").exists(),
-                               "Incorrectly found time-related item in greeting OpenAPI document");
+        assertThat("Incorrectly found greeting-related item in time OpenAPI document",
+                timeConfig.get("paths./greet/greeting.put.summary").exists(), is(false));
+        assertThat("Incorrectly found time-related item in greeting OpenAPI document",
+                greetingConfig.get("paths./timecheck.get.summary").exists(), is(false));
     }
 
     private static void connectAndConsumePayload(MediaType mt) throws Exception {

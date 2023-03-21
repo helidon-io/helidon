@@ -20,8 +20,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.Headers;
@@ -30,17 +34,20 @@ import io.helidon.common.http.Http.DateTime;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.nima.http.media.EntityWriter;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http.ServerResponseBase;
+import io.helidon.nima.webserver.http.spi.Sink;
+import io.helidon.nima.webserver.http.spi.SinkProvider;
 
-/*
-HTTP/1.1 200 OK
-Connection: keep-alive
-Content-Length: 2
-Date: Fri, 22 Oct 2021 16:47:41 +0200
-hi
+/**
+ * An HTTP/1 server response.
  */
 class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final byte[] HTTP_BYTES = "HTTP/1.1 ".getBytes(StandardCharsets.UTF_8);
@@ -52,6 +59,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final HeaderValue STREAM_TRAILERS =
             Http.Header.create(Http.Header.TRAILER, STREAM_STATUS_NAME.defaultCase()
                     + "," + STREAM_RESULT_NAME.defaultCase());
+
+    private static final List<SinkProvider> SINK_PROVIDERS
+            = HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
+    private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     private final ConnectionContext ctx;
     private final Http1ConnectionListener sendListener;
@@ -151,8 +162,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
         streamingEntity = true;
 
-        request.reset();
-
         this.outputStream = new BlockingOutputStream(headers,
                                                      trailers,
                                                      this::status,
@@ -161,6 +170,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                                      () -> {
                                                          this.isSent = true;
                                                          afterSend();
+                                                         request.reset();
                                                      },
                                                      ctx,
                                                      sendListener,
@@ -212,6 +222,46 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     public void commit() {
         if (outputStream != null) {
             outputStream.commit();
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
+        for (SinkProvider p : SINK_PROVIDERS) {
+            if (p.supports(sinkType, request)) {
+                return (X) p.create(this,
+                        (e, m) -> handleSinkData(e, (MediaType) m),
+                        this::commit);
+            }
+        }
+        // Request not acceptable if provider not found
+        throw new HttpException("Unable to find sink provider for request", Http.Status.NOT_ACCEPTABLE_406);
+    }
+
+    private void handleSinkData(Object data, MediaType mediaType) {
+        if (outputStream == null) {
+            outputStream();
+        }
+        try {
+            MediaContext mediaContext = mediaContext();
+
+            if (data instanceof byte[] bytes) {
+                outputStream.write(bytes);
+            } else {
+                if (data instanceof String str && mediaType.equals(MediaTypes.TEXT_PLAIN)) {
+                    EntityWriter<String> writer = mediaContext.writer(GenericType.STRING, EMPTY_HEADERS, EMPTY_HEADERS);
+                    writer.write(GenericType.STRING, str, outputStream, EMPTY_HEADERS, EMPTY_HEADERS);
+                } else {
+                    GenericType<Object> type = GenericType.create(data);
+                    WritableHeaders<?> resHeaders = WritableHeaders.create();
+                    resHeaders.set(Http.Header.CONTENT_TYPE, mediaType.text());
+                    EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS, resHeaders);
+                    writer.write(type, data, outputStream, EMPTY_HEADERS, resHeaders);
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

@@ -17,6 +17,7 @@
 package io.helidon.nima.http2.webserver;
 
 import io.helidon.builder.Builder;
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.config.ConfigBean;
 
@@ -84,4 +85,11 @@ public interface Http2Config {
     @ConfiguredOption("true")
     boolean validatePath();
 
+    /**
+     * Requested URI discovery settings.
+     *
+     * @return settings for computing the requested URI
+     */
+    @ConfiguredOption(key = "requested-uri-discovery")
+    RequestedUriDiscoveryContext requestedUriDiscovery();
 }

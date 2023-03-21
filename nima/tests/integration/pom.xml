@@ -16,7 +16,7 @@
   -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.nima.tests</groupId>
@@ -31,6 +31,7 @@
 
     <modules>
         <module>webserver</module>
+        <module>webclient</module>
         <module>grpc</module>
         <module>websocket</module>
         <module>http2</module>
@@ -38,6 +39,6 @@
         <module>media</module>
         <module>observe</module>
         <module>logging</module>
-        <module>webclient</module>
+        <module>sse</module>
     </modules>
 </project>

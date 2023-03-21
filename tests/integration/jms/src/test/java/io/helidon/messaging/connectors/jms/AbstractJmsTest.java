@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,19 @@ import io.helidon.messaging.connectors.jms.shim.JakartaJms;
 
 import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.Queue;
 import jakarta.jms.Session;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
+import static io.helidon.messaging.connectors.jms.AcknowledgeMode.AUTO_ACKNOWLEDGE;
+
 public class AbstractJmsTest {
 
     static final String BROKER_URL = "vm://localhost?broker.persistent=false";
-//    static final String BROKER_URL = "tcp://localhost:61616";
     static Session session;
     static ConnectionFactory connectionFactory;
 
@@ -46,4 +50,19 @@ public class AbstractJmsTest {
         session.close();
     }
 
+    static void clearQueue(String queueName){
+        var cf = JakartaJms.create(new ActiveMQConnectionFactory(AbstractJmsTest.BROKER_URL));
+        try (Connection conn = cf.createConnection();
+                var s = conn.createSession(false, AUTO_ACKNOWLEDGE.getAckMode())) {
+            conn.start();
+            Queue queue = s.createQueue(queueName);
+            MessageConsumer cons = s.createConsumer(queue);
+            jakarta.jms.Message m;
+            do {
+                m = cons.receive(100L);
+            } while (m != null);
+        } catch (JMSException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

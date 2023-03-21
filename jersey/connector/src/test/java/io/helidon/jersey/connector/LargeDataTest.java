@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,9 +36,11 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The LargeDataTest reproduces a problem when bytes of large data sent are incorrectly sent.
@@ -114,10 +116,10 @@ public class LargeDataTest extends AbstractTest {
                 throw exception;
             }
 
-            Assertions.assertEquals(
-                    Response.Status.Family.SUCCESSFUL,
+            assertThat("Unexpected error: " + response.getStatus(),
                     response.getStatusInfo().getFamily(),
-                    "Unexpected error: " + response.getStatus());
+                    is(Response.Status.Family.SUCCESSFUL)
+                    );
         } finally {
             response.close();
         }

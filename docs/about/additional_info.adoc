@@ -1,0 +1,36 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon Community and Support References
+:description: Helidon community links and references
+:keywords: helidon, java, microservices, microprofile, documentation, nima
+:rootdir: {docdir}/..
+
+
+include::{rootdir}/includes/attributes.adoc[]
+
+Here are some additional resources you can use to get started, get help, and to follow the evolution of Helidon.
+
+
+*	Project website: https://helidon.io
+*	Medium publication: https://medium.com/helidon
+*	GitHub repository: https://github.com/helidon-io/helidon
+*	Public Slack workspace: https://slack.helidon.io/
+*	Twitter account: https://twitter.com/helidon_project 
+*	YouTube channel: https://www.youtube.com/channel/UChg00-uTTrCMmPsuzUNaZsA[https://www.youtube.com/channel/UChg00-uTTrCMmPsuzUNaZsA]
+*	Stack Overflow tag: https://stackoverflow.com/tags/helidon 

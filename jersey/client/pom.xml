@@ -42,11 +42,6 @@
             <artifactId>jersey-hk2</artifactId>
         </dependency>
         <dependency>
-            <!-- this module is required by Jakarta JAX-RS (requires transitive in module-info.java) -->
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
         </dependency>

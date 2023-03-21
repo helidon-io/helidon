@@ -95,12 +95,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
             Accept-Encoding: gzip, compress, br
             Accept-Encoding: br;q=1.0, gzip;q=0.8, *;q=0.1
          */
-        String[] values = acceptEncoding.split(", ");
-        List<EncodingWithQ> supported = new ArrayList<>(values.length);
-        for (String value : values) {
-            supported.add(EncodingWithQ.parse(value));
-        }
-        Collections.sort(supported);
+        List<EncodingWithQ> supported = encodings(acceptEncoding);
         for (EncodingWithQ encodingWithQ : supported) {
             if ("*".equals(encodingWithQ.encoding)) {
                 return firstEncoder;
@@ -113,7 +108,23 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         return ContentEncoder.NO_OP;
     }
 
-    private static class EncodingWithQ implements Comparable<EncodingWithQ> {
+    /**
+     * Extract encodings from header value and sort them based on quality.
+     *
+     * @param acceptEncoding comma-separated list of encodings
+     * @return sorted list of encodings
+     */
+    static List<EncodingWithQ> encodings(String acceptEncoding) {
+        String[] values = acceptEncoding.split(",");
+        List<EncodingWithQ> supported = new ArrayList<>(values.length);
+        for (String value : values) {
+            supported.add(EncodingWithQ.parse(value));
+        }
+        Collections.sort(supported);
+        return supported;
+    }
+
+    static class EncodingWithQ implements Comparable<EncodingWithQ> {
         private final String encoding;
         private final double q;
 
@@ -125,7 +136,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         static EncodingWithQ parse(String value) {
             if (value.indexOf(';') != -1) {
                 int index = value.indexOf(';');
-                String encoding = value.substring(0, index);
+                String encoding = value.substring(0, index).trim();
                 String qString = value.substring(index + 1); // q=0.1
                 index = qString.indexOf('=');
                 if (index == -1) {

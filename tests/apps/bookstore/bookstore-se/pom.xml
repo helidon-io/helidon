@@ -59,6 +59,10 @@
             <artifactId>helidon-reactive-metrics</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.reactive.media</groupId>
             <artifactId>helidon-reactive-media-jsonp</artifactId>
         </dependency>

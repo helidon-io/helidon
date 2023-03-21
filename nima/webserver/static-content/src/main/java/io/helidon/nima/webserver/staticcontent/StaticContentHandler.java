@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import io.helidon.nima.webserver.http.ServerResponse;
 /**
  * Base implementation of static content support.
  */
-abstract class StaticContentHandler implements StaticContentSupport {
+abstract class StaticContentHandler implements StaticContentService {
     private static final System.Logger LOGGER = System.getLogger(StaticContentHandler.class.getName());
 
     private final Map<String, CachedHandlerInMemory> inMemoryCache = new ConcurrentHashMap<>();
@@ -57,7 +57,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
     private final Function<String, String> resolvePathFunction;
     private final AtomicInteger webServerCounter = new AtomicInteger();
 
-    StaticContentHandler(StaticContentSupport.Builder<?> builder) {
+    StaticContentHandler(StaticContentService.Builder<?> builder) {
         this.welcomeFilename = builder.welcomeFileName();
         this.resolvePathFunction = builder.resolvePathFunction();
         this.handlerCache = builder.handlerCache();

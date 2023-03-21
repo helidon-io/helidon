@@ -124,7 +124,7 @@ jobs:
       - name: Maven build
         run: etc/scripts/mp-tck.sh
   archetypes:
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       matrix:
         os: [ ubuntu-20.04 ]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,25 +94,6 @@ abstract class AbstractSampleBean {
     }
 
     @ApplicationScoped
-    public static class ChannelAck extends AbstractSampleBean {
-
-        @Incoming("test-channel-ack-1")
-        @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channelAck(Message<String> msg) {
-            LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
-            consumed().add(msg.getPayload());
-            if (msg.getPayload().startsWith("NO_ACK")) {
-                LOGGER.fine(() -> String.format("NOT Acked %s", msg.getPayload()));
-            } else {
-                LOGGER.fine(() -> String.format("Acked %s", msg.getPayload()));
-                msg.ack();
-            }
-            countDown("channel1()");
-            return CompletableFuture.completedFuture(null);
-        }
-    }
-
-    @ApplicationScoped
     public static class Channel1 extends AbstractSampleBean {
 
         @Incoming("test-channel-1")
@@ -150,15 +131,19 @@ abstract class AbstractSampleBean {
     @ApplicationScoped
     public static class ChannelError extends AbstractSampleBean {
         @Incoming("test-channel-error")
-        @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<Void> error(Message<String> msg) {
-            try {
-                LOGGER.fine(() -> String.format("Received possible error %s", msg.getPayload()));
-                consumed().add(Integer.toString(Integer.parseInt(msg.getPayload())));
-            } finally {
-                msg.ack().whenComplete((a, b) -> countDown("error()"));
-            }
-            return CompletableFuture.completedFuture(null);
+        @Outgoing("test-channel-error-2")
+        @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
+        public String error(String msg) {
+            LOGGER.fine(() -> String.format("Received possible error %s", msg));
+            consumed().add(Integer.toString(Integer.parseInt(msg)));
+            return msg;
+        }
+
+        @Incoming("test-channel-error-2")
+        public SubscriberBuilder<String, Void> consume() {
+            return ReactiveStreams.<String>builder()
+                    .onError(t -> countDown("error()"))
+                    .ignore();
         }
     }
 

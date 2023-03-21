@@ -248,7 +248,11 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         requestId++;
 
         if (entity == EntityStyle.NONE) {
-            Http1ServerRequest request = Http1ServerRequest.create(ctx, routing.security(), prologue, headers, requestId);
+            Http1ServerRequest request = Http1ServerRequest.create(ctx,
+                                                                   routing.security(),
+                                                                   prologue,
+                                                                   headers,
+                                                                   requestId);
             Http1ServerResponse response = new Http1ServerResponse(ctx,
                                                                    sendListener,
                                                                    writer,
@@ -289,7 +293,14 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 decoder = ContentDecoder.NO_OP;
             }
         } else {
-            // todo if validation of request enabled, check the content encoding and fail if present
+            // Check whether Content-Encoding header is present when headers validation is enabled
+            if (http1Config.validateHeaders() && headers.contains(Http.Header.CONTENT_ENCODING)) {
+                throw RequestException.builder()
+                        .type(EventType.BAD_REQUEST)
+                        .request(DirectTransportRequest.create(prologue, headers))
+                        .message("Content-Encoding header present when content encoding is disabled")
+                        .build();
+            }
             decoder = ContentDecoder.NO_OP;
         }
 

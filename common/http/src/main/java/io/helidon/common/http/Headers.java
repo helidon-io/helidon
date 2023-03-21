@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,11 +193,11 @@ public interface Headers extends Iterable<Http.HeaderValue> {
     int size();
 
     /**
-     * Returns a list of acceptedTypes ({@link io.helidon.common.http.Http.Header#ACCEPT} header) content types in
+     * Returns a list of acceptedTypes ({@link io.helidon.common.http.Http.Header#ACCEPT} header) content discoveryTypes in
      * quality factor order. Never {@code null}.
      * Returns an empty list by default.
      *
-     * @return A list of acceptedTypes media types.
+     * @return A list of acceptedTypes media discoveryTypes.
      */
     List<HttpMediaType> acceptedTypes();
 

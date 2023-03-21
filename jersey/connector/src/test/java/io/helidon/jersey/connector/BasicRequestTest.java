@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,10 @@ import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.JerseyCompletionStageRxInvoker;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasKey;
 
 public class BasicRequestTest extends AbstractTest {
     private static BasicResource basicResource = new BasicResource();
@@ -162,8 +166,8 @@ public class BasicRequestTest extends AbstractTest {
     @ParamTest
     public void testBasicGet(String entityType) {
         try (Response response = target("basic", entityType).path("get").request().get()) {
-            Assertions.assertEquals(200, response.getStatus());
-            Assertions.assertEquals("ok", response.readEntity(String.class));
+            assertThat(response.getStatus(), is(200));
+            assertThat(response.readEntity(String.class), is("ok"));
         }
     }
 
@@ -171,8 +175,8 @@ public class BasicRequestTest extends AbstractTest {
     public void testBasicPost(String entityType) {
         try (Response response = target("basic", entityType).path("post").request()
                 .buildPost(Entity.entity("ok", MediaType.TEXT_PLAIN_TYPE)).invoke()) {
-            Assertions.assertEquals(200, response.getStatus());
-            Assertions.assertEquals("okok", response.readEntity(String.class));
+            assertThat(response.getStatus(), is(200));
+            assertThat(response.readEntity(String.class), is("okok"));
         }
     }
 
@@ -182,8 +186,8 @@ public class BasicRequestTest extends AbstractTest {
                 .queryParam("first", "hello")
                 .queryParam("second", "world")
                 .request().get()) {
-            Assertions.assertEquals(200, response.getStatus());
-            Assertions.assertEquals("helloworld", response.readEntity(String.class));
+            assertThat(response.getStatus(), is(200));
+            assertThat(response.readEntity(String.class), is("helloworld"));
         }
     }
 
@@ -193,11 +197,11 @@ public class BasicRequestTest extends AbstractTest {
         MultivaluedHashMap<String, Object> map = new MultivaluedHashMap<>();
         Arrays.stream(headers).forEach(a -> map.add(a[0], a[1]));
         try (Response response = target("basic", entityType).path("headers").request().headers(map).get()) {
-            Assertions.assertEquals(200, response.getStatus());
-            Assertions.assertEquals("ok", response.readEntity(String.class));
+            assertThat(response.getStatus(), is(200));
+            assertThat(response.readEntity(String.class), is("ok"));
             for (int i = 0; i != headers.length; i++) {
-                Assertions.assertTrue(response.getHeaders().containsKey(headers[i][0]));
-                Assertions.assertEquals(headers[i][1], response.getStringHeaders().getFirst(headers[i][0]));
+                assertThat(response.getHeaders(), hasKey(headers[i][0]));
+                assertThat(response.getStringHeaders().getFirst(headers[i][0]), is(headers[i][1]));
             }
         }
     }
@@ -206,14 +210,14 @@ public class BasicRequestTest extends AbstractTest {
     public void testProduces(String entityType) {
         try (Response response = target("basic", entityType).path("produces/consumes").request("test/z-test")
                 .put(Entity.entity("ok", new MediaType("test", "x-test")))) {
-            Assertions.assertEquals(406, response.getStatus());
+            assertThat(response.getStatus(), is(406));
         }
 
         try (Response response = target("basic", entityType).path("produces/consumes").request("test/y-test")
                 .put(Entity.entity("ok", new MediaType("test", "x-test")))) {
-            Assertions.assertEquals(200, response.getStatus());
-            Assertions.assertEquals("okok", response.readEntity(String.class));
-            Assertions.assertEquals("test/y-test", response.getStringHeaders().getFirst(HttpHeaders.CONTENT_TYPE));
+            assertThat(response.getStatus(), is(200));
+            assertThat(response.readEntity(String.class), is("okok"));
+            assertThat(response.getStringHeaders().getFirst(HttpHeaders.CONTENT_TYPE), is("test/y-test"));
         }
     }
 
@@ -221,8 +225,8 @@ public class BasicRequestTest extends AbstractTest {
     public void testAsyncGet(String entityType) throws ExecutionException, InterruptedException {
         Future<Response> futureResponse = target("basic", entityType).path("get").request().async().get();
         try (Response response = futureResponse.get()) {
-            Assertions.assertEquals(200, response.getStatus());
-            Assertions.assertEquals("ok", response.readEntity(String.class));
+            assertThat(response.getStatus(), is(200));
+            assertThat(response.readEntity(String.class), is("ok"));
         }
     }
 
@@ -230,14 +234,14 @@ public class BasicRequestTest extends AbstractTest {
     public void testConsumes(String entityType) {
         try (Response response = target("basic", entityType).path("produces/consumes").request("test/y-test")
                 .put(Entity.entity("ok", new MediaType("test", "z-test")))) {
-            Assertions.assertEquals(415, response.getStatus());
+            assertThat(response.getStatus(), is(415));
         }
 
         try (Response response = target("basic", entityType).path("produces/consumes").request("test/y-test")
                 .put(Entity.entity("ok", new MediaType("test", "x-test")))) {
-            Assertions.assertEquals(200, response.getStatus());
-            Assertions.assertEquals("okok", response.readEntity(String.class));
-            Assertions.assertEquals("test/y-test", response.getStringHeaders().getFirst(HttpHeaders.CONTENT_TYPE));
+            assertThat(response.getStatus(), is(200));
+            assertThat(response.readEntity(String.class), is("okok"));
+            assertThat(response.getStringHeaders().getFirst(HttpHeaders.CONTENT_TYPE), is("test/y-test"));
         }
     }
 
@@ -248,18 +252,18 @@ public class BasicRequestTest extends AbstractTest {
                 target("basic", entityType).path("get").request().rx(JerseyCompletionStageRxInvoker.class).get();
 
         try (Response response = futureResponse.get()) {
-            Assertions.assertEquals(200, response.getStatus());
-            Assertions.assertEquals("ok", response.readEntity(String.class));
+            assertThat(response.getStatus(), is(200));
+            assertThat(response.readEntity(String.class), is("ok"));
         }
     }
 
     @ParamTest
     public void testInputStreamEntity(String entityType) throws IOException {
         try (Response response = target("basic", entityType).path("get").request().get()) {
-            Assertions.assertEquals(200, response.getStatus());
+            assertThat(response.getStatus(), is(200));
             final InputStream is = response.readEntity(InputStream.class);
-            Assertions.assertEquals('o', is.read());
-            Assertions.assertEquals('k', is.read());
+            assertThat(is.read(), is((int)('o')));
+            assertThat(is.read(), is((int)('k')));
             is.close();
         }
     }

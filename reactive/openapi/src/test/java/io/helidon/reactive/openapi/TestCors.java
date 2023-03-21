@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.reactive.openapi.ServerTest.GREETING_OPENAPI_SUPPORT_BUILDER;
 import static io.helidon.reactive.openapi.ServerTest.TIME_OPENAPI_SUPPORT_BUILDER;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Disabled
 public class TestCors {
@@ -56,7 +57,7 @@ public class TestCors {
 
         Config c = TestUtil.configFromResponse(cnx);
 
-        assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode());
+        assertThat(cnx.getResponseCode(), is(Http.Status.OK_200.code()));
     }
 
     @Test
@@ -69,7 +70,7 @@ public class TestCors {
         cnx.setRequestProperty("Origin", "http://foo.bar");
         cnx.setRequestProperty("Host", "localhost");
 
-        assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode());
+        assertThat(cnx.getResponseCode(), is(Http.Status.OK_200.code()));
     }
 
     @Test
@@ -82,6 +83,6 @@ public class TestCors {
         cnx.setRequestProperty("Origin", "http://other.com");
         cnx.setRequestProperty("Host", "localhost");
 
-        assertEquals(Http.Status.FORBIDDEN_403.code(), cnx.getResponseCode());
+        assertThat(cnx.getResponseCode(), is(Http.Status.FORBIDDEN_403.code()));
     }
 }

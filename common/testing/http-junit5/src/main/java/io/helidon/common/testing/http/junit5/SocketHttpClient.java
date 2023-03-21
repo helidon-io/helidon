@@ -534,6 +534,7 @@ public class SocketHttpClient implements AutoCloseable {
 
     /**
      * Continue sending more to text to socket.
+     *
      * @param payload text to be sent
      * @return this http client
      * @throws IOException
@@ -545,6 +546,18 @@ public class SocketHttpClient implements AutoCloseable {
             pw.print(payload);
         }
         pw.flush();
+        return this;
+    }
+
+    /**
+     * Send single chunk as defined by RFC 9112 §7.1.
+     *
+     * @param payload of the chunk
+     * @return this http client
+     * @throws IOException
+     */
+    public SocketHttpClient sendChunk(String payload) throws IOException {
+        continuePayload(Integer.toHexString(payload.length()) + EOL + payload + EOL);
         return this;
     }
 

@@ -43,8 +43,8 @@ import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonStructure;
 import org.yaml.snakeyaml.Yaml;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Various utility methods used by OpenAPI tests.
@@ -81,8 +81,8 @@ public class TestUtil {
      */
     public static String stringYAMLFromResponse(HttpURLConnection cnx) throws IOException {
         HttpMediaType returnedMediaType = mediaTypeFromResponse(cnx);
-        assertTrue(HttpMediaType.create(MediaTypes.APPLICATION_OPENAPI_YAML).test(returnedMediaType),
-                "Unexpected returned media type");
+        assertThat("Unexpected returned media type",
+                HttpMediaType.create(MediaTypes.APPLICATION_OPENAPI_YAML).test(returnedMediaType), is(true));
         return stringFromResponse(cnx, returnedMediaType);
     }
 
@@ -257,17 +257,17 @@ public class TestUtil {
     public static HttpMediaType validateResponseMediaType(
             HttpURLConnection cnx,
             MediaType expectedMediaType) throws Exception {
-        assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode(),
-                "Unexpected response code");
+        assertThat("Unexpected response code", cnx.getResponseCode(),
+                is(Http.Status.OK_200.code()));
         MediaType expectedMT = expectedMediaType != null
                 ? expectedMediaType
                 : OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE;
         HttpMediaType actualMT = mediaTypeFromResponse(cnx);
-        assertTrue(HttpMediaType.create(expectedMT).test(actualMT),
-                "Expected response media type "
+        assertThat("Expected response media type "
                         + expectedMT.toString()
                         + " but received "
-                        + actualMT.toString());
+                        + actualMT.toString(),
+                HttpMediaType.create(expectedMT).test(actualMT), is(true));
         return actualMT;
     }
 

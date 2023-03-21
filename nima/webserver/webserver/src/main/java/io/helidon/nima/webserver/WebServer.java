@@ -166,7 +166,8 @@ public interface WebServer {
                 = HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
 
         private Config providersConfig = Config.empty();
-        private MediaContext mediaContext = MediaContext.create();
+        // MediaContext should be updated with config processing or during final build if not set.
+        private MediaContext mediaContext;
         private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         private boolean shutdownHook = true;
@@ -191,6 +192,9 @@ public interface WebServer {
                 context = Context.builder()
                         .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
                         .build();
+            }
+            if (mediaContext == null) {
+                mediaContext(MediaContext.create());
             }
 
             return new LoomServer(this, directHandlers.build());
@@ -254,6 +258,11 @@ public interface WebServer {
             config.get("content-encoding")
                     .as(ContentEncodingContext::create)
                     .ifPresent(this::contentEncodingContext);
+            // Configure media support
+            config.get("media-support")
+                    .as(MediaContext::create)
+                    // MediaContext always needs to be refreshed after config change
+                    .ifPresent(this::mediaContext);
             // Store providers config node for later usage.
             providersConfig = config.get("connection-providers");
             return this;

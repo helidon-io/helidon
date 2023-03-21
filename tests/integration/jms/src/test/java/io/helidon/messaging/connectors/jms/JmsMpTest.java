@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,8 @@ import static org.hamcrest.Matchers.is;
                 value = AbstractJmsTest.BROKER_URL),
         @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.env-properties.java.naming.factory.initial",
                 value = "org.apache.activemq.jndi.ActiveMQInitialContextFactory"),
+
+        @AddConfig(key = "mp.messaging.connector.helidon-jms.period-executions", value = "5"),
 
         @AddConfig(key = "mp.messaging.incoming.test-channel-1.connector", value = JmsConnector.CONNECTOR_NAME),
         @AddConfig(key = "mp.messaging.incoming.test-channel-1.type", value = "topic"),
@@ -220,7 +222,7 @@ class JmsMpTest extends AbstractMPTest {
         AbstractSampleBean bean = CDI.current().select(AbstractSampleBean.ChannelError.class).get();
         // This is correctly processed
         List<String> testData = Collections.singletonList("10");
-        produceAndCheck(bean, testData, TEST_TOPIC_ERROR, testData);
+        produce(TEST_TOPIC_ERROR, testData, textMessage -> {});
         // This will throw a run time error in TestBean#error
         testData = Collections.singletonList("error");
         produceAndCheck(bean, testData, TEST_TOPIC_ERROR, Collections.singletonList("10"));

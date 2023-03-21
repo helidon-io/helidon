@@ -19,6 +19,7 @@ import java.util.List;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.config.ConfigBean;
 
@@ -90,6 +91,14 @@ public interface Http1Config {
      */
     @ConfiguredOption("false")
     boolean continueImmediately();
+
+    /**
+     * Requested URI discovery settings.
+     *
+     * @return settings for computing the requested URI
+     */
+    @ConfiguredOption(key = "requested-uri-discovery")
+    RequestedUriDiscoveryContext requestedUriDiscovery();
 
     /**
      * Connection send event listeners for HTTP/1.1.

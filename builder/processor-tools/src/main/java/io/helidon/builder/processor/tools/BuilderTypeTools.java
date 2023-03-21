@@ -79,7 +79,8 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
             TypeName annotationTypeName,
             TypeName typeName,
             TypeElement element,
-            ProcessingEnvironment processingEnv) {
+            ProcessingEnvironment processingEnv,
+            boolean wantDefaultMethods) {
         Objects.requireNonNull(annotationTypeName);
         if (typeName.name().equals(Annotation.class.getName())) {
             return Optional.empty();
@@ -94,8 +95,8 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
         List<ExecutableElement> problems = element.getEnclosedElements().stream()
                 .filter(it -> it.getKind() == ElementKind.METHOD)
                 .map(ExecutableElement.class::cast)
-                .filter(this::canAccept)
-                .filter(it -> !it.getParameters().isEmpty())
+                .filter(it -> canAccept(it, wantDefaultMethods))
+                .filter(it -> !it.getParameters().isEmpty() || it.getReturnType().getKind() == TypeKind.VOID)
                 .collect(Collectors.toList());
         if (!problems.isEmpty()) {
             String msg = "only simple getters with no arguments are supported: " + element + ": " + problems;
@@ -103,8 +104,8 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
             throw new IllegalStateException(msg);
         }
 
-        Collection<TypedElementName> elementInfo = toElementInfo(element, processingEnv, true);
-        Collection<TypedElementName> otherElementInfo = toElementInfo(element, processingEnv, false);
+        Collection<TypedElementName> elementInfo = toElementInfo(element, processingEnv, true, wantDefaultMethods);
+        Collection<TypedElementName> otherElementInfo = toElementInfo(element, processingEnv, false, wantDefaultMethods);
         Set<String> modifierNames = element.getModifiers().stream()
                 .map(Modifier::toString)
                 .map(String::toUpperCase)
@@ -118,7 +119,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                                    .elementInfo(elementInfo)
                                    .otherElementInfo(otherElementInfo)
                                    .modifierNames(modifierNames)
-                                   .update(it -> toTypeInfo(annotationTypeName, element, processingEnv)
+                                   .update(it -> toTypeInfo(annotationTypeName, element, processingEnv, wantDefaultMethods)
                                            .ifPresent(it::superTypeInfo))
                                    .build());
     }
@@ -147,37 +148,52 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param element               the typed element (i.e., class)
      * @param processingEnv         the processing env
      * @param wantWhatWeCanAccept   pass true to get the elements we can accept to process, false for the other ones
+     * @param wantDefaultMethods    true to process {@code default} methods
      * @return the collection of typed elements
      */
     protected Collection<TypedElementName> toElementInfo(
             TypeElement element,
             ProcessingEnvironment processingEnv,
-            boolean wantWhatWeCanAccept) {
+            boolean wantWhatWeCanAccept,
+            boolean wantDefaultMethods) {
         return element.getEnclosedElements().stream()
                 .filter(it -> it.getKind() == ElementKind.METHOD)
                 .map(ExecutableElement.class::cast)
-                .filter(it -> (wantWhatWeCanAccept == canAccept(it)))
+                .filter(it -> (wantWhatWeCanAccept == canAccept(it, wantDefaultMethods)))
                 .map(it -> createTypedElementNameFromElement(it, processingEnv.getElementUtils()))
                 .collect(Collectors.toList());
     }
 
     /**
-     * Returns true if the executable element passed is acceptable for processing (i.e., not a static and not a default method
-     * on interfaces, and abstract methods on abstract classes).
+     * Returns true if the executable element passed is acceptable for processing. By default that means methods that are not
+     * static or default methods.
      *
      * @param ee the executable element
+     * @param defineDefaultMethods true if we should also process default methods
      * @return true if not able to accept
      */
     protected boolean canAccept(
-            ExecutableElement ee) {
+            ExecutableElement ee,
+            boolean defineDefaultMethods) {
         Set<Modifier> mods = ee.getModifiers();
-        return mods.contains(Modifier.ABSTRACT);
+        if (mods.contains(Modifier.ABSTRACT)) {
+            return true;
+        }
+
+        if (defineDefaultMethods
+                && mods.contains(Modifier.DEFAULT)
+                && ee.getParameters().isEmpty()) {
+            return (ee.getReturnType().getKind() != TypeKind.VOID);
+        }
+
+        return false;
     }
 
     private Optional<TypeInfo> toTypeInfo(
             TypeName annotationTypeName,
             TypeElement element,
-            ProcessingEnvironment processingEnv) {
+            ProcessingEnvironment processingEnv,
+            boolean wantDefaultMethods) {
         List<? extends TypeMirror> ifaces = element.getInterfaces();
         if (ifaces.size() > 1) {
             processingEnv.getMessager()
@@ -194,7 +210,8 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
         return createTypeInfo(annotationTypeName,
                               createTypeNameFromElement(parent.orElseThrow()).orElseThrow(),
                               parent.orElseThrow(),
-                              processingEnv);
+                              processingEnv,
+                              wantDefaultMethods);
     }
 
     /**

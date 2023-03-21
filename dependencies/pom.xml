@@ -67,7 +67,7 @@
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <!-- This is the BOM version for Jackson Databind 2.13.4.2 -->
         <version.lib.jackson>2.13.4.20221013</version.lib.jackson>
-        <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
+        <version.lib.jakarta.activation-api>2.1.1</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.1.0</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
         <version.lib.jakarta.el-api>4.0.0</version.lib.jakarta.el-api>
@@ -81,7 +81,7 @@
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.0.0</version.lib.jakarta.websockets-api>
-        <version.lib.jakarta.xml.bind-api>3.0.1</version.lib.jakarta.xml.bind-api>
+        <version.lib.jakarta.xml.bind-api>4.0.0</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>2.4.3.Final</version.lib.jandex>
         <version.lib.jaxb-core>3.0.2</version.lib.jaxb-core>
         <version.lib.jaxb-impl>3.0.2</version.lib.jaxb-impl>
@@ -91,7 +91,7 @@
         <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
         <version.lib.jaxb-runtime>3.0.2</version.lib.jaxb-runtime>
         <version.lib.jedis>3.6.3</version.lib.jedis>
-        <version.lib.jersey>3.1.0</version.lib.jersey>
+        <version.lib.jersey>3.1.1</version.lib.jersey>
         <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>2.8.1</version.lib.kafka>
@@ -109,7 +109,7 @@
         <version.lib.microprofile-fault-tolerance-api>4.0</version.lib.microprofile-fault-tolerance-api>
         <version.lib.microprofile-graphql>2.0</version.lib.microprofile-graphql>
         <version.lib.microprofile-health>4.0</version.lib.microprofile-health>
-        <version.lib.microprofile-jwt>2.0</version.lib.microprofile-jwt>
+        <version.lib.microprofile-jwt>2.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>4.0</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-openapi-api>3.0</version.lib.microprofile-openapi-api>
         <version.lib.microprofile-reactive-messaging-api>3.0</version.lib.microprofile-reactive-messaging-api>
@@ -986,10 +986,6 @@
                     <exclusion>
                         <groupId>org.glassfish.hk2.external</groupId>
                         <artifactId>jakarta.inject</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.sun.activation</groupId>
-                        <artifactId>jakarta.activation</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

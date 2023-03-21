@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1358,6 +1358,35 @@ public final class Http {
          * This header will be removed if it is part of the request.
          */
         public static final HeaderName X_HELIDON_CN = HeaderEnum.X_HELIDON_CN;
+        /**
+         * The {@code X-Forwarded-For} header name.
+         * Represents the originating client and intervening proxies when the request has passed through one or more proxies.
+         */
+        public static final HeaderName X_FORWARDED_FOR = HeaderEnum.X_FORWARDED_FOR;
+        /**
+         * The {@code X_FORWARDED_HOST} header name.
+         * Represents the host specified by the originating client when the request has passed through one or more proxies.
+         */
+        public static final HeaderName X_FORWARDED_HOST = HeaderEnum.X_FORWARDED_HOST;
+
+        /**
+         * The {@code X_FORWARDED_PORT} header name.
+         * Represents the port specified by the originating client when the request has passed through one or more proxies.
+         */
+        public static final HeaderName X_FORWARDED_PORT = HeaderEnum.X_FORWARDED_PORT;
+
+        /**
+         * The {@code X_FORWARDED_PREFIX} header name.
+         * Represents the path prefix to be applied to relative paths resolved against this request when the request has passed
+         * through one or more proxies.
+         *
+         */
+        public static final HeaderName X_FORWARDED_PREFIX = HeaderEnum.X_FORWARDED_PREFIX;
+        /**
+         * The {@code X_FORWARDED_PROTO} header name.
+         * Represents the protocol specified by the originating client when the request has passed through one or more proxies.
+         */
+        public static final HeaderName X_FORWARDED_PROTO = HeaderEnum.X_FORWARDED_PROTO;
 
         private Header() {
         }
@@ -1597,6 +1626,12 @@ public final class Http {
         public static final HeaderValue CONTENT_TYPE_OCTET_STREAM = Header.createCached(Header.CONTENT_TYPE,
                                                                                         "application/octet-stream");
         /**
+         * Content type SSE event stream.
+         */
+        public static final HeaderValue CONTENT_TYPE_EVENT_STREAM = Header.createCached(Header.CONTENT_TYPE,
+                                                                                  "text/event-stream");
+
+        /**
          * Accept application/json.
          */
         public static final HeaderValue ACCEPT_JSON = Header.createCached(Header.ACCEPT, "application/json");
@@ -1604,6 +1639,10 @@ public final class Http {
          * Accept text/plain with UTF-8.
          */
         public static final HeaderValue ACCEPT_TEXT = Header.createCached(Header.ACCEPT, "text/plain;charset=UTF-8");
+        /**
+         * Accept text/event-stream.
+         */
+        public static final HeaderValue ACCEPT_EVENT_STREAM = Header.createCached(Header.ACCEPT, "text/event-stream");
         /**
          * Expect 100 header.
          */

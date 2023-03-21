@@ -44,6 +44,7 @@ class ThreadPerTaskExecutor implements HelidonTaskExecutor {
     private final ThreadFactory factory;
     private final Map<Thread, Object> threadTasks = new ConcurrentHashMap<>();
     private final CountDownLatch terminationSignal = new CountDownLatch(1);
+    private final ClassLoader contextClassLoader;
 
     // states: RUNNING -> SHUTDOWN -> TERMINATED
     private static final int RUNNING = 0;
@@ -53,6 +54,7 @@ class ThreadPerTaskExecutor implements HelidonTaskExecutor {
 
     private ThreadPerTaskExecutor(ThreadFactory factory) {
         this.factory = Objects.requireNonNull(factory);
+        this.contextClassLoader = Thread.currentThread().getContextClassLoader();
     }
 
     static HelidonTaskExecutor create(ThreadFactory factory) {
@@ -137,6 +139,9 @@ class ThreadPerTaskExecutor implements HelidonTaskExecutor {
         Thread thread = factory.newThread(task);
         if (thread == null) {
             throw new RejectedExecutionException();
+        }
+        if (contextClassLoader != null) {
+            thread.setContextClassLoader(contextClassLoader);
         }
         return thread;
     }

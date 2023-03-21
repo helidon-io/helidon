@@ -1,0 +1,145 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon Documentation
+:description: Helidon
+:keywords: helidon, java, microservices, microprofile, documentation, nima
+:rootdir: {docdir}/..
+
+Check out the xref:{rootdir}/about/doc_sitemap.adoc[Documentation Overview] for information about this site and the materials we provide.
+
+include::{rootdir}/includes/attributes.adoc[]
+
+
+
+[PILLARS]
+====
+//Introduction to Helidon
+[CARD]
+.Introduction to Helidon
+[icon=lightbulb]
+--
+New to Helidon? Start here to learn how Helidon's open-source set of Java libraries can help you write cloud-native Java microservices.
+
+xref:{rootdir}/about/introduction.adoc[What is Helidon?]
+
+xref:{rootdir}/about/benefits.adoc[Features and Benefits]
+
+xref:{rootdir}/about/archetype.adoc[Helidon Archetypes]
+
+xref:{rootdir}/about/additional_info.adoc[Helidon Community and Support]
+
+xref:{rootdir}/about/intro.adoc[What's New in Helidon 4]
+
+
+--
+//Getting Started
+[CARD]
+.Getting Started
+[icon=rocket_launch]
+--
+There are several ways to generate your first Helidon project. In a hurry? Try the Helidon CLI or Project Starter which provide a set of predefined archetypes to choose from.    
+
+xref:{rootdir}/about/prerequisites.adoc[Prerequisites and System Requirements]
+
+xref:{rootdir}/about/cli.adoc[Using the Helidon CLI]
+
+xref:{rootdir}/about/generating_project.adoc[Using Project Starter]
+
+xref:{rootdir}/mp/guides/quickstart.adoc[Using the MP Quickstart Guide]
+
+xref:{rootdir}/se/guides/quickstart.adoc[Using the SE Quick Start Guide]
+
+
+--
+
+//Migration Guides
+[CARD]
+.Upgrading Helidon
+[icon=storage]
+--
+Use the migration guides to help you upgrade your existing Helidon applications to the latest version of Helidon.
+
+xref:{rootdir}/mp/guides/migration_3x.adoc[Upgrade From Helidon MP 3.x]
+
+xref:{rootdir}/mp/guides/migration.adoc[Upgrade From Helidon MP 2.x]
+
+xref:{rootdir}/se/guides/migration_3x.adoc[Upgrade From Helidon SE 3.x]
+
+xref:{rootdir}/se/guides/migration.adoc[Upgrade From Helidon SE 2.x]
+
+--
+
+
+
+//Developing Your First Application
+[CARD]
+.Developing Your First Application From Scratch
+[icon=terminal]
+--
+Use these hands-on development tutorials to learn how to generate a small "Hello World!" greeting service that demonstrates some of Helidon's core features. 
+
+xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon MP Tutorial]
+
+xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon SE Tutorial]
+
+--
+
+//How-To Guides
+[CARD]
+.How-To Guides
+[icon=library_books]
+--
+Ready for more hands-on learning? Explore the features of Helidon with these quick step-by-step guides.
+
+xref:{rootdir}/nima/guides/overview.adoc[N&iacute;ma Guides]
+
+xref:{rootdir}/se/guides/overview.adoc[SE Guides]
+
+xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
+
+--
+//Advanced Features
+[CARD]
+.Advanced Features 
+[icon=swap_horiz]
+--
+
+--
+
+
+//Training and Certification
+[CARD]
+.Helidon MP
+[icon=swap_horiz]
+--
+
+--
+
+//Helidon N&iacute;ma
+[CARD]
+.Helidon N&iacute;ma
+[icon=swap_horiz]
+--
+
+--
+====
+
+
+
+
