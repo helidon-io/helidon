@@ -68,7 +68,6 @@ import io.helidon.nima.http2.WindowSize;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
 import static java.lang.System.Logger.Level.DEBUG;
-import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
