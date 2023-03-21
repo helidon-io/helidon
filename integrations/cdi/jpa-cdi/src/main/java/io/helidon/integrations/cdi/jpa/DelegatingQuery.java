@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,11 @@ import jakarta.persistence.Parameter;
 import jakarta.persistence.Query;
 import jakarta.persistence.TemporalType;
 
-abstract class DelegatingQuery implements Query {
+class DelegatingQuery implements Query {
 
     private final Query delegate;
 
-    DelegatingQuery(final Query delegate) {
+    DelegatingQuery(Query delegate) {
         super();
         this.delegate = Objects.requireNonNull(delegate);
     }
@@ -57,7 +57,7 @@ abstract class DelegatingQuery implements Query {
     }
 
     @Override
-    public Query setMaxResults(final int maxResults) {
+    public Query setMaxResults(int maxResults) {
         this.delegate.setMaxResults(maxResults);
         return this;
     }
@@ -69,7 +69,7 @@ abstract class DelegatingQuery implements Query {
     }
 
     @Override
-    public Query setFirstResult(final int firstResult) {
+    public Query setFirstResult(int firstResult) {
         this.delegate.setFirstResult(firstResult);
         return this;
     }
@@ -82,29 +82,29 @@ abstract class DelegatingQuery implements Query {
 
 
     @Override
-    public Query setHint(final String hintName, final Object value) {
+    public Query setHint(String hintName, Object value) {
         this.delegate.setHint(hintName, value);
         return this;
     }
 
 
     @Override
-    public Parameter<?> getParameter(final int position) {
+    public Parameter<?> getParameter(int position) {
         return this.delegate.getParameter(position);
     }
 
     @Override
-    public <T> Parameter<T> getParameter(final int position, final Class<T> type) {
+    public <T> Parameter<T> getParameter(int position, Class<T> type) {
         return this.delegate.getParameter(position, type);
     }
 
     @Override
-    public Parameter<?> getParameter(final String name) {
+    public Parameter<?> getParameter(String name) {
         return this.delegate.getParameter(name);
     }
 
     @Override
-    public <T> Parameter<T> getParameter(final String name, final Class<T> type) {
+    public <T> Parameter<T> getParameter(String name, Class<T> type) {
         return this.delegate.getParameter(name, type);
     }
 
@@ -116,80 +116,80 @@ abstract class DelegatingQuery implements Query {
 
 
     @Override
-    public <T> T getParameterValue(final Parameter<T> parameter) {
+    public <T> T getParameterValue(Parameter<T> parameter) {
         return this.delegate.getParameterValue(parameter);
     }
 
     @Override
-    public Object getParameterValue(final int position) {
+    public Object getParameterValue(int position) {
         return this.delegate.getParameterValue(position);
     }
 
     @Override
-    public Object getParameterValue(final String name) {
+    public Object getParameterValue(String name) {
         return this.delegate.getParameterValue(name);
     }
 
 
     @Override
-    public boolean isBound(final Parameter<?> parameter) {
+    public boolean isBound(Parameter<?> parameter) {
         return this.delegate.isBound(parameter);
     }
 
 
     @Override
-    public <T> Query setParameter(final Parameter<T> parameter, final T value) {
+    public <T> Query setParameter(Parameter<T> parameter, T value) {
         this.delegate.setParameter(parameter, value);
         return this;
     }
 
     @Override
-    public Query setParameter(final Parameter<Calendar> parameter, final Calendar value, final TemporalType temporalType) {
+    public Query setParameter(Parameter<Calendar> parameter, Calendar value, TemporalType temporalType) {
         this.delegate.setParameter(parameter, value, temporalType);
         return this;
     }
 
     @Override
-    public Query setParameter(final Parameter<Date> parameter, final Date value, final TemporalType temporalType) {
+    public Query setParameter(Parameter<Date> parameter, Date value, TemporalType temporalType) {
         this.delegate.setParameter(parameter, value, temporalType);
         return this;
     }
 
 
     @Override
-    public Query setParameter(final int position, final Calendar value, final TemporalType temporalType) {
+    public Query setParameter(int position, Calendar value, TemporalType temporalType) {
         this.delegate.setParameter(position, value, temporalType);
         return this;
     }
 
     @Override
-    public Query setParameter(final String name, final Calendar value, final TemporalType temporalType) {
+    public Query setParameter(String name, Calendar value, TemporalType temporalType) {
         this.delegate.setParameter(name, value, temporalType);
         return this;
     }
 
 
     @Override
-    public Query setParameter(final int position, final Date value, final TemporalType temporalType) {
+    public Query setParameter(int position, Date value, TemporalType temporalType) {
         this.delegate.setParameter(position, value, temporalType);
         return this;
     }
 
     @Override
-    public Query setParameter(final String name, final Date value, final TemporalType temporalType) {
+    public Query setParameter(String name, Date value, TemporalType temporalType) {
         this.delegate.setParameter(name, value, temporalType);
         return this;
     }
 
 
     @Override
-    public Query setParameter(final int position, final Object value) {
+    public Query setParameter(int position, Object value) {
         this.delegate.setParameter(position, value);
         return this;
     }
 
     @Override
-    public Query setParameter(final String name, final Object value) {
+    public Query setParameter(String name, Object value) {
         this.delegate.setParameter(name, value);
         return this;
     }
@@ -201,7 +201,7 @@ abstract class DelegatingQuery implements Query {
     }
 
     @Override
-    public Query setFlushMode(final FlushModeType flushMode) {
+    public Query setFlushMode(FlushModeType flushMode) {
         this.delegate.setFlushMode(flushMode);
         return this;
     }
@@ -213,7 +213,7 @@ abstract class DelegatingQuery implements Query {
     }
 
     @Override
-    public Query setLockMode(final LockModeType lockMode) {
+    public Query setLockMode(LockModeType lockMode) {
         this.delegate.setLockMode(lockMode);
         return this;
     }
@@ -226,7 +226,10 @@ abstract class DelegatingQuery implements Query {
 
 
     @Override
-    public <T> T unwrap(final Class<T> cls) {
+    public <T> T unwrap(Class<T> cls) {
+        if (cls != null && cls.isInstance(this)) {
+            return cls.cast(this);
+        }
         return this.delegate.unwrap(cls);
     }
 
