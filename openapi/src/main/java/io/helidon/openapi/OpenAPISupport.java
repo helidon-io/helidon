@@ -156,7 +156,8 @@ public class OpenAPISupport implements Service {
             boolean allowSnakeYamlWarnings = (config.get("openapi.parsing.warnings.enabled").asBoolean().orElse(false));
             if (SNAKE_YAML_INTROSPECTOR_LOGGER.isLoggable(Level.WARNING) && !allowSnakeYamlWarnings) {
                 SNAKE_YAML_INTROSPECTOR_LOGGER.setLevel(Level.SEVERE);
-            }helper = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create);
+            }
+            helper = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create);
             adjustTypeDescriptions(helper.types());
         }
         return helper;
