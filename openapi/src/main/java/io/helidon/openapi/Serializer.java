@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,6 @@ class Serializer {
 
         private static final String EXTENSIONS = "extensions";
 
-        private final DumperOptions dumperOptions;
         private final DumperOptions.ScalarStyle stringStyle;
 
         private final Map<Class<?>, ExpandedTypeDescription> implsToTypes;
@@ -110,8 +109,8 @@ class Serializer {
         CustomRepresenter(Map<Class<?>, ExpandedTypeDescription> types,
                 Map<Class<?>, ExpandedTypeDescription> implsToTypes, DumperOptions dumperOptions,
                 DumperOptions.ScalarStyle stringStyle) {
+            super(dumperOptions);
             this.implsToTypes = implsToTypes;
-            this.dumperOptions = dumperOptions;
             this.stringStyle = stringStyle;
             types.values().stream()
                 .map(ImplTypeDescription::new)
