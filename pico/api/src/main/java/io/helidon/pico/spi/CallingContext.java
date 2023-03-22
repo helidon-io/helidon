@@ -22,7 +22,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.Builder;
-import io.helidon.pico.PicoServices;
 
 import static io.helidon.pico.PicoServicesConfig.TAG_DEBUG;
 
@@ -97,73 +96,7 @@ public abstract class CallingContext {
     }
 
     /**
-     * Creates a new calling context instance.
-     *
-     * @param moduleName     the module name if known
-     * @param isDebugEnabled the debug flag if known
-     * @return a new calling context if there is indication that debug mode is enabled
-     * @see io.helidon.pico.PicoServices#isDebugEnabled()
-     */
-    static Optional<CallingContext> maybeCreate(Optional<String> moduleName,
-                                                Optional<Boolean> isDebugEnabled) {
-        boolean debug = isDebugEnabled.orElseGet(PicoServices::isDebugEnabled);
-        if (!debug) {
-            return Optional.empty();
-        }
-
-        return Optional.of(DefaultCallingContext.builder()
-                .moduleName(moduleName)
-                .trace(new RuntimeException().getStackTrace())
-                .build());
-    }
-
-    /**
-     * Same as {@link #maybeCreate(boolean, java.util.Optional, java.util.Optional, boolean, boolean)} passing default args.
-     *
-     * @return a new calling context if there is indication that debug mode is enabled
-     */
-    public static Optional<CallingContext> maybeCreate() {
-        return maybeCreate(false, Optional.empty(), Optional.empty(), false, false);
-    }
-
-    /**
-     * Used when no contextual information is known from the caller's perspective.
-     *
-     * @param force force the creation of the calling context regardless of whether we are in debug mode
-     * @param moduleName     the module name if known
-     * @param isDebugEnabled the debug flag if known
-     * @param setGlobalDefault should any created context be set in the global default
-     * @param throwIfAlreadySet should an exception be thrown if the global calling context was already set
-     * @return a new calling context if there is indication that debug mode is enabled
-     */
-    public static Optional<CallingContext> maybeCreate(boolean force,
-                                                       Optional<String> moduleName,
-                                                       Optional<Boolean> isDebugEnabled,
-                                                       boolean setGlobalDefault,
-                                                       boolean throwIfAlreadySet) {
-        CallingContext global = defaultCallingContext;
-        if (global != null) {
-            return Optional.of(global);
-        }
-
-        if (force || isDebugEnabled.orElse(false)) {
-            global = DefaultCallingContext.builder()
-                    .moduleName(moduleName)
-                    .trace(new RuntimeException().getStackTrace())
-                    .build();
-        } else {
-            global = maybeCreate(Optional.empty(), Optional.empty()).orElse(null);
-        }
-
-        if (global != null && setGlobalDefault) {
-            globalCallingContext(global, throwIfAlreadySet);
-        }
-
-        return Optional.ofNullable(global);
-    }
-
-    /**
-     * Sets the default global context.
+     * Sets the default global calling context.
      *
      * @param callingContext the default global context
      * @param throwIfAlreadySet should an exception be thrown if the global calling context was already set
@@ -175,8 +108,7 @@ public abstract class CallingContext {
 
         CallingContext global = defaultCallingContext;
         if (global != null && throwIfAlreadySet) {
-            CallingContext currentCallingContext =
-                    maybeCreate(true, Optional.empty(), Optional.empty(), false, false).orElseThrow();
+            CallingContext currentCallingContext = CallingContextCreator.create(true).orElseThrow();
             throw new IllegalStateException("Expected to be the owner of the calling context. This context is: "
                                                     + currentCallingContext + "\n Context previously set was: " + global);
         }
@@ -187,18 +119,28 @@ public abstract class CallingContext {
     /**
      * Convenience method for producing an error message that may involve advising the user to apply a debug mode.
      *
-     * @param callingContext the calling context (caller can be using a custom calling context, which is why we accept it here instead of using the global one)
-     * @param msg the base message to display
+     * @param callingContext the calling context (caller can be using a custom calling context, which is why we accept it here
+     *                       instead of using the global one)
+     * @param msg            the base message to display
      * @return the message appropriate for any exception being thrown
      */
-    public static String toErrorMessage(Optional<CallingContext> callingContext,
+    public static String toErrorMessage(CallingContext callingContext,
                                         String msg) {
-        if (callingContext.isEmpty()) {
-            return msg + " - " + DEBUG_HINT;
-        } else {
-            return msg + " - previous calling context: " + callingContext.orElseThrow();
-        }
+        return msg + " - previous calling context: " + callingContext;
     }
+
+    /**
+     * Convenience method for producing an error message that may involve advising the user to apply a debug mode. Use
+     * {@link #toErrorMessage(CallingContext, String)} iinstead f a calling context is available.
+     *
+     * @param msg the base message to display
+     * @return the message appropriate for any exception being thrown
+     * @see #toErrorMessage(CallingContext, String)
+     */
+    public static String toErrorMessage(String msg) {
+        return msg + " - " + DEBUG_HINT;
+    }
+
 
     static class BuilderInterceptor implements io.helidon.builder.BuilderInterceptor<DefaultCallingContext.Builder> {
         @Override

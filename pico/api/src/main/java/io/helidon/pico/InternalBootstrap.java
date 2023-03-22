@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.Builder;
 import io.helidon.pico.spi.CallingContext;
+import io.helidon.pico.spi.CallingContextCreator;
 
 /**
  * Internal bootstrap is what we store when {@link io.helidon.pico.PicoServices#globalBootstrap(Bootstrap)} is used.
@@ -43,17 +44,20 @@ abstract class InternalBootstrap {
 
     /**
      * Creates an internal bootstrap.
-     * See the notes in {@link io.helidon.pico.spi.CallingContext#maybeCreate(java.util.Optional, java.util.Optional)}.
+     * See the notes in {@link CallingContextCreator#create(boolean)}.
      *
      * @param bootstrap      Optionally, the user-defined bootstrap - one will be created if passed as null
-     * @param callingContext Optionally, the calling context if known - defaults to {@link io.helidon.pico.spi.CallingContext}
+     * @param callingContext Optionally, the calling context if known
      * @return a newly created internal bootstrap instance
      */
     static InternalBootstrap create(Bootstrap bootstrap,
                                     CallingContext callingContext) {
+        if (callingContext == null) {
+            callingContext = CallingContextCreator.create(false).orElse(null);
+        }
         return DefaultInternalBootstrap.builder()
                 .bootStrap((bootstrap == null) ? DefaultBootstrap.builder().build() : bootstrap)
-                .callingContext((callingContext == null) ? CallingContext.maybeCreate() : Optional.empty())
+                .callingContext(Optional.ofNullable(callingContext))
                 .build();
     }
 

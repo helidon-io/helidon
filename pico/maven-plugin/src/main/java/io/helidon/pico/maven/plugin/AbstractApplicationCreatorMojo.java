@@ -42,6 +42,8 @@ import io.helidon.pico.ServiceProviderProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.services.DefaultServiceBinder;
 import io.helidon.pico.spi.CallingContext;
+import io.helidon.pico.spi.CallingContextCreator;
+import io.helidon.pico.spi.DefaultCallingContext;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ApplicationCreatorCodeGen;
@@ -68,14 +70,13 @@ import static io.helidon.pico.maven.plugin.Utils.applicationCreator;
 import static io.helidon.pico.maven.plugin.Utils.hasValue;
 import static io.helidon.pico.maven.plugin.Utils.picoServices;
 import static io.helidon.pico.maven.plugin.Utils.toDescriptions;
-import static io.helidon.pico.spi.CallingContext.maybeCreate;
+import static io.helidon.pico.spi.CallingContext.globalCallingContext;
 import static io.helidon.pico.spi.CallingContext.toErrorMessage;
 import static io.helidon.pico.tools.ApplicationCreatorConfigOptions.PermittedProviderType;
 import static io.helidon.pico.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
 import static io.helidon.pico.tools.ModuleUtils.isUnnamedModuleName;
 import static io.helidon.pico.tools.ModuleUtils.toBasePath;
 import static io.helidon.pico.tools.ModuleUtils.toSuggestedModuleName;
-import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -226,8 +227,14 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     protected void innerExecute() {
         this.permittedProviderType = PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
 
-        Optional<CallingContext> ignoreCallingContext =
-                maybeCreate(false, ofNullable(getThisModuleName()), of(isDebugEnabled()), true, true);
+        CallingContext callCtx = null;
+        Optional<DefaultCallingContext.Builder> callingContextBuilder =
+                CallingContextCreator.createBuilder(false);
+        if (callingContextBuilder.isPresent()) {
+            callingContextBuilder.get().moduleName(Optional.ofNullable(getThisModuleName()));
+            callCtx = callingContextBuilder.get().build();
+            globalCallingContext(callCtx, true);
+        }
 
         // we MUST get the exclusion list prior to building the next loader, since it will reset the service registry
         Set<TypeName> serviceNamesForExclusion = getServiceTypeNamesForExclusion();
@@ -242,7 +249,9 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
             PicoServices picoServices = picoServices(false);
             if (picoServices.config().usesCompileTimeApplications()) {
-                throw new IllegalStateException(toErrorMessage(maybeCreate(), "should not be using 'application' bindings"));
+                String desc = "should not be using 'application' bindings";
+                String msg = (callCtx == null) ? toErrorMessage(desc) : toErrorMessage(callCtx, desc);
+                throw new IllegalStateException(msg);
             }
             Services services = picoServices.services();
 
@@ -363,7 +372,12 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     void warn(String msg) {
-        ToolsException e = new ToolsException(toErrorMessage(maybeCreate(), "no modules to process"));
+        Optional<DefaultCallingContext.Builder> optBuilder = CallingContextCreator.createBuilder(false);
+        CallingContext callCtx = (optBuilder.isPresent())
+                ? optBuilder.get().moduleName(Optional.ofNullable(getThisModuleName())).build() : null;
+        String desc = "no modules to process";
+        String ctxMsg = (callCtx == null) ? CallingContext.toErrorMessage(desc) : CallingContext.toErrorMessage(callCtx, desc);
+        ToolsException e = new ToolsException(ctxMsg);
         if (PicoServices.isDebugEnabled()) {
             getLog().warn(e.getMessage(), e);
         } else {

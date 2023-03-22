@@ -62,11 +62,11 @@ import io.helidon.pico.ServiceProviderProvider;
 import io.helidon.pico.configdriven.ConfiguredBy;
 import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.spi.CallingContext;
+import io.helidon.pico.spi.CallingContextCreator;
 import io.helidon.pico.spi.InjectionResolver;
 
 import static io.helidon.pico.configdriven.services.Utils.hasValue;
 import static io.helidon.pico.configdriven.services.Utils.isBlank;
-import static io.helidon.pico.spi.CallingContext.maybeCreate;
 import static io.helidon.pico.spi.CallingContext.toErrorMessage;
 
 /**
@@ -160,9 +160,9 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     void assertIsInitializing() {
         if (initialized.get()) {
             CallingContext callingContext = initializationCallingContext.get();
-            throw new PicoServiceProviderException(
-                    toErrorMessage(Optional.ofNullable(callingContext),
-                                   description() + " was previously initialized"), this);
+            String desc = description() + " was previously initialized";
+            String msg = (callingContext == null) ? toErrorMessage(desc) : toErrorMessage(callingContext, desc);
+            throw new PicoServiceProviderException(msg, this);
         }
     }
 
@@ -819,8 +819,10 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         if (cbr == null) {
             LOGGER.log(System.Logger.Level.INFO, "Config-Driven Services disabled (config bean registry not found");
         } else if (!(cbr instanceof InternalConfigBeanRegistry)) {
-            throw new PicoException(
-                    toErrorMessage(maybeCreate(), "Config-Driven Services disabled (unsupported implementation): " + cbr));
+            Optional<CallingContext> callingContext = CallingContextCreator.create(false);
+            String desc = "Config-Driven Services disabled (unsupported implementation): " + cbr;
+            String msg = (callingContext.isEmpty()) ? toErrorMessage(desc) : toErrorMessage(callingContext.get(), desc);
+            throw new PicoException(msg);
         }
 
         return (InternalConfigBeanRegistry) cbr;

@@ -59,9 +59,9 @@ import io.helidon.pico.ServiceBinder;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.spi.CallingContext;
+import io.helidon.pico.spi.CallingContextCreator;
 import io.helidon.pico.spi.Resetable;
 
-import static io.helidon.pico.spi.CallingContext.maybeCreate;
 import static io.helidon.pico.spi.CallingContext.toErrorMessage;
 
 /**
@@ -81,7 +81,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
     private final boolean isGlobal;
     private final DefaultActivationLog log;
     private final State state = State.create(Phase.INIT);
-    private CallingContext initializationCallingContext;
+    private Optional<CallingContext> initializationCallingContext;
 
     /**
      * Constructor taking the bootstrap.
@@ -371,16 +371,18 @@ class DefaultPicoServices implements PicoServices, Resetable {
 
     private void assertNotInitializing() {
         if (isBinding.get() || isInitializing()) {
-            CallingContext initializationCallingContext = this.initializationCallingContext;
-            throw new PicoException(toErrorMessage(Optional.ofNullable(initializationCallingContext),
-                                                   "reset() during the initialization sequence is not supported (binding="
-                                                           + isBinding + ", initializingServicesFinished="
-                                                           + initializingServicesFinished + ")"));
+            Optional<CallingContext> initializationCallingContext = this.initializationCallingContext;
+            String desc = "reset() during the initialization sequence is not supported (binding="
+                    + isBinding + ", initializingServicesFinished="
+                    + initializingServicesFinished + ")";
+            String msg = (initializationCallingContext.isEmpty())
+                    ? toErrorMessage(desc) : toErrorMessage(initializationCallingContext.get(), desc);
+            throw new PicoException(msg);
         }
     }
 
     private synchronized void initializeServices() {
-        initializationCallingContext = maybeCreate().orElse(null);
+        initializationCallingContext = CallingContextCreator.create(false);
 
         if (services.get() == null) {
             services.set(new DefaultServices(cfg));
