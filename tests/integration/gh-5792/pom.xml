@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,22 +20,25 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>io.helidon.microprofile.tests</groupId>
-        <artifactId>tck-project</artifactId>
-        <version>1.4.12-SNAPSHOT</version>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
-
-    <artifactId>tck-openapi</artifactId>
-    <name>Helidon Microprofile Tests TCK OpenAPI</name>
+    <parent>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-se</artifactId>
+        <version>1.4.12-SNAPSHOT</version>
+        <relativePath>../../../applications/se/pom.xml</relativePath>
+    </parent>
+    <groupId>io.helidon.tests.integration</groupId>
+    <artifactId>helidon-tests-integration-yaml-parsing</artifactId>
+    <version>1.4.12-SNAPSHOT</version>
+    <name>${project.artifactId}</name>
 
     <properties>
+        <mainClass>io.helidon.tests.integration.yamlparsing.Main</mainClass>
         <selectedSnakeYamlVersion>1.27</selectedSnakeYamlVersion>
     </properties>
 
-    <!-- The TCK uses Jackson which in turn uses SnakeYAML APIs that have disappeared in 2.0. So, for running the TCK
-          use the earlier SnakeYAML release (until an updated Jackson release becomes available). -->
+    <!-- Verify that the app builds correctly and that config and OpenAPI document YAML parsing work with the older
+          SnakeYAML release. -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -48,39 +51,25 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.microprofile.tests</groupId>
-            <artifactId>helidon-arquillian</artifactId>
-            <version>${project.version}</version>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.openapi</groupId>
+            <artifactId>helidon-openapi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.testng</groupId>
-            <artifactId>arquillian-testng-container</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.microprofile.openapi</groupId>
-            <artifactId>microprofile-openapi-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.microprofile.openapi</groupId>
-            <artifactId>microprofile-openapi-tck</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>javax.json</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>javax.activation-api</artifactId>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -90,13 +79,19 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19.1</version>
                 <configuration>
-                    <dependenciesToScan>
-                        <dependency>org.eclipse.microprofile.openapi:microprofile-openapi-tck</dependency>
-                    </dependenciesToScan>
-                    <trimStackTrace>false</trimStackTrace>
+                    <systemPropertyVariables>
+                        <selected-snakeyaml-version>${selectedSnakeYamlVersion}</selected-snakeyaml-version>
+                    </systemPropertyVariables>
                 </configuration>
+            </plugin><plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

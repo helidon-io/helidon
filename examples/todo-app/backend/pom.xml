@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@
     <properties>
         <mainClass>io.helidon.demo.todos.backend.Main</mainClass>
         <version.lib.cassandra>3.4.0</version.lib.cassandra>
+        <version.lib.snakeyaml.override>1.27</version.lib.snakeyaml.override>
     </properties>
 
     <dependencyManagement>
@@ -46,6 +47,11 @@
                 <groupId>com.datastax.cassandra</groupId>
                 <artifactId>cassandra-driver-core</artifactId>
                 <version>${version.lib.cassandra}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${version.lib.snakeyaml.override}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
