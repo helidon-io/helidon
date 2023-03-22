@@ -430,7 +430,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             if (!isChunked) {
                 if (firstByte) {
                     firstByte = false;
-                    BufferData growing = BufferData.growing(256 + buffer.available());
+                    BufferData growing = BufferData.growing(256);
                     nonEntityBytes(headers, status.get(), growing, keepAlive);
                     responseBytesTotal += growing.available();
                     dataWriter.write(growing);
