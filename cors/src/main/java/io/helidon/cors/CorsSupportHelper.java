@@ -28,9 +28,9 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.common.config.Config;
 import io.helidon.cors.LogHelper.Headers;
 
 import static io.helidon.cors.LogHelper.DECISION_LEVEL;

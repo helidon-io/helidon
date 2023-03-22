@@ -68,7 +68,7 @@ public abstract class SpanLogTracingConfig extends Traceable {
     }
 
     /**
-     * Create a new traced span log configuration from {@link io.helidon.config.Config}.
+     * Create a new traced span log configuration from {@link io.helidon.common.config.Config}.
      *
      * @param name name of the span log
      * @param config config for a traced span log
@@ -112,7 +112,7 @@ public abstract class SpanLogTracingConfig extends Traceable {
         }
 
         /**
-         * Update this builder from {@link io.helidon.config.Config}.
+         * Update this builder from {@link io.helidon.common.config.Config}.
          *
          * @param config config of a traced span log
          * @return updated builder instance

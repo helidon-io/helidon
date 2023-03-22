@@ -183,7 +183,7 @@ public abstract class ComponentTracingConfig extends Traceable {
         }
 
         /**
-         * Update this builder from {@link io.helidon.config.Config}.
+         * Update this builder from {@link io.helidon.common.config.Config}.
          *
          * @param config configuration of a traced component
          * @return updated builder instance

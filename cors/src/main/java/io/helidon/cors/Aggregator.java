@@ -22,11 +22,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigValue;
 import io.helidon.common.http.PathMatcher;
 import io.helidon.common.http.PathMatchers;
 import io.helidon.common.uri.UriPath;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigValue;
 import io.helidon.cors.LogHelper.MatcherChecks;
 
 /**

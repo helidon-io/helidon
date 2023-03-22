@@ -142,7 +142,7 @@ public abstract class SpanTracingConfig extends Traceable {
     }
 
     /**
-     * Create traced span configuration from a {@link io.helidon.config.Config}.
+     * Create traced span configuration from a {@link io.helidon.common.config.Config}.
      *
      * @param name name of the span
      * @param config config to load span configuration from
@@ -226,7 +226,7 @@ public abstract class SpanTracingConfig extends Traceable {
         }
 
         /**
-         * Update this builder from {@link io.helidon.config.Config}.
+         * Update this builder from {@link io.helidon.common.config.Config}.
          *
          * @param config configuration of this span
          * @return updated builder instance

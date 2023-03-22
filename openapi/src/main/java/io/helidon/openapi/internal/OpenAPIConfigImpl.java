@@ -26,7 +26,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
