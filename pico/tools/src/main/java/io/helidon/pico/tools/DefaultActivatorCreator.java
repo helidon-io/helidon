@@ -131,7 +131,6 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
     }
 
-    @SuppressWarnings("unchecked")
     ActivatorCreatorResponse codegen(ActivatorCreatorRequest req,
                                      DefaultActivatorCreatorResponse.Builder builder,
                                      LazyValue<ScanResult> scan) {
@@ -838,7 +837,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         AtomicReference<String> nameRef = new AtomicReference<>();
         List<String> args = new ArrayList<>();
         List<DependencyInfo> allCtorArgs = dependencies.allDependenciesFor(DefaultInjectionPointInfo.CONSTRUCTOR);
-        allCtorArgs.forEach(dep1 -> dep1.injectionPointDependencies().stream()
+        allCtorArgs.forEach(dep1 -> dep1.injectionPointDependencies()
                         .forEach(dep2 -> {
                             if (nameRef.get() == null) {
                                 nameRef.set(dep2.baseIdentity());
@@ -1174,8 +1173,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             return null;
         }
 
-        DependenciesInfo dependenciesInfo = codeGen.serviceTypeInjectionPointDependencies().get(serviceTypeName);
-        return dependenciesInfo;
+        return codeGen.serviceTypeInjectionPointDependencies().get(serviceTypeName);
     }
 
     String toPostConstructMethodName(TypeName serviceTypeName,
@@ -1188,7 +1186,6 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return codeGen.serviceTypePreDestroyMethodNames().get(serviceTypeName);
     }
 
-    @SuppressWarnings("unchecked")
     List<TypeName> toServiceTypeHierarchy(TypeName serviceTypeName,
                                           ActivatorCreatorCodeGen codeGen,
                                           LazyValue<ScanResult> scan) {

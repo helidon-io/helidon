@@ -30,6 +30,7 @@ import io.helidon.pico.Phase;
  * @param <T> the type of the service this provider manages
  */
 class NonSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
+    @SuppressWarnings("FieldCanBeLocal")
     private final AbstractServiceProvider<T> delegate;
 
     private NonSingletonServiceProvider(AbstractServiceProvider<T> delegate) {

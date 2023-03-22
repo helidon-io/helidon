@@ -103,27 +103,4 @@ public interface ModuleInfoCreatorRequest {
      */
     String classPrefixName();
 
-//    /**
-//     * Returns all contracts for the given service type name.
-//     *
-//     * @param typeName the service type name
-//     * @return all contracts for the service type name
-//     */
-//    default Set<TypeName> allContractsFor(
-//            TypeName typeName) {
-//        LinkedHashSet<TypeName> result = new LinkedHashSet<>();
-//
-//        Set<TypeName> contracts = contracts().get(typeName);
-//        if (contracts != null) {
-//            result.addAll(contracts);
-//        }
-//
-//        contracts = externalContracts().get(typeName);
-//        if (contracts != null) {
-//            result.addAll(contracts);
-//        }
-//
-//        return result;
-//    }
-//
 }

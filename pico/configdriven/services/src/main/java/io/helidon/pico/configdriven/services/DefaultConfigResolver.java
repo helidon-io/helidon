@@ -141,8 +141,9 @@ class DefaultConfigResolver extends BasicConfigResolver {
     static <T> Optional<Class<T>> toComponentType(Map<String, Map<String, Object>> meta,
                                                   ConfigResolverRequest<T> request) {
         Map<String, Object> thisMeta = meta.get(request.attributeName());
-        return Optional.ofNullable((Class<T>) (thisMeta == null
-                                                       ? request.valueComponentType() : thisMeta.get(TAG_COMPONENT_TYPE)));
+        Class componentType = request.valueComponentType().orElse(null);
+        componentType = (Class) (componentType == null && thisMeta != null ? thisMeta.get(TAG_COMPONENT_TYPE) : null);
+        return Optional.ofNullable(componentType);
     }
 
     static Optional validatedDefaults(Map<String, Object> meta,
@@ -198,7 +199,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
 
         DefaultConfigBeanRegistry cbr = (DefaultConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
         String fullConfigKey = fullConfigKeyOf(safeDowncastOf(ctx.config()), request.configKey(), meta);
-        Set<T> result = cbr.configBeansByConfigKey(request.configKey(), Optional.ofNullable(fullConfigKey));
+        Set<T> result = cbr.configBeansByConfigKey(request.configKey(), Optional.of(fullConfigKey));
         return new ArrayList<>(result);
     }
 
@@ -212,7 +213,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
 
         DefaultConfigBeanRegistry cbr = (DefaultConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
         String fullConfigKey = fullConfigKeyOf(safeDowncastOf(ctx.config()), request.configKey(), meta);
-        Map<String, V> result = cbr.configBeanMapByConfigKey(request.configKey(), Optional.ofNullable(fullConfigKey));
+        Map<String, V> result = cbr.configBeanMapByConfigKey(request.configKey(), Optional.of(fullConfigKey));
         return Objects.requireNonNull(result);
     }
 

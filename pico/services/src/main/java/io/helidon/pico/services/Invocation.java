@@ -56,7 +56,7 @@ public class Invocation<V> implements Interceptor.Chain<V> {
      * @param <V>   the type returned from the method element
      * @return the invocation instance
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static <V> V createInvokeAndSupply(InvocationContext ctx,
                                               Supplier<V> call,
                                               Object... args) {

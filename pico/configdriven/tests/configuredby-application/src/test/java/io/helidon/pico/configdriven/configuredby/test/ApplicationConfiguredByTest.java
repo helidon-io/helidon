@@ -62,7 +62,7 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
                            // tracer doesn't really exist, so it is looked up out of best-effort (as an optional injection dep)
                            "io.helidon.builder.config.testsubjects.fakes.FakeTracer"));
         assertThat("lookup log: " + criteriaSearchLog,
-                   metrics.lookupCount().get(),
+                   metrics.lookupCount().orElseThrow(),
                    is(2));
     }
 

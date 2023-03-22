@@ -55,7 +55,6 @@ import io.helidon.pico.Phase;
 import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.ServiceBinder;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.spi.CallingContext;
@@ -141,13 +140,6 @@ class DefaultPicoServices implements PicoServices, Resetable {
             return Optional.of(Set.of());
         }
         return Optional.of(thisServices.cache().keySet());
-    }
-
-    @Override
-    public Optional<ServiceBinder> createServiceBinder(io.helidon.pico.Module module) {
-        DefaultServices.assertPermitsDynamic(cfg);
-        String moduleName = module.named().orElse(module.getClass().getName());
-        return Optional.of(DefaultServiceBinder.create(this, moduleName, false));
     }
 
     @Override
@@ -340,7 +332,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
                 state.reset(true);
                 initializingServicesStarted.set(false);
                 initializingServicesFinished.set(false);
-                initializationCallingContext = null;
+                initializationCallingContext = Optional.empty();
             }
 
             return result;

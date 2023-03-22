@@ -129,6 +129,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         }
     }
 
+    @SuppressWarnings("rawtypes")
     List<TypeName> providersNotAllowed(ApplicationCreatorRequest req) {
         PicoServices picoServices = PicoServices.picoServices().orElseThrow();
         Services services = picoServices.services();
@@ -348,7 +349,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
                     }
                     line.append(", ").append(((Class<?>) target).getName()).append(".class");
                 } else if (ipQualified.isEmpty()) {
-                    // no-op
+                    assert (true); // left here for breakpoint debugging purposes
                 } else if (ipInfo.listWrapped()) {
                     line.append(", ").append(toActivatorCodeGen((Collection<ServiceProvider<?>>) ipQualified));
                 } else {

@@ -90,7 +90,7 @@ class BoundedServiceProvider<T> implements ServiceProvider<T> {
 
     @Override
     public boolean equals(Object another) {
-        return binding.equals(another);
+        return (another instanceof ServiceProvider && binding.equals(another));
     }
 
     @Override
@@ -142,12 +142,12 @@ class BoundedServiceProvider<T> implements ServiceProvider<T> {
     }
 
     @Override
-    public Optional<Activator<T>> activator() {
+    public Optional<Activator> activator() {
         return binding.activator();
     }
 
     @Override
-    public Optional<DeActivator<T>> deActivator() {
+    public Optional<DeActivator> deActivator() {
         return binding.deActivator();
     }
 

@@ -16,6 +16,7 @@
 
 package io.helidon.pico;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -74,15 +75,13 @@ public class InjectionException extends PicoServiceProviderException {
     }
 
     /**
-     * Sets the activation log on the exception.
+     * Sets the activation log on this exception instance.
      *
      * @param log the activation log
      * @return this exception instance
      */
-    public InjectionException activationLog(Optional<ActivationLog> log) {
-        if (log.isPresent()) {
-            this.activationLog = log.orElseThrow();
-        }
+    public InjectionException activationLog(ActivationLog log) {
+        this.activationLog = Objects.requireNonNull(log);
         return this;
     }
 

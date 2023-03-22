@@ -38,18 +38,19 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Named("name")
+@SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
 public class TypeToolsTest {
     ScanResult scan = ReflectionHandler.INSTANCE.scan();
 
-    ClassInfo testClassInfo = Objects.requireNonNull(
+    ClassInfo ignoredTestClassInfo = Objects.requireNonNull(
             scan.getClassInfo(TypeToolsTest.class.getName()));
     ClassInfo providerOfGenericClassInfo = Objects.requireNonNull(
             scan.getClassInfo(ProviderOfGeneric.class.getName()));
     ClassInfo providerOfDirectClassInfo = Objects.requireNonNull(
             scan.getClassInfo(ProviderOfTypeDirect.class.getName()));
-    ClassInfo providerOfTypeThroughSuperClassInfo = Objects.requireNonNull(
+    ClassInfo ignoredProviderOfTypeThroughSuperClassInfo = Objects.requireNonNull(
             scan.getClassInfo(ProviderOfTypeThroughSuper.class.getName()));
-    ClassInfo injectionPointProviderOfTypeDirectClassInfo = Objects.requireNonNull(
+    ClassInfo ignoredInjectionPointProviderOfTypeDirectClassInfo = Objects.requireNonNull(
             scan.getClassInfo(InjectionPointProviderOfTypeDirect.class.getName()));
 
     String typeToolsTestTypeName = create(TypeToolsTest.class).name();

@@ -22,7 +22,6 @@ package io.helidon.pico.services;
  * It is strongly suggested that any {@link io.helidon.pico.Bootstrap} configuration is established prior to initializing
  * this instance, since the results will vary once any bootstrap configuration is globally set.
  */
-@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 class DefaultPicoServicesConfig {
 
     static final String PROVIDER = "oracle";

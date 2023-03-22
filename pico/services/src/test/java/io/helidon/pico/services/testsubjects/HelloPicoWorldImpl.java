@@ -28,6 +28,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Singleton
 @RunLevel(0)
 public class HelloPicoWorldImpl implements HelloPicoWorld {

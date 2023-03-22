@@ -75,13 +75,13 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
      * @param fullConfigKey optionally, the full config key - if not passed will return the list of all matches
      *                      using just the key
      * @param <CB>          the config bean type
-     * @return the list of known config keys
+     * @return the set of known config keys
      */
     <CB> Set<CB> configBeansByConfigKey(String key,
                                         Optional<String> fullConfigKey);
 
     /**
-     * Similar to {@link #configBeansByConfigKey(String, Optional<String>)}, but instead returns all the known config beans in a
+     * Similar to {@link #configBeansByConfigKey}, but instead returns all the known config beans in a
      * map where the key of the map is the config key.
      *
      * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
@@ -89,7 +89,7 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
      * @param fullConfigKey optionally, the full config key - if not passed will return the list of all matches
      *                      using just the key
      * @param <CB>          the config bean type
-     * @return the list of known config keys
+     * @return the map of known config keys
      */
     <CB> Map<String, CB> configBeanMapByConfigKey(String key,
                                                   Optional<String> fullConfigKey);

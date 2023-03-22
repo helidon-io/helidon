@@ -500,7 +500,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             }
             JavaFileObject sourceFile = path.getCompilationUnit().getSourceFile();
             Optional<Path> filePath = toPath(sourceFile.toUri());
-            Optional<Path> srcPath = toSourcePath(filePath, type);
+            Optional<Path> srcPath = filePath.isPresent() ? toSourcePath(filePath.get(), type) : Optional.empty();
             srcPath.ifPresent(services::lastKnownSourcePathBeingProcessed);
             return true;
         } catch (Throwable t) {

@@ -44,6 +44,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  *
  * @see java.lang.module.ModuleDescriptor
  */
+@SuppressWarnings("unused")
 @Builder
 public interface ModuleInfoDescriptor {
 

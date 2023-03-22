@@ -20,7 +20,7 @@ import io.helidon.builder.Builder;
 
 /**
  * The response from {@link io.helidon.pico.tools.spi.ExternalModuleCreator}.
- *
+ * <p>
  * The response, if successful, will contribute to the {@link ActivatorCreatorRequest}
  * passed to {@link io.helidon.pico.tools.spi.ActivatorCreator} in any next phase of creation for the external Pico module.
  */

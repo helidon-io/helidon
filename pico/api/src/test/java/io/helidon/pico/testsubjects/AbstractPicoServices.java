@@ -24,10 +24,8 @@ import io.helidon.pico.ActivationLog;
 import io.helidon.pico.ActivationResult;
 import io.helidon.pico.Injector;
 import io.helidon.pico.Metrics;
-import io.helidon.pico.Module;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.ServiceBinder;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.Services;
 
@@ -46,11 +44,6 @@ abstract class AbstractPicoServices implements PicoServices {
     @Override
     public Services services() {
         return null;
-    }
-
-    @Override
-    public Optional<ServiceBinder> createServiceBinder(Module module) {
-        return Optional.empty();
     }
 
     @Override

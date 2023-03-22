@@ -424,24 +424,6 @@ public abstract class PicoServicesConfig {
     @ConfiguredOption(key = KEY_SUPPORTS_CONTEXTUAL_LOOKUP, value = DEFAULT_SUPPORTS_CONTEXTUAL_LOOKUP)
     public abstract boolean supportsContextualLookup();
 
-
-    /**
-     * Shortcut method to obtain a String with a default value supplier.
-     *
-     * @param key configuration key
-     * @param defaultValueSupplier supplier of default value
-     * @return value
-     */
-    static String asString(String key,
-                           Supplier<String> defaultValueSupplier) {
-        Optional<Config> cfg = get(key);
-        if (cfg.isEmpty()
-                || !cfg.get().hasValue()) {
-            return defaultValueSupplier.get();
-        }
-        return cfg.get().asString().orElseGet(defaultValueSupplier);
-    }
-
     /**
      * Shortcut method to obtain a Boolean with a default value supplier.
      *

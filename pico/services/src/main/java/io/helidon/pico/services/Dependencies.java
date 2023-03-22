@@ -297,15 +297,6 @@ public class Dependencies {
         /**
          * Sets the flag indicating that the injection point is static.
          *
-         * @return the builder
-         */
-        public BuilderContinuation staticDeclaration() {
-            return staticDeclaration(true);
-        }
-
-        /**
-         * Sets the flag indicating that the injection point is static.
-         *
          * @param val flag indicating if static
          * @return the builder
          */

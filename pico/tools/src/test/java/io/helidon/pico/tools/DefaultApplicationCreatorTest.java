@@ -74,7 +74,7 @@ class DefaultApplicationCreatorTest extends AbstractBaseCreator {
 
         String classpath = System.getProperty("java.class.path");
         String separator = System.getProperty("path.separator");
-        String[] cp = classpath.split(separator);
+        String[] ignoredClasspath = classpath.split(separator);
         ApplicationCreatorRequest req = DefaultApplicationCreatorRequest.builder()
                 .codeGen(DefaultApplicationCreatorCodeGen.builder()
                                         .className(DefaultApplicationCreator.toApplicationClassName("test"))

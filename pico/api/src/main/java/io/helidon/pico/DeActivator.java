@@ -22,10 +22,9 @@ package io.helidon.pico;
  * {@link jakarta.annotation.PreDestroy} method invocations, and finally into the terminal
  * {@link Phase#DESTROYED} phase. These phase transitions are the inverse of {@link Activator}.
  *
- * @param <T> the managed service type being deactivated
  * @see Activator
  */
-public interface DeActivator<T> {
+public interface DeActivator {
 
     /**
      * Deactivate a managed service. This will trigger any {@link jakarta.annotation.PreDestroy} method on the

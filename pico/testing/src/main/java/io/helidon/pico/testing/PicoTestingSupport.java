@@ -128,6 +128,7 @@ public class PicoTestingSupport {
         return coll.stream().map(PicoTestingSupport::toDescription).collect(Collectors.toList());
     }
 
+    @SuppressWarnings("deprecation")
     private static class Internal extends PicoServicesHolder {
         public static void reset() {
             PicoServicesHolder.reset();

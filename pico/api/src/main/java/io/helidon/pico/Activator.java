@@ -39,10 +39,9 @@ package io.helidon.pico;
  *  <li>Responsible to logging to the {@link ActivationLog} - see {@link PicoServices#activationLog()}.</li>
  * </ol>
  *
- * @param <T> the managed service type being activated
  * @see DeActivator
  */
-public interface Activator<T> {
+public interface Activator {
 
     /**
      * Activate a managed service/provider.

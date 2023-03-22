@@ -89,6 +89,7 @@ import static io.helidon.pico.tools.CommonUtils.hasValue;
 /**
  * Generically handles Pico generated artifact creation via APT.
  */
+@SuppressWarnings("deprecation")
 public final class TypeTools extends BuilderTypeTools {
     private static final LazyValue<Map<String, TypeName>> OBJ_TYPES = LazyValue.create(() -> {
         Map<String, TypeName> map = new LinkedHashMap<>();
@@ -1110,6 +1111,7 @@ public final class TypeTools extends BuilderTypeTools {
                             || isListType(typeArgClassName)
                             || typeArgClassName.equals(Collections.class.getName())) {
                         // not handled
+                        assert (true);   // left here for debugging purposes
                     } else if (isProviderType(typeArgClassName)) {
                         isProvider = true;
                         varTypeName = toClassRefSignature(typeArgSig.getTypeArguments().get(0), enclosingElem).toString();
@@ -1188,6 +1190,7 @@ public final class TypeTools extends BuilderTypeTools {
                                 || isListType(varTypeName)
                                 || varTypeName.equals(Collections.class.getName())) {
                             // not handled
+                            assert (true);   // left here for debugging purposes
                         } else if (isProviderType(varTypeName)) {
                             isProvider = true;
                             varTypeName = declaredTypeMirror.getTypeArguments().get(0).toString();

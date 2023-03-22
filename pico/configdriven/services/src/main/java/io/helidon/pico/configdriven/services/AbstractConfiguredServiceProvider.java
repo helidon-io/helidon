@@ -247,7 +247,6 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void rootProvider(ServiceProvider<T> root) {
         assertIsRootProvider(false, false);
         assert (!isRootProvider() && rootProvider.get() == null && this != root);
@@ -478,7 +477,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * Here is the heuristic:
      * <ul>
      * <li> if this is a slave then simply use the standard matching behavior.
-     *
+     * <p>
      * If, however, we are the root provider then the additional heuristic is applied:
      * <li> if the request mentions the {@link ConfiguredBy} qualifier w/ no value specified
      * then the caller is only interested in the root provider.
@@ -494,7 +493,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * @param wantThis              if this instance matches criteria, do we want to return this instance as part of the result
      * @param thisAlreadyMatches    an optimization that signals to the implementation that this instance has already
      *                              matched using the standard service info matching checks
-     * @return the set of matching service providers based upon the context and criteria provided
+     * @return the list of matching service providers based upon the context and criteria provided
      */
     @Override
     public List<ServiceProvider<?>> serviceProviders(ServiceInfoCriteria criteria,
@@ -702,7 +701,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                 existing = innerPreActivateManagedService(instanceId, configBean);
             }
 
-            AbstractConfiguredServiceProvider<T, CB> csp = existing.get();
+            AbstractConfiguredServiceProvider<T, CB> csp = existing.orElseThrow();
             if (Phase.ACTIVE != csp.currentActivationPhase()) {
                 csp.innerActivate();
             }
@@ -728,7 +727,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                 return existing;
             }
             return innerPreActivateManagedService(instanceId, configBean);
-        }).get();
+        }).orElseThrow();
     }
 
     private Optional<AbstractConfiguredServiceProvider<T, CB>> innerPreActivateManagedService(String instanceId,

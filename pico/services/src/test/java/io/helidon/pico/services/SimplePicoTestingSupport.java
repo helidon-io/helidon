@@ -31,6 +31,7 @@ class SimplePicoTestingSupport {
     }
 
 
+    @SuppressWarnings("deprecation")
     private static class Holder extends PicoServicesHolder {
         public static void reset() {
             PicoServicesHolder.reset();

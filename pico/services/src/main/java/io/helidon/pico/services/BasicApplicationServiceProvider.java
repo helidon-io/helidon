@@ -33,7 +33,6 @@ class BasicApplicationServiceProvider extends AbstractServiceProvider<Applicatio
         serviceRef(app);
     }
 
-    @SuppressWarnings("rawtypes")
     static ServiceInfo createServiceInfo(Application app) {
         DefaultServiceInfo.Builder builder = DefaultServiceInfo.builder()
                 .serviceTypeName(app.getClass().getName())

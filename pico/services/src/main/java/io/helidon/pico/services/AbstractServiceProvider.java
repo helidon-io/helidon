@@ -77,8 +77,8 @@ import jakarta.inject.Provider;
  */
 public abstract class AbstractServiceProvider<T>
         implements ServiceProviderBindable<T>,
-                   Activator<T>,
-                   DeActivator<T>,
+                   Activator,
+                   DeActivator,
                    ActivationPhaseReceiver,
                    Resetable {
     static final DependenciesInfo NO_DEPS = DefaultDependenciesInfo.builder().build();
@@ -135,23 +135,18 @@ public abstract class AbstractServiceProvider<T>
     }
 
     @Override
-    public Optional<Activator<T>> activator() {
+    public Optional<Activator> activator() {
         return Optional.of(this);
     }
 
     @Override
-    public Optional<DeActivator<T>> deActivator() {
+    public Optional<DeActivator> deActivator() {
         return Optional.of(this);
     }
 
     @Override
     public Optional<ServiceProviderBindable<T>> serviceProviderBindable() {
         return Optional.of(this);
-    }
-
-    @Override
-    public boolean isSingletonScope() {
-        return true;
     }
 
     @Override
@@ -612,7 +607,7 @@ public abstract class AbstractServiceProvider<T>
      */
     protected void onFinished(LogEntryAndResult logEntryAndResult) {
         // NOP;
-        int debugMe = 0;
+        assert (true); // left here to make it easy to set breakpoints in the future
     }
 
     private void doStartingLifecycle(LogEntryAndResult logEntryAndResult) {
@@ -911,8 +906,9 @@ public abstract class AbstractServiceProvider<T>
      * @return the newly created managed service
      */
     protected T createServiceProvider(Map<String, Object> resolvedDeps) {
-        throw new InjectionException("don't know how to create an instance of " + serviceInfo(), this)
-                .activationLog(activationLog());
+        InjectionException e = new InjectionException("don't know how to create an instance of " + serviceInfo(), this);
+        activationLog().ifPresent(e::activationLog);
+        throw e;
     }
 
     private void doInjecting(LogEntryAndResult logEntryAndResult) {
@@ -1122,7 +1118,8 @@ public abstract class AbstractServiceProvider<T>
         Throwable prev = res.error().orElse(null);
         if (prev == null || !(t instanceof InjectionException)) {
             String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "failed to complete operation";
-            e = new InjectionException(msg, t, this).activationLog(log);
+            e = new InjectionException(msg, t, this);
+            log.ifPresent(e::activationLog);
         } else {
             e = (InjectionException) t;
         }
@@ -1138,7 +1135,8 @@ public abstract class AbstractServiceProvider<T>
     private InjectionException recursiveActivationInjectionError(DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("circular dependency found during activation of " + targetServiceProvider,
-                                                      targetServiceProvider).activationLog(activationLog());
+                                                      targetServiceProvider);
+        activationLog().ifPresent(e::activationLog);
         entry.error(e);
         return e;
     }
@@ -1146,7 +1144,8 @@ public abstract class AbstractServiceProvider<T>
     private InjectionException timedOutActivationInjectionError(DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("timed out during activation of " + targetServiceProvider,
-                                                      targetServiceProvider).activationLog(activationLog());
+                                                      targetServiceProvider);
+        activationLog().ifPresent(e::activationLog);
         entry.error(e);
         return e;
     }
@@ -1154,7 +1153,8 @@ public abstract class AbstractServiceProvider<T>
     private InjectionException timedOutDeActivationInjectionError(DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("timed out during deactivation of " + targetServiceProvider,
-                                                      targetServiceProvider).activationLog(activationLog());
+                                                      targetServiceProvider);
+        activationLog().ifPresent(e::activationLog);
         entry.error(e);
         return e;
     }
@@ -1163,14 +1163,16 @@ public abstract class AbstractServiceProvider<T>
                                                                       Throwable cause) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("circular dependency found during activation of " + targetServiceProvider,
-                                                      cause, targetServiceProvider).activationLog(activationLog());
+                                                      cause, targetServiceProvider);
+        activationLog().ifPresent(e::activationLog);
         entry.error(e);
         return e;
     }
 
     private InjectionException managedServiceInstanceShouldHaveBeenSetException() {
-        return new InjectionException("managed service instance expected to have been set", this)
-                .activationLog(activationLog());
+        InjectionException e = new InjectionException("managed service instance expected to have been set", this);
+        activationLog().ifPresent(e::activationLog);
+        return e;
     }
 
     /**
@@ -1180,14 +1182,16 @@ public abstract class AbstractServiceProvider<T>
      * @return the injection exception
      */
     protected InjectionException expectedQualifiedServiceError(ContextualServiceQuery ctx) {
-        return new InjectionException("expected to return a non-null instance for: " + ctx.injectionPointInfo()
-                                              + "; with criteria matching: " + ctx.serviceInfoCriteria(), this)
-                .activationLog(activationLog());
+        InjectionException e = new InjectionException("expected to return a non-null instance for: " + ctx.injectionPointInfo()
+                                              + "; with criteria matching: " + ctx.serviceInfoCriteria(), this);
+        activationLog().ifPresent(e::activationLog);
+        return e;
     }
 
     private InjectionException activationFailed(ActivationResult res) {
-        return new InjectionException("activation failed: " + res, this)
-                .activationLog(activationLog());
+        InjectionException e = new InjectionException("activation failed: " + res, this);
+        activationLog().ifPresent(e::activationLog);
+        return e;
     }
 
     private PicoServiceProviderException unableToActivate(Throwable cause) {
@@ -1258,10 +1262,7 @@ public abstract class AbstractServiceProvider<T>
         logEntryAndResult.logEntry
                 .event(Event.STARTING)
                 .activationResult(logEntryAndResult.activationResult.build());
-        ActivationLog log = activationLog().orElse(null);
-        if (log != null) {
-            log.record(logEntryAndResult.logEntry.build());
-        }
+        activationLog().ifPresent(log -> log.record(logEntryAndResult.logEntry.build()));
         onPhaseEvent(Event.STARTING, this.phase);
     }
 

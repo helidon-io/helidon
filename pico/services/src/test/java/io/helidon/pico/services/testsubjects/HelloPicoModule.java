@@ -33,7 +33,6 @@ public final class HelloPicoModule implements Module {
     public static final String NAME = "example";
 
     public HelloPicoModule() {
-        int dummy = 1;
     }
 
     @Override

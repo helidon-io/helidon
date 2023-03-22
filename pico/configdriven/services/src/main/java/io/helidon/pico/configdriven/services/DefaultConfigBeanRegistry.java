@@ -466,7 +466,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         assert (config == null || DEFAULT_INSTANCE_ID.equals(key) || (config.key().toString().equals(key)))
                 : key + " and " + config.key().toString();
 
-        AttributeVisitor<Object> visitor = new AttributeVisitor<Object>() {
+        AttributeVisitor<Object> visitor = new AttributeVisitor<>() {
             @Override
             public void visit(String attrName,
                               Supplier<Object> valueSupplier,

@@ -30,7 +30,6 @@ import jakarta.inject.Singleton;
 
 /**
  * The default implementation for {@link io.helidon.pico.spi.PicoServicesProvider}.
- *
  * The first instance created (or first after calling deep {@link #reset}) will be the global services instance. The global
  * instance will track the set of loaded modules and applications that are loaded by this JVM.
  *

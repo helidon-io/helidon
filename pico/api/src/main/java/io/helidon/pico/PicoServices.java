@@ -140,7 +140,7 @@ public interface PicoServices {
      * service registry if it is currently available and in active use, but if not do alternative processing or allocations
      * directly, etc.
      *
-     * @return true if pico is available and the services instance if it has already been activated and initialized, empty otherwise
+     * @return the services instance if it has already been activated and initialized, empty otherwise
      */
     @SuppressWarnings("unchecked")
     static Optional<Services> unrealizedServices() {
@@ -176,15 +176,6 @@ public interface PicoServices {
      * @return the config
      */
     PicoServicesConfig config();
-
-    /**
-     * Creates a service binder instance for a specified module.
-     *
-     * @param module the module to offer binding to dynamically, and typically only at early startup initialization
-     *
-     * @return the service binder capable of binding, or empty if not permitted/available
-     */
-    Optional<ServiceBinder> createServiceBinder(Module module);
 
     /**
      * Optionally, the injector.

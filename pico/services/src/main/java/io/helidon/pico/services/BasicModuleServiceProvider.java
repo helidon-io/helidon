@@ -33,7 +33,6 @@ class BasicModuleServiceProvider extends AbstractServiceProvider<io.helidon.pico
         serviceRef(module);
     }
 
-    @SuppressWarnings("rawtypes")
     static ServiceInfo createServiceInfo(io.helidon.pico.Module module,
                                          String moduleName) {
         DefaultServiceInfo.Builder builder = DefaultServiceInfo.builder()

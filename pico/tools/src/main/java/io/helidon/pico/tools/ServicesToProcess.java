@@ -173,10 +173,7 @@ public class ServicesToProcess implements Resetable {
         if (locked != null) {
             if (locked) {
                 TypeName lockedParentType = servicesToParentServiceTypeNames.get(serviceTypeName);
-                if (!parentServiceTypeName.equals(lockedParentType)) {
-                    return false;
-                }
-                return true;
+                return parentServiceTypeName.equals(lockedParentType);
             } else {
                 servicesToLockParentServiceTypeName.put(serviceTypeName, lockParent.orElse(null));
             }
@@ -184,9 +181,7 @@ public class ServicesToProcess implements Resetable {
 
         addServiceTypeName(serviceTypeName);
         servicesToParentServiceTypeNames.put(serviceTypeName, parentServiceTypeName);
-        if (lockParent.isPresent()) {
-            servicesToLockParentServiceTypeName.put(serviceTypeName, lockParent.get());
-        }
+        lockParent.ifPresent(aBoolean -> servicesToLockParentServiceTypeName.put(serviceTypeName, aBoolean));
 
         return true;
     }
@@ -575,7 +570,7 @@ public class ServicesToProcess implements Resetable {
     /**
      * Fetches the set of known service type names being processed in this batch.
      *
-     * @return the set of known service type names being processed
+     * @return the list of known service type names being processed
      */
     public List<TypeName> serviceTypeNames() {
         ArrayList<TypeName> result = new ArrayList<>(servicesTypeNames);
@@ -741,25 +736,6 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * Sets the last generated module info descriptor and its location.
-     *
-     * @param descriptor the descriptor
-     * @param location the location for the descriptor
-     */
-    void lastGeneratedModuleInfoDescriptor(ModuleInfoDescriptor descriptor,
-                                           Path location) {
-        this.lastGeneratedModuleInfoDescriptor = descriptor;
-        this.lastGeneratedModuleInfoFilePath = location;
-    }
-
-    /**
-     * @return fetches the last generated module descriptor
-     */
-    ModuleInfoDescriptor getLastGeneratedModuleInfoDescriptor() {
-        return lastGeneratedModuleInfoDescriptor;
-    }
-
-    /**
      * @return fetches the last generated module descriptor location
      */
     Path lastGeneratedModuleInfoFilePath() {
@@ -773,13 +749,6 @@ public class ServicesToProcess implements Resetable {
      */
     public void lastKnownSourcePathBeingProcessed(Path lastKnownSourcePathBeingProcessed) {
         this.lastKnownSourcePathBeingProcessed = lastKnownSourcePathBeingProcessed;
-    }
-
-    /**
-     * @return fetches the last known source path being processed
-     */
-    Path lastKnownSourcePathBeingProcessed() {
-        return lastKnownSourcePathBeingProcessed;
     }
 
     /**
@@ -840,13 +809,6 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * Fetches the last known module name.
-     */
-    String lastKnownModuleName() {
-        return lastKnownModuleName;
-    }
-
-    /**
      * Called to signal the beginning of an annotation processing phase.
      *
      * @param processor the processor running
@@ -903,10 +865,10 @@ public class ServicesToProcess implements Resetable {
         }
 
         boolean wasModuleDefined = !servicesTypeNames.isEmpty() || contracts().values().stream()
-                .flatMap(it -> it.stream())
+                .flatMap(Collection::stream)
                 .anyMatch(it -> it.name().equals(Module.class.getName()));
         boolean wasApplicationDefined = contracts().values().stream()
-                .flatMap(it -> it.stream())
+                .flatMap(Collection::stream)
                 .anyMatch(it -> it.name().equals(Application.class.getName()));
 
         boolean shouldWarnOnly = Options.isOptionEnabled(Options.TAG_IGNORE_MODULE_USAGE);
@@ -937,13 +899,6 @@ public class ServicesToProcess implements Resetable {
                 }
             }
         }
-    }
-
-    /**
-     * Returns true if any processor is running.
-     */
-    static boolean isRunning() {
-        return RUNNING_PROCESSORS.get() > 0;
     }
 
 }

@@ -36,7 +36,7 @@ class DefaultActivationLogTest {
         log.record(DefaultActivationLogEntry.builder().build());
 
         assertThat(log.toQuery(), optionalPresent());
-        assertThat(log.toQuery().get().fullActivationLog().size(), equalTo(1));
+        assertThat(log.toQuery().orElseThrow().fullActivationLog().size(), equalTo(1));
         assertThat(log.reset(true), equalTo(Boolean.TRUE));
         assertThat(log.reset(true), equalTo(Boolean.FALSE));
     }

@@ -87,6 +87,7 @@ class DefaultConfigBuilderValidator<CBB> implements ConfigBeanBuilderValidator<C
             return this;
         }
 
+        @SuppressWarnings("rawtypes")
         Collection<?> extractValues(Object rawVal,
                                     Class<?> cbType) {
             if (rawVal == null) {

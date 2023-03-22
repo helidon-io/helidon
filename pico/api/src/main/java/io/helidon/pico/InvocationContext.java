@@ -67,13 +67,6 @@ public interface InvocationContext {
      */
     TypedElementName[] elementArgInfo();
 
-//    /**
-//     * The arguments to the method.
-//     *
-//     * @return the read/write method/element arguments
-//     */
-//    Object[] elementArgs();
-
     /**
      * The interceptor chain.
      *

@@ -68,7 +68,7 @@ final class Utils {
                                String separator) {
         Function<T, String> fn = (fnc == null) ? String::valueOf : fnc;
         separator = (separator == null) ? ", " : separator;
-        return coll.stream().map(fn::apply).collect(Collectors.joining(separator));
+        return coll.stream().map(fn).collect(Collectors.joining(separator));
     }
 
     /**

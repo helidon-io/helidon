@@ -68,7 +68,6 @@ public class ModuleUtils {
     static final String SERVICE_PROVIDER_MODULE_INFO_HBS = "module-info.hbs";
     static final String SRC_MAIN_JAVA_DIR = "/src/main/java";
     static final String SRC_TEST_JAVA_DIR = "/src/test/java";
-    static final String TARGET_DIR = "/target/";
 
     private ModuleUtils() {
     }
@@ -292,18 +291,14 @@ public class ModuleUtils {
      * Translates to the source path coordinate given a source file and type name.
      * Only available during annotation processing.
      *
-     * @param optFile the source file
+     * @param filePath the source file path
      * @param type the type name
      * @return the source path, or empty if it cannot be inferred
      */
-    public static Optional<Path> toSourcePath(Optional<Path> optFile,
+    public static Optional<Path> toSourcePath(Path filePath,
                                               TypeElement type) {
-        if (optFile.isEmpty()) {
-            return Optional.empty();
-        }
         TypeName typeName = TypeTools.createTypeNameFromElement(type).orElseThrow();
         Path typePath = Paths.get(TypeTools.toFilePath(typeName));
-        Path filePath = optFile.get();
         if (filePath.endsWith(typePath)) {
             return Optional.of(filePath.resolveSibling(typePath));
         }

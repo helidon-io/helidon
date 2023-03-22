@@ -55,7 +55,7 @@ class DefaultInjector implements Injector {
         AbstractServiceProvider<T> instance = (AbstractServiceProvider<T>) serviceOrServiceProvider;
         resultBuilder.serviceProvider(instance);
 
-        Activator<T> activator = instance.activator().orElse(null);
+        Activator activator = instance.activator().orElse(null);
         if (activator == null) {
             return handleError(resultBuilder, opts, "the service provider does not have an activator", instance);
         }
@@ -83,7 +83,7 @@ class DefaultInjector implements Injector {
         AbstractServiceProvider<T> instance = (AbstractServiceProvider<T>) serviceOrServiceProvider;
         resultBuilder.serviceProvider(instance);
 
-        DeActivator<T> deactivator = instance.deActivator().orElse(null);
+        DeActivator deactivator = instance.deActivator().orElse(null);
         if (deactivator == null) {
             return handleError(resultBuilder, opts, "the service provider does not have a deactivator", instance);
         }

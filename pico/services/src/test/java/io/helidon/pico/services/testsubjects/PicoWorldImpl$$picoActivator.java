@@ -31,7 +31,6 @@ import jakarta.inject.Singleton;
 @Generated(value = "example", comments = "API Version: n")
 @Singleton
 @Weight(DefaultServiceInfo.DEFAULT_WEIGHT)
-@SuppressWarnings("unchecked")
 public class PicoWorldImpl$$picoActivator extends AbstractServiceProvider<PicoWorldImpl> {
     private static final DefaultServiceInfo serviceInfo =
             DefaultServiceInfo.builder()
@@ -60,7 +59,6 @@ public class PicoWorldImpl$$picoActivator extends AbstractServiceProvider<PicoWo
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     protected PicoWorldImpl createServiceProvider(Map<String, Object> deps) {
         return new PicoWorldImpl();
     }

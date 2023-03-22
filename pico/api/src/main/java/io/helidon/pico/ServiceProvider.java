@@ -44,16 +44,6 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
     String description();
 
     /**
-     * Is the service annotated by @Singleton.
-     * This is a Helper only, one can alternatively check {@link ServiceInfo#scopeTypeNames()}.
-     *
-     * @return true if the service is a singleton
-     */
-    default boolean isSingletonScope() {
-        return serviceInfo().scopeTypeNames().contains(Singleton.class.getName());
-    }
-
-    /**
      * Does the service provide singletons, does it always produce the same result for every call to {@link #get()}.
      * I.e., if the managed service implements Provider or
      * {@link InjectionPointProvider} then this typically is considered not a singleton provider.
@@ -97,7 +87,7 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
      *
      * @return the activator
      */
-    Optional<Activator<T>> activator();
+    Optional<Activator> activator();
 
     /**
      * The agent responsible for deactivation - this will be non-null for build-time activators. If not present then
@@ -105,7 +95,7 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
      *
      * @return the deactivator to use or null if the service is not interested in deactivation
      */
-    Optional<DeActivator<T>> deActivator();
+    Optional<DeActivator> deActivator();
 
     /**
      * The optional method handling PreDestroy.

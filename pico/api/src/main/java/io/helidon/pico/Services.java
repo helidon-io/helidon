@@ -23,7 +23,7 @@ import java.util.Optional;
  * The service registry. The service registry generally has knowledge about all the services that are available within your
  * application, along with the contracts (i.e., interfaces) they advertise, the qualifiers that optionally describe them, and oll
  * of each services' dependencies on other service contracts, etc.
- *
+ * <p>
  * Collectively these service instances are considered "the managed service instances" under Pico. A {@link ServiceProvider} wrapper
  * provides lifecycle management on the underlying service instances that each provider "manages" in terms of activation, scoping,
  * etc. The service providers are typically created during compile-time processing when the Pico APT processor is applied to your
@@ -58,7 +58,7 @@ public interface Services {
      * @throws io.helidon.pico.PicoException if resolution fails to resolve a match
      */
     default <T> ServiceProvider<T> lookup(Class<T> type) {
-        return lookupFirst(type, true).get();
+        return lookupFirst(type, true).orElseThrow();
     }
 
     /**
@@ -73,7 +73,7 @@ public interface Services {
      */
     default <T> ServiceProvider<T> lookup(Class<T> type,
                                           String name) {
-        return lookupFirst(type, name, true).get();
+        return lookupFirst(type, name, true).orElseThrow();
     }
 
     /**
@@ -160,7 +160,6 @@ public interface Services {
      * @return the best service provider matching the criteria
      * @throws io.helidon.pico.PicoException if resolution fails to resolve a match
      */
-    @SuppressWarnings("unchecked")
     default <T> ServiceProvider<T> lookupFirst(Class<T> type) {
         return lookupFirst(type, true).orElseThrow();
     }

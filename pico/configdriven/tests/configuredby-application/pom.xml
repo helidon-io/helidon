@@ -130,6 +130,7 @@
                             <goal>application-create</goal>
                         </goals>
                     </execution>
+                    <!-- leave here for ease of use in the future -->
 <!--                    <execution>-->
 <!--                        <id>testCompile</id>-->
 <!--                        <phase>test-compile</phase>-->

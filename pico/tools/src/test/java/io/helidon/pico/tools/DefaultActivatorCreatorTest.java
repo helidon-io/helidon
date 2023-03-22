@@ -34,7 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests for {@link io.helidon.pico.tools.DefaultActivatorCreator}.
  */
-@SuppressWarnings("unchecked")
 class DefaultActivatorCreatorTest extends AbstractBaseCreator {
 
     final ActivatorCreator activatorCreator = loadAndCreate(ActivatorCreator.class);
