@@ -19,13 +19,14 @@ This release upgrades SnakeYaml from 1.32 to 2.0. Because of incompatible API ch
 
 - Config: Escape the key when copying a config node [6304](https://github.com/helidon-io/helidon/pull/6304)
 - JMS: JNDI destination support [6301](https://github.com/helidon-io/helidon/pull/6301)
+- JPA: Minor JPA cleanups [6435](https://github.com/helidon-io/helidon/pull/6435)
 - JTA: Fixes erroneous closing behavior in JtaConnection.java [6321](https://github.com/helidon-io/helidon/pull/6321)
 - Logging: Remove FileHandler from logging.properties [6363](https://github.com/helidon-io/helidon/pull/6363)
 - Metrics: Change default exemplar behavior to conform to OpenMetrics spec; allow users to choose former non-standard behavior [6387](https://github.com/helidon-io/helidon/pull/6387)
 - MultiPart: Fix MultiPartDecoder lazy inner publisher subscription [6225](https://github.com/helidon-io/helidon/pull/6225)
 - MultiPart: WritableMultiPart create methods fixed [6390](https://github.com/helidon-io/helidon/pull/6390)
 - Native image: Dockerfile.native fixes. [6424](https://github.com/helidon-io/helidon/pull/6424)
-- Native image: Fix native-image build-time initialization [6426](https://github.com/helidon-io/helidon/pull/6426)
+- Native image: Fix native-image build-time initialization [6426](https://github.com/helidon-io/helidon/pull/6426) [6438](https://github.com/helidon-io/helidon/pull/6438)
 - Security: OIDC original uri resolving leaving out query params [6342](https://github.com/helidon-io/helidon/pull/6342)
 - WebServer: Support for non-GET HTTP/2 upgrades [6383](https://github.com/helidon-io/helidon/pull/6383)
 - Build: Use https in pom.xml schemaLocation [6313](https://github.com/helidon-io/helidon/pull/6313) and others
