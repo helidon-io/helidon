@@ -7,7 +7,7 @@ name: "Validate"
 on: [pull_request, push]
 
 env:
-  JAVA_VERSION: '19'
+  JAVA_VERSION: '20'
   JAVA_DISTRO: 'temurin'
   HELIDON_PIPELINES: 'true'
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
@@ -24,7 +24,7 @@ jobs:
      - uses: actions/checkout@v3
        with:
          fetch-depth: 0
-     - name: Set up JDK 19
+     - name: Set up JDK ${{ env.JAVA_VERSION }}
        uses: actions/setup-java@v3.6.0
        with:
          distribution: ${{ env.JAVA_DISTRO }}
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 19
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 19
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 19
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
@@ -79,7 +79,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 19
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
@@ -95,7 +95,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 19
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
@@ -115,7 +115,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 19
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
@@ -131,7 +131,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 19
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
@@ -147,7 +147,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 19
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}

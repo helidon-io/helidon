@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
     . ${WS_DIR}/etc/scripts/includes/error_handlers.sh
 
     if [ -z "${GRAALVM_HOME}" ]; then
-        export GRAALVM_HOME="/tools/graalvm-ce-java19-22.3.0"
+        export GRAALVM_HOME="/tools/graalvm-ce-java20-22.3.1"
     fi
 
     require_env() {
@@ -75,7 +75,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
 
     if [ -n "${JENKINS_HOME}" ] ; then
         export PIPELINE="true"
-        export JAVA_HOME="/tools/jdk19"
+        export JAVA_HOME="/tools/jdk20"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
         MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"

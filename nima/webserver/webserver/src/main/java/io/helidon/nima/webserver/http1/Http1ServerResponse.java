@@ -103,7 +103,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             buffer.write(OK_200);
         } else {
             buffer.write(HTTP_BYTES);
-            buffer.write((status.code() + " " + status.reasonPhrase()).getBytes(StandardCharsets.US_ASCII));
+            if (status.reasonPhrase().isEmpty()) {
+                buffer.write((status.codeText()).getBytes(StandardCharsets.US_ASCII));
+            } else {
+                buffer.write((status.code() + " " + status.reasonPhrase()).getBytes(StandardCharsets.US_ASCII));
+            }
             buffer.write('\r');
             buffer.write('\n');
         }
