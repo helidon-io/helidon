@@ -9,11 +9,40 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [3.1.3]
+## [3.2.0]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
 
+This release upgrades SnakeYaml from 1.32 to 2.0. Because of incompatible API changes in SnakeYaml 2 it is possible your application might be impacted if you use SnakeYaml directly. While we reccomend you do the upgrade, if that is not possible you may force downgrade SnakeYaml to 1.32 and Helidon 3.2.0 will still work.
+
 ### CHANGES
+
+- Config: Escape the key when copying a config node [6304](https://github.com/helidon-io/helidon/pull/6304)
+- JMS: JNDI destination support [6301](https://github.com/helidon-io/helidon/pull/6301)
+- JPA: Minor JPA cleanups [6435](https://github.com/helidon-io/helidon/pull/6435)
+- JTA: Fixes erroneous closing behavior in JtaConnection.java [6321](https://github.com/helidon-io/helidon/pull/6321)
+- Logging: Remove FileHandler from logging.properties [6363](https://github.com/helidon-io/helidon/pull/6363)
+- Metrics: Change default exemplar behavior to conform to OpenMetrics spec; allow users to choose former non-standard behavior [6387](https://github.com/helidon-io/helidon/pull/6387)
+- MultiPart: Fix MultiPartDecoder lazy inner publisher subscription [6225](https://github.com/helidon-io/helidon/pull/6225)
+- MultiPart: WritableMultiPart create methods fixed [6390](https://github.com/helidon-io/helidon/pull/6390)
+- Native image: Dockerfile.native fixes. [6424](https://github.com/helidon-io/helidon/pull/6424)
+- Native image: Fix native-image build-time initialization [6426](https://github.com/helidon-io/helidon/pull/6426) [6438](https://github.com/helidon-io/helidon/pull/6438)
+- Security: OIDC original uri resolving leaving out query params [6342](https://github.com/helidon-io/helidon/pull/6342)
+- WebServer: Support for non-GET HTTP/2 upgrades [6383](https://github.com/helidon-io/helidon/pull/6383)
+- Build: Use https in pom.xml schemaLocation [6313](https://github.com/helidon-io/helidon/pull/6313) and others
+- Dependencies: Adapt to SnakeYAML 2.0 changes [5793](https://github.com/helidon-io/helidon/pull/5793)
+- Dependencies: Upgrade OCI SDK to 3.8.0 [6427](https://github.com/helidon-io/helidon/pull/6427)
+- Docs: Fix `{h1-prefix}` unreplaced token in SE metrics guide preamble [6409](https://github.com/helidon-io/helidon/pull/6409)
+- Docs: Remove claim that metrics are automatically propagated from the webserver to the webclient [6319](https://github.com/helidon-io/helidon/pull/6319)
+- Docs: TOC - #5828 [6270](https://github.com/helidon-io/helidon/pull/6270)
+- Docs: Toc tasks from #5828 [6146](https://github.com/helidon-io/helidon/pull/6146)
+- Docs: Typo in metrics guide 3.x [6271](https://github.com/helidon-io/helidon/pull/6271)
+- Docs: [3.x] Describe disabling config token replacement [6166](https://github.com/helidon-io/helidon/pull/6166)
+- Examples: Update mustache format in archetype files [6287](https://github.com/helidon-io/helidon/pull/6287)
+- Tests: Fix RC in JMS error test [6376](https://github.com/helidon-io/helidon/pull/6376)
+- Tests: Fix intermittent issue on OciMetricsSupportTest [6177](https://github.com/helidon-io/helidon/pull/6177)
+- Tests: JMS intermittent test fix [6393](https://github.com/helidon-io/helidon/pull/6393)
+- Tests: Use Hamcrest assertions instead of JUnit [6292](https://github.com/helidon-io/helidon/pull/6292) and others
 
 ## [3.1.2]
 
@@ -625,7 +654,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
-[3.1.3]: https://github.com/helidon-io/helidon/compare/3.1.2...3.1.3
+[3.2.0]: https://github.com/helidon-io/helidon/compare/3.1.2...3.2.0
 [3.1.2]: https://github.com/helidon-io/helidon/compare/3.1.1...3.1.2
 [3.1.1]: https://github.com/helidon-io/helidon/compare/3.1.0...3.1.1
 [3.1.0]: https://github.com/helidon-io/helidon/compare/3.0.2...3.1.0
