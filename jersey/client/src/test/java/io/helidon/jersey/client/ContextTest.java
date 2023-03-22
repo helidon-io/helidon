@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ContextTest {
 
@@ -81,7 +80,7 @@ public class ContextTest {
             test(cb -> cb.executorService(executorService), TEST_THREAD_NAME_PREFIX, null);
         } finally {
             executorService.shutdown();
-            assertTrue(executorService.awaitTermination(TIME_OUT.toSeconds(), TimeUnit.SECONDS));
+            assertThat(executorService.awaitTermination(TIME_OUT.toSeconds(), TimeUnit.SECONDS), is(true));
         }
     }
 
@@ -133,7 +132,7 @@ public class ContextTest {
         public void dispose(ExecutorService executorService) {
             executorService.shutdown();
             try {
-                assertTrue(executorService.awaitTermination(TIME_OUT.toSeconds(), TimeUnit.SECONDS));
+                assertThat(executorService.awaitTermination(TIME_OUT.toSeconds(), TimeUnit.SECONDS), is(true));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
