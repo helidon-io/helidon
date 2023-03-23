@@ -68,6 +68,8 @@ import io.helidon.pico.spi.Resetable;
 
 import jakarta.inject.Provider;
 
+import static io.helidon.pico.services.Utils.isQualifiedInjectionTarget;
+
 /**
  * Abstract base implementation for {@link io.helidon.pico.ServiceProviderBindable}, which represents the basics for regular
  * Singleton, ApplicationScoped, Provider, and ServiceProvider based managed services. All Pico code-generated services will
@@ -904,15 +906,19 @@ public abstract class AbstractServiceProvider<T>
      *
      * @param resolvedDeps the resolved dependencies
      * @return the newly created managed service
+     * @throws InjectionException since this is a base method for what is expected to be a code-generated derived
+     * {@link Activator} then this method will throw an exception if the derived class does not implement this method as it
+     * normally should
      */
     protected T createServiceProvider(Map<String, Object> resolvedDeps) {
-        InjectionException e = new InjectionException("don't know how to create an instance of " + serviceInfo(), this);
+        InjectionException e = new InjectionException("Don't know how to create an instance of " + serviceInfo()
+                                                              + ". Was the Activator generated?", this);
         activationLog().ifPresent(e::activationLog);
         throw e;
     }
 
     private void doInjecting(LogEntryAndResult logEntryAndResult) {
-        if (!Utils.isQualifiedInjectionTarget(this)) {
+        if (!isQualifiedInjectionTarget(this)) {
             startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
             return;
         }

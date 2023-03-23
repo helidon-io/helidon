@@ -80,7 +80,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
     private final boolean isGlobal;
     private final DefaultActivationLog log;
     private final State state = State.create(Phase.INIT);
-    private Optional<CallingContext> initializationCallingContext;
+    private CallingContext initializationCallingContext;
 
     /**
      * Constructor taking the bootstrap.
@@ -332,7 +332,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
                 state.reset(true);
                 initializingServicesStarted.set(false);
                 initializingServicesFinished.set(false);
-                initializationCallingContext = Optional.empty();
+                initializationCallingContext = null;
             }
 
             return result;
@@ -363,18 +363,18 @@ class DefaultPicoServices implements PicoServices, Resetable {
 
     private void assertNotInitializing() {
         if (isBinding.get() || isInitializing()) {
-            Optional<CallingContext> initializationCallingContext = this.initializationCallingContext;
+            CallingContext initializationCallingContext = this.initializationCallingContext;
             String desc = "reset() during the initialization sequence is not supported (binding="
                     + isBinding + ", initializingServicesFinished="
                     + initializingServicesFinished + ")";
-            String msg = (initializationCallingContext.isEmpty())
-                    ? toErrorMessage(desc) : toErrorMessage(initializationCallingContext.get(), desc);
+            String msg = (initializationCallingContext == null)
+                    ? toErrorMessage(desc) : toErrorMessage(initializationCallingContext, desc);
             throw new PicoException(msg);
         }
     }
 
     private synchronized void initializeServices() {
-        initializationCallingContext = CallingContextCreator.create(false);
+        initializationCallingContext = CallingContextCreator.create(false).orElse(null);
 
         if (services.get() == null) {
             services.set(new DefaultServices(cfg));
