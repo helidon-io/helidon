@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,13 +29,12 @@ import static org.hamcrest.Matchers.not;
 @HelidonTest
 @AddConfig(key = "metrics.enabled", value = "false")
 @AddBean(GaugedBean.class)
-@Disabled
 class TestDisabledMetrics {
 
     @Test
     void ensureRegistryFactoryIsMinimal() {
         // Invoking instance() should retrieve the factory previously initialized as disabled.
         RegistryFactory rf = RegistryFactory.getInstance();
-        assertThat("RegistryFactory type", rf, not(instanceOf(io.helidon.metrics.api.RegistryFactory.class)));
+        assertThat("RegistryFactory type", rf, not(instanceOf(io.helidon.metrics.RegistryFactory.class)));
     }
 }
