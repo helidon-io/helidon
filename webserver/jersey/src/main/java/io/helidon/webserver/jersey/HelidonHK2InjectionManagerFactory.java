@@ -114,6 +114,11 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             forApplication.shutdown();
         }
 
+        @Override
+        public boolean isShutdown() {
+            return shared.isShutdown() && forApplication.isShutdown();
+        }
+
         /**
          * Registers classes returned by {@code getClasses} in {@code forApplication} and
          * all other classes in {@code shared}. This is done to keep separation between
@@ -349,6 +354,11 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         @Override
         public void shutdown() {
+            throw new UnsupportedOperationException("Not supported");
+        }
+
+        @Override
+        public boolean isShutdown() {
             throw new UnsupportedOperationException("Not supported");
         }
 
