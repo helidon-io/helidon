@@ -46,8 +46,9 @@ public abstract class CallingContext {
 
     @Override
     public String toString() {
+        String prettyPrintStackTrace = String.join("\n", stackTraceOf(trace()));
         return "module name: " + moduleName() + "; thread name: " + threadName()
-                + "; trace:\n" + prettyPrintStackTraceOf(trace());
+                + "; trace:\n" + prettyPrintStackTrace;
     }
 
     /**
