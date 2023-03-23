@@ -40,6 +40,9 @@ import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.pico.CallingContext;
+import io.helidon.pico.CallingContextFactory;
+import io.helidon.pico.CommonQualifiers;
 import io.helidon.pico.ContextualServiceQuery;
 import io.helidon.pico.DefaultContextualServiceQuery;
 import io.helidon.pico.DefaultQualifierAndValue;
@@ -61,13 +64,11 @@ import io.helidon.pico.ServiceProviderBindable;
 import io.helidon.pico.ServiceProviderProvider;
 import io.helidon.pico.configdriven.ConfiguredBy;
 import io.helidon.pico.services.AbstractServiceProvider;
-import io.helidon.pico.spi.CallingContext;
-import io.helidon.pico.spi.CallingContextCreator;
 import io.helidon.pico.spi.InjectionResolver;
 
+import static io.helidon.pico.CallingContext.toErrorMessage;
 import static io.helidon.pico.configdriven.services.Utils.hasValue;
 import static io.helidon.pico.configdriven.services.Utils.isBlank;
-import static io.helidon.pico.spi.CallingContext.toErrorMessage;
 
 /**
  * Abstract base for any config-driven-service.
@@ -247,6 +248,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void rootProvider(ServiceProvider<T> root) {
         assertIsRootProvider(false, false);
         assert (!isRootProvider() && rootProvider.get() == null && this != root);
@@ -276,9 +278,9 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             assertIsRootProvider(true, false);
 
             // override our service info to account for any named lookup
-            if (isRootProvider() && !serviceInfo.qualifiers().contains(DefaultQualifierAndValue.WILDCARD_NAMED)) {
+            if (isRootProvider() && !serviceInfo.qualifiers().contains(CommonQualifiers.WILDCARD_NAMED)) {
                 serviceInfo = DefaultServiceInfo.toBuilder(serviceInfo)
-                        .addQualifier(DefaultQualifierAndValue.WILDCARD_NAMED)
+                        .addQualifier(CommonQualifiers.WILDCARD_NAMED)
                         .build();
             }
         }
@@ -296,9 +298,9 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         if (isRootProvider()) {
             // override out service info to account for any named lookup
             ServiceInfo serviceInfo = Objects.requireNonNull(serviceInfo());
-            if (!serviceInfo.qualifiers().contains(DefaultQualifierAndValue.WILDCARD_NAMED)) {
+            if (!serviceInfo.qualifiers().contains(CommonQualifiers.WILDCARD_NAMED)) {
                 serviceInfo = DefaultServiceInfo.toBuilder(serviceInfo)
-                        .addQualifier(DefaultQualifierAndValue.WILDCARD_NAMED)
+                        .addQualifier(CommonQualifiers.WILDCARD_NAMED)
                         .build();
                 serviceInfo(serviceInfo);
             }
@@ -818,7 +820,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         if (cbr == null) {
             LOGGER.log(System.Logger.Level.INFO, "Config-Driven Services disabled (config bean registry not found");
         } else if (!(cbr instanceof InternalConfigBeanRegistry)) {
-            Optional<CallingContext> callingContext = CallingContextCreator.create(false);
+            Optional<CallingContext> callingContext = CallingContextFactory.create(false);
             String desc = "Config-Driven Services disabled (unsupported implementation): " + cbr;
             String msg = (callingContext.isEmpty()) ? toErrorMessage(desc) : toErrorMessage(callingContext.get(), desc);
             throw new PicoException(msg);

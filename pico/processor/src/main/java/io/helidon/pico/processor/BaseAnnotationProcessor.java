@@ -500,8 +500,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             }
             JavaFileObject sourceFile = path.getCompilationUnit().getSourceFile();
             Optional<Path> filePath = toPath(sourceFile.toUri());
-            Optional<Path> srcPath = filePath.isPresent() ? toSourcePath(filePath.get(), type) : Optional.empty();
-            srcPath.ifPresent(services::lastKnownSourcePathBeingProcessed);
+            filePath.flatMap(it -> toSourcePath(it, type))
+                    .ifPresent(services::lastKnownSourcePathBeingProcessed);
             return true;
         } catch (Throwable t) {
             debug("unable to determine if contract is external: " + type + "; " + t.getMessage(), t);

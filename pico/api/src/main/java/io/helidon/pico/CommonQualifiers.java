@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,27 @@
 
 package io.helidon.pico;
 
-import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeName;
+
+import jakarta.inject.Named;
 
 /**
- * Represents a tuple of the Qualifier and optionally any value.
- *
- * @see jakarta.inject.Qualifier
- * @see CommonQualifiers
+ * Commonly used {@link QualifierAndValue} types.
  */
-public interface QualifierAndValue extends AnnotationAndValue {
+public final class CommonQualifiers {
 
     /**
-     * The qualifier annotation type name.
-     *
-     * @return the qualifier/annotation type name
+     * Represents a {@link jakarta.inject.Named} type name with no value.
      */
-    default String qualifierTypeName() {
-        return typeName().name();
+    public static final TypeName NAMED = DefaultTypeName.create(Named.class);
+
+    /**
+     * Represents a wildcard {@link #NAMED} qualifier.
+     */
+    public static final QualifierAndValue WILDCARD_NAMED = DefaultQualifierAndValue.createNamed("*");
+
+    private CommonQualifiers() {
     }
 
 }

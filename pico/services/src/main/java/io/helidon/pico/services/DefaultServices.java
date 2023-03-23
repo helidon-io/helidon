@@ -30,6 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import io.helidon.pico.Application;
+import io.helidon.pico.CallingContext;
+import io.helidon.pico.CallingContextFactory;
 import io.helidon.pico.DefaultMetrics;
 import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.DefaultServiceInfoCriteria;
@@ -42,6 +44,7 @@ import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
+import io.helidon.pico.Resetable;
 import io.helidon.pico.ServiceBinder;
 import io.helidon.pico.ServiceInfo;
 import io.helidon.pico.ServiceInfoCriteria;
@@ -49,13 +52,10 @@ import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.ServiceProviderBindable;
 import io.helidon.pico.ServiceProviderProvider;
 import io.helidon.pico.Services;
-import io.helidon.pico.spi.CallingContext;
-import io.helidon.pico.spi.CallingContextCreator;
-import io.helidon.pico.spi.Resetable;
 
 import jakarta.inject.Provider;
 
-import static io.helidon.pico.spi.CallingContext.toErrorMessage;
+import static io.helidon.pico.CallingContext.toErrorMessage;
 
 /**
  * The default reference implementation of {@link io.helidon.pico.Services}.
@@ -442,7 +442,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
                     + "Set config '"
                     + PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC
                     + " = true' to enable";
-            Optional<CallingContext> callCtx = CallingContextCreator.create(false);
+            Optional<CallingContext> callCtx = CallingContextFactory.create(false);
             String msg = (callCtx.isEmpty()) ? toErrorMessage(desc) : toErrorMessage(callCtx.get(), desc);
             throw new IllegalStateException(msg);
         }

@@ -24,11 +24,9 @@ import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.pico.spi.CallingContext;
 import io.helidon.pico.spi.PicoServicesProvider;
-import io.helidon.pico.spi.Resetable;
 
-import static io.helidon.pico.spi.CallingContext.DEBUG_HINT;
+import static io.helidon.pico.CallingContext.DEBUG_HINT;
 
 /**
  * The holder for the globally active {@link PicoServices} singleton instance, as well as its associated

@@ -43,6 +43,8 @@ import io.helidon.pico.ActivationResult;
 import io.helidon.pico.ActivationStatus;
 import io.helidon.pico.Application;
 import io.helidon.pico.Bootstrap;
+import io.helidon.pico.CallingContext;
+import io.helidon.pico.CallingContextFactory;
 import io.helidon.pico.DefaultActivationLogEntry;
 import io.helidon.pico.DefaultActivationResult;
 import io.helidon.pico.DefaultMetrics;
@@ -55,13 +57,11 @@ import io.helidon.pico.Phase;
 import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
+import io.helidon.pico.Resetable;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.spi.CallingContext;
-import io.helidon.pico.spi.CallingContextCreator;
-import io.helidon.pico.spi.Resetable;
 
-import static io.helidon.pico.spi.CallingContext.toErrorMessage;
+import static io.helidon.pico.CallingContext.toErrorMessage;
 
 /**
  * The default implementation for {@link io.helidon.pico.PicoServices}.
@@ -374,7 +374,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
     }
 
     private synchronized void initializeServices() {
-        initializationCallingContext = CallingContextCreator.create(false).orElse(null);
+        initializationCallingContext = CallingContextFactory.create(false).orElse(null);
 
         if (services.get() == null) {
             services.set(new DefaultServices(cfg));

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.spi;
+package io.helidon.pico;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,7 +108,7 @@ public abstract class CallingContext {
 
         CallingContext global = defaultCallingContext;
         if (global != null && throwIfAlreadySet) {
-            CallingContext currentCallingContext = CallingContextCreator.create(true).orElseThrow();
+            CallingContext currentCallingContext = CallingContextFactory.create(true).orElseThrow();
             throw new IllegalStateException("Expected to be the owner of the calling context. This context is: "
                                                     + currentCallingContext + "\n Context previously set was: " + global);
         }

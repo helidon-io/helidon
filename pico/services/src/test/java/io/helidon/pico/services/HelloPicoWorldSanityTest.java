@@ -180,7 +180,7 @@ class HelloPicoWorldSanityTest {
 
         // deactivate just the Hello service
         ActivationResult result = helloProvider1.deActivator().orElseThrow()
-                .deactivate(DeActivationRequest.DEFAULT.get());
+                .deactivate(DeActivationRequest.defaultDeactivationRequest());
         assertThat(result.finished(), is(true));
         assertThat(result.success(), is(true));
         assertThat(result.serviceProvider(), sameInstance(helloProvider2));

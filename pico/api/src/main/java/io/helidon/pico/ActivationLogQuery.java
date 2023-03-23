@@ -18,8 +18,6 @@ package io.helidon.pico;
 
 import java.util.List;
 
-import io.helidon.pico.spi.Resetable;
-
 /**
  * Provide a means to query the activation log.
  *

@@ -43,8 +43,8 @@ import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.Module;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
+import io.helidon.pico.Resetable;
 import io.helidon.pico.services.Dependencies;
-import io.helidon.pico.spi.Resetable;
 
 /**
  * Tracks the services to process, and ingests them to build the codegen model.

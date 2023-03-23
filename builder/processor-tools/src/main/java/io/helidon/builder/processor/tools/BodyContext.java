@@ -77,8 +77,8 @@ public class BodyContext {
     private final String publicOrPackagePrivateDecl;
     private final TypeName interceptorTypeName;
     private final String interceptorCreateMethod;
-    private TypeName parentTypeName;
-    private TypeName parentAnnotationTypeName;
+    private final TypeName parentTypeName;
+    private final TypeName parentAnnotationTypeName;
 
     /**
      * Constructor.
@@ -106,9 +106,11 @@ public class BodyContext {
         this.listType = toListImplType(builderTriggerAnnotation, typeInfo);
         this.mapType = toMapImplType(builderTriggerAnnotation, typeInfo);
         this.setType = toSetImplType(builderTriggerAnnotation, typeInfo);
+        this.parentTypeName = toParentTypeName(builderTriggerAnnotation, typeInfo);
+        this.parentAnnotationTypeName = toParentAnnotationTypeName(typeInfo);
         gatherAllAttributeNames(typeInfo);
         assert (allTypeInfos.size() == allAttributeNames.size());
-        this.hasParent = (parentTypeName != null && hasBuilder(typeInfo.superTypeInfo(), builderTriggerAnnotation));
+        this.hasParent = (parentTypeName != null && hasBuilder(typeInfo.superTypeInfo().orElse(null), builderTriggerAnnotation));
         this.hasAnyBuilderClashingMethodNames = determineIfHasAnyClashingMethodNames();
         this.isExtendingAnAbstractClass = typeInfo.typeKind().equals(TypeInfo.KIND_CLASS);
         this.ctorBuilderAcceptTypeName = toCtorBuilderAcceptTypeName(typeInfo, hasParent, parentAnnotationTypeName);
@@ -500,15 +502,6 @@ public class BodyContext {
     }
 
     /**
-     * In support of {@link io.helidon.builder.Builder#defineDefaultMethods()}.
-     */
-    private static boolean toDefineDefaultMethods(AnnotationAndValue builderTriggerAnnotation,
-                                                  TypeInfo typeInfo) {
-        String val = searchForBuilderAnnotation("defineDefaultMethods", builderTriggerAnnotation, typeInfo);
-        return (val == null) ? Builder.DEFAULT_DEFINE_DEFAULT_METHODS : Boolean.parseBoolean(val);
-    }
-
-    /**
      * In support of {@link io.helidon.builder.Builder#listImplType()}.
      */
     private static String toListImplType(AnnotationAndValue builderTriggerAnnotation,
@@ -567,14 +560,6 @@ public class BodyContext {
                 gatherAllAttributeNames(superTypeInfo);
             } else {
                 populateMap(map, superTypeInfo, beanStyleRequired);
-            }
-
-            if ((parentTypeName == null)
-                    && superTypeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
-                parentTypeName = superTypeInfo.typeName();
-            } else if ((parentAnnotationTypeName == null)
-                    && superTypeInfo.typeKind().equals(TypeInfo.KIND_ANNOTATION_TYPE)) {
-                parentAnnotationTypeName = superTypeInfo.typeName();
             }
         }
 
@@ -657,17 +642,17 @@ public class BodyContext {
                 || beanAttributeName.equals("toStringInner");
     }
 
-    private boolean hasBuilder(Optional<TypeInfo> typeInfo,
+    private boolean hasBuilder(TypeInfo typeInfo,
                                AnnotationAndValue builderTriggerAnnotation) {
-        if (typeInfo.isEmpty()) {
+        if (typeInfo == null) {
             return false;
         }
 
         TypeName builderAnnoTypeName = builderTriggerAnnotation.typeName();
-        boolean hasBuilder = typeInfo.get().annotations().stream()
+        boolean hasBuilder = typeInfo.annotations().stream()
                 .map(AnnotationAndValue::typeName)
                 .anyMatch(it -> it.equals(builderAnnoTypeName));
-        return hasBuilder || hasBuilder(typeInfo.get().superTypeInfo(), builderTriggerAnnotation);
+        return hasBuilder || hasBuilder(typeInfo.superTypeInfo().orElse(null), builderTriggerAnnotation);
     }
 
     private static TypeName toCtorBuilderAcceptTypeName(TypeInfo typeInfo,
@@ -679,6 +664,33 @@ public class BodyContext {
 
         return (parentAnnotationTypeName != null && typeInfo.elementInfo().isEmpty()
                         ? typeInfo.superTypeInfo().orElseThrow().typeName() : typeInfo.typeName());
+    }
+
+    private static TypeName toParentTypeName(AnnotationAndValue builderTriggerAnnotation,
+                                             TypeInfo typeInfo) {
+        TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
+        if (superTypeInfo != null) {
+            Optional<? extends AnnotationAndValue> superBuilderAnnotation = DefaultAnnotationAndValue
+                    .findFirst(builderTriggerAnnotation.typeName().name(), superTypeInfo.annotations());
+            if (superBuilderAnnotation.isEmpty()) {
+                return toParentTypeName(builderTriggerAnnotation, superTypeInfo);
+            }
+
+            if (superTypeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
+                return superTypeInfo.typeName();
+            }
+        }
+
+        return null;
+    }
+
+    private static TypeName toParentAnnotationTypeName(TypeInfo typeInfo) {
+        TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
+        if (superTypeInfo != null && superTypeInfo.typeKind().equals(TypeInfo.KIND_ANNOTATION_TYPE)) {
+            return superTypeInfo.typeName();
+        }
+
+        return null;
     }
 
 }

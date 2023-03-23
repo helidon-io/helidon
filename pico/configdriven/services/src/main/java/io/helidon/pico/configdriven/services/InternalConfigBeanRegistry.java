@@ -19,7 +19,7 @@ package io.helidon.pico.configdriven.services;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.spi.Resetable;
+import io.helidon.pico.Resetable;
 
 /**
  * Internal, SPI-like functionality.

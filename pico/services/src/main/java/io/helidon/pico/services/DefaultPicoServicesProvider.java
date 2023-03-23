@@ -23,8 +23,8 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.pico.Bootstrap;
 import io.helidon.pico.PicoServices;
+import io.helidon.pico.Resetable;
 import io.helidon.pico.spi.PicoServicesProvider;
-import io.helidon.pico.spi.Resetable;
 
 import jakarta.inject.Singleton;
 

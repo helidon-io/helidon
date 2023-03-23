@@ -52,8 +52,8 @@ import io.helidon.common.types.TypeName;
 import io.helidon.pico.ElementInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.InterceptedTrigger;
+import io.helidon.pico.Resetable;
 import io.helidon.pico.ServiceInfoBasics;
-import io.helidon.pico.spi.Resetable;
 import io.helidon.pico.tools.spi.InterceptorCreator;
 
 import io.github.classgraph.ClassInfo;

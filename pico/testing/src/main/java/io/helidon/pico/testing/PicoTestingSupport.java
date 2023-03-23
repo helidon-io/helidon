@@ -31,9 +31,9 @@ import io.helidon.pico.DefaultBootstrap;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.PicoServicesHolder;
+import io.helidon.pico.Resetable;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.services.DefaultServiceBinder;
-import io.helidon.pico.spi.Resetable;
 
 /**
  * Supporting helper utilities unit-testing Pico services.

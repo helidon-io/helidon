@@ -107,7 +107,7 @@ public interface ServiceInfo extends ServiceInfoBasics {
             return false;
         }
 
-        if (src.contains(DefaultQualifierAndValue.WILDCARD_NAMED)) {
+        if (src.contains(CommonQualifiers.WILDCARD_NAMED)) {
             return true;
         }
 
@@ -115,8 +115,8 @@ public interface ServiceInfo extends ServiceInfoBasics {
             if (src.contains(criteriaQualifier)) {
                 // NOP;
                 continue;
-            } else if (criteriaQualifier.typeName().equals(DefaultQualifierAndValue.NAMED)) {
-                if (criteriaQualifier.equals(DefaultQualifierAndValue.WILDCARD_NAMED)
+            } else if (criteriaQualifier.typeName().equals(CommonQualifiers.NAMED)) {
+                if (criteriaQualifier.equals(CommonQualifiers.WILDCARD_NAMED)
                         || criteriaQualifier.value().isEmpty()) {
                     // any Named qualifier will match ...
                     boolean hasSameTypeAsCriteria = src.stream()
@@ -124,7 +124,7 @@ public interface ServiceInfo extends ServiceInfoBasics {
                     if (hasSameTypeAsCriteria) {
                         continue;
                     }
-                } else if (src.contains(DefaultQualifierAndValue.WILDCARD_NAMED)) {
+                } else if (src.contains(CommonQualifiers.WILDCARD_NAMED)) {
                     continue;
                 }
                 return false;

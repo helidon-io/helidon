@@ -22,7 +22,7 @@ import java.util.Objects;
 import io.helidon.pico.RunLevel;
 import io.helidon.pico.configdriven.configuredby.test.ASingletonServiceContract;
 import io.helidon.pico.configdriven.configuredby.test.FakeWebServerContract;
-import io.helidon.pico.spi.Resetable;
+import io.helidon.pico.Resetable;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;

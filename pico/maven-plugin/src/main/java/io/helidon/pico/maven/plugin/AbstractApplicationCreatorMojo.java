@@ -33,6 +33,9 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.pico.CallingContext;
+import io.helidon.pico.CallingContextFactory;
+import io.helidon.pico.DefaultCallingContext;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.Module;
 import io.helidon.pico.PicoServices;
@@ -41,9 +44,6 @@ import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.ServiceProviderProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.services.DefaultServiceBinder;
-import io.helidon.pico.spi.CallingContext;
-import io.helidon.pico.spi.CallingContextCreator;
-import io.helidon.pico.spi.DefaultCallingContext;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ApplicationCreatorCodeGen;
@@ -66,12 +66,12 @@ import org.apache.maven.model.Build;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
+import static io.helidon.pico.CallingContext.globalCallingContext;
+import static io.helidon.pico.CallingContext.toErrorMessage;
 import static io.helidon.pico.maven.plugin.Utils.applicationCreator;
 import static io.helidon.pico.maven.plugin.Utils.hasValue;
 import static io.helidon.pico.maven.plugin.Utils.picoServices;
 import static io.helidon.pico.maven.plugin.Utils.toDescriptions;
-import static io.helidon.pico.spi.CallingContext.globalCallingContext;
-import static io.helidon.pico.spi.CallingContext.toErrorMessage;
 import static io.helidon.pico.tools.ApplicationCreatorConfigOptions.PermittedProviderType;
 import static io.helidon.pico.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
 import static io.helidon.pico.tools.ModuleUtils.isUnnamedModuleName;
@@ -229,7 +229,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
         CallingContext callCtx = null;
         Optional<DefaultCallingContext.Builder> callingContextBuilder =
-                CallingContextCreator.createBuilder(false);
+                CallingContextFactory.createBuilder(false);
         if (callingContextBuilder.isPresent()) {
             callingContextBuilder.get().moduleName(Optional.ofNullable(getThisModuleName()));
             callCtx = callingContextBuilder.get().build();
@@ -372,7 +372,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     void warn(String msg) {
-        Optional<DefaultCallingContext.Builder> optBuilder = CallingContextCreator.createBuilder(false);
+        Optional<DefaultCallingContext.Builder> optBuilder = CallingContextFactory.createBuilder(false);
         CallingContext callCtx = (optBuilder.isPresent())
                 ? optBuilder.get().moduleName(Optional.ofNullable(getThisModuleName())).build() : null;
         String desc = "no modules to process";

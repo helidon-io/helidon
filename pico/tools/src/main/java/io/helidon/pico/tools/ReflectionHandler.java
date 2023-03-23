@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tools;
 
-import io.helidon.pico.spi.Resetable;
+import io.helidon.pico.Resetable;
 
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;

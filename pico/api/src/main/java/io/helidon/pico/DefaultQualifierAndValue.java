@@ -25,24 +25,12 @@ import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
 
-import jakarta.inject.Named;
-
 /**
  * Describes a {@link jakarta.inject.Qualifier} type annotation associated with a service being provided or dependant upon.
  * In Pico these are generally determined at compile time to avoid any use of reflection at runtime.
  */
 public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
         implements QualifierAndValue, Comparable<AnnotationAndValue> {
-
-    /**
-     * Represents a {@link jakarta.inject.Named} type name with no value.
-     */
-    public static final TypeName NAMED = DefaultTypeName.create(Named.class);
-
-    /**
-     * Represents a wildcard {@link #NAMED} qualifier.
-     */
-    public static final QualifierAndValue WILDCARD_NAMED = DefaultQualifierAndValue.createNamed("*");
 
     /**
      * Constructor using the builder.
@@ -62,7 +50,7 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
      */
     public static DefaultQualifierAndValue createNamed(String name) {
         Objects.requireNonNull(name);
-        return (DefaultQualifierAndValue) builder().typeName(NAMED).value(name).build();
+        return (DefaultQualifierAndValue) builder().typeName(CommonQualifiers.NAMED).value(name).build();
     }
 
     /**

@@ -58,7 +58,8 @@ public interface Services {
      * @throws io.helidon.pico.PicoException if resolution fails to resolve a match
      */
     default <T> ServiceProvider<T> lookup(Class<T> type) {
-        return lookupFirst(type, true).orElseThrow();
+        return lookupFirst(type, true)
+                .orElseThrow(() -> new PicoException("There are no service providers for service of type " + type.getName()));
     }
 
     /**
@@ -73,7 +74,8 @@ public interface Services {
      */
     default <T> ServiceProvider<T> lookup(Class<T> type,
                                           String name) {
-        return lookupFirst(type, name, true).orElseThrow();
+        return lookupFirst(type, name, true)
+                .orElseThrow(() -> new PicoException("There are no service providers for service of type " + type.getName()));
     }
 
     /**

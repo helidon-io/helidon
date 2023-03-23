@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.spi;
+package io.helidon.pico;
 
 /**
  * Implementors of this contract are capable of resetting the state of itself (i.e., clears cache, log entries, etc.).

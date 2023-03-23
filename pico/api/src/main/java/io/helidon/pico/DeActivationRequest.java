@@ -24,12 +24,10 @@ import io.helidon.config.metadata.ConfiguredOption;
  * Request to deactivate a {@link io.helidon.pico.ServiceProvider}.
  */
 @Builder
-public interface DeActivationRequest {
+public abstract class DeActivationRequest {
 
-    /**
-     * Default request.
-     */
-    LazyValue<DeActivationRequest> DEFAULT = LazyValue.create(() -> DefaultDeActivationRequest.builder().build());
+    DeActivationRequest() {
+    }
 
     /**
      * Whether to throw an exception on failure, or return it as part of the result.
@@ -37,6 +35,21 @@ public interface DeActivationRequest {
      * @return throw on failure
      */
     @ConfiguredOption("true")
-    boolean throwIfError();
+    public abstract boolean throwIfError();
+
+    /**
+     * A standard/default deactivation request, without any additional options placed on the request.
+     *
+     * @return a standard/default deactivation request.
+     */
+    public static DeActivationRequest defaultDeactivationRequest() {
+        return Init.DEFAULT.get();
+    }
+
+
+    static class Init {
+        static final LazyValue<DeActivationRequest> DEFAULT =
+                LazyValue.create(() -> DefaultDeActivationRequest.builder().build());
+    }
 
 }

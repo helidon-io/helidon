@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.spi;
+package io.helidon.pico;
 
 import java.util.Optional;
-
-import io.helidon.pico.PicoServices;
 
 /**
  * Factory for creating {@link CallingContext} and builders for the calling context.
  * After a calling context builder is created, it should be amended with as much contextual information as possible, and then
  * optionally set globally using {@link CallingContext#globalCallingContext(CallingContext, boolean)}.
  */
-public class CallingContextCreator {
+public class CallingContextFactory {
 
-    private CallingContextCreator() {
+    private CallingContextFactory() {
     }
 
     /**
