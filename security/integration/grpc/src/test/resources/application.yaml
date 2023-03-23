@@ -32,3 +32,5 @@ http-basic-auth:
     - login: "Bob"
       password: "password"
       roles: ["user"]
+  outbound:
+    - name: "propagate-everything"

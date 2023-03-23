@@ -126,7 +126,7 @@ public class ServiceAndMethodLevelSecurityIT {
         StatusRuntimeException thrown = assertThrows(StatusRuntimeException.class, () ->
                 noCredsEchoStub.lower(toMessage("FOO")));
 
-        assertThat(thrown.getStatus().getCode(), is(Status.PERMISSION_DENIED.getCode()));
+        assertThat(thrown.getStatus().getCode(), is(Status.UNAUTHENTICATED.getCode()));
     }
 
     @Test

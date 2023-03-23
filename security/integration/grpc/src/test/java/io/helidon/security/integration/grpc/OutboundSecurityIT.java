@@ -161,7 +161,7 @@ public class OutboundSecurityIT {
                 .property(HttpAuthenticationFeature.HTTP_AUTHENTICATION_BASIC_PASSWORD, "password")
                 .get();
 
-        assertThat(response.getStatus(), is(Response.Status.FORBIDDEN.getStatusCode()));
+        assertThat(response.getStatus(), is(Response.Status.UNAUTHORIZED.getStatusCode()));
     }
 
     @Test
