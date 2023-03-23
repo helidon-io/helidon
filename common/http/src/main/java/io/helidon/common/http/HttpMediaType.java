@@ -202,7 +202,6 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
      *         parameter set to the supplied value.
      */
     default HttpMediaType withCharset(Charset charset) {
-        Objects.requireNonNull(charset);
         return withCharset(charset.name());
     }
 

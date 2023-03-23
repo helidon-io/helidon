@@ -38,9 +38,9 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /*
-Update the following tests together (if relevant):
+When adding/updating tests in this class, consider if it should be done
+ in the following tests a well:
     - JacksonMediaTest
-    - JsonbMediaTest
     - JsonpMediaTest
  */
 class JsonbMediaTest {
