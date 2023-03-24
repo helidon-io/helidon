@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,16 @@
  */
 package io.helidon.tests.integration.jpa.appl;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Test method annotation.
  * This is security enhancement which restricts methods invoked by Dispatcher only to those with this annotation.
  */
 @Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
 public @interface MPTest {
 }
