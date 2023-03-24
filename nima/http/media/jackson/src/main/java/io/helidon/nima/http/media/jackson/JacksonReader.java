@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.http.media.jsonb;
+package io.helidon.nima.http.media.jackson;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.UncheckedIOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -29,13 +30,15 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.nima.http.media.EntityReader;
 
-import jakarta.json.bind.Jsonb;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-class JsonbReader<T> implements EntityReader<T> {
-    private final Jsonb jsonb;
+class JacksonReader<T> implements EntityReader<T> {
 
-    JsonbReader(Jsonb jsonb) {
-        this.jsonb = jsonb;
+    private final ObjectMapper objectMapper;
+
+    JacksonReader(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -48,15 +51,22 @@ class JsonbReader<T> implements EntityReader<T> {
                   InputStream stream,
                   Headers requestHeaders,
                   Headers responseHeaders) {
+
         return read(type, stream, contentTypeCharset(responseHeaders));
     }
 
+    @SuppressWarnings("unchecked")
     private T read(GenericType<T> type, InputStream in, Charset charset) {
-
         try (Reader r = new InputStreamReader(in, charset)) {
-            return jsonb.fromJson(r, type.type());
+            Type t = type.type();
+            if (t instanceof ParameterizedType) {
+                JavaType javaType = objectMapper.getTypeFactory().constructType(t);
+                return objectMapper.readValue(r, javaType);
+            } else {
+                return objectMapper.readValue(r, (Class<T>) type.rawType());
+            }
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new JacksonRuntimeException("Failed to deserialize JSON to " + type, e);
         }
     }
 

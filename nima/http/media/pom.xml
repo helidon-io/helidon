@@ -33,6 +33,7 @@
         <module>media</module>
         <module>jsonb</module>
         <module>jsonp</module>
+        <module>jackson</module>
         <module>multipart</module>
     </modules>
 </project>
