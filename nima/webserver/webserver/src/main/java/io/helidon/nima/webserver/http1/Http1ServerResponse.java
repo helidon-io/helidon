@@ -427,19 +427,29 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             if (closed) {
                 throw new IOException("Stream already closed");
             }
+
             if (!isChunked) {
                 if (firstByte) {
                     firstByte = false;
-                    BufferData growing = BufferData.growing(256);
+                    sendListener.headers(ctx, headers);
+                    // write headers and payload part in one buffer to avoid TCP/ACK delay problems
+                    BufferData growing = BufferData.growing(256 + buffer.available());
                     nonEntityBytes(headers, status.get(), growing, keepAlive);
+                    // check not exceeding content-length
+                    bytesWritten += buffer.available();
+                    checkContentLength(buffer);
+                    sendListener.data(ctx, buffer);
+                    // write single buffer headers and payload part
+                    growing.write(buffer);
                     responseBytesTotal += growing.available();
                     dataWriter.write(growing);
+                } else {
+                    // if not chunked, always write
+                    writeContent(buffer);
                 }
-
-                // if not chunked, always write
-                writeContent(buffer);
                 return;
             }
+
             // try chunked data optimization
             if (firstByte && firstBuffer == null) {
                 // if somebody re-uses the byte buffer sent to us, we must copy it
@@ -531,14 +541,17 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             dataWriter.write(toWrite);
         }
 
-        private void writeContent(BufferData buffer) throws IOException {
-            bytesWritten += buffer.available();
+        private void checkContentLength(BufferData buffer) throws IOException {
             if (bytesWritten > contentLength && contentLength != -1) {
                 throw new IOException("Content length was set to " + contentLength
-                                              + ", but you are writing additional " + (bytesWritten - contentLength) + " "
-                                              + "bytes");
+                        + ", but you are writing additional " + (bytesWritten - contentLength) + " "
+                        + "bytes");
             }
+        }
 
+        private void writeContent(BufferData buffer) throws IOException {
+            bytesWritten += buffer.available();
+            checkContentLength(buffer);
             sendListener.data(ctx, buffer);
             responseBytesTotal += buffer.available();
             dataWriter.write(buffer);
