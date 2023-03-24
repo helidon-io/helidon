@@ -15,26 +15,32 @@
  */
 package io.helidon.nima.http2;
 
-import java.lang.System.Logger.Level;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
+
+import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.INFO;
 
 /**
  * Window size container, used with {@link io.helidon.nima.http2.FlowControl}.
  */
 abstract class WindowSizeImpl implements WindowSize {
 
-    private static final System.Logger LOGGER = System.getLogger(WindowSizeImpl.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(FlowControl.class.getName());
 
+    private final ConnectionFlowControl.Type type;
+    private final int streamId;
     private int windowSize;
     private final AtomicInteger remainingWindowSize;
 
-    private WindowSizeImpl(int initialWindowSize) {
+    private WindowSizeImpl(ConnectionFlowControl.Type type, int streamId, int initialWindowSize) {
+        this.type = type;
+        this.streamId = streamId;
         this.windowSize = initialWindowSize;
         this.remainingWindowSize = new AtomicInteger(initialWindowSize);
     }
@@ -46,26 +52,23 @@ abstract class WindowSizeImpl implements WindowSize {
         // it maintains by the difference between the new value and the old value
         remainingWindowSize.updateAndGet(o -> o + size - windowSize);
         windowSize = size;
-        LOGGER.log(Level.DEBUG,
-                   () -> String.format("Reset window size %d, remaining %d", windowSize, remainingWindowSize.get()));
+        LOGGER.log(DEBUG, () -> String.format("%s OFC STR %d: Recv INITIAL_WINDOW_SIZE %d(%d)",
+                                              type, streamId, windowSize, remainingWindowSize.get()));
     }
 
     @Override
-    public boolean incrementWindowSize(int increment) {
+    public long incrementWindowSize(int increment) {
         int remaining = remainingWindowSize
                 .getAndUpdate(r -> r < 0 || MAX_WIN_SIZE - r > increment
                         ? increment + r
                         : MAX_WIN_SIZE);
-        LOGGER.log(Level.DEBUG,
-                   () -> String.format("Increment window size %d, remaining %d", increment, remainingWindowSize.get()));
-        return MAX_WIN_SIZE - remaining <= increment;
+
+        return remaining + increment;
     }
 
     @Override
-    public void decrementWindowSize(int decrement) {
-        remainingWindowSize.updateAndGet(operand -> operand - decrement);
-        LOGGER.log(Level.DEBUG,
-                   () -> String.format("Decrement window size %d, remaining %d", decrement, remainingWindowSize.get()));
+    public int decrementWindowSize(int decrement) {
+        return remainingWindowSize.updateAndGet(operand -> operand - decrement);
     }
 
     @Override
@@ -84,24 +87,32 @@ abstract class WindowSizeImpl implements WindowSize {
     static final class Inbound extends WindowSizeImpl implements WindowSize.Inbound {
 
         private final Strategy strategy;
+        private final ConnectionFlowControl.Type type;
+        private final int streamId;
 
-        Inbound(int initialWindowSize, int maxFrameSize, Consumer<Http2WindowUpdate> windowUpdateWriter) {
-            super(initialWindowSize);
+        Inbound(ConnectionFlowControl.Type type,
+                int streamId,
+                int initialWindowSize,
+                int maxFrameSize,
+                BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
+            super(type, streamId, initialWindowSize);
+            this.type = type;
+            this.streamId = streamId;
             // Strategy selection based on initialWindowSize and maxFrameSize
-            this.strategy = Strategy.create(new Strategy.Context(maxFrameSize, initialWindowSize),
-                                            windowUpdateWriter);
+            this.strategy = Strategy.create(new Strategy.Context(maxFrameSize, initialWindowSize), streamId, windowUpdateWriter);
         }
 
         @Override
-        public boolean incrementWindowSize(int increment) {
-            boolean result = super.incrementWindowSize(increment);
+        public long incrementWindowSize(int increment) {
             // 6.9
             // A receiver MUST treat the receipt of a WINDOW_UPDATE frame
             // with a flow-control window increment of 0 as a stream error
             if (increment > 0) {
-                strategy.windowUpdate(increment);
+                long result = super.incrementWindowSize(increment);
+                strategy.windowUpdate(this.type, this.streamId, increment);
+                return result;
             }
-            return result;
+            return super.getRemainingWindowSize();
         }
 
     }
@@ -112,16 +123,20 @@ abstract class WindowSizeImpl implements WindowSize {
     static final class Outbound extends WindowSizeImpl implements WindowSize.Outbound {
 
         private final AtomicReference<CompletableFuture<Void>> updated = new AtomicReference<>(new CompletableFuture<>());
+        private final ConnectionFlowControl.Type type;
+        private final int streamId;
 
-        Outbound(int initialWindowSize) {
-            super(initialWindowSize);
+        Outbound(ConnectionFlowControl.Type type, int streamId, ConnectionFlowControl connectionFlowControl) {
+            super(type, streamId, connectionFlowControl.initialWindowSize());
+            this.type = type;
+            this.streamId = streamId;
         }
 
         @Override
-        public boolean incrementWindowSize(int increment) {
-            boolean result = super.incrementWindowSize(increment);
+        public long incrementWindowSize(int increment) {
+            long remaining = super.incrementWindowSize(increment);
             triggerUpdate();
-            return result;
+            return remaining;
         }
 
         @Override
@@ -131,44 +146,42 @@ abstract class WindowSizeImpl implements WindowSize {
 
         @Override
         public void blockTillUpdate() {
-            while (getRemainingWindowSize() < 1){
+            while (getRemainingWindowSize() < 1) {
                 try {
                     //TODO configurable timeout
-                    updated.get().get(100, TimeUnit.MILLISECONDS);
+                    updated.get().get(500, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    LOGGER.log(Level.WARNING,
-                               () -> String.format("Exception %s caught while waiting for window update: %s",
-                                                   e.getClass().getName(),
-                                                   e.getMessage()));
+                    LOGGER.log(DEBUG, () -> String.format("%s OFC STR %d: Window depleted, waiting for update.", type, streamId));
                 }
             }
         }
-
     }
 
     /**
      * Inbound window size container with flow control turned off.
      */
-    public static final class InboundNoop implements  WindowSize.Inbound {
+    public static final class InboundNoop implements WindowSize.Inbound {
 
         private static final int WIN_SIZE_WATERMARK = MAX_WIN_SIZE / 2;
-        private final Consumer<Http2WindowUpdate> windowUpdateWriter;
+        private final int streamId;
+        private final BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter;
         private int delayedIncrement;
 
-        InboundNoop(Consumer<Http2WindowUpdate> windowUpdateWriter) {
+        InboundNoop(int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
+            this.streamId = streamId;
             this.windowUpdateWriter = windowUpdateWriter;
             this.delayedIncrement = 0;
         }
 
         @Override
-        public boolean incrementWindowSize(int increment) {
+        public long incrementWindowSize(int increment) {
             // Send WINDOW_UPDATE frame joined for at least 1/2 of the maximum space
             delayedIncrement += increment;
             if (delayedIncrement > WIN_SIZE_WATERMARK) {
-                windowUpdateWriter.accept(new Http2WindowUpdate(delayedIncrement));
+                windowUpdateWriter.accept(streamId, new Http2WindowUpdate(delayedIncrement));
                 delayedIncrement = 0;
             }
-            return true;
+            return getRemainingWindowSize();
         }
 
         @Override
@@ -176,7 +189,8 @@ abstract class WindowSizeImpl implements WindowSize {
         }
 
         @Override
-        public void decrementWindowSize(int decrement) {
+        public int decrementWindowSize(int decrement) {
+            return WindowSize.MAX_WIN_SIZE;
         }
 
         @Override
@@ -194,26 +208,31 @@ abstract class WindowSizeImpl implements WindowSize {
     abstract static class Strategy {
 
         private final Context context;
-        private final Consumer<Http2WindowUpdate> windowUpdateWriter;
+        private final int streamId;
+        private final BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter;
 
-        private Strategy(Context context, Consumer<Http2WindowUpdate> windowUpdateWriter) {
+        private Strategy(Context context, int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
             this.context = context;
+            this.streamId = streamId;
             this.windowUpdateWriter = windowUpdateWriter;
         }
 
-        abstract void windowUpdate(int increment);
+        abstract void windowUpdate(ConnectionFlowControl.Type type, int increment, int i);
 
         Context context() {
             return context;
         }
 
-        Consumer<Http2WindowUpdate>
-        windowUpdateWriter() {
+        int streamId(){
+            return this.streamId;
+        }
+
+        BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter() {
             return windowUpdateWriter;
         }
 
         private interface StrategyConstructor {
-            Strategy create(Context context, Consumer<Http2WindowUpdate> windowUpdateWriter);
+            Strategy create(Context context, int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter);
         }
 
         // Strategy Type to instance mapping array
@@ -223,9 +242,9 @@ abstract class WindowSizeImpl implements WindowSize {
         };
 
         // Strategy implementation factory
-        private static Strategy create(Context context, Consumer<Http2WindowUpdate> windowUpdateWriter) {
+        private static Strategy create(Context context, int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
             return CREATORS[Type.select(context).ordinal()]
-                    .create(context, windowUpdateWriter);
+                    .create(context, streamId, windowUpdateWriter);
         }
 
         private enum Type {
@@ -242,14 +261,14 @@ abstract class WindowSizeImpl implements WindowSize {
 
             private static Type select(Context context) {
                 // Bisection strategy requires at least 4 frames to be placed inside window
-                return context.maxFrameSize * 4 <= context.maxWindowsize ? BISECTION : SIMPLE;
+                return context.maxFrameSize * 4 <= context.initialWindowSize ? BISECTION : SIMPLE;
             }
 
         }
 
         private record Context(
                 int maxFrameSize,
-                int maxWindowsize) {
+                int initialWindowSize) {
         }
 
         /**
@@ -258,16 +277,16 @@ abstract class WindowSizeImpl implements WindowSize {
          */
         private static final class Simple extends Strategy {
 
-            private Simple(Context context, Consumer<Http2WindowUpdate> windowUpdateWriter) {
-                super(context, windowUpdateWriter);
+            private Simple(Context context, int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
+                super(context, streamId, windowUpdateWriter);
             }
 
             @Override
-            void windowUpdate(int increment) {
-                windowUpdateWriter().accept(new Http2WindowUpdate(increment));
-                LOGGER.log(Level.DEBUG,
-                           () -> String.format("Window update increment %d", increment));
+            void windowUpdate(ConnectionFlowControl.Type type, int streamId, int increment) {
+                LOGGER.log(INFO, () -> String.format("%s IFC STR %d: Send WINDOW_UPDATE %s", type, streamId, increment));
+                windowUpdateWriter().accept(streamId(), new Http2WindowUpdate(increment));
             }
+
         }
 
         /**
@@ -280,26 +299,21 @@ abstract class WindowSizeImpl implements WindowSize {
 
             private final int watermark;
 
-            private Bisection(Context context, Consumer<Http2WindowUpdate> windowUpdateWriter) {
-                super(context, windowUpdateWriter);
+            private Bisection(Context context, int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
+                super(context, streamId, windowUpdateWriter);
                 this.delayedIncrement = 0;
-                this.watermark = context().maxWindowsize() / 2;
+                this.watermark = context().initialWindowSize() / 2;
             }
 
             @Override
-            void windowUpdate(int increment) {
+            void windowUpdate(ConnectionFlowControl.Type type, int streamId, int increment) {
+                LOGGER.log(DEBUG, () -> String.format("%s IFC STR %d: Deferred WINDOW_UPDATE %d, total %d, watermark %d",
+                                                      type, streamId, increment, delayedIncrement, watermark));
                 delayedIncrement += increment;
-                LOGGER.log(Level.DEBUG,
-                           () -> String.format("Window update hidden increment %d, total %d, watermark %d",
-                                               increment,
-                                               delayedIncrement,
-                                               watermark));
                 if (delayedIncrement > watermark) {
-                    windowUpdateWriter().accept(new Http2WindowUpdate(delayedIncrement));
-                    LOGGER.log(Level.DEBUG,
-                               () -> String.format("Window update real increment %d, watermark %d",
-                                                   delayedIncrement,
-                                                   watermark));
+                    LOGGER.log(DEBUG, () -> String.format("%s IFC STR %d: Send WINDOW_UPDATE %d, watermark %d",
+                                                          type, streamId, delayedIncrement, watermark));
+                    windowUpdateWriter().accept(streamId(), new Http2WindowUpdate(delayedIncrement));
                     delayedIncrement = 0;
                 }
             }

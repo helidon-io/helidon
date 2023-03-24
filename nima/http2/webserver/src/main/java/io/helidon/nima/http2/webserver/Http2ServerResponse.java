@@ -328,7 +328,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             bytesWritten += frameData.header().length();
             bytesWritten += Http2FrameHeader.LENGTH;
 
-            writer.write(frameData, flowControl);
+            writer.writeData(frameData, flowControl);
         }
 
         private void sendEndOfStream() {
@@ -340,7 +340,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
             bytesWritten += frameData.header().length();
             bytesWritten += Http2FrameHeader.LENGTH;
-            writer.write(frameData, flowControl);
+            writer.writeData(frameData, flowControl);
         }
     }
 }

@@ -16,9 +16,13 @@
 package io.helidon.nima.http2;
 
 import java.util.Objects;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
+
+import static java.lang.System.Logger.Level.DEBUG;
 
 abstract class FlowControlImpl implements FlowControl {
+
+    private static final System.Logger LOGGER = System.getLogger(FlowControl.class.getName());
 
     private final int streamId;
 
@@ -27,12 +31,8 @@ abstract class FlowControlImpl implements FlowControl {
     }
 
     abstract WindowSize connectionWindowSize();
-    abstract WindowSize streamWindowSize();
 
-    public void decrementWindowSize(int decrement) {
-        connectionWindowSize().decrementWindowSize(decrement);
-        streamWindowSize().decrementWindowSize(decrement);
-    }
+    abstract WindowSize streamWindowSize();
 
     @Override
     public void resetStreamWindowSize(int size) {
@@ -49,6 +49,10 @@ abstract class FlowControlImpl implements FlowControl {
         );
     }
 
+    protected int streamId() {
+        return this.streamId;
+    }
+
     @Override
     public String toString() {
         return "FlowControlImpl{"
@@ -62,20 +66,25 @@ abstract class FlowControlImpl implements FlowControl {
 
         private final WindowSize.Inbound connectionWindowSize;
         private final WindowSize.Inbound streamWindowSize;
+        private final ConnectionFlowControl.Type type;
 
-        Inbound(int streamId,
+        Inbound(ConnectionFlowControl.Type type,
+                int streamId,
                 int streamInitialWindowSize,
                 int streamMaxFrameSize,
                 WindowSize.Inbound connectionWindowSize,
-                Consumer<Http2WindowUpdate> windowUpdateStreamWriter) {
+                BiConsumer<Integer, Http2WindowUpdate> windowUpdateStreamWriter) {
             super(streamId);
+            this.type = type;
             if (streamInitialWindowSize == 0) {
                 throw new IllegalArgumentException("Window size in bytes for stream-level flow control was not set.");
             }
             Objects.requireNonNull(connectionWindowSize, "Window size in bytes for connection-level flow control was not set.");
             Objects.requireNonNull(windowUpdateStreamWriter, "Stream-level window update writer was not set.");
             this.connectionWindowSize = connectionWindowSize;
-            this.streamWindowSize = WindowSize.createInbound(streamInitialWindowSize,
+            this.streamWindowSize = WindowSize.createInbound(type,
+                                                             streamId,
+                                                             streamInitialWindowSize,
                                                              streamMaxFrameSize,
                                                              windowUpdateStreamWriter);
         }
@@ -91,29 +100,41 @@ abstract class FlowControlImpl implements FlowControl {
         }
 
         @Override
+        public void decrementWindowSize(int decrement) {
+            long strRemaining = streamWindowSize().decrementWindowSize(decrement);
+            LOGGER.log(DEBUG, () -> String.format("%s IFC STR %d: -%d(%d)", type, streamId(), decrement, strRemaining));
+            long connRemaining = connectionWindowSize().decrementWindowSize(decrement);
+            LOGGER.log(DEBUG, () -> String.format("%s IFC STR 0: -%d(%d)", type, decrement, connRemaining));
+        }
+
+        @Override
         public void incrementWindowSize(int increment) {
-            streamWindowSize.incrementWindowSize(increment);
-            connectionWindowSize.incrementWindowSize(increment);
+            long strRemaining = streamWindowSize.incrementWindowSize(increment);
+            LOGGER.log(DEBUG, () -> String.format("%s IFC STR %d: +%d(%d)", type, streamId(), increment, strRemaining));
+            long conRemaining = connectionWindowSize.incrementWindowSize(increment);
+            LOGGER.log(DEBUG, () -> String.format("%s IFC STR 0: +%d(%d)", type, increment, conRemaining));
         }
 
     }
 
     static class Outbound extends FlowControlImpl implements FlowControl.Outbound {
 
-        private final WindowSize.Outbound connectionWindowSize;
+        private final ConnectionFlowControl.Type type;
+        private final ConnectionFlowControl connectionFlowControl;
         private final WindowSize.Outbound streamWindowSize;
 
-        Outbound(int streamId,
-                 int streamInitialWindowSize,
-                 WindowSize.Outbound connectionWindowSize) {
+        Outbound(ConnectionFlowControl.Type type,
+                 int streamId,
+                 ConnectionFlowControl connectionFlowControl) {
             super(streamId);
-            this.connectionWindowSize = connectionWindowSize;
-            this.streamWindowSize = WindowSize.createOutbound(streamInitialWindowSize);
+            this.type = type;
+            this.connectionFlowControl = connectionFlowControl;
+            this.streamWindowSize = WindowSize.createOutbound(type, streamId, connectionFlowControl);
         }
 
         @Override
         WindowSize connectionWindowSize() {
-            return connectionWindowSize;
+            return connectionFlowControl.outbound();
         }
 
         @Override
@@ -121,11 +142,20 @@ abstract class FlowControlImpl implements FlowControl {
             return streamWindowSize;
         }
 
+        public void decrementWindowSize(int decrement) {
+            long strRemaining = streamWindowSize().decrementWindowSize(decrement);
+            LOGGER.log(DEBUG, () -> String.format("%s OFC STR %d: -%d(%d)", type, streamId(), decrement, strRemaining));
+
+            long connRemaining = connectionWindowSize().decrementWindowSize(decrement);
+            LOGGER.log(DEBUG, () -> String.format("%s OFC STR 0: -%d(%d)", type, decrement, connRemaining));
+        }
+
         @Override
-        public boolean incrementStreamWindowSize(int increment) {
-            boolean result = streamWindowSize.incrementWindowSize(increment);
-            connectionWindowSize.triggerUpdate();
-            return result;
+        public long incrementStreamWindowSize(int increment) {
+            long remaining = streamWindowSize.incrementWindowSize(increment);
+            LOGGER.log(DEBUG, () -> String.format("%s OFC STR %d: +%d(%d)", type, streamId(), increment, remaining));
+            connectionFlowControl.outbound().triggerUpdate();
+            return remaining;
         }
 
         @Override
@@ -135,8 +165,13 @@ abstract class FlowControlImpl implements FlowControl {
 
         @Override
         public void blockTillUpdate() {
-            connectionWindowSize.blockTillUpdate();
+            connectionFlowControl.outbound().blockTillUpdate();
             streamWindowSize.blockTillUpdate();
+        }
+
+        @Override
+        public int maxFrameSize() {
+            return connectionFlowControl.maxFrameSize();
         }
     }
 

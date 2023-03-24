@@ -15,7 +15,7 @@
  */
 package io.helidon.nima.http2;
 
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 /**
  * Window size container, used with {@link io.helidon.nima.http2.FlowControl}.
@@ -26,6 +26,14 @@ public interface WindowSize {
      * Default window size.
      */
     int DEFAULT_WIN_SIZE = 65_535;
+    /**
+     * Default and smallest possible setting for MAX_FRAME_SIZE (2^14).
+     */
+    int DEFAULT_MAX_FRAME_SIZE = 16384;
+    /**
+     * Largest possible setting for MAX_FRAME_SIZE (2^24-1).
+     */
+    int MAX_MAX_FRAME_SIZE = 16_777_215;
 
     /**
      * Maximal window size.
@@ -35,44 +43,44 @@ public interface WindowSize {
     /**
      * Create inbound window size container with initial window size set.
      *
+     * @param type
+     * @param streamId
      * @param initialWindowSize  initial window size
      * @param maxFrameSize       maximal frame size
      * @param windowUpdateWriter writer method for HTTP/2 WINDOW_UPDATE frame
      * @return a new window size container
      */
-    static WindowSize.Inbound createInbound(int initialWindowSize,
+    static WindowSize.Inbound createInbound(ConnectionFlowControl.Type type,
+                                            int streamId,
+                                            int initialWindowSize,
                                             int maxFrameSize,
-                                            Consumer<Http2WindowUpdate> windowUpdateWriter) {
-        return new WindowSizeImpl.Inbound(initialWindowSize, maxFrameSize, windowUpdateWriter);
-    }
-
-    /**
-     * Create outbound window size container with default initial size.
-     *
-     * @return a new window size container
-     */
-    static WindowSize.Outbound createOutbound() {
-        return new WindowSizeImpl.Outbound(WindowSize.DEFAULT_WIN_SIZE);
+                                            BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
+        return new WindowSizeImpl.Inbound(type, streamId, initialWindowSize, maxFrameSize, windowUpdateWriter);
     }
 
     /**
      * Create outbound window size container with initial window size set.
      *
-     * @param initialWindowSize initial window size
+     * @param type                  Server or client
+     * @param streamId              stream id
+     * @param connectionFlowControl connection flow control
      * @return a new window size container
      */
-    static WindowSize.Outbound createOutbound(int initialWindowSize) {
-        return new WindowSizeImpl.Outbound(initialWindowSize);
+    static WindowSize.Outbound createOutbound(ConnectionFlowControl.Type type,
+                                              int streamId,
+                                              ConnectionFlowControl connectionFlowControl) {
+        return new WindowSizeImpl.Outbound(type, streamId, connectionFlowControl);
     }
 
     /**
      * Create inbound window size container with flow control turned off.
      *
+     * @param streamId stream id or 0 for connection
      * @param windowUpdateWriter WINDOW_UPDATE frame writer
      * @return a new window size container
      */
-    static WindowSize.Inbound createInboundNoop(Consumer<Http2WindowUpdate> windowUpdateWriter) {
-        return new WindowSizeImpl.InboundNoop(windowUpdateWriter);
+    static WindowSize.Inbound createInboundNoop(int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
+        return new WindowSizeImpl.InboundNoop(streamId, windowUpdateWriter);
     }
 
     /**
@@ -88,19 +96,20 @@ public interface WindowSize {
      * @param increment increment
      * @return whether the increment succeeded
      */
-    boolean incrementWindowSize(int increment);
+    long incrementWindowSize(int increment);
 
     /**
      * Decrement window size.
      *
      * @param decrement decrement
+     * @return remaining size
      */
-    void decrementWindowSize(int decrement);
+    int decrementWindowSize(int decrement);
 
     /**
      * Remaining window size.
      *
-     * @return remaining sze
+     * @return remaining size
      */
     int getRemainingWindowSize();
 
@@ -126,7 +135,6 @@ public interface WindowSize {
          *
          */
         void blockTillUpdate();
-
     }
 
 }

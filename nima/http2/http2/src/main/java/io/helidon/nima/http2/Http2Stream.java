@@ -79,13 +79,6 @@ public interface Http2Stream {
      *
      * @return flow control
      */
-    FlowControl.Outbound outboundFlowControl();
-
-    /**
-     * Inbound flow control of this stream.
-     *
-     * @return flow control
-     */
-    FlowControl.Inbound inboundFlowControl();
+    StreamFlowControl flowControl();
 
 }

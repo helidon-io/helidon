@@ -264,11 +264,6 @@ class Http2HeadersTest {
 
     private Http2Stream stream() {
         return new Http2Stream() {
-            private static final FlowControl.Inbound FC_IN_NOOP = FlowControl.builderInbound()
-                    .noop()
-                    .connectionWindowSize(WindowSize.createInboundNoop(http2WindowUpdate -> {}))
-                    .windowUpdateStreamWriter(http2WindowUpdate -> {})
-                    .build();
 
             @Override
             public void rstStream(Http2RstStream rstStream) {
@@ -306,13 +301,8 @@ class Http2HeadersTest {
             }
 
             @Override
-            public FlowControl.Outbound outboundFlowControl() {
-                return FlowControl.Outbound.NOOP;
-            }
-
-            @Override
-            public FlowControl.Inbound inboundFlowControl() {
-                return FC_IN_NOOP;
+            public StreamFlowControl flowControl() {
+                return null;
             }
         };
     }
@@ -320,7 +310,12 @@ class Http2HeadersTest {
     private static class DevNullWriter implements Http2StreamWriter {
 
         @Override
-        public void write(Http2FrameData frame, FlowControl.Outbound flowControl) {
+        public void write(Http2FrameData frame) {
+        }
+
+        @Override
+        public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+
         }
 
         @Override

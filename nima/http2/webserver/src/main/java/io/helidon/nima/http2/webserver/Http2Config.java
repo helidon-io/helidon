@@ -48,14 +48,6 @@ public interface Http2Config {
     long maxHeaderListSize();
 
     /**
-     * Initial maximal size of client frames.
-     *
-     * @return maximal size in bytes
-     */
-    @ConfiguredOption("16384")
-    int maxClientFrameSize();
-
-    /**
      * Maximum number of concurrent streams that the server will allow.
      * Defaults to {@code 8192}. This limit is directional: it applies to the number of streams that the sender
      * permits the receiver to create.

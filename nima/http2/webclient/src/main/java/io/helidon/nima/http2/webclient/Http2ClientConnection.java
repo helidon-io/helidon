@@ -17,7 +17,6 @@
 package io.helidon.nima.http2.webclient;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -51,16 +50,20 @@ import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.TlsSocket;
-import io.helidon.nima.http2.FlowControl;
+import io.helidon.nima.http2.ConnectionFlowControl;
 import io.helidon.nima.http2.Http2ConnectionWriter;
 import io.helidon.nima.http2.Http2ErrorCode;
+import io.helidon.nima.http2.Http2Exception;
 import io.helidon.nima.http2.Http2Flag;
 import io.helidon.nima.http2.Http2FrameData;
 import io.helidon.nima.http2.Http2FrameHeader;
 import io.helidon.nima.http2.Http2FrameListener;
+import io.helidon.nima.http2.Http2FrameTypes;
 import io.helidon.nima.http2.Http2GoAway;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.http2.Http2LoggingFrameListener;
+import io.helidon.nima.http2.Http2Ping;
+import io.helidon.nima.http2.Http2RstStream;
 import io.helidon.nima.http2.Http2Setting;
 import io.helidon.nima.http2.Http2Settings;
 import io.helidon.nima.http2.Http2WindowUpdate;
@@ -98,20 +101,20 @@ class Http2ClientConnection {
     private final Map<Integer, Queue<Http2FrameData>> buffer = new HashMap<>();
     private final Map<Integer, Http2ClientStream> streams = new HashMap<>();
     private final Lock connectionLock = new ReentrantLock();
+    private final ConnectionFlowControl connectionFlowControl;
+
+    private Http2Settings serverSettings = Http2Settings.builder()
+            .build();
 
     private String channelId;
     private Socket socket;
     private PlainSocket helidonSocket;
     private Http2ConnectionWriter writer;
-    private InputStream inputStream;
     private DataReader reader;
     private DataWriter dataWriter;
-    private Http2Headers.DynamicTable inboundDynamicTable =
+    private final Http2Headers.DynamicTable inboundDynamicTable =
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
     private Future<?> handleTask;
-    private int streamInitialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
-    private final WindowSize.Outbound outboundConnectionWindowSize = WindowSize.createOutbound();
-    private int maxFrameSize = 16_384;
 
     Http2ClientConnection(ExecutorService executor,
                           SocketOptions socketOptions,
@@ -123,6 +126,11 @@ class Http2ClientConnection {
         this.connectionKey = connectionKey;
         this.primaryPath = primaryPath;
         this.priorKnowledge = priorKnowledge;
+        this.connectionFlowControl = ConnectionFlowControl.createClient(this::writeWindowsUpdate);
+    }
+
+    private void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
+        writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
     }
 
     Http2ClientConnection connect() {
@@ -168,6 +176,9 @@ class Http2ClientConnection {
         } else {
             data = BufferData.empty();
         }
+
+        int streamId = frameHeader.streamId();
+
         switch (frameHeader.type()) {
         case GO_AWAY:
             Http2GoAway http2GoAway = Http2GoAway.create(data);
@@ -179,31 +190,26 @@ class Http2ClientConnection {
                                                     + " lastStreamId: " + http2GoAway.lastStreamId());
 
         case SETTINGS:
-            Http2Settings http2Settings = Http2Settings.create(data);
+            serverSettings = Http2Settings.create(data);
             recvListener.frameHeader(helidonSocket, frameHeader);
-            recvListener.frame(helidonSocket, http2Settings);
+            recvListener.frame(helidonSocket, serverSettings);
             // §4.3.1 Endpoint communicates the size chosen by its HPACK decoder context
-            inboundDynamicTable.protocolMaxTableSize(http2Settings.value(Http2Setting.HEADER_TABLE_SIZE));
-            //FIXME: MAX_FRAME_SIZE can be only int
-            if (http2Settings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
-                maxFrameSize = Math.toIntExact(http2Settings.value(Http2Setting.MAX_FRAME_SIZE));
+            inboundDynamicTable.protocolMaxTableSize(serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
+            if (serverSettings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
+                connectionFlowControl.resetMaxFrameSize(serverSettings.value(Http2Setting.MAX_FRAME_SIZE).intValue());
             }
             // §6.5.2 Update initial window size for new streams and window sizes of all already existing streams
-            if (http2Settings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
-                long initWinSize = http2Settings.value(Http2Setting.INITIAL_WINDOW_SIZE);
-                if (initWinSize > WindowSize.MAX_WIN_SIZE) {
-                    goAway(frameHeader.streamId(), Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
-                    //FIXME: close connection?
-                    return;
+            if (serverSettings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
+                Long initWinSizeLong = serverSettings.value(Http2Setting.INITIAL_WINDOW_SIZE);
+                if (initWinSizeLong > WindowSize.MAX_WIN_SIZE) {
+                    goAway(streamId, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
+                    throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                             "Received too big INITIAL_WINDOW_SIZE " + initWinSizeLong);
                 }
-                // Update streams window size
-                streams.values().forEach(stream -> stream.outboundFlowControl().resetStreamWindowSize((int) initWinSize));
-                streamInitialWindowSize = Math.toIntExact(initWinSize);
-                // Update connection window size
-                outboundConnectionWindowSize.resetWindowSize((int) initWinSize);
-                LOGGER.log(DEBUG,
-                           () -> String.format("Http2Settings window size increment on client: %d",
-                                               (initWinSize - WindowSize.DEFAULT_WIN_SIZE)));
+                int initWinSize = initWinSizeLong.intValue();
+                connectionFlowControl.resetInitialWindowSize(initWinSize);
+                streams.values().forEach(stream -> stream.flowControl().outbound().resetStreamWindowSize(initWinSize));
+
             }
             // §6.5.3 Settings Synchronization
             ackSettings();
@@ -211,33 +217,67 @@ class Http2ClientConnection {
             return;
 
         case WINDOW_UPDATE:
-            Http2WindowUpdate http2WindowUpdate = Http2WindowUpdate.create(data);
+            Http2WindowUpdate windowUpdate = Http2WindowUpdate.create(data);
             recvListener.frameHeader(helidonSocket, frameHeader);
-            recvListener.frame(helidonSocket, http2WindowUpdate);
+            recvListener.frame(helidonSocket, windowUpdate);
             // Outbound flow-control window update
-            int increment = http2WindowUpdate.windowSizeIncrement();
-            if (frameHeader.streamId() == 0) {
-                outboundConnectionWindowSize.incrementWindowSize(increment);
+            if (streamId == 0) {
+                int increment = windowUpdate.windowSizeIncrement();
+                boolean overflow;
+                // overall connection
+                if (increment == 0) {
+                    Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, "Window size 0");
+                    writer.write(frame.toFrameData(serverSettings, 0, Http2Flag.NoFlags.create()));
+                }
+                overflow = connectionFlowControl.incrementOutboundConnectionWindowSize(increment) > WindowSize.MAX_WIN_SIZE;
+                if (overflow) {
+                    Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
+                    writer.write(frame.toFrameData(serverSettings, 0, Http2Flag.NoFlags.create()));
+                }
+
+
             } else {
-                streams.get(frameHeader.streamId())
-                        .outboundFlowControl()
-                        .incrementStreamWindowSize(increment);
+                streams.get(streamId)
+                        .windowUpdate(windowUpdate);
             }
+            return;
+        case PING:
+            if (streamId != 0) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                         "Received ping for a stream " + streamId);
+            }
+            if (frameHeader.length() != 8) {
+                throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
+                                         "Received ping with wrong size. Should be 8 bytes, is " + frameHeader.length());
+            }
+            if (!frameHeader.flags(Http2FrameTypes.PING).ack()) {
+                Http2Ping ping = Http2Ping.create(data);
+                recvListener.frame(helidonSocket, ping);
+                BufferData frame = ping.data();
+                Http2FrameHeader header = Http2FrameHeader.create(frame.available(),
+                                                                  Http2FrameTypes.PING,
+                                                                  Http2Flag.PingFlags.create(Http2Flag.ACK),
+                                                                  0);
+                writer.write(new Http2FrameData(header, frame));
+            }
+            break;
+
+        case RST_STREAM:
+            Http2RstStream rstStream = Http2RstStream.create(data);
+            recvListener.frame(helidonSocket, rstStream);
+            stream(streamId).rstStream(rstStream);
+            break;
+
+        case DATA:
+            connectionFlowControl.decrementInboundConnectionWindowSize(frameHeader.length());
+            enqueue(streamId, new Http2FrameData(frameHeader, data));
+            break;
+
+        case HEADERS:
+            enqueue(streamId, new Http2FrameData(frameHeader, data));
             return;
 
         default:
-            if (frameHeader.streamId() != 0) {
-                try {
-                    // Don't let streams to steal frame parts
-                    // Always read whole frame(frameHeader+data) at once
-                    connectionLock.lock();
-                    buffer(frameHeader.streamId()).add(new Http2FrameData(frameHeader, data));
-                } finally {
-                    connectionLock.unlock();
-                }
-                return;
-            }
-
             //FIXME: other frame types
             LOGGER.log(WARNING, "Unsupported frame type!! " + frameHeader.type());
         }
@@ -247,6 +287,7 @@ class Http2ClientConnection {
     Http2ClientStream stream(int priority) {
         //FIXME: priority
         return new Http2ClientStream(this,
+                                     serverSettings,
                                      helidonSocket,
                                      streamIdSeq);
     }
@@ -269,6 +310,15 @@ class Http2ClientConnection {
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void enqueue(int streamId, Http2FrameData frameData){
+        try {
+            connectionLock.lock();
+            buffer(streamId).add(frameData);
+        } finally {
+            connectionLock.unlock();
         }
     }
 
@@ -295,7 +345,6 @@ class Http2ClientConnection {
 
         dataWriter = SocketWriter.create(executor, helidonSocket, 32);
         this.reader = new DataReader(helidonSocket);
-        inputStream = socket.getInputStream();
         this.writer = new Http2ConnectionWriter(helidonSocket, dataWriter, List.of());
 
         if (sslSocket != null) {
@@ -318,8 +367,7 @@ class Http2ClientConnection {
             sendPreface(true);
         }
 
-        handleTask = java.util.concurrent.Executors.newSingleThreadExecutor().submit(() -> {
-//        handleTask = executor.submit(() -> {
+        handleTask = executor.submit(() -> {
             while (!Thread.interrupted()) {
                 handle();
             }
@@ -333,13 +381,13 @@ class Http2ClientConnection {
         Http2FrameData frameData = http2Settings.toFrameData(null, 0, flags);
         sendListener.frameHeader(helidonSocket, frameData.header());
         sendListener.frame(helidonSocket, http2Settings);
-        writer.write(frameData, FlowControl.Outbound.NOOP);
+        writer.write(frameData);
     }
 
     private void goAway(int streamId, Http2ErrorCode errorCode, String msg) {
         Http2Settings http2Settings = Http2Settings.create();
         Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
-        writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()), FlowControl.Outbound.NOOP);
+        writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
     }
 
     private void sendPreface(boolean sendSettings){
@@ -355,16 +403,15 @@ class Http2ClientConnection {
             Http2FrameData frameData = http2Settings.toFrameData(null, 0, flags);
             sendListener.frameHeader(helidonSocket, frameData.header());
             sendListener.frame(helidonSocket, http2Settings);
-            writer.write(frameData, FlowControl.Outbound.NOOP);
+            writer.write(frameData);
         }
-        // todo win update it needed after prolog?
         // win update
-        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(10000);
+        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(10000); //FIXME: configurable
         Http2Flag.NoFlags flags = Http2Flag.NoFlags.create();
         Http2FrameData frameData = windowUpdate.toFrameData(null, 0, flags);
         sendListener.frameHeader(helidonSocket, frameData.header());
         sendListener.frame(helidonSocket, windowUpdate);
-        writer.write(frameData, FlowControl.Outbound.NOOP);
+        writer.write(frameData);
     }
 
     private void httpUpgrade() {
@@ -459,15 +506,7 @@ class Http2ClientConnection {
         return this.inboundDynamicTable;
     }
 
-    int streamInitialWindowSize() {
-        return streamInitialWindowSize;
-    }
-
-    WindowSize.Outbound outboundConnectionWindowSize() {
-        return outboundConnectionWindowSize;
-    }
-
-    public int maxFrameSize() {
-        return maxFrameSize;
+    ConnectionFlowControl flowControl(){
+        return this.connectionFlowControl;
     }
 }

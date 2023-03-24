@@ -15,8 +15,6 @@
  */
 package io.helidon.nima.http2;
 
-import java.util.function.Consumer;
-
 /**
  * Flow control used by HTTP/2 for backpressure.
  */
@@ -44,31 +42,6 @@ public interface FlowControl {
     int getRemainingWindowSize();
 
     /**
-     * Create inbound flow control builder for a stream.
-     *
-     * @return a new inbound flow control builder
-     */
-    static FlowControl.Inbound.Builder builderInbound() {
-        return new FlowControl.Inbound.Builder();
-    }
-
-    /**
-     * Create outbound flow control for a stream.
-     *
-     * @param streamId                stream id
-     * @param streamInitialWindowSize initial window size for stream
-     * @param connectionWindowSize    connection window size
-     * @return a new flow control
-     */
-    static FlowControl.Outbound createOutbound(int streamId,
-                                                   int streamInitialWindowSize,
-                                                   WindowSize.Outbound connectionWindowSize) {
-        return new FlowControlImpl.Outbound(streamId,
-                                            streamInitialWindowSize,
-                                            connectionWindowSize);
-    }
-
-    /**
      * Inbound flow control used by HTTP/2 for backpressure.
      */
     interface Inbound extends FlowControl {
@@ -79,108 +52,6 @@ public interface FlowControl {
          * @param increment increment in bytes
          */
         void incrementWindowSize(int increment);
-
-        /**
-         * Inbound flow control builder.
-         */
-        class Builder implements io.helidon.common.Builder<Builder, Inbound> {
-
-            private int streamId;
-            private int streamWindowSize;
-            private int streamMaxFrameSize;
-            private WindowSize.Inbound connectionWindowSize;
-            private Consumer<Http2WindowUpdate> windowUpdateStreamWriter;
-            private boolean noop;
-
-            private Builder() {
-                this.streamId = 0;
-                this.streamWindowSize = 0;
-                this.streamMaxFrameSize = 0;
-                this.connectionWindowSize = null;
-                this.windowUpdateStreamWriter = null;
-                this.noop = false;
-            }
-
-            @Override
-            public FlowControl.Inbound build() {
-                return noop
-                        ? new FlowControlNoop.Inbound(connectionWindowSize,
-                                                      windowUpdateStreamWriter)
-                        : new FlowControlImpl.Inbound(streamId,
-                                                      streamWindowSize,
-                                                      streamMaxFrameSize,
-                                                      connectionWindowSize,
-                                                      windowUpdateStreamWriter);
-            }
-
-            /**
-             * Trigger build of NOOP flow control (flow control turned off).
-             * NOOP flow control will be returned regardless of other setting when this method is called.
-             *
-             * @return this builder
-             */
-            public Builder noop() {
-                noop = true;
-                return this;
-            }
-
-            /**
-             * Set HTTP/2 stream ID.
-             *
-             * @param streamId HTTP/2 stream ID
-             * @return this builder
-             */
-            public Builder streamId(int streamId) {
-                this.streamId = streamId;
-                return this;
-            }
-
-            /**
-             * Set HTTP/2 connection window size.
-             *
-             * @param windowSize HTTP/2 connection window size
-             * @return this builder
-             */
-            public Builder connectionWindowSize(WindowSize.Inbound windowSize) {
-                this.connectionWindowSize = windowSize;
-                return this;
-            }
-
-            /**
-             * Set HTTP/2 stream window size.
-             *
-             * @param windowSize HTTP/2 stream window size
-             * @return this builder
-             */
-            public Builder streamWindowSize(int windowSize) {
-                this.streamWindowSize = windowSize;
-                return this;
-            }
-
-            /**
-             * Set HTTP/2 stream window size.
-             *
-             * @param maxFrameSize HTTP/2 stream maximum frame size size
-             * @return this builder
-             */
-            public Builder streamMaxFrameSize(int maxFrameSize) {
-                this.streamMaxFrameSize = maxFrameSize;
-                return this;
-            }
-
-            /**
-             * Set writer method for current HTTP/2 stream WINDOW_UPDATE frame.
-             *
-             * @param windowUpdateWriter WINDOW_UPDATE frame writer for current HTTP/2 stream
-             * @return this builder
-             */
-            public Builder windowUpdateStreamWriter(Consumer<Http2WindowUpdate> windowUpdateWriter) {
-                this.windowUpdateStreamWriter = windowUpdateWriter;
-                return this;
-            }
-
-        }
-
     }
 
     /**
@@ -199,7 +70,7 @@ public interface FlowControl {
          * @param increment increment in bytes
          * @return {@code true} if succeeded, {@code false} if timed out
          */
-        boolean incrementStreamWindowSize(int increment);
+        long incrementStreamWindowSize(int increment);
 
         /**
          * Split frame into frames that can be sent.
@@ -215,6 +86,11 @@ public interface FlowControl {
          */
         void blockTillUpdate();
 
+        /**
+         * MAX_FRAME_SIZE setting last received from the other side or default.
+         * @return MAX_FRAME_SIZE
+         */
+        int maxFrameSize();
     }
 
 }

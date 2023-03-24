@@ -57,11 +57,14 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     }
 
     @Override
-    public void write(Http2FrameData frame, FlowControl.Outbound flowControl) {
-        if (frame.header().type() == Http2FrameTypes.DATA.type()) {
-            splitAndWrite(frame, flowControl);
-        } else {
+    public void write(Http2FrameData frame) {
            lockedWrite(frame);
+    }
+
+    @Override
+    public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+        for (Http2FrameData f : frame.split(flowControl.maxFrameSize())) {
+            splitAndWrite(f, flowControl);
         }
     }
 
@@ -112,7 +115,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             bytesWritten += Http2FrameHeader.LENGTH;
 
             noLockWrite(new Http2FrameData(frameHeader, headerBuffer));
-            noLockWrite(dataFrame);
+            writeData(dataFrame, flowControl);
             bytesWritten += Http2FrameHeader.LENGTH;
             bytesWritten += dataFrame.header().length();
 

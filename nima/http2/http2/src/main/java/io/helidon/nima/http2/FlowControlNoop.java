@@ -15,7 +15,7 @@
  */
 package io.helidon.nima.http2;
 
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 class FlowControlNoop implements FlowControl {
 
@@ -39,9 +39,11 @@ class FlowControlNoop implements FlowControl {
         private final WindowSize.Inbound connectionWindowSize;
         private final WindowSize.Inbound streamWindowSize;
 
-        Inbound(WindowSize.Inbound connectionWindowSize, Consumer<Http2WindowUpdate> windowUpdateStreamWriter) {
+        Inbound(int streamId,
+                WindowSize.Inbound connectionWindowSize,
+                BiConsumer<Integer, Http2WindowUpdate> windowUpdateStreamWriter) {
             this.connectionWindowSize = connectionWindowSize;
-            this.streamWindowSize = WindowSize.createInboundNoop(windowUpdateStreamWriter);
+            this.streamWindowSize = WindowSize.createInboundNoop(streamId, windowUpdateStreamWriter);
         }
 
         @Override
@@ -55,8 +57,8 @@ class FlowControlNoop implements FlowControl {
     static class Outbound extends FlowControlNoop implements FlowControl.Outbound {
 
         @Override
-        public boolean incrementStreamWindowSize(int increment) {
-            return false;
+        public long incrementStreamWindowSize(int increment) {
+            return WindowSize.MAX_WIN_SIZE;
         }
 
         @Override
@@ -68,6 +70,10 @@ class FlowControlNoop implements FlowControl {
         public void blockTillUpdate() {
         }
 
+        @Override
+        public int maxFrameSize() {
+            return WindowSize.DEFAULT_MAX_FRAME_SIZE;
+        }
     }
 
 }

@@ -175,7 +175,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                                                   Http2Flag.DataFlags.create(0),
                                                                   streamId);
 
-                streamWriter.write(new Http2FrameData(header, bufferData), FlowControl.Outbound.NOOP);
+                //FIXME: FC and MAX_FRAME_SIZE
+                streamWriter.writeData(new Http2FrameData(header, bufferData), FlowControl.Outbound.NOOP);
             }
 
             @Override

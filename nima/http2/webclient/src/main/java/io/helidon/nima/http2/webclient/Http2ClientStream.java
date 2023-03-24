@@ -27,8 +27,8 @@ import io.helidon.common.socket.SocketContext;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.ReadableEntityBase;
-import io.helidon.nima.http2.FlowControl;
 import io.helidon.nima.http2.Http2ErrorCode;
+import io.helidon.nima.http2.Http2Exception;
 import io.helidon.nima.http2.Http2Flag;
 import io.helidon.nima.http2.Http2FrameData;
 import io.helidon.nima.http2.Http2FrameHeader;
@@ -40,31 +40,37 @@ import io.helidon.nima.http2.Http2HuffmanDecoder;
 import io.helidon.nima.http2.Http2LoggingFrameListener;
 import io.helidon.nima.http2.Http2Priority;
 import io.helidon.nima.http2.Http2RstStream;
+import io.helidon.nima.http2.Http2Setting;
 import io.helidon.nima.http2.Http2Settings;
 import io.helidon.nima.http2.Http2Stream;
 import io.helidon.nima.http2.Http2StreamState;
 import io.helidon.nima.http2.Http2WindowUpdate;
+import io.helidon.nima.http2.StreamFlowControl;
+import io.helidon.nima.http2.WindowSize;
 import io.helidon.nima.webclient.ClientResponseEntity;
 
 class Http2ClientStream implements Http2Stream {
 
     private static final System.Logger LOGGER = System.getLogger(Http2ClientStream.class.getName());
     private final Http2ClientConnection connection;
+    private final Http2Settings serverSettings;
     private final SocketContext ctx;
     private final LockingStreamIdSequence streamIdSeq;
-    private FlowControl.Outbound outboundFlowControl;
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     // todo configure
     private final Http2Settings settings = Http2Settings.create();
-    private volatile Http2StreamState state = Http2StreamState.IDLE;
+    private Http2StreamState state = Http2StreamState.IDLE;
     private Http2Headers currentHeaders;
     private int streamId;
+    private StreamFlowControl flowControl;
 
     Http2ClientStream(Http2ClientConnection connection,
+                      Http2Settings serverSettings,
                       SocketContext ctx,
                       LockingStreamIdSequence streamIdSeq) {
         this.connection = connection;
+        this.serverSettings = serverSettings;
         this.ctx = ctx;
         this.streamIdSeq = streamIdSeq;
     }
@@ -101,25 +107,29 @@ class Http2ClientStream implements Http2Stream {
             recvListener.frame(ctx, frameData.data());
 
             int flags = frameData.header().flags();
-            if ((flags & Http2Flag.END_OF_STREAM) == Http2Flag.END_OF_STREAM) {
+            boolean endOfStream = (flags & Http2Flag.END_OF_STREAM) == Http2Flag.END_OF_STREAM;
+            if (endOfStream) {
                 state = Http2StreamState.CLOSED;
             }
 
             switch (frameData.header().type()) {
-            case DATA:
-                return frameData;
-            case HEADERS:
-                var requestHuffman = new Http2HuffmanDecoder();
-                currentHeaders = Http2Headers.create(this, connection.getInboundDynamicTable(), requestHuffman, frameData);
-                break;
-            case RST_STREAM:
-                state = Http2StreamState.CLOSED;
-                //FIXME: Kill just the stream
-                throw new RuntimeException("Reset of " + streamId + " stream received!");
-            default:
-                //FIXME: Settings, outbound flow control
-                LOGGER.log(System.Logger.Level.DEBUG, "Dropping frame " + frameData.header() + " expected header or data.");
-            }
+                case DATA:
+                    data(frameData.header(), frameData.data());
+                    return frameData;
+                case HEADERS:
+                    var requestHuffman = new Http2HuffmanDecoder();
+                    Http2Headers http2Headers = Http2Headers.create(this,
+                                                                    connection.getInboundDynamicTable(),
+                                                                    requestHuffman,
+                                                                    frameData);
+                    this.headers(http2Headers, endOfStream);
+                    break;
+                case RST_STREAM:
+                    this.rstStream(Http2RstStream.create(frameData.data()));
+                    break;
+                default:
+                    LOGGER.log(System.Logger.Level.DEBUG, "Dropping frame " + frameData.header() + " expected header or data.");
+                }
         }
         return null;
     }
@@ -149,12 +159,10 @@ class Http2ClientStream implements Http2Stream {
             // §5.1.1 - The identifier of a newly established stream MUST be numerically
             //          greater than all streams that the initiating endpoint has opened or reserved.
             this.streamId = streamIdSeq.lockAndNext();
-            outboundFlowControl = FlowControl.createOutbound(streamId,
-                                                             connection.streamInitialWindowSize(),
-                                                             connection.outboundConnectionWindowSize());
+            this.flowControl = connection.flowControl().createStreamFlowControl(streamId);
             this.connection.addStream(streamId, this);
             // First call to the server-starting stream, needs to be increasing sequence of odd numbers
-            connection.getWriter().writeHeaders(http2Headers, streamId, flags, outboundFlowControl);
+            connection.getWriter().writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
         } finally {
             streamIdSeq.unlock();
         }
@@ -168,17 +176,14 @@ class Http2ClientStream implements Http2Stream {
                                                                                                   : 0),
                                                                streamId);
         Http2FrameData frameData = new Http2FrameData(frameHeader, entityBytes);
-        splitAndWrite(frameData, endOfStream);
+        splitAndWrite(frameData);
     }
 
-    void splitAndWrite(Http2FrameData frameData, boolean endOfStream) {
-        // todo handle flow control
-        int maxFrameSize = connection.maxFrameSize();
-
-        var frm = frameData;
+    void splitAndWrite(Http2FrameData frameData) {
+        int maxFrameSize = this.serverSettings.value(Http2Setting.MAX_FRAME_SIZE).intValue();
 
         // Split to frames if bigger than max frame size
-        Http2FrameData[] frames = frm.split(maxFrameSize);
+        Http2FrameData[] frames = frameData.split(maxFrameSize);
         for (Http2FrameData frame : frames) {
             write(frame, frame.header().flags(Http2FrameTypes.DATA).endOfStream());
         }
@@ -204,27 +209,54 @@ class Http2ClientStream implements Http2Stream {
                                                        true,
                                                        endOfStream,
                                                        false);
-        connection.getWriter().write(frameData, outboundFlowControl());
+        connection.getWriter().writeData(frameData,
+                                         flowControl().outbound());
     }
 
     @Override
     public void rstStream(Http2RstStream rstStream) {
-        //FIXME: reset stream
+        if (state == Http2StreamState.IDLE) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                     "Received RST_STREAM for stream "
+                                             + streamId + " in IDLE state");
+        }
+        state = Http2StreamState.CLOSED;
+        throw new RuntimeException("Reset of " + streamId + " stream received!");
     }
 
     @Override
     public void windowUpdate(Http2WindowUpdate windowUpdate) {
-        //FIXME: win update
+        if (state == Http2StreamState.IDLE) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received WINDOW_UPDATE for stream "
+                    + streamId + " in state IDLE");
+        }
+
+        int increment = windowUpdate.windowSizeIncrement();
+
+        //6.9/2
+        if (increment == 0) {
+            Http2RstStream frame = new Http2RstStream(Http2ErrorCode.PROTOCOL);
+            connection.getWriter().write(frame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+        }
+        //6.9.1/3
+        if (flowControl.outbound().incrementStreamWindowSize(increment) > WindowSize.MAX_WIN_SIZE) {
+            Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
+            connection.getWriter().write(frame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+        }
+
+        flowControl()
+                .outbound()
+                .incrementStreamWindowSize(increment);
     }
 
     @Override
     public void headers(Http2Headers headers, boolean endOfStream) {
-        throw new UnsupportedOperationException("Not applicable on client.");
+        currentHeaders = headers;
     }
 
     @Override
     public void data(Http2FrameHeader header, BufferData data) {
-        throw new UnsupportedOperationException("Not applicable on client.");
+        flowControl.inbound().incrementWindowSize(header.length());
     }
 
     @Override
@@ -239,19 +271,12 @@ class Http2ClientStream implements Http2Stream {
 
     @Override
     public Http2StreamState streamState() {
-        //FIXME: State check
-        throw new UnsupportedOperationException("Not implemented yet!");
+        return state;
     }
 
     @Override
-    public FlowControl.Outbound outboundFlowControl() {
-        return outboundFlowControl;
-    }
-
-    @Override
-    public FlowControl.Inbound inboundFlowControl() {
-        //FIXME: inbound flow control
-        return null;
+    public StreamFlowControl flowControl() {
+        return flowControl;
     }
 
     class ClientOutputStream extends OutputStream {
