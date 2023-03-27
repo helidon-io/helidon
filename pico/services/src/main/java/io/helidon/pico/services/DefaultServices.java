@@ -44,7 +44,7 @@ import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 import io.helidon.pico.ServiceBinder;
 import io.helidon.pico.ServiceInfo;
 import io.helidon.pico.ServiceInfoCriteria;
@@ -60,7 +60,7 @@ import static io.helidon.pico.CallingContext.toErrorMessage;
 /**
  * The default reference implementation of {@link io.helidon.pico.Services}.
  */
-class DefaultServices implements Services, ServiceBinder, Resetable {
+class DefaultServices implements Services, ServiceBinder, Resettable {
     private static final ServiceProviderComparator COMPARATOR = ServiceProviderComparator.create();
 
     private final ConcurrentHashMap<String, ServiceProvider<?>> servicesByTypeName = new ConcurrentHashMap<>();
@@ -121,8 +121,8 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
 
         if (deep) {
             servicesByTypeName.values().forEach(sp -> {
-                if (sp instanceof Resetable) {
-                    ((Resetable) sp).reset(true);
+                if (sp instanceof Resettable) {
+                    ((Resettable) sp).reset(true);
                 }
             });
             servicesByTypeName.clear();

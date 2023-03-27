@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tools;
 
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
@@ -24,7 +24,7 @@ import io.github.classgraph.ScanResult;
 /**
  * Handles anything involving classpath scanning and introspection.
  */
-class ReflectionHandler implements Resetable {
+class ReflectionHandler implements Resettable {
 
     /**
      * The shared instance.

@@ -23,7 +23,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.pico.Bootstrap;
 import io.helidon.pico.PicoServices;
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 import io.helidon.pico.spi.PicoServicesProvider;
 
 import jakarta.inject.Singleton;
@@ -37,7 +37,7 @@ import jakarta.inject.Singleton;
  */
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)
-public class DefaultPicoServicesProvider implements PicoServicesProvider, Resetable {
+public class DefaultPicoServicesProvider implements PicoServicesProvider, Resettable {
     private static final AtomicReference<DefaultPicoServices> INSTANCE = new AtomicReference<>();
 
     /**

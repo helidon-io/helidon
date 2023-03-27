@@ -52,7 +52,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.pico.ElementInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.InterceptedTrigger;
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.tools.spi.InterceptorCreator;
 
@@ -76,7 +76,7 @@ import static io.helidon.pico.tools.TypeTools.toObjectTypeName;
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)
 @SuppressWarnings("unchecked")
-public class DefaultInterceptorCreator extends AbstractCreator implements InterceptorCreator, Resetable {
+public class DefaultInterceptorCreator extends AbstractCreator implements InterceptorCreator, Resettable {
     private static final LazyValue<ScanResult> SCAN = LazyValue.create(ReflectionHandler.INSTANCE::scan);
 
     private static final String INTERCEPTOR_NAME_SUFFIX = "Interceptor";

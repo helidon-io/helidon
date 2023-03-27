@@ -58,7 +58,7 @@ import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.PostConstructMethod;
 import io.helidon.pico.PreDestroyMethod;
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 import io.helidon.pico.ServiceInfo;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.ServiceInjectionPlanBinder;
@@ -82,7 +82,7 @@ public abstract class AbstractServiceProvider<T>
                    Activator,
                    DeActivator,
                    ActivationPhaseReceiver,
-                   Resetable {
+                   Resettable {
     static final DependenciesInfo NO_DEPS = DefaultDependenciesInfo.builder().build();
     private static final System.Logger LOGGER = System.getLogger(AbstractServiceProvider.class.getName());
 
@@ -795,9 +795,9 @@ public abstract class AbstractServiceProvider<T>
 
             if (service != null) {
                 logger().log(System.Logger.Level.INFO, "resetting " + this);
-                if (deep && service instanceof Resetable) {
+                if (deep && service instanceof Resettable) {
                     try {
-                        if (((Resetable) service).reset(deep)) {
+                        if (((Resettable) service).reset(deep)) {
                             result = true;
                         }
                     } catch (Throwable t) {

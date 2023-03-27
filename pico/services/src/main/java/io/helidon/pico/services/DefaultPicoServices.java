@@ -57,7 +57,7 @@ import io.helidon.pico.Phase;
 import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.ServiceProvider;
 
@@ -66,7 +66,7 @@ import static io.helidon.pico.CallingContext.toErrorMessage;
 /**
  * The default implementation for {@link io.helidon.pico.PicoServices}.
  */
-class DefaultPicoServices implements PicoServices, Resetable {
+class DefaultPicoServices implements PicoServices, Resettable {
     static final System.Logger LOGGER = System.getLogger(DefaultPicoServices.class.getName());
 
     private final AtomicBoolean initializingServicesStarted = new AtomicBoolean(false);

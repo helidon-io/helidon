@@ -123,10 +123,10 @@ public abstract class PicoServicesHolder {
         }
 
         private void reset() {
-            if (provider instanceof Resetable) {
-                ((Resetable) provider).reset(true);
-            } else if (picoServices instanceof Resetable) {
-                ((Resetable) picoServices).reset(true);
+            if (provider instanceof Resettable) {
+                ((Resettable) provider).reset(true);
+            } else if (picoServices instanceof Resettable) {
+                ((Resettable) picoServices).reset(true);
             }
         }
     }

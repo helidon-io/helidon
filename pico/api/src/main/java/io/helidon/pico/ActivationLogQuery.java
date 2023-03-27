@@ -23,7 +23,7 @@ import java.util.List;
  *
  * @see ActivationLog
  */
-public interface ActivationLogQuery extends Resetable {
+public interface ActivationLogQuery extends Resettable {
 
     /**
      * Clears the activation log.

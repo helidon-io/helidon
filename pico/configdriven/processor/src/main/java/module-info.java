@@ -15,9 +15,9 @@
  */
 
 /**
- * Helidon Pico ConfigBean Builder Processor module.
+ * Helidon Pico ConfiguredBy Processor module.
  */
-module io.helidon.pico.builder.config.processor {
+module io.helidon.pico.configdriven.processor {
     requires java.compiler;
     requires jakarta.inject;
     requires io.helidon.common;

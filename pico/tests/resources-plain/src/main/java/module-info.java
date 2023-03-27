@@ -25,7 +25,6 @@ module io.helidon.pico.tests.plain {
     requires io.helidon.common;
     requires io.helidon.pico.api;
 
-//    exports io.helidon.pico.tests.plain;
     exports io.helidon.pico.tests.plain.hello;
     exports io.helidon.pico.tests.plain.interceptor;
 }

@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.pico.RunLevel;
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 import io.helidon.pico.tests.pico.stacking.Intercepted;
 import io.helidon.pico.tests.pico.stacking.InterceptedImpl;
 import io.helidon.pico.tests.pico.tbox.Awl;
@@ -35,7 +35,7 @@ import jakarta.inject.Singleton;
 @RunLevel(RunLevel.STARTUP)
 @Singleton
 @Named("testing")
-public class TestingSingleton extends InterceptedImpl implements Resetable {
+public class TestingSingleton extends InterceptedImpl implements Resettable {
     final static AtomicInteger postConstructCount = new AtomicInteger();
     final static AtomicInteger preDestroyCount = new AtomicInteger();
 

@@ -31,7 +31,7 @@ import io.helidon.pico.DefaultBootstrap;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.PicoServicesHolder;
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.services.DefaultServiceBinder;
 
@@ -135,8 +135,8 @@ public class PicoTestingSupport {
             instance = lazyCreate(basicTestableConfig());
 
             BasicConfigBeanRegistry registry = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
-            if (registry instanceof Resetable) {
-                ((Resetable) registry).reset(true);
+            if (registry instanceof Resettable) {
+                ((Resettable) registry).reset(true);
             }
         }
     }

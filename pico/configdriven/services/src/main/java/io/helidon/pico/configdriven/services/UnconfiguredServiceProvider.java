@@ -37,7 +37,7 @@ import io.helidon.pico.services.InjectionPlan;
  * @param <T>   the service type
  * @param <CB>  the config bean type
  */
-public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServiceProvider<T, CB> {
+class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServiceProvider<T, CB> {
     private final AbstractConfiguredServiceProvider<T, CB> delegate;
 
     /**
@@ -45,7 +45,7 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
      *
      * @param delegate the root delegate
      */
-    public UnconfiguredServiceProvider(AbstractConfiguredServiceProvider<T, CB> delegate) {
+    UnconfiguredServiceProvider(AbstractConfiguredServiceProvider<T, CB> delegate) {
         assert (delegate != null && delegate.isRootProvider());
         this.delegate = Objects.requireNonNull(delegate);
         rootProvider(delegate);

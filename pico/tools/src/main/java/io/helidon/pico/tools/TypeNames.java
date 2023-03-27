@@ -19,7 +19,7 @@ package io.helidon.pico.tools;
 /**
  * Type name constants.
  * <p>
- * This should always be used instead of dependency on the annotation type.
+ * This should always be used instead of dependency on the annotation and other class types.
  */
 public final class TypeNames {
     /**
@@ -32,14 +32,14 @@ public final class TypeNames {
     public static final String PREFIX_JAVAX = "javax.";
 
     /**
-     * Pico {@value} annotation.
+     * Pico {@value} type.
      */
     public static final String PICO_APPLICATION = "io.helidon.pico.Application";
 
     /**
      * Pico {@value} annotation.
      */
-    public static final String PICO_CONFIGURED_BY = "io.helidon.pico.config.api.ConfiguredBy";
+    public static final String PICO_CONFIGURED_BY = "io.helidon.pico.configdriven.ConfiguredBy";
     /**
      * Pico {@value} annotation.
      */
@@ -53,7 +53,7 @@ public final class TypeNames {
      */
     public static final String PICO_INTERCEPTED = "io.helidon.pico.Intercepted";
     /**
-     * Pico {@value} annotation.
+     * Pico {@value} type.
      */
     public static final String PICO_MODULE = "io.helidon.pico.Module";
 

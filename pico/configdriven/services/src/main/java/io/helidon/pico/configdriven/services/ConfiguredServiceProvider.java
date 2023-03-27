@@ -18,13 +18,11 @@ package io.helidon.pico.configdriven.services;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 import io.helidon.builder.AttributeVisitor;
 import io.helidon.builder.config.spi.ConfigBeanMapper;
 import io.helidon.builder.config.spi.GeneratedConfigBeanBuilderBase;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
-import io.helidon.config.Config;
 import io.helidon.pico.ServiceProvider;
 
 /**
@@ -80,15 +78,6 @@ public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, Co
      * @return the generated config bean instance
      */
     GeneratedConfigBeanBuilderBase toConfigBeanBuilder(io.helidon.common.config.Config config);
-
-    /**
-     * The mapper associated with this service's config bean types.
-     *
-     * @return the mapper appropriate for this service's config beans
-     */
-    default Function<Config, CB> mapper() {
-        return this::toConfigBean;
-    }
 
     /**
      * Visit the attributes of the config bean, calling the visitor for each attribute in the hierarchy.

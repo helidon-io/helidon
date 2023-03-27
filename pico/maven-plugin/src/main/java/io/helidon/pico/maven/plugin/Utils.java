@@ -33,7 +33,7 @@ import io.helidon.pico.DefaultBootstrap;
 import io.helidon.pico.Phase;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesHolder;
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.spi.ApplicationCreator;
@@ -131,8 +131,8 @@ class Utils {
         public static void reset() {
             PicoServicesHolder.reset();
             BasicConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
-            if (cbr instanceof Resetable) {
-                ((Resetable) cbr).reset(true);
+            if (cbr instanceof Resettable) {
+                ((Resettable) cbr).reset(true);
             }
         }
     }

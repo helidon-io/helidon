@@ -155,85 +155,6 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         }
     }
 
-    private void initialize(Config commonCfg) {
-        if (configuredServiceProvidersByConfigKey.isEmpty()) {
-            LOGGER.log(System.Logger.Level.INFO, "No config driven services found...");
-            return;
-        }
-
-        io.helidon.config.Config cfg = safeDowncastOf(commonCfg);
-
-        // first load all the root config beans... but defer resolve until later phase
-        configuredServiceProviderMetaConfigBeanMap.forEach((configuredServiceProvider, cbi) -> {
-            MetaConfigBeanInfo metaConfigBeanInfo = (MetaConfigBeanInfo) cbi;
-            processRootLevelConfigBean(cfg, configuredServiceProvider, metaConfigBeanInfo);
-        });
-
-        if (!cfg.exists() || cfg.isLeaf()) {
-            return;
-        }
-
-        // now find all the sub root level config beans also... still deferring resolution until a later phase
-        visitAndInitialize(cfg.asNodeList().get(), 0);
-        LOGGER.log(System.Logger.Level.DEBUG, "finishing walking config tree");
-    }
-
-    protected boolean isInitialized() {
-        return (0 == initialized.getCount());
-    }
-
-    private void processRootLevelConfigBean(io.helidon.config.Config cfg,
-                                            ConfiguredServiceProvider<?, ?> configuredServiceProvider,
-                                            MetaConfigBeanInfo metaConfigBeanInfo) {
-        if (metaConfigBeanInfo.levelType() != ConfigBean.LevelType.ROOT) {
-            return;
-        }
-
-        String key = validatedConfigKey(metaConfigBeanInfo);
-        io.helidon.config.Config config = cfg.get(key);
-        Map<String, Map<String, Object>> metaAttributes = configuredServiceProvider.configBeanAttributes();
-        if (config.exists()) {
-            loadConfigBeans(config, configuredServiceProvider, metaConfigBeanInfo, metaAttributes);
-        } else if (metaConfigBeanInfo.wantDefaultConfigBean()) {
-            Object cfgBean = Objects.requireNonNull(configuredServiceProvider.toConfigBean(cfg),
-                                                    "unable to create default config bean for " + configuredServiceProvider);
-            registerConfigBean(cfgBean, DEFAULT_INSTANCE_ID, config, configuredServiceProvider, metaAttributes);
-        }
-    }
-
-    private void processNestedLevelConfigBean(io.helidon.config.Config config,
-                                              ConfiguredServiceProvider<?, ?> configuredServiceProvider,
-                                              ConfigBeanInfo metaConfigBeanInfo) {
-        if (metaConfigBeanInfo.levelType() != ConfigBean.LevelType.NESTED) {
-            return;
-        }
-
-        Map<String, Map<String, Object>> metaAttributes = configuredServiceProvider.configBeanAttributes();
-        loadConfigBeans(config, configuredServiceProvider, metaConfigBeanInfo, metaAttributes);
-    }
-
-    private void visitAndInitialize(List<io.helidon.config.Config> configs,
-                                    int depth) {
-        configs.forEach(config -> {
-            // we start nested, since we've already processed the root level config beans previously
-            if (depth > 0) {
-                String key = config.name();
-                List<ConfiguredServiceProvider<?, ?>> csps = configuredServiceProvidersByConfigKey.get(key);
-                if (csps != null && !csps.isEmpty()) {
-                    csps.forEach(configuredServiceProvider -> {
-                        ConfigBeanInfo metaConfigBeanInfo =
-                                Objects.requireNonNull(configuredServiceProviderMetaConfigBeanMap.get(configuredServiceProvider));
-                        processNestedLevelConfigBean(config, configuredServiceProvider, metaConfigBeanInfo);
-                    });
-                }
-            }
-
-            if (!config.isLeaf()) {
-                visitAndInitialize(config.asNodeList().get(), depth + 1);
-            }
-        });
-    }
-
     @Override
     public boolean ready() {
         return isInitialized();
@@ -257,7 +178,6 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Map<ConfiguredServiceProvider<?, ?>, ConfigBeanInfo> configurableServiceProviders() {
         return Map.copyOf(configuredServiceProviderMetaConfigBeanMap);
     }
@@ -267,16 +187,17 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     public List<ConfiguredServiceProvider<?, ?>> configuredServiceProviders() {
         List<ConfiguredServiceProvider<?, ?>> result = new ArrayList<>();
 
-        configuredServiceProvidersByConfigKey.values().forEach(cspList ->
-            cspList.stream()
-                    .filter(csp -> csp instanceof AbstractConfiguredServiceProvider)
-                    .map(AbstractConfiguredServiceProvider.class::cast)
-                    .forEach(rootCsp -> {
-                        rootCsp.assertIsRootProvider(true, false);
-                        Map<String, Optional<AbstractConfiguredServiceProvider<?, ?>>> cfgBeanMap =
-                                rootCsp.configuredServicesMap();
-                        cfgBeanMap.values().forEach(slaveCsp -> slaveCsp.ifPresent(result::add));
-                    }));
+        configuredServiceProvidersByConfigKey.values()
+                .forEach(cspList ->
+                                 cspList.stream()
+                                         .filter(csp -> csp instanceof AbstractConfiguredServiceProvider)
+                                         .map(AbstractConfiguredServiceProvider.class::cast)
+                                         .forEach(rootCsp -> {
+                                             rootCsp.assertIsRootProvider(true, false);
+                                             Map<String, Optional<AbstractConfiguredServiceProvider<?, ?>>> cfgBeanMap =
+                                                     rootCsp.configuredServicesMap();
+                                             cfgBeanMap.values().forEach(slaveCsp -> slaveCsp.ifPresent(result::add));
+                                         }));
 
         if (result.size() > 1) {
             result.sort(ServiceProviderComparator.create());
@@ -362,6 +283,85 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                 }));
 
         return result;
+    }
+
+    protected boolean isInitialized() {
+        return (0 == initialized.getCount());
+    }
+
+    private void initialize(Config commonCfg) {
+        if (configuredServiceProvidersByConfigKey.isEmpty()) {
+            LOGGER.log(System.Logger.Level.DEBUG, "No config driven services found");
+            return;
+        }
+
+        io.helidon.config.Config cfg = safeDowncastOf(commonCfg);
+
+        // first load all the root config beans... but defer resolve until later phase
+        configuredServiceProviderMetaConfigBeanMap.forEach((configuredServiceProvider, cbi) -> {
+            MetaConfigBeanInfo metaConfigBeanInfo = (MetaConfigBeanInfo) cbi;
+            processRootLevelConfigBean(cfg, configuredServiceProvider, metaConfigBeanInfo);
+        });
+
+        if (!cfg.exists() || cfg.isLeaf()) {
+            return;
+        }
+
+        // now find all the sub root level config beans also... still deferring resolution until a later phase
+        visitAndInitialize(cfg.asNodeList().get(), 0);
+        LOGGER.log(System.Logger.Level.DEBUG, "finishing walking config tree");
+    }
+
+    private void processRootLevelConfigBean(io.helidon.config.Config cfg,
+                                            ConfiguredServiceProvider<?, ?> configuredServiceProvider,
+                                            MetaConfigBeanInfo metaConfigBeanInfo) {
+        if (metaConfigBeanInfo.levelType() != ConfigBean.LevelType.ROOT) {
+            return;
+        }
+
+        String key = validatedConfigKey(metaConfigBeanInfo);
+        io.helidon.config.Config config = cfg.get(key);
+        Map<String, Map<String, Object>> metaAttributes = configuredServiceProvider.configBeanAttributes();
+        if (config.exists()) {
+            loadConfigBeans(config, configuredServiceProvider, metaConfigBeanInfo, metaAttributes);
+        } else if (metaConfigBeanInfo.wantDefaultConfigBean()) {
+            Object cfgBean = Objects.requireNonNull(configuredServiceProvider.toConfigBean(cfg),
+                                                    "unable to create default config bean for " + configuredServiceProvider);
+            registerConfigBean(cfgBean, DEFAULT_INSTANCE_ID, config, configuredServiceProvider, metaAttributes);
+        }
+    }
+
+    private void processNestedLevelConfigBean(io.helidon.config.Config config,
+                                              ConfiguredServiceProvider<?, ?> configuredServiceProvider,
+                                              ConfigBeanInfo metaConfigBeanInfo) {
+        if (metaConfigBeanInfo.levelType() != ConfigBean.LevelType.NESTED) {
+            return;
+        }
+
+        Map<String, Map<String, Object>> metaAttributes = configuredServiceProvider.configBeanAttributes();
+        loadConfigBeans(config, configuredServiceProvider, metaConfigBeanInfo, metaAttributes);
+    }
+
+    private void visitAndInitialize(List<io.helidon.config.Config> configs,
+                                    int depth) {
+        configs.forEach(config -> {
+            // we start nested, since we've already processed the root level config beans previously
+            if (depth > 0) {
+                String key = config.name();
+                List<ConfiguredServiceProvider<?, ?>> csps = configuredServiceProvidersByConfigKey.get(key);
+                if (csps != null && !csps.isEmpty()) {
+                    csps.forEach(configuredServiceProvider -> {
+                        ConfigBeanInfo metaConfigBeanInfo =
+                                Objects.requireNonNull(configuredServiceProviderMetaConfigBeanMap.get(configuredServiceProvider));
+                        processNestedLevelConfigBean(config, configuredServiceProvider, metaConfigBeanInfo);
+                    });
+                }
+            }
+
+            if (!config.isLeaf()) {
+                visitAndInitialize(config.asNodeList().get(), depth + 1);
+            }
+        });
     }
 
     <T, CB> void loadConfigBeans(io.helidon.config.Config config,

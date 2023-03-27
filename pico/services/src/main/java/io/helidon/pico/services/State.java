@@ -19,9 +19,9 @@ package io.helidon.pico.services;
 import java.util.Objects;
 
 import io.helidon.pico.Phase;
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 
-class State implements Resetable, Cloneable {
+class State implements Resettable, Cloneable {
     private Phase currentPhase;
     private boolean isFinished;
     private Throwable lastError;

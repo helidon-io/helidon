@@ -20,7 +20,7 @@ package io.helidon.pico;
  * Implementors of this contract are capable of resetting the state of itself (i.e., clears cache, log entries, etc.).
  */
 @FunctionalInterface
-public interface Resetable {
+public interface Resettable {
 
     /**
      * Resets the state of this object.

@@ -26,8 +26,8 @@ module io.helidon.pico.api {
     requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
 
-    uses io.helidon.pico.spi.PicoServicesProvider;
-
     exports io.helidon.pico;
     exports io.helidon.pico.spi;
+
+    uses io.helidon.pico.spi.PicoServicesProvider;
 }

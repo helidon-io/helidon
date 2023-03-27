@@ -19,14 +19,14 @@ package io.helidon.pico.configdriven.services;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 
 /**
  * Internal, SPI-like functionality.
  * Note: normally these methods are deemed internal-only, and should therefore not be called directly by end-consumers
  * of the {@link ConfigBeanRegistry} API.
  */
-public interface InternalConfigBeanRegistry extends ConfigBeanRegistry, Resetable {
+public interface InternalConfigBeanRegistry extends ConfigBeanRegistry, Resettable {
 
     /**
      * Binds a {@link ConfiguredServiceProvider} to the

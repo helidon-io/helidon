@@ -19,10 +19,10 @@ package io.helidon.pico.configdriven.configuredby.application.test;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.pico.Resettable;
 import io.helidon.pico.RunLevel;
 import io.helidon.pico.configdriven.configuredby.test.ASingletonServiceContract;
 import io.helidon.pico.configdriven.configuredby.test.FakeWebServerContract;
-import io.helidon.pico.Resetable;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -32,7 +32,7 @@ import jakarta.inject.Singleton;
 
 @Singleton
 @RunLevel(RunLevel.STARTUP)
-public class ASimpleRunLevelService implements Resetable {
+public class ASimpleRunLevelService implements Resettable {
 
     static int postConstructCount;
     static int preDestroyCount;

@@ -44,11 +44,9 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
      * Each entry in the returned map is the master/root for the config beans it manages. The result, therefore, is
      * not associated with config beans. Use {@link #configuredServiceProviders()} for configured service instances.
      *
-     * @param <T>  the service type
-     * @param <CB> the config bean type
      * @return the map of configurable services to the meta config beans each expects
      */
-    <T, CB> Map<ConfiguredServiceProvider<T, CB>, ConfigBeanInfo> configurableServiceProviders();
+    Map<ConfiguredServiceProvider<?, ?>, ConfigBeanInfo> configurableServiceProviders();
 
     /**
      * These are the managed/slave service providers that are associated with config bean instances.

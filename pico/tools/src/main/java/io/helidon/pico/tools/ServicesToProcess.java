@@ -43,7 +43,7 @@ import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.Module;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.Resetable;
+import io.helidon.pico.Resettable;
 import io.helidon.pico.services.Dependencies;
 
 /**
@@ -55,7 +55,7 @@ import io.helidon.pico.services.Dependencies;
  * Note that the flow might be repeated multiple times since annotation processors by definition are recurrent in
  * nature.
  */
-public class ServicesToProcess implements Resetable {
+public class ServicesToProcess implements Resettable {
     private static final ServicesToProcess SERVICES = new ServicesToProcess();
 
     private static final AtomicInteger RUNNING_PROCESSORS = new AtomicInteger();

@@ -17,7 +17,7 @@
 package io.helidon.pico;
 
 /**
- * A general purpose exception.
+ * A general exception indicating that something failed related to Pico.
  *
  * @see PicoServiceProviderException
  * @see InjectionException

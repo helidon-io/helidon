@@ -87,16 +87,6 @@ public abstract class CallingContext {
     }
 
     /**
-     * Returns a stack trace as a CRLF joined string.
-     *
-     * @param trace the trace
-     * @return the stringified stack trace
-     */
-    static String prettyPrintStackTraceOf(StackTraceElement[] trace) {
-        return String.join("\n", stackTraceOf(trace));
-    }
-
-    /**
      * Sets the default global calling context.
      *
      * @param callingContext the default global context

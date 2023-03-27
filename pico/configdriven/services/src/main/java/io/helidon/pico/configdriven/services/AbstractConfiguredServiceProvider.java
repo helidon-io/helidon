@@ -104,11 +104,6 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     protected AbstractConfiguredServiceProvider() {
     }
 
-    @Override
-    protected System.Logger logger() {
-        return LOGGER;
-    }
-
     /**
      * The map of bean instance id's to config bean instances.
      *
@@ -158,84 +153,6 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         return true;
     }
 
-    void assertIsInitializing() {
-        if (initialized.get()) {
-            CallingContext callingContext = initializationCallingContext.get();
-            String desc = description() + " was previously initialized";
-            String msg = (callingContext == null) ? toErrorMessage(desc) : toErrorMessage(callingContext, desc);
-            throw new PicoServiceProviderException(msg, this);
-        }
-    }
-
-    void assertIsInitialized() {
-        if (!initialized.get()) {
-            throw new PicoServiceProviderException(description() + " was expected to be initialized", this);
-        }
-    }
-
-    @Override
-    protected void doPreDestroying(LogEntryAndResult logEntryAndResult) {
-        if (isRootProvider()) {
-            managedConfiguredServicesMap.values().stream()
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .forEach(csp -> {
-                        LogEntryAndResult cspLogEntryAndResult = csp.createLogEntryAndResult(Phase.DESTROYED);
-                        csp.doPreDestroying(cspLogEntryAndResult);
-                    });
-        }
-        super.doPreDestroying(logEntryAndResult);
-    }
-
-    @Override
-    protected void doDestroying(LogEntryAndResult logEntryAndResult) {
-        super.doDestroying(logEntryAndResult);
-    }
-
-    @Override
-    protected void onFinalShutdown() {
-        if (isRootProvider()) {
-            managedConfiguredServicesMap.values().stream()
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .filter(csp -> csp.currentActivationPhase().eligibleForDeactivation())
-                    .forEach(AbstractConfiguredServiceProvider::onFinalShutdown);
-        }
-
-        this.initialized.set(false);
-        this.managedConfiguredServicesMap.clear();
-        this.configBeanMap.clear();
-
-        super.onFinalShutdown();
-    }
-
-    /**
-     * Transition into an initialized state.
-     */
-    void assertInitialized(boolean initialized) {
-        assertIsInitializing();
-        assert (!drivesActivation()
-                        || isAlreadyAtTargetPhase(PicoServices.terminalActivationPhase())
-                        || managedConfiguredServicesMap.isEmpty());
-        this.initialized.set(initialized);
-    }
-
-    /**
-     * Maybe transition into being a root provider if we are the first to claim it. Otherwise, we are a slave being managed.
-     *
-     * @param isRootProvider    true if an asserting is being made to claim root or claim managed slave
-     * @param expectSet         true if this is a strong assertion, and if not claimed an exception will be thrown
-     */
-    // special note: this is referred to in code generated code!
-    protected void assertIsRootProvider(boolean isRootProvider,
-                                        boolean expectSet) {
-        boolean set = this.isRootProvider.compareAndSet(null, isRootProvider);
-        if (!set && expectSet) {
-            throw new PicoServiceProviderException(description() + " was already initialized", null, this);
-        }
-        assert (!isRootProvider || rootProvider.get() == null);
-    }
-
     @Override
     public boolean isRootProvider() {
         Boolean root = isRootProvider.get();
@@ -253,39 +170,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         assertIsRootProvider(false, false);
         assert (!isRootProvider() && rootProvider.get() == null && this != root);
         boolean set = rootProvider.compareAndSet(null,
-                                   (AbstractConfiguredServiceProvider<T, CB>) Objects.requireNonNull(root));
+                                                 (AbstractConfiguredServiceProvider<T, CB>) Objects.requireNonNull(root));
         assert (set);
-    }
-
-    @Override
-    protected String identitySuffix() {
-        if (isRootProvider()) {
-            return "{root}";
-        }
-
-        Optional<CB> configBean = configBean();
-        String instanceId = toConfigBeanInstanceId(configBean.orElse(null));
-        return "{" + instanceId + "}";
-    }
-
-    @Override
-    protected void serviceInfo(ServiceInfo serviceInfo) {
-        // this might appear strange, but since activators can inherit from one another this is in place to trigger
-        // only when the most derived activator ctor is setting its serviceInfo.
-        boolean isThisOurServiceInfo = serviceType().getName().equals(serviceInfo.serviceTypeName());
-        if (isThisOurServiceInfo) {
-            assertIsInitializing();
-            assertIsRootProvider(true, false);
-
-            // override our service info to account for any named lookup
-            if (isRootProvider() && !serviceInfo.qualifiers().contains(CommonQualifiers.WILDCARD_NAMED)) {
-                serviceInfo = DefaultServiceInfo.toBuilder(serviceInfo)
-                        .addQualifier(CommonQualifiers.WILDCARD_NAMED)
-                        .build();
-            }
-        }
-
-        super.serviceInfo(serviceInfo);
     }
 
     @Override
@@ -392,50 +278,6 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     @Override
     public Map<String, Map<String, Object>> configBeanAttributes() {
         return Map.of();
-    }
-
-    /**
-     * The backing config of this configured service instance.
-     *
-     * @return the backing config of this configured service instance
-     */
-    protected abstract Optional<io.helidon.common.config.Config> rawConfig();
-
-    @Override
-    public abstract String toConfigBeanInstanceId(CB configBean);
-
-    /**
-     * Brokers the set of the instance id for the given config bean.
-     *
-     * @param configBean the config bean to set
-     * @param val the instance id to associate it with
-     */
-    public abstract void configBeanInstanceId(CB configBean,
-                                              String val);
-
-    /**
-     * Creates a new instance of this type of configured service provider, along with the configuration bean
-     * associated with the service.
-     *
-     * @param configBean the config bean
-     * @return the created instance injected with the provided config bean
-     */
-    protected abstract AbstractConfiguredServiceProvider<T, CB> createInstance(Object configBean);
-
-    /**
-     * After the gathering dependency phase, we will short circuit directly to the finish line.
-     */
-    @Override
-    protected void doConstructing(LogEntryAndResult logEntryAndResult) {
-        if (isRootProvider()) {
-            boolean shouldBeActive = (drivesActivation() && !managedConfiguredServicesMap.isEmpty());
-            Phase setPhase = (shouldBeActive) ? Phase.ACTIVE : Phase.PENDING;
-            startTransitionCurrentActivationPhase(logEntryAndResult, setPhase);
-            onFinished(logEntryAndResult);
-            return;
-        }
-
-        super.doConstructing(logEntryAndResult);
     }
 
     // note that all responsibilities to resolve is delegated to the root provider
@@ -629,6 +471,205 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         throw expectedQualifiedServiceError(query);
     }
 
+    /**
+     * Configurable services by their very nature are not compile-time bindable during application creation.
+     *
+     * @return empty, signaling that we are not bindable
+     */
+    @Override
+    public Optional<ServiceProviderBindable<T>> serviceProviderBindable() {
+        return Optional.empty();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <C extends Config, CB> Optional<CB> toConfigBean(C config,
+                                                            Class<CB> configBeanType) {
+        CB configBean = (CB) toConfigBean(config);
+        assert (configBeanType.isInstance(configBean)) : configBean;
+        return Optional.of(configBean);
+    }
+
+    @Override
+    public abstract String toConfigBeanInstanceId(CB configBean);
+
+    /**
+     * Brokers the set of the instance id for the given config bean.
+     *
+     * @param configBean the config bean to set
+     * @param val the instance id to associate it with
+     */
+    public abstract void configBeanInstanceId(CB configBean,
+                                              String val);
+
+    /**
+     * The backing config of this configured service instance.
+     *
+     * @return the backing config of this configured service instance
+     */
+    protected abstract Optional<io.helidon.common.config.Config> rawConfig();
+
+    /**
+     * Creates a new instance of this type of configured service provider, along with the configuration bean
+     * associated with the service.
+     *
+     * @param configBean the config bean
+     * @return the created instance injected with the provided config bean
+     */
+    protected abstract AbstractConfiguredServiceProvider<T, CB> createInstance(Object configBean);
+
+    /**
+     * After the gathering dependency phase, we will short circuit directly to the finish line.
+     */
+    @Override
+    protected void doConstructing(LogEntryAndResult logEntryAndResult) {
+        if (isRootProvider()) {
+            boolean shouldBeActive = (drivesActivation() && !managedConfiguredServicesMap.isEmpty());
+            Phase setPhase = (shouldBeActive) ? Phase.ACTIVE : Phase.PENDING;
+            startTransitionCurrentActivationPhase(logEntryAndResult, setPhase);
+            onFinished(logEntryAndResult);
+            return;
+        }
+
+        super.doConstructing(logEntryAndResult);
+    }
+
+    @Override
+    protected String identitySuffix() {
+        if (isRootProvider()) {
+            return "{root}";
+        }
+
+        Optional<CB> configBean = configBean();
+        String instanceId = toConfigBeanInstanceId(configBean.orElse(null));
+        return "{" + instanceId + "}";
+    }
+
+    @Override
+    protected void serviceInfo(ServiceInfo serviceInfo) {
+        // this might appear strange, but since activators can inherit from one another this is in place to trigger
+        // only when the most derived activator ctor is setting its serviceInfo.
+        boolean isThisOurServiceInfo = serviceType().getName().equals(serviceInfo.serviceTypeName());
+        if (isThisOurServiceInfo) {
+            assertIsInitializing();
+            assertIsRootProvider(true, false);
+
+            // override our service info to account for any named lookup
+            if (isRootProvider() && !serviceInfo.qualifiers().contains(CommonQualifiers.WILDCARD_NAMED)) {
+                serviceInfo = DefaultServiceInfo.toBuilder(serviceInfo)
+                        .addQualifier(CommonQualifiers.WILDCARD_NAMED)
+                        .build();
+            }
+        }
+
+        super.serviceInfo(serviceInfo);
+    }
+
+    @Override
+    protected System.Logger logger() {
+        return LOGGER;
+    }
+
+    @Override
+    protected void doPreDestroying(LogEntryAndResult logEntryAndResult) {
+        if (isRootProvider()) {
+            managedConfiguredServicesMap.values().stream()
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .forEach(csp -> {
+                        LogEntryAndResult cspLogEntryAndResult = csp.createLogEntryAndResult(Phase.DESTROYED);
+                        csp.doPreDestroying(cspLogEntryAndResult);
+                    });
+        }
+        super.doPreDestroying(logEntryAndResult);
+    }
+
+    @Override
+    protected void doDestroying(LogEntryAndResult logEntryAndResult) {
+        super.doDestroying(logEntryAndResult);
+    }
+
+    @Override
+    protected void onFinalShutdown() {
+        if (isRootProvider()) {
+            managedConfiguredServicesMap.values().stream()
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .filter(csp -> csp.currentActivationPhase().eligibleForDeactivation())
+                    .forEach(AbstractConfiguredServiceProvider::onFinalShutdown);
+        }
+
+        this.initialized.set(false);
+        this.managedConfiguredServicesMap.clear();
+        this.configBeanMap.clear();
+
+        super.onFinalShutdown();
+    }
+
+    /**
+     * Maybe transition into being a root provider if we are the first to claim it. Otherwise, we are a slave being managed.
+     *
+     * @param isRootProvider    true if an asserting is being made to claim root or claim managed slave
+     * @param expectSet         true if this is a strong assertion, and if not claimed an exception will be thrown
+     */
+    // special note: this is referred to in code generated code!
+    protected void assertIsRootProvider(boolean isRootProvider,
+                                        boolean expectSet) {
+        boolean set = this.isRootProvider.compareAndSet(null, isRootProvider);
+        if (!set && expectSet) {
+            throw new PicoServiceProviderException(description() + " was already initialized", null, this);
+        }
+        assert (!isRootProvider || rootProvider.get() == null);
+    }
+
+    /**
+     * Return true if this service is driven to activation during startup (and provided it has some config).
+     * See {@link io.helidon.pico.configdriven.ConfiguredBy#drivesActivation()} and
+     * see {@link io.helidon.builder.config.ConfigBean#drivesActivation()} for more.
+     * @return true if this service is driven to activation during startup
+     */
+    // note: overridden by the service if disabled at the ConfiguredBy service level
+    protected boolean drivesActivation() {
+        return metaConfigBeanInfo().drivesActivation();
+    }
+
+    /**
+     * Called to accept the new config bean instance initialized from the appropriate configuration tree location.
+     *
+     * @param config the configuration
+     * @return the new config bean
+     */
+    // expected that the generated configured service overrides this to set its new config bean value
+    protected CB acceptConfig(Config config) {
+        return Objects.requireNonNull(toConfigBean(config));
+    }
+
+    /**
+     * Transition into an initialized state.
+     */
+    void assertInitialized(boolean initialized) {
+        assertIsInitializing();
+        assert (!drivesActivation()
+                        || isAlreadyAtTargetPhase(PicoServices.terminalActivationPhase())
+                        || managedConfiguredServicesMap.isEmpty());
+        this.initialized.set(initialized);
+    }
+
+    void assertIsInitializing() {
+        if (initialized.get()) {
+            CallingContext callingContext = initializationCallingContext.get();
+            String desc = description() + " was previously initialized";
+            String msg = (callingContext == null) ? toErrorMessage(desc) : toErrorMessage(callingContext, desc);
+            throw new PicoServiceProviderException(msg, this);
+        }
+    }
+
+    void assertIsInitialized() {
+        if (!initialized.get()) {
+            throw new PicoServiceProviderException(description() + " was expected to be initialized", this);
+        }
+    }
+
     void resolveConfigDrivenServices() {
         assertIsInitialized();
         assert (isRootProvider());
@@ -660,17 +701,6 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                 csp.onFailedFinish(logEntryAndResult, t, true);
             }
         });
-    }
-
-    /**
-     * Called to accept the new config bean instance initialized from the appropriate configuration tree location.
-     *
-     * @param config the configuration
-     * @return the new config bean
-     */
-    // expected that the generated configured service overrides this to set its new config bean value
-    protected CB acceptConfig(Config config) {
-        return Objects.requireNonNull(toConfigBean(config));
     }
 
     private PicoException expectedConfigurationSetGlobally() {
@@ -761,42 +791,12 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     /**
-     * Return true if this service is driven to activation during startup (and provided it has some config).
-     * See {@link io.helidon.pico.configdriven.ConfiguredBy#drivesActivation()} and
-     * see {@link io.helidon.builder.config.ConfigBean#drivesActivation()} for more.
-     * @return true if this service is driven to activation during startup
-     */
-    // note: overridden by the service if disabled at the ConfiguredBy service level
-    protected boolean drivesActivation() {
-        return metaConfigBeanInfo().drivesActivation();
-    }
-
-    /**
-     * Configurable services by their very nature are not compile-time bindable during application creation.
-     *
-     * @return empty, signaling that we are not bindable
-     */
-    @Override
-    public Optional<ServiceProviderBindable<T>> serviceProviderBindable() {
-        return Optional.empty();
-    }
-
-    /**
      * The special comparator for ordering config bean instance ids.
      *
      * @return the special comparator for ordering config bean instance ids
      */
     static Comparator<String> configBeanComparator() {
         return BEAN_INSTANCE_ID_COMPARATOR;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <C extends Config, CB> Optional<CB> toConfigBean(C config,
-                                                            Class<CB> configBeanType) {
-        CB configBean = (CB) toConfigBean(config);
-        assert (configBeanType.isInstance(configBean)) : configBean;
-        return Optional.of(configBean);
     }
 
     /**
@@ -819,7 +819,10 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         BasicConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
         if (cbr == null) {
             LOGGER.log(System.Logger.Level.INFO, "Config-Driven Services disabled (config bean registry not found");
-        } else if (!(cbr instanceof InternalConfigBeanRegistry)) {
+            return null;
+        }
+
+        if (!(cbr instanceof InternalConfigBeanRegistry)) {
             Optional<CallingContext> callingContext = CallingContextFactory.create(false);
             String desc = "Config-Driven Services disabled (unsupported implementation): " + cbr;
             String msg = (callingContext.isEmpty()) ? toErrorMessage(desc) : toErrorMessage(callingContext.get(), desc);
