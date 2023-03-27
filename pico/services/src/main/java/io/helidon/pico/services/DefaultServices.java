@@ -70,7 +70,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     private final AtomicInteger lookupCount = new AtomicInteger();
     private final AtomicInteger cacheLookupCount = new AtomicInteger();
     private final AtomicInteger cacheHitCount = new AtomicInteger();
-    private State stateWatchOnly; // we are watching and not mutating this state - owned by DefaultPicoServices
+    private volatile State stateWatchOnly; // we are watching and not mutating this state - owned by DefaultPicoServices
 
     /**
      * The constructor taking a configuration.
@@ -79,18 +79,6 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
      */
     DefaultServices(PicoServicesConfig cfg) {
         this.cfg = Objects.requireNonNull(cfg);
-    }
-
-    void state(State state) {
-        this.stateWatchOnly = Objects.requireNonNull(state);
-    }
-
-    Phase currentPhase() {
-        return (stateWatchOnly == null) ? Phase.INIT : stateWatchOnly.currentPhase();
-    }
-
-    Map<ServiceInfoCriteria, List<ServiceProvider<?>>> cache() {
-        return Map.copyOf(cache);
     }
 
     /**
@@ -132,25 +120,6 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         clearCacheAndMetrics();
 
         return changed;
-    }
-
-    /**
-     * Clear the cache and metrics.
-     */
-    void clearCacheAndMetrics() {
-        cache.clear();
-        lookupCount.set(0);
-        cacheLookupCount.set(0);
-        cacheHitCount.set(0);
-    }
-
-    Metrics metrics() {
-        return DefaultMetrics.builder()
-                .services(size())
-                .lookupCount(lookupCount.get())
-                .cacheLookupCount(cacheLookupCount.get())
-                .cacheHitCount(cacheHitCount.get())
-                .build();
     }
 
     @Override
@@ -196,6 +165,92 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         List<ServiceProvider<?>> result = (List) lookup(criteria, expected, Integer.MAX_VALUE);
         assert (!expected || !result.isEmpty());
         return result;
+    }
+
+    @Override
+    public void bind(ServiceProvider<?> serviceProvider) {
+        if (currentPhase().ordinal() > Phase.GATHERING_DEPENDENCIES.ordinal()) {
+            assertPermitsDynamic(cfg);
+        }
+
+        ServiceInfo serviceInfo = toValidatedServiceInfo(serviceProvider);
+        String serviceTypeName = serviceInfo.serviceTypeName();
+
+        ServiceProvider<?> previous = servicesByTypeName.putIfAbsent(serviceTypeName, serviceProvider);
+        if (previous != null && previous != serviceProvider) {
+            if (cfg.permitsDynamic()) {
+                DefaultPicoServices.LOGGER.log(System.Logger.Level.WARNING,
+                                               "overwriting " + previous + " with " + serviceProvider);
+                servicesByTypeName.put(serviceTypeName, serviceProvider);
+            } else {
+                throw serviceProviderAlreadyBoundInjectionError(previous, serviceProvider);
+            }
+        }
+
+        // special handling in case we are an interceptor...
+        Set<QualifierAndValue> qualifiers = serviceInfo.qualifiers();
+        Optional<QualifierAndValue> interceptedQualifier = qualifiers.stream()
+                .filter(q -> q.typeName().name().equals(Intercepted.class.getName()))
+                .findFirst();
+        if (interceptedQualifier.isPresent()) {
+            // assumption: expected that the root service provider is registered prior to any interceptors
+            String interceptedServiceTypeName = Objects.requireNonNull(interceptedQualifier.get().value().orElseThrow());
+            ServiceProvider<?> interceptedSp = lookupFirst(DefaultServiceInfoCriteria.builder()
+                                                                   .serviceTypeName(interceptedServiceTypeName)
+                                                                   .build(), true).orElse(null);
+            if (interceptedSp instanceof ServiceProviderBindable) {
+                ((ServiceProviderBindable<?>) interceptedSp).interceptor(serviceProvider);
+            }
+        }
+
+        servicesByContract.compute(serviceTypeName, (contract, servicesSharingThisContract) -> {
+            if (servicesSharingThisContract == null) {
+                servicesSharingThisContract = new TreeSet<>(serviceProviderComparator());
+            }
+            boolean added = servicesSharingThisContract.add(serviceProvider);
+            assert (added) : "expected to have added: " + serviceProvider;
+            return servicesSharingThisContract;
+        });
+        for (String cn : serviceInfo.contractsImplemented()) {
+            servicesByContract.compute(cn, (contract, servicesSharingThisContract) -> {
+                if (servicesSharingThisContract == null) {
+                    servicesSharingThisContract = new TreeSet<>(serviceProviderComparator());
+                }
+                boolean ignored = servicesSharingThisContract.add(serviceProvider);
+                return servicesSharingThisContract;
+            });
+        }
+    }
+
+    void state(State state) {
+        this.stateWatchOnly = Objects.requireNonNull(state);
+    }
+
+    Phase currentPhase() {
+        return (stateWatchOnly == null) ? Phase.INIT : stateWatchOnly.currentPhase();
+    }
+
+    Map<ServiceInfoCriteria, List<ServiceProvider<?>>> cache() {
+        return Map.copyOf(cache);
+    }
+
+    /**
+     * Clear the cache and metrics.
+     */
+    void clearCacheAndMetrics() {
+        cache.clear();
+        lookupCount.set(0);
+        cacheLookupCount.set(0);
+        cacheHitCount.set(0);
+    }
+
+    Metrics metrics() {
+        return DefaultMetrics.builder()
+                .services(size())
+                .lookupCount(lookupCount.get())
+                .cacheLookupCount(cacheLookupCount.get())
+                .cacheHitCount(cacheHitCount.get())
+                .build();
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -368,61 +423,6 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         bind(createServiceProvider(module, moduleName, picoServices));
         if (isLoggable) {
             DefaultPicoServices.LOGGER.log(System.Logger.Level.TRACE, "finished binding module: " + moduleName);
-        }
-    }
-
-    @Override
-    public void bind(ServiceProvider<?> serviceProvider) {
-        if (currentPhase().ordinal() > Phase.GATHERING_DEPENDENCIES.ordinal()) {
-            assertPermitsDynamic(cfg);
-        }
-
-        ServiceInfo serviceInfo = toValidatedServiceInfo(serviceProvider);
-        String serviceTypeName = serviceInfo.serviceTypeName();
-
-        ServiceProvider<?> previous = servicesByTypeName.putIfAbsent(serviceTypeName, serviceProvider);
-        if (previous != null && previous != serviceProvider) {
-            if (cfg.permitsDynamic()) {
-                DefaultPicoServices.LOGGER.log(System.Logger.Level.WARNING,
-                                               "overwriting " + previous + " with " + serviceProvider);
-                servicesByTypeName.put(serviceTypeName, serviceProvider);
-            } else {
-                throw serviceProviderAlreadyBoundInjectionError(previous, serviceProvider);
-            }
-        }
-
-        // special handling in case we are an interceptor...
-        Set<QualifierAndValue> qualifiers = serviceInfo.qualifiers();
-        Optional<QualifierAndValue> interceptedQualifier = qualifiers.stream()
-                .filter(q -> q.typeName().name().equals(Intercepted.class.getName()))
-                .findFirst();
-        if (interceptedQualifier.isPresent()) {
-            // assumption: expected that the root service provider is registered prior to any interceptors
-            String interceptedServiceTypeName = Objects.requireNonNull(interceptedQualifier.get().value().orElseThrow());
-            ServiceProvider<?> interceptedSp = lookupFirst(DefaultServiceInfoCriteria.builder()
-                                                                   .serviceTypeName(interceptedServiceTypeName)
-                                                                   .build(), true).orElse(null);
-            if (interceptedSp instanceof ServiceProviderBindable) {
-                ((ServiceProviderBindable<?>) interceptedSp).interceptor(serviceProvider);
-            }
-        }
-
-        servicesByContract.compute(serviceTypeName, (contract, servicesSharingThisContract) -> {
-            if (servicesSharingThisContract == null) {
-                servicesSharingThisContract = new TreeSet<>(serviceProviderComparator());
-            }
-            boolean added = servicesSharingThisContract.add(serviceProvider);
-            assert (added) : "expected to have added: " + serviceProvider;
-            return servicesSharingThisContract;
-        });
-        for (String cn : serviceInfo.contractsImplemented()) {
-            servicesByContract.compute(cn, (contract, servicesSharingThisContract) -> {
-                if (servicesSharingThisContract == null) {
-                    servicesSharingThisContract = new TreeSet<>(serviceProviderComparator());
-                }
-                boolean ignored = servicesSharingThisContract.add(serviceProvider);
-                return servicesSharingThisContract;
-            });
         }
     }
 

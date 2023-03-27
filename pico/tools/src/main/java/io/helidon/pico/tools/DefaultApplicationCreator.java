@@ -51,7 +51,7 @@ import io.helidon.pico.tools.spi.ApplicationCreator;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-import static io.helidon.pico.services.Utils.isQualifiedInjectionTarget;
+import static io.helidon.pico.services.ServiceUtils.isQualifiedInjectionTarget;
 
 /**
  * The default implementation for {@link io.helidon.pico.tools.spi.ApplicationCreator}.

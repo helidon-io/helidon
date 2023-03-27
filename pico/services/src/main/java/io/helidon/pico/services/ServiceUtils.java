@@ -30,9 +30,9 @@ import io.helidon.pico.ServiceProvider;
 /**
  * Public helpers around shared Pico services usages.
  */
-public class Utils {
+public final class ServiceUtils {
 
-    private Utils() {
+    private ServiceUtils() {
     }
 
     /**
@@ -77,7 +77,7 @@ public class Utils {
      * @return the description
      */
     public static List<String> toDescriptions(Collection<?> coll) {
-        return coll.stream().map(Utils::toDescription).collect(Collectors.toList());
+        return coll.stream().map(ServiceUtils::toDescription).collect(Collectors.toList());
     }
 
 }

@@ -38,7 +38,7 @@ public class DefaultServiceBinder implements ServiceBinder {
     private DefaultServiceBinder(PicoServices picoServices,
                                  String moduleName,
                                  boolean trusted) {
-        this.picoServices = Objects.requireNonNull(picoServices);
+        this.picoServices = picoServices;
         this.serviceRegistry = (ServiceBinder) picoServices.services();
         this.moduleName = moduleName;
         this.trusted = trusted;

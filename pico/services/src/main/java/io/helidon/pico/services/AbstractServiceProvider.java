@@ -68,7 +68,7 @@ import io.helidon.pico.spi.InjectionResolver;
 
 import jakarta.inject.Provider;
 
-import static io.helidon.pico.services.Utils.isQualifiedInjectionTarget;
+import static io.helidon.pico.services.ServiceUtils.isQualifiedInjectionTarget;
 
 /**
  * Abstract base implementation for {@link io.helidon.pico.ServiceProviderBindable}, which represents the basics for regular

@@ -49,7 +49,7 @@ public abstract class AbstractCreator {
     public static final String DEFAULT_TARGET = "11";
 
     // no special chars since this will be used as a package and class name
-    static final String NAME_PREFIX = /* PicoServicesConfig.NAME */ "Pico$$";
+    static final String NAME_PREFIX = "Pico$$";
     static final String PICO_FRAMEWORK_MODULE = PicoServicesConfig.FQN + ".services";
     static final String MODULE_NAME_SUFFIX = "Module";
 

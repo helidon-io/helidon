@@ -93,14 +93,14 @@ class HelloPicoWorldSanityTest {
         List<ServiceProvider<io.helidon.pico.Module>> moduleProviders = services.lookupAll(io.helidon.pico.Module.class);
         assertThat(moduleProviders.size(),
                    equalTo(EXPECTED_MODULES));
-        List<String> descriptions = Utils.toDescriptions(moduleProviders);
+        List<String> descriptions = ServiceUtils.toDescriptions(moduleProviders);
         assertThat(descriptions,
                    containsInAnyOrder("EmptyModule:ACTIVE", "HelloPicoModule:ACTIVE"));
 
         List<ServiceProvider<Application>> applications = services.lookupAll(Application.class);
         assertThat(applications.size(),
                    equalTo(1));
-        assertThat(Utils.toDescriptions(applications),
+        assertThat(ServiceUtils.toDescriptions(applications),
                    containsInAnyOrder("HelloPicoApplication:ACTIVE"));
     }
 

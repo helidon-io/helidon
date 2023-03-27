@@ -22,8 +22,8 @@ import java.util.Optional;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 
-import static io.helidon.pico.services.Utils.toDescription;
-import static io.helidon.pico.services.Utils.toDescriptions;
+import static io.helidon.pico.services.ServiceUtils.toDescription;
+import static io.helidon.pico.services.ServiceUtils.toDescriptions;
 
 /**
  * Demonstrates setter type injection points w/ qualifiers & optionals.

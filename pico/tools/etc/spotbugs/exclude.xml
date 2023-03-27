@@ -64,10 +64,7 @@
     </Match>
 
     <Match>
-        <Class name="io.helidon.pico.tools.DefaultApplicationCreator"/>
-        <Bug pattern="EQ_DOESNT_OVERRIDE_EQUALS"/>
-    </Match>
-    <Match>
+        <!-- package private/internal class IdAndToString does not need to implement equals() -->
         <Class name="io.helidon.pico.tools.DefaultInterceptorCreator$InterceptedMethodCodeGen"/>
         <Bug pattern="EQ_DOESNT_OVERRIDE_EQUALS"/>
     </Match>
