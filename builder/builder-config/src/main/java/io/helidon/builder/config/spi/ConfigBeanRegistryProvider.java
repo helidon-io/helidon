@@ -27,9 +27,8 @@ public interface ConfigBeanRegistryProvider {
     /**
      * The service-loaded global {@link BasicConfigBeanRegistry} instance.
      *
-     * @param <T> the config bean registry type
      * @return the global config bean registry instance
      */
-    <T extends BasicConfigBeanRegistry> T configBeanRegistry();
+    BasicConfigBeanRegistry configBeanRegistry();
 
 }

@@ -39,7 +39,6 @@ public class DefaultConfigBeanRegistryProvider implements ConfigBeanRegistryProv
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public BasicConfigBeanRegistry configBeanRegistry() {
         return INSTANCE.get();
     }

@@ -36,15 +36,13 @@ public class ConfigBeanRegistryHolder {
     /**
      * Provides the global service-loader instance of {@link BasicConfigBeanRegistry}.
      *
-     * @param <T> the config bean registry type
      * @return the config bean registry
      */
-    @SuppressWarnings("unchecked")
-    public static <T extends BasicConfigBeanRegistry> Optional<T> configBeanRegistry() {
-        return (Optional<T>) INSTANCE.get();
+    public static Optional<BasicConfigBeanRegistry> configBeanRegistry() {
+        return INSTANCE.get();
     }
 
-    private static <T extends BasicConfigBeanRegistry> Optional<T> load() {
+    private static Optional<BasicConfigBeanRegistry> load() {
         return HelidonServiceLoader
                 .create(ServiceLoader.load(ConfigBeanRegistryProvider.class, ConfigBeanRegistryProvider.class.getClassLoader()))
                 .asList()
