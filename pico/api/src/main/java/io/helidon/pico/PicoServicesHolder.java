@@ -68,7 +68,7 @@ public abstract class PicoServicesHolder {
     /**
      * Resets the bootstrap state.
      */
-    protected static synchronized void reset() {
+    protected static void reset() {
         ProviderAndServicesTuple instance = INSTANCE.get();
         if (instance != null) {
             instance.reset();

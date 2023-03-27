@@ -155,26 +155,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return annoTypes();
     }
 
-    ServicesToProcess servicesToProcess() {
-        return services;
-    }
-
-    /**
-     * The annotation types we handle.
-     *
-     * @return annotation types we handle
-     */
-    protected abstract Set<String> annoTypes();
-
-    /**
-     * If these annotation type names are found on the target then do not process.
-     *
-     * @return the set of annotation type names that should result in skipped processing for this processor type
-     */
-    protected Set<String> contraAnnotations() {
-        return Set.of();
-    }
-
     @Override
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
@@ -214,6 +194,90 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             throw new ToolsException("error during processing: " + t + " @ "
                                              + rootStackTraceElementOf(t), t);
         }
+    }
+
+    @Override
+    public void debug(String message,
+                      Throwable t) {
+        if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
+            if (logger.isLoggable(loggerLevel())) {
+                logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message, t);
+            }
+        }
+        if (processingEnv != null && processingEnv.getMessager() != null) {
+            processingEnv.getMessager().printMessage(Kind.OTHER, message);
+        }
+    }
+
+    @Override
+    public void debug(String message) {
+        if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
+            if (logger.isLoggable(loggerLevel())) {
+                logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message);
+            }
+        }
+        if (processingEnv != null && processingEnv.getMessager() != null) {
+            processingEnv.getMessager().printMessage(Kind.OTHER, message);
+        }
+    }
+
+    @Override
+    public void log(String message) {
+        //        logger.log(getLevel(), getClass().getSimpleName() + ": Note: " + message);
+        if (processingEnv != null && processingEnv.getMessager() != null) {
+            processingEnv.getMessager().printMessage(Kind.NOTE, message);
+        }
+    }
+
+    @Override
+    public void warn(String message,
+                     Throwable t) {
+        if (Options.isOptionEnabled(Options.TAG_DEBUG) && t != null) {
+            logger.log(Level.WARNING, getClass().getSimpleName() + ": Warning: " + message, t);
+            t.printStackTrace();
+        }
+        if (processingEnv != null && processingEnv.getMessager() != null) {
+            processingEnv.getMessager().printMessage(Kind.WARNING, message);
+        }
+    }
+
+    @Override
+    public void warn(String message) {
+        if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
+            logger.log(Level.WARNING, getClass().getSimpleName() + ": Warning: " + message);
+        }
+        if (processingEnv != null && processingEnv.getMessager() != null) {
+            processingEnv.getMessager().printMessage(Kind.WARNING, message);
+        }
+    }
+
+    @Override
+    public void error(String message,
+                      Throwable t) {
+        logger.log(Level.ERROR, getClass().getSimpleName() + ": Error: " + message, t);
+        if (processingEnv != null && processingEnv.getMessager() != null) {
+            processingEnv.getMessager().printMessage(Kind.ERROR, message);
+        }
+    }
+
+    /**
+     * The annotation types we handle.
+     *
+     * @return annotation types we handle
+     */
+    protected abstract Set<String> annoTypes();
+
+    /**
+     * If these annotation type names are found on the target then do not process.
+     *
+     * @return the set of annotation type names that should result in skipped processing for this processor type
+     */
+    protected Set<String> contraAnnotations() {
+        return Set.of();
+    }
+
+    ServicesToProcess servicesToProcess() {
+        return services;
     }
 
     private boolean containsAnyAnnotation(Element element,
@@ -783,70 +847,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
     Level loggerLevel() {
         return (Options.isOptionEnabled(Options.TAG_DEBUG)) ? Level.INFO : Level.DEBUG;
-    }
-
-    @Override
-    public void debug(String message,
-                      Throwable t) {
-        if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
-            if (logger.isLoggable(loggerLevel())) {
-                logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message, t);
-            }
-        }
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.OTHER, message);
-        }
-    }
-
-    @Override
-    public void debug(String message) {
-        if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
-            if (logger.isLoggable(loggerLevel())) {
-                logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message);
-            }
-        }
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.OTHER, message);
-        }
-    }
-
-    @Override
-    public void log(String message) {
-        //        logger.log(getLevel(), getClass().getSimpleName() + ": Note: " + message);
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.NOTE, message);
-        }
-    }
-
-    @Override
-    public void warn(String message,
-                     Throwable t) {
-        if (Options.isOptionEnabled(Options.TAG_DEBUG) && t != null) {
-            logger.log(Level.WARNING, getClass().getSimpleName() + ": Warning: " + message, t);
-            t.printStackTrace();
-        }
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.WARNING, message);
-        }
-    }
-
-    @Override
-    public void warn(String message) {
-        if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
-            logger.log(Level.WARNING, getClass().getSimpleName() + ": Warning: " + message);
-        }
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.WARNING, message);
-        }
-    }
-
-    @Override
-    public void error(String message,
-                      Throwable t) {
-        logger.log(Level.ERROR, getClass().getSimpleName() + ": Error: " + message, t);
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.ERROR, message);
-        }
     }
 
     static boolean hasValue(String val) {

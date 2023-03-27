@@ -68,7 +68,7 @@ public class DefaultPicoServicesProvider implements PicoServicesProvider, Resett
     }
 
     @Override
-    public synchronized boolean reset(boolean deep) {
+    public boolean reset(boolean deep) {
         DefaultPicoServices services = INSTANCE.get();
         boolean result = (services != null);
         if (services != null) {

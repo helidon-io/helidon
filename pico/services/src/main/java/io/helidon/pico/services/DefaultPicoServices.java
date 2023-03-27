@@ -185,6 +185,65 @@ class DefaultPicoServices implements PicoServices, Resettable {
         return Optional.ofNullable(result);
     }
 
+    @Override
+    // note that this is typically only called during testing, and also in the pico-maven-plugin
+    public boolean reset(boolean deep) {
+        try {
+            assertNotInitializing();
+            if (isInitializing() || isInitialized()) {
+                // we allow dynamic updates leading up to initialization - after that it should be prevented if not configured on
+                DefaultServices.assertPermitsDynamic(cfg);
+            }
+            boolean result = deep;
+
+            DefaultServices prev = services.get();
+            if (prev != null) {
+                boolean affected = prev.reset(deep);
+                result |= affected;
+            }
+
+            boolean affected = log.reset(deep);
+            result |= affected;
+
+            if (deep) {
+                isBinding.set(false);
+                moduleList.set(null);
+                applicationList.set(null);
+                if (prev != null) {
+                    services.set(new DefaultServices(cfg));
+                }
+                state.reset(true);
+                initializingServicesStarted.set(false);
+                initializingServicesFinished.set(false);
+                initializationCallingContext = null;
+            }
+
+            return result;
+        } catch (Exception e) {
+            throw new PicoException("failed to reset (state=" + state
+                                            + ", isInitialized=" + isInitialized()
+                                            + ", isInitializing=" + isInitializing() + ")", e);
+        }
+    }
+
+    /**
+     * Returns true if Pico is in the midst of initialization.
+     *
+     * @return true if initialization is underway
+     */
+    public boolean isInitializing() {
+        return initializingServicesStarted.get() && !initializingServicesFinished.get();
+    }
+
+    /**
+     * Returns true if Pico was initialized.
+     *
+     * @return true if already initialized
+     */
+    public boolean isInitialized() {
+        return initializingServicesStarted.get() && initializingServicesFinished.get();
+    }
+
     private Map<String, ActivationResult> doShutdown(DefaultServices services,
                                                      State state) {
         long start = System.currentTimeMillis();
@@ -302,65 +361,6 @@ class DefaultPicoServices implements PicoServices, Resettable {
         }
     }
 
-    @Override
-    // note that this is typically only called during testing, and also in the pico-maven-plugin
-    public synchronized boolean reset(boolean deep) {
-        try {
-            assertNotInitializing();
-            if (isInitializing() || isInitialized()) {
-                // we allow dynamic updates leading up to initialization - after that it should be prevented if not configured on
-                DefaultServices.assertPermitsDynamic(cfg);
-            }
-            boolean result = deep;
-
-            DefaultServices prev = services.get();
-            if (prev != null) {
-                boolean affected = prev.reset(deep);
-                result |= affected;
-            }
-
-            boolean affected = log.reset(deep);
-            result |= affected;
-
-            if (deep) {
-                isBinding.set(false);
-                moduleList.set(null);
-                applicationList.set(null);
-                if (prev != null) {
-                    services.set(new DefaultServices(cfg));
-                }
-                state.reset(true);
-                initializingServicesStarted.set(false);
-                initializingServicesFinished.set(false);
-                initializationCallingContext = null;
-            }
-
-            return result;
-        } catch (Exception e) {
-            throw new PicoException("failed to reset (state=" + state
-                                            + ", isInitialized=" + isInitialized()
-                                            + ", isInitializing=" + isInitializing() + ")", e);
-        }
-    }
-
-    /**
-     * Returns true if Pico is in the midst of initialization.
-     *
-     * @return true if initialization is underway
-     */
-    public boolean isInitializing() {
-        return initializingServicesStarted.get() && !initializingServicesFinished.get();
-    }
-
-    /**
-     * Returns true if Pico was initialized.
-     *
-     * @return true if already initialized
-     */
-    public boolean isInitialized() {
-        return initializingServicesStarted.get() && initializingServicesFinished.get();
-    }
-
     private void assertNotInitializing() {
         if (isBinding.get() || isInitializing()) {
             CallingContext initializationCallingContext = this.initializationCallingContext;
@@ -373,7 +373,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
         }
     }
 
-    private synchronized void initializeServices() {
+    private void initializeServices() {
         initializationCallingContext = CallingContextFactory.create(false).orElse(null);
 
         if (services.get() == null) {
@@ -476,8 +476,8 @@ class DefaultPicoServices implements PicoServices, Resettable {
         return result;
     }
 
-    protected void bindApplications(DefaultServices services,
-                                    Collection<Application> apps) {
+    private void bindApplications(DefaultServices services,
+                          Collection<Application> apps) {
         if (!cfg.usesCompileTimeApplications()) {
             LOGGER.log(System.Logger.Level.DEBUG, "application binding is disabled");
             return;

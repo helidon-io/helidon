@@ -76,47 +76,10 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     public CustomAnnotationProcessor() {
     }
 
-    static List<CustomAnnotationTemplateCreator> initialize() {
-        // note: it is important to use this class' CL since maven will not give us the "right" one.
-        List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(ServiceLoader.load(
-                        CustomAnnotationTemplateCreator.class, CustomAnnotationTemplateCreator.class.getClassLoader())).asList();
-        creators.forEach(creator -> {
-            try {
-                Set<String> annoTypes = creator.annoTypes();
-                annoTypes.forEach(annoType -> {
-                    PRODUCERS_BY_ANNOTATION.compute(DefaultTypeName.createFromTypeName(annoType), (k, v) -> {
-                        if (v == null) {
-                            v = new LinkedHashSet<>();
-                        }
-                        v.add(creator);
-                        return v;
-                    });
-                });
-                ALL_ANNO_TYPES_HANDLED.addAll(annoTypes);
-            } catch (Throwable t) {
-                System.Logger logger = System.getLogger(CustomAnnotationProcessor.class.getName());
-                ToolsException te = new ToolsException("failed to initialize creator: " + creator, t);
-                logger.log(System.Logger.Level.ERROR, te.getMessage(), te);
-                throw te;
-            }
-        });
-        return creators;
-    }
-
     @Override
     public void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
         logger().log(System.Logger.Level.DEBUG, CustomAnnotationTemplateCreator.class.getSimpleName() + "s: " + PRODUCERS);
-    }
-
-    @Override
-    protected Set<String> annoTypes() {
-        return Set.copyOf(ALL_ANNO_TYPES_HANDLED);
-    }
-
-    Set<CustomAnnotationTemplateCreator> producersForType(TypeName annoTypeName) {
-        Set<CustomAnnotationTemplateCreator> set = PRODUCERS_BY_ANNOTATION.get(annoTypeName);
-        return (set == null) ? null : Collections.unmodifiableSet(set);
     }
 
     @Override
@@ -140,6 +103,43 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             throw new ToolsException("error during processing: " + t + " @ "
                                              + Utils.rootStackTraceElementOf(t), t);
         }
+    }
+
+    @Override
+    protected Set<String> annoTypes() {
+        return Set.copyOf(ALL_ANNO_TYPES_HANDLED);
+    }
+
+    static List<CustomAnnotationTemplateCreator> initialize() {
+        // note: it is important to use this class' CL since maven will not give us the "right" one.
+        List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(ServiceLoader.load(
+                CustomAnnotationTemplateCreator.class, CustomAnnotationTemplateCreator.class.getClassLoader())).asList();
+        creators.forEach(creator -> {
+            try {
+                Set<String> annoTypes = creator.annoTypes();
+                annoTypes.forEach(annoType -> {
+                    PRODUCERS_BY_ANNOTATION.compute(DefaultTypeName.createFromTypeName(annoType), (k, v) -> {
+                        if (v == null) {
+                            v = new LinkedHashSet<>();
+                        }
+                        v.add(creator);
+                        return v;
+                    });
+                });
+                ALL_ANNO_TYPES_HANDLED.addAll(annoTypes);
+            } catch (Throwable t) {
+                System.Logger logger = System.getLogger(CustomAnnotationProcessor.class.getName());
+                ToolsException te = new ToolsException("failed to initialize creator: " + creator, t);
+                logger.log(System.Logger.Level.ERROR, te.getMessage(), te);
+                throw te;
+            }
+        });
+        return creators;
+    }
+
+    Set<CustomAnnotationTemplateCreator> producersForType(TypeName annoTypeName) {
+        Set<CustomAnnotationTemplateCreator> set = PRODUCERS_BY_ANNOTATION.get(annoTypeName);
+        return (set == null) ? null : Collections.unmodifiableSet(set);
     }
 
     void doInner(TypeName annoTypeName,
