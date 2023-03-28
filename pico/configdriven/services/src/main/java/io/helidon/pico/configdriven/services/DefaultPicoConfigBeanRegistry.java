@@ -253,36 +253,19 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
     }
 
     @Override
-    public Set<?> configBeansByConfigKey(String key,
-                                         Optional<String> optFullConfigKey) {
-        List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
-                configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
-        if (cspsUsingSameKey == null) {
-            return Set.of();
-        }
+    public Set<?> configBeansByConfigKey(String key) {
+        return configBeansByConfigKey(key, Optional.empty());
+    }
 
-        Set<Object> result = new LinkedHashSet<>();
-        cspsUsingSameKey.stream()
-                .filter(csp -> csp instanceof AbstractConfiguredServiceProvider)
-                .map(AbstractConfiguredServiceProvider.class::cast)
-                .forEach(csp -> {
-                    Map<String, ?> configBeans = csp.configBeanMap();
-                    if (optFullConfigKey.isEmpty()) {
-                        result.addAll(configBeans.values());
-                    } else {
-                        configBeans.forEach((k, v) -> {
-                            if (optFullConfigKey.get().equals(k)) {
-                                result.add(v);
-                            }
-                        });
-                    }
-                });
-        return result;
+    @Override
+    public Set<?> configBeansByConfigKey(String key,
+                                         String fullConfigKey) {
+        return configBeansByConfigKey(key, Optional.of(fullConfigKey));
     }
 
     @Override
     public Map<String, ?> configBeanMapByConfigKey(String key,
-                                                   Optional<String> optFullConfigKey) {
+                                                   String fullConfigKey) {
         List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
                 configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
         if (cspsUsingSameKey == null) {
@@ -296,7 +279,7 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
                 .forEach(csp -> {
                     Map<String, ?> configBeans = csp.configBeanMap();
                     configBeans.forEach((k, v) -> {
-                        if (optFullConfigKey.isEmpty() || optFullConfigKey.get().equals(k)) {
+                        if (fullConfigKey.isEmpty() || fullConfigKey.equals(k)) {
                             Object prev = result.put(k, v);
                             if (prev != null && prev != v) {
                                 throw new IllegalStateException("had two entries with the same key: " + prev + " and " + v);
@@ -524,6 +507,33 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
         }
 
         csp.registerConfigBean(instanceId, configBean);
+    }
+
+    private Set<?> configBeansByConfigKey(String key,
+                                          Optional<String> optFullConfigKey) {
+        List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
+                configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
+        if (cspsUsingSameKey == null) {
+            return Set.of();
+        }
+
+        Set<Object> result = new LinkedHashSet<>();
+        cspsUsingSameKey.stream()
+                .filter(csp -> csp instanceof AbstractConfiguredServiceProvider)
+                .map(AbstractConfiguredServiceProvider.class::cast)
+                .forEach(csp -> {
+                    Map<String, ?> configBeans = csp.configBeanMap();
+                    if (optFullConfigKey.isEmpty()) {
+                        result.addAll(configBeans.values());
+                    } else {
+                        configBeans.forEach((k, v) -> {
+                            if (optFullConfigKey.get().equals(k)) {
+                                result.add(v);
+                            }
+                        });
+                    }
+                });
+        return result;
     }
 
     private void initialize(Config commonCfg) {

@@ -120,7 +120,7 @@ class DefaultConfigResolver extends HelidonConfigResolver {
         DefaultPicoConfigBeanRegistry cbr = (DefaultPicoConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry()
                 .orElseThrow();
         String fullConfigKey = fullConfigKeyOf(safeDowncastOf(ctx.config()), request.configKey(), meta);
-        Set<?> result = cbr.configBeansByConfigKey(request.configKey(), Optional.of(fullConfigKey));
+        Set<?> result = cbr.configBeansByConfigKey(request.configKey(), fullConfigKey);
         return new ArrayList<>(result);
     }
 
@@ -135,7 +135,7 @@ class DefaultConfigResolver extends HelidonConfigResolver {
         DefaultPicoConfigBeanRegistry cbr = (DefaultPicoConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry()
                 .orElseThrow();
         String fullConfigKey = fullConfigKeyOf(safeDowncastOf(ctx.config()), request.configKey(), meta);
-        Map<String, ?> result = cbr.configBeanMapByConfigKey(request.configKey(), Optional.of(fullConfigKey));
+        Map<String, ?> result = cbr.configBeanMapByConfigKey(request.configKey(), fullConfigKey);
         return Objects.requireNonNull((Map<String, Object>) result);
     }
 

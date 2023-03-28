@@ -18,7 +18,6 @@ package io.helidon.pico.configdriven.configuredby.test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -100,7 +99,7 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
                                       "fake-server"
         ));
 
-        Set<?> configBeans = cbr.configBeansByConfigKey("fake-server", Optional.empty());
+        Set<?> configBeans = cbr.configBeansByConfigKey("fake-server");
         assertThat(configBeans.toString(), configBeans.size(),
                    is(1));
 

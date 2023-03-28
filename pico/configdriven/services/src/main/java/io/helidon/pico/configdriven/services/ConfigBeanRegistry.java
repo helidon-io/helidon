@@ -18,7 +18,6 @@ package io.helidon.pico.configdriven.services;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.config.spi.ConfigBeanInfo;
@@ -56,26 +55,37 @@ public interface ConfigBeanRegistry extends HelidonConfigBeanRegistry {
     List<ConfiguredServiceProvider<?, ?>> configuredServiceProviders();
 
     /**
-     * These are the managed/slave service providers that are associated with config bean instances with the config key provided.
+     * These are the managed/slave service providers that are associated with config bean instances with the config {@code key}
+     * provided.
      *
-     * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
-     *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
+     * @param key the config options key - note that this is a partial key - and not relative to the parent - the same
+     *            key used by {@link io.helidon.builder.config.ConfigBean#value()}.
      * @return the list of configured services
      */
     List<ConfiguredServiceProvider<?, ?>> configuredServiceProvidersConfiguredBy(String key);
 
     /**
-     * Returns all the known config beans in order of rank given the short config key / alias. Callers should understand
-     * that this list might be incomplete until ready state is reached (see {@link #ready()}).
+     * Returns all the known config beans in order of rank given the {@code key}. Callers should understand
+     * that this list might be incomplete until ready state is reached (see {@link #ready()}). Note also that callers should
+     * attempt to use {@link #configBeansByConfigKey(String)} whenever possible since it will generate more precise matches.
      *
      * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
      *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
-     * @param fullConfigKey optionally, the full config key - if not passed will return the list of all matches
-     *                      using just the key
      * @return the set of known config keys
      */
+    Set<?> configBeansByConfigKey(String key);
+
+    /**
+     * Returns all the known config beans in order of rank matching the {@code key} and {@code fullConfigKey}. Callers should
+     * understand that this list might be incomplete until ready state is reached (see {@link #ready()}).
+     *
+     * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
+     *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
+     * @param fullConfigKey the full config key
+     * @return the set of known config keys matching the provided criteria
+     */
     Set<?> configBeansByConfigKey(String key,
-                                  Optional<String> fullConfigKey);
+                                  String fullConfigKey);
 
     /**
      * Similar to {@link #configBeansByConfigKey}, but instead returns all the known config beans in a
@@ -83,11 +93,10 @@ public interface ConfigBeanRegistry extends HelidonConfigBeanRegistry {
      *
      * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
      *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
-     * @param fullConfigKey optionally, the full config key - if not passed will return the list of all matches
-     *                      using just the key
-     * @return the map of known config keys
+     * @param fullConfigKey the full config key
+     * @return the map of known config keys to config beans
      */
     Map<String, ?> configBeanMapByConfigKey(String key,
-                                            Optional<String> fullConfigKey);
+                                            String fullConfigKey);
 
 }
