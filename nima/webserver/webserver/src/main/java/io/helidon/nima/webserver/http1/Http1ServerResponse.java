@@ -16,6 +16,7 @@
 
 package io.helidon.nima.webserver.http1;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -177,7 +178,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                                      request,
                                                      keepAlive);
 
-        return contentEncode(outputStream);
+        return new BufferedOutputStream(contentEncode(outputStream));
     }
 
     @Override
