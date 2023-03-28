@@ -237,7 +237,6 @@ public final class TypeTools extends BuilderTypeTools {
                     result.put(propertyName, stringValue);
                 }
             } catch (Throwable ignored) {
-                assert (true); // for setting breakpoints in debug
             }
         }
         return result;
@@ -1111,7 +1110,6 @@ public final class TypeTools extends BuilderTypeTools {
                             || isListType(typeArgClassName)
                             || typeArgClassName.equals(Collections.class.getName())) {
                         // not handled
-                        assert (true);   // left here for debugging purposes
                     } else if (isProviderType(typeArgClassName)) {
                         isProvider = true;
                         varTypeName = toClassRefSignature(typeArgSig.getTypeArguments().get(0), enclosingElem).toString();
@@ -1190,7 +1188,6 @@ public final class TypeTools extends BuilderTypeTools {
                                 || isListType(varTypeName)
                                 || varTypeName.equals(Collections.class.getName())) {
                             // not handled
-                            assert (true);   // left here for debugging purposes
                         } else if (isProviderType(varTypeName)) {
                             isProvider = true;
                             varTypeName = declaredTypeMirror.getTypeArguments().get(0).toString();

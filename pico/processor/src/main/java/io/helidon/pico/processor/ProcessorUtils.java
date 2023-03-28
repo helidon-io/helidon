@@ -26,8 +26,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-final class Utils {
-    private Utils() {
+final class ProcessorUtils {
+    private ProcessorUtils() {
     }
 
     /**

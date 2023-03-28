@@ -23,26 +23,27 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 
 /**
- * Provides access to the active {@link io.helidon.builder.config.spi.BasicConfigBeanRegistry} instance.
+ * Provides access to the active {@link HelidonConfigBeanRegistry} instance.
  *
- * @see BasicConfigBeanRegistry
+ * @see HelidonConfigBeanRegistry
  */
 public class ConfigBeanRegistryHolder {
-    private static final LazyValue<Optional<BasicConfigBeanRegistry>> INSTANCE = LazyValue.create(ConfigBeanRegistryHolder::load);
+    private static final LazyValue<Optional<HelidonConfigBeanRegistry>> INSTANCE
+            = LazyValue.create(ConfigBeanRegistryHolder::load);
 
     private ConfigBeanRegistryHolder() {
     }
 
     /**
-     * Provides the global service-loader instance of {@link BasicConfigBeanRegistry}.
+     * Provides the global service-loader instance of {@link HelidonConfigBeanRegistry}.
      *
      * @return the config bean registry
      */
-    public static Optional<BasicConfigBeanRegistry> configBeanRegistry() {
+    public static Optional<HelidonConfigBeanRegistry> configBeanRegistry() {
         return INSTANCE.get();
     }
 
-    private static Optional<BasicConfigBeanRegistry> load() {
+    private static Optional<HelidonConfigBeanRegistry> load() {
         return HelidonServiceLoader
                 .create(ServiceLoader.load(ConfigBeanRegistryProvider.class, ConfigBeanRegistryProvider.class.getClassLoader()))
                 .asList()

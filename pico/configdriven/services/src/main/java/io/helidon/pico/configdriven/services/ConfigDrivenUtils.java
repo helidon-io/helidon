@@ -22,9 +22,9 @@ import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.config.Config;
 import io.helidon.pico.ServiceInfoCriteria;
 
-class Utils {
+final class ConfigDrivenUtils {
 
-    private Utils() {
+    private ConfigDrivenUtils() {
     }
 
     static boolean isBlank(ServiceInfoCriteria criteria) {

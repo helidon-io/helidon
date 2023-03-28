@@ -18,6 +18,7 @@ package io.helidon.pico;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.builder.Builder;
 import io.helidon.common.types.AnnotationAndValue;
@@ -65,7 +66,7 @@ public interface InvocationContext {
      *
      * @return the method/element argument info
      */
-    TypedElementName[] elementArgInfo();
+    Optional<TypedElementName[]> elementArgInfo();
 
     /**
      * The interceptor chain.

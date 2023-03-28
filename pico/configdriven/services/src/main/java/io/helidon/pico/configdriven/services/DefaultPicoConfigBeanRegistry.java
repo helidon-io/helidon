@@ -46,34 +46,80 @@ import io.helidon.pico.PicoServices;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.services.ServiceProviderComparator;
 
-import static io.helidon.pico.configdriven.services.Utils.hasValue;
-import static io.helidon.pico.configdriven.services.Utils.safeDowncastOf;
-import static io.helidon.pico.configdriven.services.Utils.toNumeric;
-import static io.helidon.pico.configdriven.services.Utils.validatedConfigKey;
+import static io.helidon.pico.configdriven.services.ConfigDrivenUtils.hasValue;
+import static io.helidon.pico.configdriven.services.ConfigDrivenUtils.safeDowncastOf;
+import static io.helidon.pico.configdriven.services.ConfigDrivenUtils.toNumeric;
+import static io.helidon.pico.configdriven.services.ConfigDrivenUtils.validatedConfigKey;
 
 /**
  * The default implementation for {@link ConfigBeanRegistry}.
  */
 @SuppressWarnings("unchecked")
-class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
+class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
     /**
      * The default config bean instance id.
      */
     static final String DEFAULT_INSTANCE_ID = "@default";
 
-    private static final System.Logger LOGGER = System.getLogger(DefaultConfigBeanRegistry.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DefaultPicoConfigBeanRegistry.class.getName());
 
     private static final boolean FORCE_VALIDATE_USING_BEAN_ATTRIBUTES = false;
     private static final boolean FORCE_VALIDATE_USING_CONFIG_ATTRIBUTES = true;
 
     private final AtomicBoolean initializing = new AtomicBoolean();
-    private CountDownLatch initialized = new CountDownLatch(1);
     private final Map<ConfiguredServiceProvider<?, ?>, ConfigBeanInfo> configuredServiceProviderMetaConfigBeanMap =
             new ConcurrentHashMap<>();
     private final Map<String, List<ConfiguredServiceProvider<?, ?>>> configuredServiceProvidersByConfigKey =
             new ConcurrentHashMap<>();
+    private CountDownLatch initialized = new CountDownLatch(1);
 
-    DefaultConfigBeanRegistry() {
+    DefaultPicoConfigBeanRegistry() {
+    }
+
+    static boolean validateUsingConfigAttributes(String instanceId,
+                                                 String attrName,
+                                                 String attrConfigKey,
+                                                 Config config,
+                                                 Supplier<Object> beanBasedValueSupplier,
+                                                 Set<String> problems) {
+        if (config == null) {
+            if (!DEFAULT_INSTANCE_ID.equals(instanceId)) {
+                problems.add("Unable to obtain backing config for service provider for " + attrConfigKey);
+            }
+
+            return false;
+        } else {
+            Config attrConfig = config.get(attrConfigKey);
+            if (attrConfig.exists()) {
+                return true;
+            }
+
+            // if we have a default value from our bean, then that is the fallback verification
+            Object val = beanBasedValueSupplier.get();
+            if (val == null) {
+                problems.add("'" + attrConfigKey + "' is a required configuration for attribute '" + attrName + "'");
+                return true;
+            }
+
+            // full through to bean validation next, just for any added checks we might do there
+            return false;
+        }
+    }
+
+    static void validateUsingBeanAttributes(Supplier<Object> valueSupplier,
+                                            String attrName,
+                                            Set<String> problems) {
+        Object val = valueSupplier.get();
+        if (val == null) {
+            problems.add("'" + attrName + "' is a required attribute and cannot be null");
+        } else {
+            if (!(val instanceof String)) {
+                val = val.toString();
+            }
+            if (!hasValue((String) val)) {
+                problems.add("'" + attrName + "' is a required attribute and cannot be blank");
+            }
+        }
     }
 
     @Override
@@ -207,8 +253,8 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     }
 
     @Override
-    public <CB> Set<CB> configBeansByConfigKey(String key,
-                                               Optional<String> optFullConfigKey) {
+    public Set<?> configBeansByConfigKey(String key,
+                                         Optional<String> optFullConfigKey) {
         List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
                 configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
         if (cspsUsingSameKey == null) {
@@ -231,19 +277,19 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                         });
                     }
                 });
-        return (Set<CB>) result;
+        return result;
     }
 
     @Override
-    public <CB> Map<String, CB> configBeanMapByConfigKey(String key,
-                                                         Optional<String> optFullConfigKey) {
+    public Map<String, ?> configBeanMapByConfigKey(String key,
+                                                   Optional<String> optFullConfigKey) {
         List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
                 configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
         if (cspsUsingSameKey == null) {
             return Map.of();
         }
 
-        Map<String, CB> result = new TreeMap<>(AbstractConfiguredServiceProvider.configBeanComparator());
+        Map<String, Object> result = new TreeMap<>(AbstractConfiguredServiceProvider.configBeanComparator());
         cspsUsingSameKey.stream()
                 .filter(csp -> csp instanceof AbstractConfiguredServiceProvider)
                 .map(AbstractConfiguredServiceProvider.class::cast)
@@ -251,7 +297,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                     Map<String, ?> configBeans = csp.configBeanMap();
                     configBeans.forEach((k, v) -> {
                         if (optFullConfigKey.isEmpty() || optFullConfigKey.get().equals(k)) {
-                            Object prev = result.put(k, (CB) v);
+                            Object prev = result.put(k, v);
                             if (prev != null && prev != v) {
                                 throw new IllegalStateException("had two entries with the same key: " + prev + " and " + v);
                             }
@@ -287,6 +333,197 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
 
     protected boolean isInitialized() {
         return (0 == initialized.getCount());
+    }
+
+    <T, CB> void loadConfigBeans(io.helidon.config.Config config,
+                                 ConfiguredServiceProvider<T, CB> configuredServiceProvider,
+                                 ConfigBeanInfo metaConfigBeanInfo,
+                                 Map<String, Map<String, Object>> metaAttributes) {
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            LOGGER.log(System.Logger.Level.DEBUG, "Loading config bean(s) for "
+                    + configuredServiceProvider.serviceType() + " with config: "
+                    + config.key().toString());
+        }
+
+        ConfigValue<List<io.helidon.config.Config>> nodeList = config.asNodeList();
+        Object baseConfigBean = maybeLoadBaseConfigBean(config, nodeList, configuredServiceProvider);
+        Map<String, CB> mapOfInstanceBasedConfig = maybeLoadConfigBeans(nodeList, configuredServiceProvider);
+
+        // validate what we've loaded, to ensure it complies to the meta config info policy
+        if (!metaConfigBeanInfo.repeatable() && !mapOfInstanceBasedConfig.isEmpty()) {
+            throw new ConfigException("Expected to only have a single base, non-repeatable configuration for "
+                                              + configuredServiceProvider.serviceType() + " with config: "
+                                              + config.key().toString());
+        }
+
+        if (baseConfigBean != null) {
+            registerConfigBean(baseConfigBean, null, config, configuredServiceProvider, metaAttributes);
+        }
+        mapOfInstanceBasedConfig
+                .forEach((instanceId, configBean) ->
+                                 registerConfigBean(configBean,
+                                                    config.key().toString() + "." + instanceId,
+                                                    config.get(instanceId),
+                                                    configuredServiceProvider,
+                                                    metaAttributes));
+    }
+
+    /**
+     * The base config bean must be a root config, and is only available if there is a non-numeric
+     * key in our node list (e.g., "x.y" not "x.1.y").
+     */
+    <T, CB> CB maybeLoadBaseConfigBean(io.helidon.config.Config config,
+                                       ConfigValue<List<io.helidon.config.Config>> nodeList,
+                                       ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
+        boolean hasAnyNonNumericNodes = nodeList.get().stream()
+                .anyMatch(cfg -> toNumeric(cfg.name()).isEmpty());
+        if (!hasAnyNonNumericNodes) {
+            return null;
+        }
+
+        return toConfigBean(config, configuredServiceProvider);
+    }
+
+    /**
+     * These are any {config}.N instances, not the base w/o the N.
+     */
+    <T, CB> Map<String, CB> maybeLoadConfigBeans(ConfigValue<List<io.helidon.config.Config>> nodeList,
+                                                 ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
+        Map<String, CB> result = new LinkedHashMap<>();
+
+        nodeList.get().stream()
+                .filter(cfg -> toNumeric(cfg.name()).isPresent())
+                .map(ConfigDrivenUtils::safeDowncastOf)
+                .forEach(cfg -> {
+                    String key = cfg.name();
+                    CB configBean = toConfigBean(cfg, configuredServiceProvider);
+                    Object prev = result.put(key, configBean);
+                    assert (prev == null) : prev + " and " + configBean;
+                });
+
+        return result;
+    }
+
+    <T, CB> CB toConfigBean(io.helidon.config.Config config,
+                            ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
+        CB configBean = Objects.requireNonNull(configuredServiceProvider.toConfigBean(config),
+                                               "unable to create default config bean for " + configuredServiceProvider);
+        if (configuredServiceProvider instanceof AbstractConfiguredServiceProvider) {
+            AbstractConfiguredServiceProvider<T, CB> csp = (AbstractConfiguredServiceProvider<T, CB>) configuredServiceProvider;
+            csp.configBeanInstanceId(configBean, config.key().toString());
+        }
+
+        return configBean;
+    }
+
+    /**
+     * Validates the config bean against the declared policy, coming by way of annotations on the
+     * {@code ConfiguredOption}'s.
+     *
+     * @param csp            the configured service provider
+     * @param key            the config key being validated (aka instance id)
+     * @param configBean     the config bean itself
+     * @param metaAttributes the meta-attributes that captures the policy in a map like structure by attribute name
+     * @throws PicoServiceProviderException if the provided config bean is not validated according to policy
+     */
+    void validate(Object configBean,
+                  String key,
+                  Config config,
+                  AbstractConfiguredServiceProvider<Object, Object> csp,
+                  Map<String, Map<String, Object>> metaAttributes) {
+        Set<String> problems = new LinkedHashSet<>();
+        String instanceId = csp.toConfigBeanInstanceId(configBean);
+        assert (hasValue(key));
+        assert (config == null || DEFAULT_INSTANCE_ID.equals(key) || (config.key().toString().equals(key)))
+                : key + " and " + config.key().toString();
+
+        AttributeVisitor<Object> visitor = new AttributeVisitor<>() {
+            @Override
+            public void visit(String attrName,
+                              Supplier<Object> valueSupplier,
+                              Map<String, Object> meta,
+                              Object userDefinedCtx,
+                              Class<?> type,
+                              Class<?>... typeArgument) {
+                Map<String, Object> metaAttrPolicy = metaAttributes.get(attrName);
+                if (metaAttrPolicy == null) {
+                    problems.add("Unable to query policy for config key '" + key + "'");
+                    return;
+                }
+
+                Object required = metaAttrPolicy.get("required");
+                String attrConfigKey = (String) Objects.requireNonNull(metaAttrPolicy.get("key"));
+
+                if (required == null) {
+                    required = ConfiguredOption.DEFAULT_REQUIRED;
+                } else if (!(required instanceof Boolean)) {
+                    required = Boolean.parseBoolean((String) required);
+                }
+
+                if ((boolean) required) {
+                    boolean validated = false;
+
+                    if (FORCE_VALIDATE_USING_CONFIG_ATTRIBUTES) {
+                        validated = validateUsingConfigAttributes(
+                                instanceId, attrName, attrConfigKey, config, valueSupplier, problems);
+                    }
+
+                    if (!validated || FORCE_VALIDATE_USING_BEAN_ATTRIBUTES) {
+                        validateUsingBeanAttributes(valueSupplier, attrName, problems);
+                    }
+                }
+
+                // https://github.com/helidon-io/helidon/issues/6403 : "allowed values" check needed here also!
+            }
+        };
+
+        csp.visitAttributes(configBean, visitor, configBean);
+
+        if (!problems.isEmpty()) {
+            throw new PicoServiceProviderException("validation rules violated for "
+                                                           + csp.configBeanType()
+                                                           + " with config key '" + key
+                                                           + "':\n"
+                                                           + String.join(", ", problems).trim(), null, csp);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    <CB> void registerConfigBean(Object configBean,
+                                 String instanceId,
+                                 Config config,
+                                 ConfiguredServiceProvider<?, CB> configuredServiceProvider,
+                                 Map<String, Map<String, Object>> metaAttributes) {
+        assert (configuredServiceProvider instanceof AbstractConfiguredServiceProvider);
+        AbstractConfiguredServiceProvider<Object, Object> csp =
+                (AbstractConfiguredServiceProvider<Object, Object>) configuredServiceProvider;
+
+        if (instanceId != null) {
+            csp.configBeanInstanceId(configBean, instanceId);
+        } else {
+            instanceId = configuredServiceProvider.toConfigBeanInstanceId((CB) configBean);
+        }
+
+        if (DEFAULT_INSTANCE_ID.equals(instanceId)) {
+            // default config beans should not be validated against any config, even if we have it available
+            config = null;
+        } else {
+            Optional<Config> beanConfig = csp.rawConfig();
+            if (beanConfig.isPresent()) {
+                // prefer to use the bean's config over ours if it has it
+                config = beanConfig.get();
+            }
+        }
+
+        // will throw if not valid
+        validate(configBean, instanceId, config, csp, metaAttributes);
+
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            LOGGER.log(System.Logger.Level.DEBUG,
+                       "Registering config bean '" + instanceId + "' with " + configuredServiceProvider.serviceType());
+        }
+
+        csp.registerConfigBean(instanceId, configBean);
     }
 
     private void initialize(Config commonCfg) {
@@ -362,243 +599,6 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                 visitAndInitialize(config.asNodeList().get(), depth + 1);
             }
         });
-    }
-
-    <T, CB> void loadConfigBeans(io.helidon.config.Config config,
-                                 ConfiguredServiceProvider<T, CB> configuredServiceProvider,
-                                 ConfigBeanInfo metaConfigBeanInfo,
-                                 Map<String, Map<String, Object>> metaAttributes) {
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            LOGGER.log(System.Logger.Level.DEBUG, "Loading config bean(s) for "
-                    + configuredServiceProvider.serviceType() + " with config: "
-                    + config.key().toString());
-        }
-
-        ConfigValue<List<io.helidon.config.Config>> nodeList = config.asNodeList();
-        Object baseConfigBean = maybeLoadBaseConfigBean(config, nodeList, configuredServiceProvider);
-        Map<String, CB> mapOfInstanceBasedConfig = maybeLoadConfigBeans(nodeList, configuredServiceProvider);
-
-        // validate what we've loaded, to ensure it complies to the meta config info policy
-        if (!metaConfigBeanInfo.repeatable() && !mapOfInstanceBasedConfig.isEmpty()) {
-            throw new ConfigException("Expected to only have a single base, non-repeatable configuration for "
-                                              + configuredServiceProvider.serviceType() + " with config: "
-                                              + config.key().toString());
-        }
-
-        if (baseConfigBean != null) {
-            registerConfigBean(baseConfigBean, null, config, configuredServiceProvider, metaAttributes);
-        }
-        mapOfInstanceBasedConfig
-                .forEach((instanceId, configBean) ->
-                    registerConfigBean(configBean,
-                                       config.key().toString() + "." + instanceId,
-                                       config.get(instanceId),
-                                       configuredServiceProvider,
-                                       metaAttributes));
-    }
-
-    /**
-     * The base config bean must be a root config, and is only available if there is a non-numeric
-     * key in our node list (e.g., "x.y" not "x.1.y").
-     */
-    <T, CB> CB maybeLoadBaseConfigBean(io.helidon.config.Config config,
-                                       ConfigValue<List<io.helidon.config.Config>> nodeList,
-                                       ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
-        boolean hasAnyNonNumericNodes = nodeList.get().stream()
-               .anyMatch(cfg -> toNumeric(cfg.name()).isEmpty());
-        if (!hasAnyNonNumericNodes) {
-            return null;
-        }
-
-        return toConfigBean(config, configuredServiceProvider);
-    }
-
-    /**
-     * These are any {config}.N instances, not the base w/o the N.
-     */
-    <T, CB> Map<String, CB> maybeLoadConfigBeans(ConfigValue<List<io.helidon.config.Config>> nodeList,
-                                                 ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
-        Map<String, CB> result = new LinkedHashMap<>();
-
-        nodeList.get().stream()
-                .filter(cfg -> toNumeric(cfg.name()).isPresent())
-                .map(Utils::safeDowncastOf)
-                .forEach(cfg -> {
-            String key = cfg.name();
-            CB configBean = toConfigBean(cfg, configuredServiceProvider);
-            Object prev = result.put(key, configBean);
-            assert (prev == null) : prev + " and " + configBean;
-        });
-
-        return result;
-    }
-
-    <T, CB> CB toConfigBean(io.helidon.config.Config config,
-                            ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
-        CB configBean = Objects.requireNonNull(configuredServiceProvider.toConfigBean(config),
-                                               "unable to create default config bean for " + configuredServiceProvider);
-        if (configuredServiceProvider instanceof AbstractConfiguredServiceProvider) {
-            AbstractConfiguredServiceProvider<T, CB> csp = (AbstractConfiguredServiceProvider<T, CB>) configuredServiceProvider;
-            csp.configBeanInstanceId(configBean, config.key().toString());
-        }
-
-        return configBean;
-    }
-
-    /**
-     * Validates the config bean against the declared policy, coming by way of annotations on the
-     * {@code ConfiguredOption}'s.
-     *
-     * @param csp                       the configured service provider
-     * @param key                       the config key being validated (aka instance id)
-     * @param configBean                the config bean itself
-     * @param metaAttributes            the meta-attributes that captures the policy in a map like structure by attribute name
-     * @throws PicoServiceProviderException if the provided config bean is not validated according to policy
-     */
-    <T> void validate(Object configBean,
-                      String key,
-                      Config config,
-                      AbstractConfiguredServiceProvider<T, Object> csp,
-                      Map<String, Map<String, Object>> metaAttributes) {
-        Set<String> problems = new LinkedHashSet<>();
-        String instanceId = csp.toConfigBeanInstanceId(configBean);
-        assert (hasValue(key));
-        assert (config == null || DEFAULT_INSTANCE_ID.equals(key) || (config.key().toString().equals(key)))
-                : key + " and " + config.key().toString();
-
-        AttributeVisitor<Object> visitor = new AttributeVisitor<>() {
-            @Override
-            public void visit(String attrName,
-                              Supplier<Object> valueSupplier,
-                              Map<String, Object> meta,
-                              Object userDefinedCtx,
-                              Class<?> type,
-                              Class<?>... typeArgument) {
-                Map<String, Object> metaAttrPolicy = metaAttributes.get(attrName);
-                if (metaAttrPolicy == null) {
-                    problems.add("Unable to query policy for config key '" + key + "'");
-                    return;
-                }
-
-                Object required = metaAttrPolicy.get("required");
-                String attrConfigKey = (String) Objects.requireNonNull(metaAttrPolicy.get("key"));
-
-                if (required == null) {
-                    required = ConfiguredOption.DEFAULT_REQUIRED;
-                } else if (!(required instanceof Boolean)) {
-                    required = Boolean.parseBoolean((String) required);
-                }
-
-                if ((boolean) required) {
-                    boolean validated = false;
-
-                    if (FORCE_VALIDATE_USING_CONFIG_ATTRIBUTES) {
-                        validated = validateUsingConfigAttributes(
-                                instanceId, attrName, attrConfigKey, config, valueSupplier, problems);
-                    }
-
-                    if (!validated || FORCE_VALIDATE_USING_BEAN_ATTRIBUTES) {
-                        validateUsingBeanAttributes(valueSupplier, attrName, problems);
-                    }
-                }
-
-                // https://github.com/helidon-io/helidon/issues/6403 : "allowed values" check needed here also!
-            }
-        };
-
-        csp.visitAttributes(configBean, visitor, configBean);
-
-        if (!problems.isEmpty()) {
-            throw new PicoServiceProviderException("validation rules violated for "
-                                                           + csp.configBeanType()
-                                                           + " with config key '" + key
-                                                           + "':\n"
-                                                           + String.join(", ", problems).trim(), null, csp);
-        }
-    }
-
-    static boolean validateUsingConfigAttributes(String instanceId,
-                                                 String attrName,
-                                                 String attrConfigKey,
-                                                 Config config,
-                                                 Supplier<Object> beanBasedValueSupplier,
-                                                 Set<String> problems) {
-        if (config == null) {
-            if (!DEFAULT_INSTANCE_ID.equals(instanceId)) {
-                problems.add("Unable to obtain backing config for service provider for " + attrConfigKey);
-            }
-
-            return false;
-        } else {
-            Config attrConfig = config.get(attrConfigKey);
-            if (attrConfig.exists()) {
-                return true;
-            }
-
-            // if we have a default value from our bean, then that is the fallback verification
-            Object val = beanBasedValueSupplier.get();
-            if (val == null) {
-                problems.add("'" + attrConfigKey + "' is a required configuration for attribute '" + attrName + "'");
-                return true;
-            }
-
-            // full through to bean validation next, just for any added checks we might do there
-            return false;
-        }
-    }
-
-    static void validateUsingBeanAttributes(Supplier<Object> valueSupplier,
-                                            String attrName,
-                                            Set<String> problems) {
-        Object val = valueSupplier.get();
-        if (val == null) {
-            problems.add("'" + attrName + "' is a required attribute and cannot be null");
-        } else {
-            if (!(val instanceof String)) {
-                val = val.toString();
-            }
-            if (!hasValue((String) val)) {
-                problems.add("'" + attrName + "' is a required attribute and cannot be blank");
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    <CB> void registerConfigBean(Object configBean,
-                                 String instanceId,
-                                 Config config,
-                                 ConfiguredServiceProvider<?, CB> configuredServiceProvider,
-                                 Map<String, Map<String, Object>> metaAttributes) {
-        assert (configuredServiceProvider instanceof AbstractConfiguredServiceProvider);
-        AbstractConfiguredServiceProvider<?, Object> csp =
-                (AbstractConfiguredServiceProvider<?, Object>) configuredServiceProvider;
-
-        if (instanceId != null) {
-            csp.configBeanInstanceId(configBean, instanceId);
-        } else {
-            instanceId = configuredServiceProvider.toConfigBeanInstanceId((CB) configBean);
-        }
-
-        if (DEFAULT_INSTANCE_ID.equals(instanceId)) {
-            // default config beans should not be validated against any config, even if we have it available
-            config = null;
-        } else {
-            Optional<Config> beanConfig = csp.rawConfig();
-            if (beanConfig.isPresent()) {
-                // prefer to use the bean's config over ours if it has it
-                config = beanConfig.get();
-            }
-        }
-
-        // will throw if not valid
-        validate(configBean, instanceId, config, csp, metaAttributes);
-
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            LOGGER.log(System.Logger.Level.DEBUG,
-                       "Registering config bean '" + instanceId + "' with " + configuredServiceProvider.serviceType());
-        }
-
-        csp.registerConfigBean(instanceId, configBean);
     }
 
 }

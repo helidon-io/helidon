@@ -22,11 +22,10 @@ import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.Resettable;
 
 /**
- * Internal, SPI-like functionality.
- * Note: normally these methods are deemed internal-only, and should therefore not be called directly by end-consumers
- * of the {@link ConfigBeanRegistry} API.
+ * Provides bindable extensions to the {@link ConfigBeanRegistry}. Typically needed for internal processing only, and not expected
+ * to be called in normal use case scenarios.
  */
-public interface InternalConfigBeanRegistry extends ConfigBeanRegistry, Resettable {
+public interface BindableConfigBeanRegistry extends ConfigBeanRegistry, Resettable {
 
     /**
      * Binds a {@link ConfiguredServiceProvider} to the

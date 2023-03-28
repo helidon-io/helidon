@@ -30,11 +30,11 @@ import io.helidon.pico.services.AbstractServiceProvider;
  *
  * @param <T> the service type
  */
-public class BasicSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
+public class ReflectionBasedSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
     private final Class<T> serviceType;
 
-    private BasicSingletonServiceProvider(Class<T> serviceType,
-                                          ServiceInfo serviceInfo) {
+    private ReflectionBasedSingletonServiceProvider(Class<T> serviceType,
+                                                    ServiceInfo serviceInfo) {
         this.serviceType = serviceType;
         serviceInfo(serviceInfo);
     }
@@ -60,8 +60,8 @@ public class BasicSingletonServiceProvider<T> extends AbstractServiceProvider<T>
      * @return the service provider capable of being bound to the services registry
      * @see io.helidon.pico.testing.PicoTestingSupport#bind(io.helidon.pico.PicoServices, io.helidon.pico.ServiceProvider)
      */
-    public static <T> BasicSingletonServiceProvider<T> create(Class<T> serviceType,
-                                                              ServiceInfoBasics siBasics) {
+    public static <T> ReflectionBasedSingletonServiceProvider<T> create(Class<T> serviceType,
+                                                                        ServiceInfoBasics siBasics) {
         Objects.requireNonNull(serviceType);
         Objects.requireNonNull(siBasics);
 
@@ -69,7 +69,7 @@ public class BasicSingletonServiceProvider<T> extends AbstractServiceProvider<T>
             throw new IllegalArgumentException("mismatch in service types");
         }
 
-        return new BasicSingletonServiceProvider<>(serviceType, ServiceInfo.toBuilder(siBasics).build());
+        return new ReflectionBasedSingletonServiceProvider<>(serviceType, ServiceInfo.toBuilder(siBasics).build());
     }
 
     @Override

@@ -16,8 +16,8 @@
 
 package io.helidon.pico.configdriven.services;
 
-import io.helidon.builder.config.spi.BasicConfigBeanRegistry;
 import io.helidon.builder.config.spi.ConfigBeanRegistryProvider;
+import io.helidon.builder.config.spi.HelidonConfigBeanRegistry;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -27,7 +27,7 @@ import io.helidon.common.Weighted;
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class DefaultConfigBeanRegistryProvider implements ConfigBeanRegistryProvider {
-    static final LazyValue<ConfigBeanRegistry> INSTANCE = LazyValue.create(DefaultConfigBeanRegistry::new);
+    static final LazyValue<ConfigBeanRegistry> INSTANCE = LazyValue.create(DefaultPicoConfigBeanRegistry::new);
 
     /**
      * Service loader based constructor.
@@ -39,7 +39,7 @@ public class DefaultConfigBeanRegistryProvider implements ConfigBeanRegistryProv
     }
 
     @Override
-    public BasicConfigBeanRegistry configBeanRegistry() {
+    public HelidonConfigBeanRegistry configBeanRegistry() {
         return INSTANCE.get();
     }
 

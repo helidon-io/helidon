@@ -17,7 +17,7 @@
 package io.helidon.builder.config.spi;
 
 /**
- * Java {@link java.util.ServiceLoader} provider interface for delivering the {@link BasicConfigBeanRegistry} instance.
+ * Java {@link java.util.ServiceLoader} provider interface for delivering the {@link HelidonConfigBeanRegistry} instance.
  *
  * @see ConfigBeanMapperHolder
  */
@@ -25,10 +25,10 @@ package io.helidon.builder.config.spi;
 public interface ConfigBeanRegistryProvider {
 
     /**
-     * The service-loaded global {@link BasicConfigBeanRegistry} instance.
+     * The service-loaded global {@link HelidonConfigBeanRegistry} instance.
      *
      * @return the global config bean registry instance
      */
-    BasicConfigBeanRegistry configBeanRegistry();
+    HelidonConfigBeanRegistry configBeanRegistry();
 
 }

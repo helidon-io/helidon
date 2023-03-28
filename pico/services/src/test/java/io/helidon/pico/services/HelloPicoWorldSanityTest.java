@@ -30,8 +30,8 @@ import io.helidon.pico.Application;
 import io.helidon.pico.DeActivationRequest;
 import io.helidon.pico.DefaultActivationRequest;
 import io.helidon.pico.DefaultBootstrap;
+import io.helidon.pico.DefaultInjectorOptions;
 import io.helidon.pico.Injector;
-import io.helidon.pico.InjectorOptions;
 import io.helidon.pico.Phase;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
@@ -45,7 +45,7 @@ import io.helidon.pico.services.testsubjects.HelloPicoWorldImpl;
 import io.helidon.pico.services.testsubjects.PicoWorld;
 import io.helidon.pico.services.testsubjects.PicoWorldImpl;
 import io.helidon.pico.services.testsubjects.PicoWorldImpl$$picoActivator;
-import io.helidon.pico.spi.BasicInjectionPlan;
+import io.helidon.pico.spi.InjectionPlan;
 
 import jakarta.inject.Singleton;
 import org.junit.jupiter.api.AfterEach;
@@ -118,7 +118,8 @@ class HelloPicoWorldSanityTest {
         Services services = PicoServices.realizedServices();
 
         ServiceProvider<HelloPicoWorld> helloProvider1 = services.lookup(HelloPicoWorld.class);
-        assertThat(helloProvider1, notNullValue());
+        assertThat(helloProvider1,
+                   notNullValue());
 
         ServiceProvider<HelloPicoWorldImpl> helloProvider2 = services.lookup(HelloPicoWorldImpl.class);
         assertThat(helloProvider1,
@@ -206,7 +207,7 @@ class HelloPicoWorldSanityTest {
         HelloPicoImpl$$picoActivator subversiveWay = new HelloPicoImpl$$picoActivator();
         subversiveWay.picoServices(Optional.of(picoServices));
 
-        ActivationResult result = injector.activateInject(subversiveWay, InjectorOptions.DEFAULT.get());
+        ActivationResult result = injector.activateInject(subversiveWay, DefaultInjectorOptions.builder().build());
         assertThat(result.finished(), is(true));
         assertThat(result.success(), is(true));
 
@@ -220,7 +221,7 @@ class HelloPicoWorldSanityTest {
                    sameInstance(subversiveWay.get()));
         assertThat(subversiveWay, sameInstance(result.serviceProvider()));
 
-        // the above is subversive because it is disconnected from the "real" activator...
+        // the above is subversive because it is disconnected from the "real" activator
         Services services = picoServices.services();
         ServiceProvider<?> realHelloProvider = ((DefaultServices) services).serviceProviderFor(HelloPicoWorldImpl.class.getName());
         assertThat(subversiveWay, not(sameInstance(realHelloProvider)));
@@ -228,7 +229,7 @@ class HelloPicoWorldSanityTest {
         assertThat(realHelloProvider.currentActivationPhase(),
                    equalTo(Phase.INIT));
 
-        result = injector.deactivate(subversiveWay, InjectorOptions.DEFAULT.get());
+        result = injector.deactivate(subversiveWay, DefaultInjectorOptions.builder().build());
         assertThat(result.success(), is(true));
     }
 
@@ -244,7 +245,7 @@ class HelloPicoWorldSanityTest {
         assertThat(activator.serviceRef().orElseThrow().postConstructCallCount(), equalTo(0));
         assertThat(activator.serviceRef().orElseThrow().preDestroyCallCount(), equalTo(0));
 
-        Map<String, ? extends BasicInjectionPlan> injectionPlan = result.injectionPlans();
+        Map<String, ? extends InjectionPlan> injectionPlan = result.injectionPlans();
         assertThat(injectionPlan.keySet(), containsInAnyOrder(
                 "io.helidon.pico.services.testsubjects.world",
                 "io.helidon.pico.services.testsubjects.worldRef",
@@ -252,7 +253,7 @@ class HelloPicoWorldSanityTest {
                 "io.helidon.pico.services.testsubjects.listOfWorlds",
                 "io.helidon.pico.services.testsubjects.listOfWorldRefs",
                 "io.helidon.pico.services.testsubjects.world|1(1)"));
-        BasicInjectionPlan plan = injectionPlan.get("io.helidon.pico.services.testsubjects.world");
+        InjectionPlan plan = injectionPlan.get("io.helidon.pico.services.testsubjects.world");
         assertThat(plan.wasResolved(), is(true));
         assertThat(plan.resolved().orElseThrow().getClass(), equalTo(PicoWorldImpl.class));
         plan = injectionPlan.get("io.helidon.pico.services.testsubjects.redWorld");

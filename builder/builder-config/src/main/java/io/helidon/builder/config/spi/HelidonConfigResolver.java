@@ -42,7 +42,7 @@ import jakarta.inject.Singleton;
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 1)   // allow all other creators to take precedence over us...
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvider {
+public class HelidonConfigResolver implements ConfigResolver, ConfigResolverProvider {
 
     /**
      * Tag that represents meta information about the attribute. Used in the maps for various methods herein.
@@ -60,7 +60,7 @@ public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvid
      * @deprecated needed for Java service loader
      */
     @Deprecated
-    public BasicConfigResolver() {
+    public HelidonConfigResolver() {
     }
 
     @Override

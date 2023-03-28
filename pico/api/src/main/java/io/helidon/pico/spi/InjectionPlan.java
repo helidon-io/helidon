@@ -28,7 +28,7 @@ import io.helidon.pico.ServiceProvider;
  * Represents the injection plan targeting a given {@link io.helidon.pico.ServiceProvider}.
  */
 @Builder
-public interface BasicInjectionPlan {
+public interface InjectionPlan {
 
     /**
      * The service provider this plan pertains to.

@@ -76,40 +76,6 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     public CustomAnnotationProcessor() {
     }
 
-    @Override
-    public void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-        logger().log(System.Logger.Level.DEBUG, CustomAnnotationTemplateCreator.class.getSimpleName() + "s: " + PRODUCERS);
-    }
-
-    @Override
-    public boolean process(Set<? extends TypeElement> annotations,
-                           RoundEnvironment roundEnv) {
-        try {
-            if (!roundEnv.processingOver()) {
-                for (String annoType : annoTypes()) {
-                    TypeName annoName = DefaultTypeName.createFromTypeName(annoType);
-                    TypeElement annoElement = toTypeElement(annoName);
-                    Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoElement);
-                    doInner(annoName, typesToProcess, roundEnv);
-                }
-            }
-
-            return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
-        } catch (Throwable t) {
-            error(getClass().getSimpleName() + " error during processing; " + t + " @ "
-                          + Utils.rootStackTraceElementOf(t), t);
-            // we typically will not even get to this next line since the messager.error() call will trigger things to halt
-            throw new ToolsException("error during processing: " + t + " @ "
-                                             + Utils.rootStackTraceElementOf(t), t);
-        }
-    }
-
-    @Override
-    protected Set<String> annoTypes() {
-        return Set.copyOf(ALL_ANNO_TYPES_HANDLED);
-    }
-
     static List<CustomAnnotationTemplateCreator> initialize() {
         // note: it is important to use this class' CL since maven will not give us the "right" one.
         List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(ServiceLoader.load(
@@ -135,6 +101,40 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             }
         });
         return creators;
+    }
+
+    @Override
+    public void init(ProcessingEnvironment processingEnv) {
+        super.init(processingEnv);
+        logger().log(System.Logger.Level.DEBUG, CustomAnnotationTemplateCreator.class.getSimpleName() + "s: " + PRODUCERS);
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations,
+                           RoundEnvironment roundEnv) {
+        try {
+            if (!roundEnv.processingOver()) {
+                for (String annoType : annoTypes()) {
+                    TypeName annoName = DefaultTypeName.createFromTypeName(annoType);
+                    TypeElement annoElement = toTypeElement(annoName);
+                    Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoElement);
+                    doInner(annoName, typesToProcess, roundEnv);
+                }
+            }
+
+            return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
+        } catch (Throwable t) {
+            error(getClass().getSimpleName() + " error during processing; " + t + " @ "
+                          + ProcessorUtils.rootStackTraceElementOf(t), t);
+            // we typically will not even get to this next line since the messager.error() call will trigger things to halt
+            throw new ToolsException("error during processing: " + t + " @ "
+                                             + ProcessorUtils.rootStackTraceElementOf(t), t);
+        }
+    }
+
+    @Override
+    protected Set<String> annoTypes() {
+        return Set.copyOf(ALL_ANNO_TYPES_HANDLED);
     }
 
     Set<CustomAnnotationTemplateCreator> producersForType(TypeName annoTypeName) {

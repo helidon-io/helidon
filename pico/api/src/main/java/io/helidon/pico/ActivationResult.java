@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 
 import io.helidon.builder.Builder;
-import io.helidon.pico.spi.BasicInjectionPlan;
+import io.helidon.pico.spi.InjectionPlan;
 
 /**
  * Represents the result of a service activation or deactivation.
@@ -81,7 +81,7 @@ public interface ActivationResult {
      *
      * @return the resolved injection plan map
      */
-    Map<String, ? extends BasicInjectionPlan> injectionPlans();
+    Map<String, ? extends InjectionPlan> injectionPlans();
 
     /**
      * The dependencies that were resolved or loaded, key'ed by each element's {@link ServiceProvider#id()}.

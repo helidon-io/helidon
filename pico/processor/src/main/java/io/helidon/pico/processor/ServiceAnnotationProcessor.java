@@ -34,8 +34,8 @@ import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeNames;
 
-import static io.helidon.pico.processor.Utils.rootStackTraceElementOf;
-import static io.helidon.pico.processor.Utils.toPath;
+import static io.helidon.pico.processor.ProcessorUtils.rootStackTraceElementOf;
+import static io.helidon.pico.processor.ProcessorUtils.toPath;
 import static io.helidon.pico.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
 import static io.helidon.pico.tools.ModuleUtils.inferSourceOrTest;
 

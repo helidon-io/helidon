@@ -18,7 +18,6 @@ package io.helidon.pico;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.BuilderInterceptor;
-import io.helidon.common.LazyValue;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
@@ -27,12 +26,10 @@ import io.helidon.config.metadata.ConfiguredOption;
  * @see Injector
  */
 @Builder(interceptor = InjectorOptions.Interceptor.class)
-public interface InjectorOptions {
+public abstract class InjectorOptions {
 
-    /**
-     * Default options.
-     */
-    LazyValue<InjectorOptions> DEFAULT = LazyValue.create(() -> DefaultInjectorOptions.builder().build());
+    InjectorOptions() {
+    }
 
     /**
      * The strategy the injector should apply. The default is {@link Injector.Strategy#ANY}.
@@ -40,20 +37,20 @@ public interface InjectorOptions {
      * @return the injector strategy to use
      */
     @ConfiguredOption("ANY")
-    Injector.Strategy strategy();
+    public abstract Injector.Strategy strategy();
 
     /**
      * Optionally, customized activator options to use for the {@link io.helidon.pico.Activator}.
      *
      * @return activator options, or leave blank to use defaults
      */
-    ActivationRequest activationRequest();
+    public abstract ActivationRequest activationRequest();
 
 
     /**
      * This will ensure that the activation request is populated.
      */
-    class Interceptor implements BuilderInterceptor<DefaultInjectorOptions.Builder> {
+    static class Interceptor implements BuilderInterceptor<DefaultInjectorOptions.Builder> {
         Interceptor() {
         }
 

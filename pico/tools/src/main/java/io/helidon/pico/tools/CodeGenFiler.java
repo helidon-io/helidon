@@ -196,16 +196,12 @@ public class CodeGenFiler {
     }
 
     private void targetOutputPath(FileObject f) {
-        try {
-            Path path = Path.of(f.toUri());
-            Path parent = path.getParent();
-            Path gparent = (parent == null) ? null : parent.getParent();
-            this.targetOutputPath = gparent;
-            Path scratchName = (parent == null) ? null : parent.getFileName();
-            this.scratchPathName = (scratchName == null) ? null : scratchName.toString();
-        } catch (Exception e) {
-            assert (true); // for setting breakpoints in debug
-        }
+        Path path = Path.of(f.toUri());
+        Path parent = path.getParent();
+        Path gparent = (parent == null) ? null : parent.getParent();
+        this.targetOutputPath = gparent;
+        Path scratchName = (parent == null) ? null : parent.getFileName();
+        this.scratchPathName = (scratchName == null) ? null : scratchName.toString();
     }
 
     private Path toScratchPath(boolean wantClassesOrTestClassesRelative) {

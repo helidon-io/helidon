@@ -80,7 +80,6 @@ class DefaultInjectionPlanBinder implements ServiceInjectionPlanBinder, ServiceI
     @Override
     public void commit() {
         // NOP
-        assert (true); // for setting breakpoints in debug
     }
 
 }

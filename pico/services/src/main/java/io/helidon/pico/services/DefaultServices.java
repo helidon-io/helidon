@@ -81,6 +81,93 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         this.cfg = Objects.requireNonNull(cfg);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static <T> List<T> explodeAndSort(Collection<?> coll,
+                                      ServiceInfoCriteria criteria,
+                                      boolean expected) {
+        List result;
+
+        if ((coll.size() > 1)
+                || coll.stream().anyMatch(sp -> sp instanceof ServiceProviderProvider)) {
+            result = new ArrayList<>();
+
+            coll.forEach(s -> {
+                if (s instanceof ServiceProviderProvider) {
+                    List<? extends ServiceProvider<?>> subList = ((ServiceProviderProvider) s)
+                            .serviceProviders(criteria, true, true);
+                    if (subList != null && !subList.isEmpty()) {
+                        subList.stream().filter(Objects::nonNull).forEach(result::add);
+                    }
+                } else {
+                    result.add(s);
+                }
+            });
+
+            if (result.size() > 1) {
+                result.sort(serviceProviderComparator());
+            }
+
+            return result;
+        } else {
+            result = (coll instanceof List) ? (List) coll : new ArrayList<>(coll);
+        }
+
+        if (expected && result.isEmpty()) {
+            throw resolutionBasedInjectionError(criteria);
+        }
+
+        return result;
+    }
+
+    static boolean hasContracts(ServiceInfoCriteria criteria) {
+        return !criteria.contractsImplemented().isEmpty();
+    }
+
+    static boolean isIntercepted(ServiceProvider<?> sp) {
+        return (sp instanceof ServiceProviderBindable && ((ServiceProviderBindable<?>) sp).isIntercepted());
+    }
+
+    /**
+     * First use weight, then use FQN of the service type name as the secondary comparator if weights are the same.
+     *
+     * @return the pico comparator
+     * @see ServiceProviderComparator
+     */
+    static Comparator<? super Provider<?>> serviceProviderComparator() {
+        return COMPARATOR;
+    }
+
+    static void assertPermitsDynamic(PicoServicesConfig cfg) {
+        if (!cfg.permitsDynamic()) {
+            String desc = "Services are configured to prevent dynamic updates.\n"
+                    + "Set config '"
+                    + PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC
+                    + " = true' to enable";
+            Optional<CallingContext> callCtx = CallingContextFactory.create(false);
+            String msg = (callCtx.isEmpty()) ? toErrorMessage(desc) : toErrorMessage(callCtx.get(), desc);
+            throw new IllegalStateException(msg);
+        }
+    }
+
+    static ServiceInfo toValidatedServiceInfo(ServiceProvider<?> serviceProvider) {
+        ServiceInfo info = serviceProvider.serviceInfo();
+        Objects.requireNonNull(info.serviceTypeName(), () -> "service type name is required for " + serviceProvider);
+        return info;
+    }
+
+    static InjectionException serviceProviderAlreadyBoundInjectionError(ServiceProvider<?> previous,
+                                                                        ServiceProvider<?> sp) {
+        return new InjectionException("service provider already bound to " + previous, null, sp);
+    }
+
+    static InjectionException resolutionBasedInjectionError(ServiceInfoCriteria ctx) {
+        return new InjectionException("expected to resolve a service matching " + ctx);
+    }
+
+    static InjectionException resolutionBasedInjectionError(String serviceTypeName) {
+        return resolutionBasedInjectionError(DefaultServiceInfoCriteria.builder().serviceTypeName(serviceTypeName).build());
+    }
+
     /**
      * Total size of the service registry.
      *
@@ -246,7 +333,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
 
     Metrics metrics() {
         return DefaultMetrics.builder()
-                .services(size())
+                .serviceCount(size())
                 .lookupCount(lookupCount.get())
                 .cacheLookupCount(cacheLookupCount.get())
                 .cacheHitCount(cacheHitCount.get())
@@ -337,52 +424,6 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         return new ArrayList<>(servicesByTypeName.values());
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    static <T> List<T> explodeAndSort(Collection<?> coll,
-                                      ServiceInfoCriteria criteria,
-                                      boolean expected) {
-        List result;
-
-        if ((coll.size() > 1)
-                || coll.stream().anyMatch(sp -> sp instanceof ServiceProviderProvider)) {
-            result = new ArrayList<>();
-
-            coll.forEach(s -> {
-                if (s instanceof ServiceProviderProvider) {
-                    List<? extends ServiceProvider<?>> subList = ((ServiceProviderProvider) s)
-                            .serviceProviders(criteria, true, true);
-                    if (subList != null && !subList.isEmpty()) {
-                        subList.stream().filter(Objects::nonNull).forEach(result::add);
-                    }
-                } else {
-                    result.add(s);
-                }
-            });
-
-            if (result.size() > 1) {
-                result.sort(serviceProviderComparator());
-            }
-
-            return result;
-        } else {
-            result = (coll instanceof List) ? (List) coll : new ArrayList<>(coll);
-        }
-
-        if (expected && result.isEmpty()) {
-            throw resolutionBasedInjectionError(criteria);
-        }
-
-        return result;
-    }
-
-    static boolean hasContracts(ServiceInfoCriteria criteria) {
-        return !criteria.contractsImplemented().isEmpty();
-    }
-
-    static boolean isIntercepted(ServiceProvider<?> sp) {
-        return (sp instanceof ServiceProviderBindable && ((ServiceProviderBindable<?>) sp).isIntercepted());
-    }
-
     ServiceBinder createServiceBinder(PicoServices picoServices,
                                       DefaultServices services,
                                       String moduleName,
@@ -426,56 +467,15 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         }
     }
 
-    /**
-     * First use weight, then use FQN of the service type name as the secondary comparator if weights are the same.
-     *
-     * @return the pico comparator
-     * @see ServiceProviderComparator
-     */
-    static Comparator<? super Provider<?>> serviceProviderComparator() {
-        return COMPARATOR;
-    }
-
-    static void assertPermitsDynamic(PicoServicesConfig cfg) {
-        if (!cfg.permitsDynamic()) {
-            String desc = "Services are configured to prevent dynamic updates.\n"
-                    + "Set config '"
-                    + PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC
-                    + " = true' to enable";
-            Optional<CallingContext> callCtx = CallingContextFactory.create(false);
-            String msg = (callCtx.isEmpty()) ? toErrorMessage(desc) : toErrorMessage(callCtx.get(), desc);
-            throw new IllegalStateException(msg);
-        }
-    }
-
     private ServiceProvider<?> createServiceProvider(io.helidon.pico.Module module,
                                                      String moduleName,
                                                      PicoServices picoServices) {
-        return new BasicModuleServiceProvider(module, moduleName, picoServices);
+        return new PicoModuleServiceProvider(module, moduleName, picoServices);
     }
 
     private ServiceProvider<?> createServiceProvider(Application app,
                                                      PicoServices picoServices) {
-        return new BasicApplicationServiceProvider(app, picoServices);
-    }
-
-    static ServiceInfo toValidatedServiceInfo(ServiceProvider<?> serviceProvider) {
-        ServiceInfo info = serviceProvider.serviceInfo();
-        Objects.requireNonNull(info.serviceTypeName(), () -> "service type name is required for " + serviceProvider);
-        return info;
-    }
-
-    static InjectionException serviceProviderAlreadyBoundInjectionError(ServiceProvider<?> previous,
-                                                                        ServiceProvider<?> sp) {
-        return new InjectionException("service provider already bound to " + previous, null, sp);
-    }
-
-    static InjectionException resolutionBasedInjectionError(ServiceInfoCriteria ctx) {
-        return new InjectionException("expected to resolve a service matching " + ctx);
-    }
-
-    static InjectionException resolutionBasedInjectionError(String serviceTypeName) {
-        return resolutionBasedInjectionError(DefaultServiceInfoCriteria.builder().serviceTypeName(serviceTypeName).build());
+        return new PicoApplicationServiceProvider(app, picoServices);
     }
 
 }

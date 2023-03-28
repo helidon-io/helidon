@@ -20,7 +20,7 @@ import java.util.List;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.pico.spi.BasicInjectionPlan;
+import io.helidon.pico.spi.InjectionPlan;
 
 /**
  * The injection plan for a given service provider and element belonging to that service provider. This plan can be created during
@@ -29,7 +29,7 @@ import io.helidon.pico.spi.BasicInjectionPlan;
  * loaded.
  */
 @Builder
-public interface InjectionPlan extends BasicInjectionPlan {
+public interface PicoInjectionPlan extends InjectionPlan {
 
     /**
      * The list of services/providers that are unqualified to satisfy the given injection point but were considered.

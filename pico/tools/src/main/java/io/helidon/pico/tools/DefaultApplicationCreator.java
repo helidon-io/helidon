@@ -45,7 +45,7 @@ import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.services.DefaultServiceBinder;
-import io.helidon.pico.services.InjectionPlan;
+import io.helidon.pico.services.PicoInjectionPlan;
 import io.helidon.pico.tools.spi.ApplicationCreator;
 
 import jakarta.inject.Provider;
@@ -319,8 +319,8 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         }
 
         List<String> plan = new ArrayList<>(deps.allDependencies().size());
-        Map<String, InjectionPlan> injectionPlan = asp.getOrCreateInjectionPlan(false);
-        for (Map.Entry<String, InjectionPlan> e : injectionPlan.entrySet()) {
+        Map<String, PicoInjectionPlan> injectionPlan = asp.getOrCreateInjectionPlan(false);
+        for (Map.Entry<String, PicoInjectionPlan> e : injectionPlan.entrySet()) {
             StringBuilder line = new StringBuilder();
             InjectionPointInfo ipInfo = e.getValue().injectionPointInfo();
             List<? extends ServiceProvider<?>> ipQualified = e.getValue().injectionPointQualifiedServiceProviders();
@@ -348,11 +348,9 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
                         target = target.getClass();
                     }
                     line.append(", ").append(((Class<?>) target).getName()).append(".class");
-                } else if (ipQualified.isEmpty()) {
-                    assert (true); // left here for breakpoint debugging purposes
-                } else if (ipInfo.listWrapped()) {
+                } else if (ipInfo.listWrapped() && !ipQualified.isEmpty()) {
                     line.append(", ").append(toActivatorCodeGen((Collection<ServiceProvider<?>>) ipQualified));
-                } else {
+                } else if (!ipQualified.isEmpty()) {
                     line.append(", ").append(toActivatorCodeGen(ipQualified.get(0)));
                 }
                 line.append(")");

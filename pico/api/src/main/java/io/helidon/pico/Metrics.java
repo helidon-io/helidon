@@ -27,11 +27,11 @@ import io.helidon.builder.Builder;
 public interface Metrics {
 
     /**
-     * The total services in the registry.
+     * The total service count in the registry.
      *
      * @return total service count
      */
-    Optional<Integer> services();
+    Optional<Integer> serviceCount();
 
     /**
      * The total number of {@code Services::lookup()} calls since jvm start, or since last reset.

@@ -23,8 +23,8 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.config.spi.BasicConfigBeanRegistry;
 import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
+import io.helidon.builder.config.spi.HelidonConfigBeanRegistry;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
@@ -43,8 +43,8 @@ import static io.helidon.pico.PicoServicesConfig.KEY_PERMITS_DYNAMIC;
 import static io.helidon.pico.PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS;
 import static io.helidon.pico.PicoServicesConfig.NAME;
 
-class Utils {
-    private Utils() {
+final class MavenPluginUtils {
+    private MavenPluginUtils() {
     }
 
     /**
@@ -100,7 +100,7 @@ class Utils {
      * @return the description of the instance
      */
     static List<String> toDescriptions(Collection<?> coll) {
-        return coll.stream().map(Utils::toDescription).collect(Collectors.toList());
+        return coll.stream().map(MavenPluginUtils::toDescription).collect(Collectors.toList());
     }
 
     static boolean hasValue(String val) {
@@ -119,9 +119,9 @@ class Utils {
 
     static Config basicConfig(boolean apps) {
         return Config.builder(ConfigSources.create(
-                Map.of(NAME + "." + KEY_PERMITS_DYNAMIC, "true",
-                       NAME + "." + KEY_USES_COMPILE_TIME_APPLICATIONS, String.valueOf(apps)),
-                "config-1"))
+                        Map.of(NAME + "." + KEY_PERMITS_DYNAMIC, "true",
+                               NAME + "." + KEY_USES_COMPILE_TIME_APPLICATIONS, String.valueOf(apps)),
+                        "config-1"))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -130,7 +130,7 @@ class Utils {
     private static class Internal extends PicoServicesHolder {
         public static void reset() {
             PicoServicesHolder.reset();
-            BasicConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
+            HelidonConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
             if (cbr instanceof Resettable) {
                 ((Resettable) cbr).reset(true);
             }

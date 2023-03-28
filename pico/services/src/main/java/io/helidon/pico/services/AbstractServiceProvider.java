@@ -94,7 +94,7 @@ public abstract class AbstractServiceProvider<T>
     private ActivationLog log;
     private ServiceInfo serviceInfo;
     private DependenciesInfo dependencies;
-    private Map<String, InjectionPlan> injectionPlan;
+    private Map<String, PicoInjectionPlan> injectionPlan;
     private ServiceProvider<?> interceptor;
 
     /**
@@ -125,6 +125,27 @@ public abstract class AbstractServiceProvider<T>
         this.picoServices = Objects.requireNonNull(picoServices);
         this.log = picoServices.activationLog().orElseThrow();
         onInitialized();
+    }
+
+    /**
+     * Will test and downcast the passed service provider to an instance of
+     * {@link io.helidon.pico.services.AbstractServiceProvider}.
+     *
+     * @param sp       the service provider
+     * @param expected is the result expected to be present
+     * @param <T>      the managed service type
+     * @return the abstract service provider
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Optional<AbstractServiceProvider<T>> toAbstractServiceProvider(ServiceProvider<?> sp,
+                                                                                     boolean expected) {
+        if (!(sp instanceof AbstractServiceProvider)) {
+            if (expected) {
+                throw new IllegalStateException("expected provider to be of type " + AbstractServiceProvider.class.getName());
+            }
+            return Optional.empty();
+        }
+        return Optional.of((AbstractServiceProvider<T>) sp);
     }
 
     @Override
@@ -405,7 +426,6 @@ public abstract class AbstractServiceProvider<T>
     public void onPhaseEvent(Event event,
                              Phase phase) {
         // NOP
-        assert (true); // for setting breakpoints in debug
     }
 
     /**
@@ -440,24 +460,15 @@ public abstract class AbstractServiceProvider<T>
                                      }
                                  }));
 
-        ConcurrentHashMap<String, InjectionPlan> injectionPlan = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, PicoInjectionPlan> injectionPlan = new ConcurrentHashMap<>();
         AbstractServiceProvider<T> self = AbstractServiceProvider.this;
         ServiceInjectionPlanBinder.Binder result = new ServiceInjectionPlanBinder.Binder() {
             private InjectionPointInfo ipInfo;
 
-            private ServiceProvider<?> bind(ServiceProvider<?> rawSp) {
-                assert (!(rawSp instanceof BoundedServiceProvider)) : rawSp;
-                return BoundedServiceProvider.create(rawSp, ipInfo);
-            }
-
-            private List<ServiceProvider<?>> bind(List<ServiceProvider<?>> rawList) {
-                return rawList.stream().map(this::bind).collect(Collectors.toList());
-            }
-
             @Override
             public ServiceInjectionPlanBinder.Binder bind(String id,
                                                           ServiceProvider<?> serviceProvider) {
-                InjectionPlan plan = createBuilder(id)
+                PicoInjectionPlan plan = createBuilder(id)
                         .injectionPointQualifiedServiceProviders(List.of(bind(serviceProvider)))
                         .build();
                 Object prev = injectionPlan.put(id, plan);
@@ -468,7 +479,7 @@ public abstract class AbstractServiceProvider<T>
             @Override
             public ServiceInjectionPlanBinder.Binder bindMany(String id,
                                                               ServiceProvider<?>... serviceProviders) {
-                InjectionPlan plan = createBuilder(id)
+                PicoInjectionPlan plan = createBuilder(id)
                         .injectionPointQualifiedServiceProviders(bind(Arrays.asList(serviceProviders)))
                         .build();
                 Object prev = injectionPlan.put(id, plan);
@@ -495,7 +506,7 @@ public abstract class AbstractServiceProvider<T>
                     //                            .build();
                     Object resolved = Objects.requireNonNull(
                             resolver.resolve(ipInfo, picoServices(), AbstractServiceProvider.this, false));
-                    InjectionPlan plan = createBuilder(id)
+                    PicoInjectionPlan plan = createBuilder(id)
                             .unqualifiedProviders(List.of(resolved))
                             .resolved(false)
                             .build();
@@ -522,6 +533,15 @@ public abstract class AbstractServiceProvider<T>
                 self.injectionPlan = injectionPlan;
             }
 
+            private ServiceProvider<?> bind(ServiceProvider<?> rawSp) {
+                assert (!(rawSp instanceof BoundedServiceProvider)) : rawSp;
+                return BoundedServiceProvider.create(rawSp, ipInfo);
+            }
+
+            private List<ServiceProvider<?>> bind(List<ServiceProvider<?>> rawList) {
+                return rawList.stream().map(this::bind).collect(Collectors.toList());
+            }
+
             private InjectionPointInfo safeGetIpInfo(String id) {
                 InjectionPointInfo ipInfo = idToIpInfo.remove(id);
                 if (ipInfo == null) {
@@ -531,9 +551,9 @@ public abstract class AbstractServiceProvider<T>
                 return ipInfo;
             }
 
-            private DefaultInjectionPlan.Builder createBuilder(String id) {
+            private DefaultPicoInjectionPlan.Builder createBuilder(String id) {
                 ipInfo = safeGetIpInfo(id);
-                return DefaultInjectionPlan.builder()
+                return DefaultPicoInjectionPlan.builder()
                         .injectionPointInfo(ipInfo)
                         .serviceProvider(self);
             }
@@ -548,7 +568,7 @@ public abstract class AbstractServiceProvider<T>
      * @param resolveIps true if the injection points should also be activated/resolved.
      * @return the injection plan
      */
-    public Map<String, InjectionPlan> getOrCreateInjectionPlan(boolean resolveIps) {
+    public Map<String, PicoInjectionPlan> getOrCreateInjectionPlan(boolean resolveIps) {
         if (this.injectionPlan != null) {
             return this.injectionPlan;
         }
@@ -557,7 +577,7 @@ public abstract class AbstractServiceProvider<T>
             dependencies(dependencies());
         }
 
-        Map<String, InjectionPlan> plan =
+        Map<String, PicoInjectionPlan> plan =
                 DefaultInjectionPlans.createInjectionPlans(picoServices(), this, dependencies, resolveIps, logger());
         assert (this.injectionPlan == null);
         this.injectionPlan = Objects.requireNonNull(plan);
@@ -667,52 +687,6 @@ public abstract class AbstractServiceProvider<T>
     }
 
     /**
-     * Will test and downcast the passed service provider to an instance of
-     * {@link io.helidon.pico.services.AbstractServiceProvider}.
-     *
-     * @param sp        the service provider
-     * @param expected  is the result expected to be present
-     * @return          the abstract service provider
-     * @param <T>       the managed service type
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> Optional<AbstractServiceProvider<T>> toAbstractServiceProvider(ServiceProvider<?> sp,
-                                                                                     boolean expected) {
-        if (!(sp instanceof AbstractServiceProvider)) {
-            if (expected) {
-                throw new IllegalStateException("expected provider to be of type " + AbstractServiceProvider.class.getName());
-            }
-            return Optional.empty();
-        }
-        return Optional.of((AbstractServiceProvider<T>) sp);
-    }
-
-    /**
-     * Represents a result of a phase transition.
-     *
-     * @see #createLogEntryAndResult(io.helidon.pico.Phase)
-     */
-    // note that for one result, there may be N logEntry records we will build and write to the log
-    protected static class LogEntryAndResult /* implements Cloneable*/ {
-        private final DefaultActivationResult.Builder activationResult;
-        private final DefaultActivationLogEntry.Builder logEntry;
-
-        LogEntryAndResult(DefaultActivationLogEntry.Builder logEntry,
-                          DefaultActivationResult.Builder activationResult) {
-            this.logEntry = logEntry;
-            this.activationResult = activationResult;
-        }
-
-        DefaultActivationResult.Builder activationResult() {
-            return activationResult;
-        }
-
-        DefaultActivationLogEntry.Builder logEntry() {
-            return logEntry;
-        }
-    }
-
-    /**
      * Called on the final leg of the shutdown sequence.
      */
     protected void onFinalShutdown() {
@@ -728,8 +702,8 @@ public abstract class AbstractServiceProvider<T>
      * Called on a failed finish of activation.
      *
      * @param logEntryAndResult the log entry holding the result
-     * @param t the error that was observed
-     * @param throwOnError the flag indicating whether we should throw on error
+     * @param t                 the error that was observed
+     * @param throwOnError      the flag indicating whether we should throw on error
      * @see #onFinished(io.helidon.pico.services.AbstractServiceProvider.LogEntryAndResult)
      */
     protected void onFailedFinish(LogEntryAndResult logEntryAndResult,
@@ -827,10 +801,10 @@ public abstract class AbstractServiceProvider<T>
     /**
      * Called by the generated code when it is attempting to resolve a specific injection point dependency by id.
      *
-     * @param deps  the entire map of resolved dependencies
-     * @param id    the id of the dependency to lookup
-     * @return      the resolved object
-     * @param <T> the type of the dependency
+     * @param deps the entire map of resolved dependencies
+     * @param id   the id of the dependency to lookup
+     * @param <T>  the type of the dependency
+     * @return the resolved object
      */
     protected <T> T get(Map<String, T> deps, String id) {
         return Objects.requireNonNull(deps.get(id), "'" + id + "' expected to have been found in: " + deps.keySet());
@@ -882,8 +856,7 @@ public abstract class AbstractServiceProvider<T>
      * @see #onFailedFinish(io.helidon.pico.services.AbstractServiceProvider.LogEntryAndResult, Throwable, boolean)
      */
     protected void onFinished(LogEntryAndResult logEntryAndResult) {
-        // NOP;
-        assert (true); // left here to make it easy to set breakpoints in the future
+        // NOP
     }
 
     /**
@@ -906,8 +879,9 @@ public abstract class AbstractServiceProvider<T>
      * @param resolvedDeps the resolved dependencies
      * @return the newly created managed service
      * @throws InjectionException since this is a base method for what is expected to be a code-generated derived
-     * {@link Activator} then this method will throw an exception if the derived class does not implement this method as it
-     * normally should
+     *                            {@link Activator} then this method will throw an exception if the derived class does not
+     *                            implement this method as it
+     *                            normally should
      */
     protected T createServiceProvider(Map<String, Object> resolvedDeps) {
         InjectionException e = new InjectionException("Don't know how to create an instance of " + serviceInfo()
@@ -928,33 +902,31 @@ public abstract class AbstractServiceProvider<T>
     /**
      * Called during the injection of fields.
      *
-     * @param target            the target
-     * @param deps              the dependencies
-     * @param injections        the injections
-     * @param forServiceType    the service type
+     * @param target         the target
+     * @param deps           the dependencies
+     * @param injections     the injections
+     * @param forServiceType the service type
      */
     protected void doInjectingFields(Object target,
                                      Map<String, Object> deps,
                                      Set<String> injections,
                                      String forServiceType) {
         // NOP; meant to be overridden
-        assert (true); // for setting breakpoints in debug
     }
 
     /**
      * Called during the injection of methods.
      *
-     * @param target            the target
-     * @param deps              the dependencies
-     * @param injections        the injections
-     * @param forServiceType    the service type
+     * @param target         the target
+     * @param deps           the dependencies
+     * @param injections     the injections
+     * @param forServiceType the service type
      */
     protected void doInjectingMethods(Object target,
                                       Map<String, Object> deps,
                                       Set<String> injections,
                                       String forServiceType) {
         // NOP; meant to be overridden
-        assert (true); // for setting breakpoints in debug
     }
 
     /**
@@ -1040,7 +1012,7 @@ public abstract class AbstractServiceProvider<T>
      * Starts transitioning to a new phase.
      *
      * @param logEntryAndResult the record that will hold the state of the transition
-     * @param newPhase the target new phase
+     * @param newPhase          the target new phase
      */
     protected void startTransitionCurrentActivationPhase(LogEntryAndResult logEntryAndResult,
                                                          Phase newPhase) {
@@ -1054,6 +1026,85 @@ public abstract class AbstractServiceProvider<T>
                 .activationResult(logEntryAndResult.activationResult.build());
         activationLog().ifPresent(log -> log.record(logEntryAndResult.logEntry.build()));
         onPhaseEvent(Event.STARTING, this.phase);
+    }
+
+    Map<String, Object> resolveDependencies(Map<String, PicoInjectionPlan> mutablePlans) {
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        Map.copyOf(mutablePlans).forEach((key, value) -> {
+            Object resolved;
+            if (value.wasResolved()) {
+                resolved = value.resolved();
+                result.put(key, resolveOptional(value, resolved));
+            } else {
+                List<ServiceProvider<?>> serviceProviders = value.injectionPointQualifiedServiceProviders();
+                serviceProviders = (serviceProviders == null)
+                        ? List.of()
+                        : Collections.unmodifiableList(serviceProviders);
+                if (serviceProviders.isEmpty()
+                        && !value.unqualifiedProviders().isEmpty()) {
+                    resolved = List.of(); // deferred
+                } else {
+                    resolved = DefaultInjectionPlans.resolve(this, value.injectionPointInfo(), serviceProviders, logger());
+                }
+                result.put(key, resolveOptional(value, resolved));
+            }
+
+            if (value.resolved().isEmpty()) {
+                // update the original plans map to properly reflect the resolved value
+                mutablePlans.put(key, DefaultPicoInjectionPlan.toBuilder(value)
+                        .wasResolved(true)
+                        .resolved(Optional.ofNullable(resolved))
+                        .build());
+            }
+        });
+
+        return result;
+    }
+
+    void serviceRef(T instance) {
+        serviceRef.set(instance);
+    }
+
+    void onFailedFinish(LogEntryAndResult logEntryAndResult,
+                        Throwable t,
+                        boolean throwOnError,
+                        Optional<ActivationLog> log) {
+        InjectionException e;
+
+        DefaultActivationLogEntry.Builder res = logEntryAndResult.logEntry;
+        Throwable prev = res.error().orElse(null);
+        if (prev == null || !(t instanceof InjectionException)) {
+            String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "failed to complete operation";
+            e = new InjectionException(msg, t, this);
+            log.ifPresent(e::activationLog);
+        } else {
+            e = (InjectionException) t;
+        }
+
+        res.error(e);
+        logEntryAndResult.activationResult.finishingStatus(ActivationStatus.FAILURE);
+
+        if (throwOnError) {
+            throw e;
+        }
+    }
+
+    void startAndFinishTransitionCurrentActivationPhase(LogEntryAndResult logEntryAndResult,
+                                                        Phase newPhase) {
+        startTransitionCurrentActivationPhase(logEntryAndResult, newPhase);
+        finishedTransitionCurrentActivationPhase(logEntryAndResult);
+    }
+
+    void finishedTransitionCurrentActivationPhase(LogEntryAndResult logEntryAndResult) {
+        logEntryAndResult.logEntry
+                .event(Event.FINISHED)
+                .activationResult(logEntryAndResult.activationResult.build());
+        ActivationLog log = activationLog().orElse(null);
+        if (log != null) {
+            log.record(logEntryAndResult.logEntry.build());
+        }
+        onPhaseEvent(Event.FINISHED, this.phase);
     }
 
     // if we are here then we are not yet at the ultimate target phase, and we either have to activate or deactivate
@@ -1120,7 +1171,7 @@ public abstract class AbstractServiceProvider<T>
     private void doGatheringDependencies(LogEntryAndResult logEntryAndResult) {
         startTransitionCurrentActivationPhase(logEntryAndResult, Phase.GATHERING_DEPENDENCIES);
 
-        Map<String, InjectionPlan> plans = Objects.requireNonNull(getOrCreateInjectionPlan(false));
+        Map<String, PicoInjectionPlan> plans = Objects.requireNonNull(getOrCreateInjectionPlan(false));
         Map<String, Object> deps = resolveDependencies(plans);
         if (!deps.isEmpty()) {
             logEntryAndResult.activationResult.resolvedDependencies(deps);
@@ -1130,51 +1181,13 @@ public abstract class AbstractServiceProvider<T>
         finishedTransitionCurrentActivationPhase(logEntryAndResult);
     }
 
-    Map<String, Object> resolveDependencies(Map<String, InjectionPlan> mutablePlans) {
-        Map<String, Object> result = new LinkedHashMap<>();
-
-        Map.copyOf(mutablePlans).forEach((key, value) -> {
-            Object resolved;
-            if (value.wasResolved()) {
-                resolved = value.resolved();
-                result.put(key, resolveOptional(value, resolved));
-            } else {
-                List<ServiceProvider<?>> serviceProviders = value.injectionPointQualifiedServiceProviders();
-                serviceProviders = (serviceProviders == null)
-                        ? List.of()
-                        : Collections.unmodifiableList(serviceProviders);
-                if (serviceProviders.isEmpty()
-                        && !value.unqualifiedProviders().isEmpty()) {
-                    resolved = List.of(); // deferred
-                } else {
-                    resolved = DefaultInjectionPlans.resolve(this, value.injectionPointInfo(), serviceProviders, logger());
-                }
-                result.put(key, resolveOptional(value, resolved));
-            }
-
-            if (value.resolved().isEmpty()) {
-                // update the original plans map to properly reflect the resolved value
-                mutablePlans.put(key, DefaultInjectionPlan.toBuilder(value)
-                        .wasResolved(true)
-                        .resolved(Optional.ofNullable(resolved))
-                        .build());
-            }
-        });
-
-        return result;
-    }
-
     @SuppressWarnings("unchecked")
-    private Object resolveOptional(InjectionPlan plan,
+    private Object resolveOptional(PicoInjectionPlan plan,
                                    Object resolved) {
         if (!plan.injectionPointInfo().optionalWrapped() && resolved instanceof Optional) {
             return ((Optional<Object>) resolved).orElse(null);
         }
         return resolved;
-    }
-
-    void serviceRef(T instance) {
-        serviceRef.set(instance);
     }
 
     private void doInjecting(LogEntryAndResult logEntryAndResult) {
@@ -1213,30 +1226,6 @@ public abstract class AbstractServiceProvider<T>
 
     private void doActivationActive(LogEntryAndResult logEntryAndResult) {
         startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVE);
-    }
-
-    void onFailedFinish(LogEntryAndResult logEntryAndResult,
-                        Throwable t,
-                        boolean throwOnError,
-                        Optional<ActivationLog> log) {
-        InjectionException e;
-
-        DefaultActivationLogEntry.Builder res = logEntryAndResult.logEntry;
-        Throwable prev = res.error().orElse(null);
-        if (prev == null || !(t instanceof InjectionException)) {
-            String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "failed to complete operation";
-            e = new InjectionException(msg, t, this);
-            log.ifPresent(e::activationLog);
-        } else {
-            e = (InjectionException) t;
-        }
-
-        res.error(e);
-        logEntryAndResult.activationResult.finishingStatus(ActivationStatus.FAILURE);
-
-        if (throwOnError) {
-            throw e;
-        }
     }
 
     private InjectionException recursiveActivationInjectionError(DefaultActivationLogEntry.Builder entry) {
@@ -1313,21 +1302,29 @@ public abstract class AbstractServiceProvider<T>
         }
     }
 
-    void startAndFinishTransitionCurrentActivationPhase(LogEntryAndResult logEntryAndResult,
-                                                        Phase newPhase) {
-        startTransitionCurrentActivationPhase(logEntryAndResult, newPhase);
-        finishedTransitionCurrentActivationPhase(logEntryAndResult);
-    }
+    /**
+     * Represents a result of a phase transition.
+     *
+     * @see #createLogEntryAndResult(io.helidon.pico.Phase)
+     */
+    // note that for one result, there may be N logEntry records we will build and write to the log
+    protected static class LogEntryAndResult /* implements Cloneable*/ {
+        private final DefaultActivationResult.Builder activationResult;
+        private final DefaultActivationLogEntry.Builder logEntry;
 
-    void finishedTransitionCurrentActivationPhase(LogEntryAndResult logEntryAndResult) {
-        logEntryAndResult.logEntry
-                .event(Event.FINISHED)
-                .activationResult(logEntryAndResult.activationResult.build());
-        ActivationLog log = activationLog().orElse(null);
-        if (log != null) {
-            log.record(logEntryAndResult.logEntry.build());
+        LogEntryAndResult(DefaultActivationLogEntry.Builder logEntry,
+                          DefaultActivationResult.Builder activationResult) {
+            this.logEntry = logEntry;
+            this.activationResult = activationResult;
         }
-        onPhaseEvent(Event.FINISHED, this.phase);
+
+        DefaultActivationResult.Builder activationResult() {
+            return activationResult;
+        }
+
+        DefaultActivationLogEntry.Builder logEntry() {
+            return logEntry;
+        }
     }
 
 }

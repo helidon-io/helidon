@@ -32,7 +32,7 @@ import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
-import io.helidon.pico.testing.BasicSingletonServiceProvider;
+import io.helidon.pico.testing.ReflectionBasedSingletonServiceProvider;
 import io.helidon.pico.tests.plain.interceptor.IA;
 import io.helidon.pico.tests.plain.interceptor.IB;
 import io.helidon.pico.tests.plain.interceptor.NamedInterceptor;
@@ -133,7 +133,7 @@ class ComplexInterceptorTest {
                 .build();
         tearDown();
         setUp(config);
-        bind(picoServices, BasicSingletonServiceProvider
+        bind(picoServices, ReflectionBasedSingletonServiceProvider
                               .create(NamedInterceptor.class,
                                       DefaultServiceInfo.builder()
                                               .serviceTypeName(NamedInterceptor.class.getName())

@@ -28,7 +28,7 @@ import io.helidon.pico.ServiceProvider;
 /**
  * An extension to {@link io.helidon.pico.ServiceProvider} that represents a config-driven service.
  *
- * @param <T> the type of this service provider manages
+ * @param <T>  the type of this service provider manages
  * @param <CB> the type of config beans that this service is configured by
  */
 public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, ConfigBeanMapper {
@@ -82,10 +82,10 @@ public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, Co
     /**
      * Visit the attributes of the config bean, calling the visitor for each attribute in the hierarchy.
      *
-     * @param configBean            the config bean to visit
-     * @param visitor               the attribute visitor
-     * @param userDefinedContext    the optional user define context
-     * @param <R> the type of the user defined context
+     * @param configBean         the config bean to visit
+     * @param visitor            the attribute visitor
+     * @param userDefinedContext the optional user define context
+     * @param <R>                the type of the user defined context
      */
     <R> void visitAttributes(CB configBean,
                              AttributeVisitor<Object> visitor,

@@ -121,7 +121,7 @@ class DefaultGenericTemplateCreator implements GenericTemplateCreator {
         substitutions.put("elementAnnotations", req.targetElement().annotations());
         substitutions.put("elementEnclosingTypeName", req.targetElement().typeName());
         substitutions.put("elementArgs", req.targetElementArgs());
-        substitutions.put("elementArgs-declaration", Utils.toString(req.targetElementArgs()));
+        substitutions.put("elementArgs-declaration", ProcessorUtils.toString(req.targetElementArgs()));
         substitutions.putAll(genericRequest.overrideProperties());
         return substitutions;
     }

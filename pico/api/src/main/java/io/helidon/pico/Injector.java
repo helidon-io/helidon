@@ -54,7 +54,7 @@ public interface Injector {
      * {@link Phase#ACTIVE}.
      *
      * @param serviceOrServiceProvider the target instance or service provider being activated and injected
-     * @param opts                     the injector options, or use {@link InjectorOptions#DEFAULT}
+     * @param opts                     the injector options
      * @param <T>                      the managed service type
      * @return the result of the activation
      * @throws io.helidon.pico.PicoServiceProviderException if an injection or activation problem occurs
@@ -69,7 +69,7 @@ public interface Injector {
      * this lifecycle event.
      *
      * @param serviceOrServiceProvider the service provider or instance registered and being managed
-     * @param opts                     the injector options, or use {@link InjectorOptions#DEFAULT}
+     * @param opts                     the injector options
      * @param <T>                      the managed service type
      * @return the result of the deactivation
      * @throws io.helidon.pico.PicoServiceProviderException if a problem occurs

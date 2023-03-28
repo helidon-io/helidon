@@ -39,7 +39,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
-import static io.helidon.pico.maven.plugin.Utils.picoServices;
+import static io.helidon.pico.maven.plugin.MavenPluginUtils.picoServices;
 import static io.helidon.pico.tools.DefaultApplicationCreator.APPLICATION_NAME_SUFFIX;
 import static io.helidon.pico.tools.DefaultApplicationCreator.NAME_PREFIX;
 import static io.helidon.pico.tools.DefaultApplicationCreator.upperFirstChar;

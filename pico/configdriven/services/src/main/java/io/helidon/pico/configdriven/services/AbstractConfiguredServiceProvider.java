@@ -32,10 +32,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.config.ConfigBean;
-import io.helidon.builder.config.spi.BasicConfigBeanRegistry;
-import io.helidon.builder.config.spi.BasicConfigResolver;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
+import io.helidon.builder.config.spi.HelidonConfigBeanRegistry;
+import io.helidon.builder.config.spi.HelidonConfigResolver;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
@@ -67,13 +67,13 @@ import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.spi.InjectionResolver;
 
 import static io.helidon.pico.CallingContext.toErrorMessage;
-import static io.helidon.pico.configdriven.services.Utils.hasValue;
-import static io.helidon.pico.configdriven.services.Utils.isBlank;
+import static io.helidon.pico.configdriven.services.ConfigDrivenUtils.hasValue;
+import static io.helidon.pico.configdriven.services.ConfigDrivenUtils.isBlank;
 
 /**
  * Abstract base for any config-driven-service.
  *
- * @param <T> the type of the service this provider manages
+ * @param <T>  the type of the service this provider manages
  * @param <CB> the type of config beans that this service is configured by
  */
 // special note: many of these methods are referenced in code generated code!
@@ -85,7 +85,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     private static final QualifierAndValue EMPTY_CONFIGURED_BY = DefaultQualifierAndValue.create(ConfiguredBy.class);
     private static final CBInstanceComparator BEAN_INSTANCE_ID_COMPARATOR = new CBInstanceComparator();
     private static final System.Logger LOGGER = System.getLogger(AbstractConfiguredServiceProvider.class.getName());
-    private static final LazyValue<InternalConfigBeanRegistry> CONFIG_BEAN_REGISTRY
+    private static final LazyValue<BindableConfigBeanRegistry> CONFIG_BEAN_REGISTRY
             = LazyValue.create(AbstractConfiguredServiceProvider::resolveConfigBeanRegistry);
 
     private final AtomicReference<Boolean> isRootProvider = new AtomicReference<>();
@@ -102,6 +102,32 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * The default constructor.
      */
     protected AbstractConfiguredServiceProvider() {
+    }
+
+    /**
+     * The special comparator for ordering config bean instance ids.
+     *
+     * @return the special comparator for ordering config bean instance ids
+     */
+    static Comparator<String> configBeanComparator() {
+        return BEAN_INSTANCE_ID_COMPARATOR;
+    }
+
+    static BindableConfigBeanRegistry resolveConfigBeanRegistry() {
+        HelidonConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
+        if (cbr == null) {
+            LOGGER.log(System.Logger.Level.INFO, "Config-Driven Services disabled (config bean registry not found");
+            return null;
+        }
+
+        if (!(cbr instanceof BindableConfigBeanRegistry)) {
+            Optional<CallingContext> callingContext = CallingContextFactory.create(false);
+            String desc = "Config-Driven Services disabled (unsupported implementation): " + cbr;
+            String msg = (callingContext.isEmpty()) ? toErrorMessage(desc) : toErrorMessage(callingContext.get(), desc);
+            throw new PicoException(msg);
+        }
+
+        return (BindableConfigBeanRegistry) cbr;
     }
 
     /**
@@ -192,7 +218,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             }
 
             // bind to the config bean registry ...  but, don't yet resolve!
-            InternalConfigBeanRegistry cbr = CONFIG_BEAN_REGISTRY.get();
+            BindableConfigBeanRegistry cbr = CONFIG_BEAN_REGISTRY.get();
             if (cbr != null) {
                 Optional<QualifierAndValue> configuredByQualifier = serviceInfo.qualifiers().stream()
                         .filter(q -> q.typeName().name().equals(ConfiguredBy.class.getName()))
@@ -217,7 +243,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             }
 
             // one of the configured services need to "tickle" the bean registry to initialize
-            InternalConfigBeanRegistry cbr = CONFIG_BEAN_REGISTRY.get();
+            BindableConfigBeanRegistry cbr = CONFIG_BEAN_REGISTRY.get();
             if (cbr != null) {
                 cbr.initialize(picoServices);
 
@@ -257,7 +283,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
     @Override
     public MetaConfigBeanInfo metaConfigBeanInfo() {
-        Map<String, Object> meta = configBeanAttributes().get(BasicConfigResolver.TAG_META);
+        Map<String, Object> meta = configBeanAttributes().get(HelidonConfigResolver.TAG_META);
         if (meta != null) {
             ConfigBeanInfo cbi = (ConfigBeanInfo) meta.get(ConfigBeanInfo.class.getName());
             if (cbi != null) {
@@ -333,10 +359,10 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * <li> the fallback is to use standard matching using the criteria provided and only include the slaves.
      * </ul>
      *
-     * @param criteria              the injection point criteria that must match
-     * @param wantThis              if this instance matches criteria, do we want to return this instance as part of the result
-     * @param thisAlreadyMatches    an optimization that signals to the implementation that this instance has already
-     *                              matched using the standard service info matching checks
+     * @param criteria           the injection point criteria that must match
+     * @param wantThis           if this instance matches criteria, do we want to return this instance as part of the result
+     * @param thisAlreadyMatches an optimization that signals to the implementation that this instance has already
+     *                           matched using the standard service info matching checks
      * @return the list of matching service providers based upon the context and criteria provided
      */
     @Override
@@ -497,7 +523,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * Brokers the set of the instance id for the given config bean.
      *
      * @param configBean the config bean to set
-     * @param val the instance id to associate it with
+     * @param val        the instance id to associate it with
      */
     public abstract void configBeanInstanceId(CB configBean,
                                               String val);
@@ -609,8 +635,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     /**
      * Maybe transition into being a root provider if we are the first to claim it. Otherwise, we are a slave being managed.
      *
-     * @param isRootProvider    true if an asserting is being made to claim root or claim managed slave
-     * @param expectSet         true if this is a strong assertion, and if not claimed an exception will be thrown
+     * @param isRootProvider true if an asserting is being made to claim root or claim managed slave
+     * @param expectSet      true if this is a strong assertion, and if not claimed an exception will be thrown
      */
     // special note: this is referred to in code generated code!
     protected void assertIsRootProvider(boolean isRootProvider,
@@ -626,6 +652,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * Return true if this service is driven to activation during startup (and provided it has some config).
      * See {@link io.helidon.pico.configdriven.ConfiguredBy#drivesActivation()} and
      * see {@link io.helidon.builder.config.ConfigBean#drivesActivation()} for more.
+     *
      * @return true if this service is driven to activation during startup
      */
     // note: overridden by the service if disabled at the ConfiguredBy service level
@@ -791,45 +818,19 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     /**
-     * The special comparator for ordering config bean instance ids.
-     *
-     * @return the special comparator for ordering config bean instance ids
-     */
-    static Comparator<String> configBeanComparator() {
-        return BEAN_INSTANCE_ID_COMPARATOR;
-    }
-
-    /**
      * See {@link #configBeanComparator()}.
      */
     static class CBInstanceComparator implements Comparator<String>, Serializable {
         @Override
         public int compare(String str1,
                            String str2) {
-            if (DefaultConfigBeanRegistry.DEFAULT_INSTANCE_ID.equals(str1)) {
+            if (DefaultPicoConfigBeanRegistry.DEFAULT_INSTANCE_ID.equals(str1)) {
                 return -1 * Integer.MAX_VALUE;
-            } else if (DefaultConfigBeanRegistry.DEFAULT_INSTANCE_ID.equals(str2)) {
+            } else if (DefaultPicoConfigBeanRegistry.DEFAULT_INSTANCE_ID.equals(str2)) {
                 return Integer.MAX_VALUE;
             }
             return str1.compareTo(str2);
         }
-    }
-
-    static InternalConfigBeanRegistry resolveConfigBeanRegistry() {
-        BasicConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
-        if (cbr == null) {
-            LOGGER.log(System.Logger.Level.INFO, "Config-Driven Services disabled (config bean registry not found");
-            return null;
-        }
-
-        if (!(cbr instanceof InternalConfigBeanRegistry)) {
-            Optional<CallingContext> callingContext = CallingContextFactory.create(false);
-            String desc = "Config-Driven Services disabled (unsupported implementation): " + cbr;
-            String msg = (callingContext.isEmpty()) ? toErrorMessage(desc) : toErrorMessage(callingContext.get(), desc);
-            throw new PicoException(msg);
-        }
-
-        return (InternalConfigBeanRegistry) cbr;
     }
 
 }

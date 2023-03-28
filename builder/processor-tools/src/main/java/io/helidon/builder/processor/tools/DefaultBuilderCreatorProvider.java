@@ -1830,10 +1830,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         boolean isEnumLikeType = isEnumLikeType(valType, key, val);
         if (isEnumLikeType) {
             val = valType + "." + val;
-        } else if (key.equals("value") && val.startsWith(ConfiguredOption.class.getName())) {
-            // NOP; process this as-is
-            assert (true); // for setting breakpoints in debug
-        } else {
+        } else if (!key.equals("value") || !val.startsWith(ConfiguredOption.class.getName())) {
             val = quotedValueOf(val);
         }
         return quotedValueOf(key) + ", " + val;

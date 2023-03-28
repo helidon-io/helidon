@@ -59,12 +59,12 @@ class DefaultInjectionPlans {
      * @param logger            the logger to use for any logging
      * @return the injection plan per element identity belonging to the service provider
      */
-    static Map<String, InjectionPlan> createInjectionPlans(PicoServices picoServices,
-                                                           ServiceProvider<?> self,
-                                                           DependenciesInfo dependencies,
-                                                           boolean resolveIps,
-                                                           System.Logger logger) {
-        Map<String, InjectionPlan> result = new LinkedHashMap<>();
+    static Map<String, PicoInjectionPlan> createInjectionPlans(PicoServices picoServices,
+                                                               ServiceProvider<?> self,
+                                                               DependenciesInfo dependencies,
+                                                               boolean resolveIps,
+                                                               System.Logger logger) {
+        Map<String, PicoInjectionPlan> result = new LinkedHashMap<>();
         if (dependencies.allDependencies().isEmpty()) {
             return result;
         }
@@ -77,7 +77,7 @@ class DefaultInjectionPlans {
 
     @SuppressWarnings("unchecked")
     private static void accumulate(DependencyInfo dep,
-                                   Map<String, InjectionPlan> result,
+                                   Map<String, PicoInjectionPlan> result,
                                    PicoServices picoServices,
                                    ServiceProvider<?> self,
                                    boolean resolveIps,
@@ -111,7 +111,7 @@ class DefaultInjectionPlans {
                                     .orElse(null);
                             Object target = (resolved instanceof Optional)
                                     ? ((Optional<?>) resolved).orElse(null) : resolved;
-                            DefaultInjectionPlan.Builder planBuilder = DefaultInjectionPlan.builder()
+                            DefaultPicoInjectionPlan.Builder planBuilder = DefaultPicoInjectionPlan.builder()
                                     .serviceProvider(self)
                                     .injectionPointInfo(ipInfo)
                                     .injectionPointQualifiedServiceProviders(toIpQualified(target))
@@ -165,7 +165,7 @@ class DefaultInjectionPlans {
                             throw DefaultServices.resolutionBasedInjectionError(
                                     ipInfo.dependencyToServiceInfo());
                         }
-                        InjectionPlan plan = DefaultInjectionPlan.builder()
+                        DefaultPicoInjectionPlan plan = DefaultPicoInjectionPlan.builder()
                                 .injectionPointInfo(ipInfo)
                                 .injectionPointQualifiedServiceProviders(serviceProviders)
                                 .serviceProvider(self)

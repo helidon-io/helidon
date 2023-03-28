@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.config.spi.BasicConfigBeanRegistry;
 import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
+import io.helidon.builder.config.spi.HelidonConfigBeanRegistry;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -54,7 +54,7 @@ public class PicoTestingSupport {
     /**
      * Provides a means to bind a service provider into the {@link io.helidon.pico.Services} registry.
      *
-     * @param picoServices the pico services instance to bind into
+     * @param picoServices    the pico services instance to bind into
      * @param serviceProvider the service provider to bind
      * @see io.helidon.pico.ServiceBinder
      */
@@ -91,11 +91,11 @@ public class PicoTestingSupport {
      */
     public static Config basicTestableConfig() {
         return Config.builder(
-                    ConfigSources.create(
-                            Map.of(
-                                    PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
-                                    PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_SERVICE_LOOKUP_CACHING, "true"),
-                            "config-1"))
+                        ConfigSources.create(
+                                Map.of(
+                                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
+                                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_SERVICE_LOOKUP_CACHING, "true"),
+                                "config-1"))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -128,24 +128,24 @@ public class PicoTestingSupport {
         return coll.stream().map(PicoTestingSupport::toDescription).collect(Collectors.toList());
     }
 
+    private static LazyValue<PicoServices> lazyCreate(Config config) {
+        return LazyValue.create(() -> {
+            PicoServices.globalBootstrap(DefaultBootstrap.builder().config(config).build());
+            return PicoServices.picoServices().orElseThrow();
+        });
+    }
+
     @SuppressWarnings("deprecation")
     private static class Internal extends PicoServicesHolder {
         public static void reset() {
             PicoServicesHolder.reset();
             instance = lazyCreate(basicTestableConfig());
 
-            BasicConfigBeanRegistry registry = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
+            HelidonConfigBeanRegistry registry = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
             if (registry instanceof Resettable) {
                 ((Resettable) registry).reset(true);
             }
         }
-    }
-
-    private static LazyValue<PicoServices> lazyCreate(Config config) {
-        return LazyValue.create(() -> {
-            PicoServices.globalBootstrap(DefaultBootstrap.builder().config(config).build());
-            return PicoServices.picoServices().orElseThrow();
-        });
     }
 
 }

@@ -24,11 +24,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.builder.config.spi.BasicConfigResolver;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
 import io.helidon.builder.config.spi.ConfigResolverMapRequest;
 import io.helidon.builder.config.spi.ConfigResolverRequest;
+import io.helidon.builder.config.spi.HelidonConfigResolver;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.builder.config.spi.ResolutionContext;
 import io.helidon.builder.config.spi.StringValueParser;
@@ -37,17 +37,210 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.metadata.ConfiguredOption;
 
-import static io.helidon.pico.configdriven.services.Utils.hasValue;
-import static io.helidon.pico.configdriven.services.Utils.safeDowncastOf;
-import static io.helidon.pico.configdriven.services.Utils.validatedConfigKey;
+import static io.helidon.pico.configdriven.services.ConfigDrivenUtils.hasValue;
+import static io.helidon.pico.configdriven.services.ConfigDrivenUtils.safeDowncastOf;
+import static io.helidon.pico.configdriven.services.ConfigDrivenUtils.validatedConfigKey;
 
 /**
  * Handles "full" config system presence.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-class DefaultConfigResolver extends BasicConfigResolver {
+class DefaultConfigResolver extends HelidonConfigResolver {
 
     DefaultConfigResolver() {
+    }
+
+    /**
+     * Extracts the component type from the meta attributes provided for a particular bean attribute name.
+     *
+     * @param request the request
+     * @param meta    the meta attributes
+     * @param <T>     the attribute value type being resolved in the request
+     * @return the component type
+     */
+    static <T> Optional<Class<T>> toComponentType(Map<String, Map<String, Object>> meta,
+                                                  ConfigResolverRequest<T> request) {
+        Map<String, Object> thisMeta = meta.get(request.attributeName());
+        Class componentType = request.valueComponentType().orElse(null);
+        componentType = (Class) (componentType == null && thisMeta != null ? thisMeta.get(TAG_COMPONENT_TYPE) : null);
+        return Optional.ofNullable(componentType);
+    }
+
+    static Optional validatedDefaults(Map<String, Object> meta,
+                                      String attrName,
+                                      Class<?> type,
+                                      Class<?> componentType) {
+        // check the default values...
+        String defaultVal = (String) meta.get("value");
+        if (defaultVal != null && defaultVal.equals(ConfiguredOption.UNCONFIGURED)) {
+            defaultVal = null;
+        }
+        Optional result = parse(defaultVal, attrName, type, componentType);
+        if (result.isPresent()) {
+            return result;
+        }
+
+        // check to see if we are in policy violation...
+        String requiredStr = (String) meta.get("required");
+        boolean required = Boolean.parseBoolean(requiredStr);
+        if (required) {
+            throw new IllegalStateException("'" + attrName + "' is a required attribute and cannot be null");
+        }
+
+        return Optional.empty();
+    }
+
+    static <T> Class<T> validatedTypeForConfigBeanRegistry(String attrName,
+                                                           Class<T> type,
+                                                           Class<?> cbType) {
+        if (type.isArray()) {
+            type = (Class<T>) type.getComponentType();
+            if (type == null) {
+                throw new ConfigException("? is not supported for " + cbType + "." + attrName);
+            }
+        }
+
+        if (type.isPrimitive() || type.getName().startsWith("java.lang.")) {
+            return null;
+        }
+
+        return type;
+    }
+
+    static List<?> findInConfigBeanRegistryAsList(ResolutionContext ctx,
+                                                  Map<String, Map<String, Object>> meta,
+                                                  ConfigResolverRequest<?> request) {
+        Class<?> type = validatedTypeForConfigBeanRegistry(request.attributeName(),
+                                                           request.valueType(),
+                                                           request.valueComponentType().orElse(null));
+        if (type == null) {
+            return List.of();
+        }
+
+        DefaultPicoConfigBeanRegistry cbr = (DefaultPicoConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry()
+                .orElseThrow();
+        String fullConfigKey = fullConfigKeyOf(safeDowncastOf(ctx.config()), request.configKey(), meta);
+        Set<?> result = cbr.configBeansByConfigKey(request.configKey(), Optional.of(fullConfigKey));
+        return new ArrayList<>(result);
+    }
+
+    static Map<String, Object> findInConfigBeanRegistryAsMap(ResolutionContext ctx,
+                                                             Map<String, Map<String, Object>> meta,
+                                                             ConfigResolverRequest<?> request) {
+        Class<?> type = validatedTypeForConfigBeanRegistry(request.attributeName(), request.valueType(), ctx.configBeanType());
+        if (type == null) {
+            return Map.of();
+        }
+
+        DefaultPicoConfigBeanRegistry cbr = (DefaultPicoConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry()
+                .orElseThrow();
+        String fullConfigKey = fullConfigKeyOf(safeDowncastOf(ctx.config()), request.configKey(), meta);
+        Map<String, ?> result = cbr.configBeanMapByConfigKey(request.configKey(), Optional.of(fullConfigKey));
+        return Objects.requireNonNull((Map<String, Object>) result);
+    }
+
+    static Optional<?> parse(String strValueToParse,
+                             String attrName,
+                             Class<?> type,
+                             Class<?> componentType) {
+        if (strValueToParse == null) {
+            return Optional.empty();
+        }
+
+        if (type.isAssignableFrom(strValueToParse.getClass())) {
+            return Optional.of(strValueToParse);
+        }
+
+        StringValueParser provider = StringValueParserHolder.stringValueParser().orElseThrow();
+        if (componentType != null) {
+            // best effort here
+            try {
+                Object val = provider.parse(strValueToParse, componentType);
+                return Optional.ofNullable(val);
+            } catch (Exception e) {
+                if (Optional.class != type) {
+                    throw new UnsupportedOperationException("Only Optional<> is currently supported: " + attrName);
+                }
+            }
+        }
+
+        return provider.parse(strValueToParse, type);
+    }
+
+    static <T> Optional<T> optionalWrappedBean(Object configBean,
+                                               String attrName,
+                                               Class<T> type,
+                                               Class<T> componentType) {
+        if (type.isInstance(Objects.requireNonNull(configBean))
+                || (
+                Optional.class.equals(type)
+                        && (componentType != null) && componentType.isInstance(configBean))) {
+            if (Optional.class.equals(type)) {
+                return Optional.of((T) Optional.of(configBean));
+            }
+
+            return Optional.of((T) configBean);
+        }
+
+        throw new UnsupportedOperationException("Cannot convert to type " + componentType + ": " + attrName);
+    }
+
+    static <T, V> Optional<Collection<V>> optionalWrappedBeans(List<?> configBeans,
+                                                               String ignoredAttrName,
+                                                               Class<T> ignoredType,
+                                                               Class<V> componentType) {
+        assert (configBeans != null && !configBeans.isEmpty());
+
+        configBeans.forEach(configBean -> {
+            assert (componentType.isInstance(configBean));
+        });
+
+        return Optional.of((Collection) configBeans);
+    }
+
+    static Optional<Map<?, ?>> optionalWrappedBeans(Map<String, Object> configBeans,
+                                                    String attrName,
+                                                    Class<?> keyType,
+                                                    Class<?> ignoredKeyComponentType,
+                                                    Class<?> type,
+                                                    Class<?> componentType) {
+        assert (configBeans != null && !configBeans.isEmpty() && (type != null) && componentType != null);
+        if (keyType != null && String.class != keyType) {
+            throw new UnsupportedOperationException("Only Map with key of String is currently supported: " + attrName);
+        }
+
+        configBeans.forEach((key, value) -> {
+            assert (componentType.isInstance(value));
+        });
+
+        return Optional.of(configBeans);
+    }
+
+    static String fullConfigKeyOf(Config config,
+                                  String configKey,
+                                  Map<String, Map<String, Object>> metaAttributes) {
+        assert (hasValue(configKey));
+        String parentKey;
+        if (config != null) {
+            parentKey = config.key().toString();
+        } else {
+            parentKey = Objects.requireNonNull(configKeyOf(metaAttributes));
+        }
+        return parentKey + "." + configKey;
+    }
+
+    static MetaConfigBeanInfo configBeanInfoOf(Map<String, Map<String, Object>> metaAttributes) {
+        Map<String, Object> meta = metaAttributes.get(TAG_META);
+        if (meta == null) {
+            return null;
+        }
+
+        return (MetaConfigBeanInfo) meta.get(ConfigBeanInfo.class.getName());
+    }
+
+    static String configKeyOf(Map<String, Map<String, Object>> metaAttributes) {
+        MetaConfigBeanInfo cbi = configBeanInfoOf(metaAttributes);
+        return (null == cbi) ? null : validatedConfigKey(cbi);
     }
 
     @Override
@@ -112,11 +305,14 @@ class DefaultConfigResolver extends BasicConfigResolver {
         Class<V> componentType = toComponentType(meta, request).orElse(null);
 
         // check the config bean registry to see if we know of anything by this key
-        Map<String, V> matches = findInConfigBeanRegistryAsMap(ctx, meta, request);
+        Map<String, Object> matches = findInConfigBeanRegistryAsMap(ctx, meta, request);
         if (!matches.isEmpty()) {
-            return optionalWrappedBeans(matches, request.attributeName(),
-                                        request.keyType(), request.keyComponentType().orElse(null),
-                                        request.valueType(), request.valueComponentType().orElse(null));
+            return (Optional<Map<K, V>>) (Optional) optionalWrappedBeans(matches,
+                                                                         request.attributeName(),
+                                                                         request.keyType(),
+                                                                         request.keyComponentType().orElse(null),
+                                                                         request.valueType(),
+                                                                         request.valueComponentType().orElse(null));
         }
 
         // check the config sub system
@@ -128,196 +324,6 @@ class DefaultConfigResolver extends BasicConfigResolver {
 
         Map<String, Object> thisMeta = meta.get(request.attributeName());
         return validatedDefaults(thisMeta, request.attributeName(), request.valueType(), componentType);
-    }
-
-    /**
-     * Extracts the component type from the meta attributes provided for a particular bean attribute name.
-     *
-     * @param request   the request
-     * @param meta      the meta attributes
-     * @param <T> the attribute value type being resolved in the request
-     * @return the component type
-     */
-    static <T> Optional<Class<T>> toComponentType(Map<String, Map<String, Object>> meta,
-                                                  ConfigResolverRequest<T> request) {
-        Map<String, Object> thisMeta = meta.get(request.attributeName());
-        Class componentType = request.valueComponentType().orElse(null);
-        componentType = (Class) (componentType == null && thisMeta != null ? thisMeta.get(TAG_COMPONENT_TYPE) : null);
-        return Optional.ofNullable(componentType);
-    }
-
-    static Optional validatedDefaults(Map<String, Object> meta,
-                                      String attrName,
-                                      Class<?> type,
-                                      Class<?> componentType) {
-        // check the default values...
-        String defaultVal = (String) meta.get("value");
-        if (defaultVal != null && defaultVal.equals(ConfiguredOption.UNCONFIGURED)) {
-            defaultVal = null;
-        }
-        Optional result = parse(defaultVal, attrName, type, componentType);
-        if (result.isPresent()) {
-            return result;
-        }
-
-        // check to see if we are in policy violation...
-        String requiredStr = (String) meta.get("required");
-        boolean required = Boolean.parseBoolean(requiredStr);
-        if (required) {
-            throw new IllegalStateException("'" + attrName + "' is a required attribute and cannot be null");
-        }
-
-        return Optional.empty();
-    }
-
-    static <T> Class<T> validatedTypeForConfigBeanRegistry(String attrName,
-                                                           Class<T> type,
-                                                           Class<?> cbType) {
-        if (type.isArray()) {
-            type = (Class<T>) type.getComponentType();
-            if (type == null) {
-                throw new ConfigException("? is not supported for " + cbType + "." + attrName);
-            }
-        }
-
-        if (type.isPrimitive() || type.getName().startsWith("java.lang.")) {
-            return null;
-        }
-
-        return type;
-    }
-
-    static <T> List<T> findInConfigBeanRegistryAsList(ResolutionContext ctx,
-                                                      Map<String, Map<String, Object>> meta,
-                                                      ConfigResolverRequest<T> request) {
-        Class<T> type = validatedTypeForConfigBeanRegistry(request.attributeName(),
-                                                           request.valueType(),
-                                                           request.valueComponentType().orElse(null));
-        if (type == null) {
-            return List.of();
-        }
-
-        DefaultConfigBeanRegistry cbr = (DefaultConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
-        String fullConfigKey = fullConfigKeyOf(safeDowncastOf(ctx.config()), request.configKey(), meta);
-        Set<T> result = cbr.configBeansByConfigKey(request.configKey(), Optional.of(fullConfigKey));
-        return new ArrayList<>(result);
-    }
-
-    static <V> Map<String, V> findInConfigBeanRegistryAsMap(ResolutionContext ctx,
-                                                            Map<String, Map<String, Object>> meta,
-                                                            ConfigResolverRequest<V> request) {
-        Class<?> type = validatedTypeForConfigBeanRegistry(request.attributeName(), request.valueType(), ctx.configBeanType());
-        if (type == null) {
-            return Map.of();
-        }
-
-        DefaultConfigBeanRegistry cbr = (DefaultConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
-        String fullConfigKey = fullConfigKeyOf(safeDowncastOf(ctx.config()), request.configKey(), meta);
-        Map<String, V> result = cbr.configBeanMapByConfigKey(request.configKey(), Optional.of(fullConfigKey));
-        return Objects.requireNonNull(result);
-    }
-
-    static Optional<?> parse(String strValueToParse,
-                             String attrName,
-                             Class<?> type,
-                             Class<?> componentType) {
-        if (strValueToParse == null) {
-            return Optional.empty();
-        }
-
-        if (type.isAssignableFrom(strValueToParse.getClass())) {
-            return Optional.of(strValueToParse);
-        }
-
-        StringValueParser provider = StringValueParserHolder.stringValueParser().orElseThrow();
-        if (componentType != null) {
-            // best effort here
-            try {
-                Object val = provider.parse(strValueToParse, componentType);
-                return Optional.ofNullable(val);
-            } catch (Exception e) {
-                if (Optional.class != type) {
-                    throw new UnsupportedOperationException("Only Optional<> is currently supported: " + attrName);
-                }
-            }
-        }
-
-        return provider.parse(strValueToParse, type);
-    }
-
-    static <T> Optional<T> optionalWrappedBean(Object configBean,
-                                               String attrName,
-                                               Class<T> type,
-                                               Class<T> componentType) {
-        if (type.isInstance(Objects.requireNonNull(configBean))
-                || (Optional.class.equals(type)
-                        && (componentType != null) && componentType.isInstance(configBean))) {
-            if (Optional.class.equals(type)) {
-                return Optional.of((T) Optional.of(configBean));
-            }
-
-            return Optional.of((T) configBean);
-        }
-
-        throw new UnsupportedOperationException("Cannot convert to type " + componentType + ": " + attrName);
-    }
-
-    static <T, V> Optional<Collection<V>> optionalWrappedBeans(List<?> configBeans,
-                                                               String ignoredAttrName,
-                                                               Class<T> ignoredType,
-                                                               Class<V> componentType) {
-        assert (configBeans != null && !configBeans.isEmpty());
-
-        configBeans.forEach(configBean -> {
-            assert (componentType.isInstance(configBean));
-        });
-
-        return Optional.of((Collection) configBeans);
-    }
-
-    static <K, V> Optional<Map<K, V>> optionalWrappedBeans(Map<String, V> configBeans,
-                                                           String attrName,
-                                                           Class<?> keyType,
-                                                           Class<?> ignoredKeyComponentType,
-                                                           Class<?> type,
-                                                           Class<?> componentType) {
-        assert (configBeans != null && !configBeans.isEmpty() && (type != null) && componentType != null);
-        if (keyType != null && String.class != keyType) {
-            throw new UnsupportedOperationException("Only Map with key of String is currently supported: " + attrName);
-        }
-
-        configBeans.forEach((key, value) -> {
-            assert (componentType.isInstance(value));
-        });
-
-        return (Optional) Optional.of(configBeans);
-    }
-
-    static String fullConfigKeyOf(Config config,
-                                  String configKey,
-                                  Map<String, Map<String, Object>> metaAttributes) {
-        assert (hasValue(configKey));
-        String parentKey;
-        if (config != null) {
-            parentKey = config.key().toString();
-        } else {
-            parentKey = Objects.requireNonNull(configKeyOf(metaAttributes));
-        }
-        return parentKey + "." + configKey;
-    }
-
-    static MetaConfigBeanInfo configBeanInfoOf(Map<String, Map<String, Object>> metaAttributes) {
-        Map<String, Object> meta = metaAttributes.get(TAG_META);
-        if (meta == null) {
-            return null;
-        }
-
-        return (MetaConfigBeanInfo) meta.get(ConfigBeanInfo.class.getName());
-    }
-
-    static String configKeyOf(Map<String, Map<String, Object>> metaAttributes) {
-        MetaConfigBeanInfo cbi = configBeanInfoOf(metaAttributes);
-        return (null == cbi) ? null : validatedConfigKey(cbi);
     }
 
 }

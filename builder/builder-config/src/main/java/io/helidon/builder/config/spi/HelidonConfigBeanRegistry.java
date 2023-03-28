@@ -23,7 +23,7 @@ import java.util.Map;
  * The highest weighted service-loaded instance of this contract will be responsible for managing the active
  * {@link io.helidon.builder.config.ConfigBean} instances running in the JVM.
  */
-public interface BasicConfigBeanRegistry {
+public interface HelidonConfigBeanRegistry {
 
     /**
      * Returns all config beans indexed by its config key.

@@ -68,10 +68,10 @@ import org.apache.maven.project.MavenProject;
 
 import static io.helidon.pico.CallingContext.globalCallingContext;
 import static io.helidon.pico.CallingContext.toErrorMessage;
-import static io.helidon.pico.maven.plugin.Utils.applicationCreator;
-import static io.helidon.pico.maven.plugin.Utils.hasValue;
-import static io.helidon.pico.maven.plugin.Utils.picoServices;
-import static io.helidon.pico.maven.plugin.Utils.toDescriptions;
+import static io.helidon.pico.maven.plugin.MavenPluginUtils.applicationCreator;
+import static io.helidon.pico.maven.plugin.MavenPluginUtils.hasValue;
+import static io.helidon.pico.maven.plugin.MavenPluginUtils.picoServices;
+import static io.helidon.pico.maven.plugin.MavenPluginUtils.toDescriptions;
 import static io.helidon.pico.tools.ApplicationCreatorConfigOptions.PermittedProviderType;
 import static io.helidon.pico.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
 import static io.helidon.pico.tools.ModuleUtils.isUnnamedModuleName;

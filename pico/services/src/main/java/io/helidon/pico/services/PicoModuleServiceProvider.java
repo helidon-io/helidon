@@ -24,11 +24,11 @@ import io.helidon.pico.ServiceInfo;
 /**
  * Basic {@link io.helidon.pico.Module} implementation. A Pico module is-a service provider also.
  */
-class BasicModuleServiceProvider extends AbstractServiceProvider<io.helidon.pico.Module> {
+class PicoModuleServiceProvider extends AbstractServiceProvider<io.helidon.pico.Module> {
 
-    BasicModuleServiceProvider(io.helidon.pico.Module module,
-                               String moduleName,
-                               PicoServices picoServices) {
+    PicoModuleServiceProvider(io.helidon.pico.Module module,
+                              String moduleName,
+                              PicoServices picoServices) {
         super(module, PicoServices.terminalActivationPhase(), createServiceInfo(module, moduleName), picoServices);
         serviceRef(module);
     }

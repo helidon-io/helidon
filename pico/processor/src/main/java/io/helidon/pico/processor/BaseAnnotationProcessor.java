@@ -90,9 +90,9 @@ import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeName
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValue;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
-import static io.helidon.pico.processor.Utils.rootStackTraceElementOf;
-import static io.helidon.pico.processor.Utils.toList;
-import static io.helidon.pico.processor.Utils.toPath;
+import static io.helidon.pico.processor.ProcessorUtils.rootStackTraceElementOf;
+import static io.helidon.pico.processor.ProcessorUtils.toList;
+import static io.helidon.pico.processor.ProcessorUtils.toPath;
 import static io.helidon.pico.tools.ModuleUtils.toSourcePath;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromElement;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
@@ -135,6 +135,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             logger().log(Level.ERROR, "failed to initialize: " + t.getMessage(), t);
             throw new ToolsException("failed to initialize: " + t.getMessage(), t);
         }
+    }
+
+    static boolean hasValue(String val) {
+        return (val != null && !val.isBlank());
     }
 
     @Override
@@ -280,16 +284,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return services;
     }
 
-    private boolean containsAnyAnnotation(Element element,
-                                          Set<String> contraAnnotations) {
-        List<AnnotationAndValue> annotationAndValues =
-                createAnnotationAndValueListFromElement(element, processingEnv.getElementUtils());
-        Optional<AnnotationAndValue> annotation = annotationAndValues.stream()
-                .filter(it -> contraAnnotations.contains(it.typeName().name()))
-                .findFirst();
-        return annotation.isPresent();
-    }
-
     int doBulkInner(Set<? extends Element> typesToProcess,
                     TypeName serviceTypeName,
                     B builder) {
@@ -356,7 +350,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
      * Called to process the service type definition to add the basic service info constructs.
      *
      * @param serviceTypeName the service type name
-     * @param type the type element
+     * @param type            the type element
      */
     protected void processServiceType(TypeName serviceTypeName,
                                       TypeElement type) {
@@ -494,7 +488,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             return false;
         }
 
-
         String priorityString = extractValues(mirror.get().getElementValues()).get("value");
         if (priorityString == null) {
             return false;
@@ -591,17 +584,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return list;
     }
 
-    private List<String> annotationsWithAnnotationsOfNoOpposite(TypeElement type,
-                                                                String annotation) {
-        List<String> list = new ArrayList<>();
-        type.getAnnotationMirrors()
-                .forEach(am -> findAnnotationMirror(annotation,
-                                                    am.getAnnotationType().asElement()
-                                                            .getAnnotationMirrors())
-                        .ifPresent(it -> list.add(am.getAnnotationType().asElement().toString())));
-        return list;
-    }
-
     CodeGenFiler createCodeGenFiler() {
         AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, this);
         return CodeGenFiler.create(filer);
@@ -653,7 +635,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             }
 
             ToolsException revisedTe = new ToolsException("error in annotation processing round for "
-                                                        + req.serviceTypeNames(), te);
+                                                                  + req.serviceTypeNames(), te);
             error(revisedTe.getMessage(), revisedTe);
         } finally {
             if (isProcessingOver) {
@@ -666,21 +648,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
         // allow other processors to also process these same annotations?
         return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
-    }
-
-    private void handleDeferredMoves() {
-        if (logger.isLoggable(Level.INFO) && !deferredMoves.isEmpty()) {
-            logger.log(Level.INFO, "handling deferred moves: " + deferredMoves);
-        }
-
-        try {
-            for (Map.Entry<Path, Path> e : deferredMoves.entrySet()) {
-                Files.move(e.getKey(), e.getValue());
-            }
-        } catch (IOException e) {
-            throw new ToolsException(e.getMessage(), e);
-        }
-        deferredMoves.clear();
     }
 
     Set<TypeName> toContracts(TypeElement type,
@@ -701,7 +668,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 result.add(parentTe);
                 continue;
             } else if (Options.isOptionEnabled(Options.TAG_AUTO_ADD_NON_CONTRACT_INTERFACES)
-                            && (ElementKind.INTERFACE == teContract.getKind())) {
+                    && (ElementKind.INTERFACE == teContract.getKind())) {
                 result.add(parentTe);
                 // fall in the next section, skip continue here
             } else if (services.serviceTypeNames().contains(parentTe)) {
@@ -849,8 +816,40 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return (Options.isOptionEnabled(Options.TAG_DEBUG)) ? Level.INFO : Level.DEBUG;
     }
 
-    static boolean hasValue(String val) {
-        return (val != null && !val.isBlank());
+    private boolean containsAnyAnnotation(Element element,
+                                          Set<String> contraAnnotations) {
+        List<AnnotationAndValue> annotationAndValues =
+                createAnnotationAndValueListFromElement(element, processingEnv.getElementUtils());
+        Optional<AnnotationAndValue> annotation = annotationAndValues.stream()
+                .filter(it -> contraAnnotations.contains(it.typeName().name()))
+                .findFirst();
+        return annotation.isPresent();
+    }
+
+    private List<String> annotationsWithAnnotationsOfNoOpposite(TypeElement type,
+                                                                String annotation) {
+        List<String> list = new ArrayList<>();
+        type.getAnnotationMirrors()
+                .forEach(am -> findAnnotationMirror(annotation,
+                                                    am.getAnnotationType().asElement()
+                                                            .getAnnotationMirrors())
+                        .ifPresent(it -> list.add(am.getAnnotationType().asElement().toString())));
+        return list;
+    }
+
+    private void handleDeferredMoves() {
+        if (logger.isLoggable(Level.INFO) && !deferredMoves.isEmpty()) {
+            logger.log(Level.INFO, "handling deferred moves: " + deferredMoves);
+        }
+
+        try {
+            for (Map.Entry<Path, Path> e : deferredMoves.entrySet()) {
+                Files.move(e.getKey(), e.getValue());
+            }
+        } catch (IOException e) {
+            throw new ToolsException(e.getMessage(), e);
+        }
+        deferredMoves.clear();
     }
 
 }

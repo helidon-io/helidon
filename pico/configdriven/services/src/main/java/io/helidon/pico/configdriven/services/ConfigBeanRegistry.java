@@ -21,15 +21,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.builder.config.spi.BasicConfigBeanRegistry;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
+import io.helidon.builder.config.spi.HelidonConfigBeanRegistry;
 
 /**
  * The highest ranked/weighted implementor of this contract is responsible for managing the set of
  * {@link io.helidon.builder.config.ConfigBean}'s that are active, along with whether the application is configured to
  * support dynamic aspects (i.e., dynamic in content, dynamic in lifecycle, etc.).
  */
-public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
+public interface ConfigBeanRegistry extends HelidonConfigBeanRegistry {
 
     /**
      * The config bean registry is initialized as part of Pico's initialization, which happens when the service registry
@@ -72,11 +72,10 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
      *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
      * @param fullConfigKey optionally, the full config key - if not passed will return the list of all matches
      *                      using just the key
-     * @param <CB>          the config bean type
      * @return the set of known config keys
      */
-    <CB> Set<CB> configBeansByConfigKey(String key,
-                                        Optional<String> fullConfigKey);
+    Set<?> configBeansByConfigKey(String key,
+                                  Optional<String> fullConfigKey);
 
     /**
      * Similar to {@link #configBeansByConfigKey}, but instead returns all the known config beans in a
@@ -86,10 +85,9 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
      *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
      * @param fullConfigKey optionally, the full config key - if not passed will return the list of all matches
      *                      using just the key
-     * @param <CB>          the config bean type
      * @return the map of known config keys
      */
-    <CB> Map<String, CB> configBeanMapByConfigKey(String key,
-                                                  Optional<String> fullConfigKey);
+    Map<String, ?> configBeanMapByConfigKey(String key,
+                                            Optional<String> fullConfigKey);
 
 }

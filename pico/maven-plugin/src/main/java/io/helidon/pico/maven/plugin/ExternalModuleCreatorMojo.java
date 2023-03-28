@@ -47,8 +47,8 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
-import static io.helidon.pico.maven.plugin.Utils.activatorCreator;
-import static io.helidon.pico.maven.plugin.Utils.externalModuleCreator;
+import static io.helidon.pico.maven.plugin.MavenPluginUtils.activatorCreator;
+import static io.helidon.pico.maven.plugin.MavenPluginUtils.externalModuleCreator;
 
 /**
  * Responsible for creating pico {@link io.helidon.pico.Activator}'s and a {@link io.helidon.pico.Module}

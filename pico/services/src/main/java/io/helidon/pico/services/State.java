@@ -17,11 +17,13 @@
 package io.helidon.pico.services;
 
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import io.helidon.pico.Phase;
 import io.helidon.pico.Resettable;
 
 class State implements Resettable, Cloneable {
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private Phase currentPhase;
     private boolean isFinished;
     private Throwable lastError;
@@ -35,50 +37,104 @@ class State implements Resettable, Cloneable {
 
     @Override
     public State clone() {
-        return create(currentPhase()).finished(finished()).lastError(lastError());
+        ReentrantReadWriteLock.ReadLock rlock = lock.readLock();
+        rlock.lock();
+        try {
+            return create(currentPhase()).finished(finished()).lastError(lastError());
+        } finally {
+            rlock.unlock();
+        }
     }
 
     @Override
     public String toString() {
-        return "currentPhase=" + currentPhase + ", isFinished=" + isFinished + ", lastError=" + lastError;
+        ReentrantReadWriteLock.WriteLock rlock = lock.writeLock();
+        rlock.lock();
+        try {
+            return "currentPhase=" + currentPhase + ", isFinished=" + isFinished + ", lastError=" + lastError;
+        } finally {
+            rlock.unlock();
+        }
     }
 
     @Override
     public boolean reset(boolean deep) {
-        currentPhase(Phase.INIT).finished(false).lastError(null);
-        return true;
+        ReentrantReadWriteLock.WriteLock wlock = lock.writeLock();
+        wlock.lock();
+        try {
+            currentPhase(Phase.INIT).finished(false).lastError(null);
+            return true;
+        } finally {
+            wlock.unlock();
+        }
     }
 
     State currentPhase(Phase phase) {
-        Phase lastPhase = this.currentPhase;
-        this.currentPhase = Objects.requireNonNull(phase);
-        if (lastPhase != this.currentPhase) {
-            this.isFinished = false;
-            this.lastError = null;
+        ReentrantReadWriteLock.WriteLock wlock = lock.writeLock();
+        wlock.lock();
+        try {
+            Phase lastPhase = this.currentPhase;
+            this.currentPhase = Objects.requireNonNull(phase);
+            if (lastPhase != this.currentPhase) {
+                this.isFinished = false;
+                this.lastError = null;
+            }
+            return this;
+        } finally {
+            wlock.unlock();
         }
-        return this;
     }
 
     Phase currentPhase() {
-        return currentPhase;
+        ReentrantReadWriteLock.ReadLock rlock = lock.readLock();
+        rlock.lock();
+        try {
+            return currentPhase;
+        } finally {
+            rlock.unlock();
+        }
     }
 
     State finished(boolean finished) {
-        this.isFinished = finished;
-        return this;
+        ReentrantReadWriteLock.WriteLock wlock = lock.writeLock();
+        wlock.lock();
+        try {
+            this.isFinished = finished;
+            return this;
+        } finally {
+            wlock.unlock();
+        }
     }
 
     boolean finished() {
-        return isFinished;
+        ReentrantReadWriteLock.ReadLock rlock = lock.readLock();
+        rlock.lock();
+        try {
+            return isFinished;
+        } finally {
+            rlock.unlock();
+        }
     }
 
     State lastError(Throwable t) {
-        this.lastError = t;
-        return this;
+        ReentrantReadWriteLock.WriteLock wlock = lock.writeLock();
+        wlock.lock();
+        try {
+            this.lastError = t;
+            return this;
+        } finally {
+            wlock.unlock();
+        }
     }
 
     Throwable lastError() {
-        return lastError;
+        ReentrantReadWriteLock.ReadLock rlock = lock.readLock();
+        rlock.lock();
+        try {
+            return lastError;
+        } finally {
+            rlock.unlock();
+        }
     }
 
 }

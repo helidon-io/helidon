@@ -67,8 +67,8 @@ public abstract class InterceptedMethod<I, V> implements Function<Object[], V> {
                 .classAnnotations(serviceLevelAnnotations)
                 .interceptors(interceptors)
                 .elementInfo(methodInfo)
-                .elementArgInfo(methodArgInfo);
-//                .build()
+                .elementArgInfo(methodArgInfo)
+                .build();
     }
 
     /**
@@ -93,9 +93,8 @@ public abstract class InterceptedMethod<I, V> implements Function<Object[], V> {
                 .serviceTypeName(serviceTypeName)
                 .classAnnotations(serviceLevelAnnotations)
                 .interceptors(interceptors)
-                .elementInfo(methodInfo);
-        //         .elementArgInfo(methodArgInfo)
-        //         .build()
+                .elementInfo(methodInfo)
+                .build();
     }
 
     /**

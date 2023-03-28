@@ -34,5 +34,5 @@ module io.helidon.builder.config {
     exports io.helidon.builder.config.spi;
 
     provides io.helidon.builder.config.spi.ConfigResolverProvider
-            with io.helidon.builder.config.spi.BasicConfigResolver;
+            with io.helidon.builder.config.spi.HelidonConfigResolver;
 }

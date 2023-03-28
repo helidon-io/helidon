@@ -29,7 +29,7 @@ import io.helidon.pico.Phase;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceInfo;
 import io.helidon.pico.ServiceProviderBindable;
-import io.helidon.pico.services.InjectionPlan;
+import io.helidon.pico.services.PicoInjectionPlan;
 
 /**
  * Used by root service providers when there are no services that have been configured.
@@ -125,7 +125,7 @@ class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServiceProvid
     }
 
     @Override
-    public Map<String, InjectionPlan> getOrCreateInjectionPlan(boolean resolveIps) {
+    public Map<String, PicoInjectionPlan> getOrCreateInjectionPlan(boolean resolveIps) {
         return super.getOrCreateInjectionPlan(resolveIps);
     }
 
