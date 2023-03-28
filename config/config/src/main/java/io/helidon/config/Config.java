@@ -827,15 +827,6 @@ public interface Config extends io.helidon.common.config.Config {
                                    Config::asNode);
     }
 
-    /**
-     * Returns a list of child {@code Config} nodes if the node is {@link Type#OBJECT}.
-     * Returns a list of element nodes if the node is {@link Type#LIST}.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING}.
-     * Otherwise, if node is {@link Type#VALUE}, it throws {@link ConfigMappingException}.
-     *
-     * @return a list of {@link Type#OBJECT} members or a list of {@link Type#LIST} members
-     * @throws ConfigMappingException in case the node is {@link Type#VALUE}
-     */
     @Override
     @SuppressWarnings("unchecked")
     ConfigValue<List<Config>> asNodeList() throws ConfigMappingException;
