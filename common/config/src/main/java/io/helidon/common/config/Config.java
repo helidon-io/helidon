@@ -26,6 +26,14 @@ import java.util.function.Function;
  * See {@link ConfigValue}.
  */
 public interface Config {
+    /**
+     * Empty instance of {@code Config}.
+     *
+     * @return empty instance of {@code Config}.
+     */
+    static Config empty() {
+        return EmptyConfig.EMPTY;
+    }
 
     /**
      * Returns the fully-qualified key of the {@code Config} node.

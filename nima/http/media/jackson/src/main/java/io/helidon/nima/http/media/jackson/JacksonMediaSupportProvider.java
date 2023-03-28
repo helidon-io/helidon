@@ -16,132 +16,37 @@
 
 package io.helidon.nima.http.media.jackson;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.Weighted;
-import io.helidon.common.http.Headers;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.http.media.EntityReader;
-import io.helidon.nima.http.media.EntityWriter;
-import io.helidon.nima.http.media.MediaContext;
+import io.helidon.common.config.Config;
+import io.helidon.nima.http.media.MediaSupport;
 import io.helidon.nima.http.media.spi.MediaSupportProvider;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-
-import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_JSON;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for Jackson media support.
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
 public class JacksonMediaSupportProvider implements MediaSupportProvider, Weighted {
-    private JacksonReader reader;
-    private JacksonWriter writer;
-    private ObjectMapper objectMapper;
 
-    @Override
-    public void init(MediaContext context) {
-        objectMapper = new ObjectMapper()
-                .registerModule(new ParameterNamesModule())
-                .registerModule(new Jdk8Module())
-                .registerModule(new JavaTimeModule());
-
-        reader = new JacksonReader(objectMapper);
-        writer = new JacksonWriter(objectMapper);
+    /**
+     * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
+     */
+    @Deprecated
+    public JacksonMediaSupportProvider() {
+        super();
     }
 
     @Override
-    public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
-        if (requestHeaders.contentType()
-                .map(it -> it.test(MediaTypes.APPLICATION_JSON))
-                .orElse(true)) {
-            if (objectMapper.canDeserialize(objectMapper.constructType(type.type()))) {
-                return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-            }
-        }
-
-        return ReaderResponse.unsupported();
+    public String configKey() {
+        return "jackson";
     }
 
     @Override
-    public <T> WriterResponse<T> writer(GenericType<T> type,
-                                        Headers requestHeaders,
-                                        WritableHeaders<?> responseHeaders) {
-        // check if accepted
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
-                if (objectMapper.canSerialize(type.rawType())) {
-                    return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-                }
-                return WriterResponse.unsupported();
-            }
-        }
-
-        if (requestHeaders.acceptedTypes().isEmpty()) {
-            if (objectMapper.canSerialize(type.rawType())) {
-                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-            }
-        }
-
-        return WriterResponse.unsupported();
-    }
-
-    @Override
-    public <T> ReaderResponse<T> reader(GenericType<T> type,
-                                        Headers requestHeaders,
-                                        Headers responseHeaders) {
-        // check if accepted
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON) || acceptedType.mediaType().isWildcardType()) {
-                if (objectMapper.canDeserialize(objectMapper.constructType(type.type()))) {
-                    return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-                }
-            }
-        }
-
-        if (requestHeaders.acceptedTypes().isEmpty()) {
-            if (objectMapper.canDeserialize(objectMapper.constructType(type.type()))) {
-                return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-            }
-        }
-
-        return ReaderResponse.unsupported();
-    }
-
-    @Override
-    public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        if (requestHeaders.contains(Http.Header.CONTENT_TYPE)) {
-            if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
-                if (objectMapper.canSerialize(type.rawType())) {
-                    return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-                }
-                return WriterResponse.unsupported();
-            }
-        } else {
-            if (objectMapper.canSerialize(type.rawType())) {
-                return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
-            }
-            return WriterResponse.unsupported();
-        }
-        return WriterResponse.unsupported();
+    public MediaSupport create(Config config) {
+        return JacksonSupport.create(config);
     }
 
     @Override
     public double weight() {
         // very low weight, as this covers all, but higher than JSON-B
         return 11;
-    }
-
-    <T> EntityReader<T> reader() {
-        return reader;
-    }
-
-    <T> EntityWriter<T> writer() {
-        return writer;
     }
 }

@@ -25,13 +25,14 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.config.Config;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.http.media.spi.MediaSupportProvider;
+import io.helidon.nima.http.media.MediaSupport;
 
 import org.junit.jupiter.api.Test;
 
@@ -50,19 +51,19 @@ class JacksonMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
     private static final GenericType<Book> BOOK_TYPE = GenericType.create(Book.class);
     private static final GenericType<List<Book>> BOOK_LIST_TYPE = new GenericType<List<Book>>() { };
-    private final JacksonMediaSupportProvider provider;
+    private final MediaSupport support;
 
     JacksonMediaTest() {
-        this.provider = new JacksonMediaSupportProvider();
-        provider.init(MediaContext.create());
+        this.support = JacksonSupport.create(Config.empty());
+        support.init(MediaContext.create());
     }
 
     @Test
     void testWriteSingle() {
         WritableHeaders<?> headers = WritableHeaders.create();
 
-        MediaSupportProvider.WriterResponse<Book> res = provider.writer(BOOK_TYPE, headers);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.SUPPORTED));
+        MediaSupport.WriterResponse<Book> res = support.writer(BOOK_TYPE, headers);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
@@ -75,7 +76,7 @@ class JacksonMediaTest {
         assertThat(result, containsString("\"test-title\""));
 
         // sanity check, parse back to book
-        Book sanity = provider.reader(BOOK_TYPE, headers)
+        Book sanity = support.reader(BOOK_TYPE, headers)
                 .supplier()
                 .get()
                 .read(BOOK_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
@@ -87,8 +88,8 @@ class JacksonMediaTest {
     void testWriteList() {
         WritableHeaders<?> headers = WritableHeaders.create();
 
-        MediaSupportProvider.WriterResponse<List<Book>> res = provider.writer(BOOK_LIST_TYPE, headers);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.SUPPORTED));
+        MediaSupport.WriterResponse<List<Book>> res = support.writer(BOOK_LIST_TYPE, headers);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
@@ -104,7 +105,7 @@ class JacksonMediaTest {
         assertThat(result, containsString("\"third\""));
 
         // sanity check, parse back to books
-        List<Book> sanity = provider.reader(BOOK_LIST_TYPE, headers)
+        List<Book> sanity = support.reader(BOOK_LIST_TYPE, headers)
                 .supplier()
                 .get()
                 .read(BOOK_LIST_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
@@ -117,8 +118,8 @@ class JacksonMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupportProvider.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(StandardCharsets.UTF_8));
         Book book = res.supplier().get()
@@ -134,8 +135,8 @@ class JacksonMediaTest {
         requestHeaders.contentType(MediaTypes.APPLICATION_XML);
         responseHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupportProvider.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders, responseHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders, responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(StandardCharsets.UTF_8));
         Book book = res.supplier().get()
@@ -149,8 +150,8 @@ class JacksonMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupportProvider.ReaderResponse<List<Book>> res = provider.reader(BOOK_LIST_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<List<Book>> res = support.reader(BOOK_LIST_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is =
                 new ByteArrayInputStream("[{\"title\": \"first\"}, {\"title\": \"second\"}]".getBytes(StandardCharsets.UTF_8));
@@ -165,8 +166,8 @@ class JacksonMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupportProvider.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"is-8859-2: řžýčň\"}".getBytes(ISO_8859_2));
         Book book = res.supplier().get()
@@ -182,8 +183,8 @@ class JacksonMediaTest {
         requestHeaders.contentType(MediaTypes.APPLICATION_XML);
         responseHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupportProvider.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders, responseHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders, responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(ISO_8859_2));
         Book book = res.supplier().get()
@@ -197,8 +198,8 @@ class JacksonMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupportProvider.ReaderResponse<List<Book>> res = provider.reader(BOOK_LIST_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<List<Book>> res = support.reader(BOOK_LIST_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is =
                 new ByteArrayInputStream("[{\"title\": \"čř\"}, {\"title\": \"šň\"}]".getBytes(ISO_8859_2));

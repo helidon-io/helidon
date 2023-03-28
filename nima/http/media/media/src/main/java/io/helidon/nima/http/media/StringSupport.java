@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.http.media.spi.MediaSupportProvider;
 
 /**
  * Media support for strings.
@@ -38,14 +37,27 @@ import io.helidon.nima.http.media.spi.MediaSupportProvider;
  * and should be honored when parsing them.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class StringSupportProvider implements MediaSupportProvider {
+public class StringSupport implements MediaSupport {
     private static final EntityReader READER = new StringReader();
     private static final EntityWriter WRITER = new StringWriter();
+
+    private StringSupport() {
+    }
+
+
+    /**
+     * Create a new media support for {@link java.lang.String} processing.
+     *
+     * @return a new media support
+     */
+    public static MediaSupport create() {
+        return new StringSupport();
+    }
 
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
         if (type.equals(GenericType.STRING)) {
-            return new ReaderResponse<>(SupportLevel.SUPPORTED, StringSupportProvider::reader);
+            return new ReaderResponse<>(SupportLevel.SUPPORTED, StringSupport::reader);
         }
         return ReaderResponse.unsupported();
     }
@@ -55,7 +67,7 @@ public class StringSupportProvider implements MediaSupportProvider {
                                         Headers requestHeaders,
                                         WritableHeaders<?> responseHeaders) {
         if (type.equals(GenericType.STRING)) {
-            return new WriterResponse<>(SupportLevel.SUPPORTED, StringSupportProvider::writer);
+            return new WriterResponse<>(SupportLevel.SUPPORTED, StringSupport::writer);
         }
         return WriterResponse.unsupported();
     }
@@ -65,7 +77,7 @@ public class StringSupportProvider implements MediaSupportProvider {
                                         Headers requestHeaders,
                                         Headers responseHeaders) {
         if (type.equals(GenericType.STRING)) {
-            return new ReaderResponse<>(SupportLevel.SUPPORTED, StringSupportProvider::reader);
+            return new ReaderResponse<>(SupportLevel.SUPPORTED, StringSupport::reader);
         }
         return ReaderResponse.unsupported();
     }
@@ -73,7 +85,7 @@ public class StringSupportProvider implements MediaSupportProvider {
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
         if (type.equals(GenericType.STRING)) {
-            return new WriterResponse<>(SupportLevel.SUPPORTED, StringSupportProvider::writer);
+            return new WriterResponse<>(SupportLevel.SUPPORTED, StringSupport::writer);
         }
         return WriterResponse.unsupported();
     }

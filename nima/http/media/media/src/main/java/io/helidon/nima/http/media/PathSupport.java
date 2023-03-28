@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,16 +30,27 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.http.media.spi.MediaSupportProvider;
 
 /**
- * Media support for strings.
+ * Media support for Path.
  * This needs to be a proper media support, as encoding should be provided when sending strings,
  * and should be honored when parsing them.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class PathSupportProvider implements MediaSupportProvider {
+public class PathSupport implements MediaSupport {
     private static final EntityWriter WRITER = new PathWriter();
+
+    private PathSupport() {
+    }
+
+    /**
+     * Create a new media support for writing {@link java.nio.file.Path}.
+     *
+     * @return a new media support
+     */
+    public static MediaSupport create() {
+        return new PathSupport();
+    }
 
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
@@ -51,7 +62,7 @@ public class PathSupportProvider implements MediaSupportProvider {
                                         Headers requestHeaders,
                                         WritableHeaders<?> responseHeaders) {
         if (Path.class.isAssignableFrom(type.rawType())) {
-            return new WriterResponse<>(SupportLevel.SUPPORTED, PathSupportProvider::writer);
+            return new WriterResponse<>(SupportLevel.SUPPORTED, PathSupport::writer);
         }
         return WriterResponse.unsupported();
     }
@@ -66,7 +77,7 @@ public class PathSupportProvider implements MediaSupportProvider {
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
         if (Path.class.isAssignableFrom(type.rawType())) {
-            return new WriterResponse<>(SupportLevel.SUPPORTED, PathSupportProvider::writer);
+            return new WriterResponse<>(SupportLevel.SUPPORTED, PathSupport::writer);
         }
         return WriterResponse.unsupported();
     }

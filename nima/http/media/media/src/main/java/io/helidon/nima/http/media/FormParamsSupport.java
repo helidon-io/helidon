@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,17 +40,28 @@ import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriEncoding;
-import io.helidon.nima.http.media.spi.MediaSupportProvider;
 
 /**
  * Media support for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_FORM_URLENCODED} and its plaintext counterpart.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class FormParamsSupportProvider implements MediaSupportProvider {
+public class FormParamsSupport implements MediaSupport {
     private static final EntityReader URL_READER = new FormParamsUrlReader();
     private static final EntityWriter URL_WRITER = new FormParamsUrlWriter();
     private static final EntityReader PLAINTEXT_READER = new FormParamsPlaintextReader();
     private static final EntityWriter PLAINTEXT_WRITER = new FormParamsPlaintextWriter();
+
+    private FormParamsSupport() {
+    }
+
+    /**
+     * Create a new media support for application form processing.
+     *
+     * @return a new media support
+     */
+    public static MediaSupport create() {
+        return new FormParamsSupport();
+    }
 
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
@@ -62,15 +73,15 @@ public class FormParamsSupportProvider implements MediaSupportProvider {
                 .map(it -> {
                     ReaderResponse<T> response;
                     if (it.test(MediaTypes.APPLICATION_FORM_URLENCODED)) {
-                        response = new ReaderResponse<>(SupportLevel.SUPPORTED, FormParamsSupportProvider::urlEncodedReader);
+                        response = new ReaderResponse<>(SupportLevel.SUPPORTED, FormParamsSupport::urlEncodedReader);
                     } else if (it.test(MediaTypes.TEXT_PLAIN)) {
-                        response = new ReaderResponse<>(SupportLevel.SUPPORTED, FormParamsSupportProvider::textReader);
+                        response = new ReaderResponse<>(SupportLevel.SUPPORTED, FormParamsSupport::textReader);
                     } else {
                         // different than supported media type
                         response = ReaderResponse.unsupported();
                     }
                     return response;
-                }).orElseGet(() -> new ReaderResponse<>(SupportLevel.COMPATIBLE, FormParamsSupportProvider::urlEncodedReader));
+                }).orElseGet(() -> new ReaderResponse<>(SupportLevel.COMPATIBLE, FormParamsSupport::urlEncodedReader));
     }
 
     @Override
@@ -86,15 +97,15 @@ public class FormParamsSupportProvider implements MediaSupportProvider {
                 .map(it -> {
                     WriterResponse<T> response;
                     if (it.test(MediaTypes.APPLICATION_FORM_URLENCODED)) {
-                        response = new WriterResponse<>(SupportLevel.SUPPORTED, FormParamsSupportProvider::urlEncodedWriter);
+                        response = new WriterResponse<>(SupportLevel.SUPPORTED, FormParamsSupport::urlEncodedWriter);
                     } else if (it.test(MediaTypes.TEXT_PLAIN)) {
-                        response = new WriterResponse<>(SupportLevel.SUPPORTED, FormParamsSupportProvider::textWriter);
+                        response = new WriterResponse<>(SupportLevel.SUPPORTED, FormParamsSupport::textWriter);
                     } else {
                         // different than supported media type
                         response = WriterResponse.unsupported();
                     }
                     return response;
-                }).orElseGet(() -> new WriterResponse<T>(SupportLevel.COMPATIBLE, FormParamsSupportProvider::urlEncodedWriter));
+                }).orElseGet(() -> new WriterResponse<T>(SupportLevel.COMPATIBLE, FormParamsSupport::urlEncodedWriter));
     }
 
     @Override
@@ -109,15 +120,15 @@ public class FormParamsSupportProvider implements MediaSupportProvider {
                 .map(it -> {
                     ReaderResponse<T> response;
                     if (it.test(MediaTypes.APPLICATION_FORM_URLENCODED)) {
-                        response = new ReaderResponse<>(SupportLevel.SUPPORTED, FormParamsSupportProvider::urlEncodedReader);
+                        response = new ReaderResponse<>(SupportLevel.SUPPORTED, FormParamsSupport::urlEncodedReader);
                     } else if (it.test(MediaTypes.TEXT_PLAIN)) {
-                        response = new ReaderResponse<>(SupportLevel.SUPPORTED, FormParamsSupportProvider::textReader);
+                        response = new ReaderResponse<>(SupportLevel.SUPPORTED, FormParamsSupport::textReader);
                     } else {
                         // different than supported media type
                         response = ReaderResponse.unsupported();
                     }
                     return response;
-                }).orElseGet(() -> new ReaderResponse<>(SupportLevel.COMPATIBLE, FormParamsSupportProvider::urlEncodedReader));
+                }).orElseGet(() -> new ReaderResponse<>(SupportLevel.COMPATIBLE, FormParamsSupport::urlEncodedReader));
     }
 
     @Override
@@ -129,15 +140,15 @@ public class FormParamsSupportProvider implements MediaSupportProvider {
                 .map(it -> {
                     WriterResponse<T> response;
                     if (it.test(MediaTypes.APPLICATION_FORM_URLENCODED)) {
-                        response = new WriterResponse<>(SupportLevel.SUPPORTED, FormParamsSupportProvider::urlEncodedWriter);
+                        response = new WriterResponse<>(SupportLevel.SUPPORTED, FormParamsSupport::urlEncodedWriter);
                     } else if (it.test(MediaTypes.TEXT_PLAIN)) {
-                        response = new WriterResponse<>(SupportLevel.SUPPORTED, FormParamsSupportProvider::textWriter);
+                        response = new WriterResponse<>(SupportLevel.SUPPORTED, FormParamsSupport::textWriter);
                     } else {
                         // different than supported media type
                         response = WriterResponse.unsupported();
                     }
                     return response;
-                }).orElseGet(() -> new WriterResponse<T>(SupportLevel.COMPATIBLE, FormParamsSupportProvider::urlEncodedWriter));
+                }).orElseGet(() -> new WriterResponse<T>(SupportLevel.COMPATIBLE, FormParamsSupport::urlEncodedWriter));
     }
 
     private static <T> EntityReader<T> urlEncodedReader() {

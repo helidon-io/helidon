@@ -28,7 +28,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityWriter;
-import io.helidon.nima.http.media.StringSupportProvider;
+import io.helidon.nima.http.media.StringSupport;
 import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.sse.webserver.SseSink;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -85,7 +85,7 @@ class SseServerMediaTest {
     }
 
     @SuppressWarnings("unchecked")
-    public static class MyStringSupportProvider extends StringSupportProvider implements Weighted {
+    public static class MyStringSupportProvider extends StringSupport implements Weighted {
 
         private static final EntityWriter<?> WRITER = new MyStringWriter();
 

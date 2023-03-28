@@ -27,12 +27,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.http.media.spi.MediaSupportProvider;
-import io.helidon.nima.http.media.spi.MediaSupportProvider.ReaderResponse;
-import io.helidon.nima.http.media.spi.MediaSupportProvider.WriterResponse;
+import io.helidon.nima.http.media.MediaSupport.ReaderResponse;
+import io.helidon.nima.http.media.MediaSupport.WriterResponse;
 
-import static io.helidon.nima.http.media.spi.MediaSupportProvider.SupportLevel.COMPATIBLE;
-import static io.helidon.nima.http.media.spi.MediaSupportProvider.SupportLevel.SUPPORTED;
+import static io.helidon.nima.http.media.MediaSupport.SupportLevel.COMPATIBLE;
+import static io.helidon.nima.http.media.MediaSupport.SupportLevel.SUPPORTED;
 
 @SuppressWarnings("unchecked")
 class MediaContextImpl implements MediaContext {
@@ -40,18 +39,18 @@ class MediaContextImpl implements MediaContext {
     private static final ConcurrentHashMap<GenericType<?>, AtomicBoolean> LOGGED_READERS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<GenericType<?>, AtomicBoolean> LOGGED_WRITERS = new ConcurrentHashMap<>();
 
-    private final List<MediaSupportProvider> providers;
+    private final List<MediaSupport> supports;
 
-    MediaContextImpl(List<MediaSupportProvider> providers) {
-        this.providers = providers;
-        this.providers.forEach(it -> it.init(this));
+    MediaContextImpl(List<MediaSupport> supports) {
+        this.supports = supports;
+        this.supports.forEach(it -> it.init(this));
     }
 
     @Override
     public <T> EntityReader<T> reader(GenericType<T> type, Headers headers) {
         ReaderResponse<T> compatible = null;
-        for (MediaSupportProvider provider : providers) {
-            ReaderResponse<T> response = provider.reader(type, headers);
+        for (MediaSupport support : supports) {
+            ReaderResponse<T> response = support.reader(type, headers);
             if (response.support() == SUPPORTED) {
                 return entityReader(response);
             } else if (response.support() == COMPATIBLE) {
@@ -69,8 +68,8 @@ class MediaContextImpl implements MediaContext {
                                       Headers requestHeaders,
                                       WritableHeaders<?> responseHeaders) {
         WriterResponse<T> compatible = null;
-        for (MediaSupportProvider provider : providers) {
-            WriterResponse<T> response = provider.writer(type, requestHeaders, responseHeaders);
+        for (MediaSupport support : supports) {
+            WriterResponse<T> response = support.writer(type, requestHeaders, responseHeaders);
             if (response.support() == SUPPORTED) {
                 return entityWriter(response);
             }
@@ -91,8 +90,8 @@ class MediaContextImpl implements MediaContext {
                                       Headers responseHeaders) {
 
         ReaderResponse<T> compatible = null;
-        for (MediaSupportProvider provider : providers) {
-            ReaderResponse<T> response = provider.reader(type, requestHeaders, responseHeaders);
+        for (MediaSupport support : supports) {
+            ReaderResponse<T> response = support.reader(type, requestHeaders, responseHeaders);
             if (response.support() == SUPPORTED) {
                 return entityReader(response);
             }
@@ -109,8 +108,8 @@ class MediaContextImpl implements MediaContext {
     @Override
     public <T> EntityWriter<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
         WriterResponse<T> compatible = null;
-        for (MediaSupportProvider provider : providers) {
-            WriterResponse<T> response = provider.writer(type, requestHeaders);
+        for (MediaSupport support : supports) {
+            WriterResponse<T> response = support.writer(type, requestHeaders);
             if (response.support() == SUPPORTED) {
                 return entityWriter(response);
             }

@@ -28,4 +28,39 @@
     <artifactId>helidon-common-config</artifactId>
     <name>Helidon Common Config</name>
 
+    <properties>
+        <!-- Helidon common should be backward compatible with Java 11 -->
+        <version.java>11</version.java>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <!-- This module is Java 11, we must remove enable-preview from parent project -->
+                    <additionalOptions combine.self="override"/>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
