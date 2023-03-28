@@ -21,7 +21,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.tracing.Tracer;
@@ -253,9 +253,9 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         config.get("sampler-type").asString().as(SamplerType::create).ifPresent(this::samplerType);
         config.get("sampler-param").asDouble().ifPresent(this::samplerParam);
         config.get("exporter-timeout-millis").asLong().ifPresent(it -> exporterTimeout(Duration.ofMillis(it)));
-        config.get("private-key-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
-        config.get("client-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
-        config.get("trusted-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
+        config.get("private-key-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
+        config.get("client-cert-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
+        config.get("trusted-cert-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
 
         config.get("tags").detach()
                 .asMap()

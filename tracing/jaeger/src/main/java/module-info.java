@@ -29,7 +29,7 @@ module io.helidon.tracing.jaeger {
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.common;
-    requires transitive io.helidon.config;
+    requires transitive io.helidon.common.config;
     requires io.helidon.tracing;
     requires io.helidon.tracing.opentelemetry;
     requires io.helidon.common.context;

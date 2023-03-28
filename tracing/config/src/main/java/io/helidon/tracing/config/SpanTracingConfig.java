@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * Configuration of a single traced span.
@@ -142,7 +142,7 @@ public abstract class SpanTracingConfig extends Traceable {
     }
 
     /**
-     * Create traced span configuration from a {@link io.helidon.config.Config}.
+     * Create traced span configuration from a {@link io.helidon.common.config.Config}.
      *
      * @param name name of the span
      * @param config config to load span configuration from
@@ -226,7 +226,7 @@ public abstract class SpanTracingConfig extends Traceable {
         }
 
         /**
-         * Update this builder from {@link io.helidon.config.Config}.
+         * Update this builder from {@link io.helidon.common.config.Config}.
          *
          * @param config configuration of this span
          * @return updated builder instance

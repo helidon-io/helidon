@@ -34,7 +34,7 @@ module io.helidon.health.checks {
     requires static jakarta.inject;
 
     requires io.helidon.common;
-    requires io.helidon.config;
+    requires io.helidon.common.config;
     requires transitive io.helidon.health;
 
     exports io.helidon.health.checks;
