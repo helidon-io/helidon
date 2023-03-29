@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,14 +180,14 @@ class MainTest {
     @Test
     void testTimeout() {
         String response = client.get()
-                .path("/timeout/50")
+                .path("/timeout/10")
                 .request(String.class)
                 .await(1, TimeUnit.SECONDS);
 
-        assertThat(response, is("Slept for 50 ms"));
+        assertThat(response, is("Slept for 10 ms"));
 
         WebClientResponse clientResponse = client.get()
-                .path("/timeout/105")
+                .path("/timeout/1000")
                 .request()
                 .await(1, TimeUnit.SECONDS);
 
