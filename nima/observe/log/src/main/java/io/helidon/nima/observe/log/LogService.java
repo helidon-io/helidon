@@ -41,7 +41,7 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.config.Config;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
-import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.SecureHandler;
@@ -56,8 +56,8 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
 class LogService implements HttpService {
-    private static final EntityWriter<JsonObject> WRITER = JsonpMediaSupportProvider.serverResponseWriter();
-    private static final EntityReader<JsonObject> READER = JsonpMediaSupportProvider.serverRequestReader();
+    private static final EntityWriter<JsonObject> WRITER = JsonpSupport.serverResponseWriter();
+    private static final EntityReader<JsonObject> READER = JsonpSupport.serverRequestReader();
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private static final String DEFAULT_IDLE_STRING = "%\n";
 
@@ -166,7 +166,7 @@ class LogService implements HttpService {
     private void setLevelHandler(ServerRequest req, ServerResponse res) {
         System.out.println("Here");
         String logger = req.path().pathParameters().first("logger").orElse("");
-        JsonObject requestJson = READER.read(JsonpMediaSupportProvider.JSON_OBJECT_TYPE,
+        JsonObject requestJson = READER.read(JsonpSupport.JSON_OBJECT_TYPE,
                                              req.content().inputStream(),
                                              req.headers());
 
@@ -251,7 +251,7 @@ class LogService implements HttpService {
     }
 
     private void write(ServerRequest req, ServerResponse res, JsonObject json) {
-        WRITER.write(JsonpMediaSupportProvider.JSON_OBJECT_TYPE,
+        WRITER.write(JsonpSupport.JSON_OBJECT_TYPE,
                      json,
                      res.outputStream(),
                      req.headers(),

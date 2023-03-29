@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.http.media.jackson;
-
-import java.util.Objects;
+package io.helidon.nima.http.media.jsonb;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
@@ -29,54 +27,34 @@ import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaSupport;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import jakarta.json.JsonObject;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 
 import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_JSON;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for Jackson media support.
+ * {@link java.util.ServiceLoader} provider implementation for JSON Binding media support.
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
-public class JacksonSupport implements MediaSupport {
-    private final ObjectMapper objectMapper;
-    private final JacksonReader reader;
-    private final JacksonWriter writer;
+public class JsonbSupport implements MediaSupport {
+    private static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
 
-    private JacksonSupport(ObjectMapper objectMapper, JacksonReader reader, JacksonWriter writer) {
-        this.objectMapper = objectMapper;
-        this.reader = reader;
-        this.writer = writer;
+    private static final Jsonb JSON_B = JsonbBuilder.create();
+
+    private final JsonbReader reader = new JsonbReader(JSON_B);
+    private final JsonbWriter writer = new JsonbWriter(JSON_B);
+
+    private JsonbSupport() {
     }
 
     /**
-     * Creates a new {@link JacksonSupport}.
+     * Creates a new {@link JsonbSupport}.
      *
      * @param config must not be {@code null}
-     * @return a new {@link JacksonSupport}
+     * @return a new {@link JsonbSupport}
      */
     public static MediaSupport create(Config config) {
-        ObjectMapper objectMapper = new ObjectMapper()
-                .registerModule(new ParameterNamesModule())
-                .registerModule(new Jdk8Module())
-                .registerModule(new JavaTimeModule());
-        return create(objectMapper);
-    }
-
-    /**
-     * Creates a new {@link JacksonSupport}.
-     *
-     * @param objectMapper must not be {@code null}
-     * @return a new {@link JacksonSupport}
-     */
-    public static MediaSupport create(ObjectMapper objectMapper) {
-        Objects.requireNonNull(objectMapper);
-
-        JacksonReader reader = new JacksonReader(objectMapper);
-        JacksonWriter writer = new JacksonWriter(objectMapper);
-        return new JacksonSupport(objectMapper, reader, writer);
+        return new JsonbSupport();
     }
 
     @Override
@@ -84,9 +62,11 @@ public class JacksonSupport implements MediaSupport {
         if (requestHeaders.contentType()
                 .map(it -> it.test(MediaTypes.APPLICATION_JSON))
                 .orElse(true)) {
-            if (objectMapper.canDeserialize(objectMapper.constructType(type.type()))) {
-                return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
+            if (type.equals(JSON_OBJECT_TYPE)) {
+                // leave this to JSON-P
+                return ReaderResponse.unsupported();
             }
+            return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
         }
 
         return ReaderResponse.unsupported();
@@ -96,20 +76,19 @@ public class JacksonSupport implements MediaSupport {
     public <T> WriterResponse<T> writer(GenericType<T> type,
                                         Headers requestHeaders,
                                         WritableHeaders<?> responseHeaders) {
+        if (JSON_OBJECT_TYPE.equals(type)) {
+            return WriterResponse.unsupported();
+        }
+
         // check if accepted
         for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
             if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
-                if (objectMapper.canSerialize(type.rawType())) {
-                    return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-                }
-                return WriterResponse.unsupported();
+                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
             }
         }
 
         if (requestHeaders.acceptedTypes().isEmpty()) {
-            if (objectMapper.canSerialize(type.rawType())) {
-                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-            }
+            return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
         }
 
         return WriterResponse.unsupported();
@@ -119,19 +98,19 @@ public class JacksonSupport implements MediaSupport {
     public <T> ReaderResponse<T> reader(GenericType<T> type,
                                         Headers requestHeaders,
                                         Headers responseHeaders) {
+        if (JSON_OBJECT_TYPE.equals(type)) {
+            return ReaderResponse.unsupported();
+        }
+
         // check if accepted
         for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
             if (acceptedType.test(MediaTypes.APPLICATION_JSON) || acceptedType.mediaType().isWildcardType()) {
-                if (objectMapper.canDeserialize(objectMapper.constructType(type.type()))) {
-                    return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-                }
+                return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
             }
         }
 
         if (requestHeaders.acceptedTypes().isEmpty()) {
-            if (objectMapper.canDeserialize(objectMapper.constructType(type.type()))) {
-                return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-            }
+            return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
         }
 
         return ReaderResponse.unsupported();
@@ -139,18 +118,15 @@ public class JacksonSupport implements MediaSupport {
 
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
+        if (type.equals(JSON_OBJECT_TYPE)) {
+            return WriterResponse.unsupported();
+        }
         if (requestHeaders.contains(Http.Header.CONTENT_TYPE)) {
             if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
-                if (objectMapper.canSerialize(type.rawType())) {
-                    return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-                }
-                return WriterResponse.unsupported();
+                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
             }
         } else {
-            if (objectMapper.canSerialize(type.rawType())) {
-                return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
-            }
-            return WriterResponse.unsupported();
+            return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
         }
         return WriterResponse.unsupported();
     }

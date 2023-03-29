@@ -163,8 +163,8 @@ final class EmptyConfig {
             String[] split = key.split("\\.");
             Config.Key node = this.key;
 
-            for (int i = 0; i < split.length; i++) {
-                node = new KeyImpl(node, split[i]);
+            for (String s : split) {
+                node = new KeyImpl(node, s);
             }
 
             return new EmptyNode(node);
@@ -212,6 +212,11 @@ final class EmptyConfig {
 
         @Override
         public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigException {
+            return new EmptyValue<>(this.key);
+        }
+
+        @Override
+        public <C extends Config> ConfigValue<List<C>> asNodeList() throws ConfigException {
             return new EmptyValue<>(this.key);
         }
 
