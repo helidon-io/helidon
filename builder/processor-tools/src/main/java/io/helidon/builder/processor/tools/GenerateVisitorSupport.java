@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ final class GenerateVisitorSupport {
                                    + "\t\t\t\t\t\t  Class<?> type,\n"
                                    + "\t\t\t\t\t\t  Class<?>... typeArgument) {\n"
                                    + "\t\t\tString requiredStr = (String) meta.get(\"required\");\n"
-                                   + "\t\t\tboolean requiredPresent = Objects.nonNull(requiredStr);\n"
+                                   + "\t\t\tboolean requiredPresent = (requiredStr != null);\n"
                                    + "\t\t\tboolean required = Boolean.parseBoolean(requiredStr);\n"
                                    + "\t\t\tif (!required && requiredPresent) {\n"
                                    + "\t\t\t\treturn;\n"
@@ -99,7 +99,7 @@ final class GenerateVisitorSupport {
                                    + "\t\t\t}\n"
                                    + "\t\t\t\n"
                                    + "\t\t\tObject val = valueSupplier.get();\n"
-                                   + "\t\t\tif (Objects.nonNull(val)) {\n"
+                                   + "\t\t\tif (val != null) {\n"
                                    + "\t\t\t\treturn;\n"
                                    + "\t\t\t}\n"
                                    + "\t\t\t\n"
@@ -109,10 +109,12 @@ final class GenerateVisitorSupport {
                                    + "\n"
                                    + "\t\tvoid validate() {\n"
                                    + "\t\t\tif (!errors.isEmpty()) {\n"
-                                   + "\t\t\t\tthrow new java.lang.IllegalStateException(String.join(\", \", errors));\n"
+                                   + "\t\t\t\tthrow new java.lang.IllegalStateException(\"problems building configbean '\" + "
+                                   + ctx.typeInfo().typeName() + ".class.getName() + \"': \" + String.join(\", \", errors));\n"
                                    + "\t\t\t}\n"
                                    + "\t\t}\n"
                                    + "\t}\n");
         }
     }
+
 }

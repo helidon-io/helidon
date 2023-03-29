@@ -43,8 +43,8 @@ import java.util.Set;
  */
 @SuppressWarnings("rawtypes")
 @Target(ElementType.TYPE)
-// note: runtime retention needed for cases when derived builders are inherited across modules
-@Retention(RetentionPolicy.RUNTIME)
+// note: class retention needed for cases when derived builders are inherited across modules
+@Retention(RetentionPolicy.CLASS)
 @BuilderTrigger
 public @interface Builder {
 
@@ -71,7 +71,7 @@ public @interface Builder {
     /**
      * The default value for {@link #includeGeneratedAnnotation()}.
      */
-    boolean DEFAULT_INCLUDE_GENERATED_ANNOTATION = false;
+    boolean DEFAULT_INCLUDE_GENERATED_ANNOTATION = true;
 
     /**
      * The default value for {@link #defineDefaultMethods()}.

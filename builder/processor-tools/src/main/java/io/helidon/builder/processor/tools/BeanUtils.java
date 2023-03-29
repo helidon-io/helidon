@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,43 @@
 
 package io.helidon.builder.processor.tools;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.common.LazyValue;
+import io.helidon.common.types.TypeName;
+
+import static io.helidon.common.types.TypeInfo.KIND_CLASS;
+import static io.helidon.common.types.TypeInfo.KIND_ENUM;
+import static io.helidon.common.types.TypeInfo.KIND_INTERFACE;
+import static io.helidon.common.types.TypeInfo.KIND_PACKAGE;
+import static io.helidon.common.types.TypeInfo.KIND_RECORD;
+import static io.helidon.common.types.TypeInfo.MODIFIER_ABSTRACT;
+import static io.helidon.common.types.TypeInfo.MODIFIER_FINAL;
+import static io.helidon.common.types.TypeInfo.MODIFIER_PRIVATE;
+import static io.helidon.common.types.TypeInfo.MODIFIER_PROTECTED;
+import static io.helidon.common.types.TypeInfo.MODIFIER_PUBLIC;
+import static io.helidon.common.types.TypeInfo.MODIFIER_STATIC;
 
 /**
  * Provides functions to aid with bean naming and parsing.
  */
 public class BeanUtils {
+    private static final LazyValue<Set<String>> RESERVED = LazyValue.create(
+            Set.of(KIND_CLASS,
+                   KIND_INTERFACE,
+                   KIND_PACKAGE,
+                   KIND_ENUM,
+                   MODIFIER_STATIC,
+                   MODIFIER_FINAL,
+                   MODIFIER_PUBLIC,
+                   MODIFIER_PROTECTED,
+                   MODIFIER_PRIVATE,
+                   KIND_RECORD,
+                   MODIFIER_ABSTRACT
+            ));
 
     private BeanUtils() {
     }
@@ -110,10 +138,17 @@ public class BeanUtils {
      * @return true if it appears to be a reserved word
      */
     public static boolean isReservedWord(String word) {
-        word = word.toLowerCase();
-        return word.equals("class") || word.equals("interface") || word.equals("package") || word.equals("static")
-                || word.equals("final") || word.equals("public") || word.equals("protected") || word.equals("private")
-                || word.equals("abstract");
+        return RESERVED.get().contains(word.toUpperCase());
+    }
+
+    /**
+     * Returns true if the given type is known to be a built-in java type (e.g., package name starts with "java").
+     *
+     * @param type the fully qualified type name
+     * @return true if the given type is definitely known to be built-in Java type
+     */
+    public static boolean isBuiltInJavaType(TypeName type) {
+        return type.primitive() || type.name().startsWith("java.");
     }
 
     private static boolean validMethod(String name,
@@ -129,14 +164,14 @@ public class BeanUtils {
 
         c = Character.toLowerCase(c);
         String altName = "" + c + attrName.substring(1);
-        attributeNameRef.set(Optional.of(Collections.singletonList(isReservedWord(altName) ? name : altName)));
+        attributeNameRef.set(Optional.of(List.of(isReservedWord(altName) ? name : altName)));
 
         return true;
     }
 
     private static boolean validBooleanIsMethod(String name,
-                                       AtomicReference<Optional<List<String>>> attributeNameRef,
-                                       boolean throwIfInvalid) {
+                                                AtomicReference<Optional<List<String>>> attributeNameRef,
+                                                boolean throwIfInvalid) {
         assert (name.trim().equals(name));
         char c = name.charAt(2);
 
@@ -151,7 +186,9 @@ public class BeanUtils {
         return true;
     }
 
-    private static boolean validMethodCase(String name, char c, boolean throwIfInvalid) {
+    private static boolean validMethodCase(String name,
+                                           char c,
+                                           boolean throwIfInvalid) {
         if (!Character.isAlphabetic(c)) {
             return invalidMethod(name,
                                  throwIfInvalid,
@@ -167,7 +204,9 @@ public class BeanUtils {
         return true;
     }
 
-    private static boolean invalidMethod(String methodName, boolean throwIfInvalid, String message) {
+    private static boolean invalidMethod(String methodName,
+                                         boolean throwIfInvalid,
+                                         String message) {
         if (throwIfInvalid) {
             throw new RuntimeException(message + ": " + methodName);
         }

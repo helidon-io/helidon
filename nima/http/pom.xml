@@ -38,6 +38,7 @@
     <modules>
         <module>encoding</module>
         <module>media</module>
+        <module>processor</module>
     </modules>
 
 </project>

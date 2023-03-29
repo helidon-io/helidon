@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.pico.tools;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -40,7 +39,7 @@ public interface ModuleInfoItem {
      * @return pre-comments
      */
     @Singular
-    List<String> precomments();
+    Set<String> precomments();
 
     /**
      * The target class name, package name, or module name this item applies to.
@@ -131,7 +130,7 @@ public interface ModuleInfoItem {
     /**
      * Provides the content of the description item appropriate to write out.
      *
-     * @return The contents (source code body) for this descriptor item.
+     * @return the contents (source code body) for this descriptor item
      */
     default String contents() {
         StringBuilder builder = new StringBuilder();
@@ -152,7 +151,7 @@ public interface ModuleInfoItem {
             assert (!opens());
             assert (!exports());
             if (builder.length() > 0) {
-                builder.append(target()).append(";\n    ");
+                builder.append(target()).append(";");
             }
             builder.append("provides ");
             if (!withOrTo().isEmpty()) {
@@ -195,6 +194,35 @@ public interface ModuleInfoItem {
         assert (handled) : target();
         builder.append(target());
         return builder.toString();
+    }
+
+    /**
+     * Provides the ability to create a new merged descriptor item using this as the basis, and then combining another into it
+     * in order to create a new descriptor item.
+     *
+     * @param another the other descriptor item to merge
+     * @return the merged descriptor
+     */
+    default ModuleInfoItem mergeCreate(ModuleInfoItem another) {
+        if (another == this) {
+            return this;
+        }
+
+        if (!Objects.equals(target(), another.target())) {
+            throw new IllegalArgumentException();
+        }
+
+        DefaultModuleInfoItem.Builder newOne = DefaultModuleInfoItem.toBuilder(another);
+        another.precomments().forEach(newOne::addPrecomment);
+        newOne.requires(requires() || another.requires());
+        newOne.uses(uses() || another.uses());
+        newOne.transitiveUsed(isTransitiveUsed() || another.isTransitiveUsed());
+        newOne.staticUsed(isStaticUsed() || another.isStaticUsed());
+        newOne.exports(exports() || another.exports());
+        newOne.opens(opens() || another.opens());
+        newOne.provides(opens() || another.provides());
+        another.withOrTo().forEach(newOne::addWithOrTo);
+        return newOne.build();
     }
 
 }

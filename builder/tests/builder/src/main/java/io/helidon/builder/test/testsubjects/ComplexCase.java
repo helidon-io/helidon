@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
 
 /**
- * Used for demonstrating and testing the Pico Builder.
+ * Used for demonstrating and testing the Builder.
  * In this case we are enforcing bean style is used, and overriding the generated class to have a suffix of Impl on the class name.
  */
 @Builder(requireLibraryDependencies = false, requireBeanStyle = true, implPrefix = "", implSuffix = "Impl")
@@ -61,7 +61,7 @@ public interface ComplexCase extends MyConfigBean {
     Class<?> getClassType();
 
     /**
-     * The Pico Builder will ignore {@code default} and {@code static} functions.
+     * The Builder will ignore {@code default} and {@code static} functions.
      *
      * @return ignored, here for testing purposes only
      */
@@ -70,7 +70,7 @@ public interface ComplexCase extends MyConfigBean {
     }
 
     /**
-     * The Pico Builder will ignore {@code default} and {@code static} functions.
+     * The Builder will ignore {@code default} and {@code static} functions.
      *
      * @return ignored, here for testing purposes only
      */
@@ -79,7 +79,7 @@ public interface ComplexCase extends MyConfigBean {
     }
 
     /**
-     * The Pico Builder will ignore {@code default} and {@code static} functions.
+     * The Builder will ignore {@code default} and {@code static} functions.
      *
      * @return ignored, here for testing purposes only
      */

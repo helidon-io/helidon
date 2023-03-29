@@ -17,7 +17,6 @@
 package io.helidon.builder.processor.tools;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +25,16 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.builder.Builder;
-import io.helidon.builder.processor.spi.TypeInfo;
-import io.helidon.pico.types.AnnotationAndValue;
-import io.helidon.pico.types.DefaultAnnotationAndValue;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
-import io.helidon.pico.types.TypedElementName;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementName;
 
+import static io.helidon.builder.processor.tools.BeanUtils.isBooleanType;
+import static io.helidon.builder.processor.tools.BeanUtils.isReservedWord;
+import static io.helidon.builder.processor.tools.BeanUtils.validateAndParseMethodName;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.BUILDER_ANNO_TYPE_NAME;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_INCLUDE_META_ATTRIBUTES;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_LIST_TYPE;
@@ -55,8 +57,6 @@ public class BodyContext {
     private final Map<String, TypedElementName> map = new LinkedHashMap<>();
     private final List<TypedElementName> allTypeInfos = new ArrayList<>();
     private final List<String> allAttributeNames = new ArrayList<>();
-    private final AtomicReference<TypeName> parentTypeName = new AtomicReference<>();
-    private final AtomicReference<TypeName> parentAnnotationType = new AtomicReference<>();
     private final boolean hasStreamSupportOnImpl;
     private final boolean hasStreamSupportOnBuilder;
     private final boolean includeMetaAttributes;
@@ -77,6 +77,8 @@ public class BodyContext {
     private final String publicOrPackagePrivateDecl;
     private final TypeName interceptorTypeName;
     private final String interceptorCreateMethod;
+    private final TypeName parentTypeName;
+    private final TypeName parentAnnotationTypeName;
 
     /**
      * Constructor.
@@ -104,19 +106,14 @@ public class BodyContext {
         this.listType = toListImplType(builderTriggerAnnotation, typeInfo);
         this.mapType = toMapImplType(builderTriggerAnnotation, typeInfo);
         this.setType = toSetImplType(builderTriggerAnnotation, typeInfo);
-        try {
-            gatherAllAttributeNames(this, typeInfo);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed while processing: " + typeInfo.typeName(), e);
-        }
+        this.parentTypeName = toParentTypeName(builderTriggerAnnotation, typeInfo);
+        this.parentAnnotationTypeName = toParentAnnotationTypeName(typeInfo);
+        gatherAllAttributeNames(typeInfo);
         assert (allTypeInfos.size() == allAttributeNames.size());
-        this.hasParent = (parentTypeName.get() != null && hasBuilder(typeInfo.superTypeInfo(), builderTriggerAnnotation));
+        this.hasParent = (parentTypeName != null && hasBuilder(typeInfo.superTypeInfo().orElse(null), builderTriggerAnnotation));
         this.hasAnyBuilderClashingMethodNames = determineIfHasAnyClashingMethodNames();
-        this.isExtendingAnAbstractClass = typeInfo.typeKind().equals("CLASS");
-        this.ctorBuilderAcceptTypeName = (hasParent)
-                ? typeInfo.typeName()
-                : (Objects.nonNull(parentAnnotationType.get()) && typeInfo.elementInfo().isEmpty()
-                                ? typeInfo.superTypeInfo().orElseThrow().typeName() : typeInfo.typeName());
+        this.isExtendingAnAbstractClass = typeInfo.typeKind().equals(TypeInfo.KIND_CLASS);
+        this.ctorBuilderAcceptTypeName = toCtorBuilderAcceptTypeName(typeInfo, hasParent, parentAnnotationTypeName);
         this.genericBuilderClassDecl = "Builder";
         this.genericBuilderAliasDecl = ("B".equals(typeInfo.typeName().className())) ? "BU" : "B";
         this.genericBuilderAcceptAliasDecl = ("T".equals(typeInfo.typeName().className())) ? "TY" : "T";
@@ -127,9 +124,10 @@ public class BodyContext {
                 searchForBuilderAnnotation("interceptorCreateMethod", builderTriggerAnnotation, typeInfo);
         this.interceptorCreateMethod = (interceptorCreateMethod == null || interceptorCreateMethod.isEmpty())
                 ? null : interceptorCreateMethod;
-        this.publicOrPackagePrivateDecl = (typeInfo.typeKind().equals("INTERFACE")
+        this.publicOrPackagePrivateDecl = (typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)
                                                    || typeInfo.modifierNames().isEmpty()
-                                                   || typeInfo.modifierNames().contains("PUBLIC")) ? "public " : "";
+                                                   || typeInfo.modifierNames().contains(TypeInfo.MODIFIER_PUBLIC))
+                                                        ? "public " : "";
     }
 
     @Override
@@ -206,17 +204,17 @@ public class BodyContext {
      *
      * @return the parent type name
      */
-    public AtomicReference<TypeName> parentTypeName() {
-        return parentTypeName;
+    public Optional<TypeName> parentTypeName() {
+        return Optional.ofNullable(parentTypeName);
     }
 
     /**
-     * Returns the parent annotation type.
+     * Returns the parent annotation type name.
      *
      * @return the parent annotation type
      */
-    protected AtomicReference<TypeName> parentAnnotationType() {
-        return parentAnnotationType;
+    protected Optional<TypeName> parentAnnotationTypeName() {
+        return Optional.ofNullable(parentAnnotationTypeName);
     }
 
     /**
@@ -440,8 +438,8 @@ public class BodyContext {
     protected static String toBeanAttributeName(TypedElementName method,
                                                 boolean isBeanStyleRequired) {
         AtomicReference<Optional<List<String>>> refAttrNames = new AtomicReference<>();
-        BeanUtils.validateAndParseMethodName(method.elementName(), method.typeName().name(), isBeanStyleRequired, refAttrNames);
-        List<String> attrNames = (refAttrNames.get().isEmpty()) ? Collections.emptyList() : refAttrNames.get().get();
+        validateAndParseMethodName(method.elementName(), method.typeName().name(), isBeanStyleRequired, refAttrNames);
+        List<String> attrNames = (refAttrNames.get().isEmpty()) ? List.of() : refAttrNames.get().get();
         if (!isBeanStyleRequired) {
             return (!attrNames.isEmpty()) ? attrNames.get(0) : method.elementName();
         }
@@ -504,15 +502,6 @@ public class BodyContext {
     }
 
     /**
-     * In support of {@link io.helidon.builder.Builder#defineDefaultMethods()}.
-     */
-    private static boolean toDefineDefaultMethods(AnnotationAndValue builderTriggerAnnotation,
-                                                  TypeInfo typeInfo) {
-        String val = searchForBuilderAnnotation("defineDefaultMethods", builderTriggerAnnotation, typeInfo);
-        return (val == null) ? Builder.DEFAULT_DEFINE_DEFAULT_METHODS : Boolean.parseBoolean(val);
-    }
-
-    /**
      * In support of {@link io.helidon.builder.Builder#listImplType()}.
      */
     private static String toListImplType(AnnotationAndValue builderTriggerAnnotation,
@@ -550,7 +539,7 @@ public class BodyContext {
         if (!builderTriggerAnnotation.typeName().equals(BUILDER_ANNO_TYPE_NAME)) {
             AnnotationAndValue builderAnnotation = DefaultAnnotationAndValue
                     .findFirst(BUILDER_ANNO_TYPE_NAME.name(), typeInfo.annotations()).orElse(null);
-            if (Objects.nonNull(builderAnnotation)) {
+            if (builderAnnotation != null) {
                 val = builderAnnotation.value(key).orElse(null);
             }
         }
@@ -562,70 +551,60 @@ public class BodyContext {
         return val;
     }
 
-    private static void gatherAllAttributeNames(BodyContext ctx,
-                                                TypeInfo typeInfo) {
+    private void gatherAllAttributeNames(TypeInfo typeInfo) {
         TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
-        if (Objects.nonNull(superTypeInfo)) {
+        if (superTypeInfo != null) {
             Optional<? extends AnnotationAndValue> superBuilderAnnotation = DefaultAnnotationAndValue
-                    .findFirst(ctx.builderTriggerAnnotation.typeName().name(), superTypeInfo.annotations());
+                    .findFirst(builderTriggerAnnotation.typeName().name(), superTypeInfo.annotations());
             if (superBuilderAnnotation.isEmpty()) {
-                gatherAllAttributeNames(ctx, superTypeInfo);
+                gatherAllAttributeNames(superTypeInfo);
             } else {
-                populateMap(ctx.map, superTypeInfo, ctx.beanStyleRequired);
-            }
-
-            if (Objects.isNull(ctx.parentTypeName.get())
-                    && superTypeInfo.typeKind().equals(DefaultBuilderCreatorProvider.INTERFACE)) {
-                ctx.parentTypeName.set(superTypeInfo.typeName());
-            } else if (Objects.isNull(ctx.parentAnnotationType.get())
-                    && superTypeInfo.typeKind().equals("ANNOTATION_TYPE")) {
-                ctx.parentAnnotationType.set(superTypeInfo.typeName());
+                populateMap(map, superTypeInfo, beanStyleRequired);
             }
         }
 
         for (TypedElementName method : typeInfo.elementInfo()) {
-            String beanAttributeName = toBeanAttributeName(method, ctx.beanStyleRequired);
-            TypedElementName existing = ctx.map.get(beanAttributeName);
-            if (Objects.nonNull(existing)
-                    && BeanUtils.isBooleanType(method.typeName().name())
+            String beanAttributeName = toBeanAttributeName(method, beanStyleRequired);
+            TypedElementName existing = map.get(beanAttributeName);
+            if (existing != null
+                    && isBooleanType(method.typeName().name())
                     && method.elementName().startsWith("is")) {
                 AtomicReference<Optional<List<String>>> alternateNames = new AtomicReference<>();
-                BeanUtils.validateAndParseMethodName(method.elementName(),
+                validateAndParseMethodName(method.elementName(),
                                                      method.typeName().name(), true, alternateNames);
-                assert (Objects.nonNull(alternateNames.get()));
-                final String currentAttrName = beanAttributeName;
-                Optional<String> alternateName = alternateNames.get().orElse(Collections.emptyList()).stream()
+                String currentAttrName = beanAttributeName;
+                Optional<String> alternateName = alternateNames.get().orElse(List.of()).stream()
                         .filter(it -> !it.equals(currentAttrName))
                         .findFirst();
-                if (alternateName.isPresent() && !ctx.map.containsKey(alternateName.get())
-                        && !BeanUtils.isReservedWord(alternateName.get())) {
+                if (alternateName.isPresent() && !map.containsKey(alternateName.get())
+                        && !isReservedWord(alternateName.get())) {
                     beanAttributeName = alternateName.get();
-                    existing = ctx.map.get(beanAttributeName);
+                    existing = map.get(beanAttributeName);
                 }
             }
 
-            if (Objects.nonNull(existing)) {
+            if (existing != null) {
                 if (!existing.typeName().equals(method.typeName())) {
                     throw new IllegalStateException(method + " cannot redefine types from super for " + beanAttributeName);
                 }
 
                 // allow the subclass to override the defaults, etc.
-                Objects.requireNonNull(ctx.map.put(beanAttributeName, method));
-                int pos = ctx.allAttributeNames.indexOf(beanAttributeName);
+                Objects.requireNonNull(map.put(beanAttributeName, method));
+                int pos = allAttributeNames.indexOf(beanAttributeName);
                 if (pos >= 0) {
-                    ctx.allTypeInfos.set(pos, method);
+                    allTypeInfos.set(pos, method);
                 }
                 continue;
             }
 
-            Object prev = ctx.map.put(beanAttributeName, method);
-            assert (Objects.isNull(prev));
+            Object prev = map.put(beanAttributeName, method);
+            assert (prev == null);
 
-            ctx.allTypeInfos.add(method);
-            if (ctx.allAttributeNames.contains(beanAttributeName)) {
+            allTypeInfos.add(method);
+            if (allAttributeNames.contains(beanAttributeName)) {
                 throw new IllegalStateException("duplicate attribute name: " + beanAttributeName + " processing " + typeInfo);
             }
-            ctx.allAttributeNames.add(beanAttributeName);
+            allAttributeNames.add(beanAttributeName);
         }
     }
 
@@ -639,7 +618,7 @@ public class BodyContext {
         for (TypedElementName method : typeInfo.elementInfo()) {
             String beanAttributeName = toBeanAttributeName(method, isBeanStyleRequired);
             TypedElementName existing = map.get(beanAttributeName);
-            if (Objects.nonNull(existing)) {
+            if (existing != null) {
                 if (!existing.typeName().equals(method.typeName())) {
                     throw new IllegalStateException(method + " cannot redefine types from super for " + beanAttributeName);
                 }
@@ -648,7 +627,7 @@ public class BodyContext {
                 Objects.requireNonNull(map.put(beanAttributeName, method));
             } else {
                 Object prev = map.put(beanAttributeName, method);
-                assert (Objects.isNull(prev));
+                assert (prev == null);
             }
         }
     }
@@ -663,16 +642,55 @@ public class BodyContext {
                 || beanAttributeName.equals("toStringInner");
     }
 
-    private boolean hasBuilder(Optional<TypeInfo> typeInfo, AnnotationAndValue builderTriggerAnnotation) {
-        if (typeInfo.isEmpty()) {
+    private boolean hasBuilder(TypeInfo typeInfo,
+                               AnnotationAndValue builderTriggerAnnotation) {
+        if (typeInfo == null) {
             return false;
         }
 
         TypeName builderAnnoTypeName = builderTriggerAnnotation.typeName();
-        boolean hasBuilder = typeInfo.get().annotations().stream()
+        boolean hasBuilder = typeInfo.annotations().stream()
                 .map(AnnotationAndValue::typeName)
                 .anyMatch(it -> it.equals(builderAnnoTypeName));
-        return hasBuilder || hasBuilder(typeInfo.get().superTypeInfo(), builderTriggerAnnotation);
+        return hasBuilder || hasBuilder(typeInfo.superTypeInfo().orElse(null), builderTriggerAnnotation);
+    }
+
+    private static TypeName toCtorBuilderAcceptTypeName(TypeInfo typeInfo,
+                                                        boolean hasParent,
+                                                        TypeName parentAnnotationTypeName) {
+        if (hasParent) {
+            return typeInfo.typeName();
+        }
+
+        return (parentAnnotationTypeName != null && typeInfo.elementInfo().isEmpty()
+                        ? typeInfo.superTypeInfo().orElseThrow().typeName() : typeInfo.typeName());
+    }
+
+    private static TypeName toParentTypeName(AnnotationAndValue builderTriggerAnnotation,
+                                             TypeInfo typeInfo) {
+        TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
+        if (superTypeInfo != null) {
+            Optional<? extends AnnotationAndValue> superBuilderAnnotation = DefaultAnnotationAndValue
+                    .findFirst(builderTriggerAnnotation.typeName().name(), superTypeInfo.annotations());
+            if (superBuilderAnnotation.isEmpty()) {
+                return toParentTypeName(builderTriggerAnnotation, superTypeInfo);
+            }
+
+            if (superTypeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
+                return superTypeInfo.typeName();
+            }
+        }
+
+        return null;
+    }
+
+    private static TypeName toParentAnnotationTypeName(TypeInfo typeInfo) {
+        TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
+        if (superTypeInfo != null && superTypeInfo.typeKind().equals(TypeInfo.KIND_ANNOTATION_TYPE)) {
+            return superTypeInfo.typeName();
+        }
+
+        return null;
     }
 
 }

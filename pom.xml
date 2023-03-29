@@ -84,7 +84,7 @@
         <version.lib.jmh>1.23</version.lib.jmh>
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
         <version.lib.commons-lang3>3.10</version.lib.commons-lang3>
-        <version.lib.classgraph>4.8.87</version.lib.classgraph>
+        <version.lib.classgraph>4.8.154</version.lib.classgraph>
         <!--
         !Version statement! - end
         -->
@@ -1189,6 +1189,12 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${version.lib.commons-io}</version>
+            </dependency>
+            <!-- Pico TCK tests -->
+            <dependency>
+                <groupId>jakarta.inject</groupId>
+                <artifactId>jakarta.inject-tck</artifactId>
+                <version>${version.lib.jakarta.inject}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

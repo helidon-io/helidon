@@ -3,7 +3,7 @@
 The <b>Helidon Builder</b> provides compile-time code generation for fluent builders. It was inspired by [Lombok]([https://projectlombok.org/), but the implementation here in Helidon is different in a few ways:
 <ol>
     <li>The <i>Builder</i> annotation targets interface or annotation types only. Your interface effectively contains the attributes of your getter as well as serving as the contract for your getter methods.</li>
-    <li>Generated classes implement your target interface (or annotation) and provide a fluent builder that will always have an implementation of <i>toString(), hashCode(), and equals().</i> implemented</li>
+    <li>Generated classes implement your target interface (or annotation or abstract class) and provide a fluent builder that will always have an implementation of <i>toString(), hashCode(), and equals().</i> implemented</li>
     <li>Generated classes always behave like a <i>SuperBuilder</i> from Lombok. Basically this means that builders can form
       a hierarchy on the types they target (e.g., Level2 derives from Level1 derives from Level0, etc.).</li>
     <li>Lombok uses AOP while the Helidon Builder generates source code. You can use the <i>Builder</i> annotation (as well as other annotations in the package and <i>ConfiguredOption</i>) to control the naming and other features of what and how the implementation classes are generated and behave.</li>
@@ -38,7 +38,35 @@ public interface MyConfigBean {
 }
 ```
 2. Annotate your interface definition with <i>Builder</i>, and optionally use <i>ConfiguredOption</i>, <i>Singular</i>, etc. Remember to review the annotation attributes javadoc for any customizations.
-3. Compile (using the <i>builder-processor</i> in your annotation classpath).
+3. Builder (using the <i>builder-processor</i> in your annotation classpath).
+```xml
+    ...
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <!-- this path is needed if only requiring the Builder annotation -->
+                        <path>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <!-- this path is needed if requiring the ConfigBean annotation (which will automatically bring in the Builder processor transitively) -->
+                        <path>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    ...
+```
 
 The result of this will create (under ./target/generated-sources/annotations):
 * MyConfigBeanImpl (in the same package as MyConfigBean) that will support multi-inheritance builders named MyConfigBeanImpl.Builder.
@@ -49,16 +77,28 @@ The result of this will create (under ./target/generated-sources/annotations):
 * Support for attribute validation (see ConfiguredOption#required() and [test-builder](./tests/builder/src/main/java/io/helidon/builder/test/testsubjects/package-info.java)).
 * Support for builder interception (i.e., including decoration or mutation). (see [test-builder](./tests/builder/src/main/java/io/helidon/builder/test/testsubjects/package-info.java)).
 
+Also note that the generated code from Helidon Builder processors may add other dependencies that you will need to add (typically in <i>provided</i> scope).
+```xml
+    <dependency>
+        <groupId>jakarta.annotation</groupId>
+        <artifactId>jakarta.annotation-api</artifactId>
+        <scope>provided</scope>
+        <optional>true</optional>
+    </dependency>
+```
+
 ## Modules
 * [builder](./builder) - provides the compile-time annotations, as well as optional runtime supporting types.
 * [processor-spi](./processor-spi) - defines the Builder Processor SPI runtime definitions used by builder tooling. This module is only needed at compile time.
 * [processor-tools](./processor-tools) - provides the concrete creators & code generators. This module is only needed at compile time.
 * [processor](./processor) - the annotation processor which delegates to the processor-tools module for the main processing logic. This module is only needed at compile time.
-* [tests/builder](./tests/builder) - tests that can also serve as examples for usage.
+* [builder-config](./builder-config) - extension to the builder to additionally support [Helidon (Common) Config](../common/config) and [@ConfigBean](./builder-config/src/main/java/io/helidon/builder/config/ConfigBean.java).
+* [builder-config-processor](./builder-config-processor) - defines the ConfigBean builder.
+* [tests](./tests) - tests that can also serve as examples for usage.
 
-## Customizations
+## Customizations and Extensibility
 To implement your own custom <i>Builder</i>:
-* See [pico/builder-config](../pico/builder-config) for an example.
+* See [builder-config](../builder-config) serving as an example.
 
 ## Usage
 See [tests/builder](./tests/builder) for usage examples.

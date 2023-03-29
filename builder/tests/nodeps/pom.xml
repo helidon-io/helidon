@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
 
     Copyright (c) 2022, 2023 Oracle and/or its affiliates.
@@ -28,7 +29,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-builder-test-nodeps</artifactId>
+    <artifactId>helidon-builder-tests-test-nodeps</artifactId>
     <name>Helidon Builder No Dependencies Tests</name>
     <description>A test that excludes all Helidon dependencies to ensure that builder works in such conditions</description>
 

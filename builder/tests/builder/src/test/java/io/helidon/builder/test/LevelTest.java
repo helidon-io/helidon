@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.builder.test;
 
 import java.util.Collections;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.builder.test.testsubjects.Level0;
@@ -44,7 +45,7 @@ class LevelTest {
                 .level1booleanAttribute(false)
                 .level1IntegerAttribute(null)
                 .level2Level0Info(null)
-                .level2Level0Info(Collections.singleton(Level0ManualImpl.builder().build()))
+                .level2Level0Info(Set.of(Level0ManualImpl.builder().build()))
                 .addLevel0(Level0ManualImpl.builder().build())
                 .addStringToLevel1("key", Level1ManualImpl.builder().build())
                 .build();
@@ -79,7 +80,7 @@ class LevelTest {
                 .level1booleanAttribute(false)
                 .level1IntegerAttribute(null)
                 .level2Level0Info(null)
-                .level2Level0Info(Collections.singleton(Level0ManualImpl.builder().build()))
+                .level2Level0Info(Set.of(Level0ManualImpl.builder().build()))
                 .addLevel0(Level0ManualImpl.builder().build())
                 .addStringToLevel1("key", Level1ManualImpl.builder().build())
                 .build();
@@ -116,7 +117,7 @@ class LevelTest {
         Level2 val2 = Level2Impl.builder()
                 .level0StringAttribute("a")
                 .level1booleanAttribute(false)
-                .level2Level0Info(Collections.singleton(Level0Impl.builder().build()))
+                .level2Level0Info(Set.of(Level0Impl.builder().build()))
                 .addLevel0(Level0Impl.builder().build())
                 .addStringToLevel1("key", Level1Impl.builder().build())
                 .build();

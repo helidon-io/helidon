@@ -41,3 +41,6 @@ server2:
   media-support:
 
   content-encoding:
+
+pico:
+  permits-dynamic: true

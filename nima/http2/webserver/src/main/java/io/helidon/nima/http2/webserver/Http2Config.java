@@ -17,15 +17,15 @@
 package io.helidon.nima.http2.webserver;
 
 import io.helidon.builder.Builder;
+import io.helidon.builder.config.ConfigBean;
 import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.builder.config.ConfigBean;
 
 /**
  * HTTP/2 server configuration.
  */
 @Builder
-@ConfigBean(key = "server.connection-providers.http_2")
+@ConfigBean("server.connection-providers.http_2")
 public interface Http2Config {
     /**
      * The size of the largest frame payload that the sender is willing to receive in bytes.

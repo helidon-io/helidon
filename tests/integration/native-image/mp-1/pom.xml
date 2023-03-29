@@ -52,6 +52,11 @@
             <artifactId>helidon-security-providers-oidc</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-services</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-jaeger</artifactId>
             <scope>runtime</scope>

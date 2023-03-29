@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,11 @@
 
 package io.helidon.pico.tools;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import io.helidon.pico.DefaultBootstrap;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +35,7 @@ class TemplateHelperTest {
 
     @Test
     void bogusTemplateName() {
-        TemplateHelper helper = TemplateHelper.create(DefaultBootstrap.builder().build());
+        TemplateHelper helper = TemplateHelper.create();
         ToolsException e = assertThrows(ToolsException.class,
                                               () -> helper.safeLoadTemplate("bogus.hbs"));
         assertThat(e.getMessage(), equalTo("failed to load: templates/pico/default/bogus.hbs"));
@@ -46,7 +43,7 @@ class TemplateHelperTest {
 
     @Test
     void requiredArguments() {
-        TemplateHelper helper = TemplateHelper.create(DefaultBootstrap.builder().build());
+        TemplateHelper helper = TemplateHelper.create();
         Set<String> args = helper.requiredArguments("this is {a} little {test}", Optional.of("{"), Optional.of("}"));
         assertThat(args, contains("a", "test"));
 
@@ -59,8 +56,8 @@ class TemplateHelperTest {
 
     @Test
     public void applyMustacheSubstitutions() {
-        TemplateHelper helper = TemplateHelper.create(DefaultBootstrap.builder().build());
-        Map<String, Object> props = Collections.singletonMap("little", "big");
+        TemplateHelper helper = TemplateHelper.create();
+        Map<String, Object> props = Map.of("little", "big");
 
         String val = helper.applySubstitutions("", props, true);
         assertThat(val, equalTo(""));
@@ -72,7 +69,7 @@ class TemplateHelperTest {
     @Test
     public void moduleInfoTemplate() {
         Map<String, Object> subst = new HashMap<>();
-        TemplateHelper helper = TemplateHelper.create(DefaultBootstrap.builder().build());
+        TemplateHelper helper = TemplateHelper.create();
         String template = helper.safeLoadTemplate("module-info.hbs");
 
         Set<String> args = helper.requiredArguments(template);
@@ -87,8 +84,8 @@ class TemplateHelperTest {
         subst.put("name", "my-module-name");
         subst.put("description", List.of("Description 1.", "Description 2."));
         subst.put("hasdescription", true);
-        subst.put("header", "/*\n  Header Line 1\n  Header Line 2\n */");
-        subst.put("generatedanno", helper.defaultGeneratedStickerFor("generator"));
+        subst.put("header", "/*\n  Header Line 1\n  Header Line 2\n */\n");
+        subst.put("generatedanno", helper.generatedStickerFor("generator"));
         codegen = helper.applySubstitutions(template, subst, true);
         assertThat(codegen,
                    equalTo("/*\n"
@@ -99,7 +96,7 @@ class TemplateHelperTest {
                                    + " * Description 1.\n"
                                    + " * Description 2.\n"
                                    + " */\n"
-                                   + "// @Generated({provider=null, generator=generator, ver=null})\n"
+                                   + "// @Generated(value = \"generator\", comments = \"version=1\")\n"
                                    + "module my-module-name { \n"
                                    + "}\n"));
     }
