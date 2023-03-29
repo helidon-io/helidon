@@ -214,4 +214,26 @@
    <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
 </suppress>
 
+
+<!-- This is a low priority CVE against a deprecated method in Guava. We don't use guava directly.
+     This CVE bounces in and out of being "fixed" in version 30 and later.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: guava-31.1-jre.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
+   <vulnerabilityName>CVE-2020-8908</vulnerabilityName>
+</suppress>
+
+<!-- False Positive. This CVE is again Use After Free media server. We don't use that.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: io.helidon.media.jsonp:helidon-media-jsonp-server:1.4.12-SNAPSHOT
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.media\.jsonp/helidon\-media\-jsonp\-server@.*$</packageUrl>
+   <cve>CVE-2022-40016</cve>
+</suppress>
+
 </suppressions>
