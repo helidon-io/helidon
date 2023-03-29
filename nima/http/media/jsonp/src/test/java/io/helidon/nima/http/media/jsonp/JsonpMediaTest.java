@@ -16,16 +16,6 @@
 
 package io.helidon.nima.http.media.jsonp;
 
-import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
-import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.http.media.spi.MediaSupportProvider;
-import jakarta.json.*;
-import org.junit.jupiter.api.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -33,8 +23,24 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import static io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider.JSON_ARRAY_TYPE;
-import static io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider.JSON_OBJECT_TYPE;
+import io.helidon.common.config.Config;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.MediaSupport;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.nima.http.media.jsonp.JsonpSupport.JSON_ARRAY_TYPE;
+import static io.helidon.nima.http.media.jsonp.JsonpSupport.JSON_OBJECT_TYPE;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,10 +55,10 @@ class JsonpMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
-    private final JsonpMediaSupportProvider provider;
+    private final MediaSupport provider;
 
     JsonpMediaTest() {
-        this.provider = new JsonpMediaSupportProvider();
+        this.provider = JsonpSupport.create(Config.empty());
         provider.init(MediaContext.create());
     }
 
@@ -60,8 +66,8 @@ class JsonpMediaTest {
     void testWriteSingle() {
         WritableHeaders<?> headers = WritableHeaders.create();
 
-        MediaSupportProvider.WriterResponse<JsonObject> res = provider.writer(JSON_OBJECT_TYPE, headers);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.SUPPORTED));
+        MediaSupport.WriterResponse<JsonObject> res = provider.writer(JSON_OBJECT_TYPE, headers);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
@@ -86,8 +92,8 @@ class JsonpMediaTest {
     void testWriteList() {
         WritableHeaders<?> headers = WritableHeaders.create();
 
-        MediaSupportProvider.WriterResponse<JsonArray> res = provider.writer(JSON_ARRAY_TYPE, headers);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.SUPPORTED));
+        MediaSupport.WriterResponse<JsonArray> res = provider.writer(JSON_ARRAY_TYPE, headers);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
@@ -116,8 +122,8 @@ class JsonpMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupportProvider.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.SUPPORTED));
+        MediaSupport.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(StandardCharsets.UTF_8));
         JsonObject JsonObject = res.supplier().get()
@@ -133,8 +139,8 @@ class JsonpMediaTest {
         requestHeaders.contentType(MediaTypes.APPLICATION_XML);
         responseHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupportProvider.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders, responseHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.SUPPORTED));
+        MediaSupport.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders, responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(StandardCharsets.UTF_8));
         JsonObject JsonObject = res.supplier().get()
@@ -148,8 +154,8 @@ class JsonpMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupportProvider.ReaderResponse<JsonArray> res = provider.reader(JSON_ARRAY_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.SUPPORTED));
+        MediaSupport.ReaderResponse<JsonArray> res = provider.reader(JSON_ARRAY_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is =
                 new ByteArrayInputStream("[{\"title\": \"first\"}, {\"title\": \"second\"}]".getBytes(StandardCharsets.UTF_8));
@@ -164,8 +170,8 @@ class JsonpMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupportProvider.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.SUPPORTED));
+        MediaSupport.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"is-8859-2: řžýčň\"}".getBytes(ISO_8859_2));
         JsonObject JsonObject = res.supplier().get()
@@ -181,8 +187,8 @@ class JsonpMediaTest {
         requestHeaders.contentType(MediaTypes.APPLICATION_XML);
         responseHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupportProvider.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders, responseHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.SUPPORTED));
+        MediaSupport.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders, responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(ISO_8859_2));
         JsonObject JsonObject = res.supplier().get()
@@ -196,8 +202,8 @@ class JsonpMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupportProvider.ReaderResponse<JsonArray> res = provider.reader(JSON_ARRAY_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupportProvider.SupportLevel.SUPPORTED));
+        MediaSupport.ReaderResponse<JsonArray> res = provider.reader(JSON_ARRAY_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is =
                 new ByteArrayInputStream("[{\"title\": \"čř\"}, {\"title\": \"šň\"}]".getBytes(ISO_8859_2));

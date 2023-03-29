@@ -47,6 +47,6 @@ public class JacksonMediaSupportProvider implements MediaSupportProvider, Weight
     @Override
     public double weight() {
         // very low weight, as this covers all, but higher than JSON-B
-        return 11;
+        return 15;
     }
 }

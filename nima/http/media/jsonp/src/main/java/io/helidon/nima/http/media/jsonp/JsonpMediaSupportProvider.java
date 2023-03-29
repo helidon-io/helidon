@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,127 +16,32 @@
 
 package io.helidon.nima.http.media.jsonp;
 
-import java.util.List;
-import java.util.Map;
-
-import io.helidon.common.GenericType;
-import io.helidon.common.http.Headers;
-import io.helidon.common.http.HttpMediaType;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.http.media.EntityReader;
-import io.helidon.nima.http.media.EntityWriter;
+import io.helidon.common.Weighted;
+import io.helidon.common.config.Config;
+import io.helidon.nima.http.media.MediaSupport;
 import io.helidon.nima.http.media.spi.MediaSupportProvider;
-
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
-import jakarta.json.JsonStructure;
-import jakarta.json.JsonWriterFactory;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for JSON Processing media support.
  */
-public class JsonpMediaSupportProvider implements MediaSupportProvider {
-    /**
-     * Json object generic type.
-     */
-    public static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
-    /**
-     * Json array generic type.
-     */
-    public static final GenericType<JsonArray> JSON_ARRAY_TYPE = GenericType.create(JsonArray.class);
-
-    private static final JsonReaderFactory READER_FACTORY = Json.createReaderFactory(Map.of());
-    private static final JsonWriterFactory WRITER_FACTORY = Json.createWriterFactory(Map.of());
-
-    private final JsonpReader reader = new JsonpReader(READER_FACTORY);
-    private final JsonpWriter writer = new JsonpWriter(WRITER_FACTORY);
+public class JsonpMediaSupportProvider implements MediaSupportProvider, Weighted {
 
     /**
-     * Server response writer direct access.
-     *
-     * @param <T> type to write
-     * @return a writer to write JSON-P objects
+     * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
      */
-    public static <T extends JsonStructure> EntityWriter<T> serverResponseWriter() {
-        return new JsonpWriter<>(WRITER_FACTORY);
-    }
-
-    /**
-     * Server request reader direct access.
-     *
-     * @param <T> type to read
-     * @return a reader to read JSON-P objects
-     */
-    public static <T extends JsonStructure> EntityReader<T> serverRequestReader() {
-        return new JsonpReader<>(READER_FACTORY);
+    @Deprecated
+    public JsonpMediaSupportProvider() {
+        super();
     }
 
     @Override
-    public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
-        if (isSupportedType(type)) {
-            if (requestHeaders.contentType()
-                    .map(it -> it.test(MediaTypes.APPLICATION_JSON))
-                    .orElse(true)) {
-                return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
-            }
-        }
-        return ReaderResponse.unsupported();
+    public String configKey() {
+        return "jsonp";
     }
 
     @Override
-    public <T> WriterResponse<T> writer(GenericType<T> type,
-                                        Headers requestHeaders,
-                                        WritableHeaders<?> responseHeaders) {
-
-        if (isSupportedType(type)) {
-            return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
-        }
-
-        return WriterResponse.unsupported();
+    public MediaSupport create(Config config) {
+        return JsonpSupport.create(config);
     }
 
-    @Override
-    public <T> ReaderResponse<T> reader(GenericType<T> type,
-                                        Headers requestHeaders,
-                                        Headers responseHeaders) {
-        if (isSupportedType(type)) {
-            List<HttpMediaType> acceptedTypes = requestHeaders.acceptedTypes();
-            // check if accepted
-            if (acceptedTypes.isEmpty()) {
-                return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
-            }
-            for (HttpMediaType acceptedType : acceptedTypes) {
-                if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
-                    return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
-                }
-            }
-        }
-
-        return ReaderResponse.unsupported();
-    }
-
-    @Override
-    public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        // if the type is JsonStructure, we support it and do not care about content type
-        // you provide json, you get json...
-        if (isSupportedType(type)) {
-            return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
-        }
-        return WriterResponse.unsupported();
-    }
-
-    boolean isSupportedType(GenericType<?> type) {
-        return JsonStructure.class.isAssignableFrom(type.rawType());
-    }
-
-    <T> EntityReader<T> reader() {
-        return reader;
-    }
-
-    <T> EntityWriter<T> writer() {
-        return writer;
-    }
 }

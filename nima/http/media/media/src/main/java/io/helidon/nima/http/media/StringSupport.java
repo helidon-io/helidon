@@ -41,9 +41,12 @@ public class StringSupport implements MediaSupport {
     private static final EntityReader READER = new StringReader();
     private static final EntityWriter WRITER = new StringWriter();
 
-    private StringSupport() {
+    // MyStringSupportProvider in SseServerMediaTest extends this class so protected access is required
+    /**
+     * Creates an instance of media support for strings.
+     */
+    protected StringSupport() {
     }
-
 
     /**
      * Create a new media support for {@link java.lang.String} processing.

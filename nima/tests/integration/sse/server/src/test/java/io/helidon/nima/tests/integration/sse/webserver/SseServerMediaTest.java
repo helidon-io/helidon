@@ -23,12 +23,15 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Weighted;
+import io.helidon.common.config.Config;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityWriter;
+import io.helidon.nima.http.media.MediaSupport;
 import io.helidon.nima.http.media.StringSupport;
+import io.helidon.nima.http.media.spi.MediaSupportProvider;
 import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.sse.webserver.SseSink;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -38,6 +41,7 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.HeaderValues.ACCEPT_EVENT_STREAM;
@@ -85,14 +89,9 @@ class SseServerMediaTest {
     }
 
     @SuppressWarnings("unchecked")
-    public static class MyStringSupportProvider extends StringSupport implements Weighted {
+    public static class MyStringSupport extends StringSupport {
 
         private static final EntityWriter<?> WRITER = new MyStringWriter();
-
-        @Override
-        public double weight() {
-            return Weighted.DEFAULT_WEIGHT + 1;
-        }
 
         @Override
         public <T> WriterResponse<T> writer(GenericType<T> type,
@@ -100,7 +99,7 @@ class SseServerMediaTest {
                                             WritableHeaders<?> responseHeaders) {
             HttpMediaType mediaType = responseHeaders.contentType().orElse(null);
             if (type.equals(GenericType.STRING) && mediaType != null && mediaType.equals(MY_PLAIN_TEXT)) {
-                return new WriterResponse<>(SupportLevel.SUPPORTED, MyStringSupportProvider::writer);
+                return new WriterResponse<>(SupportLevel.SUPPORTED, MyStringSupport::writer);
             }
             return WriterResponse.unsupported();
         }
@@ -140,4 +139,24 @@ class SseServerMediaTest {
             }
         }
     }
+
+    public static class MyStringSupportProvider implements MediaSupportProvider, Weighted {
+
+        @Override
+        public String configKey() {
+            return "my-string";
+        }
+
+        @Override
+        public MediaSupport create(Config config) {
+            return new MyStringSupport();
+        }
+
+        @Override
+        public double weight() {
+            return Weighted.DEFAULT_WEIGHT + 1;
+        }
+
+    }
+
 }

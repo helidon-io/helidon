@@ -16,119 +16,38 @@
 
 package io.helidon.nima.http.media.jsonb;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.Weighted;
-import io.helidon.common.http.Headers;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.http.media.EntityReader;
-import io.helidon.nima.http.media.EntityWriter;
+import io.helidon.common.config.Config;
+import io.helidon.nima.http.media.MediaSupport;
 import io.helidon.nima.http.media.spi.MediaSupportProvider;
-
-import jakarta.json.JsonObject;
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
-
-import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_JSON;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for JSON Binding media support.
  */
 public class JsonbMediaSupportProvider implements MediaSupportProvider, Weighted {
-    private static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
 
-    private static final Jsonb JSON_B = JsonbBuilder.create();
-
-    private final JsonbReader reader = new JsonbReader(JSON_B);
-    private final JsonbWriter writer = new JsonbWriter(JSON_B);
-
-    @Override
-    public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
-        if (requestHeaders.contentType()
-                .map(it -> it.test(MediaTypes.APPLICATION_JSON))
-                .orElse(true)) {
-            if (type.equals(JSON_OBJECT_TYPE)) {
-                // leave this to JSON-P
-                return ReaderResponse.unsupported();
-            }
-            return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-        }
-
-        return ReaderResponse.unsupported();
+    /**
+     * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
+     */
+    @Deprecated
+    public JsonbMediaSupportProvider() {
+        super();
     }
 
     @Override
-    public <T> WriterResponse<T> writer(GenericType<T> type,
-                                        Headers requestHeaders,
-                                        WritableHeaders<?> responseHeaders) {
-        if (JSON_OBJECT_TYPE.equals(type)) {
-            return WriterResponse.unsupported();
-        }
-
-        // check if accepted
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
-                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-            }
-        }
-
-        if (requestHeaders.acceptedTypes().isEmpty()) {
-            return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-        }
-
-        return WriterResponse.unsupported();
+    public String configKey() {
+        return "jsonb";
     }
 
     @Override
-    public <T> ReaderResponse<T> reader(GenericType<T> type,
-                                        Headers requestHeaders,
-                                        Headers responseHeaders) {
-        if (JSON_OBJECT_TYPE.equals(type)) {
-            return ReaderResponse.unsupported();
-        }
-
-        // check if accepted
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON) || acceptedType.mediaType().isWildcardType()) {
-                return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-            }
-        }
-
-        if (requestHeaders.acceptedTypes().isEmpty()) {
-            return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-        }
-
-        return ReaderResponse.unsupported();
-    }
-
-    @Override
-    public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        if (type.equals(JSON_OBJECT_TYPE)) {
-            return WriterResponse.unsupported();
-        }
-        if (requestHeaders.contains(Http.Header.CONTENT_TYPE)) {
-            if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
-                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-            }
-        } else {
-            return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
-        }
-        return WriterResponse.unsupported();
+    public MediaSupport create(Config config) {
+        return JsonbSupport.create(config);
     }
 
     @Override
     public double weight() {
-        // very low weight, as this covers all
+        // very low weight, as this covers all, also lower than Jackson
         return 10;
     }
 
-    <T> EntityReader<T> reader() {
-        return reader;
-    }
-
-    <T> EntityWriter<T> writer() {
-        return writer;
-    }
 }
