@@ -178,7 +178,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                                      request,
                                                      keepAlive);
 
-        return new BufferedOutputStream(contentEncode(outputStream));
+        int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
+        return contentEncode(new BufferedOutputStream(outputStream, writeBufferSize));
     }
 
     @Override

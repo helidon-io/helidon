@@ -16,7 +16,6 @@
 
 package io.helidon.nima.http.encoding.deflate;
 
-import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 import java.util.Set;
 import java.util.zip.DeflaterOutputStream;
@@ -63,7 +62,7 @@ public class DeflateEncodingProvider implements ContentEncodingProvider {
         return new ContentEncoder() {
             @Override
             public OutputStream encode(OutputStream network) {
-                return new DeflaterOutputStream(new BufferedOutputStream(network, 512));
+                return new DeflaterOutputStream(network);
             }
 
             @Override

@@ -16,7 +16,6 @@
 
 package io.helidon.nima.http.encoding.gzip;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -75,7 +74,7 @@ public class GzipEncodingProvider implements ContentEncodingProvider, Weighted {
             @Override
             public OutputStream encode(OutputStream network) {
                 try {
-                    return new GZIPOutputStream(new BufferedOutputStream(network, 512));
+                    return new GZIPOutputStream(network);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
