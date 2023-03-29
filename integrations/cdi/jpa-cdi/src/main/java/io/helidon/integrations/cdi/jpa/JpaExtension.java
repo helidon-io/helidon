@@ -311,7 +311,7 @@ public class JpaExtension implements Extension {
         }
         this.enabled = Boolean.parseBoolean(System.getProperty(this.getClass().getName() + ".enabled", "true"));
         if (LOGGER.isLoggable(Level.FINE) && !this.enabled) {
-            LOGGER.logp(Level.FINE, cn, mn, "{0} is not enabled", this.getClass().getName());
+            LOGGER.logp(Level.FINE, cn, mn, "jpaExtensionDisabled", this.getClass().getName());
         }
         this.unlistedManagedClassesByPersistenceUnitNames = new HashMap<>();
         this.implicitPersistenceUnits = new HashMap<>();
