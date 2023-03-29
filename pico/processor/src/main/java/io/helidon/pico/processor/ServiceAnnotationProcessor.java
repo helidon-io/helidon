@@ -110,7 +110,7 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             error(getClass().getSimpleName() + " error during processing; " + t
                           + " @ " + rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
-            throw new ToolsException("error during processing: " + t
+            throw new ToolsException("Error detected while processing: " + t
                                              + " @ " + rootStackTraceElementOf(t), t);
         } finally {
             if (roundEnv.processingOver()) {

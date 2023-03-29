@@ -43,6 +43,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServiceProviderException;
 import io.helidon.pico.PicoServices;
+import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.services.ServiceProviderComparator;
 
@@ -142,7 +143,8 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
         Objects.requireNonNull(metaConfigBeanInfo);
 
         if (initializing.get()) {
-            throw new ConfigException("unable to bind config post initialization: " + configuredServiceProvider.description());
+            throw new ConfigException("Unable to bind config post " + PicoServicesConfig.NAME + " initialization: "
+                                              + configuredServiceProvider.description());
         }
 
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -282,7 +284,7 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
                         if (fullConfigKey.isEmpty() || fullConfigKey.equals(k)) {
                             Object prev = result.put(k, v);
                             if (prev != null && prev != v) {
-                                throw new IllegalStateException("had two entries with the same key: " + prev + " and " + v);
+                                throw new IllegalStateException("Two entries with the same key detected: " + prev + " and " + v);
                             }
                         }
                     });
@@ -463,7 +465,7 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
         csp.visitAttributes(configBean, visitor, configBean);
 
         if (!problems.isEmpty()) {
-            throw new PicoServiceProviderException("validation rules violated for "
+            throw new PicoServiceProviderException("Validation rules violated for "
                                                            + csp.configBeanType()
                                                            + " with config key '" + key
                                                            + "':\n"

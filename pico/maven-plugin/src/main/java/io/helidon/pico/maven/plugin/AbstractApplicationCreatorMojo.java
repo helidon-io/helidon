@@ -117,12 +117,13 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     static ToolsException noModuleFoundError() {
-        return new ToolsException("unable to determine the name for the current module - "
+        return new ToolsException("Unable to determine the name of the current module - "
                                           + "was APT run and do you have a module-info?");
     }
 
     static ToolsException noModuleFoundError(String moduleName) {
-        return new ToolsException("no pico module named '" + moduleName + "' found in the current module - was APT run?");
+        return new ToolsException("No " + PicoServicesConfig.NAME + " module named '" + moduleName
+                                          + "' was found in the current module - was APT run?");
     }
 
     String getThisModuleName() {
@@ -363,9 +364,9 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             ServiceProvider<?> prev = result.put(name, sp);
             if (prev != null) {
                 if (!(prev instanceof ServiceProviderProvider)) {
-                    throw new ToolsException("there are two registrations for the same service type: " + prev + " and " + sp);
+                    throw new ToolsException("There are two registrations for the same service type: " + prev + " and " + sp);
                 }
-                getLog().debug("two registrations for the same service type: " + prev + " and " + sp);
+                getLog().debug("There are two registrations for the same service type: " + prev + " and " + sp);
             }
         });
         return new TreeSet<>(result.keySet());

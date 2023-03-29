@@ -51,7 +51,7 @@ final class CommonUtils {
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8);
             }
         } catch (Exception e) {
-            throw new ToolsException("failed to load: " + resourceNamePath, e);
+            throw new ToolsException("Failed to load: " + resourceNamePath, e);
         }
     }
 
@@ -68,7 +68,7 @@ final class CommonUtils {
             String content = Files.readString(filePath);
             return content;
         } catch (IOException e) {
-            throw new ToolsException("unable to load from file: " + fileName, e);
+            throw new ToolsException("Unable to load from file: " + fileName, e);
         }
     }
 
@@ -189,7 +189,7 @@ final class CommonUtils {
             if (allowEmptyCollection) {
                 return null;
             } else {
-                throw new ToolsException("expected a non-empty collection");
+                throw new ToolsException("Expected a non-empty collection");
             }
         }
 

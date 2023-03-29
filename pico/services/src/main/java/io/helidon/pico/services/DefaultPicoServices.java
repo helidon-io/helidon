@@ -158,7 +158,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
                 if (t instanceof PicoException) {
                     throw (PicoException) t;
                 } else {
-                    throw new PicoException("failed to initialize: " + t.getMessage(), t);
+                    throw new PicoException("Failed to initialize: " + t.getMessage(), t);
                 }
             } finally {
                 state.finished(true);
@@ -168,7 +168,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
 
         DefaultServices thisServices = services.get();
         if (thisServices == null) {
-            throw new PicoException("must reset() after shutdown()");
+            throw new PicoException("Must reset() after shutdown()");
         }
         return Optional.of(thisServices);
     }
@@ -221,7 +221,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
 
             return result;
         } catch (Exception e) {
-            throw new PicoException("failed to reset (state=" + state
+            throw new PicoException("Failed to reset (state=" + state
                                             + ", isInitialized=" + isInitialized()
                                             + ", isInitializing=" + isInitializing() + ")", e);
         }
@@ -267,20 +267,20 @@ class DefaultPicoServices implements PicoServices, Resettable {
                     .get();
         } catch (Throwable t) {
             finish = System.currentTimeMillis();
-            errorLog("error during shutdown (elapsed = " + (finish - start) + " ms)", t);
-            throw new PicoException("error during shutdown", t);
+            errorLog("Error detected during shutdown (elapsed = " + (finish - start) + " ms)", t);
+            throw new PicoException("Error detected during shutdown", t);
         } finally {
             es.shutdown();
             state.finished(true);
             finish = System.currentTimeMillis();
-            log("finished shutdown (elapsed = " + (finish - start) + " ms)");
+            log("Finished shutdown (elapsed = " + (finish - start) + " ms)");
         }
     }
 
     private void assertNotInitializing() {
         if (isBinding.get() || isInitializing()) {
             CallingContext initializationCallingContext = this.initializationCallingContext;
-            String desc = "reset() during the initialization sequence is not supported (binding="
+            String desc = "Calling reset() during the initialization sequence is not supported (binding="
                     + isBinding + ", initializingServicesFinished="
                     + initializingServicesFinished + ")";
             String msg = (initializationCallingContext == null)

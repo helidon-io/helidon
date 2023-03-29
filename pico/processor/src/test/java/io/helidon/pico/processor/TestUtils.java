@@ -41,7 +41,7 @@ class TestUtils {
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8);
             }
         } catch (Exception e) {
-            throw new ToolsException("failed to load: " + resourceNamePath, e);
+            throw new ToolsException("Failed to load: " + resourceNamePath, e);
         }
     }
 

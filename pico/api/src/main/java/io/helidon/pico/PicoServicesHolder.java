@@ -89,7 +89,7 @@ public abstract class PicoServicesHolder {
                         "bootstrap was previously set from this code path:\n" + prettyPrintStackTraceOf(trace)
                                 + "; module name is '" + callingContext.moduleName().orElse("undefined") + "'");
             }
-            throw new IllegalStateException("bootstrap already set - " + DEBUG_HINT);
+            throw new IllegalStateException("The bootstrap has already been set - " + DEBUG_HINT);
         }
     }
 

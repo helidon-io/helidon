@@ -219,6 +219,7 @@ public class ServicesToProcess implements Resettable {
      *
      * @param serviceTypeName the service type name
      * @param access the access level for the service type name
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public void addAccessLevel(TypeName serviceTypeName,
                                InjectionPointInfo.Access access) {
@@ -226,7 +227,7 @@ public class ServicesToProcess implements Resettable {
         if (access != null) {
             Object prev = servicesToAccess.put(serviceTypeName, access);
             if (prev != null && !access.equals(prev)) {
-                throw new ToolsException("can only support one access level for " + serviceTypeName);
+                throw new IllegalStateException("Can only support one access level for " + serviceTypeName);
             }
         }
     }
@@ -269,6 +270,7 @@ public class ServicesToProcess implements Resettable {
      *
      * @param serviceTypeName the service type name
      * @param serviceTypeHierarchy the list of superclasses (where this service type is the last in the list)
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public void addServiceTypeHierarchy(TypeName serviceTypeName,
                                         List<TypeName> serviceTypeHierarchy) {
@@ -276,7 +278,7 @@ public class ServicesToProcess implements Resettable {
         if (serviceTypeHierarchy != null) {
             Object prev = this.serviceTypeHierarchy.put(serviceTypeName, serviceTypeHierarchy);
             if (prev != null && !serviceTypeHierarchy.equals(prev)) {
-                throw new ToolsException("can only support one hierarchy for " + serviceTypeName);
+                throw new IllegalStateException("Can only support one hierarchy for " + serviceTypeName);
             }
         }
     }
@@ -328,12 +330,13 @@ public class ServicesToProcess implements Resettable {
      *
      * @param serviceTypeName   the service type name
      * @param plan              the interceptor plan
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public void addInterceptorPlanFor(TypeName serviceTypeName,
                                       Optional<InterceptionPlan> plan) {
         Object prev = interceptorPlanFor.put(serviceTypeName, plan.orElse(null));
         if (prev != null && plan.isPresent()) {
-            throw new ToolsException("should only set interception plan once for: " + serviceTypeName);
+            throw new IllegalStateException("Should only set interception plan once for: " + serviceTypeName);
         }
     }
 
@@ -461,13 +464,14 @@ public class ServicesToProcess implements Resettable {
      *
      * @param serviceTypeName the service type name
      * @param preDestroyMethodName the method name
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public void addPreDestroyMethod(TypeName serviceTypeName,
                                     String preDestroyMethodName) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToPreDestroyMethod.put(serviceTypeName, preDestroyMethodName);
         if (prev != null) {
-            throw new ToolsException("can only support one PreDestroy method for " + serviceTypeName);
+            throw new IllegalStateException("Can only support one PreDestroy method for " + serviceTypeName);
         }
     }
 
@@ -476,13 +480,14 @@ public class ServicesToProcess implements Resettable {
      *
      * @param serviceTypeName the service type name
      * @param postConstructMethodName the method name
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public void addPostConstructMethod(TypeName serviceTypeName,
                                        String postConstructMethodName) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToPostConstructMethod.put(serviceTypeName, postConstructMethodName);
         if (prev != null) {
-            throw new ToolsException("can only support one PostConstruct method for " + serviceTypeName);
+            throw new IllegalStateException("Can only support one PostConstruct method for " + serviceTypeName);
         }
     }
 
@@ -491,13 +496,14 @@ public class ServicesToProcess implements Resettable {
      *
      * @param serviceTypeName the service type name
      * @param weight the weight priority
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public void addDeclaredWeight(TypeName serviceTypeName,
                                   Double weight) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToWeightedPriority.put(serviceTypeName, weight);
         if (prev != null) {
-            throw new ToolsException("can only support one weighted priority for " + serviceTypeName);
+            throw new IllegalStateException("Can only support one weighted priority for " + serviceTypeName);
         }
     }
 
@@ -506,13 +512,14 @@ public class ServicesToProcess implements Resettable {
      *
      * @param serviceTypeName the service type name
      * @param runLevel its run level
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public void addDeclaredRunLevel(TypeName serviceTypeName,
                                     Integer runLevel) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToRunLevel.put(serviceTypeName, runLevel);
         if (prev != null) {
-            throw new ToolsException("can only support one RunLevel for " + serviceTypeName);
+            throw new IllegalStateException("Can only support one RunLevel for " + serviceTypeName);
         }
     }
 
@@ -541,13 +548,14 @@ public class ServicesToProcess implements Resettable {
      *
      * @param serviceTypeName the service type name
      * @param providerFor the types that it provides
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public void addProviderFor(TypeName serviceTypeName,
                                Set<TypeName> providerFor) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToProviderFor.put(serviceTypeName, providerFor);
         if (prev != null && !prev.equals(providerFor)) {
-            throw new ToolsException("can only support setting isProvider once for " + serviceTypeName);
+            throw new IllegalStateException("Can only support setting isProvider once for " + serviceTypeName);
         }
     }
 
@@ -556,13 +564,14 @@ public class ServicesToProcess implements Resettable {
      *
      * @param serviceTypeName the service type name
      * @param qualifiers its qualifiers
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public void addQualifiers(TypeName serviceTypeName,
                               Set<QualifierAndValue> qualifiers) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToQualifiers.put(serviceTypeName, qualifiers);
         if (prev != null) {
-            throw new ToolsException("can only support setting qualifiers once for " + serviceTypeName
+            throw new IllegalStateException("Can only support setting qualifiers once for " + serviceTypeName
                     + "; prev = " + prev + " and new = " + qualifiers);
         }
     }
@@ -854,10 +863,11 @@ public class ServicesToProcess implements Resettable {
      * validate the integrity of the user's module-info.java for the {@link io.helidon.pico.Module} and
      * {@link io.helidon.pico.Application} definitions - unless the user opted out of this check with the
      * {@link io.helidon.pico.tools.Options#TAG_IGNORE_MODULE_USAGE} option.
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     private void performModuleUsageValidation(Messager processor) {
         if (lastKnownModuleInfoFilePath != null && lastKnownModuleInfoDescriptor == null) {
-            throw new ToolsException("expected to have a module-info.java");
+            throw new IllegalStateException("Expected to have a module-info.java");
         }
 
         if (lastKnownModuleInfoDescriptor == null) {
@@ -877,7 +887,7 @@ public class ServicesToProcess implements Resettable {
         if (wasModuleDefined) {
             Optional<ModuleInfoItem> moduleInfoItem = lastKnownModuleInfoDescriptor.first(Module.class.getName());
             if (moduleInfoItem.isEmpty() || !moduleInfoItem.get().provides()) {
-                ToolsException te = new ToolsException("expected to have a 'provides " + Module.class.getName()
+                IllegalStateException te = new IllegalStateException("Expected to have a 'provides " + Module.class.getName()
                                                                + " with ... ' entry in " + lastKnownModuleInfoFilePath + message);
                 if (shouldWarnOnly) {
                     processor.warn(te.getMessage(), te);
@@ -890,7 +900,7 @@ public class ServicesToProcess implements Resettable {
         if (wasApplicationDefined) {
             Optional<ModuleInfoItem> moduleInfoItem = lastKnownModuleInfoDescriptor.first(Application.class.getName());
             if (moduleInfoItem.isEmpty() || !moduleInfoItem.get().provides()) {
-                ToolsException te = new ToolsException("expected to have a 'provides " + Application.class.getName()
+                ToolsException te = new ToolsException("Expected to have a 'provides " + Application.class.getName()
                                                                + " with ... ' entry in " + lastKnownModuleInfoFilePath + message);
                 if (shouldWarnOnly) {
                     processor.warn(te.getMessage(), te);

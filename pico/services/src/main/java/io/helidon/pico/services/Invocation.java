@@ -119,7 +119,7 @@ public class Invocation<V> implements Interceptor.Chain<V> {
                 this.call = null;
                 return call.get();
             } else {
-                throw new IllegalStateException("unknown call type: " + this);
+                throw new IllegalStateException("Unknown call type: " + this);
             }
         } else {
             return interceptorIterator.next()

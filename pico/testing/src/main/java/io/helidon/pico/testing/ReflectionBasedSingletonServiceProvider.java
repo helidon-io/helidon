@@ -66,7 +66,7 @@ public class ReflectionBasedSingletonServiceProvider<T> extends AbstractServiceP
         Objects.requireNonNull(siBasics);
 
         if (!serviceType.getName().equals(siBasics.serviceTypeName())) {
-            throw new IllegalArgumentException("mismatch in service types");
+            throw new IllegalArgumentException("Mismatch in service types: " + serviceType.getName());
         }
 
         return new ReflectionBasedSingletonServiceProvider<>(serviceType, ServiceInfo.toBuilder(siBasics).build());
@@ -84,7 +84,7 @@ public class ReflectionBasedSingletonServiceProvider<T> extends AbstractServiceP
             ctor.setAccessible(true);
             return ctor.newInstance();
         } catch (Exception e) {
-            throw new InjectionException("failed to create instance: " + this, e, this);
+            throw new InjectionException("Failed to fully create instance: " + this, e, this);
         }
     }
 

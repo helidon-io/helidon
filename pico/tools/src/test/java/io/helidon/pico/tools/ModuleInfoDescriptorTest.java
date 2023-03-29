@@ -137,7 +137,7 @@ class ModuleInfoDescriptorTest {
         String moduleInfo = "module test {\nprovides /* inner comment */ cn;\n}";
         ToolsException te = assertThrows(ToolsException.class, () -> ModuleInfoDescriptor.create(moduleInfo));
         assertThat(te.getMessage(),
-                   equalTo("unable to parse lines that have inner comments: 'provides /* inner comment */ cn'"));
+                   equalTo("Unable to parse lines that have inner comments: 'provides /* inner comment */ cn'"));
     }
 
     @Test

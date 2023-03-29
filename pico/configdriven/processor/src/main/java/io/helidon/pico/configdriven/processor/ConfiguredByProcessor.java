@@ -188,7 +188,7 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         TypeElement typeElement = (configBeanType == null)
                 ? null : processingEnv.getElementUtils().getTypeElement(configBeanType.name());
         if (typeElement == null) {
-            throw new ToolsException("unknown type: " + configBeanType);
+            throw new ToolsException("Unknown config bean type: " + configBeanType);
         }
 
         if (typeElement.getKind() != ElementKind.INTERFACE) {
@@ -208,7 +208,7 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         TypeElement typeElement = (serviceTypeName == null)
                 ? null : processingEnv.getElementUtils().getTypeElement(serviceTypeName.name());
         if (typeElement == null) {
-            throw new ToolsException("unknown type: " + serviceTypeName);
+            throw new ToolsException("Unknown service type: " + serviceTypeName);
         }
 
         if (typeElement.getKind() != ElementKind.CLASS) {

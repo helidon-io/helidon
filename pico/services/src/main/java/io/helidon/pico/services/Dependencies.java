@@ -85,7 +85,7 @@ public class Dependencies {
                                        InjectionPointInfo.ElementKind kind,
                                        InjectionPointInfo.Access access) {
             if (InjectionPointInfo.ElementKind.FIELD != kind && Void.class != elemType) {
-                throw new IllegalStateException("should not use this method for method types");
+                throw new IllegalStateException("Should not use this for method element types");
             }
             String fromServiceTypeName = builder.fromServiceTypeName().orElseThrow();
             return add(fromServiceTypeName, elemName, elemType.getName(), kind, 0, access);
@@ -108,7 +108,7 @@ public class Dependencies {
                                        int elemArgs,
                                        InjectionPointInfo.Access access) {
             if (InjectionPointInfo.ElementKind.FIELD == kind && 0 != elemArgs) {
-                throw new IllegalStateException("should not have args for field: " + elemName);
+                throw new IllegalStateException("Should not have any arguments for field types: " + elemName);
             }
             String fromServiceTypeName = builder.fromServiceTypeName().orElseThrow();
             return add(fromServiceTypeName, elemName, elemType.getName(), kind, elemArgs, access);
@@ -131,7 +131,7 @@ public class Dependencies {
                                        InjectionPointInfo.ElementKind kind,
                                        InjectionPointInfo.Access access) {
             if (InjectionPointInfo.ElementKind.FIELD != kind) {
-                throw new IllegalStateException("should not use this for method types");
+                throw new IllegalStateException("Should not use this for method element types");
             }
             return add(serviceType.getName(), elemName, elemType.getName(), kind, 0, access);
         }
@@ -384,7 +384,7 @@ public class Dependencies {
 
                 return Optional.empty();
             } catch (Exception e) {
-                throw new IllegalStateException("failed to commit a dependency: " + id, e);
+                throw new IllegalStateException("Failed to commit a dependency for id: " + id, e);
             }
         }
     }
@@ -454,7 +454,7 @@ public class Dependencies {
         } else {
             id = toMethodIdentity(elemName,
                                   dep.elementArgs().orElseThrow(),
-                                  dep.elementOffset().orElseThrow(() -> new IllegalStateException("failed on " + elemName)),
+                                  dep.elementOffset().orElseThrow(() -> new IllegalStateException("Failed on " + elemName)),
                                   access,
                                   packageName);
         }

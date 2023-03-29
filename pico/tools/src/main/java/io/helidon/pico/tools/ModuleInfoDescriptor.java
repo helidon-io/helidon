@@ -222,7 +222,7 @@ public interface ModuleInfoDescriptor {
             String moduleInfo = Files.readString(path);
             return create(moduleInfo, ordering);
         } catch (IOException e) {
-            throw new ToolsException("unable to load: " + path, e);
+            throw new ToolsException("Unable to load: " + path, e);
         }
     }
 
@@ -251,7 +251,7 @@ public interface ModuleInfoDescriptor {
             String moduleInfo = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             return create(moduleInfo, ordering);
         } catch (IOException e) {
-            throw new ToolsException("unable to load from stream", e);
+            throw new ToolsException("Unable to load from stream", e);
         }
     }
 
@@ -336,7 +336,7 @@ public interface ModuleInfoDescriptor {
                             .target(resolve(split[1], importAliases))
                             .precomments((comments != null) ? comments : List.of());
                     if (split.length < 3) {
-                        throw new ToolsException("unable to process module-info's use of: " + line);
+                        throw new ToolsException("Unable to process module-info's use of: " + line);
                     }
                     if (split[2].equals("with")) {
                         for (int i = 3; i < split.length; i++) {
@@ -347,7 +347,7 @@ public interface ModuleInfoDescriptor {
                 } else if (line.equals("}")) {
                     break;
                 } else {
-                    throw new ToolsException("unable to process module-info's use of: " + line);
+                    throw new ToolsException("Unable to process module-info's use of: " + line);
                 }
 
                 if (comments != null) {
@@ -358,10 +358,10 @@ public interface ModuleInfoDescriptor {
             throw e;
         } catch (Exception e) {
             if (line != null) {
-                throw new ToolsException("failed on line: " + line + ";\n"
+                throw new ToolsException("Failed on line: " + line + ";\n"
                                                  + "unable to load or parse module-info: " + moduleInfo, e);
             }
-            throw new ToolsException("unable to load or parse module-info: " + moduleInfo, e);
+            throw new ToolsException("Unable to load or parse module-info: " + moduleInfo, e);
         }
 
         return descriptor.build();
@@ -378,7 +378,7 @@ public interface ModuleInfoDescriptor {
         try {
             Files.writeString(path, contents());
         } catch (IOException e) {
-            throw new ToolsException("unable to save: " + path, e);
+            throw new ToolsException("Unable to save: " + path, e);
         }
     }
 
@@ -627,7 +627,7 @@ public interface ModuleInfoDescriptor {
         }
 
         if (line.contains("/*") || line.contains("*/")) {
-            throw new ToolsException("unable to parse lines that have inner comments: '" + line + "'");
+            throw new ToolsException("Unable to parse lines that have inner comments: '" + line + "'");
         }
 
         return line.trim();

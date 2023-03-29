@@ -87,7 +87,7 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
             builder = Dependencies.builder(serviceTypeName.name());
             int ctorCount = super.doBulkInner(typesToProcess, serviceTypeName, builder);
             if (ctorCount > 1) {
-                throw new ToolsException("there can be max 1 injectable constructor for " + serviceTypeName);
+                throw new ToolsException("There can be max of 1 injectable constructor for " + serviceTypeName);
             }
             DependenciesInfo dependencies = builder.build();
             servicesToProcess().addDependencies(dependencies);
@@ -110,7 +110,7 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
         boolean isStatic = (isStaticAlready != null && isStaticAlready);
         if (access == null) {
             if (varType.getKind() != ElementKind.FIELD) {
-                throw new ToolsException("unsupported element kind " + varType.getEnclosingElement()
+                throw new ToolsException("Unsupported element kind " + varType.getEnclosingElement()
                                                  + "." + varType + " with " + varType.getKind());
             }
 
@@ -145,7 +145,7 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
                  Dependencies.BuilderContinuation builder) {
         if (method.getKind() != ElementKind.METHOD
                 && method.getKind() != ElementKind.CONSTRUCTOR) {
-            throw new ToolsException("unsupported element kind " + method.getEnclosingElement()
+            throw new ToolsException("Unsupported element kind " + method.getEnclosingElement()
                                              + "." + method + " with " + method.getKind());
         }
 
@@ -154,7 +154,7 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
 
         List<? extends VariableElement> params = method.getParameters();
         if (params.isEmpty() && method.getKind() != ElementKind.CONSTRUCTOR) {
-            throw new ToolsException("unsupported element kind " + method.getEnclosingElement()
+            throw new ToolsException("Unsupported element kind " + method.getEnclosingElement()
                                              + "." + method + " with " + method.getKind());
         }
 

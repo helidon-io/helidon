@@ -91,7 +91,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
 
         Collection<Path> targetExternalJars = identifyExternalJars(packageNames);
         if (1 != targetExternalJars.size()) {
-            return handleError(req, new ToolsException("the package names provided " + packageNames
+            return handleError(req, new ToolsException("The package names provided " + packageNames
                                                      + " must map to a single jar file, but instead found: "
                                                      + targetExternalJars), responseBuilder);
         }

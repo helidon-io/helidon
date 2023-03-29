@@ -125,7 +125,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         } catch (RuntimeException e) {
             throw e;
         } catch (Throwable t) {
-            return handleError(req, new ToolsException("failed in create", t), builder);
+            return handleError(req, new ToolsException("Failed during create", t), builder);
         }
     }
 
@@ -357,7 +357,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
 
                 plan.add(line.toString());
             } catch (Exception exc) {
-                throw new IllegalStateException("failed to process: " + e.getKey() + " with " + e.getValue(), exc);
+                throw new IllegalStateException("Failed to process: " + e.getKey() + " with " + e.getValue(), exc);
             }
         }
 
@@ -411,7 +411,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
                 JavaC.Result result = compiler.compile(applicationJavaFilePath.toFile());
                 ToolsException e = result.maybeGenerateError();
                 if (e != null) {
-                    throw new ToolsException("failed to compile: " + applicationJavaFilePath, e);
+                    throw new ToolsException("Failed to compile: " + applicationJavaFilePath, e);
                 }
             }
         }
@@ -453,8 +453,8 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         } else {
             Path realModuleInfoPath = filer.toSourceLocation(ModuleUtils.REAL_MODULE_INFO_JAVA_NAME).orElse(null);
             if (realModuleInfoPath != null && !realModuleInfoPath.toFile().exists()) {
-                throw new ToolsException("expected to find " + realModuleInfoPath
-                                                 + ". did the " + PicoServicesConfig.NAME + " annotation processor run?");
+                throw new ToolsException("Expected to find " + realModuleInfoPath
+                                                 + ". Did the " + PicoServicesConfig.NAME + " APT run?");
             }
         }
     }

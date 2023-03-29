@@ -95,7 +95,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 ALL_ANNO_TYPES_HANDLED.addAll(annoTypes);
             } catch (Throwable t) {
                 System.Logger logger = System.getLogger(CustomAnnotationProcessor.class.getName());
-                ToolsException te = new ToolsException("failed to initialize creator: " + creator, t);
+                ToolsException te = new ToolsException("Failed to initialize: " + creator, t);
                 logger.log(System.Logger.Level.ERROR, te.getMessage(), te);
                 throw te;
             }
@@ -127,7 +127,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             error(getClass().getSimpleName() + " error during processing; " + t + " @ "
                           + ProcessorUtils.rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
-            throw new ToolsException("error during processing: " + t + " @ "
+            throw new ToolsException("Error while processing: " + t + " @ "
                                              + ProcessorUtils.rootStackTraceElementOf(t), t);
         }
     }
@@ -176,7 +176,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                     doFiler(response);
                 }
             } catch (Throwable t) {
-                throw new ToolsException("handling " + typesToProcess + t, t);
+                throw new ToolsException("Error detected while processing: " + typesToProcess + t, t);
             }
         }
     }

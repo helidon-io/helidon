@@ -127,7 +127,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         } catch (UnsupportedOperationException e) {
             throw e;
         } catch (Throwable t) {
-            return handleError(req, new ToolsException("failed in create", t), builder);
+            return handleError(req, new ToolsException("Failed in create", t), builder);
         }
     }
 
@@ -1044,7 +1044,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                                  LazyValue<ScanResult> scan) {
         ClassInfo classInfo = scan.get().getClassInfo(serviceTypeName.name());
         if (classInfo == null) {
-            throw new ToolsException("unable to introspect: " + serviceTypeName);
+            throw new ToolsException("Unable to introspect: " + serviceTypeName);
         }
         return classInfo;
     }

@@ -213,7 +213,7 @@ class DefaultInjectionPlans {
 
                 if (serviceProviders.isEmpty()) {
                     if (!allowNullableInjectionPoint(ipInfo)) {
-                        throw new InjectionException("expected to resolve a service appropriate for "
+                        throw new InjectionException("Expected to resolve a service appropriate for "
                                                              + ipInfo.serviceTypeName() + "." + ipInfo.elementName(),
                                                      DefaultServices
                                                              .resolutionBasedInjectionError(
@@ -235,7 +235,7 @@ class DefaultInjectionPlans {
                 if (ipInfo.optionalWrapped()) {
                     return Optional.empty();
                 } else {
-                    throw new InjectionException("expected to resolve a service appropriate for "
+                    throw new InjectionException("Expected to resolve a service appropriate for "
                                                          + ipInfo.serviceTypeName() + "." + ipInfo.elementName(),
                                                  DefaultServices.resolutionBasedInjectionError(ipInfo.dependencyToServiceInfo()),
                                                  self);
