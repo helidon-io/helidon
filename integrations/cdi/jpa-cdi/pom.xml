@@ -31,17 +31,14 @@
 
     <properties>
       <doclint>-syntax</doclint>
+      <eclipselink.skip>false</eclipselink.skip>
+      <hibernate.skip>false</hibernate.skip>
       <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>
 
         <!-- Compile-scoped dependencies. -->
-        <dependency>
-            <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-delegates</artifactId>
-            <scope>compile</scope>
-        </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
@@ -52,13 +49,45 @@
             <artifactId>helidon-integrations-jta-jdbc</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <!--
+                In a perfect world, this would be set to provided
+                scope, since whatever JAXB runtime the user selects
+                would provide the API jar it implements, assuming of
+                course it's compatible with the version we select
+                here.
+                In practice, setting the scope to provided here causes
+                the combination of JPMS and the maven-compiler-plugin
+                to fail:
+                * The jakarta.xml.bind module uses the
+                  jakarta.activation module (this project does not). The
+                  jakarta.activation module is, inconveniently,
+                  "implemented" by two possible API artifacts (!):
+                  jakarta.activation:activation-api and
+                  com.sun.activation:jakarta.activation. The
+                  jakarta.xml.bind:jakarta.xml.bind-api artifact depends
+                  on com.sun.activation:jakarta.activation, not
+                  jakarta.activation:activation-api (as one might
+                  naively suspect). All of this is important to the
+                  next bullet point.
+                * When jakarta.xml.bind:jakarta.xml.bind-api is placed
+                  in provided scope, the
+                  com.sun.activation:jakarta.activation artifact's
+                  jakarta.activation module does not end up on the
+                  module path at compile time and a "module not found:
+                  jakarta.activation" error is emitted.
+                Happily, setting the scope to compile and setting the
+                optional element to true, as is done here, gives the
+                desired provided semantics while placing the
+                transitive dependencies properly on the module path.
+            -->
+            <scope>compile</scope>
+            <optional>true</optional>
+        </dependency>
 
         <!-- Provided-scoped dependencies. -->
-        <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
@@ -67,6 +96,11 @@
         <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -82,9 +116,28 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <scope>compile</scope>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <!--
+                In a perfect world, the scope of this dependency would
+                be test, properly indicating that at runtime the end
+                user is responsible for supplying her choice of JAXB
+                runtime implementation that implements
+                jakarta.xml.bind:jakarta.xml.bind-api (see above).
+                In practice, Hibernate, probably the most popular of
+                JPA runtimes used with this project, transitively
+                includes org.glassfish.jaxb:jaxb-runtime whether we or
+                our hypothetical end user want it or not. Eclipselink
+                does not.
+                Given (a) the predominance of Hibernate, (b) the
+                relative infrequence of JAXB usage by end users these
+                days and hence the probable lack of conflict, it
+                probably makes sense to just include
+                org.glassfish.jaxb:jaxb-runtime at runtime for minimum
+                disruption since in any Hibernate-using installation
+                it's going to be there anyway.
+            -->
+            <scope>runtime</scope> <!-- really should be test -->
         </dependency>
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
@@ -94,8 +147,13 @@
 
         <!-- Test-scoped dependencies. -->
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.cdi</groupId>
+            <artifactId>helidon-microprofile-cdi</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -104,13 +162,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -133,11 +191,6 @@
             <artifactId>helidon-integrations-cdi-hibernate</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.cdi</groupId>
-            <artifactId>helidon-microprofile-cdi</artifactId>
-            <scope>test</scope>
-        </dependency>
 
         <!-- Feature generation-->
         <dependency>
@@ -150,9 +203,14 @@
     <build>
         <pluginManagement>
             <plugins>
-              <plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <compilerArgs combine.children="append">
+                            <arg>-Xlint:-path</arg>
+                        </compilerArgs>
+                    </configuration>
                     <executions>
                         <execution>
                             <id>default-testCompile</id>
@@ -164,6 +222,9 @@
                                         <version>${version.lib.hibernate}</version>
                                     </annotationProcessorPath>
                                 </annotationProcessorPaths>
+                                <compilerArgs combine.children="append">
+                                    <arg>-Xlint:-processing</arg>
+                                </compilerArgs>
                             </configuration>
                         </execution>
                     </executions>
@@ -221,11 +282,16 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <classpathDependencyExcludes>
+                    <!-- Exclude Hibernate and its transitive dependencies when Eclipselink is being tested. -->
+                        <classpathDependencyExclude>com.fasterxml:classmate</classpathDependencyExclude>
                         <classpathDependencyExclude>io.helidon.integrations.cdi:helidon-integrations-cdi-hibernate</classpathDependencyExclude>
+                        <classpathDependencyExclude>net.bytebuddy:byte-buddy</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.antlr:antlr4-runtime</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.hibernate.common:hibernate-commons-annotations</classpathDependencyExclude>
                         <classpathDependencyExclude>org.hibernate.orm:hibernate-core</classpathDependencyExclude>
                     </classpathDependencyExcludes>
                     <reportNameSuffix>eclipselink</reportNameSuffix>
-                    <skip>true</skip>
+                    <skip>${eclipselink.skip}</skip>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>${project.basedir}/src/test/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
@@ -252,11 +318,15 @@
                         </goals>
                         <configuration>
                             <classpathDependencyExcludes>
+                                <!-- Exclude Eclipselink and its transitive dependencies when Hibernate is being tested. -->
                                 <classpathDependencyExclude>io.helidon.integrations.cdi:helidon-integrations-cdi-eclipselink</classpathDependencyExclude>
+                                <classpathDependencyExclude>org.eclipse.persistence:org.eclipse.persistence.asm</classpathDependencyExclude>
+                                <classpathDependencyExclude>org.eclipse.persistence:org.eclipse.persistence.core</classpathDependencyExclude>
                                 <classpathDependencyExclude>org.eclipse.persistence:org.eclipse.persistence.jpa</classpathDependencyExclude>
+                                <classpathDependencyExclude>org.eclipse.persistence:org.eclipse.persistence.jpa.jpql</classpathDependencyExclude>
                             </classpathDependencyExcludes>
                             <reportNameSuffix>hibernate</reportNameSuffix>
-                            <skip>false</skip>
+                            <skip>${hibernate.skip}</skip>
                             <testClassesDirectory>${project.build.directory}/hibernate/test-classes</testClassesDirectory>
                         </configuration>
                     </execution>
@@ -271,8 +341,8 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <property>
-                  <name>maven.test.skip</name>
-                  <value>!true</value>
+                    <name>maven.test.skip</name>
+                    <value>!true</value>
                 </property>
             </activation>
             <build>
@@ -285,47 +355,46 @@
                         * maven-resources-plugin
                         * exec-maven-plugin
                         * hibernate-enhance-maven-plugin
-                        * maven-surefire-plugin
                     -->
 
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
-                          <execution>
-                            <id>Copy test classes to Eclipselink weaving area</id>
-                            <goals>
-                              <goal>copy-resources</goal>
-                            </goals>
-                            <phase>process-test-classes</phase>
-                            <configuration>
-                              <resources>
-                                <resource>
-                                  <directory>${project.build.testOutputDirectory}</directory>
-                                  <filtering>false</filtering>
-                                </resource>
-                              </resources>
-                              <outputDirectory>${project.build.directory}/eclipselink/test-classes</outputDirectory>
-                              <overwrite>true</overwrite>
-                            </configuration>
-                          </execution>
-                          <execution>
-                            <id>Copy test classes to Hibernate weaving area</id>
-                            <goals>
-                              <goal>copy-resources</goal>
-                            </goals>
-                            <phase>process-test-classes</phase>
-                            <configuration>
-                              <resources>
-                                <resource>
-                                  <directory>${project.build.testOutputDirectory}</directory>
-                                  <filtering>false</filtering>
-                                </resource>
-                              </resources>
-                              <outputDirectory>${project.build.directory}/hibernate/test-classes</outputDirectory>
-                              <overwrite>true</overwrite>
-                            </configuration>
-                          </execution>
+                            <execution>
+                                <id>Copy test classes to Eclipselink weaving area</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-test-classes</phase>
+                                <configuration>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.testOutputDirectory}</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                    <outputDirectory>${project.build.directory}/eclipselink/test-classes</outputDirectory>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>Copy test classes to Hibernate weaving area</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-test-classes</phase>
+                                <configuration>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.testOutputDirectory}</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                    <outputDirectory>${project.build.directory}/hibernate/test-classes</outputDirectory>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                     <plugin>
