@@ -153,7 +153,7 @@ class BasicConfigBeanTest {
     @Test
     void equality() {
         Config cfg = Config.builder()
-                .sources(ConfigSources.classpath("io/helidon/builder/config/test/BasicConfigBeanTest.yaml"))
+                .sources(ConfigSources.classpath("io/helidon/builder/config/test/basic-config-bean-test.yaml"))
                 .addParser(YamlConfigParser.create())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -176,7 +176,7 @@ class BasicConfigBeanTest {
         clientCfg.get("pswd").asString().ifPresent(serverConfigBeanManualBuilder::pswd);
         TestClientConfig clientConfigBeanManual = clientConfigBeanManualBuilder.build();
 
-        // juxtaposition the config bean approach
+        // juxtaposed to the new ConfigBean approach
         TestServerConfig serverConfigBean = DefaultTestServerConfig.toBuilder(serverCfg).build();
         TestClientConfig clientConfigBean = DefaultTestClientConfig.toBuilder(clientCfg).build();
 
