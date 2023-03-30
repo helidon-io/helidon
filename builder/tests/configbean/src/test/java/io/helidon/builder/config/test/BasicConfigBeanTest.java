@@ -25,6 +25,7 @@ import io.helidon.builder.config.testsubjects.TestClientConfig;
 import io.helidon.builder.config.testsubjects.TestServerConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.yaml.YamlConfigParser;
 
 import org.junit.jupiter.api.Test;
 
@@ -147,6 +148,40 @@ class BasicConfigBeanTest {
                    equalTo(Map.of()));
         assertThat(clientConfig.cipherSuites(),
                    equalTo(List.of()));
+    }
+
+    @Test
+    void equality() {
+        Config cfg = Config.builder()
+                .sources(ConfigSources.classpath("io/helidon/builder/config/test/BasicConfigBeanTest.yaml"))
+                .addParser(YamlConfigParser.create())
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
+        Config serverCfg = cfg.get("test-server");
+        DefaultTestServerConfig.Builder serverConfigBeanManualBuilder = DefaultTestServerConfig.builder()
+                .port(serverCfg.get("port").asInt().get());
+        serverCfg.get("name").asString().ifPresent(serverConfigBeanManualBuilder::name);
+        serverCfg.get("pswd").asString().ifPresent(serverConfigBeanManualBuilder::pswd);
+        serverCfg.get("description").asString().ifPresent(serverConfigBeanManualBuilder::description);
+        TestServerConfig serverConfigBeanManual = serverConfigBeanManualBuilder.build();
+
+        Config clientCfg = cfg.get("test-client");
+        DefaultTestClientConfig.Builder clientConfigBeanManualBuilder = DefaultTestClientConfig.builder()
+                .port(clientCfg.get("port").asInt().get())
+                .serverPort(clientCfg.get("server-port").asInt().get())
+                .cipherSuites(clientCfg.get("cipher-suites").asList(String.class).get())
+                .headers(clientCfg.get("headers").asMap().get());
+        clientCfg.get("name").asString().ifPresent(clientConfigBeanManualBuilder::name);
+        clientCfg.get("pswd").asString().ifPresent(serverConfigBeanManualBuilder::pswd);
+        TestClientConfig clientConfigBeanManual = clientConfigBeanManualBuilder.build();
+
+        // juxtaposition the config bean approach
+        TestServerConfig serverConfigBean = DefaultTestServerConfig.toBuilder(serverCfg).build();
+        TestClientConfig clientConfigBean = DefaultTestClientConfig.toBuilder(clientCfg).build();
+
+        assertThat(serverConfigBeanManual, equalTo(serverConfigBean));
+        assertThat(clientConfigBeanManual, equalTo(clientConfigBean));
     }
 
 }

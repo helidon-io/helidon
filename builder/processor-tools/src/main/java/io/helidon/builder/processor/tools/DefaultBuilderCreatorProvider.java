@@ -134,7 +134,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 });
 
         if (!duplicateNames.isEmpty()) {
-            throw new IllegalStateException("duplicate methods are using the same names " + duplicateNames + " for: "
+            throw new IllegalStateException("Duplicate methods are using the same names " + duplicateNames + " for: "
                                                     + typeInfo.typeName());
         }
     }

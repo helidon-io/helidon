@@ -169,7 +169,7 @@ final class GenerateMethod {
                 } else if (mapValueType.isMap()) {
                     builder.append(ctx.mapType());
                 } else {
-                    throw new IllegalStateException("unhandled singular type: " + mapValueType);
+                    throw new IllegalStateException("Unhandled singular type: " + mapValueType);
                 }
                 builder.append("<>();\n");
                 builder.append("\t\t\t\t}\n");
@@ -179,7 +179,7 @@ final class GenerateMethod {
                     } else if (mapValueType.isMap()) {
                         builder.append("\t\t\t\t((java.util.Map) v).put(k, val);\n");
                     } else {
-                        throw new IllegalStateException("unhandled singular type: " + mapValueType);
+                        throw new IllegalStateException("Unhandled singular type: " + mapValueType);
                     }
                 } else {
                     if (mapValueType.isSet() || mapValueType.isList()) {
