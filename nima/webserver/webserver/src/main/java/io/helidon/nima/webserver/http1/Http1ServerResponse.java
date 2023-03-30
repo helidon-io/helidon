@@ -590,7 +590,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         private final BlockingOutputStream delegate;
 
-        public ClosingBufferedOutputStream(BlockingOutputStream out, int size) {
+        ClosingBufferedOutputStream(BlockingOutputStream out, int size) {
             super(out, size);
             this.delegate = out;
         }
