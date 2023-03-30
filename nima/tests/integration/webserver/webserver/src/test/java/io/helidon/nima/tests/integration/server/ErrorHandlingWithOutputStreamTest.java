@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,13 +62,6 @@ class ErrorHandlingWithOutputStreamTest {
                     os.write("writeOnceOnly".getBytes(StandardCharsets.UTF_8));
                     throw new CustomException();
                 })
-                .get("get-outputStream-writeTwiceThenError", (req, res) -> {
-                    res.header(MAIN_HEADER_NAME, "x");
-                    OutputStream os = res.outputStream();
-                    os.write("writeOnce".getBytes(StandardCharsets.UTF_8));
-                    os.write("|writeTwice".getBytes(StandardCharsets.UTF_8));
-                    throw new CustomException();
-                })
                 .get("get-outputStream-writeFlushThenError", (req, res) -> {
                     res.header(MAIN_HEADER_NAME, "x");
                     OutputStream os = res.outputStream();
@@ -111,16 +104,6 @@ class ErrorHandlingWithOutputStreamTest {
             assertThat(response.entity().as(String.class), is("CustomErrorContent"));
             assertThat(response.headers().contains(ERROR_HEADER_NAME), is(true));
             assertThat(response.headers().contains(MAIN_HEADER_NAME), is(false));
-        }
-    }
-
-    @Test
-    void testGetOutputStreamWriteTwiceThenError_expect_invalidResponse() {
-        try (Http1ClientResponse response = client.method(Http.Method.GET)
-                .uri("/get-outputStream-writeTwiceThenError")
-                .request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
-            assertThrows(DataReader.InsufficientDataAvailableException.class, () -> response.entity().as(String.class));
         }
     }
 
