@@ -46,6 +46,6 @@ public class StatusResource {
             status = Http.Status.INTERNAL_SERVER_ERROR_500.code();
             msg = "Unsuccessful conversion";
         }
-        return Response.status(status).entity(msg).build();
+        return status == 204 ? Response.status(204).build() : Response.status(status).entity(msg).build();
     }
 }
