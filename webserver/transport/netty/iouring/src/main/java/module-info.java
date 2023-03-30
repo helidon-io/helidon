@@ -22,7 +22,7 @@ module io.helidon.webserver.transport.netty.iouring {
 
     requires io.netty.transport;
 
-    requires io.netty.incubator.transport.io_uring;
+    requires io.netty.incubator.transport.classes.io_uring;
 
     exports io.helidon.webserver.transport.netty.iouring;
 }
