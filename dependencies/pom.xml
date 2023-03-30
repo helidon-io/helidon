@@ -45,7 +45,8 @@
         <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>3.0.3</version.lib.eclipselink>
-        <!-- Needed only to force upgrade to ASM 9.4.0. Once eclipselink is upgraded this can be removed -->
+        <!-- Force upgrade to ASM 9.4.0. Once eclipselink is upgraded this can be removed -->
+        <!-- Needed to support Java 20 -->
         <version.lib.eclipselink.asm>9.4.0</version.lib.eclipselink.asm>
         <version.lib.el-impl>4.0.2</version.lib.el-impl>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
@@ -883,7 +884,8 @@
                 <artifactId>org.eclipse.persistence.jpa</artifactId>
                 <version>${version.lib.eclipselink}</version>
             </dependency>
-            <!-- Needed only to force upgrade to ASM 9.4.0. Once eclipselink is upgraded this can be removed -->
+            <!-- Force upgrade to ASM 9.4.0. Once eclipselink is upgraded this can be removed -->
+            <!-- Needed to support Java 20 -->
             <dependency>
                 <groupId>org.eclipse.persistence</groupId>
                 <artifactId>org.eclipse.persistence.asm</artifactId>
