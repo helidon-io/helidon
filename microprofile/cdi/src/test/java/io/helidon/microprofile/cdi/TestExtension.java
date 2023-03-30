@@ -42,7 +42,7 @@ public class TestExtension implements Extension {
     private final List<String> events = new LinkedList<>();
     private Config runtimeConfig;
 
-    // must be public so it works with java 11 (do not want to open this module to weld)
+    // must be public so it works with never versions of Java (do not want to open this module to weld)
     public void registerBeans(@Observes BeforeBeanDiscovery bbd) {
         bbd.addAnnotatedType(TestBean.class, "unit-test-bean");
         bbd.addAnnotatedType(TestBean2.class, "unit-test-bean2");

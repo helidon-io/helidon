@@ -31,11 +31,6 @@
     <artifactId>helidon-common-features-project</artifactId>
     <name>Helidon Common Features Project</name>
 
-    <properties>
-        <!-- Helidon features should be backward compatible with Java 11 -->
-        <version.java>11</version.java>
-    </properties>
-
     <packaging>pom</packaging>
 
     <modules>

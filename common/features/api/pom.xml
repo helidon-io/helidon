@@ -30,16 +30,4 @@
     <artifactId>helidon-common-features-api</artifactId>
     <name>Helidon Common Features API</name>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <!-- This module is Java 11, we must remove enable-preview from parent project -->
-                    <additionalOptions combine.self="override"/>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>
