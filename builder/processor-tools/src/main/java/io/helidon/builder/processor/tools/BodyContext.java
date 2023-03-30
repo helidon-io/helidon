@@ -602,7 +602,7 @@ public class BodyContext {
 
             allTypeInfos.add(method);
             if (allAttributeNames.contains(beanAttributeName)) {
-                throw new IllegalStateException("duplicate attribute name: " + beanAttributeName + " processing " + typeInfo);
+                throw new IllegalStateException("Duplicate attribute name: " + beanAttributeName + " processing " + typeInfo);
             }
             allAttributeNames.add(beanAttributeName);
         }

@@ -317,7 +317,7 @@ public class ModuleUtils {
             pos = sourcePath.lastIndexOf(SRC_TEST_JAVA_DIR);
         }
         if (pos < 0) {
-            throw new ToolsException("invalid source path: " + sourcePath);
+            throw new ToolsException("Invalid source path: " + sourcePath);
         }
         Path path = Path.of(sourcePath.substring(0, pos));
         return Objects.requireNonNull(path);
@@ -415,7 +415,7 @@ public class ModuleUtils {
             try {
                 packageName = Files.readString(packageFileName.toPath(), StandardCharsets.UTF_8);
             } catch (IOException e) {
-                throw new ToolsException("unable to load: " + packageFileName, e);
+                throw new ToolsException("Unable to load: " + packageFileName, e);
             }
 
             if (hasValue(packageName)) {
@@ -430,6 +430,7 @@ public class ModuleUtils {
      *
      * @param scratchPath the scratch directory path
      * @param packageName the package name
+     * @throws ToolsException if there are any errors creating or writing the content
      */
     public static void saveAppPackageName(Path scratchPath,
                                           String packageName) {
@@ -439,7 +440,7 @@ public class ModuleUtils {
             Files.createDirectories(packageFileName.getParentFile().toPath());
             Files.writeString(packageFileName.toPath(), packageName, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new ToolsException("unable to save: " + packageFileName, e);
+            throw new ToolsException("Unable to save: " + packageFileName, e);
         }
     }
 

@@ -86,7 +86,7 @@ class ConfigBeanBuilderCreatorTest {
         IllegalStateException e = assertThrows(IllegalStateException.class,
                                                () -> creator.preValidate(implTypeName, typeInfo, configBeanAnno));
         assertThat(e.getMessage(),
-                   equalTo("only levelType {ROOT} config beans can drive activation for: " + getClass().getName()));
+                   equalTo("Only levelType {ROOT} config beans can drive activation for: " + getClass().getName()));
     }
 
     @Test
@@ -106,7 +106,7 @@ class ConfigBeanBuilderCreatorTest {
         IllegalStateException e = assertThrows(IllegalStateException.class,
                                                () -> creator.preValidate(implTypeName, typeInfo, configBeanAnno));
         assertThat(e.getMessage(),
-                   equalTo("only levelType {ROOT} config beans can have a default bean for: " + getClass().getName()));
+                   equalTo("Only levelType {ROOT} config beans can have a default bean for: " + getClass().getName()));
     }
 
     @Test
@@ -136,7 +136,7 @@ class ConfigBeanBuilderCreatorTest {
         IllegalStateException e = assertThrows(IllegalStateException.class,
                                                () -> creator.preValidate(implTypeName, typeInfo, configBeanAnno));
         assertThat(e.getMessage(),
-                   startsWith("duplicate methods are using the same names [socket] for: "));
+                   startsWith("Duplicate methods are using the same names [socket] for: "));
     }
 
     @Test

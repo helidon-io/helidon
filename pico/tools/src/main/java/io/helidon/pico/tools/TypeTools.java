@@ -649,6 +649,7 @@ public final class TypeTools extends BuilderTypeTools {
      *
      * @param classInfo class info
      * @return the provided type
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     static String providesContractType(ClassInfo classInfo) {
         Set<String> candidates = new LinkedHashSet<>();
@@ -679,7 +680,7 @@ public final class TypeTools extends BuilderTypeTools {
         }
 
         if (candidates.size() > 1) {
-            throw new ToolsException("unsupported case where provider provides more than one type: " + classInfo);
+            throw new IllegalStateException("Unsupported case where provider provides more than one type: " + classInfo);
         }
 
         if (!candidates.isEmpty()) {
@@ -699,7 +700,7 @@ public final class TypeTools extends BuilderTypeTools {
     private static String providerTypeOf(TypeArgument typeArgument,
                                          Object enclosingElem) {
         if (!(typeArgument.getTypeSignature() instanceof ClassRefTypeSignature)) {
-            throw new ToolsException("unsupported provider<> type of " + typeArgument + " in " + enclosingElem);
+            throw new IllegalStateException("Unsupported provider<> type of " + typeArgument + " in " + enclosingElem);
         }
         return typeArgument.toString();
     }
@@ -709,6 +710,7 @@ public final class TypeTools extends BuilderTypeTools {
      *
      * @param sig class type signature
      * @return the provided type
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     static String providesContractType(TypeSignature sig) {
         if (sig instanceof ClassRefTypeSignature) {
@@ -716,7 +718,7 @@ public final class TypeTools extends BuilderTypeTools {
             if (isProviderType(csig.getFullyQualifiedClassName())) {
                 TypeArgument typeArg = csig.getTypeArguments().get(0);
                 if (!(typeArg.getTypeSignature() instanceof ClassRefTypeSignature)) {
-                    throw new ToolsException("unsupported: " + sig);
+                    throw new IllegalStateException("Unsupported signature: " + sig);
                 }
                 return typeArg.toString();
             }
@@ -1066,7 +1068,7 @@ public final class TypeTools extends BuilderTypeTools {
     private static ClassRefTypeSignature toClassRefSignature(TypeSignature sig,
                                                              Object enclosingElem) {
         if (!(Objects.requireNonNull(sig) instanceof ClassRefTypeSignature)) {
-            throw new ToolsException("unsupported type for " + sig + " in " + enclosingElem);
+            throw new IllegalStateException("Unsupported type for " + sig + " in " + enclosingElem);
         }
         return (ClassRefTypeSignature) sig;
     }
@@ -1085,6 +1087,7 @@ public final class TypeTools extends BuilderTypeTools {
      * @param isListWrapped     set to indicate that the ip is a list type
      * @param isOptionalWrapped set to indicate that the ip is an optional type
      * @return the return type of the injection point
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     static String extractInjectionPointTypeInfo(TypeSignature sig,
                                                 Object enclosingElem,
@@ -1137,7 +1140,7 @@ public final class TypeTools extends BuilderTypeTools {
         isOptionalWrapped.set(isOptional);
 
         if (!handled && !isOptional) {
-            throw new ToolsException("unsupported type for " + csig + " in " + enclosingElem);
+            throw new IllegalStateException("Unsupported type for " + csig + " in " + enclosingElem);
         }
 
         return Objects.requireNonNull(componentTypeNameOf(varTypeName));
@@ -1151,6 +1154,7 @@ public final class TypeTools extends BuilderTypeTools {
      * @param isListWrapped     set to indicate that the ip is a list type
      * @param isOptionalWrapped set to indicate that the ip is an optional type
      * @return the return type of the injection point
+     * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public static String extractInjectionPointTypeInfo(Element typeElement,
                                                        AtomicReference<Boolean> isProviderWrapped,
@@ -1158,7 +1162,7 @@ public final class TypeTools extends BuilderTypeTools {
                                                        AtomicReference<Boolean> isOptionalWrapped) {
         TypeMirror typeMirror = typeElement.asType();
         if (!(typeMirror instanceof DeclaredType)) {
-            throw new ToolsException("unsupported type for " + typeElement.getEnclosingElement() + "."
+            throw new IllegalStateException("Unsupported type for " + typeElement.getEnclosingElement() + "."
                                              + typeElement + " with " + typeMirror.getKind());
         }
         DeclaredType declaredTypeMirror = (DeclaredType) typeMirror;
@@ -1215,7 +1219,7 @@ public final class TypeTools extends BuilderTypeTools {
                             declaredClassType = ((TypeElement) declaredTypeMirror.asElement());
                             varTypeName = declaredClassType.toString();
                             if (!declaredTypeMirror.getTypeArguments().isEmpty()) {
-                                throw new ToolsException("unsupported generics usage for " + typeMirror + " in "
+                                throw new IllegalStateException("Unsupported generics usage for " + typeMirror + " in "
                                                                  + typeElement.getEnclosingElement());
                             }
                             handled = true;
@@ -1230,7 +1234,7 @@ public final class TypeTools extends BuilderTypeTools {
         isOptionalWrapped.set(isOptional);
 
         if (!handled && !isOptional) {
-            throw new ToolsException("unsupported type for " + typeElement.getEnclosingElement()
+            throw new IllegalStateException("Unsupported type for " + typeElement.getEnclosingElement()
                                              + "." + typeElement + " with " + typeMirror.getKind());
         }
 

@@ -92,7 +92,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                 .filter(it -> !it.getParameters().isEmpty() || it.getReturnType().getKind() == TypeKind.VOID)
                 .collect(Collectors.toList());
         if (!problems.isEmpty()) {
-            String msg = "only simple getters with no arguments are supported: " + element + ": " + problems;
+            String msg = "Only simple getters with no arguments are supported: " + element + ": " + problems;
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             throw new IllegalStateException(msg);
         }
@@ -310,7 +310,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                 type = double.class;
                 break;
             default:
-                throw new IllegalStateException("unknown primitive type: " + kind);
+                throw new IllegalStateException("Unknown primitive type: " + kind);
             }
 
             return Optional.of(DefaultTypeName.create(type));

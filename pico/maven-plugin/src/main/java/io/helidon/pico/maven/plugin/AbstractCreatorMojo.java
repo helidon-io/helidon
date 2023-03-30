@@ -247,7 +247,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
             getLog().info("Finishing " + getClass().getName() + " for " + getProject());
             MavenPluginUtils.resetAll();
         } catch (Throwable t) {
-            MojoExecutionException me = new MojoExecutionException("creator failed", t);
+            MojoExecutionException me = new MojoExecutionException(PicoServicesConfig.NAME + " Maven plugin execution failed", t);
             getLog().error(me.getMessage(), t);
             throw me;
         } finally {

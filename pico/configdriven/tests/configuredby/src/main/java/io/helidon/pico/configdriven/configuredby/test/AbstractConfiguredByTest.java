@@ -161,8 +161,8 @@ public abstract class AbstractConfiguredByTest {
 
         ServiceProvider<Object> fakeTlsProvider = list.get(0);
         PicoServiceProviderException e = assertThrows(PicoServiceProviderException.class, fakeTlsProvider::get);
-        assertThat("there is no configuration, so cannot activate this service", e.getMessage(),
-                   equalTo("expected to find a match: service provider: FakeTlsWSNotDrivenByCB{root}:PENDING"));
+        assertThat("There is no configuration, so cannot activate this service", e.getMessage(),
+                   equalTo("Expected to find a match: service provider: FakeTlsWSNotDrivenByCB{root}:PENDING"));
 
         criteria = DefaultServiceInfoCriteria.builder()
                 .addContractImplemented(ASingletonService.class.getName())
@@ -170,7 +170,7 @@ public abstract class AbstractConfiguredByTest {
                 .build();
         list = services.lookupAll(criteria);
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
-        assertThat("slave providers expected here since we have default configuration for this service", desc,
+        assertThat("Slave providers expected here since we have default configuration for this service", desc,
                    contains("ASingletonService{1}:ACTIVE"));
     }
 

@@ -478,7 +478,7 @@ public class CodeGenFiler {
             CharSequence body = readResourceAsString(name);
             return Optional.ofNullable((body == null) ? null : ModuleInfoDescriptor.create(body.toString()));
         } catch (Exception e) {
-            throw new ToolsException("failed to read module-info: " + name, e);
+            throw new ToolsException("Failed to read module-info: " + name, e);
         }
     }
 

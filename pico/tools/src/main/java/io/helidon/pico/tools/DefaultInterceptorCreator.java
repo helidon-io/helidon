@@ -350,7 +350,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         } else if (Strategy.BLENDED == strategy || strategy == null) {
             return new BlendedStrategy(creator, resolver);
         } else {
-            throw new ToolsException("unknown strategy: " + strategy);
+            throw new ToolsException("Unknown strategy: " + strategy);
         }
     }
 
@@ -430,7 +430,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             }
 
             if (!hasNoArgConstructor()) {
-                ToolsException te =  new ToolsException("there must be a no-arg constructor for: " + serviceTypeName());
+                ToolsException te =  new ToolsException("There must be a no-arg constructor for: " + serviceTypeName());
                 logger.log(System.Logger.Level.WARNING, "skipping interception for: " + serviceTypeName(), te);
                 return Optional.empty();
             }

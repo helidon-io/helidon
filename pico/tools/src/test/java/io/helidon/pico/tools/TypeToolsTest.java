@@ -65,16 +65,16 @@ public class TypeToolsTest {
                                    providerOfGenericClassInfo.getFieldInfo("optionalProvider"));
         optionalsProvidersAndLists(typeToolsTestTypeName, false, false, true,
                                    providerOfGenericClassInfo.getFieldInfo("optionalNotProvider"));
-        optionalsProvidersAndListsException("unsupported type for D in abstract static class io.helidon.pico.tools"
+        optionalsProvidersAndListsException("Unsupported type for D in abstract static class io.helidon.pico.tools"
                         + ".TypeToolsTest$ProviderOfGeneric<D> implements jakarta.inject.Provider<D>",
                                             providerOfGenericClassInfo.getFieldInfo("generic"));
-        optionalsProvidersAndListsException("unsupported type for D in abstract static class io.helidon.pico.tools"
+        optionalsProvidersAndListsException("Unsupported type for D in abstract static class io.helidon.pico.tools"
                                                     + ".TypeToolsTest$ProviderOfGeneric<D> implements jakarta.inject.Provider<D>",
                                             providerOfGenericClassInfo.getFieldInfo("listOfProvidersOfGeneric"));
-        optionalsProvidersAndListsException("unsupported type for D in abstract static class io.helidon.pico.tools"
+        optionalsProvidersAndListsException("Unsupported type for D in abstract static class io.helidon.pico.tools"
                                                     + ".TypeToolsTest$ProviderOfGeneric<D> implements jakarta.inject.Provider<D>",
                                             providerOfGenericClassInfo.getFieldInfo("optionalProviderOfGeneric"));
-        optionalsProvidersAndListsException("unsupported type for D in abstract static class io.helidon.pico.tools"
+        optionalsProvidersAndListsException("Unsupported type for D in abstract static class io.helidon.pico.tools"
                                                     + ".TypeToolsTest$ProviderOfGeneric<D> implements jakarta.inject.Provider<D>",
                                             providerOfGenericClassInfo.getFieldInfo("optionalOfGeneric"));
 
@@ -118,7 +118,7 @@ public class TypeToolsTest {
         optionalsProvidersAndLists(typeToolsTestTypeName, false, false, false,
                                    providerOfGenericClassInfo.getMethodInfo("setTyped")
                                            .get(0).getParameterInfo()[0]);
-        optionalsProvidersAndListsException("unsupported type for D in public void setGeneric(D)",
+        optionalsProvidersAndListsException("Unsupported type for D in public void setGeneric(D)",
                                             providerOfGenericClassInfo.getMethodInfo("setGeneric")
                                                     .get(0).getParameterInfo()[0]);
 
@@ -150,7 +150,7 @@ public class TypeToolsTest {
         AtomicReference<Boolean> isProvider = new AtomicReference<>();
         AtomicReference<Boolean> isList = new AtomicReference<>();
         AtomicReference<Boolean> isOptional = new AtomicReference<>();
-        ToolsException te = assertThrows(ToolsException.class,
+        Exception te = assertThrows(IllegalStateException.class,
                                          () -> extractInjectionPointTypeInfo(fld, isProvider, isList, isOptional));
         assertThat(fld.toString(), te.getMessage(), equalTo(exceptedException));
     }
@@ -174,7 +174,7 @@ public class TypeToolsTest {
         AtomicReference<Boolean> isProvider = new AtomicReference<>();
         AtomicReference<Boolean> isList = new AtomicReference<>();
         AtomicReference<Boolean> isOptional = new AtomicReference<>();
-        ToolsException te = assertThrows(ToolsException.class,
+        Exception te = assertThrows(IllegalStateException.class,
                                          () -> extractInjectionPointTypeInfo(fld, isProvider, isList, isOptional));
         assertThat(fld.toString(), te.getMessage(), equalTo(exceptedException));
     }

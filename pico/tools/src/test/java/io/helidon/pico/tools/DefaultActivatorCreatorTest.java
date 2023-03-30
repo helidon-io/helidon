@@ -66,7 +66,7 @@ class DefaultActivatorCreatorTest extends AbstractBaseCreator {
                 .build();
 
         ToolsException te = assertThrows(ToolsException.class, () -> activatorCreator.createModuleActivators(req));
-        assertEquals("failed in create", te.getMessage());
+        assertEquals("Failed in create", te.getMessage());
 
         ActivatorCreatorRequest req2 = DefaultActivatorCreatorRequest.builder()
                 .serviceTypeNames(Collections.singletonList(DefaultTypeName.create(HelloPicoWorldImpl.class)))
@@ -78,7 +78,7 @@ class DefaultActivatorCreatorTest extends AbstractBaseCreator {
                 .build();
         ActivatorCreatorResponse res = activatorCreator.createModuleActivators(req2);
         assertThat(res.toString(), res.success(), is(false));
-        assertThat(res.error().orElseThrow().getMessage(), equalTo("failed in create"));
+        assertThat(res.error().orElseThrow().getMessage(), equalTo("Failed in create"));
     }
 
 }

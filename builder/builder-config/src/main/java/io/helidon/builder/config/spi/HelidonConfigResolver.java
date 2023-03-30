@@ -129,7 +129,7 @@ public class HelidonConfigResolver implements ConfigResolver, ConfigResolverProv
             if (mapper != null) {
                 if (attrCfg.isList() || isMap) {
                     if (!isList && !isSet && !isMap) {
-                        throw new IllegalStateException("unable to convert node list to " + type + " for " + attrCfg);
+                        throw new IllegalStateException("Unable to convert node list to " + type + " for " + attrCfg);
                     }
 
                     List<Object> cfgList = new ArrayList<>();

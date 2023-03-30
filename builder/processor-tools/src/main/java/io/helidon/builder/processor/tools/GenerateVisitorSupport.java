@@ -109,7 +109,7 @@ final class GenerateVisitorSupport {
                                    + "\n"
                                    + "\t\tvoid validate() {\n"
                                    + "\t\t\tif (!errors.isEmpty()) {\n"
-                                   + "\t\t\t\tthrow new java.lang.IllegalStateException(\"problems building configbean '\" + "
+                                   + "\t\t\t\tthrow new java.lang.IllegalStateException(\"Problems building config bean '\" + "
                                    + ctx.typeInfo().typeName() + ".class.getName() + \"': \" + String.join(\", \", errors));\n"
                                    + "\t\t\t}\n"
                                    + "\t\t}\n"

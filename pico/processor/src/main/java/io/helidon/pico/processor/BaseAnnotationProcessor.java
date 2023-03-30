@@ -133,7 +133,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             this.interceptorCreator = InterceptorCreatorProvider.instance();
         } catch (Throwable t) {
             logger().log(Level.ERROR, "failed to initialize: " + t.getMessage(), t);
-            throw new ToolsException("failed to initialize: " + t.getMessage(), t);
+            throw new ToolsException("Failed to initialize: " + t.getMessage(), t);
         }
     }
 
@@ -195,8 +195,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             error(getClass().getSimpleName() + " error during processing; " + t + " @ "
                           + rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
-            throw new ToolsException("error during processing: " + t + " @ "
-                                             + rootStackTraceElementOf(t), t);
+            throw new ToolsException("Error during processing: " + t + " @ " + rootStackTraceElementOf(t), t);
         }
     }
 
@@ -317,7 +316,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 }
             }
         } catch (Throwable t) {
-            throw new ToolsException("handling: " + typesToProcess + " for " + serviceTypeName + ": " + t, t);
+            throw new ToolsException("Error detected while processing: " + typesToProcess
+                                             + " for " + serviceTypeName + ": " + t, t);
         }
 
         return injectedCtorCount;
@@ -634,13 +634,12 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 debug("service type hierarchy is " + hierarchy);
             }
 
-            ToolsException revisedTe = new ToolsException("error in annotation processing round for "
-                                                                  + req.serviceTypeNames(), te);
+            ToolsException revisedTe = new ToolsException("Error detected while processing " + req.serviceTypeNames(), te);
             error(revisedTe.getMessage(), revisedTe);
         } finally {
             if (isProcessingOver) {
                 handleDeferredMoves();
-                processingEnv.getMessager().printMessage(Kind.NOTE, getClass().getSimpleName()
+                processingEnv.getMessager().printMessage(Kind.OTHER, getClass().getSimpleName()
                         + ": processing is over - resetting");
                 services.reset(false);
             }

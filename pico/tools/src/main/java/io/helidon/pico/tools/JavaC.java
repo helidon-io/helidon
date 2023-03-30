@@ -231,7 +231,7 @@ class JavaC {
 
         public ToolsException maybeGenerateError() {
             if (!isSuccessful()) {
-                return new ToolsException("creator compilation error");
+                return new ToolsException("Creator compilation error");
             }
             return null;
         }

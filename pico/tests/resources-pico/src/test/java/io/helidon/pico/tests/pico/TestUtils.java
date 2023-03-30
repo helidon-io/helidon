@@ -45,7 +45,7 @@ public final class TestUtils {
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
             }
         } catch (Exception e) {
-            throw new ToolsException("failed to load: " + resourceNamePath, e);
+            throw new ToolsException("Failed to load: " + resourceNamePath, e);
         }
     }
 
@@ -63,7 +63,7 @@ public final class TestUtils {
             String content = Files.readString(filePath);
             return content.trim();
         } catch (IOException e) {
-            throw new ToolsException("unable to load from file: " + fileName, e);
+            throw new ToolsException("Unable to load from file: " + fileName, e);
         }
     }
 

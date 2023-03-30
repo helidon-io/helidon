@@ -159,7 +159,7 @@ class DefaultConfigResolver extends HelidonConfigResolver {
                 return Optional.ofNullable(val);
             } catch (Exception e) {
                 if (Optional.class != type) {
-                    throw new UnsupportedOperationException("Only Optional<> is currently supported: " + attrName);
+                    throw new UnsupportedOperationException("Only Optional<> is supported: " + attrName);
                 }
             }
         }
@@ -206,7 +206,7 @@ class DefaultConfigResolver extends HelidonConfigResolver {
                                                     Class<?> componentType) {
         assert (configBeans != null && !configBeans.isEmpty() && (type != null) && componentType != null);
         if (keyType != null && String.class != keyType) {
-            throw new UnsupportedOperationException("Only Map with key of String is currently supported: " + attrName);
+            throw new UnsupportedOperationException("Only Map<String, ...> is supported: " + attrName);
         }
 
         configBeans.forEach((key, value) -> {

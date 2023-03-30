@@ -157,11 +157,11 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
 
     static InjectionException serviceProviderAlreadyBoundInjectionError(ServiceProvider<?> previous,
                                                                         ServiceProvider<?> sp) {
-        return new InjectionException("service provider already bound to " + previous, null, sp);
+        return new InjectionException("Service provider already bound to " + previous, null, sp);
     }
 
     static InjectionException resolutionBasedInjectionError(ServiceInfoCriteria ctx) {
-        return new InjectionException("expected to resolve a service matching " + ctx);
+        return new InjectionException("Expected to resolve a service matching " + ctx);
     }
 
     static InjectionException resolutionBasedInjectionError(String serviceTypeName) {
@@ -447,7 +447,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
                 DefaultPicoServices.LOGGER.log(System.Logger.Level.INFO, "finished binding application: " + appName);
             }
         } catch (Exception e) {
-            throw new PicoException("failed to process: " + app, e);
+            throw new PicoException("Failed to process: " + app, e);
         }
     }
 

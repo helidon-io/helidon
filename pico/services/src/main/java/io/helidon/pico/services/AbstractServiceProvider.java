@@ -141,7 +141,7 @@ public abstract class AbstractServiceProvider<T>
                                                                                      boolean expected) {
         if (!(sp instanceof AbstractServiceProvider)) {
             if (expected) {
-                throw new IllegalStateException("expected provider to be of type " + AbstractServiceProvider.class.getName());
+                throw new IllegalStateException("Expected provider to be of type " + AbstractServiceProvider.class.getName());
             }
             return Optional.empty();
         }
@@ -514,21 +514,20 @@ public abstract class AbstractServiceProvider<T>
                     assert (prev == null);
                     return this;
                 } catch (Exception e) {
-                    throw new PicoServiceProviderException("failed to process: " + id, e, AbstractServiceProvider.this);
+                    throw new PicoServiceProviderException("Failed to process: " + id, e, AbstractServiceProvider.this);
                 }
             }
 
             @Override
             public void commit() {
                 if (!idToIpInfo.isEmpty()) {
-                    throw new InjectionException("missing injection bindings for "
+                    throw new InjectionException("Missing injection bindings for "
                                                          + idToIpInfo + " in "
                                                          + this, null, self);
                 }
 
                 if ((self.injectionPlan != null) && !self.injectionPlan.equals(injectionPlan)) {
-                    throw new InjectionException("injection plan has already been bound for "
-                                                         + this, null, self);
+                    throw new InjectionException("Injection plan has already been bound for " + this, null, self);
                 }
                 self.injectionPlan = injectionPlan;
             }
@@ -545,7 +544,7 @@ public abstract class AbstractServiceProvider<T>
             private InjectionPointInfo safeGetIpInfo(String id) {
                 InjectionPointInfo ipInfo = idToIpInfo.remove(id);
                 if (ipInfo == null) {
-                    throw new InjectionException("expected to find a dependency for '" + id + "' from "
+                    throw new InjectionException("Expected to find a dependency for '" + id + "' from "
                                                          + this + " in " + idToIpInfo, null, self);
                 }
                 return ipInfo;
@@ -617,9 +616,9 @@ public abstract class AbstractServiceProvider<T>
             }
         } catch (Exception e) {
             if (didAcquire) {
-                throw new PicoServiceProviderException("unable to reset", e, this);
+                throw new PicoServiceProviderException("Unable to reset", e, this);
             } else {
-                throw new PicoServiceProviderException("unable to reset during activation", e, this);
+                throw new PicoServiceProviderException("Unable to reset during activation", e, this);
             }
         } finally {
             if (didAcquire) {
@@ -981,7 +980,7 @@ public abstract class AbstractServiceProvider<T>
      * @return the injection exception
      */
     protected InjectionException expectedQualifiedServiceError(ContextualServiceQuery ctx) {
-        InjectionException e = new InjectionException("expected to return a non-null instance for: " + ctx.injectionPointInfo()
+        InjectionException e = new InjectionException("Expected to return a non-null instance for: " + ctx.injectionPointInfo()
                                                               + "; with criteria matching: " + ctx.serviceInfoCriteria(), this);
         activationLog().ifPresent(e::activationLog);
         return e;
@@ -1212,7 +1211,7 @@ public abstract class AbstractServiceProvider<T>
                 doInjectingFields(target, deps, injections, forServiceType);
                 doInjectingMethods(target, deps, injections, forServiceType);
             } catch (Throwable t) {
-                throw new InjectionException("failed to activate/inject: " + this
+                throw new InjectionException("Failed to activate/inject: " + this
                                                      + "; dependency map was: " + deps, t, this);
             }
         });
@@ -1230,7 +1229,7 @@ public abstract class AbstractServiceProvider<T>
 
     private InjectionException recursiveActivationInjectionError(DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
-        InjectionException e = new InjectionException("circular dependency found during activation of " + targetServiceProvider,
+        InjectionException e = new InjectionException("A circular dependency found during activation of " + targetServiceProvider,
                                                       targetServiceProvider);
         activationLog().ifPresent(e::activationLog);
         entry.error(e);
@@ -1239,7 +1238,7 @@ public abstract class AbstractServiceProvider<T>
 
     private InjectionException timedOutActivationInjectionError(DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
-        InjectionException e = new InjectionException("timed out during activation of " + targetServiceProvider,
+        InjectionException e = new InjectionException("Timed out during activation of " + targetServiceProvider,
                                                       targetServiceProvider);
         activationLog().ifPresent(e::activationLog);
         entry.error(e);
@@ -1248,7 +1247,7 @@ public abstract class AbstractServiceProvider<T>
 
     private InjectionException timedOutDeActivationInjectionError(DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
-        InjectionException e = new InjectionException("timed out during deactivation of " + targetServiceProvider,
+        InjectionException e = new InjectionException("Timed out during deactivation of " + targetServiceProvider,
                                                       targetServiceProvider);
         activationLog().ifPresent(e::activationLog);
         entry.error(e);
@@ -1258,7 +1257,7 @@ public abstract class AbstractServiceProvider<T>
     private InjectionException interruptedPreActivationInjectionError(DefaultActivationLogEntry.Builder entry,
                                                                       Throwable cause) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
-        InjectionException e = new InjectionException("circular dependency found during activation of " + targetServiceProvider,
+        InjectionException e = new InjectionException("A circular dependency found during activation of " + targetServiceProvider,
                                                       cause, targetServiceProvider);
         activationLog().ifPresent(e::activationLog);
         entry.error(e);
@@ -1266,29 +1265,29 @@ public abstract class AbstractServiceProvider<T>
     }
 
     private InjectionException managedServiceInstanceShouldHaveBeenSetException() {
-        InjectionException e = new InjectionException("managed service instance expected to have been set", this);
+        InjectionException e = new InjectionException("This managed service instance expected to have been set", this);
         activationLog().ifPresent(e::activationLog);
         return e;
     }
 
     private InjectionException activationFailed(ActivationResult res) {
-        InjectionException e = new InjectionException("activation failed: " + res, this);
+        InjectionException e = new InjectionException("Activation failed: " + res, this);
         activationLog().ifPresent(e::activationLog);
         return e;
     }
 
     private PicoServiceProviderException unableToActivate(Throwable cause) {
-        return new PicoServiceProviderException("unable to activate: " + getClass().getName(), cause, this);
+        return new PicoServiceProviderException("Unable to activate: " + getClass().getName(), cause, this);
     }
 
     private PicoServiceProviderException alreadyInitialized() {
-        throw new PicoServiceProviderException("already initialized", this);
+        throw new PicoServiceProviderException("Already initialized", this);
     }
 
     private void logMultiDefInjectionNote(String id,
                                           Object prev,
                                           InjectionPointInfo ipDep) {
-        String message = "there are two different services sharing the same injection point info id; first = "
+        String message = "There are two different services sharing the same injection point id; first = "
                 + prev + " and the second = " + ipDep + "; both use the id '" + id
                 + "'; note that the second will override the first";
         if (log != null) {

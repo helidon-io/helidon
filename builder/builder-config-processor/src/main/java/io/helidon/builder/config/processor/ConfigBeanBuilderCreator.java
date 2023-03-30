@@ -105,13 +105,13 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
         boolean drivesActivation = Boolean.parseBoolean(configBeanAnno.value(TAG_DRIVES_ACTIVATION).orElseThrow());
         LevelType levelType = LevelType.valueOf(configBeanAnno.value(TAG_LEVEL_TYPE).orElseThrow());
         if (drivesActivation && levelType != LevelType.ROOT) {
-            throw new IllegalStateException("only levelType {" + LevelType.ROOT + "} config beans can drive activation for: "
+            throw new IllegalStateException("Only levelType {" + LevelType.ROOT + "} config beans can drive activation for: "
                                                     + typeInfo.typeName());
         }
 
         boolean wantDefaultConfigBean = Boolean.parseBoolean(configBeanAnno.value(TAG_WANT_DEFAULT_CONFIG_BEAN).orElseThrow());
         if (wantDefaultConfigBean && levelType != LevelType.ROOT) {
-            throw new IllegalStateException("only levelType {" + LevelType.ROOT + "} config beans can have a default bean for: "
+            throw new IllegalStateException("Only levelType {" + LevelType.ROOT + "} config beans can have a default bean for: "
                                                     + typeInfo.typeName());
         }
 

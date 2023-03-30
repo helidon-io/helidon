@@ -34,6 +34,7 @@ public interface BindableConfigBeanRegistry extends ConfigBeanRegistry, Resettab
      * @param configuredServiceProvider the configured service provider
      * @param configuredByQualifier the qualifier associated with the {@link io.helidon.builder.config.spi.ConfigBeanInfo}
      * @param metaConfigBeanInfo the meta config bean info associated with this service provider
+     * @throws io.helidon.config.ConfigException if the bind operation encountered an error
      */
     void bind(ConfiguredServiceProvider<?, ?> configuredServiceProvider,
               QualifierAndValue configuredByQualifier,

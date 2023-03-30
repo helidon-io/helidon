@@ -40,7 +40,7 @@ final class ConfigDrivenUtils {
 
     static String validatedConfigKey(String configKey) {
         if (!hasValue(configKey)) {
-            throw new IllegalStateException("key was expected to be non-blank");
+            throw new IllegalStateException("The config key was expected to be non-blank");
         }
         return configKey;
     }

@@ -38,7 +38,7 @@ class TemplateHelperTest {
         TemplateHelper helper = TemplateHelper.create();
         ToolsException e = assertThrows(ToolsException.class,
                                               () -> helper.safeLoadTemplate("bogus.hbs"));
-        assertThat(e.getMessage(), equalTo("failed to load: templates/pico/default/bogus.hbs"));
+        assertThat(e.getMessage(), equalTo("Failed to load: templates/pico/default/bogus.hbs"));
     }
 
     @Test

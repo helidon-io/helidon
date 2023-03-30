@@ -67,12 +67,11 @@ public interface InjectionPointProvider<T> extends Provider<T> {
         return first(query).map(List::of).orElseGet(List::of);
     }
 
-    @SuppressWarnings("rawtypes")
     private PicoException couldNotFindMatch() {
         if (this instanceof ServiceProvider) {
-            return new PicoServiceProviderException("expected to find a match", (ServiceProvider) this);
+            return new PicoServiceProviderException("Expected to find a match", (ServiceProvider<?>) this);
         }
-        return new PicoException("expected to find a match for " + this);
+        return new PicoException("Expected to find a match for " + this);
     }
 
 }

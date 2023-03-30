@@ -731,7 +731,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     private PicoException expectedConfigurationSetGlobally() {
-        return new PicoException("expected to have configuration set globally - see PicoServices.globalBootstrap()");
+        return new PicoException("Expected to have configuration set globally - see PicoServices.globalBootstrap()");
     }
 
     private void activateConfigDrivenServices() {

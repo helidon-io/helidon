@@ -303,7 +303,7 @@ class ToolBoxTest {
         assertThat(picoServices.metrics().orElseThrow().lookupCount().orElse(0), equalTo(0));
 
         PicoException e = assertThrows(PicoException.class, () -> picoServices.services());
-        assertThat(e.getMessage(), equalTo("must reset() after shutdown()"));
+        assertThat(e.getMessage(), equalTo("Must reset() after shutdown()"));
 
         tearDown();
         setUp();

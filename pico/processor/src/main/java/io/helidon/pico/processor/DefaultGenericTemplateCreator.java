@@ -91,7 +91,7 @@ class DefaultGenericTemplateCreator implements GenericTemplateCreator {
         TemplateHelper templateHelper = TemplateHelper.create();
         String template = templateHelper.loadTemplate(templateProfile, templateName);
         if (template == null) {
-            ToolsException te = new ToolsException("unable to find template" + templateProfile + "/" + templateName);
+            ToolsException te = new ToolsException("Unable to find template " + templateProfile + "/" + templateName);
             messager.error(te.getMessage(), te);
             throw te;
         }
