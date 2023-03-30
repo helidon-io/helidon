@@ -29,11 +29,6 @@
     <artifactId>helidon-pico-api</artifactId>
     <name>Helidon Pico API / SPI</name>
 
-    <properties>
-        <!-- Pico uses a lower level of Java language -->
-        <version.java>11</version.java>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>

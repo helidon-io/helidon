@@ -28,11 +28,6 @@
     <artifactId>helidon-common</artifactId>
     <name>Helidon Common</name>
 
-    <properties>
-        <!-- Helidon common should be backward compatible with Java 11 -->
-        <version.java>11</version.java>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -86,14 +81,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <!-- This module is Java 11, we must remove enable-preview from parent project -->
-                    <additionalOptions combine.self="override"/>
-                </configuration>
             </plugin>
         </plugins>
     </build>

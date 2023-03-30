@@ -36,9 +36,6 @@
     <packaging>pom</packaging>
 
     <properties>
-        <!-- all pico modules should be backward compatible with 11 -->
-        <version.java>11</version.java>
-
         <!-- pico supports a universal debug flag -->
         <pico.debug>true</pico.debug>
     </properties>
@@ -54,20 +51,5 @@
         <module>services</module>
         <module>tests</module>
     </modules>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <configuration>
-                        <!-- This module is Java 11, we must remove enable-preview from parent project -->
-                        <additionalOptions combine.self="override"/>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
 
 </project>

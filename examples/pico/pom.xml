@@ -19,7 +19,7 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.helidon.examples</groupId>
         <artifactId>helidon-examples-project</artifactId>
@@ -32,18 +32,6 @@
     <name>Helidon Examples Pico Project</name>
     <packaging>pom</packaging>
     <modelVersion>4.0.0</modelVersion>
-
-    <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-
-<!--        <maven.deploy.skip>true</maven.deploy.skip>-->
-<!--        <maven.sources.skip>true</maven.sources.skip>-->
-<!--        <maven.javadoc.skip>true</maven.javadoc.skip>-->
-<!--        <spotbugs.skip>true</spotbugs.skip>-->
-<!--        <dependency-check.skip>true</dependency-check.skip>-->
-<!--        <helidon.services.skip>true</helidon.services.skip>-->
-    </properties>
 
     <modules>
         <module>book</module>
