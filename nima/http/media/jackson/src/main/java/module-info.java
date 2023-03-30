@@ -26,7 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
          invalidIn = HelidonFlavor.SE,
          path = {"Media", "Jackson"}
 )
-module io.helidon.nima.http.media.jacskon {
+module io.helidon.nima.http.media.jackson {
     requires static io.helidon.common.features.api;
 
     requires io.helidon.nima.http.media;
