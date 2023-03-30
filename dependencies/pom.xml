@@ -56,7 +56,7 @@
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.google-protobuf>3.21.7</version.lib.google-protobuf>
         <version.lib.graalvm>22.3.0</version.lib.graalvm>
-        <version.lib.graphql-java>17.4</version.lib.graphql-java>
+        <version.lib.graphql-java>17.5</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>17.1</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.9.0</version.lib.gson>
         <version.lib.grpc>1.49.2</version.lib.grpc>
