@@ -42,6 +42,7 @@ module io.helidon.openapi {
     requires transitive microprofile.openapi.api;
 
     requires static io.helidon.config.metadata;
+    requires java.logging; // temporary to adjust SnakeYAML logger level
 
     exports io.helidon.openapi;
     exports io.helidon.openapi.internal to io.helidon.microprofile.openapi, io.helidon.reactive.openapi, io.helidon.nima.openapi;
