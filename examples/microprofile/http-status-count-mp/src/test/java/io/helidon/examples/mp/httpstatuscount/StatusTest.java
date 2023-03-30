@@ -55,7 +55,8 @@ public class StatusTest {
 
     @Test
     void checkStatusMetrics() {
-        checkAfterStatus(171);
+        // intermediate responses are not "full" responses and since JDK 20 they are not returned by the client at all
+        // checkAfterStatus(171);
         checkAfterStatus(200);
         checkAfterStatus(201);
         checkAfterStatus(204);

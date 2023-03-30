@@ -32,27 +32,27 @@ class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<String, O
     private boolean mapBlankArrayToNull;
     private boolean mapToSourceDeclaration;
 
-    public ToStringAnnotationValueVisitor mapVoidToNull(boolean val) {
+    ToStringAnnotationValueVisitor mapVoidToNull(boolean val) {
         this.mapVoidToNull = val;
         return this;
     }
 
-    public ToStringAnnotationValueVisitor mapBooleanToNull(boolean val) {
+    ToStringAnnotationValueVisitor mapBooleanToNull(boolean val) {
         this.mapFalseToNull = val;
         return this;
     }
 
-    public ToStringAnnotationValueVisitor mapEmptyStringToNull(boolean val) {
+    ToStringAnnotationValueVisitor mapEmptyStringToNull(boolean val) {
         this.mapEmptyStringToNull = val;
         return this;
     }
 
-    public ToStringAnnotationValueVisitor mapBlankArrayToNull(boolean val) {
+    ToStringAnnotationValueVisitor mapBlankArrayToNull(boolean val) {
         this.mapBlankArrayToNull = val;
         return this;
     }
 
-    public ToStringAnnotationValueVisitor mapToSourceDeclaration(boolean val) {
+    ToStringAnnotationValueVisitor mapToSourceDeclaration(boolean val) {
         this.mapToSourceDeclaration = val;
         return this;
     }
@@ -150,24 +150,27 @@ class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<String, O
             }
         }
 
-        String result = String.join(", ", values);
-        if (mapBlankArrayToNull && result.isBlank()) {
-            result = null;
+        if (mapBlankArrayToNull && values.isEmpty()) {
+            return null;
         } else if (mapToSourceDeclaration) {
-            result = "{";
+            StringBuilder resultBuilder = new StringBuilder("{");
+
             for (AnnotationValue val : vals) {
                 String stringVal = val.accept(this, null);
                 if (stringVal != null) {
-                    if (result.length() > 1) {
-                        result += ", ";
+                    if (resultBuilder.length() > 1) {
+                        resultBuilder.append(", ");
                     }
-                    result += stringVal;
+                    resultBuilder.append(stringVal);
                 }
             }
-            result += "}";
+
+            resultBuilder.append("}");
+
+            return resultBuilder.toString();
         }
 
-        return result;
+        return String.join(", ", values);
     }
 
     @Override

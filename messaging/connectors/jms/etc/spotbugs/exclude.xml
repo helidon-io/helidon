@@ -23,14 +23,9 @@
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
     <Match>
-        <!-- Path comes from config or code -->
-        <Class name="io.helidon.pico.processor.ServiceAnnotationProcessor"/>
-        <Bug pattern="PATH_TRAVERSAL_IN"/>
-    </Match>
-    <Match>
-        <!-- Path comes from config or code -->
-        <Class name="io.helidon.pico.processor.ProcessorUtils"/>
-        <Bug pattern="PATH_TRAVERSAL_IN"/>
+        <!-- The destination is configured by application, it is not a user input -->
+        <Class name="io.helidon.messaging.connectors.jms.ConnectionContext"/>
+        <Bug pattern="LDAP_INJECTION"/>
     </Match>
 
 </FindBugsFilter>
