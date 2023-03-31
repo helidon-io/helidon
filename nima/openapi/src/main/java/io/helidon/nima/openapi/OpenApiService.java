@@ -739,7 +739,9 @@ public class OpenApiService implements HttpService {
                                                                             + " is not one of recognized types: "
                                                                             + OpenAPIMediaType.recognizedFileTypes()));
 
-            try (InputStream is = new BufferedInputStream(Files.newInputStream(path))) {
+            // DO NOT use try-with-close; the stream needs to remain open because it is not consumed until later.
+            try {
+                InputStream is = new BufferedInputStream(Files.newInputStream(path));
                 LOGGER.log(Level.DEBUG,
                            () -> String.format(
                                    OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT,

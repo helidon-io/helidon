@@ -143,7 +143,7 @@
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>2.0.0</version.lib.slf4j>
         <version.lib.smallrye-openapi>2.1.16</version.lib.smallrye-openapi>
-        <version.lib.snakeyaml>1.32</version.lib.snakeyaml>
+        <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.0.4</version.lib.tyrus>
         <version.lib.weld-api>5.0.SP3</version.lib.weld-api>

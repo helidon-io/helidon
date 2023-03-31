@@ -114,7 +114,6 @@ public class Serializer {
 
         private static final String EXTENSIONS = "extensions";
 
-        private final DumperOptions dumperOptions;
         private final DumperOptions.ScalarStyle stringStyle;
 
         private final Map<Class<?>, ExpandedTypeDescription> implsToTypes;
@@ -122,8 +121,8 @@ public class Serializer {
         CustomRepresenter(Map<Class<?>, ExpandedTypeDescription> types,
                 Map<Class<?>, ExpandedTypeDescription> implsToTypes, DumperOptions dumperOptions,
                 DumperOptions.ScalarStyle stringStyle) {
+            super(dumperOptions);
             this.implsToTypes = implsToTypes;
-            this.dumperOptions = dumperOptions;
             this.stringStyle = stringStyle;
             types.values().stream()
                     .map(ImplTypeDescription::new)

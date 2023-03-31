@@ -71,6 +71,8 @@
         <module>native-image</module>
         <module>vault</module>
         <module>oidc</module>
+        <module>gh-5792</module>
+        <module>gh-5792-nima</module>
     </modules>
 
     <dependencyManagement>
