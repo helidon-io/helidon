@@ -24,14 +24,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 import static java.lang.System.Logger.Level.DEBUG;
-import static java.lang.System.Logger.Level.INFO;
 
 /**
  * Window size container, used with {@link io.helidon.nima.http2.FlowControl}.
  */
 abstract class WindowSizeImpl implements WindowSize {
 
-    private static final System.Logger LOGGER = System.getLogger(FlowControl.class.getName());
+    private static final System.Logger LOGGER_INBOUND = System.getLogger(FlowControl.class.getName() + ".ifc");
+    private static final System.Logger LOGGER_OUTBOUND = System.getLogger(FlowControl.class.getName() + ".ofc");
 
     private final ConnectionFlowControl.Type type;
     private final int streamId;
@@ -52,8 +52,8 @@ abstract class WindowSizeImpl implements WindowSize {
         // it maintains by the difference between the new value and the old value
         remainingWindowSize.updateAndGet(o -> o + size - windowSize);
         windowSize = size;
-        LOGGER.log(DEBUG, () -> String.format("%s OFC STR %d: Recv INITIAL_WINDOW_SIZE %d(%d)",
-                                              type, streamId, windowSize, remainingWindowSize.get()));
+        LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR %d: Recv INITIAL_WINDOW_SIZE %d(%d)",
+                                                      type, streamId, windowSize, remainingWindowSize.get()));
     }
 
     @Override
@@ -135,6 +135,7 @@ abstract class WindowSizeImpl implements WindowSize {
         @Override
         public long incrementWindowSize(int increment) {
             long remaining = super.incrementWindowSize(increment);
+            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR %d: +%d(%d)", type, streamId, increment, remaining));
             triggerUpdate();
             return remaining;
         }
@@ -151,7 +152,8 @@ abstract class WindowSizeImpl implements WindowSize {
                     //TODO configurable timeout
                     updated.get().get(500, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    LOGGER.log(DEBUG, () -> String.format("%s OFC STR %d: Window depleted, waiting for update.", type, streamId));
+                    LOGGER_OUTBOUND.log(DEBUG, () ->
+                            String.format("%s OFC STR %d: Window depleted, waiting for update.", type, streamId));
                 }
             }
         }
@@ -223,7 +225,7 @@ abstract class WindowSizeImpl implements WindowSize {
             return context;
         }
 
-        int streamId(){
+        int streamId() {
             return this.streamId;
         }
 
@@ -283,7 +285,7 @@ abstract class WindowSizeImpl implements WindowSize {
 
             @Override
             void windowUpdate(ConnectionFlowControl.Type type, int streamId, int increment) {
-                LOGGER.log(INFO, () -> String.format("%s IFC STR %d: Send WINDOW_UPDATE %s", type, streamId, increment));
+                LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR %d: Send WINDOW_UPDATE %s", type, streamId, increment));
                 windowUpdateWriter().accept(streamId(), new Http2WindowUpdate(increment));
             }
 
@@ -307,12 +309,12 @@ abstract class WindowSizeImpl implements WindowSize {
 
             @Override
             void windowUpdate(ConnectionFlowControl.Type type, int streamId, int increment) {
-                LOGGER.log(DEBUG, () -> String.format("%s IFC STR %d: Deferred WINDOW_UPDATE %d, total %d, watermark %d",
-                                                      type, streamId, increment, delayedIncrement, watermark));
+                LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR %d: Deferred WINDOW_UPDATE %d, total %d, watermark %d",
+                                                              type, streamId, increment, delayedIncrement, watermark));
                 delayedIncrement += increment;
                 if (delayedIncrement > watermark) {
-                    LOGGER.log(DEBUG, () -> String.format("%s IFC STR %d: Send WINDOW_UPDATE %d, watermark %d",
-                                                          type, streamId, delayedIncrement, watermark));
+                    LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR %d: Send WINDOW_UPDATE %d, watermark %d",
+                                                                  type, streamId, delayedIncrement, watermark));
                     windowUpdateWriter().accept(streamId(), new Http2WindowUpdate(delayedIncrement));
                     delayedIncrement = 0;
                 }

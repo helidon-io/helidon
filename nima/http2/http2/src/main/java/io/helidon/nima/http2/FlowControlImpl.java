@@ -22,7 +22,8 @@ import static java.lang.System.Logger.Level.DEBUG;
 
 abstract class FlowControlImpl implements FlowControl {
 
-    private static final System.Logger LOGGER = System.getLogger(FlowControl.class.getName());
+    private static final System.Logger LOGGER_INBOUND = System.getLogger(FlowControl.class.getName() + ".ifc");
+    private static final System.Logger LOGGER_OUTBOUND = System.getLogger(FlowControl.class.getName() + ".ofc");
 
     private final int streamId;
 
@@ -102,17 +103,17 @@ abstract class FlowControlImpl implements FlowControl {
         @Override
         public void decrementWindowSize(int decrement) {
             long strRemaining = streamWindowSize().decrementWindowSize(decrement);
-            LOGGER.log(DEBUG, () -> String.format("%s IFC STR %d: -%d(%d)", type, streamId(), decrement, strRemaining));
+            LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR %d: -%d(%d)", type, streamId(), decrement, strRemaining));
             long connRemaining = connectionWindowSize().decrementWindowSize(decrement);
-            LOGGER.log(DEBUG, () -> String.format("%s IFC STR 0: -%d(%d)", type, decrement, connRemaining));
+            LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR 0: -%d(%d)", type, decrement, connRemaining));
         }
 
         @Override
         public void incrementWindowSize(int increment) {
             long strRemaining = streamWindowSize.incrementWindowSize(increment);
-            LOGGER.log(DEBUG, () -> String.format("%s IFC STR %d: +%d(%d)", type, streamId(), increment, strRemaining));
+            LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR %d: +%d(%d)", type, streamId(), increment, strRemaining));
             long conRemaining = connectionWindowSize.incrementWindowSize(increment);
-            LOGGER.log(DEBUG, () -> String.format("%s IFC STR 0: +%d(%d)", type, increment, conRemaining));
+            LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR 0: +%d(%d)", type, increment, conRemaining));
         }
 
     }
@@ -144,16 +145,16 @@ abstract class FlowControlImpl implements FlowControl {
 
         public void decrementWindowSize(int decrement) {
             long strRemaining = streamWindowSize().decrementWindowSize(decrement);
-            LOGGER.log(DEBUG, () -> String.format("%s OFC STR %d: -%d(%d)", type, streamId(), decrement, strRemaining));
+            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR %d: -%d(%d)", type, streamId(), decrement, strRemaining));
 
             long connRemaining = connectionWindowSize().decrementWindowSize(decrement);
-            LOGGER.log(DEBUG, () -> String.format("%s OFC STR 0: -%d(%d)", type, decrement, connRemaining));
+            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR 0: -%d(%d)", type, decrement, connRemaining));
         }
 
         @Override
         public long incrementStreamWindowSize(int increment) {
             long remaining = streamWindowSize.incrementWindowSize(increment);
-            LOGGER.log(DEBUG, () -> String.format("%s OFC STR %d: +%d(%d)", type, streamId(), increment, remaining));
+            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR %d: +%d(%d)", type, streamId(), increment, remaining));
             connectionFlowControl.outbound().triggerUpdate();
             return remaining;
         }

@@ -57,7 +57,7 @@ public record Http2FrameData(Http2FrameHeader header, BufferData data) {
         for (int i = 0; i < allFrames; i++) {
             boolean lastFrame = allFrames == i + 1;
             // only last frame can be smaller than max size
-            byte[] data = new byte[lastFrame ? lastFrameSize : size];
+            byte[] data = new byte[lastFrame ? (lastFrameSize != 0 ? lastFrameSize : size) : size];
             this.data().read(data);
             BufferData bufferData = BufferData.create(data);
             splitFrames[i] = new Http2FrameData(

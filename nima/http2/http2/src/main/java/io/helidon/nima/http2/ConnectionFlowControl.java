@@ -18,14 +18,14 @@ package io.helidon.nima.http2;
 
 import java.util.function.BiConsumer;
 
-import static java.lang.System.Logger.Level.INFO;
+import static java.lang.System.Logger.Level.DEBUG;
 
 /**
  * HTTP/2 Flow control for connection.
  */
 public class ConnectionFlowControl {
 
-    private static final System.Logger LOGGER = System.getLogger(FlowControl.class.getName());
+    private static final System.Logger LOGGER_OUTBOUND = System.getLogger(FlowControl.class.getName() + ".ofc");
 
     private final Type type;
     private final BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter;
@@ -114,7 +114,7 @@ public class ConnectionFlowControl {
      * @param initialWindowSize INIT_WINDOW_SIZE received
      */
     public void resetInitialWindowSize(int initialWindowSize) {
-        LOGGER.log(INFO, () -> String.format("%s OFC STR *: Recv INIT_WINDOW_SIZE %s", type, initialWindowSize));
+        LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR *: Recv INIT_WINDOW_SIZE %s", type, initialWindowSize));
         this.initialWindowSize = initialWindowSize;
     }
 

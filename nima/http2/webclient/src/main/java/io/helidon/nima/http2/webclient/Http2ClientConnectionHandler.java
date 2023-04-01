@@ -60,12 +60,12 @@ class Http2ClientConnectionHandler {
             Http2ClientStream stream;
             if (conn == null) {
                 conn = createConnection(connectionKey, priorKnowledge);
-                stream = conn.stream(priority);
+                stream = conn.createStream(priority);
             } else {
                 stream = conn.tryStream(priority);
                 if (stream == null) {
                     conn = createConnection(connectionKey, priorKnowledge);
-                    stream = conn.stream(priority);
+                    stream = conn.createStream(priority);
                 }
             }
 

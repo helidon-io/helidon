@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -101,6 +102,7 @@ class Http2ClientConnection {
     private final Map<Integer, Queue<Http2FrameData>> buffer = new HashMap<>();
     private final Map<Integer, Http2ClientStream> streams = new HashMap<>();
     private final Lock connectionLock = new ReentrantLock();
+    private final Semaphore dequeSemaphore = new Semaphore(1);
     private final ConnectionFlowControl connectionFlowControl;
 
     private Http2Settings serverSettings = Http2Settings.builder()
@@ -156,10 +158,12 @@ class Http2ClientConnection {
 
     Http2FrameData readNextFrame(int streamId) {
         try {
-            // Don't let streams to steal frame parts
-            // Always read whole frame(frameHeader+data) at once
+            // Block deque thread when queue is empty
+            dequeSemaphore.acquire();
             connectionLock.lock();
             return buffer(streamId).poll();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         } finally {
             connectionLock.unlock();
         }
@@ -269,7 +273,7 @@ class Http2ClientConnection {
             break;
 
         case DATA:
-            connectionFlowControl.decrementInboundConnectionWindowSize(frameHeader.length());
+            stream(streamId).flowControl().inbound().decrementWindowSize(frameHeader.length());
             enqueue(streamId, new Http2FrameData(frameHeader, data));
             break;
 
@@ -277,14 +281,21 @@ class Http2ClientConnection {
             enqueue(streamId, new Http2FrameData(frameHeader, data));
             return;
 
+        case CONTINUATION:
+            //FIXME: Header continuation
+            throw new UnsupportedOperationException("Continuation support is not implemented yet!");
+
         default:
-            //FIXME: other frame types
             LOGGER.log(WARNING, "Unsupported frame type!! " + frameHeader.type());
         }
 
     }
 
-    Http2ClientStream stream(int priority) {
+    Http2ClientStream stream(int streamId) {
+        return streams.get(streamId);
+    }
+
+    Http2ClientStream createStream(int priority) {
         //FIXME: priority
         return new Http2ClientStream(this,
                                      serverSettings,
@@ -298,7 +309,7 @@ class Http2ClientConnection {
 
     Http2ClientStream tryStream(int priority) {
         try {
-            return stream(priority);
+            return createStream(priority);
         } catch (IllegalStateException | UncheckedIOException e) {
             return null;
         }
@@ -312,13 +323,14 @@ class Http2ClientConnection {
             e.printStackTrace();
         }
     }
-
     private void enqueue(int streamId, Http2FrameData frameData){
         try {
             connectionLock.lock();
             buffer(streamId).add(frameData);
         } finally {
             connectionLock.unlock();
+            // Release deque threads
+            dequeSemaphore.release();
         }
     }
 

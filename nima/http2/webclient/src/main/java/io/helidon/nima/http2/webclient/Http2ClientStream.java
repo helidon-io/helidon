@@ -124,9 +124,6 @@ class Http2ClientStream implements Http2Stream {
                                                                     frameData);
                     this.headers(http2Headers, endOfStream);
                     break;
-                case RST_STREAM:
-                    this.rstStream(Http2RstStream.create(frameData.data()));
-                    break;
                 default:
                     LOGGER.log(System.Logger.Level.DEBUG, "Dropping frame " + frameData.header() + " expected header or data.");
                 }
