@@ -34,6 +34,7 @@ import java.util.logging.Level;
 
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
+import io.helidon.nima.http2.WindowSize;
 import io.helidon.nima.http2.webclient.Http2Client;
 import io.helidon.nima.http2.webserver.DefaultHttp2Config;
 import io.helidon.nima.http2.webserver.Http2ConnectionProvider;
@@ -68,11 +69,10 @@ public class FlowControlTest {
         serverBuilder
                 .addConnectionProvider(Http2ConnectionProvider.builder()
                                                .http2Config(DefaultHttp2Config.builder()
-                                                                    .maxWindowSize(65537)
+                                                                    .maxWindowSize(WindowSize.DEFAULT_WIN_SIZE)
                                                )
                                                .build())
                 .defaultSocket(builder -> builder
-                        .port(-1)
                         .host("localhost")
                 )
                 .routing(router -> router
@@ -101,7 +101,7 @@ public class FlowControlTest {
                         .route(Http2Route.route(GET, "/flow-control", (req, res) -> {
                             res.send(EXPECTED);
                         }))
-                );
+                ).port(-1);
     }
 
     FlowControlTest(WebServer server) {
@@ -116,6 +116,7 @@ public class FlowControlTest {
 
         var client = Http2Client.builder()
                 .priorKnowledge(true)
+                .initialWindowSize(WindowSize.DEFAULT_WIN_SIZE)
                 .baseUri("http://localhost:" + server.port())
                 .build();
 
@@ -154,7 +155,7 @@ public class FlowControlTest {
         // Wait a bit if more than allowed is sent
         Thread.sleep(300);
         // Depends on the win update strategy, can't be full 100k
-        assertThat(sentData.get(), lessThan(99_000L));
+        assertThat(sentData.get(), is(70_000L));
         // Let server ask for the rest of the data
         flowControlServerLatch.complete(null);
         String response = responded.get(TIMEOUT_SEC, TimeUnit.SECONDS);

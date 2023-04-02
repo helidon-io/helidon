@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -45,7 +46,6 @@ class ClientRequestImpl implements Http2ClientRequest {
     static final HeaderValue USER_AGENT_HEADER = Header.create(Header.USER_AGENT, "Helidon Nima " + Version.VERSION);
     //todo Gracefully close connections in channel cache
     private static final Map<ConnectionKey, Http2ClientConnectionHandler> CHANNEL_CACHE = new ConcurrentHashMap<>();
-
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
 
     private final Http2ClientImpl client;
@@ -57,20 +57,29 @@ class ClientRequestImpl implements Http2ClientRequest {
     private Tls tls;
     private int priority;
     private boolean priorKnowledge;
+    private long initialWindowSize;
+    private int maxFrameSize;
+    private long maxHeaderListSize;
+    private int connectionPrefetch;
+    private int requestPrefetch = 0;
     private ClientConnection explicitConnection;
+    private Duration timeout = Duration.ofSeconds(10);
 
     ClientRequestImpl(Http2ClientImpl client,
                       ExecutorService executor,
                       Http.Method method,
                       UriHelper helper,
-                      boolean priorKnowledge,
                       Tls tls,
                       UriQueryWriteable query) {
         this.client = client;
         this.executor = executor;
         this.method = method;
         this.uri = helper;
-        this.priorKnowledge = priorKnowledge;
+        this.priorKnowledge = client.priorKnowledge();
+        this.initialWindowSize = client.initialWindowSize();
+        this.maxFrameSize = client.maxFrameSize();
+        this.maxHeaderListSize = client.maxHeaderListSize();
+        this.connectionPrefetch = client.prefetch();
         this.tls = tls == null || !tls.enabled() ? null : tls;
         this.query = query;
     }
@@ -134,6 +143,9 @@ class ClientRequestImpl implements Http2ClientRequest {
 
         Http2Headers http2Headers = prepareHeaders(headers);
         stream.write(http2Headers, entityBytes.length == 0);
+
+        stream.flowControl().inbound().incrementWindowSize(requestPrefetch);
+
         if (entityBytes.length != 0) {
             stream.writeData(BufferData.create(entityBytes), true);
         }
@@ -194,6 +206,18 @@ class ClientRequestImpl implements Http2ClientRequest {
         return this;
     }
 
+    @Override
+    public Http2ClientRequest requestPrefetch(int requestPrefetch) {
+        this.requestPrefetch = requestPrefetch;
+        return this;
+    }
+
+    @Override
+    public Http2ClientRequest timeout(Duration timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
     UriHelper uriHelper() {
         return uri;
     }
@@ -236,26 +260,33 @@ class ClientRequestImpl implements Http2ClientRequest {
         }
     }
 
-    private Http2ClientStream newStream(UriHelper uri){
+    private Http2ClientStream newStream(UriHelper uri) {
         try {
             ConnectionKey connectionKey = new ConnectionKey(method,
-                    uri.scheme(),
-                    uri.host(),
-                    uri.port(),
-                    priorKnowledge,
-                    tls,
-                    client.dnsResolver(),
-                    client.dnsAddressLookup());
+                                                            uri.scheme(),
+                                                            uri.host(),
+                                                            uri.port(),
+                                                            priorKnowledge,
+                                                            tls,
+                                                            client.dnsResolver(),
+                                                            client.dnsAddressLookup());
 
             // this statement locks all threads - must not do anything complicated (just create a new instance)
             return CHANNEL_CACHE.computeIfAbsent(connectionKey,
-                            key -> new Http2ClientConnectionHandler(executor,
-                                    SocketOptions.builder().build(),
-                                    uri.path(),
-                                    key))
+                                                 key -> new Http2ClientConnectionHandler(executor,
+                                                                                         SocketOptions.builder().build(),
+                                                                                         uri.path(),
+                                                                                         key))
                     // this statement may block a single connection key
-                    .newStream(priorKnowledge, priority);
-        } catch (UpgradeRedirectException e){
+                    .newStream(new ConnectionContext(priority,
+                                                     priorKnowledge,
+                                                     initialWindowSize,
+                                                     maxFrameSize,
+                                                     maxHeaderListSize,
+                                                     connectionPrefetch,
+                                                     requestPrefetch,
+                                                     timeout));
+        } catch (UpgradeRedirectException e) {
             return newStream(UriHelper.create(URI.create(e.redirectUri()), UriQueryWriteable.create()));
         }
     }

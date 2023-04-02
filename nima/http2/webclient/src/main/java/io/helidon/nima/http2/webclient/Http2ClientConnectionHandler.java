@@ -48,7 +48,7 @@ class Http2ClientConnectionHandler {
         this.connectionKey = connectionKey;
     }
 
-    public Http2ClientStream newStream(boolean priorKnowledge, int priority) {
+    public Http2ClientStream newStream(ConnectionContext ctx) {
         try {
             semaphore.acquire();
         } catch (InterruptedException e) {
@@ -59,13 +59,13 @@ class Http2ClientConnectionHandler {
             Http2ClientConnection conn = activeConnection.get();
             Http2ClientStream stream;
             if (conn == null) {
-                conn = createConnection(connectionKey, priorKnowledge);
-                stream = conn.createStream(priority);
+                conn = createConnection(connectionKey, ctx);
+                stream = conn.createStream(ctx.priority());
             } else {
-                stream = conn.tryStream(priority);
+                stream = conn.tryStream(ctx.priority());
                 if (stream == null) {
-                    conn = createConnection(connectionKey, priorKnowledge);
-                    stream = conn.createStream(priority);
+                    conn = createConnection(connectionKey, ctx);
+                    stream = conn.createStream(ctx.priority());
                 }
             }
 
@@ -75,9 +75,9 @@ class Http2ClientConnectionHandler {
         }
     }
 
-    private Http2ClientConnection createConnection(ConnectionKey connectionKey, boolean priorKnowledge) {
+    private Http2ClientConnection createConnection(ConnectionKey connectionKey, ConnectionContext connectionContext) {
         Http2ClientConnection conn =
-                new Http2ClientConnection(executor, socketOptions, connectionKey, primaryPath, priorKnowledge);
+                new Http2ClientConnection(executor, socketOptions, connectionKey, primaryPath, connectionContext);
         conn.connect();
         activeConnection.set(conn);
         fullConnections.add(conn);

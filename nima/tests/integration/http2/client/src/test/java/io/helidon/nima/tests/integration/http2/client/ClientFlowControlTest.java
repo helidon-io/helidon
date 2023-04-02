@@ -34,6 +34,7 @@ import io.helidon.common.http.Http;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.http2.WindowSize;
 import io.helidon.nima.http2.webclient.Http2;
+import io.helidon.nima.http2.webclient.Http2Client;
 import io.helidon.nima.http2.webclient.Http2ClientResponse;
 import io.helidon.nima.webclient.WebClient;
 
@@ -63,6 +64,7 @@ public class ClientFlowControlTest {
     private static final ExecutorService exec = Executors.newVirtualThreadPerTaskExecutor();
     private static HttpServer server;
     private static CompletableFuture<HttpServerRequest> outboundTestServerRequestRef = new CompletableFuture<>();
+    private static Http2Client client;
 
     @BeforeAll
     static void beforeAll() throws ExecutionException, InterruptedException, TimeoutException {
@@ -96,6 +98,11 @@ public class ClientFlowControlTest {
                 .toCompletionStage()
                 .toCompletableFuture()
                 .get(TIMEOUT.toMillis(), MILLISECONDS);
+
+        client = WebClient.builder(Http2.PROTOCOL)
+                .baseUri("http://localhost:" + server.actualPort() + "/")
+                .prefetch(10000)
+                .build();
     }
 
     @Test
@@ -109,9 +116,7 @@ public class ClientFlowControlTest {
 
         ByteArrayInputStream baos = new ByteArrayInputStream(EXPECTED.getBytes());
         CompletableFuture<String> clientFuture = CompletableFuture.supplyAsync(() -> {
-            try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
-                    .baseUri("http://localhost:" + server.actualPort() + "/")
-                    .build()
+            try (Http2ClientResponse res = client
                     .method(Http.Method.PUT)
                     .path("/out")
                     .priorKnowledge(true)
@@ -148,9 +153,7 @@ public class ClientFlowControlTest {
     void clientInbound() throws InterruptedException {
 
         AtomicLong receivedByteSize = new AtomicLong();
-        try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
-                .baseUri("http://localhost:" + server.actualPort() + "/")
-                .build()
+        try (Http2ClientResponse res = client
                 .method(Http.Method.GET)
                 .path("/in")
                 .priorKnowledge(true)

@@ -68,7 +68,7 @@ class PostTest {
     static void startServer() {
         server = WebServer.builder()
                 .host("localhost")
-                .port(8080)
+                .port(-1)
                 .addRouting(HttpRouting.builder()
                                     .route(Http.Method.POST, "/string", Handler.create(String.class, Routes::string))
                                     .route(Http.Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))

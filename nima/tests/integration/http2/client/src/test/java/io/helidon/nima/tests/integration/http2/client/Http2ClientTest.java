@@ -42,11 +42,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class Http2ClientTest {
-    public static final String MESSAGE = "Hello World!";
+     static final String MESSAGE = "Hello World!";
     private static final String TEST_HEADER_NAME = "custom_header";
     private static final String TEST_HEADER_VALUE = "as!fd";
     private static final HeaderValue TEST_HEADER = Header.create(Header.create(TEST_HEADER_NAME), TEST_HEADER_VALUE);
-
     private final Http1Client http1Client;
     private final Http2Client tlsClient;
     private final Http2Client plainClient;

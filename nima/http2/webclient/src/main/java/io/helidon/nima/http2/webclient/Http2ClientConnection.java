@@ -24,18 +24,13 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.ArrayDeque;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -97,13 +92,10 @@ class Http2ClientConnection {
     private final SocketOptions socketOptions;
     private final ConnectionKey connectionKey;
     private final String primaryPath;
-    private final boolean priorKnowledge;
     private final LockingStreamIdSequence streamIdSeq = new LockingStreamIdSequence();
-    private final Map<Integer, Queue<Http2FrameData>> buffer = new HashMap<>();
     private final Map<Integer, Http2ClientStream> streams = new HashMap<>();
-    private final Lock connectionLock = new ReentrantLock();
-    private final Semaphore dequeSemaphore = new Semaphore(1);
     private final ConnectionFlowControl connectionFlowControl;
+    private final ConnectionContext connectionContext;
 
     private Http2Settings serverSettings = Http2Settings.builder()
             .build();
@@ -122,16 +114,16 @@ class Http2ClientConnection {
                           SocketOptions socketOptions,
                           ConnectionKey connectionKey,
                           String primaryPath,
-                          boolean priorKnowledge) {
+                          ConnectionContext connectionContext) {
         this.executor = executor;
         this.socketOptions = socketOptions;
         this.connectionKey = connectionKey;
         this.primaryPath = primaryPath;
-        this.priorKnowledge = priorKnowledge;
+        this.connectionContext = connectionContext;
         this.connectionFlowControl = ConnectionFlowControl.createClient(this::writeWindowsUpdate);
     }
 
-    private void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
+    void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
         writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
     }
 
@@ -150,23 +142,6 @@ class Http2ClientConnection {
         }
 
         return this;
-    }
-
-    private Queue<Http2FrameData> buffer(int streamId) {
-        return buffer.computeIfAbsent(streamId, i -> new ArrayDeque<>());
-    }
-
-    Http2FrameData readNextFrame(int streamId) {
-        try {
-            // Block deque thread when queue is empty
-            dequeSemaphore.acquire();
-            connectionLock.lock();
-            return buffer(streamId).poll();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            connectionLock.unlock();
-        }
     }
 
     private void handle() {
@@ -241,7 +216,7 @@ class Http2ClientConnection {
 
 
             } else {
-                streams.get(streamId)
+                stream(streamId)
                         .windowUpdate(windowUpdate);
             }
             return;
@@ -273,17 +248,14 @@ class Http2ClientConnection {
             break;
 
         case DATA:
-            stream(streamId).flowControl().inbound().decrementWindowSize(frameHeader.length());
-            enqueue(streamId, new Http2FrameData(frameHeader, data));
+            Http2ClientStream stream = stream(streamId);
+            stream.flowControl().inbound().decrementWindowSize(frameHeader.length());
+            stream.push(new Http2FrameData(frameHeader, data));
             break;
 
-        case HEADERS:
-            enqueue(streamId, new Http2FrameData(frameHeader, data));
+        case HEADERS, CONTINUATION:
+            stream(streamId).push(new Http2FrameData(frameHeader, data));
             return;
-
-        case CONTINUATION:
-            //FIXME: Header continuation
-            throw new UnsupportedOperationException("Continuation support is not implemented yet!");
 
         default:
             LOGGER.log(WARNING, "Unsupported frame type!! " + frameHeader.type());
@@ -300,11 +272,16 @@ class Http2ClientConnection {
         return new Http2ClientStream(this,
                                      serverSettings,
                                      helidonSocket,
+                                     connectionContext,
                                      streamIdSeq);
     }
 
     void addStream(int streamId, Http2ClientStream stream){
         this.streams.put(streamId, stream);
+    }
+
+    void removeStream(int streamId) {
+        this.streams.remove(streamId);
     }
 
     Http2ClientStream tryStream(int priority) {
@@ -321,16 +298,6 @@ class Http2ClientConnection {
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-    private void enqueue(int streamId, Http2FrameData frameData){
-        try {
-            connectionLock.lock();
-            buffer(streamId).add(frameData);
-        } finally {
-            connectionLock.unlock();
-            // Release deque threads
-            dequeSemaphore.release();
         }
     }
 
@@ -371,7 +338,7 @@ class Http2ClientConnection {
             }
         }
 
-        if (!priorKnowledge && !useTls) {
+        if (!connectionContext.priorKnowledge() && !useTls) {
             httpUpgrade();
             // Settings are part of the HTTP/1 upgrade request
             sendPreface(false);
@@ -383,7 +350,7 @@ class Http2ClientConnection {
             while (!Thread.interrupted()) {
                 handle();
             }
-            System.out.println("Client listener interrupted!!!");
+            LOGGER.log(DEBUG, () -> "Client listener interrupted");
         });
     }
 
@@ -406,19 +373,24 @@ class Http2ClientConnection {
         dataWriter.writeNow(BufferData.create(PRIOR_KNOWLEDGE_PREFACE));
         if (sendSettings) {
             // §3.5 Preface bytes must be followed by setting frame
-            Http2Settings http2Settings = Http2Settings.builder()
-                    .add(Http2Setting.MAX_HEADER_LIST_SIZE, 8192L)
+            Http2Settings.Builder b = Http2Settings.builder();
+            if (connectionContext.maxHeaderListSize() > 0) {
+                b.add(Http2Setting.MAX_HEADER_LIST_SIZE, connectionContext.maxHeaderListSize());
+            }
+            Http2Settings http2Settings = b
+                    .add(Http2Setting.INITIAL_WINDOW_SIZE, connectionContext.initialWindowSize())
+                    .add(Http2Setting.MAX_FRAME_SIZE, (long) connectionContext.maxFrameSize())
                     .add(Http2Setting.ENABLE_PUSH, false)
-                   // .add(Http2Setting., false)
                     .build();
+
             Http2Flag.SettingsFlags flags = Http2Flag.SettingsFlags.create(0);
             Http2FrameData frameData = http2Settings.toFrameData(null, 0, flags);
             sendListener.frameHeader(helidonSocket, frameData.header());
             sendListener.frame(helidonSocket, http2Settings);
             writer.write(frameData);
         }
-        // win update
-        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(10000); //FIXME: configurable
+        // First connection window update, with prefetch increment
+        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(connectionContext.connectionPrefetch());
         Http2Flag.NoFlags flags = Http2Flag.NoFlags.create();
         Http2FrameData frameData = windowUpdate.toFrameData(null, 0, flags);
         sendListener.frameHeader(helidonSocket, frameData.header());
