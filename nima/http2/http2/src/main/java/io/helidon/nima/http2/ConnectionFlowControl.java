@@ -16,7 +16,10 @@
 
 package io.helidon.nima.http2;
 
+import java.time.Duration;
 import java.util.function.BiConsumer;
+
+import io.helidon.common.Builder;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -29,10 +32,30 @@ public class ConnectionFlowControl {
 
     private final Type type;
     private final BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter;
+    private final Duration timeout;
     private final WindowSize.Inbound inboundConnectionWindowSize;
     private final WindowSize.Outbound outboundConnectionWindowSize;
-    private int maxFrameSize = WindowSize.DEFAULT_MAX_FRAME_SIZE;
-    private int initialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
+
+    private volatile int maxFrameSize = WindowSize.DEFAULT_MAX_FRAME_SIZE;
+    private volatile int initialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
+
+    private ConnectionFlowControl(Type type,
+                                  int initialWindowSize,
+                                  int maxFrameSize,
+                                  BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter,
+                                  Duration timeout) {
+        this.type = type;
+        this.windowUpdateWriter = windowUpdateWriter;
+        this.timeout = timeout;
+        this.inboundConnectionWindowSize =
+                WindowSize.createInbound(type,
+                                         0,
+                                         initialWindowSize,
+                                         maxFrameSize,
+                                         windowUpdateWriter);
+        outboundConnectionWindowSize =
+                WindowSize.createOutbound(type, 0, this);
+    }
 
     /**
      * Create connection HTTP/2 flow-control for server side.
@@ -40,8 +63,8 @@ public class ConnectionFlowControl {
      * @param windowUpdateWriter method called for sending WINDOW_UPDATE frames to the client.
      * @return Connection HTTP/2 flow-control
      */
-    public static ConnectionFlowControl createServer(BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter){
-        return new ConnectionFlowControl(Type.SERVER, windowUpdateWriter);
+    public static ConnectionFlowControlBuilder serverBuilder(BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
+        return new ConnectionFlowControlBuilder(Type.SERVER, windowUpdateWriter);
     }
 
     /**
@@ -50,22 +73,8 @@ public class ConnectionFlowControl {
      * @param windowUpdateWriter method called for sending WINDOW_UPDATE frames to the server.
      * @return Connection HTTP/2 flow-control
      */
-    public static ConnectionFlowControl createClient(BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter){
-        return new ConnectionFlowControl(Type.CLIENT, windowUpdateWriter);
-    }
-
-    private ConnectionFlowControl(Type type, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
-        this.type = type;
-        this.windowUpdateWriter = windowUpdateWriter;
-        //FIXME: configurable max frame size?
-        this.inboundConnectionWindowSize =
-                WindowSize.createInbound(type,
-                                         0,
-                                         WindowSize.DEFAULT_WIN_SIZE,
-                                         WindowSize.DEFAULT_MAX_FRAME_SIZE,
-                                         windowUpdateWriter);
-        outboundConnectionWindowSize =
-                WindowSize.createOutbound(type, 0, this);
+    public static ConnectionFlowControlBuilder clientBuilder(BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
+        return new ConnectionFlowControlBuilder(Type.CLIENT, windowUpdateWriter);
     }
 
     /**
@@ -90,6 +99,7 @@ public class ConnectionFlowControl {
 
     /**
      * Decrement inbound connection flow control window, called when DATA frame is received.
+     *
      * @param decrement received DATA frame size in bytes
      * @return inbound window size after decrement
      */
@@ -114,7 +124,9 @@ public class ConnectionFlowControl {
      * @param initialWindowSize INIT_WINDOW_SIZE received
      */
     public void resetInitialWindowSize(int initialWindowSize) {
-        LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR *: Recv INIT_WINDOW_SIZE %s", type, initialWindowSize));
+        if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR *: Recv INIT_WINDOW_SIZE %s", type, initialWindowSize));
+        }
         this.initialWindowSize = initialWindowSize;
     }
 
@@ -147,7 +159,69 @@ public class ConnectionFlowControl {
         return initialWindowSize;
     }
 
+    Duration timeout() {
+        return timeout;
+    }
+
     enum Type {
         SERVER, CLIENT;
+    }
+
+    /**
+     * Connection flow control builder.
+     */
+    public static class ConnectionFlowControlBuilder implements Builder<ConnectionFlowControlBuilder, ConnectionFlowControl> {
+
+        private static final Duration DEFAULT_TIMEOUT = Duration.ofMillis(100);
+        private final Type type;
+        private final BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter;
+        private int initialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
+        private int maxFrameSize = WindowSize.DEFAULT_MAX_FRAME_SIZE;
+        private Duration blockTimeout = DEFAULT_TIMEOUT;
+
+        ConnectionFlowControlBuilder(Type type, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
+            this.type = type;
+            this.windowUpdateWriter = windowUpdateWriter;
+        }
+
+        /**
+         * Outbound flow control INITIAL_WINDOW_SIZE setting for new HTTP/2 connections.
+         *
+         * @param initialWindowSize units of octets
+         * @return updated builder
+         */
+        public ConnectionFlowControlBuilder initialWindowSize(int initialWindowSize) {
+            this.initialWindowSize = initialWindowSize;
+            return this;
+        }
+
+        /**
+         * Initial MAX_FRAME_SIZE setting for new HTTP/2 connections.
+         * Maximum size of data frames in bytes we are prepared to accept from the other size.
+         * Default value is 2^14(16_384).
+         *
+         * @param maxFrameSize data frame size in bytes between 2^14(16_384) and 2^24-1(16_777_215)
+         * @return updated client
+         */
+        public ConnectionFlowControlBuilder maxFrameSize(int maxFrameSize) {
+            this.maxFrameSize = maxFrameSize;
+            return this;
+        }
+
+        /**
+         * Timeout for blocking between windows size check iterations.
+         *
+         * @param timeout duration
+         * @return updated builder
+         */
+        public ConnectionFlowControlBuilder blockTimeout(Duration timeout) {
+            this.blockTimeout = timeout;
+            return this;
+        }
+
+        @Override
+        public ConnectionFlowControl build() {
+            return new ConnectionFlowControl(type, initialWindowSize, maxFrameSize, windowUpdateWriter, blockTimeout);
+        }
     }
 }

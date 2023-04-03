@@ -58,4 +58,12 @@ public interface Http2ClientRequest extends ClientRequest<Http2ClientRequest, Ht
      * @return updated request
      */
     Http2ClientRequest timeout(Duration timeout);
+
+    /**
+     * Outbound flow control blocking timeout.
+     *
+     * @param timeout duration
+     * @return updated request
+     */
+    Http2ClientRequest flowControlTimeout(Duration timeout);
 }

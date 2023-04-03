@@ -120,7 +120,11 @@ class Http2ClientConnection {
         this.connectionKey = connectionKey;
         this.primaryPath = primaryPath;
         this.connectionContext = connectionContext;
-        this.connectionFlowControl = ConnectionFlowControl.createClient(this::writeWindowsUpdate);
+        this.connectionFlowControl = ConnectionFlowControl.clientBuilder(this::writeWindowsUpdate)
+                .maxFrameSize(connectionContext.maxFrameSize())
+                .initialWindowSize(connectionContext.initialWindowSize())
+                .blockTimeout(connectionContext.timeout())
+                .build();
     }
 
     void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
@@ -378,7 +382,7 @@ class Http2ClientConnection {
                 b.add(Http2Setting.MAX_HEADER_LIST_SIZE, connectionContext.maxHeaderListSize());
             }
             Http2Settings http2Settings = b
-                    .add(Http2Setting.INITIAL_WINDOW_SIZE, connectionContext.initialWindowSize())
+                    .add(Http2Setting.INITIAL_WINDOW_SIZE, (long) connectionContext.initialWindowSize())
                     .add(Http2Setting.MAX_FRAME_SIZE, (long) connectionContext.maxFrameSize())
                     .add(Http2Setting.ENABLE_PUSH, false)
                     .build();

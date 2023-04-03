@@ -23,15 +23,15 @@ public interface Http2StreamWriter {
     /**
      * Write a frame.
      *
-     * @param frame       frame to write
+     * @param frame frame to write
      */
     void write(Http2FrameData frame);
 
     /**
      * Write a frame with flow control.
      *
-     * @param frame
-     * @param flowControl
+     * @param frame       data frame
+     * @param flowControl outbound flow control
      */
     void writeData(Http2FrameData frame, FlowControl.Outbound flowControl);
 

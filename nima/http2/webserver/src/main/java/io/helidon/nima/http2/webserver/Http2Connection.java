@@ -86,7 +86,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final Http2ConnectionWriter connectionWriter;
     private final List<Http2SubProtocolSelector> subProviders;
     private final DataReader reader;
-
     private final Http2Settings serverSettings;
     private final boolean sendErrorDetails;
     private final ConnectionFlowControl flowControl;
@@ -124,24 +123,26 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.sendErrorDetails = http2Config.sendErrorDetails();
         this.maxClientConcurrentStreams = http2Config.maxConcurrentStreams();
 
-        // Inbound flow control is initialized from config
-//        if (http2Config.flowControlEnabled()) {
-//            this.inboundWindowSize = WindowSize.createInbound(FlowControl.Type.SERVER,
-//                                                              0,
-//                                                              WindowSize.DEFAULT_WIN_SIZE,
-//                                                              http2Config.maxFrameSize(),
-//                                                              this::writeWindowUpdateFrame);
-//            this.inboundInitialWindowSize = http2Config.maxStreamWindowSize() > 0
-//                    ? http2Config.maxStreamWindowSize()
-//                    : http2Config.maxWindowSize();
-//        } else {
-//            // Pass NOOP when flow control is turned off (but we still have to send WINDOW_UPDATE frames)
-//            this.inboundWindowSize = WindowSize.createInboundNoop(this::writeWindowUpdateFrame);
-//            this.inboundInitialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
-//        }
-
         // Flow control is initialized by RFC 9113 default values
-        this.flowControl = ConnectionFlowControl.createServer(this::writeWindowUpdateFrame);
+        this.flowControl = ConnectionFlowControl.serverBuilder(this::writeWindowUpdateFrame)
+                .initialWindowSize(http2Config.initialWindowSize())
+                .blockTimeout(http2Config.flowControlTimeout())
+                .maxFrameSize(http2Config.maxFrameSize())
+                .build();
+    }
+
+    private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
+        applySetting(builder, config.maxFrameSize(), Http2Setting.MAX_FRAME_SIZE);
+        applySetting(builder, config.maxHeaderListSize(), Http2Setting.MAX_HEADER_LIST_SIZE);
+        applySetting(builder, config.maxConcurrentStreams(), Http2Setting.MAX_CONCURRENT_STREAMS);
+        applySetting(builder, config.initialWindowSize(), Http2Setting.INITIAL_WINDOW_SIZE);
+    }
+
+    // Add value to the builder only when differs from default
+    private static void applySetting(Http2Settings.Builder builder, long value, Http2Setting<Long> settings) {
+        if (value != settings.defaultValue()) {
+            builder.add(settings, value);
+        }
     }
 
     @Override
@@ -287,20 +288,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         return serverSettings;
     }
 
-    private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
-        applySetting(builder, config.maxFrameSize(), Http2Setting.MAX_FRAME_SIZE);
-        applySetting(builder, config.maxHeaderListSize(), Http2Setting.MAX_HEADER_LIST_SIZE);
-        applySetting(builder, config.maxConcurrentStreams(), Http2Setting.MAX_CONCURRENT_STREAMS);
-        applySetting(builder, config.maxWindowSize(), Http2Setting.INITIAL_WINDOW_SIZE);
-    }
-
-    // Add value to the builder only when differs from default
-    private static void applySetting(Http2Settings.Builder builder, long value, Http2Setting<Long> settings) {
-        if (value != settings.defaultValue()) {
-            builder.add(settings, value);
-        }
-    }
-
     private void doHandle() throws InterruptedException {
 
         while (state != State.FINISHED) {
@@ -326,22 +313,22 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private void dispatchHandler() {
         switch (state) {
-            case CONTINUATION -> doContinuation();
-            case WRITE_SERVER_SETTINGS -> writeServerSettings();
-            case WINDOW_UPDATE -> readWindowUpdateFrame();
-            case SETTINGS -> doSettings();
-            case ACK_SETTINGS -> ackSettings();
-            case DATA -> dataFrame();
-            case HEADERS -> doHeaders();
-            case PRIORITY -> doPriority();
-            case READ_PUSH_PROMISE -> throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM, "Push promise not supported");
-            case PING -> pingFrame();
-            case SEND_PING_ACK -> writePingAck();
-            case GO_AWAY ->
-                // todo we may need to do graceful shutdown to process the last stream
-                    goAwayFrame();
-            case RST_STREAM -> rstStream();
-            default -> unknownFrame();
+        case CONTINUATION -> doContinuation();
+        case WRITE_SERVER_SETTINGS -> writeServerSettings();
+        case WINDOW_UPDATE -> readWindowUpdateFrame();
+        case SETTINGS -> doSettings();
+        case ACK_SETTINGS -> ackSettings();
+        case DATA -> dataFrame();
+        case HEADERS -> doHeaders();
+        case PRIORITY -> doPriority();
+        case READ_PUSH_PROMISE -> throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM, "Push promise not supported");
+        case PING -> pingFrame();
+        case SEND_PING_ACK -> writePingAck();
+        case GO_AWAY ->
+            // todo we may need to do graceful shutdown to process the last stream
+                goAwayFrame();
+        case RST_STREAM -> rstStream();
+        default -> unknownFrame();
         }
     }
 
@@ -524,7 +511,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                         .decrementWindowSize(length);
             }
         }
-
 
         if (frameHeader.flags(Http2FrameTypes.DATA).padded()) {
             BufferData frameData = inProgressFrame();
@@ -727,19 +713,19 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             // as a stream error (section 5.4.2) of type PROTOCOL_ERROR or REFUSED_STREAM.
             if (streams.size() > maxClientConcurrentStreams) {
                 throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM,
-                        "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
+                                         "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
             }
             // Pass NOOP when flow control is turned off
-//            FlowControl.Inbound.Builder inboundFlowControlBuilder = http2Config.flowControlEnabled()
-//                    ? FlowControl.builderInbound(FlowControl.Type.SERVER)
-//                            .streamId(streamId)
-//                            .connectionWindowSize(inboundWindowSize)
-//                            .streamWindowSize(inboundInitialWindowSize)
-//                            .streamMaxFrameSize(http2Config.maxFrameSize())
-//                    // Pass NOOP when flow control is turned off (but we still have to send WINDOW_UPDATE frames)
-//                    : FlowControl.builderInbound(FlowControl.Type.SERVER)
-//                            .connectionWindowSize(inboundWindowSize)
-//                            .noop();
+            //            FlowControl.Inbound.Builder inboundFlowControlBuilder = http2Config.flowControlEnabled()
+            //                    ? FlowControl.builderInbound(FlowControl.Type.SERVER)
+            //                            .streamId(streamId)
+            //                            .connectionWindowSize(inboundWindowSize)
+            //                            .streamWindowSize(inboundInitialWindowSize)
+            //                            .streamMaxFrameSize(http2Config.maxFrameSize())
+            //                    // Pass NOOP when flow control is turned off (but we still have to send WINDOW_UPDATE frames)
+            //                    : FlowControl.builderInbound(FlowControl.Type.SERVER)
+            //                            .connectionWindowSize(inboundWindowSize)
+            //                            .noop();
             streamContext = new StreamContext(streamId,
                                               new Http2Stream(ctx,
                                                               routing,

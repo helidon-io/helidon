@@ -99,39 +99,16 @@ class ConnectionConfigTest {
         assertThat(http2Config.validatePath(), is(false));
     }
 
-    // Verify that HTTP/2 flow control enabled is properly configured from configuration file
-    @Test
-    void testFlowControlEnabled() {
-        // This will pick up application.yaml from the classpath as default configuration file
-        TestProvider provider = new TestProvider();
-        WebServer.builder().addConnectionProvider(provider).build();
-        assertThat(provider.isConfig(), is(true));
-        Http2Config http2Config = provider.config();
-        assertThat(http2Config.flowControlEnabled(), is(false));
-    }
-
     // Verify that HTTP/2 maximum connection-level window size is properly configured from configuration file
     @Test
-    void testMaxWindowSize() {
+    void testInitialWindowSize() {
         // This will pick up application.yaml from the classpath as default configuration file
         TestProvider provider = new TestProvider();
         WebServer.builder().addConnectionProvider(provider).build();
         assertThat(provider.isConfig(), is(true));
         Http2Config http2Config = provider.config();
-        assertThat(http2Config.maxWindowSize(), is(32767));
+        assertThat(http2Config.initialWindowSize(), is(32767));
     }
-
-    // Verify that HTTP/2 maximum stream-level window size is properly configured from configuration file
-    @Test
-    void testMaxStreamWindowSize() {
-        // This will pick up application.yaml from the classpath as default configuration file
-        TestProvider provider = new TestProvider();
-        WebServer.builder().addConnectionProvider(provider).build();
-        assertThat(provider.isConfig(), is(true));
-        Http2Config http2Config = provider.config();
-        assertThat(http2Config.maxStreamWindowSize(), is(16383));
-    }
-
 
     private static class TestProvider implements ServerConnectionProvider {
 

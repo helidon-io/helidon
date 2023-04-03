@@ -779,6 +779,7 @@ public class Http2Headers {
             for (StaticHeader predefinedHeader : StaticHeader.values()) {
                 BY_INDEX.put(predefinedHeader.index(), predefinedHeader);
                 maxIndex = Math.max(maxIndex, predefinedHeader.index);
+                // Indexed headers may be referenced either with or without value, so we need to store them in both tables
                 if (predefinedHeader.hasValue()) {
                     BY_NAME_VALUE.computeIfAbsent(predefinedHeader.headerName().lowerCase(), it -> new HashMap<>())
                             .put(predefinedHeader.value(), predefinedHeader);

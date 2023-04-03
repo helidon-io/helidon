@@ -46,23 +46,23 @@ class ClientRequestImpl implements Http2ClientRequest {
     static final HeaderValue USER_AGENT_HEADER = Header.create(Header.USER_AGENT, "Helidon Nima " + Version.VERSION);
     //todo Gracefully close connections in channel cache
     private static final Map<ConnectionKey, Http2ClientConnectionHandler> CHANNEL_CACHE = new ConcurrentHashMap<>();
-    private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
-
     private final Http2ClientImpl client;
-
     private final ExecutorService executor;
     private final Http.Method method;
     private final UriHelper uri;
     private final UriQueryWriteable query;
+    private final int initialWindowSize;
+    private final int maxFrameSize;
+    private final long maxHeaderListSize;
+    private final int connectionPrefetch;
+
+    private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private Tls tls;
     private int priority;
     private boolean priorKnowledge;
-    private long initialWindowSize;
-    private int maxFrameSize;
-    private long maxHeaderListSize;
-    private int connectionPrefetch;
     private int requestPrefetch = 0;
     private ClientConnection explicitConnection;
+    private Duration flowControlTimeout = Duration.ofMillis(100);
     private Duration timeout = Duration.ofSeconds(10);
 
     ClientRequestImpl(Http2ClientImpl client,
@@ -115,7 +115,7 @@ class ClientRequestImpl implements Http2ClientRequest {
 
     @Override
     public Http2ClientRequest queryParam(String name, String... values) {
-        query.add(name, values);
+        query.set(name, values);
         return this;
     }
 
@@ -218,6 +218,12 @@ class ClientRequestImpl implements Http2ClientRequest {
         return this;
     }
 
+    @Override
+    public Http2ClientRequest flowControlTimeout(Duration timeout) {
+        this.flowControlTimeout = timeout;
+        return this;
+    }
+
     UriHelper uriHelper() {
         return uri;
     }
@@ -285,6 +291,7 @@ class ClientRequestImpl implements Http2ClientRequest {
                                                      maxHeaderListSize,
                                                      connectionPrefetch,
                                                      requestPrefetch,
+                                                     flowControlTimeout,
                                                      timeout));
         } catch (UpgradeRedirectException e) {
             return newStream(UriHelper.create(URI.create(e.redirectUri()), UriQueryWriteable.create()));

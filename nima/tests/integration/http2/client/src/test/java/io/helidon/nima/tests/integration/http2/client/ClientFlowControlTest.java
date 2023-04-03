@@ -45,6 +45,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static java.lang.System.Logger.Level.DEBUG;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -75,12 +76,12 @@ public class ClientFlowControlTest {
                     case "/in" -> {
                         for (int i = 0; i < 5; i++) {
                             req.response().write(DATA_10_K)
-                                    .andThen(event -> LOGGER.log(System.Logger.Level.DEBUG, "Vertx server sent " +
+                                    .andThen(event -> LOGGER.log(DEBUG, "Vertx server sent " +
                                             inboundServerSentData.addAndGet(BYTES_10_K.length)));
                         }
                         for (int i = 5; i < 10; i++) {
                             req.response().write(DATA_10_K.toUpperCase())
-                                    .andThen(event -> LOGGER.log(System.Logger.Level.DEBUG, "Vertx server sent " +
+                                    .andThen(event -> LOGGER.log(DEBUG, "Vertx server sent " +
                                             inboundServerSentData.addAndGet(BYTES_10_K_UP_CASE.length)));
                         }
                         req.end();

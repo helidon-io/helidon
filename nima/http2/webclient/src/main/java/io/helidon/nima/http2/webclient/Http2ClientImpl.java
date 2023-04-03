@@ -25,7 +25,7 @@ class Http2ClientImpl extends LoomClient implements Http2Client {
 
     private final int maxFrameSize;
     private final long maxHeaderListSize;
-    private final long initialWindowSize;
+    private final int initialWindowSize;
     private final int prefetch;
     private final boolean priorKnowledge;
 
@@ -50,7 +50,7 @@ class Http2ClientImpl extends LoomClient implements Http2Client {
         return maxHeaderListSize;
     }
 
-    long initialWindowSize() {
+    int initialWindowSize() {
         return initialWindowSize;
     }
 

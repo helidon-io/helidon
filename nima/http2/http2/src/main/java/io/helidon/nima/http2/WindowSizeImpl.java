@@ -35,8 +35,8 @@ abstract class WindowSizeImpl implements WindowSize {
 
     private final ConnectionFlowControl.Type type;
     private final int streamId;
-    private int windowSize;
     private final AtomicInteger remainingWindowSize;
+    private int windowSize;
 
     private WindowSizeImpl(ConnectionFlowControl.Type type, int streamId, int initialWindowSize) {
         this.type = type;
@@ -52,8 +52,10 @@ abstract class WindowSizeImpl implements WindowSize {
         // it maintains by the difference between the new value and the old value
         remainingWindowSize.updateAndGet(o -> o + size - windowSize);
         windowSize = size;
-        LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR %d: Recv INITIAL_WINDOW_SIZE %d(%d)",
-                                                      type, streamId, windowSize, remainingWindowSize.get()));
+        if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR %d: Recv INITIAL_WINDOW_SIZE %d(%d)",
+                                                           type, streamId, windowSize, remainingWindowSize.get()));
+        }
     }
 
     @Override
@@ -125,17 +127,21 @@ abstract class WindowSizeImpl implements WindowSize {
         private final AtomicReference<CompletableFuture<Void>> updated = new AtomicReference<>(new CompletableFuture<>());
         private final ConnectionFlowControl.Type type;
         private final int streamId;
+        private final long timeoutMillis;
 
         Outbound(ConnectionFlowControl.Type type, int streamId, ConnectionFlowControl connectionFlowControl) {
             super(type, streamId, connectionFlowControl.initialWindowSize());
             this.type = type;
             this.streamId = streamId;
+            this.timeoutMillis = connectionFlowControl.timeout().toMillis();
         }
 
         @Override
         public long incrementWindowSize(int increment) {
             long remaining = super.incrementWindowSize(increment);
-            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR %d: +%d(%d)", type, streamId, increment, remaining));
+            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                LOGGER_OUTBOUND.log(DEBUG, String.format("%s OFC STR %d: +%d(%d)", type, streamId, increment, remaining));
+            }
             triggerUpdate();
             return remaining;
         }
@@ -149,11 +155,12 @@ abstract class WindowSizeImpl implements WindowSize {
         public void blockTillUpdate() {
             while (getRemainingWindowSize() < 1) {
                 try {
-                    //TODO configurable timeout
-                    updated.get().get(500, TimeUnit.MILLISECONDS);
+                    updated.get().get(timeoutMillis, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    LOGGER_OUTBOUND.log(DEBUG, () ->
-                            String.format("%s OFC STR %d: Window depleted, waiting for update.", type, streamId));
+                    if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                        LOGGER_OUTBOUND.log(DEBUG,
+                                            String.format("%s OFC STR %d: Window depleted, waiting for update.", type, streamId));
+                    }
                 }
             }
         }
@@ -209,6 +216,11 @@ abstract class WindowSizeImpl implements WindowSize {
 
     abstract static class Strategy {
 
+        // Strategy Type to instance mapping array
+        private static final StrategyConstructor[] CREATORS = new StrategyConstructor[] {
+                Simple::new,
+                Bisection::new
+        };
         private final Context context;
         private final int streamId;
         private final BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter;
@@ -217,6 +229,12 @@ abstract class WindowSizeImpl implements WindowSize {
             this.context = context;
             this.streamId = streamId;
             this.windowUpdateWriter = windowUpdateWriter;
+        }
+
+        // Strategy implementation factory
+        private static Strategy create(Context context, int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
+            return CREATORS[Type.select(context).ordinal()]
+                    .create(context, streamId, windowUpdateWriter);
         }
 
         abstract void windowUpdate(ConnectionFlowControl.Type type, int increment, int i);
@@ -231,22 +249,6 @@ abstract class WindowSizeImpl implements WindowSize {
 
         BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter() {
             return windowUpdateWriter;
-        }
-
-        private interface StrategyConstructor {
-            Strategy create(Context context, int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter);
-        }
-
-        // Strategy Type to instance mapping array
-        private static final StrategyConstructor[] CREATORS = new StrategyConstructor[] {
-                Simple::new,
-                Bisection::new
-        };
-
-        // Strategy implementation factory
-        private static Strategy create(Context context, int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
-            return CREATORS[Type.select(context).ordinal()]
-                    .create(context, streamId, windowUpdateWriter);
         }
 
         private enum Type {
@@ -266,6 +268,10 @@ abstract class WindowSizeImpl implements WindowSize {
                 return context.maxFrameSize * 4 <= context.initialWindowSize ? BISECTION : SIMPLE;
             }
 
+        }
+
+        private interface StrategyConstructor {
+            Strategy create(Context context, int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter);
         }
 
         private record Context(
@@ -297,9 +303,8 @@ abstract class WindowSizeImpl implements WindowSize {
          */
         private static final class Bisection extends Strategy {
 
-            private int delayedIncrement;
-
             private final int watermark;
+            private int delayedIncrement;
 
             private Bisection(Context context, int streamId, BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter) {
                 super(context, streamId, windowUpdateWriter);

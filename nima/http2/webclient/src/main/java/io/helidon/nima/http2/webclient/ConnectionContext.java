@@ -20,10 +20,11 @@ import java.time.Duration;
 
 record ConnectionContext(int priority,
                          boolean priorKnowledge,
-                         long initialWindowSize,
+                         int initialWindowSize,
                          int maxFrameSize,
                          long maxHeaderListSize,
                          int connectionPrefetch,
                          int requestPrefetch,
+                         Duration flowControlTimeout,
                          Duration timeout) {
 }

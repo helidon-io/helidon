@@ -103,17 +103,25 @@ abstract class FlowControlImpl implements FlowControl {
         @Override
         public void decrementWindowSize(int decrement) {
             long strRemaining = streamWindowSize().decrementWindowSize(decrement);
-            LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR %d: -%d(%d)", type, streamId(), decrement, strRemaining));
+            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                LOGGER_INBOUND.log(DEBUG, String.format("%s IFC STR %d: -%d(%d)", type, streamId(), decrement, strRemaining));
+            }
             long connRemaining = connectionWindowSize().decrementWindowSize(decrement);
-            LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR 0: -%d(%d)", type, decrement, connRemaining));
+            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                LOGGER_INBOUND.log(DEBUG, String.format("%s IFC STR 0: -%d(%d)", type, decrement, connRemaining));
+            }
         }
 
         @Override
         public void incrementWindowSize(int increment) {
             long strRemaining = streamWindowSize.incrementWindowSize(increment);
-            LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR %d: +%d(%d)", type, streamId(), increment, strRemaining));
+            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                LOGGER_INBOUND.log(DEBUG, String.format("%s IFC STR %d: +%d(%d)", type, streamId(), increment, strRemaining));
+            }
             long conRemaining = connectionWindowSize.incrementWindowSize(increment);
-            LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR 0: +%d(%d)", type, increment, conRemaining));
+            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                LOGGER_INBOUND.log(DEBUG, String.format("%s IFC STR 0: +%d(%d)", type, increment, conRemaining));
+            }
         }
 
     }
@@ -145,16 +153,23 @@ abstract class FlowControlImpl implements FlowControl {
 
         public void decrementWindowSize(int decrement) {
             long strRemaining = streamWindowSize().decrementWindowSize(decrement);
-            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR %d: -%d(%d)", type, streamId(), decrement, strRemaining));
+            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                LOGGER_OUTBOUND.log(DEBUG, String.format("%s OFC STR %d: -%d(%d)", type, streamId(), decrement, strRemaining));
+            }
 
             long connRemaining = connectionWindowSize().decrementWindowSize(decrement);
-            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR 0: -%d(%d)", type, decrement, connRemaining));
+            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                LOGGER_OUTBOUND.log(DEBUG, String.format("%s OFC STR 0: -%d(%d)", type, decrement, connRemaining));
+
+            }
         }
 
         @Override
         public long incrementStreamWindowSize(int increment) {
             long remaining = streamWindowSize.incrementWindowSize(increment);
-            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR %d: +%d(%d)", type, streamId(), increment, remaining));
+            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                LOGGER_OUTBOUND.log(DEBUG, String.format("%s OFC STR %d: +%d(%d)", type, streamId(), increment, remaining));
+            }
             connectionFlowControl.outbound().triggerUpdate();
             return remaining;
         }

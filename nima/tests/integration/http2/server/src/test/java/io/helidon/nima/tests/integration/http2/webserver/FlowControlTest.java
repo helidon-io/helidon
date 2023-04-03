@@ -46,6 +46,8 @@ import io.helidon.nima.webserver.WebServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
+import static java.lang.System.Logger.Level.DEBUG;
+
 import static io.helidon.common.http.Http.Method.GET;
 import static io.helidon.common.http.Http.Method.PUT;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -56,20 +58,26 @@ import static org.hamcrest.Matchers.lessThan;
 public class FlowControlTest {
 
     private static final System.Logger LOGGER = System.getLogger(FlowControlTest.class.getName());
-    private static volatile CompletableFuture<Void> flowControlServerLatch = new CompletableFuture<>();
-    private static volatile CompletableFuture<Void> flowControlClientLatch = new CompletableFuture<>();
     private static final ExecutorService exec = Executors.newCachedThreadPool();
     private static final String DATA_10_K = "Helidon!!!".repeat(1_000);
     private static final String EXPECTED = DATA_10_K.repeat(5) + DATA_10_K.toUpperCase().repeat(5);
     private static final int TIMEOUT_SEC = 150;
+
+    private static volatile CompletableFuture<Void> flowControlServerLatch = new CompletableFuture<>();
+    private static volatile CompletableFuture<Void> flowControlClientLatch = new CompletableFuture<>();
+
     private final WebServer server;
+
+    FlowControlTest(WebServer server) {
+        this.server = server;
+    }
 
     @SetUpServer
     static void setUpServer(WebServer.Builder serverBuilder) {
         serverBuilder
                 .addConnectionProvider(Http2ConnectionProvider.builder()
                                                .http2Config(DefaultHttp2Config.builder()
-                                                                    .maxWindowSize(WindowSize.DEFAULT_WIN_SIZE)
+                                                                    .initialWindowSize(WindowSize.DEFAULT_WIN_SIZE)
                                                )
                                                .build())
                 .defaultSocket(builder -> builder
@@ -101,11 +109,15 @@ public class FlowControlTest {
                         .route(Http2Route.route(GET, "/flow-control", (req, res) -> {
                             res.send(EXPECTED);
                         }))
-                ).port(-1);
+                ).port(8080);
     }
 
-    FlowControlTest(WebServer server) {
-        this.server = server;
+    @AfterAll
+    static void afterAll() throws InterruptedException {
+        exec.shutdown();
+        if (!exec.awaitTermination(TIMEOUT_SEC, TimeUnit.SECONDS)) {
+            exec.shutdownNow();
+        }
     }
 
     @Test
@@ -131,14 +143,14 @@ public class FlowControlTest {
                             out -> {
                                 for (int i = 0; i < 5; i++) {
                                     byte[] bytes = DATA_10_K.getBytes();
-                                    LOGGER.log(System.Logger.Level.DEBUG,
+                                    LOGGER.log(DEBUG,
                                                () -> String.format("CL: Sending %d bytes", bytes.length));
                                     out.write(bytes);
                                     sentData.updateAndGet(o -> o + bytes.length);
                                 }
                                 for (int i = 0; i < 5; i++) {
                                     byte[] bytes = DATA_10_K.toUpperCase().getBytes();
-                                    LOGGER.log(System.Logger.Level.DEBUG,
+                                    LOGGER.log(DEBUG,
                                                () -> String.format("CL: Sending %d bytes", bytes.length));
                                     out.write(bytes);
                                     sentData.updateAndGet(o -> o + bytes.length);
@@ -200,7 +212,7 @@ public class FlowControlTest {
             try {
                 HttpResponse<String> response =
                         cl.send(HttpRequest.newBuilder()
-                                        .timeout(Duration.ofSeconds(50))
+                                        .timeout(Duration.ofSeconds(5))
                                         .uri(URI.create("http://localhost:" + server.port() + "/flow-control"))
                                         .PUT(HttpRequest.BodyPublishers.fromPublisher(
                                                 Multi.create(publisher)
@@ -218,12 +230,12 @@ public class FlowControlTest {
 
         for (int i = 0; i < 5; i++) {
             byte[] bytes = DATA_10_K.getBytes();
-            LOGGER.log(System.Logger.Level.DEBUG, () -> String.format("CL: Sending %d bytes", bytes.length));
+            LOGGER.log(DEBUG, () -> String.format("CL: Sending %d bytes", bytes.length));
             publisher.emit(ByteBuffer.wrap(bytes));
         }
         for (int i = 0; i < 5; i++) {
             byte[] bytes = DATA_10_K.toUpperCase().getBytes();
-            LOGGER.log(System.Logger.Level.DEBUG, () -> String.format("CL: Sending %d bytes", bytes.length));
+            LOGGER.log(DEBUG, () -> String.format("CL: Sending %d bytes", bytes.length));
             publisher.emit(ByteBuffer.wrap(bytes));
         }
 
@@ -248,13 +260,5 @@ public class FlowControlTest {
         flowControlClientLatch = new CompletableFuture<>();
         flowControlServerLatch.complete(null);
         new CompletableFuture<Void>().join();
-    }
-
-    @AfterAll
-    static void afterAll() throws InterruptedException {
-        exec.shutdown();
-        if (!exec.awaitTermination(TIMEOUT_SEC, TimeUnit.SECONDS)) {
-            exec.shutdownNow();
-        }
     }
 }

@@ -146,21 +146,14 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     }
 
     @Override
-    public UriQueryWriteable add(String name, String... values) {
+    public UriQueryWriteable add(String name, String value) {
         String encodedName = UriEncoding.encodeUri(name);
+        String encodedValue = UriEncoding.encodeUri(value);
 
-        List<String> decodedValues = new ArrayList<>(values.length);
-        List<String> encodedValues = new ArrayList<>(values.length);
-
-        for (String value : values) {
-            decodedValues.add(value);
-            encodedValues.add(UriEncoding.encodeUri(value));
-        }
-
-        rawQueryParams.computeIfAbsent(encodedName, it -> new ArrayList<>(values.length))
-                .addAll(encodedValues);
-        decodedQueryParams.computeIfAbsent(name, it -> new ArrayList<>(values.length))
-                .addAll(decodedValues);
+        rawQueryParams.computeIfAbsent(encodedName, it -> new ArrayList<>(1))
+                .add(encodedValue);
+        decodedQueryParams.computeIfAbsent(name, it -> new ArrayList<>(1))
+                .add(value);
 
         return this;
     }

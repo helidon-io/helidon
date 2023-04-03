@@ -42,7 +42,7 @@ public interface Http2Client extends HttpClient<Http2ClientRequest, Http2ClientR
         private boolean priorKnowledge;
         private int maxFrameSize = WindowSize.DEFAULT_MAX_FRAME_SIZE;
         private long maxHeaderListSize = -1;
-        private long initialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
+        private int initialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
         private int prefetch = 33554432;
 
         private Http2ClientBuilder() {
@@ -136,7 +136,7 @@ public interface Http2Client extends HttpClient<Http2ClientRequest, Http2ClientR
             return maxHeaderListSize;
         }
 
-        long initialWindowSize() {
+        int initialWindowSize() {
             return initialWindowSize;
         }
 

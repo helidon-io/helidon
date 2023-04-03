@@ -24,15 +24,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
@@ -46,6 +39,11 @@ import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http1.Http1Route;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static io.helidon.common.http.Http.Header.USER_AGENT;
 import static io.helidon.common.http.Http.Method.GET;
@@ -63,7 +61,22 @@ class Http2WebClientTest {
     private static final Http.HeaderName CLIENT_USER_AGENT_HEADER_NAME = Http.Header.create("client-user-agent");
     private static ExecutorService executorService;
     private static int plainPort;
+    private static final LazyValue<Http2Client> priorKnowledgeClient = LazyValue.create(() -> Http2Client.builder()
+            .priorKnowledge(true)
+            .baseUri("http://localhost:" + plainPort + "/versionspecific")
+            .build());
+    private static final LazyValue<Http2Client> upgradeClient = LazyValue.create(() -> Http2Client.builder()
+            .baseUri("http://localhost:" + plainPort + "/versionspecific")
+            .build());
     private static int tlsPort;
+    private static final LazyValue<Http2Client> tlsClient = LazyValue.create(() -> Http2Client.builder()
+            .baseUri("https://localhost:" + tlsPort + "/versionspecific")
+            .tls(Tls.builder()
+                         .enabled(true)
+                         .trustAll(true)
+                         .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+                         .build())
+            .build());
 
     Http2WebClientTest(WebServer server) {
         this.plainPort = server.port();
@@ -91,8 +104,7 @@ class Http2WebClientTest {
                 )
                 .addConnectionProvider(Http2ConnectionProvider.builder()
                                                .http2Config(DefaultHttp2Config.builder()
-                                                                    .flowControlEnabled(true)
-                                                                    .maxStreamWindowSize(10))
+                                                                    .initialWindowSize(10))
                                                .build())
                 .socket("https",
                         builder -> builder.port(-1)
@@ -130,27 +142,11 @@ class Http2WebClientTest {
                                     Thread.sleep(10);
                                 }
                             } catch (IOException | InterruptedException e) {
-                                e.printStackTrace();
+                                throw new RuntimeException(e);
                             }
                         }))
                 );
     }
-
-    private static final LazyValue<Http2Client> priorKnowledgeClient = LazyValue.create(() -> Http2Client.builder()
-            .priorKnowledge(true)
-            .baseUri("http://localhost:" + plainPort + "/versionspecific")
-            .build());
-    private static final LazyValue<Http2Client> upgradeClient = LazyValue.create(() -> Http2Client.builder()
-            .baseUri("http://localhost:" + plainPort + "/versionspecific")
-            .build());
-    private static final LazyValue<Http2Client> tlsClient = LazyValue.create(() -> Http2Client.builder()
-            .baseUri("https://localhost:" + tlsPort + "/versionspecific")
-            .tls(Tls.builder()
-                    .enabled(true)
-                    .trustAll(true)
-                    .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
-                    .build())
-            .build());
 
     private static Stream<Arguments> clientTypes() {
         return Stream.of(
@@ -158,6 +154,14 @@ class Http2WebClientTest {
                 Arguments.of("upgrade", upgradeClient),
                 Arguments.of("tls", tlsClient)
         );
+    }
+
+    @AfterAll
+    static void afterAll() throws InterruptedException {
+        executorService.shutdown();
+        if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+            executorService.shutdownNow();
+        }
     }
 
     @ParameterizedTest(name = "{0}")
@@ -239,7 +243,9 @@ class Http2WebClientTest {
                 InputStream is = response.inputStream();
                 for (int i = 0; ; i++) {
                     byte[] bytes = is.readNBytes("0BAF000".getBytes().length);
-                    if (bytes.length == 0) break;
+                    if (bytes.length == 0) {
+                        break;
+                    }
                     String message = new String(bytes);
                     assertThat(message, is(String.format(id + "BAF%03d", i)));
                 }
@@ -255,13 +261,5 @@ class Http2WebClientTest {
                 , CompletableFuture.runAsync(() -> callable.accept(3), executorService)
                 , CompletableFuture.runAsync(() -> callable.accept(4), executorService)
         ).get(5, TimeUnit.MINUTES);
-    }
-
-    @AfterAll
-    static void afterAll() throws InterruptedException {
-        executorService.shutdown();
-        if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
-            executorService.shutdownNow();
-        }
     }
 }

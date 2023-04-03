@@ -16,6 +16,8 @@
 
 package io.helidon.nima.http2.webserver;
 
+import java.time.Duration;
+
 import io.helidon.builder.Builder;
 import io.helidon.builder.config.ConfigBean;
 import io.helidon.common.http.RequestedUriDiscoveryContext;
@@ -60,16 +62,6 @@ public interface Http2Config {
     long maxConcurrentStreams();
 
     /**
-     * This setting indicates whether flow control is turned on or off. Value of {@code true} turns flow control on
-     * and value of {@code false} turns flow control off.
-     * Default value is {@code true}.
-     *
-     * @return whether flow control is enabled
-     */
-    @ConfiguredOption("true")
-    boolean flowControlEnabled();
-
-    /**
      * This setting indicates the sender's maximum window size in bytes for connection-level flow control.
      * Default and maximum value is 2<sup>31</sup>-1 = 2147483647 bytes. This setting affects the window size
      * of HTTP/2 connection.
@@ -78,21 +70,16 @@ public interface Http2Config {
      *
      * @return maximum window size in bytes
      */
-    @ConfiguredOption("2147483647")
-    int maxWindowSize();
+    @ConfiguredOption("65635")
+    int initialWindowSize();
 
     /**
-     * This setting indicates the sender's maximum window size in bytes for stream-level flow control.
-     * Value of {@code 0} is reserved to use the same value as connection-level value.
-     * Default value is {@code 0}. This setting affects the window size of all streams.
-     * Any value greater than 2147483647 causes an error. Any value greater than {@code 0} and smaller than initial
-     * window size causes an error.
-     * See RFC 9113 section 6.9.1 for details.
+     * Outbound flow control blocking timeout.
      *
-     * @return maximum stream-level window size in bytes
+     * @return duration
      */
-    @ConfiguredOption("0")
-    int maxStreamWindowSize();
+    @ConfiguredOption("java.time.Duration.ofMillis(100)")
+    Duration flowControlTimeout();
 
     /**
      * Whether to send error message over HTTP to client.
