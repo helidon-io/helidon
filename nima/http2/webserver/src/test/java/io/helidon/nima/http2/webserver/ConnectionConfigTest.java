@@ -107,7 +107,7 @@ class ConnectionConfigTest {
         WebServer.builder().addConnectionProvider(provider).build();
         assertThat(provider.isConfig(), is(true));
         Http2Config http2Config = provider.config();
-        assertThat(http2Config.initialWindowSize(), is(32767));
+        assertThat(http2Config.initialWindowSize(), is(8192));
     }
 
     private static class TestProvider implements ServerConnectionProvider {
