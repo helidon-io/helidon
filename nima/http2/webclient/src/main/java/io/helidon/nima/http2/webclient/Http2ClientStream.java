@@ -59,15 +59,13 @@ class Http2ClientStream implements Http2Stream {
     private final Http2ClientConnection connection;
     private final Http2Settings serverSettings;
     private final SocketContext ctx;
-    private final ConnectionContext connectionContext;
     private final LockingStreamIdSequence streamIdSeq;
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
-
-    // todo configure
     private final Http2Settings settings = Http2Settings.create();
     private final List<Http2FrameData> continuationData = new ArrayList<>();
     private final StreamBuffer buffer;
+
     private Http2StreamState state = Http2StreamState.IDLE;
     private Http2Headers currentHeaders;
     private StreamFlowControl flowControl;
@@ -81,7 +79,6 @@ class Http2ClientStream implements Http2Stream {
         this.connection = connection;
         this.serverSettings = serverSettings;
         this.ctx = ctx;
-        this.connectionContext = connectionContext;
         this.streamIdSeq = streamIdSeq;
         this.buffer = new StreamBuffer(streamId, connectionContext.timeout());
     }
@@ -137,22 +134,22 @@ class Http2ClientStream implements Http2Stream {
                                                            endOfHeaders);
 
             switch (frameData.header().type()) {
-                case DATA:
-                    data(frameData.header(), frameData.data());
-                    return frameData;
-                case HEADERS, CONTINUATION:
-                    continuationData.add(frameData);
-                    if (endOfHeaders) {
-                        var requestHuffman = new Http2HuffmanDecoder();
-                        Http2Headers http2Headers = Http2Headers.create(this,
-                                                                        connection.getInboundDynamicTable(),
-                                                                        requestHuffman,
-                                                                        continuationData.toArray(new Http2FrameData[0]));
-                        this.headers(http2Headers, endOfStream);
-                    }
-                    break;
-                default:
-                    LOGGER.log(DEBUG, "Dropping frame " + frameData.header() + " expected header or data.");
+            case DATA:
+                data(frameData.header(), frameData.data());
+                return frameData;
+            case HEADERS, CONTINUATION:
+                continuationData.add(frameData);
+                if (endOfHeaders) {
+                    var requestHuffman = new Http2HuffmanDecoder();
+                    Http2Headers http2Headers = Http2Headers.create(this,
+                                                                    connection.getInboundDynamicTable(),
+                                                                    requestHuffman,
+                                                                    continuationData.toArray(new Http2FrameData[0]));
+                    this.headers(http2Headers, endOfStream);
+                }
+                break;
+            default:
+                LOGGER.log(DEBUG, "Dropping frame " + frameData.header() + " expected header or data.");
             }
         }
         return null;
