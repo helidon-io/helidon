@@ -291,7 +291,9 @@ abstract class WindowSizeImpl implements WindowSize {
 
             @Override
             void windowUpdate(ConnectionFlowControl.Type type, int streamId, int increment) {
-                LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR %d: Send WINDOW_UPDATE %s", type, streamId, increment));
+                if (LOGGER_INBOUND.isLoggable(DEBUG)) {
+                    LOGGER_INBOUND.log(DEBUG, String.format("%s IFC STR %d: Send WINDOW_UPDATE %s", type, streamId, increment));
+                }
                 windowUpdateWriter().accept(streamId(), new Http2WindowUpdate(increment));
             }
 
@@ -314,12 +316,16 @@ abstract class WindowSizeImpl implements WindowSize {
 
             @Override
             void windowUpdate(ConnectionFlowControl.Type type, int streamId, int increment) {
-                LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR %d: Deferred WINDOW_UPDATE %d, total %d, watermark %d",
-                                                              type, streamId, increment, delayedIncrement, watermark));
+                if (LOGGER_INBOUND.isLoggable(DEBUG)) {
+                    LOGGER_INBOUND.log(DEBUG, String.format("%s IFC STR %d: Deferred WINDOW_UPDATE %d, total %d, watermark %d",
+                                                            type, streamId, increment, delayedIncrement, watermark));
+                }
                 delayedIncrement += increment;
                 if (delayedIncrement > watermark) {
-                    LOGGER_INBOUND.log(DEBUG, () -> String.format("%s IFC STR %d: Send WINDOW_UPDATE %d, watermark %d",
-                                                                  type, streamId, delayedIncrement, watermark));
+                    if (LOGGER_INBOUND.isLoggable(DEBUG)) {
+                        LOGGER_INBOUND.log(DEBUG, String.format("%s IFC STR %d: Send WINDOW_UPDATE %d, watermark %d",
+                                                                type, streamId, delayedIncrement, watermark));
+                    }
                     windowUpdateWriter().accept(streamId(), new Http2WindowUpdate(delayedIncrement));
                     delayedIncrement = 0;
                 }
