@@ -62,6 +62,14 @@ class ErrorHandlingWithOutputStreamTest {
                     os.write("writeOnceOnly".getBytes(StandardCharsets.UTF_8));
                     throw new CustomException();
                 })
+                .get("get-outputStream-writeTwiceThenError", (req, res) -> {
+                    res.header(MAIN_HEADER_NAME, "x");
+                    OutputStream os = res.outputStream();
+                    os.write("writeOnce".getBytes(StandardCharsets.UTF_8));
+                    os.flush();
+                    os.write("|writeTwice".getBytes(StandardCharsets.UTF_8));
+                    throw new CustomException();
+                })
                 .get("get-outputStream-writeFlushThenError", (req, res) -> {
                     res.header(MAIN_HEADER_NAME, "x");
                     OutputStream os = res.outputStream();
@@ -104,6 +112,16 @@ class ErrorHandlingWithOutputStreamTest {
             assertThat(response.entity().as(String.class), is("CustomErrorContent"));
             assertThat(response.headers().contains(ERROR_HEADER_NAME), is(true));
             assertThat(response.headers().contains(MAIN_HEADER_NAME), is(false));
+        }
+    }
+
+    @Test
+    void testGetOutputStreamWriteTwiceThenError_expect_invalidResponse() {
+        try (Http1ClientResponse response = client.method(Http.Method.GET)
+                .uri("/get-outputStream-writeTwiceThenError")
+                .request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThrows(DataReader.InsufficientDataAvailableException.class, () -> response.entity().as(String.class));
         }
     }
 
