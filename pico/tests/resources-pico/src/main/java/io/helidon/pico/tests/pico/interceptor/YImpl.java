@@ -14,72 +14,82 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tests.plain.interceptor;
+package io.helidon.pico.tests.pico.interceptor;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Optional;
 
+import io.helidon.pico.ExternalContracts;
+import io.helidon.pico.tests.plain.interceptor.IA;
+import io.helidon.pico.tests.plain.interceptor.IB;
+import io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno;
+
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
+/**
+ * This test case is applying {@link InterceptorBasedAnno} (an {@link io.helidon.pico.InterceptedTrigger}) on only
+ * the {@link IB} interface.
+ * <p>
+ * Also note that interception was triggered by the presence of the {@link InterceptorBasedAnno} trigger.
+ */
 @Singleton
-@Named("ClassX")
-public class X implements IA, IB, Closeable {
+@Named("ClassY")
+@ExternalContracts(value = Closeable.class, moduleNames = {"test1", "test2"})
+@SuppressWarnings("unused")
+public class YImpl implements IB, Closeable {
 
-    X() {
-        // this is the one that will be used by interception
-    }
+//    YImpl() {
+//    }
 
     @Inject
-    public X(Optional<IA> optionalIA) {
-        assert (optionalIA.isEmpty());
-    }
-
-    @Override
-    public void methodIA1() {
-    }
-
-    @InterceptorBasedAnno("IA2")
-    @Override
-    public void methodIA2() {
-    }
-
-    @Named("methodIB2")
-    @InterceptorBasedAnno("IBSubAnno")
-    @Override
-    public String methodIB2(@Named("arg1") String val) {
-        return val;
+    // will be intercepted
+    YImpl(Optional<IA> optionalIA) {
+        assert (optionalIA.isPresent() && optionalIA.get().getClass().getName().contains("XImpl"));
     }
 
     @Named("methodIB")
     @InterceptorBasedAnno("IBSubAnno")
     @Override
+    // will be intercepted
     public void methodIB(@Named("arg1") String val) {
+    }
+
+    @Named("methodIB2")
+    @InterceptorBasedAnno("IBSubAnno")
+    @Override
+    // will be intercepted
+    public String methodIB2(@Named("arg1") String val) {
+        return val;
     }
 
     @InterceptorBasedAnno
     @Override
+    // will be intercepted
     public void close() throws IOException, RuntimeException {
         throw new IOException("forced");
     }
 
-    public long methodX(String arg1, int arg2, boolean arg3) throws IOException, RuntimeException, AssertionError {
+    // will not be intercepted
+    public long methodX(String arg1,
+                        int arg2,
+                        boolean arg3) throws IOException, RuntimeException, AssertionError {
         return 101;
     }
 
-    // test of package private
+    // will not be intercepted
     String methodY() {
         return "methodY";
     }
 
-    // test of protected
+    // will not be intercepted
     protected String methodZ() {
         return "methodZ";
     }
 
-    // test of protected
+    // will not be intercepted
     protected void throwRuntimeException() {
         throw new RuntimeException("forced");
     }

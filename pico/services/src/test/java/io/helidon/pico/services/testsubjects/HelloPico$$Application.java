@@ -30,13 +30,13 @@ import jakarta.inject.Singleton;
  */
 @Generated(value = "example", comments = "API Version: n")
 @Singleton
-@Named(HelloPicoApplication.NAME)
-public class HelloPicoApplication implements Application {
+@Named(HelloPico$$Application.NAME)
+public class HelloPico$$Application implements Application {
     public static boolean ENABLED = true;
 
     static final String NAME = "HelloPicoApplication";
 
-    public HelloPicoApplication() {
+    public HelloPico$$Application() {
         assert(true); // for setting breakpoints in debug
     }
 

@@ -24,7 +24,7 @@ import io.helidon.config.ConfigSources;
 import io.helidon.pico.DefaultBootstrap;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.services.testsubjects.HelloPicoApplication;
+import io.helidon.pico.services.testsubjects.HelloPico$$Application;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +50,7 @@ class DefaultPicoServicesTest {
 
     @AfterEach
     void tearDown() {
-        HelloPicoApplication.ENABLED = true;
+        HelloPico$$Application.ENABLED = true;
         SimplePicoTestingSupport.resetAll();
     }
 

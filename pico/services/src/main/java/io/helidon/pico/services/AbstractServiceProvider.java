@@ -257,6 +257,23 @@ public abstract class AbstractServiceProvider<T>
             throw alreadyInitialized();
         }
         this.interceptor = interceptor;
+        if (interceptor instanceof AbstractServiceProvider<?>) {
+            ((AbstractServiceProvider) interceptor).intercepted(this);
+        }
+    }
+
+    /**
+     * Incorporate the intercepted qualifiers into our own qualifiers.
+     *
+     * @param intercepted the service being intercepted
+     */
+    void intercepted(AbstractServiceProvider<?> intercepted) {
+        if (activationSemaphore.availablePermits() == 0 || phase != Phase.INIT) {
+            throw alreadyInitialized();
+        }
+        this.serviceInfo = DefaultServiceInfo.toBuilder(this.serviceInfo)
+                .addQualifiers(intercepted.serviceInfo().qualifiers())
+                .build();
     }
 
     @Override

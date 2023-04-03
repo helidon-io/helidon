@@ -50,6 +50,11 @@
             <artifactId>helidon-builder-tests-test-configbean</artifactId>
             <version>${helidon.version}</version>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.helidon.pico.tests</groupId>-->
+<!--            <artifactId>helidon-pico-tests-resources-plain</artifactId>-->
+<!--            <version>${helidon.version}</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
@@ -128,6 +133,12 @@
                             <artifactId>helidon-builder-config-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
+<!--                        &lt;!&ndash; this has the actual interceptor processor for InterceptorBasedAnno &ndash;&gt;-->
+<!--                        <path>-->
+<!--                            <groupId>io.helidon.pico.tests</groupId>-->
+<!--                            <artifactId>helidon-pico-tests-resources-plain</artifactId>-->
+<!--                            <version>${helidon.version}</version>-->
+<!--                        </path>-->
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>

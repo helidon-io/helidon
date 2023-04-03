@@ -15,4 +15,4 @@
 #
 
 io.helidon.pico.services.testsubjects.EmptyModule
-io.helidon.pico.services.testsubjects.HelloPicoModule
+io.helidon.pico.services.testsubjects.HelloPico$$Module

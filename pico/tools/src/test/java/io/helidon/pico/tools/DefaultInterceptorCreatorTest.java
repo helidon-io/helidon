@@ -19,12 +19,19 @@ package io.helidon.pico.tools;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.DefaultTypeName;
+import io.helidon.pico.DefaultServiceInfoBasics;
 import io.helidon.pico.InterceptedTrigger;
 import io.helidon.pico.tools.spi.InterceptorCreator;
+import io.helidon.pico.tools.testsubjects.HelloPicoWorld;
+import io.helidon.pico.tools.testsubjects.HelloPicoWorldImpl;
 
 import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.pico.tools.DefaultInterceptorCreator.AnnotationTypeNameResolver;
@@ -32,6 +39,7 @@ import static io.helidon.pico.tools.DefaultInterceptorCreator.createResolverFrom
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
 class DefaultInterceptorCreatorTest extends AbstractBaseCreator {
@@ -55,6 +63,20 @@ class DefaultInterceptorCreatorTest extends AbstractBaseCreator {
                            DefaultAnnotationAndValue.create(Retention.class, "java.lang.annotation.RetentionPolicy.CLASS"),
                            DefaultAnnotationAndValue.create(Target.class, "{java.lang.annotation.ElementType.ANNOTATION_TYPE}")
                    ));
+    }
+
+    @Test
+    void interceptorPlanByReflection() {
+        DefaultServiceInfoBasics serviceInfoBasics = DefaultServiceInfoBasics.builder()
+                .serviceTypeName(HelloPicoWorldImpl.class.getName())
+                .build();
+        DefaultInterceptorCreator.AbstractInterceptorProcessor processor =
+                ((DefaultInterceptorCreator) interceptorCreator).createInterceptorProcessor(serviceInfoBasics,
+                                                                                            interceptorCreator,
+                                                                                            Optional.empty());
+        InterceptionPlan plan = processor.createInterceptorPlan(Set.of(Singleton.class.getName())).orElseThrow();
+        assertThat(plan.hasNoArgConstructor(), is(false));
+        assertThat(plan.interfaces(), contains(DefaultTypeName.create(HelloPicoWorld.class)));
     }
 
 }

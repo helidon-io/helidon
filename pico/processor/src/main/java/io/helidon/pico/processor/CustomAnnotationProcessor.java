@@ -116,8 +116,11 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             if (!roundEnv.processingOver()) {
                 for (String annoType : annoTypes()) {
                     TypeName annoName = DefaultTypeName.createFromTypeName(annoType);
-                    TypeElement annoElement = toTypeElement(annoName);
-                    Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoElement);
+                    Optional<TypeElement> annoElement = toTypeElement(annoName);
+                    if (annoElement.isEmpty()) {
+                        continue;
+                    }
+                    Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoElement.get());
                     doInner(annoName, typesToProcess, roundEnv);
                 }
             }
@@ -184,9 +187,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     void doFiler(CustomAnnotationTemplateResponse response) {
         AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, this);
         CodeGenFiler codegen = CodeGenFiler.create(filer);
-        response.generatedSourceCode().forEach((typeName, codeBody) -> {
-            codegen.codegenJavaFilerOut(typeName, codeBody);
-        });
+        response.generatedSourceCode().forEach(codegen::codegenJavaFilerOut);
         response.generatedResources().forEach((typedElementName, resourceBody) -> {
             String fileType = typedElementName.elementName();
             if (!hasValue(fileType)) {

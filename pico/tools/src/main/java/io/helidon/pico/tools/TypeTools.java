@@ -500,6 +500,7 @@ public final class TypeTools extends BuilderTypeTools {
         Elements elementUtils = processEnv.getElementUtils();
         Set<AnnotationAndValue> result = new LinkedHashSet<>();
         createAnnotationAndValueSet(serviceTypeElement).forEach(anno -> {
+            result.add(anno);
             TypeElement typeElement = elementUtils.getTypeElement(anno.typeName().name());
             if (typeElement != null) {
                 typeElement.getAnnotationMirrors()

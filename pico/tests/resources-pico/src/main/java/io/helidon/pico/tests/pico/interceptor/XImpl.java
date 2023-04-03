@@ -29,33 +29,52 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
+/**
+ * This test case is applying {@link InterceptorBasedAnno} (an {@link io.helidon.pico.InterceptedTrigger}) using the no-arg
+ * constructor approach - all methods are intercepted.
+ * <p>
+ * Also note that interception was triggered by the presence of the {@link TestNamed} and {@link InterceptorBasedAnno} triggers.
+ */
 @Singleton
 @Named("ClassX")
+@TestNamed("TestNamed-ClassX")
 @ExternalContracts(value = Closeable.class, moduleNames = {"test1", "test2"})
+@SuppressWarnings("unused")
 public class XImpl implements IA, IB, Closeable {
 
     XImpl() {
-        // this is the one that will be used by interception
     }
 
     @Inject
-    public XImpl(Optional<IA> optionalIA) {
+    // will be intercepted
+    XImpl(Optional<IA> optionalIA) {
         assert (optionalIA.isEmpty());
     }
 
     @Override
+    // will be intercepted
     public void methodIA1() {
     }
 
     @InterceptorBasedAnno("IA2")
     @Override
+    // will be intercepted
     public void methodIA2() {
     }
 
     @Named("methodIB")
     @InterceptorBasedAnno("IBSubAnno")
     @Override
+    // will be intercepted
     public void methodIB(@Named("arg1") String val) {
+    }
+
+    @Named("methodIB2")
+    @InterceptorBasedAnno("IBSubAnno")
+    @Override
+    // will be intercepted
+    public String methodIB2(@Named("arg1") String val) {
+        return val;
     }
 
     @InterceptorBasedAnno
@@ -64,6 +83,7 @@ public class XImpl implements IA, IB, Closeable {
         throw new IOException("forced");
     }
 
+    // will be intercepted
     public long methodX(String arg1,
                         int arg2,
                         boolean arg3) throws IOException, RuntimeException, AssertionError {
@@ -71,16 +91,19 @@ public class XImpl implements IA, IB, Closeable {
     }
 
     // test of package private
+    // will be intercepted
     String methodY() {
         return "methodY";
     }
 
     // test of protected
+    // will be intercepted
     protected String methodZ() {
         return "methodZ";
     }
 
     // test of protected
+    // will be intercepted
     protected void throwRuntimeException() {
         throw new RuntimeException("forced");
     }

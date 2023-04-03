@@ -27,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
@@ -170,11 +169,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             if (!roundEnv.processingOver()) {
                 for (String annoType : annoTypes()) {
                     // annotation may not be on the classpath, in such a case just ignore it
-                    DefaultTypeName annoName = DefaultTypeName.createFromTypeName(annoType);
-
-                    if (available(annoName)) {
-                        Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(toTypeElement(annoName));
-
+                    TypeName annoName = DefaultTypeName.createFromTypeName(annoType);
+                    Optional<TypeElement> annoTypeElement = toTypeElement(annoName);
+                    if (annoTypeElement.isPresent()) {
+                        Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoTypeElement.get());
                         Set<String> contraAnnotations = contraAnnotations();
                         if (!contraAnnotations.isEmpty()) {
                             // filter out the ones we will not do...
@@ -362,12 +360,16 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     void maybeSetInterceptorPlanForServiceType(TypeName serviceTypeName,
                                                TypeElement ignoredType) {
         if (services.hasVisitedInterceptorPlanFor(serviceTypeName)) {
+            // if we processed it already then there is no reason to check again
             return;
         }
 
         // note: it is important to use this class' CL since maven will not give us the "right" one.
+        ServiceInfoBasics interceptedServiceInfo = toInterceptedServiceInfoFor(serviceTypeName);
         InterceptorCreator.InterceptorProcessor processor = interceptorCreator.createInterceptorProcessor(
-                toInterceptedServiceInfoFor(serviceTypeName), interceptorCreator, Optional.of(processingEnv));
+                interceptedServiceInfo,
+                interceptorCreator,
+                Optional.of(processingEnv));
         Set<String> annotationTypeTriggers = processor.allAnnotationTypeTriggers();
         if (annotationTypeTriggers.isEmpty()) {
             services.addInterceptorPlanFor(serviceTypeName, Optional.empty());
@@ -376,7 +378,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
         Optional<InterceptionPlan> plan = processor.createInterceptorPlan(annotationTypeTriggers);
         if (plan.isEmpty()) {
-            warn("expected to see an interception plan for: " + serviceTypeName);
+            warn("unable to produce an interception plan for: " + serviceTypeName);
         }
         services.addInterceptorPlanFor(serviceTypeName, plan);
     }
@@ -517,14 +519,18 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                                      Set<String> externalModuleNamesRequired) {
         AtomicReference<String> externalModuleName = new AtomicReference<>();
         for (TypeName contract : contracts) {
-            if (!isInThisModule(toTypeElement(contract), externalModuleName)) {
+            Optional<TypeElement> typeElement = toTypeElement(contract);
+            if (typeElement.isPresent()
+                    && !isInThisModule(typeElement.get(), externalModuleName)) {
                 maybeAddExternalModule(externalModuleName.get(), externalModuleNamesRequired);
                 externalContracts.add(contract);
             }
         }
 
         for (TypeName externalContract : externalContracts) {
-            if (isInThisModule(toTypeElement(externalContract), externalModuleName)) {
+            Optional<TypeElement> typeElement = toTypeElement(externalContract);
+            if (typeElement.isPresent()
+                    && isInThisModule(typeElement.get(), externalModuleName)) {
                 warn(externalContract + " is actually in this module and therefore should not be labelled as external.", null);
                 maybeAddExternalModule(externalModuleName.get(), externalModuleNamesRequired);
             }
@@ -723,7 +729,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         });
 
         toServiceTypeHierarchy(typeElement, false).stream()
-                .map(te -> toTypeElement(te).asType())
+                .map(te -> toTypeElement(te).orElseThrow().asType())
                 .forEach(tm -> {
                     processed.add(tm);
                     gatherContractsToBeProcessed(processed, TypeTools.toTypeElement(tm).orElse(null));
@@ -793,19 +799,19 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return result;
     }
 
-    TypeElement toTypeElement(TypeName typeName) {
-        return Objects.requireNonNull(processingEnv.getElementUtils().getTypeElement(typeName.name()));
+    Optional<TypeElement> toTypeElement(TypeName typeName) {
+        return Optional.ofNullable(processingEnv.getElementUtils().getTypeElement(typeName.name()));
     }
 
-    /**
-     * Check if a type is available on application classpath.
-     *
-     * @param typeName type name
-     * @return {@code true} if the type is available
-     */
-    boolean available(TypeName typeName) {
-        return processingEnv.getElementUtils().getTypeElement(typeName.name()) != null;
-    }
+//    /**
+//     * Check if a type is available on application classpath.
+//     *
+//     * @param typeName type name
+//     * @return {@code true} if the type is available
+//     */
+//    boolean available(TypeName typeName) {
+//        return processingEnv.getElementUtils().getTypeElement(typeName.name()) != null;
+//    }
 
     System.Logger logger() {
         return logger;

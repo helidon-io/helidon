@@ -16,32 +16,36 @@
 
 package io.helidon.pico.tests.pico.interceptor;
 
+import java.io.Closeable;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.DefaultServiceInfo;
+import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.Interceptor;
 import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.testing.ReflectionBasedSingletonServiceProvider;
-import io.helidon.pico.tests.plain.interceptor.IA;
 import io.helidon.pico.tests.plain.interceptor.IB;
-import io.helidon.pico.tests.plain.interceptor.NamedInterceptor;
+import io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno;
+import io.helidon.pico.tests.plain.interceptor.TestNamedInterceptor;
 
 import jakarta.inject.Named;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.pico.DefaultQualifierAndValue.create;
+import static io.helidon.pico.DefaultQualifierAndValue.createNamed;
 import static io.helidon.pico.PicoServicesConfig.KEY_PERMITS_DYNAMIC;
 import static io.helidon.pico.PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS;
 import static io.helidon.pico.PicoServicesConfig.KEY_USES_COMPILE_TIME_MODULES;
@@ -50,6 +54,7 @@ import static io.helidon.pico.testing.PicoTestingSupport.basicTestableConfig;
 import static io.helidon.pico.testing.PicoTestingSupport.bind;
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
 import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
+import static io.helidon.pico.testing.PicoTestingSupport.toDescription;
 import static io.helidon.pico.testing.PicoTestingSupport.toDescriptions;
 import static io.helidon.pico.tests.pico.TestUtils.loadStringFromResource;
 import static io.helidon.pico.tools.TypeTools.toFilePath;
@@ -60,7 +65,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class ComplexInterceptorTest {
+class InterceptorRuntimeTest {
 
     Config config = basicTestableConfig();
     PicoServices picoServices;
@@ -82,7 +87,7 @@ class ComplexInterceptorTest {
     }
 
     @Test
-    void createInterceptorSource() throws Exception {
+    void createNoArgBasedInterceptorSource() throws Exception {
         TypeName interceptorTypeName = DefaultTypeName.create(XImpl$$Pico$$Interceptor.class);
         String path = toFilePath(interceptorTypeName);
         File file = new File("./target/generated-sources/annotations", path);
@@ -93,35 +98,71 @@ class ComplexInterceptorTest {
     }
 
     @Test
+    void createInterfaceBasedInterceptorSource() throws Exception {
+        TypeName interceptorTypeName = DefaultTypeName.create(YImpl$$Pico$$Interceptor.class);
+        String path = toFilePath(interceptorTypeName);
+        File file = new File("./target/generated-sources/annotations", path);
+        assertThat(file.exists(), is(true));
+        String java = Files.readString(file.toPath());
+        assertEquals(loadStringFromResource("expected/yimpl-interceptor._java_"),
+                   java);
+    }
+
+    @Test
     void runtimeWithNoInterception() throws Exception {
-        List<ServiceProvider<IA>> iaProviders = services.lookupAll(IA.class);
-        assertThat(toDescriptions(iaProviders),
-                   contains("XImpl$$Pico$$Interceptor:INIT", "XImpl:INIT"));
+        List<ServiceProvider<Closeable>> closeableProviders = services.lookupAll(Closeable.class);
+        assertThat("the interceptors should always be weighted higher than the non-interceptors",
+                   toDescriptions(closeableProviders),
+                   contains("XImpl$$Pico$$Interceptor:INIT", "YImpl$$Pico$$Interceptor:INIT",
+                            "XImpl:INIT", "YImpl:INIT"));
 
         List<ServiceProvider<IB>> ibProviders = services.lookupAll(IB.class);
-        assertThat(iaProviders, equalTo(ibProviders));
+        assertThat(closeableProviders,
+                   equalTo(ibProviders));
 
         ServiceProvider<XImpl> ximplProvider = services.lookupFirst(XImpl.class);
-        assertThat(iaProviders.get(0), is(ximplProvider));
+        assertThat(closeableProviders.get(0),
+                   is(ximplProvider));
 
         XImpl x = ximplProvider.get();
         x.methodIA1();
         x.methodIA2();
         x.methodIB("test");
+        String sval = x.methodIB2("test");
+        assertThat(sval,
+                   equalTo("test"));
         long val = x.methodX("a", 2, true);
-        assertThat(val, equalTo(101L));
-        assertThat(x.methodY(), equalTo("methodY"));
-        assertThat(x.methodZ(), equalTo("methodZ"));
+        assertThat(val,
+                   equalTo(101L));
+        assertThat(x.methodY(),
+                   equalTo("methodY"));
+        assertThat(x.methodZ(),
+                   equalTo("methodZ"));
         PicoException pe = assertThrows(PicoException.class, x::close);
         assertThat(pe.getMessage(),
                    equalTo("forced: service provider: XImpl:ACTIVE"));
         RuntimeException re = assertThrows(RuntimeException.class, x::throwRuntimeException);
-        assertThat(re.getMessage(), equalTo("forced"));
+        assertThat(re.getMessage(),
+                   equalTo("forced"));
+
+        // we cannot look up by service type here - we need to instead lookup by one of the interfaces
+        ServiceProvider<Closeable> yimplProvider = services
+                .lookupFirst(
+                        DefaultServiceInfoCriteria.builder()
+                                .addContractImplemented(Closeable.class.getName())
+                                .qualifiers(Set.of(create(Named.class, "ClassY")))
+                                .build());
+        assertThat(toDescription(yimplProvider),
+                   equalTo("YImpl$$Pico$$Interceptor:INIT"));
+        IB ibOnYInterceptor = (IB)yimplProvider.get();
+        sval = ibOnYInterceptor.methodIB2("test");
+        assertThat(sval,
+                   equalTo("test"));
     }
 
     @Test
     void runtimeWithInterception() throws Exception {
-        // disable application and modules to affectively start with an empty registry.
+        // disable application and modules to effectively start with an empty registry
         Config config = Config.builder(
                 ConfigSources.create(
                         Map.of(NAME + "." + KEY_PERMITS_DYNAMIC, "true",
@@ -134,42 +175,72 @@ class ComplexInterceptorTest {
         tearDown();
         setUp(config);
         bind(picoServices, ReflectionBasedSingletonServiceProvider
-                              .create(NamedInterceptor.class,
+                              .create(TestNamedInterceptor.class,
                                       DefaultServiceInfo.builder()
-                                              .serviceTypeName(NamedInterceptor.class.getName())
-                                              .addQualifier(DefaultQualifierAndValue.createNamed(Named.class.getName()))
+                                              .serviceTypeName(TestNamedInterceptor.class.getName())
+                                              .addQualifier(createNamed(TestNamed.class.getName()))
+                                              .addQualifier(createNamed(InterceptorBasedAnno.class.getName()))
                                               .addExternalContractsImplemented(Interceptor.class.getName())
                                               .build()));
-        assertThat(NamedInterceptor.ctorCount.get(), equalTo(0));
+        assertThat(TestNamedInterceptor.ctorCount.get(),
+                   equalTo(0));
 
-        List<ServiceProvider<IA>> iaProviders = picoServices.services().lookupAll(IA.class);
-        assertThat(toDescriptions(iaProviders),
-                   contains("XImpl$$Pico$$Interceptor:INIT", "XImpl:INIT"));
+        List<ServiceProvider<Closeable>> closeableProviders = picoServices.services().lookupAll(Closeable.class);
+        assertThat("the interceptors should always be weighted higher than the non-interceptors",
+                   toDescriptions(closeableProviders),
+                   contains("XImpl$$Pico$$Interceptor:INIT", "YImpl$$Pico$$Interceptor:INIT",
+                            "XImpl:INIT", "YImpl:INIT"));
 
         List<ServiceProvider<IB>> ibProviders = services.lookupAll(IB.class);
-        assertThat(iaProviders, equalTo(ibProviders));
+        assertThat(closeableProviders,
+                   equalTo(ibProviders));
 
         ServiceProvider<XImpl> ximplProvider = services.lookupFirst(XImpl.class);
-        assertThat(iaProviders.get(0), is(ximplProvider));
+        assertThat(closeableProviders.get(0),
+                   is(ximplProvider));
 
-        assertThat(NamedInterceptor.ctorCount.get(), equalTo(0));
+        assertThat(TestNamedInterceptor.ctorCount.get(),
+                   equalTo(0));
         XImpl xIntercepted = ximplProvider.get();
-        assertThat(NamedInterceptor.ctorCount.get(), equalTo(1));
+        assertThat(TestNamedInterceptor.ctorCount.get(),
+                   equalTo(1));
 
         xIntercepted.methodIA1();
         xIntercepted.methodIA2();
         xIntercepted.methodIB("test");
+        String sval = xIntercepted.methodIB2("test");
+        assertThat(sval,
+                   equalTo("intercepted:test"));
         long val = xIntercepted.methodX("a", 2, true);
-        assertThat(val, equalTo(202L));
-        assertThat(xIntercepted.methodY(), equalTo("methodY"));
-        assertThat(xIntercepted.methodZ(), equalTo("methodZ"));
+        assertThat(val,
+                   equalTo(202L));
+        assertThat(xIntercepted.methodY(),
+                   equalTo("intercepted:methodY"));
+        assertThat(xIntercepted.methodZ(),
+                   equalTo("intercepted:methodZ"));
         PicoException pe = assertThrows(PicoException.class, xIntercepted::close);
         assertThat(pe.getMessage(),
                    equalTo("forced: service provider: XImpl:ACTIVE"));
         RuntimeException re = assertThrows(RuntimeException.class, xIntercepted::throwRuntimeException);
-        assertThat(re.getMessage(), equalTo("forced"));
+        assertThat(re.getMessage(),
+                   equalTo("forced"));
 
-        assertThat(NamedInterceptor.ctorCount.get(), equalTo(1));
+        assertThat(TestNamedInterceptor.ctorCount.get(),
+                   equalTo(1));
+
+        // we cannot look up by service type here - we need to instead lookup by one of the interfaces
+        ServiceProvider<Closeable> yimplProvider = services
+                .lookupFirst(
+                        DefaultServiceInfoCriteria.builder()
+                                .addContractImplemented(Closeable.class.getName())
+                                .qualifiers(Set.of(create(Named.class, "ClassY")))
+                                .build());
+        assertThat(toDescription(yimplProvider),
+                   equalTo("YImpl$$Pico$$Interceptor:INIT"));
+        IB ibOnYInterceptor = (IB) yimplProvider.get();
+        sval = ibOnYInterceptor.methodIB2("test");
+        assertThat(sval,
+                   equalTo("intercepted:test"));
     }
 
 }

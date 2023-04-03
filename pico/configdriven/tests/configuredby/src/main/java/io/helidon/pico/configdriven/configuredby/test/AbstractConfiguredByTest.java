@@ -130,8 +130,7 @@ public abstract class AbstractConfiguredByTest {
                    contains("ASingletonService{root}:ACTIVE",
                             "FakeTlsWSNotDrivenByCB{root}:PENDING",
                             "FakeWebServer{root}:ACTIVE",
-                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{root}:PENDING"
-                   ));
+                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{root}:PENDING"));
 
         criteria = DefaultServiceInfoCriteria.builder()
                 .addContractImplemented(FakeWebServerContract.class.getName())
