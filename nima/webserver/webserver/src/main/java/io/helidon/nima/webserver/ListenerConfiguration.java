@@ -49,6 +49,7 @@ public final class ListenerConfiguration {
     private final SocketOptions connectionOptions;
     private final int writeQueueLength;
     private final long maxPayloadSize;
+    private final int writeBufferSize;
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final DirectHandlers directHandlers;
@@ -64,6 +65,7 @@ public final class ListenerConfiguration {
         this.connectionOptions = builder.connectionOptions;
         this.writeQueueLength = builder.writeQueueLength;
         this.maxPayloadSize = builder.maxPayloadSize;
+        this.writeBufferSize = builder.writeBufferSize;
         this.contentEncodingContext = builder.contentEncodingContext;
         this.mediaContext = builder.mediaContext;
         this.directHandlers = builder.directHandlers.build();
@@ -146,6 +148,15 @@ public final class ListenerConfiguration {
     }
 
     /**
+     * Initial buffer size of {@link java.io.BufferedOutputStream} created internally.
+     *
+     * @return initial buffer size for writing (in bytes)
+     */
+    public int writeBufferSize() {
+        return writeBufferSize;
+    }
+
+    /**
      * Configured direct handlers.
      *
      * @return direct handlers
@@ -224,6 +235,7 @@ public final class ListenerConfiguration {
         private SocketOptions connectionOptions;
         private int writeQueueLength = 0;
         private long maxPayloadSize = -1;
+        private int writeBufferSize = 512;
         private ContentEncodingContext contentEncodingContext;
         private MediaContext mediaContext;
         private Context context;
@@ -359,6 +371,18 @@ public final class ListenerConfiguration {
         }
 
         /**
+         * Initial buffer size in bytes of {@link java.io.BufferedOutputStream} created internally to
+         * write data to a socket connection. Default is {@code 512}.
+         *
+         * @param writeBufferSize initial buffer size used for writing
+         * @return updated builder
+         */
+        public Builder writeBufferSize(int writeBufferSize) {
+            this.writeBufferSize = writeBufferSize;
+            return this;
+        }
+
+        /**
          * Maximal number of bytes an entity may have.
          * If {@link io.helidon.common.http.Http.Header#CONTENT_LENGTH} is used, this is checked immediately,
          * if {@link io.helidon.common.http.Http.HeaderValues#TRANSFER_ENCODING_CHUNKED} is used, we will fail when the
@@ -366,9 +390,11 @@ public final class ListenerConfiguration {
          * Defaults to unlimited ({@code -1}).
          *
          * @param maxPayloadSize maximal number of bytes of entity
+         * @return updated builder
          */
-        public void maxPayloadSize(long maxPayloadSize) {
+        public Builder maxPayloadSize(long maxPayloadSize) {
             this.maxPayloadSize = maxPayloadSize;
+            return this;
         }
 
         /**

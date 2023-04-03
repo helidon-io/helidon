@@ -240,6 +240,7 @@ public interface WebServer {
                         listenerConfig.get("backlog").asInt().ifPresent(listener::backlog);
                         listenerConfig.get("receive-buffer-size").asInt().ifPresent(listener::receiveBufferSize);
                         listenerConfig.get("write-queue-length").asInt().ifPresent(listener::writeQueueLength);
+                        listenerConfig.get("write-buffer-size").asInt().ifPresent(listener::writeBufferSize);
 
                         listenerConfig.get("tls").as(Tls::create).ifPresent(listener::tls);
 
@@ -529,7 +530,7 @@ public interface WebServer {
                     .toList();
         }
 
-        private ListenerConfiguration.Builder socket(String socketName) {
+        ListenerConfiguration.Builder socket(String socketName) {
             return socketBuilder.computeIfAbsent(socketName, ListenerConfiguration::builder);
         }
 

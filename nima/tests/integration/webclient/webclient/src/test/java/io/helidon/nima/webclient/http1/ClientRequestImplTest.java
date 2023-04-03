@@ -333,6 +333,7 @@ class ClientRequestImplTest {
                     byte[] chunk = new byte[chunkLen];
                     System.arraycopy(entity, i * regularChunkLen, chunk, 0, chunkLen);
                     outputStream.write(chunk);
+                    outputStream.flush();       // will force chunked
                 }
             }
         }
