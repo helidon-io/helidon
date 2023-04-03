@@ -20,7 +20,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ArrayList;
@@ -34,10 +33,8 @@ import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.ClientRequestImpl;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -336,6 +333,7 @@ class ClientRequestImplTest {
                     byte[] chunk = new byte[chunkLen];
                     System.arraycopy(entity, i * regularChunkLen, chunk, 0, chunkLen);
                     outputStream.write(chunk);
+                    outputStream.flush();       // will force chunked
                 }
             }
         }
