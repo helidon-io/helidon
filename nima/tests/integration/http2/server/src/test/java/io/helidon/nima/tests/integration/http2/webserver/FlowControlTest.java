@@ -55,7 +55,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 
 @ServerTest
-public class FlowControlTest {
+class FlowControlTest {
 
     private static final System.Logger LOGGER = System.getLogger(FlowControlTest.class.getName());
     private static final ExecutorService exec = Executors.newCachedThreadPool();
@@ -252,13 +252,5 @@ public class FlowControlTest {
         String response = responded.get(TIMEOUT_SEC, TimeUnit.SECONDS);
         assertThat(sentData.get(), is(100_000L));
         assertThat(response, is(EXPECTED));
-    }
-
-    //    @Test
-    void name() {
-        flowControlServerLatch = new CompletableFuture<>();
-        flowControlClientLatch = new CompletableFuture<>();
-        flowControlServerLatch.complete(null);
-        new CompletableFuture<Void>().join();
     }
 }

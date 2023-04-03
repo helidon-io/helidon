@@ -53,8 +53,8 @@ abstract class WindowSizeImpl implements WindowSize {
         remainingWindowSize.updateAndGet(o -> o + size - windowSize);
         windowSize = size;
         if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
-            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR %d: Recv INITIAL_WINDOW_SIZE %d(%d)",
-                                                           type, streamId, windowSize, remainingWindowSize.get()));
+            LOGGER_OUTBOUND.log(DEBUG, String.format("%s OFC STR %d: Recv INITIAL_WINDOW_SIZE %d(%d)",
+                                                     type, streamId, windowSize, remainingWindowSize.get()));
         }
     }
 

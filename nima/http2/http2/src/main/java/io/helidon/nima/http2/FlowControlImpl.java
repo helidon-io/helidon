@@ -50,10 +50,6 @@ abstract class FlowControlImpl implements FlowControl {
         );
     }
 
-    protected int streamId() {
-        return this.streamId;
-    }
-
     @Override
     public String toString() {
         return "FlowControlImpl{"
@@ -61,6 +57,10 @@ abstract class FlowControlImpl implements FlowControl {
                 + ", connectionWindowSize=" + connectionWindowSize()
                 + ", streamWindowSize=" + streamWindowSize()
                 + '}';
+    }
+
+    protected int streamId() {
+        return this.streamId;
     }
 
     static class Inbound extends FlowControlImpl implements FlowControl.Inbound {
@@ -151,6 +151,7 @@ abstract class FlowControlImpl implements FlowControl {
             return streamWindowSize;
         }
 
+        @Override
         public void decrementWindowSize(int decrement) {
             long strRemaining = streamWindowSize().decrementWindowSize(decrement);
             if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {

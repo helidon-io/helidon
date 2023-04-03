@@ -25,7 +25,6 @@ import io.helidon.logging.common.LogConfig;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -45,38 +44,33 @@ class MaxFrameSizeSplitTest {
         LogConfig.configureRuntime();
     }
 
-    private static Stream<Arguments> splitMultiple() {
-        return Stream.of(
-                Arguments.of(17, 1, 16),
-                Arguments.of(16, 1, 16),
-                Arguments.of(15, 2, 1),
-                Arguments.of(14, 2, 2),
-                Arguments.of(13, 2, 3),
-                Arguments.of(12, 2, 4),
-                Arguments.of(11, 2, 5),
-                Arguments.of(10, 2, 6),
-                Arguments.of(9, 2, 7),
-                Arguments.of(8, 2, 8),
-                Arguments.of(7, 3, 2),
-                Arguments.of(6, 3, 4),
-                Arguments.of(5, 4, 1),
-                Arguments.of(4, 4, 4),
-                Arguments.of(3, 6, 1),
-                Arguments.of(2, 8, 2),
-                Arguments.of(1, 16, 1)
+    private static Stream<SplitTest> splitMultiple() {
+        return Stream.of(new SplitTest(17, 1, 16),
+                         new SplitTest(16, 1, 16),
+                         new SplitTest(15, 2, 1),
+                         new SplitTest(14, 2, 2),
+                         new SplitTest(13, 2, 3),
+                         new SplitTest(12, 2, 4),
+                         new SplitTest(11, 2, 5),
+                         new SplitTest(10, 2, 6),
+                         new SplitTest(9, 2, 7),
+                         new SplitTest(8, 2, 8),
+                         new SplitTest(7, 3, 2),
+                         new SplitTest(6, 3, 4),
+                         new SplitTest(5, 4, 1),
+                         new SplitTest(4, 4, 4),
+                         new SplitTest(3, 6, 1),
+                         new SplitTest(2, 8, 2),
+                         new SplitTest(1, 16, 1)
         );
     }
 
     @ParameterizedTest
     @MethodSource
-    void splitMultiple(int sizeOfFrames,
-                       int numberOfFrames,
-                       int sizeOfLastFrame) {
-        LOGGER.log(DEBUG, "Splitting " + Arrays.toString(TEST_DATA) + " to frames of max size " + sizeOfFrames);
-
+    void splitMultiple(SplitTest args) {
         Http2FrameData frameData = createFrameData(TEST_DATA);
-        Http2FrameData[] split = frameData.split(sizeOfFrames);
-        assertThat("Unexpected number of frames", split.length, is(numberOfFrames));
+        Http2FrameData[] split = frameData.split(args.sizeOfFrames());
+        assertThat("Unexpected number of frames", split.length, is(args.numberOfFrames()));
 
         BufferData joined = Stream.of(split)
                 .collect(() -> BufferData.create(TEST_DATA.length),
@@ -89,9 +83,9 @@ class MaxFrameSizeSplitTest {
                    is(TEST_STRING));
 
         // Reload data depleted by previous test
-        split = createFrameData(TEST_DATA).split(sizeOfFrames);
+        split = createFrameData(TEST_DATA).split(args.sizeOfFrames());
 
-        for (int i = 0; i < numberOfFrames - 1; i++) {
+        for (int i = 0; i < args.numberOfFrames() - 1; i++) {
             Http2FrameData frame = split[i];
             assertThat("Only last frame can have endOfStream flag",
                        frame.header().flags(Http2FrameTypes.DATA).endOfStream(),
@@ -99,17 +93,17 @@ class MaxFrameSizeSplitTest {
 
             byte[] bytes = toBytes(frame);
             LOGGER.log(DEBUG, i + ". frame: " + Arrays.toString(bytes));
-            assertThat("Unexpected size of frame " + i, bytes.length, is(sizeOfFrames));
+            assertThat("Unexpected size of frame " + i, bytes.length, is(args.sizeOfFrames()));
         }
 
-        Http2FrameData lastFrame = split[numberOfFrames - 1];
+        Http2FrameData lastFrame = split[args.numberOfFrames() - 1];
         assertThat("Last frame is missing endOfStream flag",
                    lastFrame.header().flags(Http2FrameTypes.DATA).endOfStream(),
                    is(true));
 
         byte[] bytes = toBytes(lastFrame);
-        LOGGER.log(DEBUG, numberOfFrames - 1 + ". frame: " + Arrays.toString(bytes));
-        assertThat("Unexpected size of the last frame", bytes.length, is(sizeOfLastFrame));
+        LOGGER.log(DEBUG, args.numberOfFrames() - 1 + ". frame: " + Arrays.toString(bytes));
+        assertThat("Unexpected size of the last frame", bytes.length, is(args.sizeOfLastFrame()));
     }
 
     private Http2FrameData createFrameData(byte[] data) {
@@ -128,5 +122,11 @@ class MaxFrameSizeSplitTest {
         byte[] b = new byte[data.available()];
         data.read(b);
         return b;
+    }
+
+    private record SplitTest(int sizeOfFrames,
+                             int numberOfFrames,
+                             int sizeOfLastFrame) {
+
     }
 }

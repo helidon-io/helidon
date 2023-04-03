@@ -51,7 +51,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class ClientFlowControlTest {
+class ClientFlowControlTest {
 
     private static final System.Logger LOGGER = System.getLogger(ClientFlowControlTest.class.getName());
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
@@ -104,6 +104,20 @@ public class ClientFlowControlTest {
                 .baseUri("http://localhost:" + server.actualPort() + "/")
                 .prefetch(10000)
                 .build();
+    }
+
+    @AfterAll
+    static void afterAll() {
+        server.close();
+        vertx.close();
+        exec.shutdown();
+        try {
+            if (!exec.awaitTermination(TIMEOUT.toMillis(), MILLISECONDS)) {
+                exec.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            exec.shutdownNow();
+        }
     }
 
     @Test
@@ -205,19 +219,5 @@ public class ClientFlowControlTest {
             Thread.sleep(i);
         }
         assertThat(msg, actualSize.get(), is(expected));
-    }
-
-    @AfterAll
-    static void afterAll() {
-        server.close();
-        vertx.close();
-        exec.shutdown();
-        try {
-            if (!exec.awaitTermination(TIMEOUT.toMillis(), MILLISECONDS)) {
-                exec.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            exec.shutdownNow();
-        }
     }
 }

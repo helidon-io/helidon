@@ -148,7 +148,7 @@ class Http2WebClientTest {
                 );
     }
 
-    private static Stream<Arguments> clientTypes() {
+    static Stream<Arguments> clientTypes() {
         return Stream.of(
                 Arguments.of("priorKnowledge", priorKnowledgeClient),
                 Arguments.of("upgrade", upgradeClient),

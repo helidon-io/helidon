@@ -42,7 +42,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class HeadersTest {
+class HeadersTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String DATA = "Helidon!!!".repeat(10);
@@ -58,20 +58,20 @@ public class HeadersTest {
                 .requestHandler(req -> {
                     HttpServerResponse res = req.response();
                     switch (req.path()) {
-                        case "/trailer" -> {
-                            res.putHeader("test", "before");
-                            res.write(DATA);
-                            res.putTrailer("Trailer-header", "trailer-test");
-                            res.end();
+                    case "/trailer" -> {
+                        res.putHeader("test", "before");
+                        res.write(DATA);
+                        res.putTrailer("Trailer-header", "trailer-test");
+                        res.end();
+                    }
+                    case "/cont" -> {
+                        for (int i = 0; i < 500; i++) {
+                            res.headers().add("test-header-" + i, DATA);
                         }
-                        case "/cont" -> {
-                            for (int i = 0; i < 500; i++) {
-                                res.headers().add("test-header-" + i, DATA);
-                            }
-                            res.write(DATA);
-                            res.end();
-                        }
-                        default -> res.setStatusCode(404).end();
+                        res.write(DATA);
+                        res.end();
+                    }
+                    default -> res.setStatusCode(404).end();
                     }
                 })
                 .listen(0)
@@ -82,8 +82,23 @@ public class HeadersTest {
         port = server.actualPort();
     }
 
+    @AfterAll
+    static void afterAll() {
+        server.close();
+        vertx.close();
+        exec.shutdown();
+        try {
+            if (!exec.awaitTermination(TIMEOUT.toMillis(), MILLISECONDS)) {
+                exec.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            exec.shutdownNow();
+        }
+    }
+
     @Test
-    @Disabled//FIXME: trailer headers are not implemented yet
+    //FIXME: trailer headers are not implemented yet
+    @Disabled
     void trailerHeader() {
         try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
                 .baseUri("http://localhost:" + port + "/")
@@ -116,20 +131,6 @@ public class HeadersTest {
             }
 
             assertThat(res.as(String.class), is(DATA));
-        }
-    }
-
-    @AfterAll
-    static void afterAll() {
-        server.close();
-        vertx.close();
-        exec.shutdown();
-        try {
-            if (!exec.awaitTermination(TIMEOUT.toMillis(), MILLISECONDS)) {
-                exec.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            exec.shutdownNow();
         }
     }
 }

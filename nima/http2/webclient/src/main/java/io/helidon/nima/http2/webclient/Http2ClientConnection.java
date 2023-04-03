@@ -72,12 +72,7 @@ import static java.lang.System.Logger.Level.WARNING;
 
 class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
-
-    private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
-    private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
-
     private static final int FRAME_HEADER_LENGTH = 9;
-
     private static final String UPGRADE_REQ_MASK = """
             %s %s HTTP/1.1\r
             Host: %s:%s\r
@@ -87,7 +82,8 @@ class Http2ClientConnection {
             """;
     private static final byte[] PRIOR_KNOWLEDGE_PREFACE =
             "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes(StandardCharsets.UTF_8);
-
+    private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
+    private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     private final ExecutorService executor;
     private final SocketOptions socketOptions;
     private final ConnectionKey connectionKey;
@@ -96,18 +92,16 @@ class Http2ClientConnection {
     private final Map<Integer, Http2ClientStream> streams = new HashMap<>();
     private final ConnectionFlowControl connectionFlowControl;
     private final ConnectionContext connectionContext;
-
+    private final Http2Headers.DynamicTable inboundDynamicTable =
+            Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
     private Http2Settings serverSettings = Http2Settings.builder()
             .build();
-
     private String channelId;
     private Socket socket;
     private PlainSocket helidonSocket;
     private Http2ConnectionWriter writer;
     private DataReader reader;
     private DataWriter dataWriter;
-    private final Http2Headers.DynamicTable inboundDynamicTable =
-            Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
     private Future<?> handleTask;
 
     Http2ClientConnection(ExecutorService executor,
@@ -127,8 +121,16 @@ class Http2ClientConnection {
                 .build();
     }
 
-    void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
-        writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+    Http2ConnectionWriter writer() {
+        return writer;
+    }
+
+    Http2Headers.DynamicTable getInboundDynamicTable() {
+        return this.inboundDynamicTable;
+    }
+
+    ConnectionFlowControl flowControl() {
+        return this.connectionFlowControl;
     }
 
     Http2ClientConnection connect() {
@@ -146,6 +148,48 @@ class Http2ClientConnection {
         }
 
         return this;
+    }
+
+    Http2ClientStream stream(int streamId) {
+        return streams.get(streamId);
+    }
+
+    Http2ClientStream createStream(int priority) {
+        //FIXME: priority
+        return new Http2ClientStream(this,
+                                     serverSettings,
+                                     helidonSocket,
+                                     connectionContext,
+                                     streamIdSeq);
+    }
+
+    void addStream(int streamId, Http2ClientStream stream) {
+        this.streams.put(streamId, stream);
+    }
+
+    void removeStream(int streamId) {
+        this.streams.remove(streamId);
+    }
+
+    Http2ClientStream tryStream(int priority) {
+        try {
+            return createStream(priority);
+        } catch (IllegalStateException | UncheckedIOException e) {
+            return null;
+        }
+    }
+
+    void close() {
+        try {
+            handleTask.cancel(true);
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
+        writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
     }
 
     private void handle() {
@@ -196,7 +240,7 @@ class Http2ClientConnection {
             }
             // §6.5.3 Settings Synchronization
             ackSettings();
-            //FIXME: Other settings
+            //FIXME: Max number of concurrent streams
             return;
 
         case WINDOW_UPDATE:
@@ -217,7 +261,6 @@ class Http2ClientConnection {
                     Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
                     writer.write(frame.toFrameData(serverSettings, 0, Http2Flag.NoFlags.create()));
                 }
-
 
             } else {
                 stream(streamId)
@@ -265,44 +308,6 @@ class Http2ClientConnection {
             LOGGER.log(WARNING, "Unsupported frame type!! " + frameHeader.type());
         }
 
-    }
-
-    Http2ClientStream stream(int streamId) {
-        return streams.get(streamId);
-    }
-
-    Http2ClientStream createStream(int priority) {
-        //FIXME: priority
-        return new Http2ClientStream(this,
-                                     serverSettings,
-                                     helidonSocket,
-                                     connectionContext,
-                                     streamIdSeq);
-    }
-
-    void addStream(int streamId, Http2ClientStream stream){
-        this.streams.put(streamId, stream);
-    }
-
-    void removeStream(int streamId) {
-        this.streams.remove(streamId);
-    }
-
-    Http2ClientStream tryStream(int priority) {
-        try {
-            return createStream(priority);
-        } catch (IllegalStateException | UncheckedIOException e) {
-            return null;
-        }
-    }
-
-    void close() {
-        try {
-            handleTask.cancel(true);
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private void doConnect() throws IOException {
@@ -373,7 +378,7 @@ class Http2ClientConnection {
         writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
     }
 
-    private void sendPreface(boolean sendSettings){
+    private void sendPreface(boolean sendSettings) {
         dataWriter.writeNow(BufferData.create(PRIOR_KNOWLEDGE_PREFACE));
         if (sendSettings) {
             // §3.5 Preface bytes must be followed by setting frame
@@ -412,13 +417,13 @@ class Http2ClientConnection {
         String message = reader.readLine();
         WritableHeaders<?> headers = Http1HeadersParser.readHeaders(reader, 8192, false);
         switch (status) {
-            case "101":
-                break;
-            case "301":
-                throw new UpgradeRedirectException(headers.get(Http.Header.LOCATION).value());
-            default:
-                close();
-                throw new IllegalStateException("Upgrade to HTTP/2 failed: " + message);
+        case "101":
+            break;
+        case "301":
+            throw new UpgradeRedirectException(headers.get(Http.Header.LOCATION).value());
+        default:
+            close();
+            throw new IllegalStateException("Upgrade to HTTP/2 failed: " + message);
         }
     }
 
@@ -484,17 +489,5 @@ class Http2ClientConnection {
         }
 
         return String.join(", ", certs);
-    }
-
-    public Http2ConnectionWriter getWriter() {
-        return writer;
-    }
-
-    public Http2Headers.DynamicTable getInboundDynamicTable() {
-        return this.inboundDynamicTable;
-    }
-
-    ConnectionFlowControl flowControl(){
-        return this.connectionFlowControl;
     }
 }

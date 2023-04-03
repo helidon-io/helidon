@@ -62,7 +62,7 @@ class Http2ClientImpl extends LoomClient implements Http2Client {
         return priorKnowledge;
     }
 
-    public int maxFrameSize() {
+    int maxFrameSize() {
         return this.maxFrameSize;
     }
 }

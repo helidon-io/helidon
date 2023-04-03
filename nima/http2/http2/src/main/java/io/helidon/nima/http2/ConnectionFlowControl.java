@@ -125,7 +125,7 @@ public class ConnectionFlowControl {
      */
     public void resetInitialWindowSize(int initialWindowSize) {
         if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
-            LOGGER_OUTBOUND.log(DEBUG, () -> String.format("%s OFC STR *: Recv INIT_WINDOW_SIZE %s", type, initialWindowSize));
+            LOGGER_OUTBOUND.log(DEBUG, String.format("%s OFC STR *: Recv INIT_WINDOW_SIZE %s", type, initialWindowSize));
         }
         this.initialWindowSize = initialWindowSize;
     }
