@@ -75,7 +75,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
     private boolean streamingEntity;
     private boolean isSent;
-    private BlockingOutputStream outputStream;
+    private ClosingBufferedOutputStream outputStream;
     private long entitySize;
     private String streamResult = "";
 
@@ -163,7 +163,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
         streamingEntity = true;
 
-        this.outputStream = new BlockingOutputStream(headers,
+        BlockingOutputStream bos = new BlockingOutputStream(headers,
                                                      trailers,
                                                      this::status,
                                                      () -> streamResult,
@@ -179,7 +179,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                                      keepAlive);
 
         int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
-        return contentEncode(new ClosingBufferedOutputStream(outputStream, writeBufferSize));
+        outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
+        return contentEncode(outputStream);
     }
 
     @Override
@@ -596,9 +597,21 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             delegate.closing();     // inform of imminent call to close for last flush
-            super.close();
+            try {
+                super.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        long totalBytesWritten() {
+            return delegate.totalBytesWritten();
+        }
+
+        void commit() {
+            delegate.commit();
         }
     }
 }
