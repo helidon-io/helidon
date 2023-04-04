@@ -96,6 +96,7 @@ public abstract class AbstractServiceProvider<T>
     private DependenciesInfo dependencies;
     private Map<String, PicoInjectionPlan> injectionPlan;
     private ServiceProvider<?> interceptor;
+    private boolean thisIsAnInterceptor;
 
     /**
      * The default constructor.
@@ -246,6 +247,11 @@ public abstract class AbstractServiceProvider<T>
     }
 
     @Override
+    public boolean isInterceptor() {
+        return thisIsAnInterceptor;
+    }
+
+    @Override
     public Optional<ServiceProvider<?>> interceptor() {
         return Optional.ofNullable(interceptor);
     }
@@ -271,6 +277,7 @@ public abstract class AbstractServiceProvider<T>
         if (activationSemaphore.availablePermits() == 0 || phase != Phase.INIT) {
             throw alreadyInitialized();
         }
+        this.thisIsAnInterceptor = true;
         this.serviceInfo = DefaultServiceInfo.toBuilder(this.serviceInfo)
                 .addQualifiers(intercepted.serviceInfo().qualifiers())
                 .build();

@@ -44,6 +44,16 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
     void moduleName(String moduleName);
 
     /**
+     * Returns true if this service provider instance is an {@link Interceptor}.
+     *
+     * @return true if this service provider is an interceptor
+     */
+    default boolean isInterceptor() {
+        // NOP; intended to be overridden if applicable
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * Returns {@code true} if this service provider is intercepted.
      *
      * @return flag indicating whether this service provider is intercepted

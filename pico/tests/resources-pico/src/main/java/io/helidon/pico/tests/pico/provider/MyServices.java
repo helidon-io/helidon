@@ -61,8 +61,7 @@ public class MyServices {
             assert (injected != null);
             assert (postConstructed);
             int num = counter++;
-            String id = getClass().getSimpleName() + ":instance_" + num + ", "
-                    + query + ", " + injected;
+            String id = getClass().getSimpleName() + ":instance_" + num + ", " + injected;
             return Optional.of(new MyConcreteClassContract(id));
         }
 

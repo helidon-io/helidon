@@ -59,19 +59,11 @@ class PerRequestProviderTest {
                    equalTo("MyServices$MyConcreteClassContractPerRequestIPProvider:INIT"));
         MyConcreteClassContract instance0 = sp.get();
         assertThat(instance0.toString(),
-                   equalTo("MyConcreteClassContractPerRequestIPProvider:instance_0, ContextualServiceQuery"
-                                   + "(serviceInfoCriteria=ServiceInfoCriteria(serviceTypeName=Optional.empty, "
-                                   + "scopeTypeNames=[], qualifiers=[], contractsImplemented=[], runLevel=Optional.empty, "
-                                   + "weight=Optional.empty, externalContractsImplemented=[], activatorTypeName=Optional.empty,"
-                                   + " moduleName=Optional.empty), injectionPointInfo=Optional.empty, expected=true), "
+                   equalTo("MyConcreteClassContractPerRequestIPProvider:instance_0, "
                                    + "MyConcreteClassContractPerRequestProvider:instance_0"));
         MyConcreteClassContract instance1 = sp.get();
         assertThat(instance1.toString(),
-                   equalTo("MyConcreteClassContractPerRequestIPProvider:instance_1, ContextualServiceQuery"
-                                   + "(serviceInfoCriteria=ServiceInfoCriteria(serviceTypeName=Optional.empty, "
-                                   + "scopeTypeNames=[], qualifiers=[], contractsImplemented=[], runLevel=Optional.empty, "
-                                   + "weight=Optional.empty, externalContractsImplemented=[], activatorTypeName=Optional.empty,"
-                                   + " moduleName=Optional.empty), injectionPointInfo=Optional.empty, expected=true), "
+                   equalTo("MyConcreteClassContractPerRequestIPProvider:instance_1, "
                                    + "MyConcreteClassContractPerRequestProvider:instance_0"));
     }
 

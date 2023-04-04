@@ -32,6 +32,7 @@ import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.Interceptor;
 import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
+import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.testing.ReflectionBasedSingletonServiceProvider;
@@ -110,11 +111,24 @@ class InterceptorRuntimeTest {
 
     @Test
     void runtimeWithNoInterception() throws Exception {
-        List<ServiceProvider<Closeable>> closeableProviders = services.lookupAll(Closeable.class);
+        ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+                .addContractImplemented(Closeable.class.getName())
+                .includeIntercepted(true)
+                .build();
+        List<ServiceProvider<Closeable>> closeableProviders = services.lookupAll(criteria);
         assertThat("the interceptors should always be weighted higher than the non-interceptors",
                    toDescriptions(closeableProviders),
                    contains("XImpl$$Pico$$Interceptor:INIT", "YImpl$$Pico$$Interceptor:INIT",
                             "XImpl:INIT", "YImpl:INIT"));
+
+        criteria = DefaultServiceInfoCriteria.builder()
+                .addContractImplemented(Closeable.class.getName())
+                .includeIntercepted(false)
+                .build();
+        closeableProviders = services.lookupAll(criteria);
+        assertThat("the interceptors should always be weighted higher than the non-interceptors",
+                   toDescriptions(closeableProviders),
+                   contains("XImpl$$Pico$$Interceptor:INIT", "YImpl$$Pico$$Interceptor:INIT"));
 
         List<ServiceProvider<IB>> ibProviders = services.lookupAll(IB.class);
         assertThat(closeableProviders,
@@ -188,8 +202,7 @@ class InterceptorRuntimeTest {
         List<ServiceProvider<Closeable>> closeableProviders = picoServices.services().lookupAll(Closeable.class);
         assertThat("the interceptors should always be weighted higher than the non-interceptors",
                    toDescriptions(closeableProviders),
-                   contains("XImpl$$Pico$$Interceptor:INIT", "YImpl$$Pico$$Interceptor:INIT",
-                            "XImpl:INIT", "YImpl:INIT"));
+                   contains("XImpl$$Pico$$Interceptor:INIT", "YImpl$$Pico$$Interceptor:INIT"));
 
         List<ServiceProvider<IB>> ibProviders = services.lookupAll(IB.class);
         assertThat(closeableProviders,
