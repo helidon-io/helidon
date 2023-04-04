@@ -256,7 +256,9 @@ public class LraCdiExtension implements Extension {
         LOGGER.log(Level.DEBUG, "Indexing " + fqdn);
         ClassInfo classInfo;
         try {
-            classInfo = indexer.index(classLoader.getResourceAsStream(fqdn.toString().replace('.', '/') + ".class"));
+            indexer.index(classLoader.getResourceAsStream(fqdn.toString().replace('.', '/') + ".class"));
+            classInfo = indexer.complete().getClassByName(fqdn.toString());
+
             // look also for extended classes
             runtimeIndex(classInfo.superName());
             // and implemented interfaces
