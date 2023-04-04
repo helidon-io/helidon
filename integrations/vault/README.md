@@ -36,6 +36,6 @@ Example of obtaining vault instance using a token:
 ```java
  Vault vault = Vault.builder()
                 .address("http://localhost:8200")
-                .token("s.oZZcsMzbasmwNqfAxPZOs8jw")
+                .token("<put-token-here>")
                 .build();
 ```
