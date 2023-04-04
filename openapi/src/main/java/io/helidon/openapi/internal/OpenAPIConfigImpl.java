@@ -15,11 +15,9 @@
  */
 package io.helidon.openapi.internal;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -59,7 +57,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     private final Map<String, String> schemas;
 
     // Cannot be final because the interface we implement requires this to be settable after it is built.
-    private Optional<Boolean> allowNakedPathParameter;
+    private Optional<Boolean> allowNakedPathParameter = Optional.empty();
 
     private OpenAPIConfigImpl(Builder builder) {
         modelReader = builder.modelReader;
@@ -113,12 +111,12 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
 
     @Override
     public Set<String> scanExcludePackages() {
-        return NEVER_SCAN_PACKAGES;
+        return scanExcludePackages;
     }
 
     @Override
     public Set<String> scanExcludeClasses() {
-        return NEVER_SCAN_CLASSES;
+        return scanExcludeClasses;
     }
 
     @Override
