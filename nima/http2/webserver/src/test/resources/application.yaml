@@ -24,4 +24,5 @@ server:
       max-header-list-size: 4096
       max-concurrent-streams: 16384
       initial-window-size: 8192
+      flow-control-timeout: 1000
       validate-path: false

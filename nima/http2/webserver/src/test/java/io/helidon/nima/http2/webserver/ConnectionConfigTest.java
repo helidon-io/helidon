@@ -110,6 +110,26 @@ class ConnectionConfigTest {
         assertThat(http2Config.initialWindowSize(), is(8192));
     }
 
+    @Test
+    void maxFrameSize() {
+        // This will pick up application.yaml from the classpath as default configuration file
+        TestProvider provider = new TestProvider();
+        WebServer.builder().addConnectionProvider(provider).build();
+        assertThat(provider.isConfig(), is(true));
+        Http2Config http2Config = provider.config();
+        assertThat(http2Config.maxFrameSize(), is(8192));
+    }
+
+    @Test
+    void flowControlTimeout() {
+        // This will pick up application.yaml from the classpath as default configuration file
+        TestProvider provider = new TestProvider();
+        WebServer.builder().addConnectionProvider(provider).build();
+        assertThat(provider.isConfig(), is(true));
+        Http2Config http2Config = provider.config();
+        assertThat(http2Config.flowControlTimeout(), is(1000L));
+    }
+
     private static class TestProvider implements ServerConnectionProvider {
 
         private Http2Config http2Config = null;

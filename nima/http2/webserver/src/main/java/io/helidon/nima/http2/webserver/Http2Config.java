@@ -16,8 +16,6 @@
 
 package io.helidon.nima.http2.webserver;
 
-import java.time.Duration;
-
 import io.helidon.builder.Builder;
 import io.helidon.builder.config.ConfigBean;
 import io.helidon.common.http.RequestedUriDiscoveryContext;
@@ -74,12 +72,12 @@ public interface Http2Config {
     int initialWindowSize();
 
     /**
-     * Outbound flow control blocking timeout.
+     * Outbound flow control blocking timeout in milliseconds.
      *
      * @return duration
      */
-    @ConfiguredOption("java.time.Duration.ofMillis(100)")
-    Duration flowControlTimeout();
+    @ConfiguredOption("100")
+    long flowControlTimeout();
 
     /**
      * Whether to send error message over HTTP to client.
