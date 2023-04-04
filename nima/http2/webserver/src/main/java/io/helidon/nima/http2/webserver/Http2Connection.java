@@ -709,23 +709,12 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 }
             }
 
-            // MAX_CONCURRENT_STREAMS limit check - according to RFC 9113 section 5.1.2 endpoint MUST treat this
-            // as a stream error (section 5.4.2) of type PROTOCOL_ERROR or REFUSED_STREAM.
+            // 5.1.2 MAX_CONCURRENT_STREAMS limit check - stream error of type PROTOCOL_ERROR or REFUSED_STREAM
             if (streams.size() > maxClientConcurrentStreams) {
                 throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM,
                                          "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
             }
-            // Pass NOOP when flow control is turned off
-            //            FlowControl.Inbound.Builder inboundFlowControlBuilder = http2Config.flowControlEnabled()
-            //                    ? FlowControl.builderInbound(FlowControl.Type.SERVER)
-            //                            .streamId(streamId)
-            //                            .connectionWindowSize(inboundWindowSize)
-            //                            .streamWindowSize(inboundInitialWindowSize)
-            //                            .streamMaxFrameSize(http2Config.maxFrameSize())
-            //                    // Pass NOOP when flow control is turned off (but we still have to send WINDOW_UPDATE frames)
-            //                    : FlowControl.builderInbound(FlowControl.Type.SERVER)
-            //                            .connectionWindowSize(inboundWindowSize)
-            //                            .noop();
+
             streamContext = new StreamContext(streamId,
                                               new Http2Stream(ctx,
                                                               routing,
