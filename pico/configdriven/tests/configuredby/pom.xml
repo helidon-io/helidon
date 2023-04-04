@@ -50,11 +50,6 @@
             <artifactId>helidon-builder-tests-test-configbean</artifactId>
             <version>${helidon.version}</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.pico.tests</groupId>-->
-<!--            <artifactId>helidon-pico-tests-resources-plain</artifactId>-->
-<!--            <version>${helidon.version}</version>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
@@ -117,9 +112,6 @@
                 <configuration>
                     <compilerArgs>
                         <arg>-Apico.autoAddNonContractInterfaces=true</arg>
-<!--                        <arg>-XprintProcessorInfo</arg>-->
-<!--                        <arg>-XprintRounds</arg>-->
-<!--                        <arg>-verbose</arg>-->
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
@@ -133,12 +125,6 @@
                             <artifactId>helidon-builder-config-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
-<!--                        &lt;!&ndash; this has the actual interceptor processor for InterceptorBasedAnno &ndash;&gt;-->
-<!--                        <path>-->
-<!--                            <groupId>io.helidon.pico.tests</groupId>-->
-<!--                            <artifactId>helidon-pico-tests-resources-plain</artifactId>-->
-<!--                            <version>${helidon.version}</version>-->
-<!--                        </path>-->
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>

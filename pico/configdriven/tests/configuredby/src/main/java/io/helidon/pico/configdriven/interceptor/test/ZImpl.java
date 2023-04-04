@@ -28,14 +28,13 @@ import jakarta.inject.Inject;
  * This test case is applying {@link InterceptorBasedAnno} (an {@link io.helidon.pico.InterceptedTrigger}) on this class directly.
  * Since it is a config-driven service it is forced to used the interface based approach to interceptors.
  */
-// TODO:
+// TODO: https://github.com/helidon-io/helidon/issues/6542
 @TestInterceptorTrigger
 //@ConfiguredBy(ZImplConfig.class)
 @SuppressWarnings("ALL")
 public class ZImpl implements IZ {
     private final AtomicInteger postConstructCallCount = new AtomicInteger();
 
-    // TODO:
 //    @Inject
 //    ZImpl(ZImplConfig config/*,
 //          List<Provider<ASingletonServiceContract>> singletons*/) {

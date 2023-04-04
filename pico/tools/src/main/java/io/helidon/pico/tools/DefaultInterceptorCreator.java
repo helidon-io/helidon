@@ -752,8 +752,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             Set<AnnotationAndValue> serviceLevelAnnos = getServiceLevelAnnotations();
             classInfo.getMethodAndConstructorInfo()
                     .filter(m -> isProcessed(toKind(m), /*m.getParameterInfo().length,*/ null, m.isPrivate(), m.isStatic()))
-                    .filter(m -> /*interceptorAnnotationTriggers.isEmpty()
-                            || */ containsAny(serviceLevelAnnos, interceptorAnnotationTriggers)
+                    .filter(m -> containsAny(serviceLevelAnnos, interceptorAnnotationTriggers)
                             || containsAny(createAnnotationAndValueSet(m.getAnnotationInfo()), interceptorAnnotationTriggers))
                     .forEach(mi -> result.add(
                             create(mi, serviceLevelAnnos, interceptorAnnotationTriggers)));

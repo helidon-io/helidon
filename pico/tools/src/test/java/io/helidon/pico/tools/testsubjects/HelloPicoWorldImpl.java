@@ -53,7 +53,6 @@ public class HelloPicoWorldImpl implements HelloPicoWorld {
     int postConstructCallCount;
     int preDestroyCallCount;
 
-    // note that the tests in this module expects there to be no zero/no-arg constructor available
     @Inject
     HelloPicoWorldImpl(PicoWorld picoWorld) {
         Objects.requireNonNull(picoWorld);
