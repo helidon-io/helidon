@@ -28,7 +28,7 @@
             <value key="parent-artifactId">helidon-mp</value>
             <list key="dependencies">
                 <map>
-                    <value key="groupId">org.jboss</value>
+                    <value key="groupId">io.smallrye</value>
                     <value key="artifactId">jandex</value>
                     <value key="scope">runtime</value>
                 </map>
