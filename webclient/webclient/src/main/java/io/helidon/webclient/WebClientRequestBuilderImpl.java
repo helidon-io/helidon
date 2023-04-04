@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.resolver.dns.DnsServerAddressStreamProviders;
 import io.netty.resolver.dns.RoundRobinDnsAddressResolverGroup;
 import io.netty.util.AsciiString;
@@ -586,9 +587,16 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     .option(ChannelOption.SO_KEEPALIVE, keepAlive)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeout.toMillis());
 
-            if (dnsResolverType == DnsResolverType.ROUND_ROBIN) {
-                bootstrap.resolver(new RoundRobinDnsAddressResolverGroup(NioDatagramChannel.class,
-                                                                         DnsServerAddressStreamProviders.platformDefault()));
+            switch (dnsResolverType) {
+                case ROUND_ROBIN:
+                    bootstrap.resolver(new RoundRobinDnsAddressResolverGroup(NioDatagramChannel.class,
+                                                                             DnsServerAddressStreamProviders.platformDefault()));
+                    break;
+                case NONE:
+                    bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
+                    break;
+                default:
+                    // Do nothing and default bootstrap resolver will be used
             }
 
             ChannelFuture channelFuture = keepAlive
