@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -45,14 +44,14 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
 
     private final String modelReader;
     private final String filter;
-    private final Map<String, List<String>> operationServers;
-    private final Map<String, List<String>> pathServers;
+    private final Map<String, Set<String>> operationServers;
+    private final Map<String, Set<String>> pathServers;
     private Boolean scanDisable;
     private final Set<String> scanPackages;
     private final Set<String>  scanClasses;
     private final Set<String>  scanExcludePackages;
     private final Set<String>  scanExcludeClasses;
-    private final List<String> servers;
+    private final Set<String> servers;
     private final Boolean scanDependenciesDisable = Boolean.TRUE;
     private final Set<String> scanDependenciesJars = Collections.emptySet();
     private final String customSchemaRegistryClass;
@@ -67,7 +66,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         filter = builder.filter;
         operationServers = builder.operationServers;
         pathServers = builder.pathServers;
-        servers = new ArrayList<>(builder.servers);
+        servers = new HashSet<>(builder.servers);
         scanDisable = builder.scanDisable;
         scanPackages = builder.scanPackages;
         scanClasses = builder.scanClasses;
@@ -85,16 +84,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
      */
     public static Builder builder() {
         return new Builder();
-    }
-
-    @Override
-    public <R, T> T getConfigValue(String propertyName, Class<R> type, Function<R, T> converter, Supplier<T> defaultValue) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <R, T> Map<String, T> getConfigValueMap(String propertyNamePrefix, Class<R> type, Function<R, T> converter) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -133,17 +122,17 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     }
 
     @Override
-    public List<String> servers() {
+    public Set<String> servers() {
         return servers;
     }
 
     @Override
-    public List<String> pathServers(String path) {
+    public Set<String> pathServers(String path) {
         return chooseEntry(pathServers, path);
     }
 
     @Override
-    public List<String> operationServers(String operationID) {
+    public Set<String> operationServers(String operationID) {
         return chooseEntry(operationServers, operationID);
     }
 
@@ -170,11 +159,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     @Override
     public Map<String, String> getSchemas() {
         return schemas;
-    }
-
-    @Override
-    public void setAllowNakedPathParameter(Boolean allowNakedPathParameter) {
-        this.allowNakedPathParameter = Optional.of(allowNakedPathParameter);
     }
 
     @Override
@@ -288,25 +272,15 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     }
 
     @Override
-    public Map<String, String> getScanResourceClasses() {
-        return Map.of();
-    }
-
-    @Override
     public boolean removeUnusedSchemas() {
         return false;
     }
 
-    @Override
-    public Integer getMaximumStaticFileSize() {
-        return MAXIMUM_STATIC_FILE_SIZE_DEFAULT;
-    }
-
-    private static <T, U> List<U> chooseEntry(Map<T, List<U>> map, T key) {
+    private static <T, U> Set<U> chooseEntry(Map<T, Set<U>> map, T key) {
         if (map.containsKey(key)) {
             return map.get(key);
         }
-        return List.of();
+        return Set.of();
     }
 
     /**
@@ -347,8 +321,8 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
 
         private String modelReader;
         private String filter;
-        private final Map<String, List<String>> operationServers = new HashMap<>();
-        private final Map<String, List<String>> pathServers = new HashMap<>();
+        private final Map<String, Set<String>> operationServers = new HashMap<>();
+        private final Map<String, Set<String>> pathServers = new HashMap<>();
         private final Set<String> servers = new HashSet<>();
         private boolean scanDisable = true;
         private Set<String> scanPackages = Set.of();
@@ -481,7 +455,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         @ConfiguredOption(kind = ConfiguredOption.Kind.LIST)
         public Builder servers(String servers) {
             this.servers.clear();
-            this.servers.addAll(commaListToList(servers));
+            this.servers.addAll(commaListToSet(servers));
             return this;
         }
 
@@ -604,12 +578,12 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          * @param key key for which a value is to be added
          * @param value value to add to the Map entry for the given key
          */
-        private static <T, U> void addToEntry(Map<T, List<U>> map, T key, U value) {
-            List<U> result;
+        private static <T, U> void addToEntry(Map<T, Set<U>> map, T key, U value) {
+            Set<U> result;
             if (map.containsKey(key)) {
                 result = map.get(key);
             } else {
-                result = new ArrayList<>();
+                result = new HashSet<>();
                 map.put(key, result);
             }
             result.add(value);
@@ -626,19 +600,19 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          * list
          */
         private static <T> void setEntry(
-                Map<T, List<String>> map,
+                Map<T, Set<String>> map,
                 T key,
                 String values) {
-            List<String> set = commaListToList(values);
+            Set<String> set = commaListToSet(values);
             map.put(key, set);
         }
 
-        private static List<String> commaListToList(String items) {
+        private static Set<String> commaListToSet(String items) {
             /*
              * Do not special-case an empty comma-list to an empty set because a
              * set created here might be added to later.
              */
-            var result = new ArrayList<String>();
+            var result = new HashSet<String>();
             if (items != null) {
                 for (String item : items.split(",")) {
                     result.add(item.trim());

@@ -55,7 +55,7 @@
             <artifactId>helidon-microprofile-grpc-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss</groupId>
+            <groupId>io.smallrye</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>

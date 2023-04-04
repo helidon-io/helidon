@@ -123,7 +123,7 @@
             <artifactId>slf4j-jdk14</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss</groupId>
+            <groupId>io.smallrye</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
