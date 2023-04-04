@@ -42,7 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class Http2ClientTest {
-     static final String MESSAGE = "Hello World!";
+    private static final String MESSAGE = "Hello World!";
     private static final String TEST_HEADER_NAME = "custom_header";
     private static final String TEST_HEADER_VALUE = "as!fd";
     private static final HeaderValue TEST_HEADER = Header.create(Header.create(TEST_HEADER_NAME), TEST_HEADER_VALUE);
@@ -94,44 +94,51 @@ class Http2ClientTest {
     @Test
     void testHttp1() {
         // make sure the HTTP/1 route is not working
+        try (Http1ClientResponse response = http1Client
+                .get("/")
+                .request()) {
 
-        Http1ClientResponse response = http1Client.get("/")
-                .request();
-
-        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+        }
     }
 
     @Test
     void testUpgrade() {
-        Http2ClientResponse response = plainClient.get("/")
-                .request();
+        try (Http2ClientResponse response = plainClient
+                .get("/")
+                .request()) {
 
-        assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.as(String.class), is(MESSAGE));
-        assertThat(TEST_HEADER + " header must be present in response",
-                   response.headers().contains(TEST_HEADER), is(true));
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(String.class), is(MESSAGE));
+            assertThat(TEST_HEADER + " header must be present in response",
+                       response.headers().contains(TEST_HEADER), is(true));
+        }
     }
 
     @Test
     void testAppProtocol() {
-        Http2ClientResponse response = tlsClient.get("/")
-                .request();
+        try (Http2ClientResponse response = tlsClient
+                .get("/")
+                .request()) {
 
-        assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.as(String.class), is(MESSAGE));
-        assertThat(TEST_HEADER + " header must be present in response",
-                   response.headers().contains(TEST_HEADER), is(true));
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(String.class), is(MESSAGE));
+            assertThat(TEST_HEADER + " header must be present in response",
+                       response.headers().contains(TEST_HEADER), is(true));
+        }
     }
 
     @Test
     void testPriorKnowledge() {
-        Http2ClientResponse response = tlsClient.get("/")
+        try (Http2ClientResponse response = tlsClient
+                .get("/")
                 .priorKnowledge(true)
-                .request();
+                .request()) {
 
-        assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.as(String.class), is(MESSAGE));
-        assertThat(TEST_HEADER + " header must be present in response",
-                   response.headers().contains(TEST_HEADER), is(true));
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(String.class), is(MESSAGE));
+            assertThat(TEST_HEADER + " header must be present in response",
+                       response.headers().contains(TEST_HEADER), is(true));
+        }
     }
 }
