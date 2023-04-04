@@ -109,9 +109,12 @@
                         <dependency>org.eclipse.microprofile.openapi:microprofile-openapi-tck</dependency>
                     </dependenciesToScan>
                     <trimStackTrace>false</trimStackTrace>
-                    <!-- Following works around TCK test error when Application.getSingletons returns a non-empty set -->
                     <systemPropertyVariables>
+                        <!-- Following works around TCK test error when Application.getSingletons returns a non-empty set -->
                         <mp.openapi.extensions.helidon.use-jaxrs-semantics>false</mp.openapi.extensions.helidon.use-jaxrs-semantics>
+
+                        <!-- Following works around TCK bug https://github.com/eclipse/microprofile-open-api/issues/557 -->
+                        <jersey.config.server.resource.validation.ignoreErrors>true</jersey.config.server.resource.validation.ignoreErrors>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

@@ -556,6 +556,7 @@ public class OpenApiService implements HttpService {
             config.get(CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
+            apiConfigBuilder.config(config);
             return identity();
         }
 

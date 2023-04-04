@@ -15,21 +15,26 @@
  */
 package io.helidon.openapi.internal;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.regex.Pattern;
+import java.util.function.Supplier;
 
 import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
 import io.smallrye.openapi.api.OpenApiConfig;
+
+import static io.smallrye.openapi.api.constants.OpenApiConstants.NEVER_SCAN_CLASSES;
+import static io.smallrye.openapi.api.constants.OpenApiConstants.NEVER_SCAN_PACKAGES;
 
 /**
  * Helidon-specific implementation of the smallrye OpenApiConfig interface,
@@ -40,26 +45,29 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
 
     private final String modelReader;
     private final String filter;
-    private final Map<String, Set<String>> operationServers;
-    private final Map<String, Set<String>> pathServers;
+    private final Map<String, List<String>> operationServers;
+    private final Map<String, List<String>> pathServers;
     private Boolean scanDisable;
-    private final Pattern scanPackages;
-    private final Pattern scanClasses;
-    private final Pattern scanExcludePackages;
-    private final Pattern scanExcludeClasses;
-    private final Set<String> servers;
+    private final Set<String> scanPackages;
+    private final Set<String>  scanClasses;
+    private final Set<String>  scanExcludePackages;
+    private final Set<String>  scanExcludeClasses;
+    private final List<String> servers;
     private final Boolean scanDependenciesDisable = Boolean.TRUE;
     private final Set<String> scanDependenciesJars = Collections.emptySet();
     private final String customSchemaRegistryClass;
     private final Boolean applicationPathDisable;
     private final Map<String, String> schemas;
 
+    // Cannot be final because the interface we implement requires this to be settable after it is built.
+    private Optional<Boolean> allowNakedPathParameter;
+
     private OpenAPIConfigImpl(Builder builder) {
         modelReader = builder.modelReader;
         filter = builder.filter;
         operationServers = builder.operationServers;
         pathServers = builder.pathServers;
-        servers = new HashSet<>(builder.servers);
+        servers = new ArrayList<>(builder.servers);
         scanDisable = builder.scanDisable;
         scanPackages = builder.scanPackages;
         scanClasses = builder.scanClasses;
@@ -80,6 +88,16 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     }
 
     @Override
+    public <R, T> T getConfigValue(String propertyName, Class<R> type, Function<R, T> converter, Supplier<T> defaultValue) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <R, T> Map<String, T> getConfigValueMap(String propertyNamePrefix, Class<R> type, Function<R, T> converter) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public String modelReader() {
         return modelReader;
     }
@@ -95,37 +113,37 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     }
 
     @Override
-    public Pattern scanPackages() {
+    public Set<String> scanPackages() {
         return scanPackages;
     }
 
     @Override
-    public Pattern scanClasses() {
+    public Set<String> scanClasses() {
         return scanClasses;
     }
 
     @Override
-    public Pattern scanExcludePackages() {
-        return scanExcludePackages;
+    public Set<String> scanExcludePackages() {
+        return NEVER_SCAN_PACKAGES;
     }
 
     @Override
-    public Pattern scanExcludeClasses() {
-        return scanExcludeClasses;
+    public Set<String> scanExcludeClasses() {
+        return NEVER_SCAN_CLASSES;
     }
 
     @Override
-    public Set<String> servers() {
+    public List<String> servers() {
         return servers;
     }
 
     @Override
-    public Set<String> pathServers(String path) {
+    public List<String> pathServers(String path) {
         return chooseEntry(pathServers, path);
     }
 
     @Override
-    public Set<String> operationServers(String operationID) {
+    public List<String> operationServers(String operationID) {
         return chooseEntry(operationServers, operationID);
     }
 
@@ -154,11 +172,141 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         return schemas;
     }
 
-    private static <T, U> Set<U> chooseEntry(Map<T, Set<U>> map, T key) {
+    @Override
+    public void setAllowNakedPathParameter(Boolean allowNakedPathParameter) {
+        this.allowNakedPathParameter = Optional.of(allowNakedPathParameter);
+    }
+
+    @Override
+    public Optional<Boolean> allowNakedPathParameter() {
+        return allowNakedPathParameter;
+    }
+
+    @Override
+    public boolean scanBeanValidation() {
+        return true;
+    }
+
+    @Override
+    public boolean arrayReferencesEnable() {
+        return true;
+    }
+
+    @Override
+    public boolean privatePropertiesEnable() {
+        return true;
+    }
+
+    @Override
+    public String propertyNamingStrategy() {
+        return null;
+    }
+
+    @Override
+    public boolean sortedPropertiesEnable() {
+        return true;
+    }
+
+    @Override
+    public String getOpenApiVersion() {
+        return "3.0.3";
+    }
+
+    @Override
+    public String getInfoTitle() {
+        return null;
+    }
+
+    @Override
+    public String getInfoVersion() {
+        return null;
+    }
+
+    @Override
+    public String getInfoDescription() {
+        return null;
+    }
+
+    @Override
+    public String getInfoTermsOfService() {
+        return null;
+    }
+
+    @Override
+    public String getInfoContactEmail() {
+        return null;
+    }
+
+    @Override
+    public String getInfoContactName() {
+        return null;
+    }
+
+    @Override
+    public String getInfoContactUrl() {
+        return null;
+    }
+
+    @Override
+    public String getInfoLicenseName() {
+        return null;
+    }
+
+    @Override
+    public String getInfoLicenseUrl() {
+        return null;
+    }
+
+    @Override
+    public OperationIdStrategy getOperationIdStrategy() {
+        return null;
+    }
+
+    @Override
+    public DuplicateOperationIdBehavior getDuplicateOperationIdBehavior() {
+        return OpenApiConfig.DUPLICATE_OPERATION_ID_BEHAVIOR_DEFAULT;
+    }
+
+    @Override
+    public Optional<String[]> getDefaultProduces() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<String[]> getDefaultConsumes() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Set<String> getScanProfiles() {
+        return Set.of();
+    }
+
+    @Override
+    public Set<String> getScanExcludeProfiles() {
+        return Set.of();
+    }
+
+    @Override
+    public Map<String, String> getScanResourceClasses() {
+        return Map.of();
+    }
+
+    @Override
+    public boolean removeUnusedSchemas() {
+        return false;
+    }
+
+    @Override
+    public Integer getMaximumStaticFileSize() {
+        return MAXIMUM_STATIC_FILE_SIZE_DEFAULT;
+    }
+
+    private static <T, U> List<U> chooseEntry(Map<T, List<U>> map, T key) {
         if (map.containsKey(key)) {
             return map.get(key);
         }
-        return Collections.emptySet();
+        return List.of();
     }
 
     /**
@@ -187,10 +335,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          */
         public static final String SCHEMA = "schema";
 
-        private static final System.Logger LOGGER = System.getLogger(Builder.class.getName());
-
-        private static final Pattern MATCH_EVERYTHING = Pattern.compile(".*");
-
         // Key names are inspired by the MP OpenAPI config key names
         static final String MODEL_READER = "model.reader";
         static final String FILTER = "filter";
@@ -198,24 +342,23 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         static final String SERVERS_PATH = "servers.path";
         static final String SERVERS_OPERATION = "servers.operation";
 
-        static final String CUSTOM_SCHEMA_REGISTRY_CLASS = "custom-schema-registry.class";
-        static final String APPLICATION_PATH_DISABLE = "application-path.disable";
+        private static final Set<String> NEVER_SCAN_PACKAGES = Set.of("java.lang");
+        private static final Set<String> NEVER_SCAN_CLASSES = Set.of();
 
         private String modelReader;
         private String filter;
-        private final Map<String, Set<String>> operationServers = new HashMap<>();
-        private final Map<String, Set<String>> pathServers = new HashMap<>();
+        private final Map<String, List<String>> operationServers = new HashMap<>();
+        private final Map<String, List<String>> pathServers = new HashMap<>();
         private final Set<String> servers = new HashSet<>();
         private boolean scanDisable = true;
-        private Pattern scanPackages = MATCH_EVERYTHING;
-        private Pattern scanClasses = MATCH_EVERYTHING;
-        private Pattern scanExcludePackages = null;
-        private Pattern scanExcludeClasses = null;
+        private Set<String> scanPackages = Set.of();
+        private Set<String> scanClasses = Set.of();
+        private Set<String> scanExcludePackages = NEVER_SCAN_PACKAGES;
+        private Set<String> scanExcludeClasses = NEVER_SCAN_CLASSES;
 
         private String customSchemaRegistryClass;
-        private Boolean applicationPathDisable;
+        private boolean applicationPathDisable = false;
         private Map<String, String> schemas = new HashMap<>();
-
         private Builder() {
         }
 
@@ -237,8 +380,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
             stringFromConfig(config, SERVERS, this::servers);
             listFromConfig(config, SERVERS_PATH, this::pathServers);
             listFromConfig(config, SERVERS_OPERATION, this::operationServers);
-            stringFromConfig(config, CUSTOM_SCHEMA_REGISTRY_CLASS, this::customSchemaRegistryClass);
-            booleanFromConfig(config, APPLICATION_PATH_DISABLE, this::applicationPathDisable);
             mapFromConfig(config, SCHEMA, this::schemas);
             return this;
         }
@@ -340,7 +481,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         @ConfiguredOption(kind = ConfiguredOption.Kind.LIST)
         public Builder servers(String servers) {
             this.servers.clear();
-            this.servers.addAll(commaListToSet(servers));
+            this.servers.addAll(commaListToList(servers));
             return this;
         }
 
@@ -420,6 +561,8 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
             return this;
         }
 
+
+
         private static void stringFromConfig(Config config,
                                              String key,
                                              Function<String, Builder> assignment) {
@@ -439,12 +582,10 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         private static void mapFromConfig(Config config,
                                           String keyPrefix,
                                           Function<Map<String, String>, Builder> assignment) {
-            AtomicReference<Map<String, String>> schemas = new AtomicReference<>(new HashMap<>());
             config.get(keyPrefix)
                     .detach()
                     .asMap()
-                    .ifPresent(configNodeMap -> schemas.set(configNodeMap));
-            assignment.apply(schemas.get());
+                    .ifPresent(assignment::apply);
         }
 
         private static void booleanFromConfig(Config config,
@@ -463,15 +604,15 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          * @param key key for which a value is to be added
          * @param value value to add to the Map entry for the given key
          */
-        private static <T, U> void addToEntry(Map<T, Set<U>> map, T key, U value) {
-            Set<U> set;
+        private static <T, U> void addToEntry(Map<T, List<U>> map, T key, U value) {
+            List<U> result;
             if (map.containsKey(key)) {
-                set = map.get(key);
+                result = map.get(key);
             } else {
-                set = new HashSet<>();
-                map.put(key, set);
+                result = new ArrayList<>();
+                map.put(key, result);
             }
-            set.add(value);
+            result.add(value);
         }
 
         /**
@@ -485,19 +626,19 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          * list
          */
         private static <T> void setEntry(
-                Map<T, Set<String>> map,
+                Map<T, List<String>> map,
                 T key,
                 String values) {
-            Set<String> set = commaListToSet(values);
+            List<String> set = commaListToList(values);
             map.put(key, set);
         }
 
-        private static Set<String> commaListToSet(String items) {
+        private static List<String> commaListToList(String items) {
             /*
              * Do not special-case an empty comma-list to an empty set because a
              * set created here might be added to later.
              */
-            final Set<String> result = new HashSet<>();
+            var result = new ArrayList<String>();
             if (items != null) {
                 for (String item : items.split(",")) {
                     result.add(item.trim());

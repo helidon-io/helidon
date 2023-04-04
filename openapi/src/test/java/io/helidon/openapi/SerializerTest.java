@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,15 @@ class SerializerTest {
         Serializer.serialize(helper.types(), implsToTypes, openAPI, Format.JSON, writer);
         JsonStructure json = jsonFromReader(new StringReader(writer.toString()));
 
+        String greetGreetingPut = "/paths/~1greet~1greeting/put";
+        assertThat(json.getValue(greetGreetingPut + "/x-put-ext-0").toString(), is("\"put-ext-0-value\""));
+        assertThat(json.getValue(greetGreetingPut + "/x-put-ext-1").toString(), is("\"put-ext-1-value\""));
+        assertThat(json.getValue(greetGreetingPut + "/responses/x-responses-ext").toString(),
+                   is("\"responses-ext-0-value\""));
+        assertThat(json.getValue(greetGreetingPut + "/responses/204/x-204-ext").toString(),
+                   is("\"204-ext-value\""));
         assertThat(json.getValue("/x-my-personal-map/owner/last").toString(), is("\"Myself\""));
+
         JsonValue otherItem = json.getValue("/x-other-item");
         assertThat(otherItem.getValueType(), is(JsonValue.ValueType.NUMBER));
         assertThat(Double.valueOf(otherItem.toString()), is(10.0));

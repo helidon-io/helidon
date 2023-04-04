@@ -71,6 +71,7 @@ import org.glassfish.jersey.server.spi.Container;
 
 import static java.util.Objects.requireNonNull;
 import static org.glassfish.jersey.CommonProperties.PROVIDER_DEFAULT_DISABLE;
+import static org.glassfish.jersey.server.ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS;
 import static org.glassfish.jersey.server.ServerProperties.WADL_FEATURE_DISABLE;
 
 /**
@@ -508,6 +509,12 @@ public class JerseySupport implements Service {
                 LOGGER.log(Level.DEBUG, "Disabling Jersey WADL feature, you can enable it by setting system property "
                                     + WADL_FEATURE_DISABLE + " to false");
                 resourceConfig.property(WADL_FEATURE_DISABLE, "true");
+            }
+
+            // At least a temporary workaround for TCK bug https://github.com/eclipse/microprofile-open-api/issues/557.
+            String resourceValidationIgnoreErrors = System.getProperty(RESOURCE_VALIDATION_IGNORE_ERRORS);
+            if (resourceValidationIgnoreErrors != null) {
+                resourceConfig.property(RESOURCE_VALIDATION_IGNORE_ERRORS, Boolean.parseBoolean(resourceValidationIgnoreErrors));
             }
         }
 

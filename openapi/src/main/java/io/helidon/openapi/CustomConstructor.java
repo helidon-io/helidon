@@ -17,10 +17,12 @@ package io.helidon.openapi;
 
 import java.lang.System.Logger.Level;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.Paths;
 import org.eclipse.microprofile.openapi.models.callbacks.Callback;
@@ -36,6 +38,8 @@ import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeId;
+import org.yaml.snakeyaml.nodes.NodeTuple;
+import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.SequenceNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
@@ -228,17 +232,57 @@ final class CustomConstructor extends Constructor {
 
         @Override
         public Object construct(Node node) {
-            Class<?> parentType = node.getType();
-            if (CHILD_MAP_TYPES.containsKey(parentType) || CHILD_MAP_OF_LIST_TYPES.containsKey(parentType)) {
-                // Following is inspired by SnakeYAML Constructor$ConstructMapping#construct.
-                MappingNode mappingNode = (MappingNode) node;
-                if (node.isTwoStepsConstruction()) {
-                    return newMap(mappingNode);
-                } else {
-                    return constructMapping(mappingNode);
-                }
+            MappingNode mappingNode = (MappingNode) node;
+            Class<?> parentType = mappingNode.getType();
+            Map<String, Object> extensions = new HashMap<>();
+
+            // If the element has extension properties, SnakeYAML will have prepared a MappingNode even if
+            // the node type is actually a scalar, for example.
+            if (Extensible.class.isAssignableFrom(parentType)) {
+                // Save the extension property names and values, remove the corresponding child nodes,
+                // let SnakeYAML process the adjusted node, then set the saved extension properties.
+                var allTuples = mappingNode.getValue();
+                List<NodeTuple> extensionTuples = new ArrayList<>();
+                allTuples.forEach(tuple -> {
+                    String name = ((ScalarNode) tuple.getKeyNode()).getValue();
+                    if (name.startsWith("x-")) {
+                        extensionTuples.add(tuple);
+                        // Extension values can be scalars, sequences, or maps. Using constructObject here will create the
+                        // correct value type.
+                        Node valueNode = tuple.getValueNode();
+                        Object value;
+                        if (valueNode.getTag().equals(Tag.STR)) {
+                            value = constructScalar((ScalarNode) valueNode);
+                        } else if (valueNode.getTag().equals(Tag.SEQ)) {
+                            value = constructSequence((SequenceNode) valueNode);
+                        } else if (valueNode.getTag().equals(Tag.MAP)) {
+                            value = constructMapping((MappingNode) valueNode);
+                        } else {
+                            value = constructObject(valueNode);
+                        }
+                        extensions.put(name, value);
+                    }
+                });
+                allTuples.removeAll(extensionTuples);
             }
-            return super.construct(node);
+
+            Object result;
+            if (CHILD_MAP_TYPES.containsKey(parentType) || CHILD_MAP_OF_LIST_TYPES.containsKey(parentType)) {
+                // Following is inspired by SnakeYAML Constructor$ConstructMapping#construct
+                // and Constructor$ConstructSequence#construct.
+                if (mappingNode.isTwoStepsConstruction()) {
+                    result = newMap(mappingNode);
+                } else {
+                    result = constructMapping(mappingNode);
+                }
+            } else {
+                result = super.construct(mappingNode);
+            }
+
+            if (!extensions.isEmpty()) {
+                ((Extensible<?>) result).setExtensions(extensions);
+            }
+            return result;
         }
     }
 }

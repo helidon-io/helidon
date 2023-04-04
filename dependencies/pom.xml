@@ -111,7 +111,7 @@
         <version.lib.microprofile-health>4.0</version.lib.microprofile-health>
         <version.lib.microprofile-jwt>2.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>4.0</version.lib.microprofile-metrics-api>
-        <version.lib.microprofile-openapi-api>3.0</version.lib.microprofile-openapi-api>
+        <version.lib.microprofile-openapi-api>3.1</version.lib.microprofile-openapi-api>
         <version.lib.microprofile-reactive-messaging-api>3.0</version.lib.microprofile-reactive-messaging-api>
         <version.lib.microprofile-reactive-streams-operators-api>3.0</version.lib.microprofile-reactive-streams-operators-api>
         <version.lib.microprofile-reactive-streams-operators-core>3.0</version.lib.microprofile-reactive-streams-operators-core>
@@ -142,7 +142,7 @@
         <version.lib.postgresql>42.4.3</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>2.0.0</version.lib.slf4j>
-        <version.lib.smallrye-openapi>2.1.16</version.lib.smallrye-openapi>
+        <version.lib.smallrye-openapi>3.3.1</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.0.4</version.lib.tyrus>

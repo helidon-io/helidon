@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.config.metadata.Configured;
@@ -256,26 +255,16 @@ public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpe
             return viewFilteredByConfig;
         }
 
-        /*
-         * If the classes to be ignored are A and B, the exclusion regex expression we want for filtering is
-         *
-         * ^(A|B)$
-         *
-         * The ^ and $ avoid incorrect prefix/suffix matches.
-         */
-        Pattern excludePattern = Pattern.compile(
-                classNamesToIgnore(jaxRsApplications,
+
+        Set<String> excludedClasses = classNamesToIgnore(jaxRsApplications,
                                    jaxRsApp,
                                    ancillaryClassNames,
-                                   classesExplicitlyReferenced)
-                        .stream()
-                        .map(Pattern::quote)
-                        .collect(Collectors.joining("|", "^(", ")$")));
+                                   classesExplicitlyReferenced);
 
         // Create a new filtered index view for this application which excludes the irrelevant classes we just identified. Its
         // delegate is the previously-created view based only on the MP configuration.
         FilteredIndexView result = new FilteredIndexView(viewFilteredByConfig,
-                                                         new FilteringOpenApiConfigImpl(mpConfig, excludePattern));
+                                                         new FilteringOpenApiConfigImpl(mpConfig, excludedClasses));
         if (LOGGER.isLoggable(Level.DEBUG)) {
             String knownClassNames = result
                     .getKnownClasses()
@@ -291,7 +280,7 @@ public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpe
                                              + "  and known classes: %n  %s",
                                      appClassName,
                                      classesExplicitlyReferenced,
-                                     excludePattern,
+                                     excludedClasses,
                                      knownClassNames));
         }
 
@@ -329,15 +318,15 @@ public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpe
 
     private static class FilteringOpenApiConfigImpl extends OpenApiConfigImpl {
 
-        private final Pattern classesToExclude;
+        private final Set<String> classesToExclude;
 
-        FilteringOpenApiConfigImpl(Config config, Pattern classesToExclude) {
+        FilteringOpenApiConfigImpl(Config config, Set<String> classesToExclude) {
             super(config);
             this.classesToExclude = classesToExclude;
         }
 
         @Override
-        public Pattern scanExcludeClasses() {
+        public Set<String> scanExcludeClasses() {
             return classesToExclude;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
 import static org.glassfish.jersey.CommonProperties.PROVIDER_DEFAULT_DISABLE;
+import static org.glassfish.jersey.server.ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS;
 import static org.glassfish.jersey.server.ServerProperties.WADL_FEATURE_DISABLE;
 
 class JaxRsService implements HttpService {
@@ -96,6 +97,12 @@ class JaxRsService implements HttpService {
     static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
         resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
         resourceConfig.property(WADL_FEATURE_DISABLE, "true");
+
+        // At least a temporary workaround for TCK bug https://github.com/eclipse/microprofile-open-api/issues/557.
+        String resourceValidationIgnoreErrors = System.getProperty(RESOURCE_VALIDATION_IGNORE_ERRORS);
+        if (resourceValidationIgnoreErrors != null) {
+            resourceConfig.property(RESOURCE_VALIDATION_IGNORE_ERRORS, Boolean.parseBoolean(resourceValidationIgnoreErrors));
+        }
 
         InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
         ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,

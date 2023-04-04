@@ -31,6 +31,7 @@ module io.helidon.openapi {
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.common.media.type;
+    requires io.helidon.config;
 
     requires org.jboss.jandex;
 

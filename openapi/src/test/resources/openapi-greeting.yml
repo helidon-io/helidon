@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@
 # limitations under the License.
 # 
 ---
-openapi: 3.0.0
+openapi: 3.0.3
+x-my-string: hello
 x-my-personal-map:
   owner:
     first: Me
@@ -49,6 +50,8 @@ servers:
 paths:
   /greet/greeting:
     put:
+      x-put-ext-0: put-ext-0-value
+      x-put-ext-1: put-ext-1-value
       summary: Sets the greeting prefix
       description: Permits the client to set the prefix part of the greeting ("Hello")
       requestBody:
@@ -65,8 +68,19 @@ paths:
                   type: string
 
       responses:
+        x-responses-ext: responses-ext-0-value
         '204':
+          x-204-ext: 204-ext-value
           description: Greeting set
+        '200':
+          x-200-ext: 200-ext-value
+          description: Just for YAML testing
+          content:
+            x-200-content-ext: 200-content-ext-value
+            text/plain:
+              schema:
+                type: string
+
 
   /greet/:
     get:
