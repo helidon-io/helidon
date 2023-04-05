@@ -56,7 +56,7 @@ class AutoFlushTest {
                 try (InputStream is = new FileInputStream(file)) {
                     is.transferTo(outputStream);
                 }
-            }).header(Http.Header.CONTENT_LENGTH, "6000000").build();
+            }).header(Http.Header.CONTENT_LENGTH, String.valueOf(FILE_SIZE)).build();
         }
     }
 
@@ -78,8 +78,8 @@ class AutoFlushTest {
                 .request()
                 .get()) {
             assertThat(resp.getStatus(), is(200));
-            assertThat(resp.getHeaderString(Http.Header.CONTENT_LENGTH), is("6000000"));
-            assertThat(resp.readEntity(byte[].class).length, is(6000000));
+            assertThat(resp.getHeaderString(Http.Header.CONTENT_LENGTH), is(String.valueOf(FILE_SIZE)));
+            assertThat(resp.readEntity(byte[].class).length, is(FILE_SIZE));
         }
     }
 }
