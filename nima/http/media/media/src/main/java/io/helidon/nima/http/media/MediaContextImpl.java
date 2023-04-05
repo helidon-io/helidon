@@ -40,10 +40,12 @@ class MediaContextImpl implements MediaContext {
     private static final ConcurrentHashMap<GenericType<?>, AtomicBoolean> LOGGED_WRITERS = new ConcurrentHashMap<>();
 
     private final List<MediaSupport> supports;
+    private final MediaContext fallback;
 
-    MediaContextImpl(List<MediaSupport> supports) {
+    MediaContextImpl(List<MediaSupport> supports, MediaContext fallback) {
         this.supports = supports;
         this.supports.forEach(it -> it.init(this));
+        this.fallback = fallback;
     }
 
     @Override
@@ -58,7 +60,11 @@ class MediaContextImpl implements MediaContext {
             }
         }
         if (compatible == null) {
-            return FailingReader.instance();
+            if (fallback == null) {
+                return FailingReader.instance();
+            } else {
+                return fallback.reader(type, headers);
+            }
         }
         return entityReader(compatible);
     }
@@ -79,7 +85,11 @@ class MediaContextImpl implements MediaContext {
         }
 
         if (compatible == null) {
-            return FailingWriter.instance();
+            if (fallback == null) {
+                return FailingWriter.instance();
+            } else {
+                return fallback.writer(type, requestHeaders, responseHeaders);
+            }
         }
         return entityWriter(compatible);
     }
@@ -100,7 +110,11 @@ class MediaContextImpl implements MediaContext {
             }
         }
         if (compatible == null) {
-            return FailingReader.instance();
+            if (fallback == null) {
+                return FailingReader.instance();
+            } else {
+                return fallback.reader(type, requestHeaders, responseHeaders);
+            }
         }
         return entityReader(compatible);
     }
@@ -119,7 +133,11 @@ class MediaContextImpl implements MediaContext {
         }
 
         if (compatible == null) {
-            return FailingWriter.instance();
+            if (fallback == null) {
+                return FailingWriter.instance();
+            } else {
+                return fallback.writer(type, requestHeaders);
+            }
         }
         return entityWriter(compatible);
     }

@@ -18,6 +18,7 @@ package io.helidon.nima.http.media;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.ServiceLoader;
 
 import io.helidon.common.GenericType;
@@ -115,6 +116,7 @@ public interface MediaContext {
         private final HelidonServiceLoader.Builder<MediaSupportProvider> mediaSupportProviders;
         private final List<MediaSupport> explicitSupports = new ArrayList<>();
         private Config providersConfig;
+        private MediaContext fallback;
 
         // Builder instance must be created using factory method.
         private Builder() {
@@ -141,7 +143,7 @@ public interface MediaContext {
             supports.add(StringSupport.create());
             supports.add(PathSupport.create());
             supports.add(FormParamsSupport.create());
-            return new MediaContextImpl(supports);
+            return new MediaContextImpl(supports, fallback);
         }
 
         /**
@@ -181,6 +183,18 @@ public interface MediaContext {
          */
         public Builder addMediaSupport(MediaSupport mediaSupport) {
             explicitSupports.add(mediaSupport);
+            return this;
+        }
+
+        /**
+         * Configure an existing context as a fallback for this context.
+         *
+         * @param mediaContext media context to use if supports configured on this request cannot provide a good result
+         * @return updated builder
+         */
+        public Builder fallback(MediaContext mediaContext) {
+            Objects.requireNonNull(mediaContext);
+            this.fallback = mediaContext;
             return this;
         }
     }
