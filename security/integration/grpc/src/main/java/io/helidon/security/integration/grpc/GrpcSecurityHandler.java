@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -368,11 +368,13 @@ public class GrpcSecurityHandler
                                                .customObjects(customObjects.orElse(new ClassToInstanceStore<>()))
                                                .build());
 
-        CompletionStage<Boolean> stage = processAuthentication(call, headers, securityContext, tracing.atnTracing())
+        CallWrapper<ReqT, RespT> callWrapper = new CallWrapper<>(call);
+
+        CompletionStage<Boolean> stage = processAuthentication(callWrapper, headers, securityContext, tracing.atnTracing())
                 .thenCompose(atnResult -> {
                     if (atnResult.proceed) {
                         // authentication was OK or disabled, we should continue
-                        return processAuthorization(securityContext, tracing.atzTracing());
+                        return processAuthorization(securityContext, tracing.atzTracing(), callWrapper);
                     } else {
                         // authentication told us to stop processing
                         return CompletableFuture.completedFuture(AtxResult.STOP);
@@ -392,7 +394,6 @@ public class GrpcSecurityHandler
                 });
 
         ServerCall.Listener<ReqT> listener;
-        CallWrapper<ReqT, RespT> callWrapper = new CallWrapper<>(call);
 
         try {
             boolean proceed = stage.toCompletableFuture().get();
@@ -400,7 +401,6 @@ public class GrpcSecurityHandler
             if (proceed) {
                 listener = next.startCall(callWrapper, headers);
             } else {
-                callWrapper.close(Status.PERMISSION_DENIED, new Metadata());
                 listener = new EmptyListener<>();
             }
         } catch (Throwable throwable) {
@@ -463,18 +463,18 @@ public class GrpcSecurityHandler
                 //everything is fine, we can continue with processing
                 break;
             case FAILURE_FINISH:
-                if (atnFinishFailure(future)) {
+                if (atnFinishFailure(future, call)) {
                     atnSpanFinish(atnTracing, response);
                     return;
                 }
                 break;
             case SUCCESS_FINISH:
-                atnFinish(future);
+                atnFinish(future, call);
                 atnSpanFinish(atnTracing, response);
                 return;
             case ABSTAIN:
             case FAILURE:
-                if (atnAbstainFailure(future)) {
+                if (atnAbstainFailure(future, call)) {
                     atnSpanFinish(atnTracing, response);
                     return;
                 }
@@ -505,28 +505,31 @@ public class GrpcSecurityHandler
         atnTracing.finish();
     }
 
-    private boolean atnAbstainFailure(CompletableFuture<AtxResult> future) {
+    private boolean atnAbstainFailure(CompletableFuture<AtxResult> future, ServerCall<?, ?> call) {
         if (authenticationOptional.orElse(false)) {
             LOGGER.finest("Authentication failed, but was optional, so assuming anonymous");
             return false;
         }
 
+        call.close(Status.UNAUTHENTICATED, new Metadata());
         future.complete(AtxResult.STOP);
         return true;
     }
 
-    private boolean atnFinishFailure(CompletableFuture<AtxResult> future) {
+    private boolean atnFinishFailure(CompletableFuture<AtxResult> future, ServerCall<?, ?> call) {
 
         if (authenticationOptional.orElse(false)) {
             LOGGER.finest("Authentication failed, but was optional, so assuming anonymous");
             return false;
         } else {
+            call.close(Status.UNAUTHENTICATED, new Metadata());
             future.complete(AtxResult.STOP);
             return true;
         }
     }
 
-    private void atnFinish(CompletableFuture<AtxResult> future) {
+    private void atnFinish(CompletableFuture<AtxResult> future, ServerCall<?, ?> call) {
+        call.close(Status.OK, new Metadata());
         future.complete(AtxResult.STOP);
     }
 
@@ -539,7 +542,8 @@ public class GrpcSecurityHandler
 
     private CompletionStage<AtxResult> processAuthorization(
             SecurityContext context,
-            AtzTracing atzTracing) {
+            AtzTracing atzTracing,
+            ServerCall<?, ?> call) {
         CompletableFuture<AtxResult> future = new CompletableFuture<>();
 
         if (!authorize.orElse(false)) {
@@ -555,12 +559,14 @@ public class GrpcSecurityHandler
             // first validate roles - RBAC is supported out of the box by security, no need to invoke provider
             if (explicitAuthorizer.isPresent()) {
                 if (rolesSet.stream().noneMatch(role -> context.isUserInRole(role, explicitAuthorizer.get()))) {
+                    call.close(Status.PERMISSION_DENIED, new Metadata());
                     future.complete(AtxResult.STOP);
                     atzTracing.finish();
                     return future;
                 }
             } else {
                 if (rolesSet.stream().noneMatch(context::isUserInRole)) {
+                    call.close(Status.PERMISSION_DENIED, new Metadata());
                     future.complete(AtxResult.STOP);
                     atzTracing.finish();
                     return future;
@@ -580,14 +586,20 @@ public class GrpcSecurityHandler
             case SUCCESS:
                 //everything is fine, we can continue with processing
                 break;
-            case FAILURE_FINISH:
             case SUCCESS_FINISH:
                 atzTracing.finish();
+                call.close(Status.OK, new Metadata());
+                future.complete(AtxResult.STOP);
+                return;
+            case FAILURE_FINISH:
+                atzTracing.finish();
+                call.close(Status.PERMISSION_DENIED, new Metadata());
                 future.complete(AtxResult.STOP);
                 return;
             case ABSTAIN:
             case FAILURE:
                 atzTracing.finish();
+                call.close(Status.PERMISSION_DENIED, new Metadata());
                 future.complete(AtxResult.STOP);
                 return;
             default:
