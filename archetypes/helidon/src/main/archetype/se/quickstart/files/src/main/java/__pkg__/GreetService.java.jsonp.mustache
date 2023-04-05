@@ -131,7 +131,7 @@ public class GreetService implements Service {
     private void updateGreetingHandler(ServerRequest request,
                                        ServerResponse response) {
         request.content().as(JsonObject.class)
-            .thenAccept(jo -> updateGreetingFromJson(jo, response))
+            .forSingle(jo -> updateGreetingFromJson(jo, response))
             .exceptionally(ex -> processErrors(ex, request, response));
     }
 }

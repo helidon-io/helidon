@@ -5,6 +5,7 @@ import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonValue;
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
@@ -61,7 +62,7 @@ public class InitializeDb {
             dbClient.execute(exec -> exec
                     .namedDml("create-types")
                     .flatMapSingle(result -> exec.namedDml("create-pokemons")))
-                    .await();
+                    .await(Duration.ofSeconds(10));
         } catch (Exception e) {
             LOGGER.warning(e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
         }
@@ -76,8 +77,7 @@ public class InitializeDb {
      */
     private static void initData(DbClient dbClient) throws InterruptedException, ExecutionException {
         dbClient.execute(exec -> initTypes(exec).flatMapSingle(count -> initPokemons(exec)))
-                .toCompletableFuture()
-                .get();
+                .await(Duration.ofSeconds(10));
     }
 
     /**

@@ -1,5 +1,10 @@
 package {{package}};
 
+import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
 import io.helidon.common.http.Headers;
 import io.helidon.config.Config;
 import io.helidon.webclient.WebClient;
@@ -12,10 +17,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -26,7 +27,7 @@ class TestCORS {
 
     @BeforeAll
     static void init() throws InterruptedException {
-        server = Main.startServer().await();
+        server = Main.startServer().await(Duration.ofSeconds(10));
 
         client = WebClient.builder()
                 .baseUri("http://localhost:" + server.port())
@@ -81,7 +82,7 @@ class TestCORS {
 
         WebClientResponse r = builder.path("/cors")
                 .submit()
-                .await();
+                .await(Duration.ofSeconds(2));
 
         assertThat("pre-flight status", r.status().code(), is(200));
         Headers preflightResponseHeaders = r.headers();
@@ -127,21 +128,20 @@ class TestCORS {
         return builder
                 .path("/cors")
                 .submit()
-                .await();
+                .await(Duration.ofSeconds(5));
     }
 
     private static String fromPayload(WebClientResponse response) {
         return response
                 .content()
                 .as(String.class)
-                .await();
+                .await(Duration.ofSeconds(5));
     }
 
     private static WebClientResponse putResponse(String message, WebClientRequestBuilder builder) {
         return builder
                 .path("/cors/" + message)
                 .submit()
-                .await();
+                .await(Duration.ofSeconds(5));
     }
 }
-

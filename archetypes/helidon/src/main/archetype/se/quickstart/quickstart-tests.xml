@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-
     <output>
         <model>
+            <list key="MainTest-java-imports">
+                <value>java.time.Duration</value>
+            </list>
             <list key="MainTest-java-imports" if="${media.json-lib} == 'jsonp'">
                 <value>java.util.Collections</value>
                 <value>jakarta.json.Json</value>
@@ -35,7 +37,8 @@
                 .build();]]></value>
             </list>
             <list key="MainTest-methods" if="${media.json-lib} == 'jsonp'">
-                <value><![CDATA[    @Test
+                <value><![CDATA[
+    @Test
     void testGreetings() {
         JsonObject jsonObject;
         WebClientResponse response;
@@ -43,24 +46,26 @@
         jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(jsonObject.getString("message"), is("Hello Joe!"));
 
         response = webClient.put()
                 .path("/greet/greeting")
                 .submit(TEST_JSON_OBJECT)
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(response.status().code(), is(204));
 
         jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(jsonObject.getString("message"), is("Hola Joe!"));
-    }]]></value>
+    }
+]]></value>
             </list>
             <list key="MainTest-methods" if="['jsonb', 'jackson'] contains ${media.json-lib}">
-                <value><![CDATA[    @Test
+                <value><![CDATA[
+    @Test
     void testGreetings() {
         Message json;
         WebClientResponse response;
@@ -68,21 +73,22 @@
         json = webClient.get()
                 .path("/greet/Joe")
                 .request(Message.class)
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(json.getMessage(), is("Hello Joe!"));
 
         response = webClient.put()
                 .path("/greet/greeting")
                 .submit("{\"greeting\" : \"Hola\"}")
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(response.status().code(), is(204));
 
         json = webClient.get()
                 .path("/greet/Joe")
                 .request(Message.class)
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(json.getMessage(), is("Hola Joe!"));
-    }]]></value>
+    }
+]]></value>
             </list>
         </model>
     </output>

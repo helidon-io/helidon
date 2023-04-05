@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@
 
     <output>
         <model>
+            <list key="MainTest-java-imports">
+                <value>java.time.Duration</value>
+            </list>
             <list key="MainTest-other-imports">
                 <value>org.junit.jupiter.api.Order</value>
             </list>
@@ -35,7 +38,7 @@
         JsonObject jsonObject = webClient.get()
                                          .path("/simple-greet")
                                          .request(JsonObject.class)
-                                         .await();
+                                         .await(Duration.ofSeconds(5));
         assertThat(jsonObject.getString("message"), is("Hello World!"));
     }]]></value>
             </list>
@@ -45,7 +48,7 @@
         Message json = webClient.get()
                 .path("/simple-greet")
                 .request(Message.class)
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(json.getMessage(), is("Hello World!"));
     }]]></value>
             </list>

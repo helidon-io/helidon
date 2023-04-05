@@ -61,7 +61,7 @@ public class FtService implements Service {
         long sleep = Long.parseLong(request.path().param("millis"));
 
         timeout.invoke(() -> sleep(sleep))
-                .thenAccept(response::send)
+                .forSingle(response::send)
                 .exceptionally(response::send);
     }
 
@@ -78,7 +78,7 @@ public class FtService implements Service {
                 return reactiveFailure();
             }
             return Single.just("calls/failures: " + current + "/" + failures.get());
-        }).thenAccept(response::send)
+        }).forSingle(response::send)
                 .exceptionally(response::send);
     }
 
@@ -86,9 +86,9 @@ public class FtService implements Service {
         boolean success = "true".equalsIgnoreCase(request.path().param("success"));
 
         if (success) {
-            fallback.invoke(this::reactiveData).thenAccept(response::send);
+            fallback.invoke(this::reactiveData).forSingle(response::send);
         } else {
-            fallback.invoke(this::reactiveFailure).thenAccept(response::send);
+            fallback.invoke(this::reactiveFailure).forSingle(response::send);
         }
     }
 
@@ -97,11 +97,11 @@ public class FtService implements Service {
 
         if (success) {
             breaker.invoke(this::reactiveData)
-                    .thenAccept(response::send)
+                    .forSingle(response::send)
                     .exceptionally(response::send);
         } else {
             breaker.invoke(this::reactiveFailure)
-                    .thenAccept(response::send)
+                    .forSingle(response::send)
                     .exceptionally(response::send);
         }
 
@@ -111,7 +111,7 @@ public class FtService implements Service {
         long sleep = Long.parseLong(request.path().param("millis"));
 
         bulkhead.invoke(() -> sleep(sleep))
-                .thenAccept(response::send)
+                .forSingle(response::send)
                 .exceptionally(response::send);
     }
 
