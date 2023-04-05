@@ -38,7 +38,7 @@ import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceInfo;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
-import io.helidon.pico.services.testsubjects.HelloPicoApplication;
+import io.helidon.pico.services.testsubjects.HelloPico$$Application;
 import io.helidon.pico.services.testsubjects.HelloPicoImpl$$picoActivator;
 import io.helidon.pico.services.testsubjects.HelloPicoWorld;
 import io.helidon.pico.services.testsubjects.HelloPicoWorldImpl;
@@ -82,7 +82,7 @@ class HelloPicoWorldSanityTest {
 
     @AfterEach
     void tearDown() {
-        HelloPicoApplication.ENABLED = true;
+        HelloPico$$Application.ENABLED = true;
         SimplePicoTestingSupport.resetAll();
     }
 
@@ -95,18 +95,18 @@ class HelloPicoWorldSanityTest {
                    equalTo(EXPECTED_MODULES));
         List<String> descriptions = ServiceUtils.toDescriptions(moduleProviders);
         assertThat(descriptions,
-                   containsInAnyOrder("EmptyModule:ACTIVE", "HelloPicoModule:ACTIVE"));
+                   containsInAnyOrder("EmptyModule:ACTIVE", "HelloPico$$Module:ACTIVE"));
 
         List<ServiceProvider<Application>> applications = services.lookupAll(Application.class);
         assertThat(applications.size(),
                    equalTo(1));
         assertThat(ServiceUtils.toDescriptions(applications),
-                   containsInAnyOrder("HelloPicoApplication:ACTIVE"));
+                   containsInAnyOrder("HelloPico$$Application:ACTIVE"));
     }
 
     @Test
     void standardActivationWithNoApplicationEnabled() {
-        HelloPicoApplication.ENABLED = false;
+        HelloPico$$Application.ENABLED = false;
         Optional<PicoServices> picoServices = PicoServices.picoServices();
         ((DefaultPicoServices) picoServices.orElseThrow()).reset(true);
 

@@ -34,6 +34,7 @@ import io.helidon.pico.DependencyInfo;
 import io.helidon.pico.InjectionException;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.Interceptor;
+import io.helidon.pico.PicoServiceProviderException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceInfo;
@@ -70,7 +71,13 @@ class DefaultInjectionPlans {
         }
 
         dependencies.allDependencies()
-                .forEach(dep -> accumulate(dep, result, picoServices, self, resolveIps, logger));
+                .forEach(dep -> {
+                    try {
+                        accumulate(dep, result, picoServices, self, resolveIps, logger);
+                    } catch (Exception e) {
+                        throw new PicoServiceProviderException("An error occurred creating the injection plan", e, self);
+                    }
+                });
 
         return result;
     }
@@ -82,17 +89,8 @@ class DefaultInjectionPlans {
                                    ServiceProvider<?> self,
                                    boolean resolveIps,
                                    System.Logger logger) {
-        ServiceInfoCriteria depTo = dep.dependencyTo();
         ServiceInfo selfInfo = self.serviceInfo();
-        if (selfInfo.declaredWeight().isPresent()
-                && selfInfo.contractsImplemented().containsAll(depTo.contractsImplemented())) {
-            // if we have a weight on ourselves, and we inject an interface that we actually offer, then
-            // be sure to use it to get lower weighted injection points ...
-            depTo = DefaultServiceInfoCriteria.toBuilder(depTo)
-                    .weight(selfInfo.declaredWeight().get())
-                    .build();
-        }
-
+        ServiceInfoCriteria depTo = toCriteria(dep, self, selfInfo);
         Services services = picoServices.services();
         PicoServicesConfig cfg = picoServices.config();
         boolean isPrivateSupported = cfg.supportsJsr330Privates();
@@ -177,6 +175,37 @@ class DefaultInjectionPlans {
                         assert (prev == null) : ipInfo;
                     }
                 });
+    }
+
+    /**
+     * Creates and maybe adjusts the criteria to match the context of who is doing the lookup.
+     *
+     * @param dep       the dependency info to lookup
+     * @param self      the service doing the lookup
+     * @param selfInfo  the service info for the service doing the lookup
+     * @return the criteria
+     */
+    static ServiceInfoCriteria toCriteria(DependencyInfo dep,
+                                          ServiceProvider<?> self,
+                                          ServiceInfo selfInfo) {
+        ServiceInfoCriteria criteria = dep.dependencyTo();
+        DefaultServiceInfoCriteria.Builder builder = null;
+        if (selfInfo.declaredWeight().isPresent()
+                && selfInfo.contractsImplemented().containsAll(criteria.contractsImplemented())) {
+            // if we have a weight on ourselves, and we inject an interface that we actually offer, then
+            // be sure to use it to get lower weighted injection points
+            builder = DefaultServiceInfoCriteria.toBuilder(criteria)
+                    .weight(selfInfo.declaredWeight().get());
+        }
+
+        if ((self instanceof ServiceProviderBindable) && ((ServiceProviderBindable<?>) self).isInterceptor()) {
+            if (builder == null) {
+                builder = DefaultServiceInfoCriteria.toBuilder(criteria);
+            }
+            builder = builder.includeIntercepted(true);
+        }
+
+        return (builder != null) ? builder.build() : criteria;
     }
 
     /**

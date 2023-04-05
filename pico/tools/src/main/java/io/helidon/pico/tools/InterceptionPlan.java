@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.helidon.builder.Builder;
 import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.ServiceInfoBasics;
 
 /**
@@ -43,6 +44,20 @@ public interface InterceptionPlan {
      * @return annotations at the service type level
      */
     Set<AnnotationAndValue> serviceLevelAnnotations();
+
+    /**
+     * Returns true if the implementation has a zero/no-argument constructor.
+     *
+     * @return true if the service type being intercepted has a zero/no-argument constructor
+     */
+    boolean hasNoArgConstructor();
+
+    /**
+     * The interfaces that this service implements (usually a superset of {@link ServiceInfoBasics#contractsImplemented()}).
+     *
+     * @return the interfaces implemented
+     */
+    Set<TypeName> interfaces();
 
     /**
      * All the annotation names that contributed to triggering this interceptor plan.

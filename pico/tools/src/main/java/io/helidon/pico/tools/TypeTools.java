@@ -500,6 +500,7 @@ public final class TypeTools extends BuilderTypeTools {
         Elements elementUtils = processEnv.getElementUtils();
         Set<AnnotationAndValue> result = new LinkedHashSet<>();
         createAnnotationAndValueSet(serviceTypeElement).forEach(anno -> {
+            result.add(anno);
             TypeElement typeElement = elementUtils.getTypeElement(anno.typeName().name());
             if (typeElement != null) {
                 typeElement.getAnnotationMirrors()
@@ -971,14 +972,14 @@ public final class TypeTools extends BuilderTypeTools {
                                                   ExecutableElement elemInfo,
                                                   int elemOffset) {
         VariableElement paramInfo = elemInfo.getParameters().get(elemOffset - 1);
-        String elemType = paramInfo.asType().toString();
+        TypeName elemTypeName = TypeTools.createTypeNameFromElement(paramInfo).orElseThrow();
         Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(paramInfo.getAnnotationMirrors());
         return DefaultElementInfo.builder()
                 .serviceTypeName(serviceTypeName.name())
                 .elementName("p" + elemOffset)
                 .elementKind(elemInfo.getKind() == ElementKind.CONSTRUCTOR
                                      ? InjectionPointInfo.ElementKind.CONSTRUCTOR : InjectionPointInfo.ElementKind.METHOD)
-                .elementTypeName(elemType)
+                .elementTypeName(elemTypeName.name())
                 .elementArgs(elemInfo.getParameters().size())
                 .elementOffset(elemOffset)
                 .access(toAccess(elemInfo))

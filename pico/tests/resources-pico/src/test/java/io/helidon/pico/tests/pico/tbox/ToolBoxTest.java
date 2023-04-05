@@ -236,18 +236,22 @@ class ToolBoxTest {
      */
     @Test
     void runlevel() {
-        // we start with 1 because we are looking for interceptors (which there is one here in this module)
-        assertThat(picoServices.metrics().orElseThrow().lookupCount().orElseThrow(), equalTo(1));
+        assertThat("we start with 2 because we are looking for interceptors (which there is 2 here in this module)",
+                   picoServices.metrics().orElseThrow().lookupCount().orElseThrow(),
+                   equalTo(2));
         List<ServiceProvider<?>> runLevelServices = services
                 .lookupAll(DefaultServiceInfoCriteria.builder().runLevel(RunLevel.STARTUP).build(), true);
         List<String> desc = runLevelServices.stream().map(ServiceProvider::description).collect(Collectors.toList());
-        assertThat(desc, contains("TestingSingleton:INIT"));
+        assertThat(desc,
+                   contains("TestingSingleton:INIT"));
 
         runLevelServices.forEach(sp -> Objects.requireNonNull(sp.get(), sp + " failed on get()"));
-        assertThat("activation should not have triggered any new lookups other than the startup we just did",
-                   picoServices.metrics().orElseThrow().lookupCount().orElseThrow(), equalTo(2));
+        assertThat("activation should not triggered one new lookup from startup",
+                   picoServices.metrics().orElseThrow().lookupCount().orElseThrow(),
+                   equalTo(3));
         desc = runLevelServices.stream().map(ServiceProvider::description).collect(Collectors.toList());
-        assertThat(desc, contains("TestingSingleton:ACTIVE"));
+        assertThat(desc,
+                   contains("TestingSingleton:ACTIVE"));
     }
 
     /**

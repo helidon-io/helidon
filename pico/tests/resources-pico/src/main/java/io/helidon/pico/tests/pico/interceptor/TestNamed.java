@@ -14,13 +14,24 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tests.plain.interceptor;
+package io.helidon.pico.tests.pico.interceptor;
 
-@InterceptorBasedAnno("IBAnno")
-public interface IB {
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-    void methodIB(String val);
+/**
+ * Used as an {@link io.helidon.pico.InterceptedTrigger} from the maven-plugin call (see pom.xml).
+ */
+//@InterceptedTrigger - intentional decision not to add this in order to avoid standard annotation processing.
+//  it will instead be handled by the maven-plugin
+@Retention(RetentionPolicy.CLASS)
+public @interface TestNamed {
 
-    String methodIB2(String val);
+    /**
+     * For testing only.
+     *
+     * @return for testing only
+     */
+    String value();
 
 }

@@ -104,6 +104,16 @@ public interface ServiceInfoCriteria {
     Optional<String> moduleName();
 
     /**
+     * Determines whether the non-proxied, {@link Intercepted} services should be returned in any lookup operation. If this
+     * option is disabled then only the {@link Interceptor}-generated service will be eligible to be returned and not the service
+     * being intercepted.
+     * The default value is {@code false}.
+     *
+     * @return true if the non-proxied type intercepted services should be eligible
+     */
+    boolean includeIntercepted();
+
+    /**
      * Determines whether this service info matches the criteria for injection.
      * Matches is a looser form of equality check than {@code equals()}. If a service matches criteria
      * it is generally assumed to be viable for assignability.

@@ -14,13 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tests.plain.interceptor;
+package io.helidon.pico.configdriven.interceptor.test;
 
-@InterceptorBasedAnno("IBAnno")
-public interface IB {
+import io.helidon.builder.config.ConfigBean;
 
-    void methodIB(String val);
+/**
+ * Drives {@link ZImpl} activation.
+ */
+@ConfigBean(drivesActivation = true)
+public interface ZImplConfig {
 
-    String methodIB2(String val);
+    /**
+     * For testing purposes.
+     *
+     * @return for testing purposes
+     */
+    String name();
 
 }

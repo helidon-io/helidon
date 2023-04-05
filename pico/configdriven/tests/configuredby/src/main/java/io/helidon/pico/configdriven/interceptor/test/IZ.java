@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tests.plain.interceptor;
+package io.helidon.pico.configdriven.interceptor.test;
 
-@InterceptorBasedAnno("IBAnno")
-public interface IB {
+import io.helidon.pico.Contract;
 
-    void methodIB(String val);
+@Contract
+public interface IZ {
 
-    String methodIB2(String val);
+    String methodIZ1(String arg1);
 
 }

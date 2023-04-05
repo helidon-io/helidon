@@ -17,6 +17,7 @@
 package io.helidon.pico.tools.testsubjects;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.pico.RunLevel;
@@ -30,6 +31,7 @@ import jakarta.inject.Singleton;
 
 @Singleton
 @RunLevel(0)
+@SuppressWarnings("unused")
 public class HelloPicoWorldImpl implements HelloPicoWorld {
 
     @Inject
@@ -51,6 +53,11 @@ public class HelloPicoWorldImpl implements HelloPicoWorld {
 
     int postConstructCallCount;
     int preDestroyCallCount;
+
+    @Inject
+    HelloPicoWorldImpl(PicoWorld picoWorld) {
+        Objects.requireNonNull(picoWorld);
+    }
 
     @Override
     public String sayHello() {

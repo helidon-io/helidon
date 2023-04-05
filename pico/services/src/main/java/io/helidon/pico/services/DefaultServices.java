@@ -82,38 +82,44 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    static <T> List<T> explodeAndSort(Collection<?> coll,
-                                      ServiceInfoCriteria criteria,
-                                      boolean expected) {
-        List result;
-
+    static <T> List<T> explodeFilterAndSort(Collection<?> coll,
+                                            ServiceInfoCriteria criteria,
+                                            boolean expected) {
+        List exploded;
         if ((coll.size() > 1)
                 || coll.stream().anyMatch(sp -> sp instanceof ServiceProviderProvider)) {
-            result = new ArrayList<>();
+            exploded = new ArrayList<>();
 
             coll.forEach(s -> {
                 if (s instanceof ServiceProviderProvider) {
                     List<? extends ServiceProvider<?>> subList = ((ServiceProviderProvider) s)
                             .serviceProviders(criteria, true, true);
                     if (subList != null && !subList.isEmpty()) {
-                        subList.stream().filter(Objects::nonNull).forEach(result::add);
+                        subList.stream().filter(Objects::nonNull).forEach(exploded::add);
                     }
                 } else {
-                    result.add(s);
+                    exploded.add(s);
                 }
             });
-
-            if (result.size() > 1) {
-                result.sort(serviceProviderComparator());
-            }
-
-            return result;
         } else {
-            result = (coll instanceof List) ? (List) coll : new ArrayList<>(coll);
+            exploded = (coll instanceof List) ? (List) coll : new ArrayList<>(coll);
+        }
+
+        List result;
+        if (criteria.includeIntercepted()) {
+            result = exploded;
+        } else {
+            result = (List) exploded.stream()
+                    .filter(sp -> !(sp instanceof AbstractServiceProvider) || !((AbstractServiceProvider) sp).isIntercepted())
+                    .collect(Collectors.toList());
         }
 
         if (expected && result.isEmpty()) {
             throw resolutionBasedInjectionError(criteria);
+        }
+
+        if (result.size() > 1) {
+            result.sort(serviceProviderComparator());
         }
 
         return result;
@@ -361,7 +367,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
             if (serviceTypeName != null) {
                 ServiceProvider exact = servicesByTypeName.get(serviceTypeName);
                 if (exact != null && !isIntercepted(exact)) {
-                    return explodeAndSort(List.of(exact), criteria, expected);
+                    return explodeFilterAndSort(List.of(exact), criteria, expected);
                 }
             }
             if (hasOneContractInCriteria) {
@@ -372,7 +378,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
                             .limit(limit)
                             .collect(Collectors.toList());
                     if (!result.isEmpty()) {
-                        return explodeAndSort(result, criteria, expected);
+                        return explodeFilterAndSort(result, criteria, expected);
                     }
                 }
             }
@@ -398,7 +404,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         }
 
         if (!result.isEmpty()) {
-            result = explodeAndSort(result, criteria, expected);
+            result = explodeFilterAndSort(result, criteria, expected);
         }
 
         if (cfg.serviceLookupCaching()) {
@@ -418,7 +424,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
 
     List<ServiceProvider<?>> allServiceProviders(boolean explode) {
         if (explode) {
-            return explodeAndSort(servicesByTypeName.values(), null, false);
+            return explodeFilterAndSort(servicesByTypeName.values(), PicoServices.EMPTY_CRITERIA, false);
         }
 
         return new ArrayList<>(servicesByTypeName.values());

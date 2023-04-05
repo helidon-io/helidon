@@ -112,9 +112,6 @@
                 <configuration>
                     <compilerArgs>
                         <arg>-Apico.autoAddNonContractInterfaces=true</arg>
-<!--                        <arg>-XprintProcessorInfo</arg>-->
-<!--                        <arg>-XprintRounds</arg>-->
-<!--                        <arg>-verbose</arg>-->
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>

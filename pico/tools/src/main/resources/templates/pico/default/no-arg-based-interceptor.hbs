@@ -43,8 +43,9 @@ import static io.helidon.pico.services.Invocation.createInvokeAndSupply;
 import static io.helidon.pico.services.Invocation.mergeAndCollapse;
 
 /**
- * Pico {@link Interceptor} manager for {@link {{parent}} }.
+ * Pico {@link Interceptor} for {@link {{parent}} }.
  */
+// using the no-arg constructor approach
 @io.helidon.common.Weight({{weight}})
 @io.helidon.pico.Intercepted({{parent}}.class)
 @Singleton
@@ -58,10 +59,11 @@ public class {{className}} extends {{parent}} {
             {{{.}}}
             .build();{{/interceptedmethoddecls}}
 
+    private static final TypeName __serviceTypeName = DefaultTypeName.create({{parent}}.class);
+
     private final Provider<{{parent}}> __provider;
     private final ServiceProvider<{{parent}}> __sp;
-    private final {{parent}} __impl;
-    private final TypeName __serviceTypeName;{{#interceptedelements}}
+    private final {{parent}} __impl;{{#interceptedelements}}
     private final List<Provider<Interceptor>> __{{id}}__interceptors;{{/interceptedelements}}{{#interceptedelements}}
     private final InterceptedMethod<{{parent}}, {{elementTypeName}}> __{{id}}__call;{{/interceptedelements}}
 
@@ -71,7 +73,6 @@ public class {{className}} extends {{parent}} {
                 Provider<{{parent}}> provider) {
         this.__provider = Objects.requireNonNull(provider);
         this.__sp = (provider instanceof ServiceProvider) ? (ServiceProvider<{{parent}}>) __provider : null;
-        this.__serviceTypeName = DefaultTypeName.create({{parent}}.class);
         List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse({{#annotationtriggertypenames}}{{id}}{{#unless @last}}, {{/unless}}{{/annotationtriggertypenames}});{{#interceptedelements}}
         this.__{{{id}}}__interceptors = mergeAndCollapse({{interceptedTriggerTypeNames}});{{/interceptedelements}}
 
@@ -83,7 +84,7 @@ public class {{className}} extends {{parent}} {
                     .classAnnotations(__serviceLevelAnnotations)
                     .elementInfo(__ctor)
                     .interceptors(__ctor__interceptors)
-                    /*.build()*/,
+                    .build(),
                 call);
         this.__impl = Objects.requireNonNull(result);{{#interceptedelements}}
 

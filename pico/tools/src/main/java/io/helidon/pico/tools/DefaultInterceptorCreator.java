@@ -58,6 +58,7 @@ import io.helidon.pico.tools.spi.InterceptorCreator;
 
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.MethodInfo;
+import io.github.classgraph.MethodTypeSignature;
 import io.github.classgraph.ScanResult;
 import jakarta.inject.Singleton;
 
@@ -81,7 +82,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
 
     private static final String INTERCEPTOR_NAME_SUFFIX = "Interceptor";
     private static final String INNER_INTERCEPTOR_CLASS_NAME = "$$" + NAME_PREFIX + INTERCEPTOR_NAME_SUFFIX;
-    private static final String COMPLEX_INTERCEPTOR_HBS = "complex-interceptor.hbs";
+    private static final String NO_ARG_INTERCEPTOR_HBS = "no-arg-based-interceptor.hbs";
+    private static final String INTERFACES_INTERCEPTOR_HBS = "interface-based-interceptor.hbs";
     private static final double INTERCEPTOR_PRIORITY_DELTA = 0.001;
     private static final String CTOR_ALIAS = "ctor";
     private static final Set<String> ALLOW_LIST = new LinkedHashSet<>();
@@ -389,13 +391,6 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
 
         /**
-         * @return the annotation resolver in use
-         */
-        AnnotationTypeNameResolver resolver() {
-            return resolver;
-        }
-
-        /**
          * @return the trigger filter in use
          */
         TriggerFilter triggerFilter() {
@@ -403,7 +398,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
 
         /**
-         * The set of annotation types that are trigger interception.
+         * The set of annotation types that trigger interception.
          *
          * @return the set of annotation types that are trigger interception
          */
@@ -424,15 +419,30 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
 
         @Override
         public Optional<InterceptionPlan> createInterceptorPlan(Set<String> interceptorAnnotationTriggers) {
-            List<InterceptedElement> interceptedElements = getInterceptedElements(interceptorAnnotationTriggers);
-            if (interceptedElements == null || interceptedElements.isEmpty()) {
-                return Optional.empty();
+            boolean hasNoArgConstructor = hasNoArgConstructor();
+            Set<TypeName> interfaces = interfaces();
+
+            // the code generation will extend the class when there is a zero/no-arg constructor, but if not then we will use a
+            // different generated source altogether that will only allow the interception of the interfaces.
+            // note also that the service type, or the method has to have the interceptor trigger annotation to qualify.
+            if (!hasNoArgConstructor && interfaces.isEmpty()) {
+                String msg = "There must either be a no-arg constructor, or otherwise the target service must implement at least "
+                        + "one interface type. Note that when a no-arg constructor is available then your entire type, including "
+                        + "all of its public methods are interceptable. If, however, there is no applicable no-arg constructor "
+                        + "available then only the interface-based methods of the target service type are interceptable for: "
+                        + serviceTypeName();
+                ToolsException te = new ToolsException(msg);
+                logger.log(System.Logger.Level.ERROR, "Unable to create an interceptor plan for: " + serviceTypeName(), te);
+                throw te;
             }
 
-            if (!hasNoArgConstructor()) {
-                ToolsException te =  new ToolsException("There must be a no-arg constructor for: " + serviceTypeName());
-                logger.log(System.Logger.Level.WARNING, "skipping interception for: " + serviceTypeName(), te);
-                return Optional.empty();
+            List<InterceptedElement> interceptedElements = (hasNoArgConstructor)
+                    ? getInterceptedElements(interceptorAnnotationTriggers)
+                    : getInterceptedElements(interceptorAnnotationTriggers, interfaces);
+            if (interceptedElements.isEmpty()) {
+                ToolsException te = new ToolsException("No methods available to intercept for: " + serviceTypeName());
+                logger.log(System.Logger.Level.ERROR, "Unable to create an interceptor plan for: " + serviceTypeName(), te);
+                throw te;
             }
 
             Set<AnnotationAndValue> serviceLevelAnnotations = getServiceLevelAnnotations();
@@ -441,6 +451,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                     .serviceLevelAnnotations(serviceLevelAnnotations)
                     .annotationTriggerTypeNames(interceptorAnnotationTriggers)
                     .interceptedElements(interceptedElements)
+                    .hasNoArgConstructor(hasNoArgConstructor)
+                    .interfaces(interfaces)
                     .build();
             return Optional.of(plan);
         }
@@ -456,17 +468,28 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         abstract Set<AnnotationAndValue> getServiceLevelAnnotations();
 
         /**
-         * Intercepted classes must have a no-arg constructor (current restriction).
-         *
          * @return true if there is a no-arg constructor present
          */
         abstract boolean hasNoArgConstructor();
 
+        /**
+         * @return the set of interfaces implemented
+         */
+        abstract Set<TypeName> interfaces();
+
+        /**
+         * @return all public methods
+         */
         abstract List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers);
+
+        /**
+         * @return all public methods for only the given interfaces
+         */
+        abstract List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers,
+                                                                 Set<TypeName> interfaces);
 
         boolean containsAny(Set<AnnotationAndValue> annotations,
                             Set<String> annotationTypeNames) {
-            assert (!annotationTypeNames.isEmpty());
             for (AnnotationAndValue annotation : annotations) {
                 if (annotationTypeNames.contains(annotation.typeName().name())) {
                     return true;
@@ -476,7 +499,6 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
 
         boolean isProcessed(InjectionPointInfo.ElementKind kind,
-                            int methodArgCount,
                             Set<Modifier> modifiers,
                             Boolean isPrivate,
                             Boolean isStatic) {
@@ -501,13 +523,10 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                 }
             }
 
-            if (ElementInfo.ElementKind.CONSTRUCTOR == kind && methodArgCount != 0) {
-                return false;
-            }
-
             return true;
         }
     }
+
 
     private static class ProcessorBased extends AbstractInterceptorProcessor {
         private final TypeElement serviceTypeElement;
@@ -524,18 +543,18 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
 
         @Override
-        public Set<String> getAllAnnotations() {
+        Set<String> getAllAnnotations() {
             Set<AnnotationAndValue> set = gatherAllAnnotationsUsedOnPublicNonStaticMethods(serviceTypeElement, processEnv);
             return set.stream().map(a -> a.typeName().name()).collect(Collectors.toCollection(LinkedHashSet::new));
         }
 
         @Override
-        public Set<AnnotationAndValue> getServiceLevelAnnotations() {
+        Set<AnnotationAndValue> getServiceLevelAnnotations() {
             return createAnnotationAndValueSet(serviceTypeElement);
         }
 
         @Override
-        public boolean hasNoArgConstructor() {
+        boolean hasNoArgConstructor() {
             return serviceTypeElement.getEnclosedElements().stream()
                     .filter(it -> it.getKind().equals(ElementKind.CONSTRUCTOR))
                     .map(ExecutableElement.class::cast)
@@ -543,15 +562,118 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
 
         @Override
-        protected List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers) {
+        Set<TypeName> interfaces() {
+            return gatherInterfaces(new LinkedHashSet<>(), serviceTypeElement);
+        }
+
+        Set<TypeName> gatherInterfaces(Set<TypeName> result,
+                                       TypeElement typeElement) {
+            if (typeElement == null) {
+                return result;
+            }
+
+            typeElement.getInterfaces().forEach(tm -> {
+                result.add(TypeTools.createTypeNameFromMirror(tm).orElseThrow());
+                gatherInterfaces(result, TypeTools.toTypeElement(tm).orElse(null));
+            });
+
+            return result;
+        }
+
+        @Override
+        List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers) {
             List<InterceptedElement> result = new ArrayList<>();
             Set<AnnotationAndValue> serviceLevelAnnos = getServiceLevelAnnotations();
+
+            // find the injectable constructor, falling back to the no-arg constructor
+            gatherInjectableConstructor(result, serviceLevelAnnos, interceptorAnnotationTriggers);
+
+            // gather all of the public methods as well as the no-arg constructor
             serviceTypeElement.getEnclosedElements().stream()
-                    .filter(e -> e.getKind() == ElementKind.METHOD || e.getKind() == ElementKind.CONSTRUCTOR)
+                    .filter(e -> e.getKind() == ElementKind.METHOD)
                     .map(ExecutableElement.class::cast)
-                    .filter(e -> isProcessed(toKind(e), e.getParameters().size(), e.getModifiers(), null, null))
-                    .forEach(ee -> result.add(create(ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
+                    .filter(e -> isProcessed(toKind(e), /*e.getParameters().size(),*/ e.getModifiers(), null, null))
+                    .forEach(ee -> result.add(
+                            create(ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
             return result;
+        }
+
+        @Override
+        List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers,
+                                                        Set<TypeName> interfaces) {
+            assert (!interfaces.isEmpty());
+            List<InterceptedElement> result = new ArrayList<>();
+            Set<AnnotationAndValue> serviceLevelAnnos = getServiceLevelAnnotations();
+
+            // find the injectable constructor, falling back to the no-arg constructor
+            gatherInjectableConstructor(result, serviceLevelAnnos, interceptorAnnotationTriggers);
+
+            // gather all of the methods that map to one of our interfaces
+            serviceTypeElement.getEnclosedElements().stream()
+                    .filter(e -> e.getKind() == ElementKind.METHOD)
+                    .map(ExecutableElement.class::cast)
+                    .filter(e -> isProcessed(toKind(e), e.getModifiers(), null, null))
+                    .filter(e -> mapsToAnInterface(e, interfaces))
+                    .forEach(ee -> result.add(
+                            create(ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
+            return result;
+        }
+
+        void gatherInjectableConstructor(List<InterceptedElement> result,
+                                         Set<AnnotationAndValue> serviceLevelAnnos,
+                                         Set<String> interceptorAnnotationTriggers) {
+            serviceTypeElement.getEnclosedElements().stream()
+                    .filter(e -> e.getKind() == ElementKind.CONSTRUCTOR)
+                    .map(ExecutableElement.class::cast)
+                    .filter(ee -> !ee.getModifiers().contains(Modifier.PRIVATE))
+                    .filter(ee -> {
+                        boolean hasInject = ee.getAnnotationMirrors().stream()
+                                .map(TypeTools::createAnnotationAndValue)
+                                .map(AnnotationAndValue::typeName)
+                                .map(TypeName::name)
+                                .anyMatch(anno -> TypeNames.JAKARTA_INJECT.equals(anno) || TypeNames.JAVAX_INJECT.equals(anno));
+                        return hasInject;
+                    })
+                    .forEach(ee -> result.add(
+                            create(ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
+
+            if (result.size() > 1) {
+                throw new ToolsException("There can be at most one injectable constructor for: " + serviceTypeName());
+            }
+
+            if (result.size() == 1) {
+                return;
+            }
+
+            // find the no-arg constructor as the fallback
+            serviceTypeElement.getEnclosedElements().stream()
+                    .filter(e -> e.getKind() == ElementKind.CONSTRUCTOR)
+                    .map(ExecutableElement.class::cast)
+                    .filter(ee -> !ee.getModifiers().contains(Modifier.PRIVATE))
+                    .filter(ee -> ee.getParameters().isEmpty())
+                    .forEach(ee -> result.add(
+                            create(ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
+            if (result.isEmpty()) {
+                throw new ToolsException("There should either be a no-arg or injectable constructor for: " + serviceTypeName());
+            }
+        }
+
+        /**
+         * @return returns true if the given method is implemented in one of the provided interface type names
+         */
+        boolean mapsToAnInterface(ExecutableElement ee,
+                                  Set<TypeName> interfaces) {
+            for (TypeName typeName : interfaces) {
+                TypeElement te = processEnv.getElementUtils().getTypeElement(typeName.name());
+                Objects.requireNonNull(te, typeName.toString());
+                boolean hasIt = te.getEnclosedElements().stream()
+                        // _note to self_: there needs to be a better way than this!
+                        .anyMatch(e -> e.toString().equals(ee.toString()));
+                if (hasIt) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private InterceptedElement create(ExecutableElement ee,
@@ -568,6 +690,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
     }
 
+
     private static class ReflectionBased extends AbstractInterceptorProcessor {
         private final ClassInfo classInfo;
 
@@ -580,35 +703,101 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
 
         @Override
-        public Set<String> getAllAnnotations() {
+        Set<String> getAllAnnotations() {
             Set<AnnotationAndValue> set = gatherAllAnnotationsUsedOnPublicNonStaticMethods(classInfo);
             return set.stream().map(a -> a.typeName().name()).collect(Collectors.toCollection(LinkedHashSet::new));
         }
 
         @Override
-        public Set<AnnotationAndValue> getServiceLevelAnnotations() {
+        Set<AnnotationAndValue> getServiceLevelAnnotations() {
             return createAnnotationAndValueSet(classInfo);
         }
 
         @Override
-        public boolean hasNoArgConstructor() {
+        boolean hasNoArgConstructor() {
             return classInfo.getConstructorInfo().stream()
                     .filter(mi -> !mi.isPrivate())
                     .anyMatch(mi -> mi.getParameterInfo().length == 0);
         }
 
         @Override
-        protected List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers) {
+        Set<TypeName> interfaces() {
+            return gatherInterfaces(new LinkedHashSet<>(), classInfo);
+        }
+
+        Set<TypeName> gatherInterfaces(Set<TypeName> result,
+                                       ClassInfo classInfo) {
+            if (classInfo == null) {
+                return result;
+            }
+
+            classInfo.getInterfaces().forEach(tm -> {
+                result.add(TypeTools.createTypeNameFromClassInfo(tm));
+                gatherInterfaces(result, tm);
+            });
+
+            return result;
+        }
+
+        @Override
+        List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers) {
             List<InterceptedElement> result = new ArrayList<>();
             Set<AnnotationAndValue> serviceLevelAnnos = getServiceLevelAnnotations();
             classInfo.getMethodAndConstructorInfo()
-                    .filter(m -> isProcessed(toKind(m),
-                                               m.getParameterInfo().length, null, m.isPrivate(), m.isStatic()))
+                    .filter(m -> isProcessed(toKind(m), /*m.getParameterInfo().length,*/ null, m.isPrivate(), m.isStatic()))
                     .filter(m -> containsAny(serviceLevelAnnos, interceptorAnnotationTriggers)
-                                    || containsAny(createAnnotationAndValueSet(
-                                            m.getAnnotationInfo()), interceptorAnnotationTriggers))
-                    .forEach(mi -> result.add(create(mi, serviceLevelAnnos, interceptorAnnotationTriggers)));
+                            || containsAny(createAnnotationAndValueSet(m.getAnnotationInfo()), interceptorAnnotationTriggers))
+                    .forEach(mi -> result.add(
+                            create(mi, serviceLevelAnnos, interceptorAnnotationTriggers)));
             return result;
+        }
+
+        @Override
+        List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers,
+                                                        Set<TypeName> interfaces) {
+            List<InterceptedElement> result = new ArrayList<>();
+            Set<AnnotationAndValue> serviceLevelAnnos = getServiceLevelAnnotations();
+            classInfo.getMethodAndConstructorInfo()
+                    .filter(m -> isProcessed(toKind(m), null, m.isPrivate(), m.isStatic()))
+                    .filter(m -> containsAny(serviceLevelAnnos, interceptorAnnotationTriggers)
+                            || containsAny(createAnnotationAndValueSet(m.getAnnotationInfo()), interceptorAnnotationTriggers))
+                    .filter(m -> mapsToAnInterface(m, interfaces))
+                    .forEach(mi -> result.add(
+                            create(mi, serviceLevelAnnos, interceptorAnnotationTriggers)));
+            return result;
+        }
+
+        boolean mapsToAnInterface(MethodInfo targetMethodInfo,
+                                  Set<TypeName> interfaces) {
+            MethodTypeSignature sig = targetMethodInfo.getTypeSignatureOrTypeDescriptor();
+            for (TypeName typeName : interfaces) {
+                ClassInfo ci = toClassInfo(typeName, classInfo);
+                Objects.requireNonNull(ci, typeName.toString());
+                for (MethodInfo mi : ci.getDeclaredMethodInfo(targetMethodInfo.getName())) {
+                    if (mi.equals(targetMethodInfo) || sig.equals(mi.getTypeSignatureOrTypeDescriptor())) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        ClassInfo toClassInfo(TypeName typeName,
+                              ClassInfo child) {
+            for (ClassInfo ci : child.getInterfaces()) {
+                if (TypeTools.createTypeNameFromClassInfo(ci).equals(typeName)) {
+                    return ci;
+                }
+            }
+
+            for (ClassInfo ci : child.getSuperclasses()) {
+                ClassInfo foundIt = toClassInfo(typeName, ci);
+                if (foundIt != null) {
+                    return foundIt;
+                }
+            }
+
+            return null;
         }
 
         private InterceptedElement create(MethodInfo mi,
@@ -648,8 +837,10 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
     public AbstractInterceptorProcessor createInterceptorProcessor(ServiceInfoBasics interceptedService,
                                                                    InterceptorCreator delegateCreator,
                                                                    Optional<ProcessingEnvironment> processEnv) {
+        Objects.requireNonNull(interceptedService);
+        Objects.requireNonNull(delegateCreator);
         if (processEnv.isPresent()) {
-            return createInterceptorProcessorFromProcessor(interceptedService, delegateCreator, processEnv.get());
+            return createInterceptorProcessorFromProcessor(interceptedService, delegateCreator, processEnv);
         }
         return createInterceptorProcessorFromReflection(interceptedService, delegateCreator);
     }
@@ -658,27 +849,30 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
     /**
      * Create an interceptor processor based on annotation processing.
      *
-     * @param interceptedService the service being processed
-     * @param realCreator     the real/delegate creator
-     * @param processEnv the processing env
+     * @param interceptedService    the service being processed
+     * @param delegateCreator       the real/delegate creator
+     * @param processEnv            the processing env, if available
      * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AbstractInterceptorProcessor} to use
      */
     AbstractInterceptorProcessor createInterceptorProcessorFromProcessor(ServiceInfoBasics interceptedService,
-                                                                         InterceptorCreator realCreator,
-                                                                         ProcessingEnvironment processEnv) {
-        Options.init(processEnv);
+                                                                         InterceptorCreator delegateCreator,
+                                                                         Optional<ProcessingEnvironment> processEnv) {
+        processEnv.ifPresent(Options::init);
         ALLOW_LIST.addAll(Options.getOptionStringList(Options.TAG_ALLOW_LISTED_INTERCEPTOR_ANNOTATIONS));
-        return new ProcessorBased(Objects.requireNonNull(interceptedService),
-                                  Objects.requireNonNull(realCreator),
-                                  Objects.requireNonNull(processEnv),
-                                  logger());
+        if (processEnv.isPresent()) {
+            return new ProcessorBased(interceptedService,
+                                      delegateCreator,
+                                      processEnv.get(),
+                                      logger());
+        }
+        return createInterceptorProcessorFromReflection(interceptedService, delegateCreator);
     }
 
     /**
      * Create an interceptor processor based on reflection processing.
      *
      * @param interceptedService the service being processed
-     * @param realCreator     the real/delegate creator
+     * @param realCreator        the real/delegate creator
      * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AbstractInterceptorProcessor} to use
      */
     AbstractInterceptorProcessor createInterceptorProcessorFromReflection(ServiceInfoBasics interceptedService,
@@ -717,6 +911,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         subst.put("generatedanno", toGeneratedSticker(null));
         subst.put("weight", interceptorWeight(plan.interceptedService().declaredWeight()));
         subst.put("interceptedmethoddecls", toInterceptedMethodDecls(plan));
+        subst.put("interfaces", toInterfacesDecl(plan));
         subst.put("interceptedelements", IdAndToString
                 .toList(plan.interceptedElements(), DefaultInterceptorCreator::toBody).stream()
                 .filter(it -> !it.getId().equals(CTOR_ALIAS))
@@ -726,7 +921,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                         str -> new IdAndToString(str.replace(".", "_"), str)));
         subst.put("servicelevelannotations", IdAndToString
                 .toList(plan.serviceLevelAnnotations(), DefaultInterceptorCreator::toDecl));
-        String template = templateHelper().safeLoadTemplate(COMPLEX_INTERCEPTOR_HBS);
+        String template = templateHelper().safeLoadTemplate(
+                plan.hasNoArgConstructor() ? NO_ARG_INTERCEPTOR_HBS : INTERFACES_INTERCEPTOR_HBS);
         return templateHelper().applySubstitutions(template, subst, true).trim();
     }
 
@@ -748,6 +944,12 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             }
         }
         return result;
+    }
+
+    private static String toInterfacesDecl(InterceptionPlan plan) {
+        return plan.interfaces().stream()
+                .map(TypeName::name)
+                .collect(Collectors.joining(", "));
     }
 
     private static IdAndToString toDecl(InterceptedElement method) {
@@ -806,7 +1008,9 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         String name = (mi.elementKind() == ElementInfo.ElementKind.CONSTRUCTOR) ? CTOR_ALIAS : mi.elementName();
         StringBuilder builder = new StringBuilder();
         builder.append("public ").append(mi.elementTypeName()).append(" ").append(mi.elementName()).append("(");
-        String args = mi.parameterInfo().stream().map(ElementInfo::elementName).collect(Collectors.joining(", "));
+        String args = mi.parameterInfo().stream()
+                .map(ElementInfo::elementName)
+                .collect(Collectors.joining(", "));
         String argDecls = "";
         String objArrayArgs = "";
         String typedElementArgs = "";
@@ -848,7 +1052,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         if (hasArgs) {
             elementArgInfo = ",\n\t\t\t\tnew TypedElementName[] {" + typedElementArgs + "}";
         }
-        return new InterceptedMethodCodeGen(name, methodDecl, hasReturn, supplierType, elementArgInfo, args,
+        return new InterceptedMethodCodeGen(name, methodDecl, true, hasReturn, supplierType, elementArgInfo, args,
                                             objArrayArgs, untypedElementArgs,
                                             method.interceptedTriggerTypeNames(), builder);
     }
@@ -873,6 +1077,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
 
     static class InterceptedMethodCodeGen extends IdAndToString {
         private final String methodDecl;
+        private final boolean isOverride;
         private final boolean hasReturn;
         private final TypeName elementTypeName;
         private final String elementArgInfo;
@@ -883,6 +1088,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
 
         InterceptedMethodCodeGen(String id,
                                  String methodDecl,
+                                 boolean isOverride,
                                  boolean hasReturn,
                                  TypeName elementTypeName,
                                  String elementArgInfo,
@@ -893,6 +1099,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                                  Object toString) {
             super(id, toString);
             this.methodDecl = methodDecl;
+            this.isOverride = isOverride;
             this.hasReturn = hasReturn;
             this.elementTypeName = elementTypeName;
             this.elementArgInfo = elementArgInfo;
@@ -906,6 +1113,11 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         // note: this needs to stay as a public getXXX() method to support Mustache
         public String getMethodDecl() {
             return methodDecl;
+        }
+
+        // note: this needs to stay as a public getXXX() method to support Mustache
+        public boolean isOverride() {
+            return isOverride;
         }
 
         // note: this needs to stay as a public getXXX() method to support Mustache

@@ -30,42 +30,31 @@ import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
 /**
- * This test case is applying {@link InterceptorBasedAnno} (an {@link io.helidon.pico.InterceptedTrigger}) using the no-arg
- * constructor approach - all methods are intercepted.
+ * This test case is applying {@link InterceptorBasedAnno} (an {@link io.helidon.pico.InterceptedTrigger}) on only
+ * the {@link IB} interface.
  * <p>
- * Also note that interception was triggered by the presence of the {@link TestNamed} and {@link InterceptorBasedAnno} triggers.
+ * Also note that interception was triggered by the presence of the {@link InterceptorBasedAnno} trigger.
  */
 @Singleton
-@Named("ClassX")
-@TestNamed("TestNamed-ClassX")
+@Named("ClassY")
 @ExternalContracts(value = Closeable.class, moduleNames = {"test1", "test2"})
 @SuppressWarnings("unused")
-public class XImpl implements IA, IB, Closeable {
+public class YImpl implements IB, Closeable {
 
-    XImpl() {
-    }
+    // intentionally w/o a default constructor - do not uncomment
+//    YImpl() {
+//    }
 
     @Inject
     // will be intercepted
-    XImpl(Optional<IA> optionalIA) {
-        assert (optionalIA.isEmpty());
+    YImpl(Optional<IA> optionalIA) {
+        assert (optionalIA.isPresent() && optionalIA.get().getClass().getName().contains("XImpl"));
     }
 
     // a decoy constructor (and will not be intercepted)
     @InterceptorBasedAnno("IA2")
-    XImpl(IB ib) {
+    YImpl(IB ib) {
         throw new IllegalStateException("should not be here");
-    }
-
-    @Override
-    // will be intercepted
-    public void methodIA1() {
-    }
-
-    @InterceptorBasedAnno("IA2")
-    @Override
-    // will be intercepted
-    public void methodIA2() {
     }
 
     @Named("methodIB")
@@ -85,31 +74,29 @@ public class XImpl implements IA, IB, Closeable {
 
     @InterceptorBasedAnno
     @Override
+    // will be intercepted
     public void close() throws IOException, RuntimeException {
         throw new IOException("forced");
     }
 
-    // will be intercepted
+    // will not be intercepted
     public long methodX(String arg1,
                         int arg2,
                         boolean arg3) throws IOException, RuntimeException, AssertionError {
         return 101;
     }
 
-    // test of package private
-    // will be intercepted
+    // will not be intercepted
     String methodY() {
         return "methodY";
     }
 
-    // test of protected
-    // will be intercepted
+    // will not be intercepted
     protected String methodZ() {
         return "methodZ";
     }
 
-    // test of protected
-    // will be intercepted
+    // will not be intercepted
     protected void throwRuntimeException() {
         throw new RuntimeException("forced");
     }

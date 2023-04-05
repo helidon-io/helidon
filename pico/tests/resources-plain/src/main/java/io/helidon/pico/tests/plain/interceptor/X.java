@@ -46,6 +46,13 @@ public class X implements IA, IB, Closeable {
     public void methodIA2() {
     }
 
+    @Named("methodIB2")
+    @InterceptorBasedAnno("IBSubAnno")
+    @Override
+    public String methodIB2(@Named("arg1") String val) {
+        return val;
+    }
+
     @Named("methodIB")
     @InterceptorBasedAnno("IBSubAnno")
     @Override

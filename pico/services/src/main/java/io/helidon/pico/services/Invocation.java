@@ -47,6 +47,11 @@ public class Invocation<V> implements Interceptor.Chain<V> {
         this.interceptorIterator = ctx.interceptors().listIterator();
     }
 
+    @Override
+    public String toString() {
+        return String.valueOf(ctx.elementInfo());
+    }
+
     /**
      * Creates an instance of {@link Invocation} and invokes it in this context.
      *

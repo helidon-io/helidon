@@ -24,10 +24,10 @@ import io.helidon.pico.Interceptor;
 import io.helidon.pico.InvocationContext;
 
 @SuppressWarnings({"ALL", "unchecked"})
-public class NamedInterceptor implements Interceptor {
+public class TestNamedInterceptor implements Interceptor {
     public static final AtomicInteger ctorCount = new AtomicInteger();
 
-    public NamedInterceptor() {
+    public TestNamedInterceptor() {
         ctorCount.incrementAndGet();
     }
 
@@ -43,6 +43,9 @@ public class NamedInterceptor implements Interceptor {
             long longResult = (Long) result;
             Object interceptedResult = (longResult * 2);
             return (V) interceptedResult;
+        } else if (methodInfo != null && methodInfo.typeName().name().equals(String.class.getName())) {
+            V result = chain.proceed(args);
+            return (V) ("intercepted:" + result);
         } else {
             return chain.proceed(args);
         }
