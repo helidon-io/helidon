@@ -31,7 +31,6 @@ include::{rootdir}/includes/nima.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<API, API>>
-- <<Configuration, Configuration>>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
 
