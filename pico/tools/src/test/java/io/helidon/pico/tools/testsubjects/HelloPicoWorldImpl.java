@@ -31,6 +31,7 @@ import jakarta.inject.Singleton;
 
 @Singleton
 @RunLevel(0)
+@SuppressWarnings("unused")
 public class HelloPicoWorldImpl implements HelloPicoWorld {
 
     @Inject
