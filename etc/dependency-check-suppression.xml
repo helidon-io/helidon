@@ -48,19 +48,6 @@
    <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
 </suppress>
 
-<!-- 
-     We use SafeConstructor() or an even more limited custom constructor so this CVE does not apply.
-     SnakeYaml maintainer has closed their issue as "will not fix".
-     https://bitbucket.org/snakeyaml/snakeyaml/issues/561/cve-2022-1471-vulnerability-in
--->
-<suppress>
-   <notes><![CDATA[
-   file name: snakeyaml-1.32.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
-   <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
-</suppress>
-
 <!-- False Positive. This CVE is against graphql-java, not the microprofile-graphql-api
 -->
 <suppress>
@@ -89,6 +76,17 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
    <vulnerabilityName>CVE-2020-8908</vulnerabilityName>
+</suppress>
+
+<!-- False Positive. This CVE is against graphql-java, not graphql-java-dataloader
+     See https://github.com/jeremylong/DependencyCheck/issues/5641
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: java-dataloader-3.1.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.graphql\-java/java\-dataloader@.*$</packageUrl>
+   <cve>CVE-2023-28867</cve>
 </suppress>
 
 <!-- This CVE is against Kafka Connect server, we use kafka client
