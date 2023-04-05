@@ -16,6 +16,10 @@
 
 package io.helidon.microprofile.server;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import io.helidon.common.http.Http;
@@ -27,6 +31,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -35,6 +40,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @HelidonTest
 @AddBean(AutoFlushTest.AutoFlushResource.class)
 class AutoFlushTest {
+
+    private static File file;
+    private static final int FILE_SIZE = 6000000;
 
     @Inject
     private WebTarget target;
@@ -45,11 +53,22 @@ class AutoFlushTest {
         @GET
         public Response getDefaultMessage() {
             return Response.ok((StreamingOutput) outputStream -> {
-                try (InputStream is = AutoFlushResource.class.getResourceAsStream("/zero.bin")) {
-                    assert is != null;
+                try (InputStream is = new FileInputStream(file)) {
                     is.transferTo(outputStream);
                 }
             }).header(Http.Header.CONTENT_LENGTH, "6000000").build();
+        }
+    }
+
+    @BeforeAll
+    static void createTempFile() throws IOException {
+        file = File.createTempFile("zero", ".bin");
+        file.deleteOnExit();
+        byte[] zero = new byte[10 * 1000];
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            for (int i = 0; i < FILE_SIZE / zero.length; i++) {
+                fos.write(zero);
+            }
         }
     }
 
