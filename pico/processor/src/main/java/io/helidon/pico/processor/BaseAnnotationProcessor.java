@@ -803,16 +803,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return Optional.ofNullable(processingEnv.getElementUtils().getTypeElement(typeName.name()));
     }
 
-//    /**
-//     * Check if a type is available on application classpath.
-//     *
-//     * @param typeName type name
-//     * @return {@code true} if the type is available
-//     */
-//    boolean available(TypeName typeName) {
-//        return processingEnv.getElementUtils().getTypeElement(typeName.name()) != null;
-//    }
-
     System.Logger logger() {
         return logger;
     }

@@ -49,8 +49,7 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
      * @return true if this service provider is an interceptor
      */
     default boolean isInterceptor() {
-        // NOP; intended to be overridden if applicable
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     /**

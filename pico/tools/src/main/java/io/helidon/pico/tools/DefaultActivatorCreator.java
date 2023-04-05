@@ -387,6 +387,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     private Path codegenInterceptorFilerOut(GeneralCreatorRequest req,
                                             DefaultActivatorCreatorResponse.Builder builder,
                                             InterceptionPlan interceptionPlan) {
+        validate(interceptionPlan);
         TypeName interceptorTypeName = DefaultInterceptorCreator.createInterceptorSourceTypeName(interceptionPlan);
         DefaultInterceptorCreator interceptorCreator = new DefaultInterceptorCreator();
         String body = interceptorCreator.createInterceptorSourceBody(interceptionPlan);
@@ -394,6 +395,17 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             builder.addServiceTypeInterceptorPlan(interceptorTypeName, interceptionPlan);
         }
         return req.filer().codegenJavaFilerOut(interceptorTypeName, body).orElseThrow();
+    }
+
+    private void validate(InterceptionPlan plan) {
+        List<ElementInfo> ctorElements = plan.interceptedElements().stream()
+                .map(InterceptedElement::elementInfo)
+                .filter(it -> it.elementKind() == ElementInfo.ElementKind.CONSTRUCTOR)
+                .collect(Collectors.toList());
+        if (ctorElements.size() > 1) {
+            throw new IllegalStateException("Can only have interceptor with a single (injectable) constructor for: "
+                                                    + plan.interceptedService().serviceTypeName());
+        }
     }
 
     private ActivatorCodeGenDetail createActivatorCodeGenDetail(ActivatorCreatorRequest req,

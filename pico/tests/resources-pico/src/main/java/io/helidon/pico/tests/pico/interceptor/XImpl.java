@@ -51,6 +51,12 @@ public class XImpl implements IA, IB, Closeable {
         assert (optionalIA.isEmpty());
     }
 
+    // a decoy constructor (and will not be intercepted)
+    @InterceptorBasedAnno("IA2")
+    XImpl(IB ib) {
+        throw new IllegalStateException("should not be here");
+    }
+
     @Override
     // will be intercepted
     public void methodIA1() {

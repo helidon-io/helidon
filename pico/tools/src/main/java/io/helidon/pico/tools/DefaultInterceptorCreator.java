@@ -391,13 +391,6 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
 
         /**
-         * @return the annotation resolver in use
-         */
-        AnnotationTypeNameResolver resolver() {
-            return resolver;
-        }
-
-        /**
          * @return the trigger filter in use
          */
         TriggerFilter triggerFilter() {
@@ -879,7 +872,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      * Create an interceptor processor based on reflection processing.
      *
      * @param interceptedService the service being processed
-     * @param realCreator     the real/delegate creator
+     * @param realCreator        the real/delegate creator
      * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AbstractInterceptorProcessor} to use
      */
     AbstractInterceptorProcessor createInterceptorProcessorFromReflection(ServiceInfoBasics interceptedService,

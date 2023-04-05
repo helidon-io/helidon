@@ -41,6 +41,7 @@ import jakarta.inject.Singleton;
 @SuppressWarnings("unused")
 public class YImpl implements IB, Closeable {
 
+    // intentionally w/o a default constructor - do not uncomment
 //    YImpl() {
 //    }
 
@@ -48,6 +49,12 @@ public class YImpl implements IB, Closeable {
     // will be intercepted
     YImpl(Optional<IA> optionalIA) {
         assert (optionalIA.isPresent() && optionalIA.get().getClass().getName().contains("XImpl"));
+    }
+
+    // a decoy constructor (and will not be intercepted)
+    @InterceptorBasedAnno("IA2")
+    YImpl(IB ib) {
+        throw new IllegalStateException("should not be here");
     }
 
     @Named("methodIB")
