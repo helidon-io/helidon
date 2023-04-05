@@ -81,37 +81,39 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
     @Test
     void testPokemons() {
         assertThat(getPokemonCount(), is(6));
-
-        webClient.get()
+        JsonObject pokemon = webClient.get()
                 .path("/pokemon/1")
                 .request(JsonObject.class)
-                .forSingle(pokemon -> assertThat(pokemon.getString("{{name}}"), is("Bulbasaur")))
                 .await(Duration.ofSeconds(5));
 
-        webClient.get()
+        assertThat(pokemon.getString("{{name}}"), is("Bulbasaur"));
+
+        pokemon = webClient.get()
                 .path("/pokemon/name/Charmander")
                 .request(JsonObject.class)
-                .forSingle(pokemon -> assertThat(pokemon.getJsonNumber("{{id_type}}").intValue(), is(10)))
                 .await(Duration.ofSeconds(5));
+
+        assertThat(pokemon.getJsonNumber("{{id_type}}").intValue(), is(10));
 
         JsonObject json = JSON_BUILDER.createObjectBuilder()
                 .add("id", 100)
                 .add("idType", 1)
                 .add("name", "Test")
                 .build();
-        webClient.post()
+        WebClientResponse response = webClient.post()
                 .path("/pokemon")
                 .submit(json)
-                .forSingle(r -> assertThat(r.status(), is(Http.Status.OK_200)))
                 .await(Duration.ofSeconds(5));
+
+        assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(getPokemonCount(), is(7));
 
-        webClient.delete()
+        response =  webClient.delete()
                 .path("/pokemon/100")
                 .request()
-                .forSingle(r -> assertThat(r.status(), is(Http.Status.OK_200)))
                 .await(Duration.ofSeconds(5));
 
+        assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(getPokemonCount(), is(6));
     }
 
