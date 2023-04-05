@@ -56,7 +56,7 @@ Tolerance API provides support for circuit breakers, retries, timeouts, bulkhead
 In addition, the API makes it very easy to create and monitor asynchronous tasks that
 do not require explicit creation and management of threads or executors.
 
-For more information the reader is referred to the
+For more information, see
 link:{nima-faulttolerance-javadoc-base-url}/module-summary.html[Fault Tolerance Nima API Javadocs].
 
 include::{rootdir}/includes/dependencies.adoc[]
