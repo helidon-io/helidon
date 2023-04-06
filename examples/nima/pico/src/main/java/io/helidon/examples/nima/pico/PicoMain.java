@@ -21,9 +21,9 @@ import java.util.Optional;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.pico.Bootstrap;
-import io.helidon.pico.DefaultBootstrap;
-import io.helidon.pico.PicoServices;
+import io.helidon.pico.api.Bootstrap;
+import io.helidon.pico.api.DefaultBootstrap;
+import io.helidon.pico.api.PicoServices;
 
 /**
  * As simple as possible with a fixed port.
