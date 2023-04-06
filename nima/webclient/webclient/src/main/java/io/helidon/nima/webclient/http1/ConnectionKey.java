@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webclient;
+package io.helidon.nima.webclient.http1;
 
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.webclient.DnsAddressLookup;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
 /**
@@ -29,7 +30,7 @@ import io.helidon.nima.webclient.spi.DnsResolver;
  * @param dnsResolver DNS resolver to be used
  * @param dnsAddressLookup DNS address lookup strategy
  */
-public record ConnectionKey(String scheme,
+record ConnectionKey(String scheme,
                             String host,
                             int port,
                             Tls tls,

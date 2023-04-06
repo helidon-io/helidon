@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,64 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.nima.http2;
 
 /**
  * Flow control used by HTTP/2 for backpressure.
  */
 public interface FlowControl {
-    /**
-     * No-op flow control, used for connection related frames.
-     */
-    FlowControl NOOP = new FlowControl() {
-        @Override
-        public void resetStreamWindowSize(long increment) {
-        }
-
-        @Override
-        public void decrementWindowSize(int decrement) {
-        }
-
-        @Override
-        public boolean incrementStreamWindowSize(int increment) {
-            return false;
-        }
-
-        @Override
-        public int getRemainingWindowSize() {
-            return Integer.MAX_VALUE;
-        }
-
-        @Override
-        public Http2FrameData[] split(Http2FrameData frame) {
-            return new Http2FrameData[] {frame};
-        }
-
-        @Override
-        public boolean blockTillUpdate() {
-            return false;
-        }
-    };
-
-    /**
-     * Create a flow control for a stream.
-     *
-     * @param streamId                stream id
-     * @param streamInitialWindowSize initial window size for stream
-     * @param connectionWindowSize    connection window size
-     * @return a new flow control
-     */
-    static FlowControl create(int streamId, int streamInitialWindowSize, WindowSize connectionWindowSize) {
-        return new FlowControlImpl(streamId, streamInitialWindowSize, connectionWindowSize);
-    }
-
-    /**
-     * Reset stream window size.
-     *
-     * @param increment increment
-     */
-    void resetStreamWindowSize(long increment);
 
     /**
      * Decrement window size.
@@ -80,12 +28,11 @@ public interface FlowControl {
     void decrementWindowSize(int decrement);
 
     /**
-     * Increment stream window size.
+     * Reset stream window size.
      *
-     * @param increment increment in bytes
-     * @return {@code true} if succeeded, {@code false} if timed out
+     * @param size new window size
      */
-    boolean incrementStreamWindowSize(int increment);
+    void resetStreamWindowSize(int size);
 
     /**
      * Remaining window size in bytes.
@@ -95,17 +42,55 @@ public interface FlowControl {
     int getRemainingWindowSize();
 
     /**
-     * Split frame into frames that can be sent.
-     *
-     * @param frame frame to split
-     * @return result
+     * Inbound flow control used by HTTP/2 for backpressure.
      */
-    Http2FrameData[] split(Http2FrameData frame);
+    interface Inbound extends FlowControl {
+
+        /**
+         * Increment window size.
+         *
+         * @param increment increment in bytes
+         */
+        void incrementWindowSize(int increment);
+    }
 
     /**
-     * Block until a window size update happens.
-     *
-     * @return {@code true} if window update happened, {@code false} in case of timeout
+     * Outbound flow control used by HTTP/2 for backpressure.
      */
-    boolean blockTillUpdate();
+    interface Outbound extends FlowControl {
+
+        /**
+         * No-op outbound flow control, used for connection related frames.
+         */
+        Outbound NOOP = new FlowControlNoop.Outbound();
+
+        /**
+         * Increment stream window size.
+         *
+         * @param increment increment in bytes
+         * @return {@code true} if succeeded, {@code false} if timed out
+         */
+        long incrementStreamWindowSize(int increment);
+
+        /**
+         * Split frame into frames that can be sent.
+         *
+         * @param frame frame to split
+         * @return result
+         */
+        Http2FrameData[] cut(Http2FrameData frame);
+
+        /**
+         * Block until a window size update happens.
+         *
+         */
+        void blockTillUpdate();
+
+        /**
+         * MAX_FRAME_SIZE setting last received from the other side or default.
+         * @return MAX_FRAME_SIZE
+         */
+        int maxFrameSize();
+    }
+
 }

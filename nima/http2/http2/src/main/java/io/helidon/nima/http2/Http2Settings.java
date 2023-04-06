@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,13 @@ import java.util.Optional;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
 
+import static java.lang.System.Logger.Level.DEBUG;
+
 /**
  * HTTP settings frame.
  */
 public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> {
+    private static final System.Logger LOGGER = System.getLogger(Http2Settings.class.getName());
     private final Map<Integer, SettingValue> values;
 
     Http2Settings(Map<Integer, SettingValue> values) {
@@ -36,7 +39,7 @@ public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> 
     }
 
     /**
-     * Create emtpy settings frame.
+     * Create empty settings frame.
      *
      * @return settings frame
      */
@@ -81,6 +84,10 @@ public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> 
         return new Http2Settings(values);
     }
 
+    private static String toString(String setting, int code, Object value) {
+        return String.format("[%s (0x%02x):%s]", setting, code, value);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public Http2FrameData toFrameData(Http2Settings settings, int streamId, Http2Flag.SettingsFlags flags) {
@@ -89,9 +96,11 @@ public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> 
         values.values().forEach(it -> {
             Object value = it.value();
             Http2Setting<Object> setting = (Http2Setting<Object>) it.setting();
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, String.format(" - Http2Settings %s:  %s", it.setting().toString(), it.value().toString()));
+            }
             setting.write(data, value);
         });
-
         Http2FrameHeader header = Http2FrameHeader.create(data.available(),
                                                           frameTypes(),
                                                           flags,
@@ -169,10 +178,6 @@ public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> 
      */
     public boolean hasValue(Http2Setting<?> setting) {
         return values.containsKey(setting.identifier());
-    }
-
-    private static String toString(String setting, int code, Object value) {
-        return String.format("[%s (0x%02x):%s]", setting, code, value);
     }
 
     private record SettingValue(Http2Setting<?> setting, Object value) {

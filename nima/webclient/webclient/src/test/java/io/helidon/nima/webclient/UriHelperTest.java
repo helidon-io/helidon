@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,20 @@ class UriHelperTest {
         assertThat(helper.authority(), is("localhost"));
         assertThat(helper.host(), is("localhost"));
         assertThat(helper.path(), is(""));
-        assertThat(helper.port(), is(-1));
+        assertThat(helper.port(), is(80));
         assertThat(helper.scheme(), is("http"));
+    }
+
+    @Test
+    void testDefaultsHttps() {
+        UriQueryWriteable query = UriQueryWriteable.create();
+        UriHelper helper = UriHelper.create(URI.create("https://localhost"), query);
+
+        assertThat(helper.authority(), is("localhost"));
+        assertThat(helper.host(), is("localhost"));
+        assertThat(helper.path(), is(""));
+        assertThat(helper.port(), is(443));
+        assertThat(helper.scheme(), is("https"));
     }
 
     @Test

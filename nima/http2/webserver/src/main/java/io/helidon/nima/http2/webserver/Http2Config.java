@@ -16,6 +16,8 @@
 
 package io.helidon.nima.http2.webserver;
 
+import java.time.Duration;
+
 import io.helidon.builder.Builder;
 import io.helidon.builder.config.ConfigBean;
 import io.helidon.common.http.RequestedUriDiscoveryContext;
@@ -29,12 +31,13 @@ import io.helidon.config.metadata.ConfiguredOption;
 public interface Http2Config {
     /**
      * The size of the largest frame payload that the sender is willing to receive in bytes.
+     * Default value is {@code 16384} and maximum value is 2<sup>24</sup>-1 = 16777215 bytes.
      * See RFC 9113 section 6.5.2 for details.
      *
      * @return maximal frame size
      */
-    @ConfiguredOption("16_384")
-    long maxFrameSize();
+    @ConfiguredOption("16384")
+    int maxFrameSize();
 
     /**
      * The maximum field section size that the sender is prepared to accept in bytes.
@@ -47,14 +50,6 @@ public interface Http2Config {
     long maxHeaderListSize();
 
     /**
-     * Initial maximal size of client frames.
-     *
-     * @return maximal size in bytes
-     */
-    @ConfiguredOption("16384")
-    int maxClientFrameSize();
-
-    /**
      * Maximum number of concurrent streams that the server will allow.
      * Defaults to {@code 8192}. This limit is directional: it applies to the number of streams that the sender
      * permits the receiver to create.
@@ -65,6 +60,38 @@ public interface Http2Config {
      */
     @ConfiguredOption("8192")
     long maxConcurrentStreams();
+
+    /**
+     * This setting indicates the sender's maximum window size in bytes for connection-level flow control.
+     * Default and maximum value is 2<sup>31</sup>-1 = 2147483647 bytes. This setting affects the window size
+     * of HTTP/2 connection.
+     * Any value greater than 2147483647 causes an error. Any value smaller than initial window size causes an error.
+     * See RFC 9113 section 6.9.1 for details.
+     *
+     * @return maximum window size in bytes
+     */
+    @ConfiguredOption("65635")
+    int initialWindowSize();
+
+    /**
+     * Outbound flow control blocking timeout configured as {@link java.time.Duration}
+     * or text in ISO-8601 format.
+     * Blocking timeout defines an interval to wait for the outbound window size changes(incoming window updates)
+     * before the next blocking iteration.
+     * Default value is {@code PT0.1S}.
+     *
+     * <table>
+     *     <caption><b>ISO_8601 format examples:</b></caption>
+     *     <tr><th>PT0.1S</th><th>100 milliseconds</th></tr>
+     *     <tr><th>PT0.5S</th><th>500 milliseconds</th></tr>
+     *     <tr><th>PT2S</th><th>2 seconds</th></tr>
+     * </table>
+     *
+     * @return duration
+     * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
+     */
+    @ConfiguredOption("java.time.Duration.ofMillis(100L)")
+    Duration flowControlTimeout();
 
     /**
      * Whether to send error message over HTTP to client.

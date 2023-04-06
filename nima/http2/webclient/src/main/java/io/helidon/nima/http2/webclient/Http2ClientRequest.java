@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.nima.http2.webclient;
+
+import java.time.Duration;
 
 import io.helidon.nima.webclient.ClientRequest;
 
@@ -39,4 +41,29 @@ public interface Http2ClientRequest extends ClientRequest<Http2ClientRequest, Ht
      * @return updated request
      */
     Http2ClientRequest priorKnowledge(boolean priorKnowledge);
+
+    /**
+     * Configure request prefetch, increases both connection and stream inbound flow control window
+     * and may send window updates to inform the server, depending on flow control strategy.
+     *
+     * @param requestPrefetch inbound flow control window increment in bytes
+     * @return updated request
+     */
+    Http2ClientRequest requestPrefetch(int requestPrefetch);
+
+    /**
+     * Maximum timeout for the data reception from request stream.
+     *
+     * @param timeout timeout duration
+     * @return updated request
+     */
+    Http2ClientRequest timeout(Duration timeout);
+
+    /**
+     * Outbound flow control blocking timeout.
+     *
+     * @param timeout duration
+     * @return updated request
+     */
+    Http2ClientRequest flowControlTimeout(Duration timeout);
 }
