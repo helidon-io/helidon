@@ -81,7 +81,7 @@ public interface Http2Config {
      * Default value is {@code PT0.1S}.
      *
      * <table>
-     *     Examples:
+     *     <caption><b>ISO_8601 format examples:</b></caption>
      *     <tr><th>PT0.1S</th><th>100 milliseconds</th></tr>
      *     <tr><th>PT0.5S</th><th>500 milliseconds</th></tr>
      *     <tr><th>PT2S</th><th>2 seconds</th></tr>
