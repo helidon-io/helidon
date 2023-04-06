@@ -71,7 +71,7 @@ import static io.helidon.builder.config.spi.ConfigBeanInfo.TAG_WANT_DEFAULT_CONF
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     static final String PICO_CONTRACT_TYPENAME = "io.helidon.pico.Contract";
-    static final String PICO_EXTERNAL_CONTRACT_TYPENAME = "io.helidon.pico.ExternalContracts";
+    static final String PICO_EXTERNAL_CONTRACT_TYPENAME = "io.helidon.pico.api.ExternalContracts";
     static final String PICO_CONFIGUREDBY_TYPENAME = "io.helidon.pico.configdriven.ConfiguredBy";
 
     /**

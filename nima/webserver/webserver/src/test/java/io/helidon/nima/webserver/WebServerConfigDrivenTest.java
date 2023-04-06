@@ -27,6 +27,9 @@ import io.helidon.pico.testing.PicoTestingSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 class WebServerConfigDrivenTest {
     static final boolean NORMAL_PRODUCTION_PATH = false;
 
