@@ -1,0 +1,199 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon Builder
+:description: about Helidon Builder
+:keywords: helidon, java, microservices, reactive, virtual threads, config, builder-config
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+
+== Overview
+
+Helidon Builder is an annotation processor that code-generates fluent builder support just by adding `@Builder` to your declared Java types. This declarative style of using annotations helps you by reducing the amount of boilerplate code you need to write. 
+
+Specifically, Helidon Builder offers a rich set of capabilities, including:
+
+* Extensibility. Helidon Builder is designed to be customized and extended in order to integrate directly with the Helidon Configuration system.  
+
+* Visitor Pattern. Helidon Builder allows every attribute in the @Builder-annotated target type to be visited for your general use.
+
+* Validation. Having the visitor pattern available allows some convenient mix-in behaviors, one of which is checking for required attributes that must be set as part of the build() method of your target. By default, all non-Optional attributes are considered to be required attributes. Helidon Builder provides validation out of the box in the generated implementation classes.
+
+* Interception. You can provide other custom semantics during the build() method (similar to validation) for other types of interception or decoration on your target builders.
+
+* Packaging and usage choice. Helidon Builder can be used as a standalone module in your build today as long as you are using Java 11 or later. When used in a standalone manner in your build, you can use the requireLibraryDependencies() attribute to toggle between supporting libraries (like validation) to be either generated directly into your application, or otherwise have it supplied by Helidon libraries. This gives you an opportunity to use Helidon's tooling in isolation in your project build, even if you don't plan to use Helidon in any other part of your application runtime!
+
+== Maven Coordinates
+
+To enable Builder add the following dependencies and annotation processor path to your project's `pom.xml` (see Managing Dependencies).
+
+.Builder dependencies
+[source,java]
+
+----
+<dependency>
+   <groupId>io.helidon.builder</groupId>
+   <artifactId>helidon-builder</artifactId>
+   <version>4.0.0-ALPHA4</version>
+</dependency>
+
+----
+
+
+.Annotation Processor Path
+[source, java]
+
+----
+<build>
+   <plugins>
+       <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-compiler-plugin</artifactId>
+           <version>3.10.1</version>
+           <configuration>
+               <annotationProcessorPaths>
+                   <path>
+                       <groupId>io.helidon.builder</groupId>
+                       <artifactId>helidon-builder-processor</artifactId>
+                       <version>4.0.0-ALPHA4</version>
+                   </path>
+               </annotationProcessorPaths>
+           </configuration>
+       </plugin>
+   </plugins>
+</build>
+
+
+----
+
+== Usage
+
+=== Coding and Testing
+
+The following examples illustrate how to use Helidon Builder with simple test subject classes. To create your test subject classes, create an example with two interface types: `NameAndDescription` and `NameAndDescriptionAndComments` that extends from the first, each having the Builder annotation:
+
+.NameAndDescription
+[source, java]
+
+----
+@Builder(requireLibraryDependencies = false)
+public interface NameAndDescription {
+   String name();
+   Optional<String> description();
+}
+
+----
+
+.NameAndDescriptionAndComments
+[source, java]
+
+----
+@Builder(requireLibraryDependencies = false)
+public interface NameAndDescriptionAndComments extends NameAndDescription {
+   @Singular
+   List<String> comments();
+}
+
+----
+
+
+NOTE: The two classes above use `requireLibraryDependencies=false` which allows you to use Maven's provided dependency for the Helidon Builder libraries. This also makes it possible to code-generate the supporting validation directly into your builder- generated types, thereby not requiring any Helidon library support in your runtime.
+
+
+.Build Your Project
+[source, java]
+
+----
+maven clean compile
+----
+
+.Write your main()
+[source, java]
+
+----
+public class Main {
+   public static void main(String[] args) {
+       NameAndDescriptionAndComments target =
+               DefaultNameAndDescriptionAndComments.builder()
+                       .name("world")
+                       .addComment("hello")
+                       .build();
+       System.out.println("Hello " + target);
+   }
+}
+----
+
+.Output
+[source, java]
+
+----
+
+Hello NameAndDescriptionAndComments(name=world, description=Optional.empty,
+comments=[hello])
+
+----
+
+
+
+=== Auto-Generated Code
+
+The Helidon Builder's annotation processor generates source code whenever it processes an annotation that it recognizes - in this case the @Builder annotation. You must apply the annotation processors in your build in order to generate the supporting sources before they are consumed in the main() from this example.
+
+
+
+
+== Configuration
+
+Pico Builder Config is a specialization of the builder that extends the builder to support additional integration with Helidon's configuration subsystem. It adds support for the @ConfigBean annotation. When applied to a target interface it will map that interface to configuration via a new toBuilder method generated on the implementation as follows:
+
+.toBuilder method
+[source,java]
+
+----
+
+
+	public static Builder toBuilder(io.helidon.common.config.Config cfg) {
+       
+	}
+    
+        
+        
+----
+
+There are a few additional caveats to understand about ConfigBean and its supporting infrastructure.
+
+    * @Builder can be used in conjunction with @ConfigBean. All attributed will be honored exception one...
+    * Builder.requireLibraryDependencies is not supported. All generated configuration beans and builders will minimally require a compile-time and runtime dependency on Helidon's common-config module. But for full fidelity support of Helidon's config one should instead use the full config module.
+
+
+== Examples
+
+* See https://github.com/helidon-io/helidon/blob/4.0.0-ALPHA4/builder/tests/builder[tests/builder] for additional builder usage examples.
+
+* See https://github.com/helidon-io/helidon/tree/4.0.0-ALPHA4/pico/builder-config/tests[pico/builder-config/tests] for additional usage examples for builder-config.
+
+
+
+

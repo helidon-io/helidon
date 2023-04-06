@@ -36,7 +36,18 @@
 
 == Overview
 
-Helidon Pico //explain what it is and what it can do. 
+Helidon Pico is an optional feature in Helidon that provides service registry, a lifecycle engine and extensibility for customized code generation. Foundationally, Pico provides a way to develop declarative code using standard Javax/Jakarta annotation types (not Helidon-specific). The Helidon Pico framework provides a mix of declarative and programmatic ways to build your application. 
+
+Pico's minimalist, compile-time generated dependency injection (DI) framework and compile-time source code generation has a number of advantages, including:
+
+* pre-runtime validation of the dependency injection model
+* visibility into your application by providing "less magic" - understandability and debug-ability of your application
+* deterministic behavior (instead of depending on reflection and classpath ordering, etc.)
+* performance, since binding the model at compile-time is more efficient than computing it at runtime. 
+
+
+
+
 
 == Maven Coordinates
 
@@ -66,7 +77,7 @@ Once you have planned how each of your resources should support Pico, you specif
 
 == API
 
-Adding Pico behavior to your Helidon Níma application involves just a few simple steps.
+Adding Pico behavior to your Helidon application involves just a few simple steps.
 
 === Maven Coordinates
 
