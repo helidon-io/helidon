@@ -96,7 +96,7 @@ public class ProtocolsMain {
     private static WsListener wsEcho() {
         return new WsListener() {
             @Override
-            public void receive(WsSession session, String text, boolean last) {
+            public void onMessage(WsSession session, String text, boolean last) {
                 session.send(text, last);
                 System.out.println("websocket request " + text);
             }

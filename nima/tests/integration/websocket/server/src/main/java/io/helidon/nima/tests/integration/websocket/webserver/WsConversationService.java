@@ -85,12 +85,12 @@ class WsConversationService implements WsListener {
     }
 
     @Override
-    public void receive(WsSession session, String text, boolean last) {
+    public void onMessage(WsSession session, String text, boolean last) {
         received.add(new WsAction(RCV, TEXT, text));
     }
 
     @Override
-    public void receive(WsSession session, BufferData buffer, boolean last) {
+    public void onMessage(WsSession session, BufferData buffer, boolean last) {
         int n = buffer.available();
         received.add(new WsAction(RCV, BINARY, buffer.readString(n, UTF_8)));
     }

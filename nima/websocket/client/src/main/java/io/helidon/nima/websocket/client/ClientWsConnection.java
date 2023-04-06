@@ -228,8 +228,8 @@ public class ClientWsConnection implements WsSession, Runnable {
                 recvContinuation = ContinuationType.NONE;
             }
             switch (ct) {
-            case TEXT -> listener.receive(this, payload.readString(payload.available(), StandardCharsets.UTF_8), finalFrame);
-            case BINARY -> listener.receive(this, payload, finalFrame);
+            case TEXT -> listener.onMessage(this, payload.readString(payload.available(), StandardCharsets.UTF_8), finalFrame);
+            case BINARY -> listener.onMessage(this, payload, finalFrame);
             default -> {
                 close(WsCloseCodes.PROTOCOL_ERROR, "Unexpected continuation received");
                 throw new WsClientException("Unexpected continuation received");
@@ -238,11 +238,11 @@ public class ClientWsConnection implements WsSession, Runnable {
         }
         case TEXT -> {
             recvContinuation = ContinuationType.TEXT;
-            listener.receive(this, payload.readString(payload.available(), StandardCharsets.UTF_8), frame.fin());
+            listener.onMessage(this, payload.readString(payload.available(), StandardCharsets.UTF_8), frame.fin());
         }
         case BINARY -> {
             recvContinuation = ContinuationType.BINARY;
-            listener.receive(this, payload, frame.fin());
+            listener.onMessage(this, payload, frame.fin());
         }
         case CLOSE -> {
             int status = payload.readInt16();
