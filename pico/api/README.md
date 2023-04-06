@@ -13,7 +13,7 @@ The programmatic API is typically used to manually lookup and activate services 
 * [PicoServices](src/main/java/io/helidon/pico/api/PicoServices.java)
 * [Services](src/main/java/io/helidon/pico/api/Services.java)
 
-Note that this module only contains the common types for a Helidon Pico services provider. See the [pico-services](../services) module for the default reference implementation for this API / SPI.
+Note that this module only contains the common types for a Helidon Pico services provider. See the [runtime](../runtime) module for the default reference implementation for this API / SPI.
 
 ## Declaring a Service
 
