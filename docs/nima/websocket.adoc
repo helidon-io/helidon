@@ -16,12 +16,68 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= WebSocket Introduction
-:description: Helidon WebSocket Introduction
-:keywords: helidon, webserver, websocket, nima
+= WebSocket in Helidon Nima
+:toc:
+:toc-placement: preamble
+:description: WebSocket in Helidon Nima
+:keywords: helidon, java, websocket, web, socket, nima
+:feature-name: WebSocket
 :rootdir: {docdir}/..
-
 
 include::{rootdir}/includes/nima.adoc[]
 
-== TO DO FOR NIMA
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<API, API>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+
+== Overview
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.nima.websocket</groupId>
+    <artifactId>helidon-nima-websocket</artifactId>
+</dependency>
+----
+
+To enable WebSocket client support add the following dependency:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.nima.websocket</groupId>
+    <artifactId>helidon-nima-websocket-client</artifactId>
+</dependency>
+----
+
+== API
+
+Helidon Nima provides a WebSocket API that includes support for both
+client and server endpoints. The two APIs share a common interface called `WsListener`
+to handle WebSocket events --these connections are _symmetric_ in that both
+client and server can send messages, ping each other, etc. The client API
+is an alternative to the built-in client in the JDK library.
+
+The `WsListener` interface defines default (empty) methods for each of the
+events that occur during the lifetime of a WebSocket connection. These include:
+open, close, message, ping, pong
+
+// Server and Client API
+// Both share the WsListener interface
+// The client API provides an alternative to the native support in the JDK
+// WsClient
+
+== Examples
+
+See <<API>> section for examples.
+
+== Additional Information
+
+For additional information, see the
+link:{nima-faulttolerance-javadoc-base-url}/module-summary.html[Fault Tolerance Nima API Javadocs].
