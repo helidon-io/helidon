@@ -16,7 +16,6 @@
 
 package io.helidon.nima.http2.webserver;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -127,7 +126,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // Flow control is initialized by RFC 9113 default values
         this.flowControl = ConnectionFlowControl.serverBuilder(this::writeWindowUpdateFrame)
                 .initialWindowSize(http2Config.initialWindowSize())
-                .blockTimeout(Duration.ofMillis(http2Config.flowControlTimeout()))
+                .blockTimeout(http2Config.flowControlTimeout())
                 .maxFrameSize(http2Config.maxFrameSize())
                 .build();
     }

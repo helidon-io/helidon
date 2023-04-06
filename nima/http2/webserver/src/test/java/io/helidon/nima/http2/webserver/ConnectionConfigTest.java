@@ -16,6 +16,7 @@
 
 package io.helidon.nima.http2.webserver;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.function.Function;
 
@@ -127,7 +128,7 @@ class ConnectionConfigTest {
         WebServer.builder().addConnectionProvider(provider).build();
         assertThat(provider.isConfig(), is(true));
         Http2Config http2Config = provider.config();
-        assertThat(http2Config.flowControlTimeout(), is(1000L));
+        assertThat(http2Config.flowControlTimeout(), is(Duration.ofMillis(700)));
     }
 
     private static class TestProvider implements ServerConnectionProvider {
