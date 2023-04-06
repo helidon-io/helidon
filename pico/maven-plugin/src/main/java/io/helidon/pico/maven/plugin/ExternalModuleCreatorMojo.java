@@ -25,8 +25,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.QualifierAndValue;
+import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorConfigOptions;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
@@ -51,7 +51,7 @@ import static io.helidon.pico.maven.plugin.MavenPluginUtils.activatorCreator;
 import static io.helidon.pico.maven.plugin.MavenPluginUtils.externalModuleCreator;
 
 /**
- * Responsible for creating pico {@link io.helidon.pico.Activator}'s and a {@link io.helidon.pico.Module}
+ * Responsible for creating pico {@link io.helidon.pico.api.Activator}'s and a {@link io.helidon.pico.api.Module}
  * wrapping a set of packages from an external third-party jar.
  */
 @Mojo(name = "external-module-create", defaultPhase = LifecyclePhase.GENERATE_SOURCES, threadSafe = true,

@@ -7,8 +7,8 @@ module io.helidon.pico {
 
     exports io.helidon.pico.spi.impl;
 
-    provides io.helidon.pico.PicoServices with io.helidon.pico.spi.impl.DefaultPicoServices;
+    provides io.helidon.pico.api.PicoServices with io.helidon.pico.spi.impl.DefaultPicoServices;
 
-    uses io.helidon.pico.Module;
-    uses io.helidon.pico.Application;
+    uses io.helidon.pico.api.Module;
+    uses io.helidon.pico.api.Application;
 }

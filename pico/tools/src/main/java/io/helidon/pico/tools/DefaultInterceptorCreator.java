@@ -49,11 +49,11 @@ import io.helidon.common.Weighted;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.ElementInfo;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.InterceptedTrigger;
-import io.helidon.pico.Resettable;
-import io.helidon.pico.ServiceInfoBasics;
+import io.helidon.pico.api.ElementInfo;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.InterceptedTrigger;
+import io.helidon.pico.api.Resettable;
+import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.tools.spi.InterceptorCreator;
 
 import io.github.classgraph.ClassInfo;
@@ -153,6 +153,10 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         @Override
         public Collection<AnnotationAndValue> resolve(String annoTypeName) {
            TypeElement typeElement = elements.getTypeElement(annoTypeName);
+           if (typeElement == null) {
+               throw new ToolsException("Unable to resolve: " + annoTypeName);
+           }
+
            List<? extends AnnotationMirror> annotations = typeElement.getAnnotationMirrors();
            Set<AnnotationAndValue> result = annotations.stream()
                             .map(it -> createAnnotationAndValueFromMirror(it, elements).orElseThrow())

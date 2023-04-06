@@ -25,7 +25,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
 /**
- * This test case is applying {@link InterceptorBasedAnno} (an {@link io.helidon.pico.InterceptedTrigger}) on this class directly.
+ * This test case is applying {@link InterceptorBasedAnno} (an {@link io.helidon.pico.api.InterceptedTrigger}) on this class directly.
  * Since it is a config-driven service it is forced to used the interface based approach to interceptors.
  */
 // TODO: https://github.com/helidon-io/helidon/issues/6542

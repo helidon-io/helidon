@@ -22,16 +22,16 @@ import io.helidon.builder.Builder;
 
 /**
  * Used in the interception model described by {@link InterceptionPlan}. An intercepted
- * element typically refers to a {@link io.helidon.pico.ElementInfo.ElementKind#CONSTRUCTOR} or
- * {@link io.helidon.pico.ElementInfo.ElementKind#METHOD} that qualifies for interception. If, however,
- * the {@link io.helidon.pico.InterceptedTrigger} is applied on the enclosing service type then all public methods.
+ * element typically refers to a {@link io.helidon.pico.api.ElementInfo.ElementKind#CONSTRUCTOR} or
+ * {@link io.helidon.pico.api.ElementInfo.ElementKind#METHOD} that qualifies for interception. If, however,
+ * the {@link io.helidon.pico.api.InterceptedTrigger} is applied on the enclosing service type then all public methods.
  * Note that only public methods on pico-activated services can be intercepted.
  */
 @Builder
 public interface InterceptedElement {
 
     /**
-     * The set of {@link io.helidon.pico.InterceptedTrigger} types that apply to this method/element.
+     * The set of {@link io.helidon.pico.api.InterceptedTrigger} types that apply to this method/element.
      *
      * @return the set of intercepted trigger types that apply to this method/element
      */

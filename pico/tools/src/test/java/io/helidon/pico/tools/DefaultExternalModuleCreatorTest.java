@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.DefaultQualifierAndValue;
+import io.helidon.pico.api.DefaultQualifierAndValue;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.spi.ExternalModuleCreator;
 

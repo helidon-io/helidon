@@ -20,6 +20,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
@@ -231,7 +232,8 @@ class JavaC {
 
         public ToolsException maybeGenerateError() {
             if (!isSuccessful()) {
-                return new ToolsException("Creator compilation error");
+                return new ToolsException("Compilation error encountered:\n"
+                                          + diagList.stream().map(Object::toString).collect(Collectors.joining("\n")));
             }
             return null;
         }

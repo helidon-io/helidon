@@ -70,7 +70,7 @@ Compile-time dependency:
 ```
   <dependency>
     <groupId>io.helidon.pico</groupId>
-    <artifactId>helidon-pico-services</artifactId>
+    <artifactId>helidon-pico-runtime</artifactId>
     <version>${helidon.version}</version>
   </dependency>
 ```
@@ -120,7 +120,7 @@ Compile-time dependency:
 ## Modules
 
 * [api](./api) - the Pico API and SPI; depends on jakarta-inject and jakarta-annotations. Required as a maven compile-time dependency for runtime consumption.
-* [services](./services) - contains the default runtime implementation of the Pico API/SPI; depends on the pico api module above. Requires as a maven compile-time dependency for runtime consumption.
+* [runtime](./runtime) - contains the default runtime implementation of the Pico API/SPI; depends on the pico api module above. Requires as a maven compile-time dependency for runtime consumption.
 * [config-driven](./configdriven) - Extensions to Pico to integrate directly with the [Helidon Config](../config) subsystem.
 * [tools](./tools) - contains the libraries and template-based codegen mustache resources as well as model validation tooling; depends on runtime services. Only required at build time and is not required for Pico at runtime.
 * [processor](./processor) - contains the libraries for annotation processing; depends on tools. Only required at build time and is not required for Pico at runtime.
@@ -168,7 +168,7 @@ And just randomly taking one of the generated <i>Activators</i>:
 ```java
 @Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
 public class SmsCommunicationMode$$Pico$$Activator
-            extends io.helidon.pico.services.AbstractServiceProvider<SmsCommunicationMode> {
+            extends io.helidon.pico.runtime.AbstractServiceProvider<SmsCommunicationMode> {
     private static final DefaultServiceInfo serviceInfo =
         DefaultServiceInfo.builder()
             .serviceTypeName(io.helidon.examples.pico.logger.common.SmsCommunicationMode.class.getName())

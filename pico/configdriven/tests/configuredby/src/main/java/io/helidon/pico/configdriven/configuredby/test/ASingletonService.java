@@ -16,7 +16,7 @@
 
 package io.helidon.pico.configdriven.configuredby.test;
 
-import io.helidon.pico.configdriven.ConfiguredBy;
+import io.helidon.pico.configdriven.api.ConfiguredBy;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;

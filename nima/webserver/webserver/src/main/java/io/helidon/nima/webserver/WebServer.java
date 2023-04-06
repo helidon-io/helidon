@@ -38,7 +38,7 @@ import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 
 /**
  * Server that opens server sockets and handles requests through routing.

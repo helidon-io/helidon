@@ -19,11 +19,11 @@ package io.helidon.pico.tools;
 import java.util.Optional;
 
 import io.helidon.builder.Builder;
-import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.ServiceInfoBasics;
+import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.ServiceInfoBasics;
 
 /**
- * The specifics for a single {@link io.helidon.pico.ServiceProvider} that was code generated.
+ * The specifics for a single {@link io.helidon.pico.api.ServiceProvider} that was code generated.
  *
  * @see ActivatorCreatorResponse#serviceTypeDetails()
  */

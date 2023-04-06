@@ -16,16 +16,16 @@
 
 package io.helidon.pico.spi;
 
-import io.helidon.pico.Bootstrap;
-import io.helidon.pico.PicoServices;
+import io.helidon.pico.api.Bootstrap;
+import io.helidon.pico.api.PicoServices;
 
 /**
- * Java {@link java.util.ServiceLoader} provider interface to find implementation of {@link io.helidon.pico.PicoServices}.
+ * Java {@link java.util.ServiceLoader} provider interface to find implementation of {@link PicoServices}.
  */
 public interface PicoServicesProvider {
 
     /**
-     * Provide the {@code Pico} Services implementation given the provided primordial {@link io.helidon.pico.Bootstrap}
+     * Provide the {@code Pico} Services implementation given the provided primordial {@link Bootstrap}
      * configuration instance.
      *
      * @param bootstrap the primordial bootstrap configuration

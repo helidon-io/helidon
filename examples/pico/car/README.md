@@ -85,7 +85,7 @@ The Pico generated <i>Car$$picoActivator</i>:
 @SuppressWarnings("unchecked")
 @Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
 public class Car$$picoActivator
-        extends io.helidon.pico.services.AbstractServiceProvider<Car> {
+        extends io.helidon.pico.runtime.AbstractServiceProvider<Car> {
    private static final DefaultServiceInfo serviceInfo =
            DefaultServiceInfo.builder()
                    .serviceTypeName(io.helidon.examples.pico.car.pico.Car.class.getName())

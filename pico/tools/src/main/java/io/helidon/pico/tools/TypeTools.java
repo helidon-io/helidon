@@ -56,17 +56,17 @@ import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.DefaultElementInfo;
-import io.helidon.pico.DefaultInjectionPointInfo;
-import io.helidon.pico.DefaultQualifierAndValue;
-import io.helidon.pico.DefaultServiceInfoCriteria;
-import io.helidon.pico.ElementInfo;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.InjectionPointProvider;
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.ServiceInfoCriteria;
-import io.helidon.pico.services.Dependencies;
+import io.helidon.pico.api.DefaultElementInfo;
+import io.helidon.pico.api.DefaultInjectionPointInfo;
+import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.ElementInfo;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.InjectionPointProvider;
+import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.runtime.Dependencies;
 
 import io.github.classgraph.AnnotationInfo;
 import io.github.classgraph.AnnotationInfoList;
@@ -646,7 +646,7 @@ public final class TypeTools extends BuilderTypeTools {
     }
 
     /**
-     * Determines the {@link jakarta.inject.Provider} or {@link io.helidon.pico.InjectionPointProvider} contract type.
+     * Determines the {@link jakarta.inject.Provider} or {@link io.helidon.pico.api.InjectionPointProvider} contract type.
      *
      * @param classInfo class info
      * @return the provided type
@@ -1409,7 +1409,7 @@ public final class TypeTools extends BuilderTypeTools {
     }
 
     /**
-     * Converts the modifiers to an {@link io.helidon.pico.ElementInfo.Access} type.
+     * Converts the modifiers to an {@link io.helidon.pico.api.ElementInfo.Access} type.
      *
      * @param modifiers the moifiers
      * @return the access

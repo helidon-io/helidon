@@ -20,7 +20,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Used as an {@link io.helidon.pico.InterceptedTrigger} from the maven-plugin call (see pom.xml).
+ * Used as an {@link io.helidon.pico.api.InterceptedTrigger} from the maven-plugin call (see pom.xml).
  */
 //@InterceptedTrigger - intentional decision not to add this in order to avoid standard annotation processing.
 //  it will instead be handled by the maven-plugin

@@ -29,26 +29,26 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.DefaultBootstrap;
-import io.helidon.pico.Phase;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.PicoServicesHolder;
-import io.helidon.pico.Resettable;
-import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.api.DefaultBootstrap;
+import io.helidon.pico.api.Phase;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.PicoServicesHolder;
+import io.helidon.pico.api.Resettable;
+import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.spi.ApplicationCreator;
 import io.helidon.pico.tools.spi.ExternalModuleCreator;
 
-import static io.helidon.pico.PicoServicesConfig.KEY_PERMITS_DYNAMIC;
-import static io.helidon.pico.PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS;
-import static io.helidon.pico.PicoServicesConfig.NAME;
+import static io.helidon.pico.api.PicoServicesConfig.KEY_PERMITS_DYNAMIC;
+import static io.helidon.pico.api.PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS;
+import static io.helidon.pico.api.PicoServicesConfig.NAME;
 
 final class MavenPluginUtils {
     private MavenPluginUtils() {
     }
 
     /**
-     * Returns a {@link io.helidon.pico.Services} registry that forces application loading to be disabled.
+     * Returns a {@link io.helidon.pico.api.Services} registry that forces application loading to be disabled.
      *
      * @return pico services
      */

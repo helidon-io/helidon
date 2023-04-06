@@ -34,24 +34,24 @@ import io.helidon.common.Weighted;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.DefaultServiceInfoCriteria;
-import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.Module;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.ServiceInfoCriteria;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.Services;
-import io.helidon.pico.services.AbstractServiceProvider;
-import io.helidon.pico.services.DefaultServiceBinder;
-import io.helidon.pico.services.PicoInjectionPlan;
+import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.Module;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.api.Services;
+import io.helidon.pico.runtime.AbstractServiceProvider;
+import io.helidon.pico.runtime.DefaultServiceBinder;
+import io.helidon.pico.runtime.PicoInjectionPlan;
 import io.helidon.pico.tools.spi.ApplicationCreator;
 
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-import static io.helidon.pico.services.ServiceUtils.isQualifiedInjectionTarget;
+import static io.helidon.pico.runtime.ServiceUtils.isQualifiedInjectionTarget;
 
 /**
  * The default implementation for {@link io.helidon.pico.tools.spi.ApplicationCreator}.
@@ -62,7 +62,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
     /**
      * The prefix to add before the generated "Application" class name (i.e., "Pico$$" in the "Pico$$Application").
      */
-    public static final String NAME_PREFIX = /* PicoServicesConfig.NAME */ DefaultActivatorCreator.NAME_PREFIX;
+    public static final String NAME_PREFIX = DefaultActivatorCreator.NAME_PREFIX;
 
     /**
      * The "Application" part of the name.
@@ -92,7 +92,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
     }
 
     /**
-     * Generates the source and class file for {@link io.helidon.pico.Application} using the current classpath.
+     * Generates the source and class file for {@link io.helidon.pico.api.Application} using the current classpath.
      *
      * @param req the request
      * @return the response for application creation

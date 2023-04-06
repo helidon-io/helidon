@@ -18,7 +18,7 @@ package io.helidon.pico.maven.plugin;
 
 import java.io.File;
 
-import io.helidon.pico.PicoServicesConfig;
+import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.tools.DefaultApplicationCreator;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -35,13 +35,13 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     /**
-     * The classname to use for the Pico {@link io.helidon.pico.Application} class.
+     * The classname to use for the Pico {@link io.helidon.pico.api.Application} class.
      * If not found the classname will be inferred.
      */
     @Parameter(property = PicoServicesConfig.NAME + ".application.class.name", readonly = true
                // note: the default value handling doesn't work here for "$$"!!
-//               defaultValue = DefaultApplicationCreator.APPLICATION_NAME
-    )
+               //               defaultValue = DefaultApplicationCreator.APPLICATION_NAME
+               )
     private String className;
 
     /**

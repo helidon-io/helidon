@@ -23,9 +23,9 @@ import java.util.Set;
 import io.helidon.builder.Builder;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.QualifierAndValue;
+import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.QualifierAndValue;
 
 /**
  * Codegen request options applicable as part of the overall {@link ActivatorCreatorRequest}.
@@ -81,16 +81,16 @@ public interface ActivatorCreatorCodeGen {
     Map<TypeName, Boolean> serviceTypeIsAbstractTypes();
 
     /**
-     * The {@link io.helidon.pico.Contract}'s associated with each service type.
+     * The {@link io.helidon.pico.api.Contract}'s associated with each service type.
      *
-     * @return the map of service type names to {@link io.helidon.pico.Contract}'s implemented
+     * @return the map of service type names to {@link io.helidon.pico.api.Contract}'s implemented
      */
     Map<TypeName, Set<TypeName>> serviceTypeContracts();
 
     /**
-     * The {@link io.helidon.pico.ExternalContracts} associated with each service type.
+     * The {@link io.helidon.pico.api.ExternalContracts} associated with each service type.
      *
-     * @return the map of service type names to {@link io.helidon.pico.ExternalContracts} implemented
+     * @return the map of service type names to {@link io.helidon.pico.api.ExternalContracts} implemented
      */
     Map<TypeName, Set<TypeName>> serviceTypeExternalContracts();
 
@@ -105,7 +105,7 @@ public interface ActivatorCreatorCodeGen {
      * The {@code PreDestroy} method name for each service type.
      *
      * @return the map of service type names to PreDestroy method names
-     * @see io.helidon.pico.PreDestroyMethod
+     * @see io.helidon.pico.api.PreDestroyMethod
      */
     Map<TypeName, String> serviceTypePreDestroyMethodNames();
 
@@ -113,7 +113,7 @@ public interface ActivatorCreatorCodeGen {
      * The {@code PostConstruct} method name for each service type.
      *
      * @return the map of service type names to PostConstruct method names
-     * @see io.helidon.pico.PostConstructMethod
+     * @see io.helidon.pico.api.PostConstructMethod
      */
     Map<TypeName, String> serviceTypePostConstructMethodNames();
 
@@ -125,7 +125,7 @@ public interface ActivatorCreatorCodeGen {
     Map<TypeName, Double> serviceTypeWeights();
 
     /**
-     * The declared {@link io.helidon.pico.RunLevel} value for each service type.
+     * The declared {@link io.helidon.pico.api.RunLevel} value for each service type.
      *
      * @return the map of service type names to declared run level
      */

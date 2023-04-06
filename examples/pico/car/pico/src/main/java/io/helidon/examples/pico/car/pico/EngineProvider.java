@@ -18,8 +18,8 @@ package io.helidon.examples.pico.car.pico;
 
 import java.util.Optional;
 
-import io.helidon.pico.ContextualServiceQuery;
-import io.helidon.pico.InjectionPointProvider;
+import io.helidon.pico.api.ContextualServiceQuery;
+import io.helidon.pico.api.InjectionPointProvider;
 
 import jakarta.inject.Singleton;
 

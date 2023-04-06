@@ -24,8 +24,8 @@ import java.util.Set;
 
 import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
-import io.helidon.pico.DefaultServiceInfoBasics;
-import io.helidon.pico.InterceptedTrigger;
+import io.helidon.pico.api.DefaultServiceInfoBasics;
+import io.helidon.pico.api.InterceptedTrigger;
 import io.helidon.pico.tools.spi.InterceptorCreator;
 import io.helidon.pico.tools.testsubjects.HelloPicoWorld;
 import io.helidon.pico.tools.testsubjects.HelloPicoWorldImpl;

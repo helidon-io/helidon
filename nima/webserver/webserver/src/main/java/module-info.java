@@ -49,12 +49,12 @@ module io.helidon.nima.webserver {
     requires io.helidon.common.uri;
 
     requires static io.helidon.config.metadata;
-    requires static io.helidon.pico.configdriven.services;
+    requires static io.helidon.pico.configdriven.runtime;
     requires static jakarta.inject;
 
     // needed to compile pico generated classes
     requires io.helidon.pico.api;
-    requires static io.helidon.pico.services;
+    requires static io.helidon.pico.runtime;
 
     // provides multiple packages due to intentional cyclic dependency
     // we want to support HTTP/1.1 by default (we could fully separate it, but the API would be harder to use
@@ -72,5 +72,5 @@ module io.helidon.nima.webserver {
     uses SinkProvider;
 
     provides io.helidon.nima.webserver.spi.ServerConnectionProvider with io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-    provides io.helidon.pico.Module with io.helidon.nima.webserver.Pico$$Module;
+    provides io.helidon.pico.api.Module with io.helidon.nima.webserver.Pico$$Module;
 }

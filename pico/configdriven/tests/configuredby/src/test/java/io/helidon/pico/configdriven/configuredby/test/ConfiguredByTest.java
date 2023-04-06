@@ -26,9 +26,9 @@ import io.helidon.builder.config.testsubjects.fakes.FakeServerConfig;
 import io.helidon.builder.config.testsubjects.fakes.FakeSocketConfig;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.configdriven.services.ConfigBeanRegistry;
-import io.helidon.pico.configdriven.services.ConfiguredServiceProvider;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.configdriven.runtime.ConfigBeanRegistry;
+import io.helidon.pico.configdriven.runtime.ConfiguredServiceProvider;
 
 import org.junit.jupiter.api.Test;
 

@@ -13,11 +13,11 @@ import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.DefaultTypedElementName;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
-import io.helidon.pico.DefaultInvocationContext;
-import io.helidon.pico.Interceptor;
-import io.helidon.pico.InvocationException;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.services.InterceptedMethod;
+import io.helidon.pico.api.DefaultInvocationContext;
+import io.helidon.pico.api.Interceptor;
+import io.helidon.pico.api.InvocationException;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.runtime.InterceptedMethod;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -25,15 +25,15 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 import static io.helidon.common.types.DefaultTypeName.create;
-import static io.helidon.pico.services.Invocation.createInvokeAndSupply;
-import static io.helidon.pico.services.Invocation.mergeAndCollapse;
+import static io.helidon.pico.runtime.Invocation.createInvokeAndSupply;
+import static io.helidon.pico.runtime.Invocation.mergeAndCollapse;
 
 /**
  * Pico {@link Interceptor} for {@link io.helidon.pico.tests.pico.interceptor.XImpl }.
  */
 // using the no-arg constructor approach
 @io.helidon.common.Weight(100.001)
-@io.helidon.pico.Intercepted(io.helidon.pico.tests.pico.interceptor.XImpl.class)
+@io.helidon.pico.api.Intercepted(io.helidon.pico.tests.pico.interceptor.XImpl.class)
 @Singleton
 @SuppressWarnings("ALL")
 @jakarta.annotation.Generated(value = "io.helidon.pico.tools.DefaultInterceptorCreator", comments = "version=1")
@@ -42,13 +42,13 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
             DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class),
             DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")),
             DefaultAnnotationAndValue.create(io.helidon.pico.tests.pico.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")),
-            DefaultAnnotationAndValue.create(io.helidon.pico.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")),
+            DefaultAnnotationAndValue.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")),
             DefaultAnnotationAndValue.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")));
 
     private static final TypedElementName __ctor = DefaultTypedElementName.builder()
             .typeName(create(void.class))
-			.elementName(io.helidon.pico.ElementInfo.CONSTRUCTOR)
-			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.elementName(io.helidon.pico.api.ElementInfo.CONSTRUCTOR)
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.pico.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Inject.class))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
@@ -58,7 +58,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     private static final TypedElementName __methodIA1 = DefaultTypedElementName.builder()
             .typeName(create(void.class))
 			.elementName("methodIA1")
-			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.pico.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
@@ -68,7 +68,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     private static final TypedElementName __methodIA2 = DefaultTypedElementName.builder()
             .typeName(create(void.class))
 			.elementName("methodIA2")
-			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.pico.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IA2")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
@@ -79,7 +79,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     private static final TypedElementName __methodIB = DefaultTypedElementName.builder()
             .typeName(create(void.class))
 			.elementName("methodIB")
-			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.pico.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IBSubAnno")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "methodIB")))
@@ -95,7 +95,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     private static final TypedElementName __methodIB2 = DefaultTypedElementName.builder()
             .typeName(create(java.lang.String.class))
 			.elementName("methodIB2")
-			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.pico.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IBSubAnno")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "methodIB2")))
@@ -111,7 +111,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     private static final TypedElementName __close = DefaultTypedElementName.builder()
             .typeName(create(void.class))
 			.elementName("close")
-			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.pico.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
@@ -122,7 +122,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     private static final TypedElementName __methodX = DefaultTypedElementName.builder()
             .typeName(create(long.class))
 			.elementName("methodX")
-			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.pico.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
@@ -143,7 +143,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     private static final TypedElementName __methodY = DefaultTypedElementName.builder()
             .typeName(create(java.lang.String.class))
 			.elementName("methodY")
-			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.pico.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
@@ -152,7 +152,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     private static final TypedElementName __methodZ = DefaultTypedElementName.builder()
             .typeName(create(java.lang.String.class))
 			.elementName("methodZ")
-			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.pico.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
@@ -161,7 +161,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     private static final TypedElementName __throwRuntimeException = DefaultTypedElementName.builder()
             .typeName(create(void.class))
 			.elementName("throwRuntimeException")
-			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
 			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.pico.interceptor.TestNamed.class, Map.of("value", "TestNamed-ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
 			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))

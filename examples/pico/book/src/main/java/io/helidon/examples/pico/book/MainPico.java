@@ -16,9 +16,9 @@
 
 package io.helidon.examples.pico.book;
 
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.Services;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.api.Services;
 
 public class MainPico {
 

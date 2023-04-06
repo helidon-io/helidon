@@ -19,7 +19,7 @@ package io.helidon.pico.tests.pico.tbox;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.pico.InjectionPointInfo;
+import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.tests.pico.tbox.impl.CoarseBlade;
 import io.helidon.pico.tests.pico.tbox.impl.DullBlade;
 

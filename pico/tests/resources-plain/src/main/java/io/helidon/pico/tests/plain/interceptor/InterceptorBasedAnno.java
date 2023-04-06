@@ -19,7 +19,7 @@ package io.helidon.pico.tests.plain.interceptor;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import io.helidon.pico.InterceptedTrigger;
+import io.helidon.pico.api.InterceptedTrigger;
 
 @InterceptedTrigger
 @Retention(RetentionPolicy.CLASS)

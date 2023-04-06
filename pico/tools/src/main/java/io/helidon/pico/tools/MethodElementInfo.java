@@ -19,7 +19,7 @@ package io.helidon.pico.tools;
 import java.util.List;
 
 import io.helidon.builder.Builder;
-import io.helidon.pico.ElementInfo;
+import io.helidon.pico.api.ElementInfo;
 
 /**
  * Describes a method element.
@@ -29,7 +29,7 @@ public interface MethodElementInfo extends ElementInfo {
 
     /**
      * The list of "throws" that the method throws. Applies only to
-     * {@link io.helidon.pico.ElementInfo.ElementKind#METHOD} element types.
+     * {@link io.helidon.pico.api.ElementInfo.ElementKind#METHOD} element types.
      *
      * @return the list of throwable types this method may throw
      */

@@ -19,7 +19,7 @@ package io.helidon.pico.tools.spi;
 import java.util.Map;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
 import io.helidon.pico.tools.GeneralCreatorRequest;
@@ -28,16 +28,16 @@ import io.helidon.pico.tools.InterceptorCreatorResponse;
 
 /**
  * Implementors of this contract are responsible for code-generating the Pico
- * {@link io.helidon.pico.Activator}s and {@link io.helidon.pico.ServiceProvider}s for service types found in your DI-enabled
+ * {@link io.helidon.pico.api.Activator}s and {@link io.helidon.pico.api.ServiceProvider}s for service types found in your DI-enabled
  * module.
  * <p>
  * The typical scenario will have 1-SingletonServiceType:1-GeneratedPicoActivatorClassForThatService:1-ServiceProvider
- * representation in the {@link io.helidon.pico.Services} registry that can be lazily activated.
+ * representation in the {@link io.helidon.pico.api.Services} registry that can be lazily activated.
  * <p>
  * Activators are only generated if your service is marked as a {@code jakarta.inject.Singleton} scoped service.
  * <p>
  * All activators for your jar module are then aggregated and registered into a pico code-generated
- * {@link io.helidon.pico.Module} class.
+ * {@link io.helidon.pico.api.Module} class.
  *
  * @see io.helidon.pico.tools.ActivatorCreatorProvider
  */
@@ -45,8 +45,8 @@ import io.helidon.pico.tools.InterceptorCreatorResponse;
 public interface ActivatorCreator {
 
     /**
-     * Used during annotation processing in compile time to automatically generate {@link io.helidon.pico.Activator}'s
-     * and optionally an aggregating {@link io.helidon.pico.Module} for those activators.
+     * Used during annotation processing in compile time to automatically generate {@link io.helidon.pico.api.Activator}'s
+     * and optionally an aggregating {@link io.helidon.pico.api.Module} for those activators.
      *
      * @param request the request for what to generate
      * @return the response result for the create operation

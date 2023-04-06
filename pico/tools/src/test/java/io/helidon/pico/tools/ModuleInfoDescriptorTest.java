@@ -19,8 +19,8 @@ package io.helidon.pico.tools;
 import java.io.File;
 import java.util.List;
 
-import io.helidon.pico.Contract;
-import io.helidon.pico.ExternalContracts;
+import io.helidon.pico.api.Contract;
+import io.helidon.pico.api.ExternalContracts;
 
 import org.junit.jupiter.api.Test;
 
@@ -152,10 +152,10 @@ class ModuleInfoDescriptorTest {
                                    + "    requires static lombok;\n"
                                    + "    requires io.helidon.common;\n"
                                    + "    exports io.helidon.pico.spi.impl;\n"
-                                   + "    provides io.helidon.pico.PicoServices with io.helidon.pico.spi.impl"
+                                   + "    provides io.helidon.pico.api.PicoServices with io.helidon.pico.spi.impl"
                                         + ".DefaultPicoServices;\n"
-                                   + "    uses io.helidon.pico.Module;\n"
-                                   + "    uses io.helidon.pico.Application;\n"
+                                   + "    uses io.helidon.pico.api.Module;\n"
+                                   + "    uses io.helidon.pico.api.Application;\n"
                                    + "}"));
 
         String contents = CommonUtils.loadStringFromFile("target/test-classes/testsubjects/m0._java_").trim();
@@ -192,10 +192,10 @@ class ModuleInfoDescriptorTest {
                                    + "    requires static lombok;\n"
                                    + "    requires io.helidon.common;\n"
                                    + "    exports io.helidon.pico.spi.impl;\n"
-                                   + "    provides io.helidon.pico.PicoServices with io.helidon.pico.spi.impl"
+                                   + "    provides io.helidon.pico.api.PicoServices with io.helidon.pico.spi.impl"
                                    + ".DefaultPicoServices;\n"
-                                   + "    uses io.helidon.pico.Module;\n"
-                                   + "    uses io.helidon.pico.Application;\n"
+                                   + "    uses io.helidon.pico.api.Module;\n"
+                                   + "    uses io.helidon.pico.api.Application;\n"
                                    + "}"));
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> descriptor.mergeCreate(descriptor));
         assertThat(e.getMessage(), equalTo("can't merge with self"));

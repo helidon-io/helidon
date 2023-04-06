@@ -39,8 +39,8 @@ import io.helidon.common.config.Config;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.configdriven.ConfiguredBy;
-import io.helidon.pico.configdriven.services.AbstractConfiguredServiceProvider;
+import io.helidon.pico.configdriven.api.ConfiguredBy;
+import io.helidon.pico.configdriven.runtime.AbstractConfiguredServiceProvider;
 import io.helidon.pico.processor.ServiceAnnotationProcessor;
 import io.helidon.pico.tools.ActivatorCreatorProvider;
 import io.helidon.pico.tools.ServicesToProcess;
@@ -57,7 +57,7 @@ import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
 import static io.helidon.common.types.DefaultTypeName.toBuilder;
 
 /**
- * Processor for @{@link io.helidon.pico.configdriven.ConfiguredBy} type annotations.
+ * Processor for @{@link ConfiguredBy} type annotations.
  */
 public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     private final System.Logger logger = System.getLogger(getClass().getName());

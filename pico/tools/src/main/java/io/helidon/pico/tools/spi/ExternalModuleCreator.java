@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tools.spi;
 
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 import io.helidon.pico.tools.ExternalModuleCreatorRequest;
 import io.helidon.pico.tools.ExternalModuleCreatorResponse;
 

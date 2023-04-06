@@ -16,7 +16,7 @@
 
 package io.helidon.examples.pico.car.pico;
 
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 
 @Contract
 public interface Vehicle {

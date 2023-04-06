@@ -27,13 +27,13 @@ import io.helidon.builder.config.spi.HelidonConfigBeanRegistry;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.DefaultBootstrap;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.PicoServicesHolder;
-import io.helidon.pico.Resettable;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.services.DefaultServiceBinder;
+import io.helidon.pico.api.DefaultBootstrap;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.PicoServicesHolder;
+import io.helidon.pico.api.Resettable;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.runtime.DefaultServiceBinder;
 
 /**
  * Supporting helper utilities unit-testing Pico services.
@@ -52,11 +52,11 @@ public class PicoTestingSupport {
     }
 
     /**
-     * Provides a means to bind a service provider into the {@link io.helidon.pico.Services} registry.
+     * Provides a means to bind a service provider into the {@link io.helidon.pico.api.Services} registry.
      *
      * @param picoServices    the pico services instance to bind into
      * @param serviceProvider the service provider to bind
-     * @see io.helidon.pico.ServiceBinder
+     * @see io.helidon.pico.api.ServiceBinder
      */
     public static void bind(PicoServices picoServices,
                             ServiceProvider<?> serviceProvider) {
@@ -65,7 +65,7 @@ public class PicoTestingSupport {
     }
 
     /**
-     * Creates a {@link io.helidon.pico.PicoServices} interface more conducive to unit and integration testing.
+     * Creates a {@link io.helidon.pico.api.PicoServices} interface more conducive to unit and integration testing.
      *
      * @return testable services instance
      */
@@ -74,11 +74,11 @@ public class PicoTestingSupport {
     }
 
     /**
-     * Creates a {@link io.helidon.pico.PicoServices} interface more conducive to unit and integration testing.
+     * Creates a {@link io.helidon.pico.api.PicoServices} interface more conducive to unit and integration testing.
      *
      * @param config the config to use
      * @return testable services instance
-     * @see io.helidon.pico.PicoServicesConfig
+     * @see io.helidon.pico.api.PicoServicesConfig
      */
     public static PicoServices testableServices(Config config) {
         return lazyCreate(config).get();

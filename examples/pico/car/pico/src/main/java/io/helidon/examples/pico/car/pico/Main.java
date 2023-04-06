@@ -16,8 +16,8 @@
 
 package io.helidon.examples.pico.car.pico;
 
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.ServiceProvider;
 
 public class Main {
 

@@ -34,28 +34,29 @@ public final class TypeNames {
     /**
      * Pico {@value} type.
      */
-    public static final String PICO_APPLICATION = "io.helidon.pico.Application";
+    public static final String PICO_APPLICATION = "io.helidon.pico.api.Application";
 
     /**
      * Pico {@value} annotation.
      */
-    public static final String PICO_CONFIGURED_BY = "io.helidon.pico.configdriven.ConfiguredBy";
+    public static final String PICO_CONTRACT = "io.helidon.pico.api.Contract";
     /**
      * Pico {@value} annotation.
      */
-    public static final String PICO_CONTRACT = "io.helidon.pico.Contract";
+    public static final String PICO_EXTERNAL_CONTRACTS = "io.helidon.pico.api.ExternalContracts";
     /**
      * Pico {@value} annotation.
      */
-    public static final String PICO_EXTERNAL_CONTRACTS = "io.helidon.pico.ExternalContracts";
-    /**
-     * Pico {@value} annotation.
-     */
-    public static final String PICO_INTERCEPTED = "io.helidon.pico.Intercepted";
+    public static final String PICO_INTERCEPTED = "io.helidon.pico.api.Intercepted";
     /**
      * Pico {@value} type.
      */
-    public static final String PICO_MODULE = "io.helidon.pico.Module";
+    public static final String PICO_MODULE = "io.helidon.pico.api.Module";
+
+    /**
+     * Pico {@value} annotation.
+     */
+    public static final String PICO_CONFIGURED_BY = "io.helidon.pico.configdriven.api.ConfiguredBy";
 
     /**
      * Jakarta {@value} annotation.

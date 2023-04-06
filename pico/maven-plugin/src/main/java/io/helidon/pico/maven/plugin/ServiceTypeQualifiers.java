@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import io.helidon.pico.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValue;
 
 import org.apache.maven.plugins.annotations.Parameter;
 

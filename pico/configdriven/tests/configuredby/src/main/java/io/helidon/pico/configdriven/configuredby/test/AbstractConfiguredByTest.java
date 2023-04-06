@@ -25,16 +25,16 @@ import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.pico.DefaultQualifierAndValue;
-import io.helidon.pico.DefaultServiceInfoCriteria;
-import io.helidon.pico.Phase;
-import io.helidon.pico.PicoServiceProviderException;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.Services;
-import io.helidon.pico.configdriven.ConfiguredBy;
-import io.helidon.pico.configdriven.services.ConfigBeanRegistry;
+import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.Phase;
+import io.helidon.pico.api.PicoServiceProviderException;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.api.Services;
+import io.helidon.pico.configdriven.api.ConfiguredBy;
+import io.helidon.pico.configdriven.runtime.ConfigBeanRegistry;
 import io.helidon.pico.testing.PicoTestingSupport;
 
 import org.junit.jupiter.api.AfterAll;
@@ -50,7 +50,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Tests for {@link io.helidon.pico.configdriven.ConfiguredBy}.
+ * Tests for {@link io.helidon.pico.configdriven.api.ConfiguredBy}.
  */
 public abstract class AbstractConfiguredByTest {
     protected static final String FAKE_SOCKET_CONFIG = "sockets";

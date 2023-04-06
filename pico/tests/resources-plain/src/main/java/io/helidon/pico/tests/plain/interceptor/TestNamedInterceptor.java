@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypedElementName;
-import io.helidon.pico.Interceptor;
-import io.helidon.pico.InvocationContext;
+import io.helidon.pico.api.Interceptor;
+import io.helidon.pico.api.InvocationContext;
 
 @SuppressWarnings({"ALL", "unchecked"})
 public class TestNamedInterceptor implements Interceptor {

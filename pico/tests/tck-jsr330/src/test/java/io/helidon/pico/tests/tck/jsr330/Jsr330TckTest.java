@@ -19,8 +19,8 @@ package io.helidon.pico.tests.tck.jsr330;
 import java.util.Enumeration;
 import java.util.Objects;
 
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.PicoServicesConfig;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.PicoServicesConfig;
 
 import jakarta.inject.Provider;
 import junit.framework.TestFailure;

@@ -19,8 +19,8 @@ package io.helidon.pico.configdriven.configuredby.application.test;
 import java.util.List;
 import java.util.Objects;
 
-import io.helidon.pico.Resettable;
-import io.helidon.pico.RunLevel;
+import io.helidon.pico.api.Resettable;
+import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.configdriven.configuredby.test.ASingletonServiceContract;
 import io.helidon.pico.configdriven.configuredby.test.FakeWebServerContract;
 

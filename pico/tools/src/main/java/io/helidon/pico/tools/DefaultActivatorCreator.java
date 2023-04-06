@@ -37,22 +37,21 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.DefaultInjectionPointInfo;
-import io.helidon.pico.DefaultQualifierAndValue;
-import io.helidon.pico.DefaultServiceInfo;
-import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.DependencyInfo;
-import io.helidon.pico.ElementInfo;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.Module;
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.RunLevel;
-import io.helidon.pico.ServiceInfo;
-import io.helidon.pico.ServiceInfoBasics;
-import io.helidon.pico.ServiceInfoCriteria;
-import io.helidon.pico.services.AbstractServiceProvider;
-import io.helidon.pico.services.Dependencies;
+import io.helidon.pico.api.DefaultInjectionPointInfo;
+import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.pico.api.DefaultServiceInfo;
+import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.DependencyInfo;
+import io.helidon.pico.api.ElementInfo;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.RunLevel;
+import io.helidon.pico.api.ServiceInfo;
+import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.runtime.AbstractServiceProvider;
+import io.helidon.pico.runtime.Dependencies;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 
 import io.github.classgraph.AnnotationInfo;
@@ -75,9 +74,9 @@ import static io.helidon.pico.tools.TypeTools.isPackagePrivate;
 /**
  * Responsible for building all pico-di related collateral for a module, including:
  * <ol>
- * <li>The {@link io.helidon.pico.ServiceProvider} for each service type implementation passed in.
- * <li>The {@link io.helidon.pico.Activator} and {@link io.helidon.pico.DeActivator} for each service type implementation passed in.
- * <li>The {@link Module} for the aggregate service provider bindings for the same set of service type names.
+ * <li>The {@link io.helidon.pico.api.ServiceProvider} for each service type implementation passed in.
+ * <li>The {@link io.helidon.pico.api.Activator} and {@link io.helidon.pico.api.DeActivator} for each service type implementation passed in.
+ * <li>The {@link io.helidon.pico.api.Module} for the aggregate service provider bindings for the same set of service type names.
  * <li>The module-info as appropriate for the above set of services (and contracts).
  * <li>The /META-INF/services entries as appropriate.
  * </ol>

@@ -47,7 +47,7 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpFeature;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
-import io.helidon.pico.configdriven.ConfiguredBy;
+import io.helidon.pico.configdriven.api.ConfiguredBy;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;

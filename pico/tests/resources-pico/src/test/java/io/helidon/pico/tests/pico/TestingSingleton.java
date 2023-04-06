@@ -19,8 +19,8 @@ package io.helidon.pico.tests.pico;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.pico.RunLevel;
-import io.helidon.pico.Resettable;
+import io.helidon.pico.api.Resettable;
+import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.tests.pico.stacking.Intercepted;
 import io.helidon.pico.tests.pico.stacking.InterceptedImpl;
 import io.helidon.pico.tests.pico.tbox.Awl;

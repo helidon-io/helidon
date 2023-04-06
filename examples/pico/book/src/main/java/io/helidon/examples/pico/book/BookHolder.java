@@ -18,7 +18,7 @@ package io.helidon.examples.pico.book;
 
 import java.util.Collection;
 
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 
 @Contract
 @org.jvnet.hk2.annotations.Contract

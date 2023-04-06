@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 
 import jakarta.inject.Inject;
 

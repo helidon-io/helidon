@@ -19,13 +19,13 @@ package {{packagename}};
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 
-import io.helidon.pico.DefaultDependenciesInfo;
-import io.helidon.pico.DefaultServiceInfo;
-import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.PostConstructMethod;
-import io.helidon.pico.PreDestroyMethod;
-import io.helidon.pico.RunLevel;
-import io.helidon.pico.services.Dependencies;
+import io.helidon.pico.api.DefaultDependenciesInfo;
+import io.helidon.pico.api.DefaultServiceInfo;
+import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.PostConstructMethod;
+import io.helidon.pico.api.PreDestroyMethod;
+import io.helidon.pico.api.RunLevel;
+import io.helidon.pico.runtime.Dependencies;
 
 import jakarta.annotation.Generated;
 import jakarta.inject.Provider;
@@ -36,9 +36,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static io.helidon.pico.ElementInfo.Access;
-import static io.helidon.pico.ElementInfo.ElementKind;
-import static io.helidon.pico.InjectionPointInfo.CONSTRUCTOR;
+import static io.helidon.pico.api.ElementInfo.Access;
+import static io.helidon.pico.api.ElementInfo.ElementKind;
+import static io.helidon.pico.api.InjectionPointInfo.CONSTRUCTOR;
 
 /**{{#description}}
  * {{{.}}}{{/description}}{{#extraclasscomments}}

@@ -23,7 +23,7 @@ import java.util.Optional;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
-import io.helidon.pico.PicoServicesConfig;
+import io.helidon.pico.api.PicoServicesConfig;
 
 import static io.helidon.pico.tools.CommonUtils.hasValue;
 import static io.helidon.pico.tools.CommonUtils.toList;
@@ -45,7 +45,7 @@ public class Options {
     public static final String TAG_AUTO_ADD_NON_CONTRACT_INTERFACES = PicoServicesConfig.NAME + ".autoAddNonContractInterfaces";
 
     /**
-     * Pre-creates a placeholder for an {@link io.helidon.pico.Application}.
+     * Pre-creates a placeholder for an {@link io.helidon.pico.api.Application}.
      */
     public static final String TAG_APPLICATION_PRE_CREATE = ActivatorCreatorConfigOptions.TAG_APPLICATION_PRE_CREATE;
 

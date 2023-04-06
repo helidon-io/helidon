@@ -27,7 +27,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Used to represent the parameters that feed into the code generation of a module-info file specifically for Pico in that
- * it offers easy ability to add the {@link io.helidon.pico.Module} as well as optionally the {@link io.helidon.pico.Application}.
+ * it offers easy ability to add the {@link io.helidon.pico.api.Module} as well as optionally the {@link io.helidon.pico.api.Application}.
  */
 @Builder
 public interface ModuleInfoCreatorRequest {
@@ -40,21 +40,21 @@ public interface ModuleInfoCreatorRequest {
     Optional<String> name();
 
     /**
-     * The Pico {@link io.helidon.pico.Module} type name.
+     * The Pico {@link io.helidon.pico.api.Module} type name.
      *
      * @return Pico module type name
      */
     TypeName moduleTypeName();
 
     /**
-     * The Pico {@link io.helidon.pico.Application} type name.
+     * The Pico {@link io.helidon.pico.api.Application} type name.
      *
      * @return application type name
      */
     Optional<TypeName> applicationTypeName();
 
     /**
-     * Set to true if the {@link io.helidon.pico.Module} should be created.
+     * Set to true if the {@link io.helidon.pico.api.Module} should be created.
      *
      * @return true if the Pico Module should be created
      */
@@ -62,7 +62,7 @@ public interface ModuleInfoCreatorRequest {
     boolean moduleCreated();
 
     /**
-     * Set to true if the {@link io.helidon.pico.Application} should be created.
+     * Set to true if the {@link io.helidon.pico.api.Application} should be created.
      *
      * @return true if the Pico Application should be created
      */

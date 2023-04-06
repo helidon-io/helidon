@@ -48,7 +48,7 @@ import javax.tools.StandardLocation;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.PicoServicesConfig;
+import io.helidon.pico.api.PicoServicesConfig;
 
 import static io.helidon.pico.tools.ModuleUtils.PICO_MODULE_INFO_JAVA_NAME;
 import static io.helidon.pico.tools.ModuleUtils.normalizedBaseModuleName;
@@ -346,7 +346,7 @@ public class CodeGenFiler {
     }
 
     /**
-     * Code generates the {@link Module} source.
+     * Code generates the {@link io.helidon.pico.api.Module} source.
      *
      * @param moduleDetail the module details
      */
@@ -361,7 +361,7 @@ public class CodeGenFiler {
     }
 
     /**
-     * Code generates the {@link io.helidon.pico.Application} source.
+     * Code generates the {@link io.helidon.pico.api.Application} source.
      *
      * @param applicationTypeName the application type
      * @param body                the application body of source
@@ -372,7 +372,7 @@ public class CodeGenFiler {
     }
 
     /**
-     * Code generates the {@link io.helidon.pico.Activator} source.
+     * Code generates the {@link io.helidon.pico.api.Activator} source.
      *
      * @param activatorDetail the activator details
      */

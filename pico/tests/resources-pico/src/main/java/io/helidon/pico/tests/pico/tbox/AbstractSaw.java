@@ -19,9 +19,9 @@ package io.helidon.pico.tests.pico.tbox;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.tests.pico.tbox.impl.DullBlade;
+import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.tests.pico.Verification;
+import io.helidon.pico.tests.pico.tbox.impl.DullBlade;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;

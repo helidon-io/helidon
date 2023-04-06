@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tests.pico.tbox;
 
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 
 /**
  * Pico Testing.

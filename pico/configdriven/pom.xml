@@ -36,7 +36,7 @@
     <modules>
         <module>api</module>
         <module>processor</module>
-        <module>services</module>
+        <module>runtime</module>
         <module>tests</module>
     </modules>
 

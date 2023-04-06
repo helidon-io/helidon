@@ -20,10 +20,10 @@ import java.lang.reflect.Constructor;
 import java.util.Map;
 import java.util.Objects;
 
-import io.helidon.pico.InjectionException;
-import io.helidon.pico.ServiceInfo;
-import io.helidon.pico.ServiceInfoBasics;
-import io.helidon.pico.services.AbstractServiceProvider;
+import io.helidon.pico.api.InjectionException;
+import io.helidon.pico.api.ServiceInfo;
+import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.pico.runtime.AbstractServiceProvider;
 
 /**
  * Creates a simple reflection based service provider - for testing purposes only!
@@ -46,7 +46,7 @@ public class ReflectionBasedSingletonServiceProvider<T> extends AbstractServiceP
      * <li>The service type will be created reflectively, and will expect to have an empty constructor</li>
      * <li>The service type will not be able to provide its dependencies, nor will it be able to accept injection</li>
      * <li>The service type will not be able to participate in lifecycle -
-     * {@link io.helidon.pico.PostConstructMethod} or {@link io.helidon.pico.PreDestroyMethod}</li>
+     * {@link io.helidon.pico.api.PostConstructMethod} or {@link io.helidon.pico.api.PreDestroyMethod}</li>
      * </ul>
      * Note: Generally it is encouraged for users to rely on the annotation processors and other built on compile-time
      * tooling to generate the appropriate service providers and modules. This method is an alternative to that
@@ -58,7 +58,7 @@ public class ReflectionBasedSingletonServiceProvider<T> extends AbstractServiceP
      * @param <T> the class of the service type
      *
      * @return the service provider capable of being bound to the services registry
-     * @see io.helidon.pico.testing.PicoTestingSupport#bind(io.helidon.pico.PicoServices, io.helidon.pico.ServiceProvider)
+     * @see io.helidon.pico.testing.PicoTestingSupport#bind(io.helidon.pico.api.PicoServices, io.helidon.pico.api.ServiceProvider)
      */
     public static <T> ReflectionBasedSingletonServiceProvider<T> create(Class<T> serviceType,
                                                                         ServiceInfoBasics siBasics) {
