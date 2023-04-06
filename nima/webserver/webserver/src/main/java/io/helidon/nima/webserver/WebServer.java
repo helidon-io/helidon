@@ -34,6 +34,7 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.MediaSupport;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
@@ -170,8 +171,8 @@ public interface WebServer {
         private final DefaultServerConfig.Builder configBuilder = DefaultServerConfig.builder();
 
         private Config providersConfig = Config.empty();
-        // MediaContext should be updated with config processing or during final build if not set.
-        private MediaContext mediaContext;
+        private MediaContext mediaContext = MediaContext.create();
+        private MediaContext.Builder mediaContextBuilder;
         private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         private boolean shutdownHook = true;
@@ -198,8 +199,17 @@ public interface WebServer {
                         .build();
             }
             if (mediaContext == null) {
-                mediaContext(MediaContext.create());
+                if (mediaContextBuilder == null) {
+                    mediaContext = MediaContext.create();
+                } else {
+                    mediaContext = mediaContextBuilder.build();
+                }
+            } else {
+                if (mediaContextBuilder != null) {
+                    mediaContext = mediaContextBuilder.fallback(mediaContext).build();
+                }
             }
+            mediaContextBuilder = null;
 
             return new LoomServer(this, configBuilder.build(), directHandlers.build());
         }
@@ -264,10 +274,15 @@ public interface WebServer {
                     .as(ContentEncodingContext::create)
                     .ifPresent(this::contentEncodingContext);
             // Configure media support
-            config.get("media-support")
-                    .as(MediaContext::create)
-                    // MediaContext always needs to be refreshed after config change
-                    .ifPresent(this::mediaContext);
+            Config mediaSupportConfig = config.get("media-support");
+            if (mediaSupportConfig.exists()) {
+                // we are directly updating the builder, and we do not need to fallback to defaults
+                // also configuration overrides any manual setup
+                mediaContext = null;
+                mediaContextBuilder = MediaContext.builder();
+                mediaSupportConfig.ifExists(mediaContextBuilder::config);
+            }
+
             // Store providers config node for later usage.
             providersConfig = config.get("connection-providers");
             return this;
@@ -424,11 +439,35 @@ public interface WebServer {
         }
 
         /**
-         * Configure the default {@link MediaContext}.
-         * This method discards all previously registered MediaContext.
+         * Add an explicit media support to the list.
+         * By default, all discovered media supports will be available to the server. Use this method only when
+         * the media support is not discoverable by service loader, or when using explicit
+         * {@link #mediaContext(io.helidon.nima.http.media.MediaContext)}.
+         *
+         * @param mediaSupport media support to add
+         * @return updated builder
+         */
+        public Builder addMediaSupport(MediaSupport mediaSupport) {
+            Objects.requireNonNull(mediaSupport);
+            if (mediaContextBuilder == null) {
+                mediaContextBuilder = MediaContext.builder()
+                        .discoverServices(false);
+            }
+
+            mediaContextBuilder.addMediaSupport(mediaSupport);
+            return this;
+        }
+
+        /**
+         * Configure the {@link MediaContext}.
+         * This method discards previously registered {@link io.helidon.nima.http.media.MediaContext}
+         * and all previously registered {@link io.helidon.nima.http.media.MediaSupport}.
+         * If an explicit media support is configured using {@link #addMediaSupport(io.helidon.nima.http.media.MediaSupport)},
+         * this context will be used as a fallback for a new one created from configured values.
          *
          * @param mediaContext media context
          * @return updated instance of the builder
+         * @see #addMediaSupport(io.helidon.nima.http.media.MediaSupport)
          */
         public Builder mediaContext(MediaContext mediaContext) {
             Objects.requireNonNull(mediaContext);

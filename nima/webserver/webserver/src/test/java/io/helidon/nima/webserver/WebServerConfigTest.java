@@ -92,6 +92,7 @@ public class WebServerConfigTest {
         Config config = Config.create();
         Config server = config.get("server2");
         WebServer.Builder wsBuilder = WebServer.builder().config(server);
+        wsBuilder.build(); // triggers processing of media context
         MediaContext mediaContext = wsBuilder.mediaContext();
         assertThat(mediaContext, is(notNullValue()));
         WritableHeaders<?> writableHeaders = WritableHeaders.create();
@@ -120,6 +121,7 @@ public class WebServerConfigTest {
     void testMediaSupportFileConfigNoJson() throws IOException {
         Config config = Config.create();
         WebServer.Builder wsBuilder = WebServer.builder().config(config.get("server"));
+        wsBuilder.build(); // trigger processing of media context
         MediaContext mediaContext = wsBuilder.mediaContext();
         assertThat(mediaContext, is(notNullValue()));
         WritableHeaders<?> writableHeaders = WritableHeaders.create();
