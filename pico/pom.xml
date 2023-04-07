@@ -48,7 +48,7 @@
         <module>processor</module>
         <module>maven-plugin</module>
         <module>testing</module>
-        <module>services</module>
+        <module>runtime</module>
         <module>tests</module>
     </modules>
 

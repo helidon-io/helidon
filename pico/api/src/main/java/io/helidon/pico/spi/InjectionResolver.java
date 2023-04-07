@@ -18,9 +18,9 @@ package io.helidon.pico.spi;
 
 import java.util.Optional;
 
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.ServiceProvider;
 
 /**
  * Implementors of this contract can assist with resolving injection points.

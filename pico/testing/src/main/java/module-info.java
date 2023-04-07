@@ -20,7 +20,7 @@
 module io.helidon.pico.testing {
     requires io.helidon.builder.config;
     requires io.helidon.config;
-    requires transitive io.helidon.pico.services;
+    requires transitive io.helidon.pico.runtime;
 
     exports io.helidon.pico.testing;
 }

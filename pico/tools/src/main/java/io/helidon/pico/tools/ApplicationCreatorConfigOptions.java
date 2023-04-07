@@ -30,7 +30,7 @@ public interface ApplicationCreatorConfigOptions {
 
     /**
      * Defines how the generator should allow the presence of {@link jakarta.inject.Provider}'s or
-     * {@link io.helidon.pico.InjectionPointProvider}'s. Since providers add a level of non-deterministic behavior
+     * {@link io.helidon.pico.api.InjectionPointProvider}'s. Since providers add a level of non-deterministic behavior
      * to the system it is required for the application to explicitly permit whether this feature should be permitted.
      */
     enum PermittedProviderType {

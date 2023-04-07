@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tests.plain.hello;
 
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 
 @Contract
 public interface Hello {

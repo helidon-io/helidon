@@ -13,6 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-io.helidon.pico.testsubjects.PicoServices1Provider
-io.helidon.pico.testsubjects.PicoServices2Provider
-io.helidon.pico.testsubjects.PicoServices3Provider
+io.helidon.pico.api.testsubjects.PicoServices1Provider
+io.helidon.pico.api.testsubjects.PicoServices2Provider
+io.helidon.pico.api.testsubjects.PicoServices3Provider

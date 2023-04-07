@@ -21,11 +21,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.pico.ContextualServiceQuery;
-import io.helidon.pico.DefaultQualifierAndValue;
-import io.helidon.pico.InjectionPointProvider;
-import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.ServiceInfoCriteria;
+import io.helidon.pico.api.ContextualServiceQuery;
+import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.pico.api.InjectionPointProvider;
+import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.tests.pico.tbox.AbstractBlade;
 
 import jakarta.inject.Named;

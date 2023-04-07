@@ -23,8 +23,8 @@ import java.util.Set;
 
 import io.helidon.builder.Builder;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.ServiceInfoBasics;
+import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.ServiceInfoBasics;
 
 /**
  * See {@link DefaultActivatorCreator}.

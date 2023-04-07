@@ -21,8 +21,8 @@ import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.pico.ContextualServiceQuery;
-import io.helidon.pico.InjectionPointProvider;
+import io.helidon.pico.api.ContextualServiceQuery;
+import io.helidon.pico.api.InjectionPointProvider;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;

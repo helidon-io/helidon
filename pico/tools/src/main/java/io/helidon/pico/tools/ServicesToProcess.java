@@ -37,14 +37,14 @@ import javax.lang.model.element.TypeElement;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.Application;
-import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.Module;
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.Resettable;
-import io.helidon.pico.services.Dependencies;
+import io.helidon.pico.api.Application;
+import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.Module;
+import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.Resettable;
+import io.helidon.pico.runtime.Dependencies;
 
 /**
  * Tracks the services to process, and ingests them to build the codegen model.
@@ -860,8 +860,8 @@ public class ServicesToProcess implements Resettable {
     /**
      * If we made it here we know that Pico annotation processing was used. If there is a module-info in use and services where
      * defined during processing, then we should have a module created and optionally and application.  If so then we should
-     * validate the integrity of the user's module-info.java for the {@link io.helidon.pico.Module} and
-     * {@link io.helidon.pico.Application} definitions - unless the user opted out of this check with the
+     * validate the integrity of the user's module-info.java for the {@link io.helidon.pico.api.Module} and
+     * {@link io.helidon.pico.api.Application} definitions - unless the user opted out of this check with the
      * {@link io.helidon.pico.tools.Options#TAG_IGNORE_MODULE_USAGE} option.
      * @throws IllegalStateException thrown if internal state inconsistencies are found
      */

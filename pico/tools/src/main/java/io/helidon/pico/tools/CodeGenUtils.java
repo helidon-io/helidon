@@ -16,8 +16,8 @@
 
 package io.helidon.pico.tools;
 
-import io.helidon.pico.ElementInfo;
-import io.helidon.pico.InjectionPointInfo;
+import io.helidon.pico.api.ElementInfo;
+import io.helidon.pico.api.InjectionPointInfo;
 
 /**
  * Code generation utilities.

@@ -30,10 +30,10 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.services.Dependencies;
+import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.runtime.Dependencies;
 import io.helidon.pico.tools.spi.ExternalModuleCreator;
 
 import io.github.classgraph.ClassInfo;

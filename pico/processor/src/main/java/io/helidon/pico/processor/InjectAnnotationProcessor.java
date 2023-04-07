@@ -28,11 +28,11 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.DependencyInfo;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.services.Dependencies;
+import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.DependencyInfo;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.runtime.Dependencies;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeNames;
 import io.helidon.pico.tools.TypeTools;

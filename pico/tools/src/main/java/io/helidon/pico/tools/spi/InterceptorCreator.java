@@ -22,8 +22,8 @@ import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
-import io.helidon.pico.Contract;
-import io.helidon.pico.ServiceInfoBasics;
+import io.helidon.pico.api.Contract;
+import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.tools.InterceptionPlan;
 
 /**
@@ -41,7 +41,7 @@ public interface InterceptorCreator {
     enum Strategy {
 
         /**
-         * Meta-annotation based. Only annotations annotated with {@link io.helidon.pico.InterceptedTrigger} will
+         * Meta-annotation based. Only annotations annotated with {@link io.helidon.pico.api.InterceptedTrigger} will
          * qualify.
          */
         EXPLICIT,

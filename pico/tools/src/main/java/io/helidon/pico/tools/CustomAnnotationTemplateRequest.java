@@ -23,8 +23,8 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.ServiceInfoBasics;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.ServiceInfoBasics;
 
 /**
  * The request will be generated internally and then passed to the appropriate

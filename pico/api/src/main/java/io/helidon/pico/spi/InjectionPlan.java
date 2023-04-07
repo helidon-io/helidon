@@ -21,11 +21,11 @@ import java.util.Optional;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.ServiceProvider;
 
 /**
- * Represents the injection plan targeting a given {@link io.helidon.pico.ServiceProvider}.
+ * Represents the injection plan targeting a given {@link io.helidon.pico.api.ServiceProvider}.
  */
 @Builder
 public interface InjectionPlan {

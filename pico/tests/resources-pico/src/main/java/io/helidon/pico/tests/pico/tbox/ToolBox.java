@@ -18,7 +18,7 @@ package io.helidon.pico.tests.pico.tbox;
 
 import java.util.List;
 
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 
 import jakarta.inject.Provider;
 

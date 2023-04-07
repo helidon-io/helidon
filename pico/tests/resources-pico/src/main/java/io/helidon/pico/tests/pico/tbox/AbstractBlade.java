@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tests.pico.tbox;
 
-import io.helidon.pico.OptionallyNamed;
+import io.helidon.pico.api.OptionallyNamed;
 
 import jakarta.inject.Inject;
 

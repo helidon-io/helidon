@@ -24,7 +24,7 @@ module io.helidon.pico.tests.pico {
     requires io.helidon.common.types;
     requires io.helidon.common;
     requires io.helidon.pico.api;
-    requires io.helidon.pico.services;
+    requires io.helidon.pico.runtime;
     requires io.helidon.pico.tests.plain;
 
     exports io.helidon.pico.tests.pico;
@@ -32,6 +32,6 @@ module io.helidon.pico.tests.pico {
     exports io.helidon.pico.tests.pico.stacking;
     exports io.helidon.pico.tests.pico.tbox;
 
-    provides io.helidon.pico.Module with io.helidon.pico.tests.pico.Pico$$Module;
-    provides io.helidon.pico.Application with io.helidon.pico.tests.pico.Pico$$Application;
+    provides io.helidon.pico.api.Module with io.helidon.pico.tests.pico.Pico$$Module;
+    provides io.helidon.pico.api.Application with io.helidon.pico.tests.pico.Pico$$Application;
 }

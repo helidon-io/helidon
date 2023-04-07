@@ -27,7 +27,7 @@ import io.helidon.builder.Builder;
 public interface ApplicationCreatorResponse extends GeneralCreatorResponse {
 
     /**
-     * The basic description for the {@link io.helidon.pico.Application} generated.
+     * The basic description for the {@link io.helidon.pico.api.Application} generated.
      *
      * @return describes the application generated (package and class)
      */

@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tools.testsubjects;
 
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 
 /**
  * For testing.

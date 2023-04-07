@@ -22,7 +22,7 @@ import java.util.Set;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.pico.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValue;
 
 /**
  * The request payload that is used by {@link io.helidon.pico.tools.spi.ExternalModuleCreator}.

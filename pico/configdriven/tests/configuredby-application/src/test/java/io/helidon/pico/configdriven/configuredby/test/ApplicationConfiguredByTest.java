@@ -21,11 +21,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.pico.DefaultServiceInfoCriteria;
-import io.helidon.pico.Metrics;
-import io.helidon.pico.RunLevel;
-import io.helidon.pico.ServiceInfoCriteria;
-import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.Metrics;
+import io.helidon.pico.api.RunLevel;
+import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.configdriven.configuredby.application.test.ASimpleRunLevelService;
 
 import org.junit.jupiter.api.Test;

@@ -18,11 +18,11 @@ package io.helidon.pico.tools;
 
 import io.helidon.builder.Builder;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.PicoServicesConfig;
+import io.helidon.pico.api.PicoServicesConfig;
 
 /**
  * These options are expected to have an affinity match to "permit" properties found within
- * {@link io.helidon.pico.PicoServicesConfig}. These are used to fine tune the type of code generated.
+ * {@link PicoServicesConfig}. These are used to fine tune the type of code generated.
  *
  * @see io.helidon.pico.tools.spi.ActivatorCreator
  */
@@ -30,7 +30,7 @@ import io.helidon.pico.PicoServicesConfig;
 public interface ActivatorCreatorConfigOptions {
 
     /**
-     * This option (use -A at compile time) should be set to opt into {@link io.helidon.pico.Application} stub
+     * This option (use -A at compile time) should be set to opt into {@link io.helidon.pico.api.Application} stub
      * creation.
      */
     String TAG_APPLICATION_PRE_CREATE = PicoServicesConfig.NAME + ".application.pre.create";
@@ -49,7 +49,7 @@ public interface ActivatorCreatorConfigOptions {
     boolean isSupportsJsr330InStrictMode();
 
     /**
-     * Should a {@link io.helidon.pico.Module} be created during activator creation. The default is true.
+     * Should a {@link io.helidon.pico.api.Module} be created during activator creation. The default is true.
      *
      * @return true if the module should be created
      */
@@ -57,7 +57,7 @@ public interface ActivatorCreatorConfigOptions {
     boolean isModuleCreated();
 
     /**
-     * Should a stub {@link io.helidon.pico.Application} be created during activator creation. The default is false.
+     * Should a stub {@link io.helidon.pico.api.Application} be created during activator creation. The default is false.
      * This feature can opt'ed in by using {@link #TAG_APPLICATION_PRE_CREATE}.  Pre-req requires that this can
      * only be enabled if {@link #isModuleCreated()} is also enabled.
      *

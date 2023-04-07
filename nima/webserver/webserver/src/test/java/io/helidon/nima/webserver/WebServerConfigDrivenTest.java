@@ -17,18 +17,18 @@
 package io.helidon.nima.webserver;
 
 import io.helidon.config.Config;
-import io.helidon.pico.DefaultBootstrap;
-import io.helidon.pico.Phase;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.Services;
+import io.helidon.pico.api.DefaultBootstrap;
+import io.helidon.pico.api.Phase;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.api.Services;
 import io.helidon.pico.testing.PicoTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
 
 class WebServerConfigDrivenTest {
     static final boolean NORMAL_PRODUCTION_PATH = false;

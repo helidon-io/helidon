@@ -25,7 +25,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 
-import io.helidon.pico.InjectionPointInfo;
+import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeNames;
 

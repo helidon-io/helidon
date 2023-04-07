@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tools.testsubjects;
 
-import io.helidon.pico.ExternalContracts;
+import io.helidon.pico.api.ExternalContracts;
 
 @ExternalContracts(PicoWorld.class)
 public class PicoWorldImpl implements PicoWorld {

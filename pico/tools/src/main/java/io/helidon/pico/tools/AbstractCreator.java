@@ -26,10 +26,10 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.services.AbstractServiceProvider;
-import io.helidon.pico.services.DefaultServiceBinder;
+import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.runtime.AbstractServiceProvider;
+import io.helidon.pico.runtime.DefaultServiceBinder;
 
 import static io.helidon.pico.tools.CommonUtils.hasValue;
 import static io.helidon.pico.tools.TypeTools.needToDeclareModuleUsage;
@@ -50,7 +50,7 @@ public abstract class AbstractCreator {
 
     // no special chars since this will be used as a package and class name
     static final String NAME_PREFIX = "Pico$$";
-    static final String PICO_FRAMEWORK_MODULE = PicoServicesConfig.FQN + ".services";
+    static final String PICO_FRAMEWORK_MODULE = PicoServicesConfig.FQN + ".runtime";
     static final String MODULE_NAME_SUFFIX = "Module";
 
     private final System.Logger logger = System.getLogger(getClass().getName());
@@ -100,7 +100,7 @@ public abstract class AbstractCreator {
     }
 
     /**
-     * Generates the {@link io.helidon.pico.Activator} source code for the provided service providers. Custom
+     * Generates the {@link io.helidon.pico.api.Activator} source code for the provided service providers. Custom
      * service providers (see {@link AbstractServiceProvider#isCustom()}) do not qualify to
      * have activators code generated.
      *
@@ -115,7 +115,7 @@ public abstract class AbstractCreator {
     }
 
     /**
-     * Generates the {@link io.helidon.pico.Activator} source code for the provided service providers.
+     * Generates the {@link io.helidon.pico.api.Activator} source code for the provided service providers.
      *
      * @param coll the collection of service providers
      * @return the code generated string for the collection of service providers given

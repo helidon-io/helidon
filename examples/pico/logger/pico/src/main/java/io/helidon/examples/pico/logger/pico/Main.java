@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.examples.pico.logger.common.Communication;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.Services;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.Services;
 
 public class Main {
 

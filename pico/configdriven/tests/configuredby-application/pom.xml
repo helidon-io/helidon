@@ -43,7 +43,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.pico.configdriven</groupId>
-            <artifactId>helidon-pico-configdriven-services</artifactId>
+            <artifactId>helidon-pico-configdriven-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.pico.configdriven.tests</groupId>

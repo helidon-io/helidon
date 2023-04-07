@@ -26,9 +26,9 @@ import java.util.Optional;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.Module;
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.api.Module;
+import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.tools.AbstractCreator;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
@@ -156,7 +156,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
 
     /**
      * Sets the debug flag.
-     * See {@link io.helidon.pico.PicoServicesConfig#TAG_DEBUG}.
+     * See {@link io.helidon.pico.api.PicoServicesConfig#TAG_DEBUG}.
      */
     @Parameter(property = PicoServicesConfig.TAG_DEBUG, readonly = true)
     private boolean isDebugEnabled;

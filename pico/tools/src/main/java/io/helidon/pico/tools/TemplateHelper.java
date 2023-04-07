@@ -25,8 +25,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import io.helidon.builder.processor.tools.BuilderTypeTools;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.PicoServicesConfig;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.PicoServicesConfig;
 
 import com.github.jknack.handlebars.Handlebars;
 import com.github.jknack.handlebars.TagType;

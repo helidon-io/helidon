@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.pico.RunLevel;
+import io.helidon.pico.api.RunLevel;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;

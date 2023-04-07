@@ -18,7 +18,7 @@ package io.helidon.pico.tests.plain.hello;
 
 import java.io.Serializable;
 
-import io.helidon.pico.ExternalContracts;
+import io.helidon.pico.api.ExternalContracts;
 
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;

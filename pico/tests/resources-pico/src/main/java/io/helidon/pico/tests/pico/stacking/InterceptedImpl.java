@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.pico.RunLevel;
+import io.helidon.pico.api.RunLevel;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;

@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tools;
 
-import io.helidon.pico.Resettable;
+import io.helidon.pico.api.Resettable;
 
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;

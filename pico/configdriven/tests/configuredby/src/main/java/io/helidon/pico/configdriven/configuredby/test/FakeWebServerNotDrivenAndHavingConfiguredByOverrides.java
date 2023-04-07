@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.config.testsubjects.fakes.FakeServerConfig;
 import io.helidon.builder.config.testsubjects.fakes.FakeTracer;
-import io.helidon.pico.configdriven.ConfiguredBy;
+import io.helidon.pico.configdriven.api.ConfiguredBy;
 
 import jakarta.inject.Inject;
 

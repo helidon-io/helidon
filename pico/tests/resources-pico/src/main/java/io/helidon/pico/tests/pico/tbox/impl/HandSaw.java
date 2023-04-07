@@ -19,11 +19,11 @@ package io.helidon.pico.tests.pico.tbox.impl;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.pico.DefaultContextualServiceQuery;
-import io.helidon.pico.DefaultServiceInfoCriteria;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.InjectionPointProvider;
-import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.api.DefaultContextualServiceQuery;
+import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.InjectionPointProvider;
+import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.tests.pico.tbox.AbstractBlade;
 import io.helidon.pico.tests.pico.tbox.AbstractSaw;
 import io.helidon.pico.tests.pico.tbox.Lubricant;

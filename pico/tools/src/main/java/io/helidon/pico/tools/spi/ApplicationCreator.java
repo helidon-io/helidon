@@ -16,12 +16,12 @@
 
 package io.helidon.pico.tools.spi;
 
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 import io.helidon.pico.tools.ApplicationCreatorRequest;
 import io.helidon.pico.tools.ApplicationCreatorResponse;
 
 /**
- * Implementors of this contract are responsible for creating the {@link io.helidon.pico.Application} instance.
+ * Implementors of this contract are responsible for creating the {@link io.helidon.pico.api.Application} instance.
  * This is used by Pico's maven-plugin.
  *
  * @see io.helidon.pico.tools.ApplicationCreatorProvider
@@ -30,7 +30,7 @@ import io.helidon.pico.tools.ApplicationCreatorResponse;
 public interface ApplicationCreator {
 
     /**
-     * Used to create the {@link io.helidon.pico.Application} source for the entire
+     * Used to create the {@link io.helidon.pico.api.Application} source for the entire
      * application / assembly.
      *
      * @param request the request for what to generate

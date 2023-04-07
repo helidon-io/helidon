@@ -20,7 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Optional;
 
-import io.helidon.pico.ExternalContracts;
+import io.helidon.pico.api.ExternalContracts;
 import io.helidon.pico.tests.plain.interceptor.IA;
 import io.helidon.pico.tests.plain.interceptor.IB;
 import io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno;
@@ -30,7 +30,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
 /**
- * This test case is applying {@link InterceptorBasedAnno} (an {@link io.helidon.pico.InterceptedTrigger}) on only
+ * This test case is applying {@link InterceptorBasedAnno} (an {@link io.helidon.pico.api.InterceptedTrigger}) on only
  * the {@link IB} interface.
  * <p>
  * Also note that interception was triggered by the presence of the {@link InterceptorBasedAnno} trigger.

@@ -33,17 +33,17 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.CallingContext;
-import io.helidon.pico.CallingContextFactory;
-import io.helidon.pico.DefaultCallingContext;
-import io.helidon.pico.DefaultServiceInfoCriteria;
-import io.helidon.pico.Module;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.ServiceProviderProvider;
-import io.helidon.pico.Services;
-import io.helidon.pico.services.DefaultServiceBinder;
+import io.helidon.pico.api.CallingContext;
+import io.helidon.pico.api.CallingContextFactory;
+import io.helidon.pico.api.DefaultCallingContext;
+import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.Module;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.api.ServiceProviderProvider;
+import io.helidon.pico.api.Services;
+import io.helidon.pico.runtime.DefaultServiceBinder;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ApplicationCreatorCodeGen;
@@ -66,8 +66,8 @@ import org.apache.maven.model.Build;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import static io.helidon.pico.CallingContext.globalCallingContext;
-import static io.helidon.pico.CallingContext.toErrorMessage;
+import static io.helidon.pico.api.CallingContext.globalCallingContext;
+import static io.helidon.pico.api.CallingContext.toErrorMessage;
 import static io.helidon.pico.maven.plugin.MavenPluginUtils.applicationCreator;
 import static io.helidon.pico.maven.plugin.MavenPluginUtils.hasValue;
 import static io.helidon.pico.maven.plugin.MavenPluginUtils.picoServices;
@@ -82,7 +82,7 @@ import static java.util.Optional.ofNullable;
 /**
  * Abstract base for the {@code Pico maven-plugin} responsible for creating {@code Application} and Test {@code Application}'s.
  *
- * @see io.helidon.pico.Application
+ * @see io.helidon.pico.api.Application
  * @see io.helidon.pico.tools.ApplicationCreatorConfigOptions
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal"})

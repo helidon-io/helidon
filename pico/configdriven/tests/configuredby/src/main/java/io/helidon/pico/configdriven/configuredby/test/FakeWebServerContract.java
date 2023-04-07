@@ -17,7 +17,7 @@
 package io.helidon.pico.configdriven.configuredby.test;
 
 import io.helidon.builder.config.testsubjects.fakes.FakeServerConfig;
-import io.helidon.pico.Contract;
+import io.helidon.pico.api.Contract;
 
 /**
  * For Testing.

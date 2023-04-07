@@ -24,11 +24,11 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.DefaultServiceInfoCriteria;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.Services;
+import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.api.Services;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 
 import org.apache.maven.artifact.Artifact;

@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValue;
 
 /**
  * Used by {@link ExternalModuleCreatorMojo}, and here in this package due to maven

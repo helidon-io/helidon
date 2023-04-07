@@ -36,8 +36,9 @@ import javax.lang.model.element.TypeElement;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.Application;
-import io.helidon.pico.PicoServicesConfig;
+import io.helidon.pico.api.Application;
+import io.helidon.pico.api.Module;
+import io.helidon.pico.api.PicoServicesConfig;
 
 import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
@@ -109,8 +110,8 @@ public class ModuleUtils {
     }
 
     /**
-     * Common way for naming a module (generally for use by {@link io.helidon.pico.Application} and
-     * {@link io.helidon.pico.Module}).
+     * Common way for naming a module (generally for use by {@link io.helidon.pico.api.Application} and
+     * {@link io.helidon.pico.api.Module}).
      *
      * @param moduleName  the module name (from module-info)
      * @param typeSuffix  "test" for test, or null for normal src classes
@@ -165,7 +166,7 @@ public class ModuleUtils {
      * @param sourcePath       the source path
      * @param defaultToUnnamed if true, will return the default name, otherwise empty is returned
      * @return the module name suggested to use, most appropriate for the name of {@link
-     *         io.helidon.pico.Application} or {@link io.helidon.pico.Module}
+     *         io.helidon.pico.api.Application} or {@link io.helidon.pico.api.Module}
      */
     public static Optional<String> toSuggestedModuleName(Path basePath,
                                                          Path sourcePath,

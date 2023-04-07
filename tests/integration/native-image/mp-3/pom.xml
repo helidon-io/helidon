@@ -40,7 +40,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.pico</groupId>
-            <artifactId>helidon-pico-services</artifactId>
+            <artifactId>helidon-pico-runtime</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>

@@ -27,11 +27,11 @@ import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.DefaultTypedElementName;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
-import io.helidon.pico.DefaultInvocationContext;
-import io.helidon.pico.Interceptor;
-import io.helidon.pico.InvocationException;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.services.InterceptedMethod;
+import io.helidon.pico.api.DefaultInvocationContext;
+import io.helidon.pico.api.Interceptor;
+import io.helidon.pico.api.InvocationException;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.runtime.InterceptedMethod;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -39,15 +39,15 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 import static io.helidon.common.types.DefaultTypeName.create;
-import static io.helidon.pico.services.Invocation.createInvokeAndSupply;
-import static io.helidon.pico.services.Invocation.mergeAndCollapse;
+import static io.helidon.pico.runtime.Invocation.createInvokeAndSupply;
+import static io.helidon.pico.runtime.Invocation.mergeAndCollapse;
 
 /**
  * Pico {@link Interceptor} for {@link {{parent}} }.
  */
 // using the no-arg constructor approach
 @io.helidon.common.Weight({{weight}})
-@io.helidon.pico.Intercepted({{parent}}.class)
+@io.helidon.pico.api.Intercepted({{parent}}.class)
 @Singleton
 @SuppressWarnings("ALL")
 @jakarta.annotation.Generated({{{generatedanno}}})
