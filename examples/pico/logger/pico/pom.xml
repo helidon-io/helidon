@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.examples.pico.logger</groupId>
         <artifactId>helidon-examples-pico-logger-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.0-ALPHA6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>

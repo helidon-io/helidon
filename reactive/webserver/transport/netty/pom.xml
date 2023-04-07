@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.reactive.webserver.transport</groupId>
         <artifactId>helidon-reactive-webserver-transport-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.0-ALPHA6-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.reactive.webserver.transport.netty</groupId>
     <artifactId>helidon-reactive-webserver-transport-netty-project</artifactId>

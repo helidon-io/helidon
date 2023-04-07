@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.nima.tests.integration.websocket</groupId>
         <artifactId>helidon-nima-tests-integration-websocket-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.0-ALPHA6-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-nima-tests-integration-websocket-webserver</artifactId>
