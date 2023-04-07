@@ -62,7 +62,7 @@ class TyrusConnection implements ServerConnection, WsSession {
         while (true) {
             try {
                 BufferData buffer = dataReader.readBuffer();
-                listener.receive(this, buffer, true);
+                listener.onMessage(this, buffer, true);
             } catch (Exception e) {
                 listener.onError(this, e);
                 listener.onClose(this, WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
@@ -112,12 +112,12 @@ class TyrusConnection implements ServerConnection, WsSession {
         private Connection connection;
 
         @Override
-        public void receive(WsSession session, String text, boolean last) {
+        public void onMessage(WsSession session, String text, boolean last) {
             // Should never be called!
         }
 
         @Override
-        public void receive(WsSession session, BufferData buffer, boolean last) {
+        public void onMessage(WsSession session, BufferData buffer, boolean last) {
             byte[] b = new byte[buffer.available()];
             buffer.read(b);         // buffer copy!
             writeToTyrus(session, ByteBuffer.wrap(b));

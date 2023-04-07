@@ -27,23 +27,23 @@ import io.helidon.common.http.HttpPrologue;
  */
 public interface WsListener {
     /**
-     * Receive text fragment.
+     * Received text fragment.
      *
      * @param session WebSocket session
      * @param text    text received
      * @param last    is this last fragment
      */
-    default void receive(WsSession session, String text, boolean last) {
+    default void onMessage(WsSession session, String text, boolean last) {
     }
 
     /**
-     * Receive binary fragment.
+     * Received binary fragment.
      *
      * @param session WebSocket session
      * @param buffer  buffer with data
      * @param last    is this last fragment
      */
-    default void receive(WsSession session, BufferData buffer, boolean last) {
+    default void onMessage(WsSession session, BufferData buffer, boolean last) {
     }
 
     /**
