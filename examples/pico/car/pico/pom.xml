@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.examples.pico.car</groupId>
         <artifactId>helidon-examples-pico-car-project</artifactId>
-        <version>4.0.0-ALPHA6-SNAPSHOT</version>
+        <version>4.0.0-ALPHA6</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
