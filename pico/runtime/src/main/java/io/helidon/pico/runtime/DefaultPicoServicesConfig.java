@@ -16,13 +16,10 @@
 
 package io.helidon.pico.runtime;
 
-import io.helidon.pico.api.Bootstrap;
-import io.helidon.pico.api.PicoServicesConfig;
-
 /**
- * The default reference implementation {@link PicoServicesConfig}.
+ * The default reference implementation {@link io.helidon.pico.api.PicoServicesConfig}.
  * <p>
- * It is strongly suggested that any {@link Bootstrap} configuration is established prior to initializing
+ * It is strongly suggested that any {@link io.helidon.pico.api.Bootstrap} configuration is established prior to initializing
  * this instance, since the results will vary once any bootstrap configuration is globally set.
  */
 class DefaultPicoServicesConfig {

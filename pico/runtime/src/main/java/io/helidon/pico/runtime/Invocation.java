@@ -32,7 +32,7 @@ import jakarta.inject.Provider;
 /**
  * Handles the invocation of {@link Interceptor} methods.
  *
- * @see InvocationContext
+ * @see io.helidon.pico.api.InvocationContext
  * @param <V> the invocation type
  */
 public class Invocation<V> implements Interceptor.Chain<V> {

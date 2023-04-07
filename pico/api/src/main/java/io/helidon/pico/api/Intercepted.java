@@ -27,7 +27,7 @@ import jakarta.inject.Qualifier;
 /**
  * Indicates that type identified by {@link #value()} is being intercepted.
  *
- * @see Interceptor
+ * @see io.helidon.pico.api.Interceptor
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)

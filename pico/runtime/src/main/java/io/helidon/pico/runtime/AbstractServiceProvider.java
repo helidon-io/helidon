@@ -71,7 +71,7 @@ import jakarta.inject.Provider;
 import static io.helidon.pico.runtime.ServiceUtils.isQualifiedInjectionTarget;
 
 /**
- * Abstract base implementation for {@link ServiceProviderBindable}, which represents the basics for regular
+ * Abstract base implementation for {@link io.helidon.pico.api.ServiceProviderBindable}, which represents the basics for regular
  * Singleton, ApplicationScoped, Provider, and ServiceProvider based managed services. All Pico code-generated services will
  * extend from this abstract base class.
  *
@@ -130,7 +130,7 @@ public abstract class AbstractServiceProvider<T>
 
     /**
      * Will test and downcast the passed service provider to an instance of
-     * {@link AbstractServiceProvider}.
+     * {@link io.helidon.pico.runtime.AbstractServiceProvider}.
      *
      * @param sp       the service provider
      * @param expected is the result expected to be present
@@ -727,7 +727,7 @@ public abstract class AbstractServiceProvider<T>
      * @param logEntryAndResult the log entry holding the result
      * @param t                 the error that was observed
      * @param throwOnError      the flag indicating whether we should throw on error
-     * @see #onFinished(AbstractServiceProvider.LogEntryAndResult)
+     * @see #onFinished(io.helidon.pico.runtime.AbstractServiceProvider.LogEntryAndResult)
      */
     protected void onFailedFinish(LogEntryAndResult logEntryAndResult,
                                   Throwable t,
@@ -876,7 +876,7 @@ public abstract class AbstractServiceProvider<T>
      * Called on a successful finish of activation.
      *
      * @param logEntryAndResult the record holding the result
-     * @see #onFailedFinish(AbstractServiceProvider.LogEntryAndResult, Throwable, boolean)
+     * @see #onFailedFinish(io.helidon.pico.runtime.AbstractServiceProvider.LogEntryAndResult, Throwable, boolean)
      */
     protected void onFinished(LogEntryAndResult logEntryAndResult) {
         // NOP
@@ -953,7 +953,7 @@ public abstract class AbstractServiceProvider<T>
     }
 
     /**
-     * Called during the {@link PostConstructMethod} process.
+     * Called during the {@link io.helidon.pico.api.PostConstructMethod} process.
      *
      * @param logEntryAndResult the entry holding the result
      */
@@ -969,7 +969,7 @@ public abstract class AbstractServiceProvider<T>
     }
 
     /**
-     * Called during the {@link PreDestroyMethod} process.
+     * Called during the {@link io.helidon.pico.api.PreDestroyMethod} process.
      *
      * @param logEntryAndResult the entry holding the result
      */
@@ -985,7 +985,7 @@ public abstract class AbstractServiceProvider<T>
     }
 
     /**
-     * Called after the {@link PreDestroyMethod} process.
+     * Called after the {@link io.helidon.pico.api.PreDestroyMethod} process.
      *
      * @param logEntryAndResult the entry holding the result
      */
@@ -1328,7 +1328,7 @@ public abstract class AbstractServiceProvider<T>
     /**
      * Represents a result of a phase transition.
      *
-     * @see #createLogEntryAndResult(Phase)
+     * @see #createLogEntryAndResult(io.helidon.pico.api.Phase)
      */
     // note that for one result, there may be N logEntry records we will build and write to the log
     protected static class LogEntryAndResult /* implements Cloneable*/ {

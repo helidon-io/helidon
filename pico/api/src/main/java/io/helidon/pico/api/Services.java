@@ -55,7 +55,7 @@ public interface Services {
      * @param type the type to find
      * @param <T> the type of the service
      * @return the best service provider matching the criteria
-     * @throws PicoException if resolution fails to resolve a match
+     * @throws io.helidon.pico.api.PicoException if resolution fails to resolve a match
      */
     default <T> ServiceProvider<T> lookup(Class<T> type) {
         return lookupFirst(type, true)
@@ -70,7 +70,7 @@ public interface Services {
      * @param name the name for the service
      * @param <T> the type of the service
      * @return the best service provider matching the criteria
-     * @throws PicoException if resolution fails to resolve a match
+     * @throws io.helidon.pico.api.PicoException if resolution fails to resolve a match
      */
     default <T> ServiceProvider<T> lookup(Class<T> type,
                                           String name) {
@@ -86,7 +86,7 @@ public interface Services {
      * @param expected indicates whether the provider should throw if a match is not found
      * @param <T> the type of the service
      * @return the best service provider matching the criteria, or {@code empty} if (@code expected = false) and no match found
-     * @throws PicoException if expected=true and resolution fails to resolve a match
+     * @throws io.helidon.pico.api.PicoException if expected=true and resolution fails to resolve a match
      */
     <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
                                                  boolean expected);
@@ -100,7 +100,7 @@ public interface Services {
      * @param expected indicates whether the provider should throw if a match is not found
      * @param <T> the type of the service
      * @return the best service provider matching the criteria, or {@code empty} if (@code expected = false) and no match found
-     * @throws PicoException if expected=true and resolution fails to resolve a match
+     * @throws io.helidon.pico.api.PicoException if expected=true and resolution fails to resolve a match
      */
     <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
                                                  String name,
@@ -112,7 +112,7 @@ public interface Services {
      * @param criteria the criteria to find
      * @param <T> the type of the service
      * @return the best service provider
-     * @throws PicoException if resolution fails to resolve a match
+     * @throws io.helidon.pico.api.PicoException if resolution fails to resolve a match
      */
     @SuppressWarnings("unchecked")
     default <T> ServiceProvider<T> lookup(ServiceInfoCriteria criteria) {
@@ -126,7 +126,7 @@ public interface Services {
      * @param expected indicates whether the provider should throw if a match is not found
      * @param <T> the type of the service
      * @return the best service provider matching the criteria, or {@code empty} if (@code expected = false) and no match found
-     * @throws PicoException if expected=true and resolution fails to resolve a match
+     * @throws io.helidon.pico.api.PicoException if expected=true and resolution fails to resolve a match
      */
     <T> Optional<ServiceProvider<T>> lookupFirst(ServiceInfoCriteria criteria,
                                                  boolean expected);
@@ -142,7 +142,7 @@ public interface Services {
      * @param criteria the criteria to find
      * @param <T> the type of the service
      * @return the best service provider matching the criteria
-     * @throws PicoException if resolution fails to resolve a match
+     * @throws io.helidon.pico.api.PicoException if resolution fails to resolve a match
      */
     @SuppressWarnings("unchecked")
     default <T> ServiceProvider<T> lookupFirst(ServiceInfoCriteria criteria) {
@@ -160,7 +160,7 @@ public interface Services {
      * @param type the type criteria to find
      * @param <T> the type of the service
      * @return the best service provider matching the criteria
-     * @throws PicoException if resolution fails to resolve a match
+     * @throws io.helidon.pico.api.PicoException if resolution fails to resolve a match
      */
     default <T> ServiceProvider<T> lookupFirst(Class<T> type) {
         return lookupFirst(type, true).orElseThrow();

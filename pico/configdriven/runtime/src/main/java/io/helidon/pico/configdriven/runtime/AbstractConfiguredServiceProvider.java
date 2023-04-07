@@ -650,7 +650,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
     /**
      * Return true if this service is driven to activation during startup (and provided it has some config).
-     * See {@link ConfiguredBy#drivesActivation()} and
+     * See {@link io.helidon.pico.configdriven.api.ConfiguredBy#drivesActivation()} and
      * see {@link io.helidon.builder.config.ConfigBean#drivesActivation()} for more.
      *
      * @return true if this service is driven to activation during startup

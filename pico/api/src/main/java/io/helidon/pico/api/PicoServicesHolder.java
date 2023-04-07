@@ -30,7 +30,7 @@ import static io.helidon.pico.api.CallingContext.DEBUG_HINT;
 
 /**
  * The holder for the globally active {@link PicoServices} singleton instance, as well as its associated
- * {@link Bootstrap} primordial configuration.
+ * {@link io.helidon.pico.api.Bootstrap} primordial configuration.
  */
 // exposed in the testing module as non deprecated
 public abstract class PicoServicesHolder {

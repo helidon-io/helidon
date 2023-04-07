@@ -40,7 +40,7 @@ public abstract class InjectorOptions {
     public abstract Injector.Strategy strategy();
 
     /**
-     * Optionally, customized activator options to use for the {@link Activator}.
+     * Optionally, customized activator options to use for the {@link io.helidon.pico.api.Activator}.
      *
      * @return activator options, or leave blank to use defaults
      */

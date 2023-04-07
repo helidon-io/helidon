@@ -23,7 +23,7 @@ import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfo;
 
 /**
- * Basic {@link Module} implementation. A Pico module is-a service provider also.
+ * Basic {@link io.helidon.pico.api.Module} implementation. A Pico module is-a service provider also.
  */
 class PicoModuleServiceProvider extends AbstractServiceProvider<Module> {
 

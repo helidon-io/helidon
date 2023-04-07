@@ -40,7 +40,7 @@ public interface ServiceInfo extends ServiceInfoBasics {
      * {@link #contractsImplemented()}. External contracts are from other modules other than the module containing
      * the implementation typically.
      *
-     * @see ExternalContracts
+     * @see io.helidon.pico.api.ExternalContracts
      * @return the service external contracts implemented
      */
     @Singular
@@ -170,7 +170,7 @@ public interface ServiceInfo extends ServiceInfoBasics {
     }
 
     /**
-     * Creates a builder from a {@link ServiceInfoBasics} instance.
+     * Creates a builder from a {@link io.helidon.pico.api.ServiceInfoBasics} instance.
      *
      * @param val the instance to copy
      * @return the fluent builder

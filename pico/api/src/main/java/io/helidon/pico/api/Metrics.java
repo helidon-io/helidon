@@ -44,7 +44,7 @@ public interface Metrics {
      * The total number of {@code Services::lookup()} calls that were attempted against the lookup cache. This will be empty
      * if caching is disabled.
      *
-     * @see PicoServicesConfig
+     * @see io.helidon.pico.api.PicoServicesConfig
      * @return cache lookup count
      */
     Optional<Integer> cacheLookupCount();

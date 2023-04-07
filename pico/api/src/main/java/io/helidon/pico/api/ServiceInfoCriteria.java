@@ -58,7 +58,7 @@ public interface ServiceInfoCriteria {
     /**
      * The managed services advertised types (i.e., typically its interfaces).
      *
-     * @see ExternalContracts
+     * @see io.helidon.pico.api.ExternalContracts
      * @return the service contracts implemented
      */
     @Singular("contractImplemented")
@@ -83,7 +83,7 @@ public interface ServiceInfoCriteria {
      * {@link #contractsImplemented()}. External contracts are from other modules other than the module containing
      * the implementation typically.
      *
-     * @see ExternalContracts
+     * @see io.helidon.pico.api.ExternalContracts
      * @return the service external contracts implemented
      */
     @Singular("externalContractImplemented")

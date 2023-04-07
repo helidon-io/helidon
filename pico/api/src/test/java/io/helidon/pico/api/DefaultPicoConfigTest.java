@@ -20,10 +20,6 @@ import java.util.Map;
 
 import io.helidon.common.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.api.DefaultBootstrap;
-import io.helidon.pico.api.DefaultPicoServicesConfig;
-import io.helidon.pico.api.PicoServicesConfig;
-import io.helidon.pico.api.PicoServicesHolder;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

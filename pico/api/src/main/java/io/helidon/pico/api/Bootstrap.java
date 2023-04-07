@@ -25,14 +25,14 @@ import io.helidon.common.config.Config;
  * This is the bootstrap needed to provide to {@code Pico} initialization.
  *
  * @see io.helidon.pico.spi.PicoServicesProvider
- * @see PicoServices#globalBootstrap()
+ * @see io.helidon.pico.api.PicoServices#globalBootstrap()
  */
 @Builder
 public interface Bootstrap {
 
     /**
      * Provides the base primordial bootstrap configuration to the {@link io.helidon.pico.spi.PicoServicesProvider}.
-     * The provider will then bootstrap {@link PicoServices} using this bootstrap instance.
+     * The provider will then bootstrap {@link io.helidon.pico.api.PicoServices} using this bootstrap instance.
      * then default values will be used accordingly.
      *
      * @return the bootstrap helidon configuration

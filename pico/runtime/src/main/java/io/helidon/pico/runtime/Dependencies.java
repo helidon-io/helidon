@@ -24,7 +24,6 @@ import java.util.function.Supplier;
 
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.Activator;
 import io.helidon.pico.api.DefaultDependenciesInfo;
 import io.helidon.pico.api.DefaultDependencyInfo;
 import io.helidon.pico.api.DefaultInjectionPointInfo;
@@ -39,7 +38,7 @@ import io.helidon.pico.api.ServiceInfoCriteria;
 
 /**
  * This is the class the code-generator will target that will be used at runtime for a service provider to build up its
- * dependencies expressed as {@link DependenciesInfo}.
+ * dependencies expressed as {@link io.helidon.pico.api.DependenciesInfo}.
  */
 public class Dependencies {
 
@@ -203,7 +202,7 @@ public class Dependencies {
     }
 
     /**
-     * The continuation builder. This is a specialized builder used within the generated Pico {@link Activator}.
+     * The continuation builder. This is a specialized builder used within the generated Pico {@link io.helidon.pico.api.Activator}.
      * It is specialized in that it validates and decorates over the normal builder, and provides a more streamlined interface.
      */
     public static class BuilderContinuation {

@@ -57,7 +57,7 @@ import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
 import static io.helidon.common.types.DefaultTypeName.toBuilder;
 
 /**
- * Processor for @{@link ConfiguredBy} type annotations.
+ * Processor for @{@link io.helidon.pico.configdriven.api.ConfiguredBy} type annotations.
  */
 public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     private final System.Logger logger = System.getLogger(getClass().getName());

@@ -20,7 +20,7 @@ package io.helidon.pico.api;
  * A receiver of events from the {@link Services} registry and providers held by the service registry.
  * <p>
  * Note that only {@link ServiceProvider}'s implement this contract that are also bound to the global
- * {@link Services} registry are currently capable of receiving events.
+ * {@link io.helidon.pico.api.Services} registry are currently capable of receiving events.
  *
  * @see ServiceProviderBindable
  */

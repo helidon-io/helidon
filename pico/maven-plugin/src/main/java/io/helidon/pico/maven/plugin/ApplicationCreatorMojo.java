@@ -38,10 +38,7 @@ public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
      * The classname to use for the Pico {@link io.helidon.pico.api.Application} class.
      * If not found the classname will be inferred.
      */
-    @Parameter(property = PicoServicesConfig.NAME + ".application.class.name", readonly = true
-               // note: the default value handling doesn't work here for "$$"!!
-               //               defaultValue = DefaultApplicationCreator.APPLICATION_NAME
-               )
+    @Parameter(property = PicoServicesConfig.NAME + ".application.class.name", readonly = true)
     private String className;
 
     /**

@@ -20,13 +20,12 @@ import java.util.List;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.pico.api.Application;
 import io.helidon.pico.spi.InjectionPlan;
 
 /**
  * The injection plan for a given service provider and element belonging to that service provider. This plan can be created during
- * compile-time, and then just loaded from the {@link Application} during Pico bootstrap initialization, or it can
- * be produced during the same startup processing sequence if the Application was not found, or if it was not permitted to be
+ * compile-time, and then just loaded from the {@link io.helidon.pico.api.Application} during Pico bootstrap initialization, or it
+ * can be produced during the same startup processing sequence if the Application was not found, or if it was not permitted to be
  * loaded.
  */
 @Builder

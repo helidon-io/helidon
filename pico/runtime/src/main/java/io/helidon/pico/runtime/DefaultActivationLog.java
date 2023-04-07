@@ -27,7 +27,7 @@ import io.helidon.pico.api.ActivationLogEntry;
 import io.helidon.pico.api.ActivationLogQuery;
 
 /**
- * The default reference implementation of {@link ActivationLog} and {@link ActivationLogQuery}.
+ * The default reference implementation of {@link io.helidon.pico.api.ActivationLog} and {@link io.helidon.pico.ActivationLogQuery}.
  */
 class DefaultActivationLog implements ActivationLog, ActivationLogQuery {
     private final List<ActivationLogEntry> log;
@@ -44,7 +44,7 @@ class DefaultActivationLog implements ActivationLog, ActivationLogQuery {
 
     /**
      * Create a retained activation log that tee's to the provided logger. A retained log is capable of supporting
-     * {@link ActivationLogQuery}.
+     * {@link io.helidon.pico.api.ActivationLogQuery}.
      *
      * @param logger the logger to use
      * @return the created activity log
@@ -55,7 +55,7 @@ class DefaultActivationLog implements ActivationLog, ActivationLogQuery {
 
     /**
      * Create an unretained activation log that simply logs to the provided logger. An unretained log is not capable of
-     * supporting {@link ActivationLogQuery}.
+     * supporting {@link io.helidon.pico.api.ActivationLogQuery}.
      *
      * @param logger the logger to use
      * @return the created activity log

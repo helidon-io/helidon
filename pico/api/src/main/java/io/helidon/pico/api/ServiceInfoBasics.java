@@ -63,7 +63,7 @@ public interface ServiceInfoBasics {
     /**
      * The managed services advertised types (i.e., typically its interfaces).
      *
-     * @see ExternalContracts
+     * @see io.helidon.pico.api.ExternalContracts
      * @return the service contracts implemented
      */
     @Singular

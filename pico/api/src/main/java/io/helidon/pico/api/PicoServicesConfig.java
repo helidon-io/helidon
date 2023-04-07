@@ -269,8 +269,8 @@ public abstract class PicoServicesConfig {
      * {@link #supportsCompileTime()}.
      *
      * @return the flag indicating whether the provider is permitted to use Application generated code from compile-time
-     * @see Application
-     * @see Activator
+     * @see io.helidon.pico.api.Application
+     * @see io.helidon.pico.api.Activator
      */
     @ConfiguredOption(key = KEY_USES_COMPILE_TIME_APPLICATIONS, value = DEFAULT_USES_COMPILE_TIME_APPLICATIONS)
     public boolean usesCompileTimeApplications() {
@@ -279,26 +279,26 @@ public abstract class PicoServicesConfig {
 
 
     /**
-     * The key that controls whether any {@link Module}'s
+     * The key that controls whether any {@link io.helidon.pico.api.Module}'s
      * (typically produced at compile-time by Pico tooling) can be discovered and is used during Pico startup processing. It is
      * strongly suggested for developers to adopt a compile-time strategy for producing the dependency/injection model as it will
      * lead to faster startup times as well as be deterministic and validated during compile-time instead of at runtime.
      */
     public static final String KEY_USES_COMPILE_TIME_MODULES = "uses-compile-time-modules";
     /**
-     * The default value for this is true, meaning that the Pico will attempt to find and use {@link Module} code
+     * The default value for this is true, meaning that the Pico will attempt to find and use {@link io.helidon.pico.api.Module} code
      * generated during compile-time (see Pico's APT <i>processor</i> and <i>maven-plugin</i> modules for usage).
      */
     public static final String DEFAULT_USES_COMPILE_TIME_MODULES = "true";
 
     /**
-     * Flag indicating whether compile-time generated {@link Module}'s should be used at Pico's startup
+     * Flag indicating whether compile-time generated {@link io.helidon.pico.api.Module}'s should be used at Pico's startup
      * initialization. Setting this value to false will have no affect if the underlying provider does not support compile-time
      * generation via {@link #supportsCompileTime()}.
      *
      * @return the flag indicating whether the provider is permitted to use Application generated code from compile-time
-     * @see Module
-     * @see Activator
+     * @see io.helidon.pico.api.Module
+     * @see io.helidon.pico.api.Activator
      */
     @ConfiguredOption(key = KEY_USES_COMPILE_TIME_MODULES, value = DEFAULT_USES_COMPILE_TIME_MODULES)
     public boolean usesCompileTimeModules() {
@@ -309,9 +309,9 @@ public abstract class PicoServicesConfig {
     /**
      * The key that represents whether the provider supports compile-time code generation of DI artifacts.
      *
-     * @see Application
-     * @see Module
-     * @see Activator
+     * @see io.helidon.pico.api.Application
+     * @see io.helidon.pico.api.Module
+     * @see io.helidon.pico.api.Activator
      * @see #usesCompileTimeApplications()
      * @see #usesCompileTimeModules()
      */

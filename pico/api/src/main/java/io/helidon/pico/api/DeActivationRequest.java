@@ -21,7 +21,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
- * Request to deactivate a {@link ServiceProvider}.
+ * Request to deactivate a {@link io.helidon.pico.api.ServiceProvider}.
  */
 @Builder
 public abstract class DeActivationRequest {

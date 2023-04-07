@@ -105,7 +105,7 @@ public interface DependenciesInfo {
     }
 
     /**
-     * Provides a comparator appropriate for {@link DependencyInfo}.
+     * Provides a comparator appropriate for {@link io.helidon.pico.api.DependencyInfo}.
      *
      * @return a comparator for dependency info
      */

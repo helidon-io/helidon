@@ -31,7 +31,7 @@ import io.helidon.builder.Builder;
 public interface ContextualServiceQuery {
 
     /**
-     * The criteria to use for the lookup into {@link Services}.
+     * The criteria to use for the lookup into {@link io.helidon.pico.api.Services}.
      *
      * @return the service info criteria
      */

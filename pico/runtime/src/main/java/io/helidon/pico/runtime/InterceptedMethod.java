@@ -32,7 +32,7 @@ import io.helidon.pico.api.ServiceProvider;
 import jakarta.inject.Provider;
 
 /**
- * Base class, used in {@link Interceptor} generated code. One of these instances will be created for each
+ * Base class, used in {@link io.helidon.pico.api.Interceptor} generated code. One of these instances will be created for each
  * intercepted method.
  *
  * @param <I> the intercepted type

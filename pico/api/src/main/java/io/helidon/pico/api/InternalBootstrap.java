@@ -21,7 +21,7 @@ import java.util.Optional;
 import io.helidon.builder.Builder;
 
 /**
- * Internal bootstrap is what we store when {@link PicoServices#globalBootstrap(Bootstrap)} is used.
+ * Internal bootstrap is what we store when {@link io.helidon.pico.api.PicoServices#globalBootstrap(Bootstrap)} is used.
  */
 @Builder
 abstract class InternalBootstrap {
@@ -34,7 +34,7 @@ abstract class InternalBootstrap {
      abstract Bootstrap bootStrap();
 
     /**
-     * Only populated when {@link PicoServicesConfig#TAG_DEBUG} is set.
+     * Only populated when {@link io.helidon.pico.api.PicoServicesConfig#TAG_DEBUG} is set.
      *
      * @return the calling context
      */

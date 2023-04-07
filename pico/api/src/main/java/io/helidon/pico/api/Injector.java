@@ -57,7 +57,7 @@ public interface Injector {
      * @param opts                     the injector options
      * @param <T>                      the managed service type
      * @return the result of the activation
-     * @throws PicoServiceProviderException if an injection or activation problem occurs
+     * @throws io.helidon.pico.api.PicoServiceProviderException if an injection or activation problem occurs
      * @see Activator
      */
     <T> ActivationResult activateInject(T serviceOrServiceProvider,
@@ -72,7 +72,7 @@ public interface Injector {
      * @param opts                     the injector options
      * @param <T>                      the managed service type
      * @return the result of the deactivation
-     * @throws PicoServiceProviderException if a problem occurs
+     * @throws io.helidon.pico.api.PicoServiceProviderException if a problem occurs
      * @see DeActivator
      */
     <T> ActivationResult deactivate(T serviceOrServiceProvider,

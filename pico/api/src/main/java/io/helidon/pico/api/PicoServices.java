@@ -47,7 +47,7 @@ public interface PicoServices {
             .build();
 
     /**
-     * Returns the {@link Bootstrap} configuration instance that was used to initialize this instance.
+     * Returns the {@link io.helidon.pico.api.Bootstrap} configuration instance that was used to initialize this instance.
      *
      * @return the bootstrap configuration instance
      */
@@ -57,7 +57,7 @@ public interface PicoServices {
      * Returns true if debugging is enabled.
      *
      * @return true if debugging is enabled
-     * @see PicoServicesConfig#TAG_DEBUG
+     * @see io.helidon.pico.api.PicoServicesConfig#TAG_DEBUG
      */
     // Note that here in Pico at this level we don't have much access to information.
     // <ul>
@@ -119,7 +119,7 @@ public interface PicoServices {
     }
 
     /**
-     * Short-cut for the following code block. During the first invocation the {@link Services} registry
+     * Short-cut for the following code block. During the first invocation the {@link io.helidon.pico.api.Services} registry
      * will be initialized.
      *
      * <pre>
@@ -221,7 +221,7 @@ public interface PicoServices {
     Optional<Metrics> metrics();
 
     /**
-     * Optionally, the set of {@link Services} lookup criteria that were recorded. This is only available if
+     * Optionally, the set of {@link io.helidon.pico.api.Services} lookup criteria that were recorded. This is only available if
      * {@link PicoServicesConfig#serviceLookupCaching()} is enabled.
      *
      * @return the lookup criteria recorded, or empty if not available
@@ -229,8 +229,8 @@ public interface PicoServices {
     Optional<Set<ServiceInfoCriteria>> lookups();
 
     /**
-     * Will create an activation request either to {@link Phase#ACTIVE} or limited to any
-     * {@link Bootstrap#limitRuntimePhase()} specified.
+     * Will create an activation request either to {@link io.helidon.pico.api.Phase#ACTIVE} or limited to any
+     * {@link io.helidon.pico.api.Bootstrap#limitRuntimePhase()} specified.
      *
      * @return the activation request
      */

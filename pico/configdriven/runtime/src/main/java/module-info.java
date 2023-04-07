@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.pico.configdriven.runtime.DefaultConfigBeanBuilderValidatorProvider;
-import io.helidon.pico.configdriven.runtime.DefaultConfigBeanRegistryProvider;
-import io.helidon.pico.configdriven.runtime.DefaultConfigResolverProvider;
-import io.helidon.pico.configdriven.runtime.DefaultStringValueParserProvider;
-
 /**
  * Pico Config-Driven Services Module.
  */
@@ -44,11 +39,11 @@ module io.helidon.pico.configdriven.runtime {
     uses io.helidon.builder.config.spi.ConfigResolverProvider;
 
     provides io.helidon.builder.config.spi.ConfigBeanBuilderValidatorProvider
-            with DefaultConfigBeanBuilderValidatorProvider;
+            with io.helidon.pico.configdriven.runtime.DefaultConfigBeanBuilderValidatorProvider;
     provides io.helidon.builder.config.spi.ConfigBeanRegistryProvider
-            with DefaultConfigBeanRegistryProvider;
+            with io.helidon.pico.configdriven.runtime.DefaultConfigBeanRegistryProvider;
     provides io.helidon.builder.config.spi.ConfigResolverProvider
-            with DefaultConfigResolverProvider;
+            with io.helidon.pico.configdriven.runtime.DefaultConfigResolverProvider;
     provides io.helidon.builder.config.spi.StringValueParserProvider
-            with DefaultStringValueParserProvider;
+            with io.helidon.pico.configdriven.runtime.DefaultStringValueParserProvider;
 }

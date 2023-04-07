@@ -58,7 +58,7 @@ import jakarta.inject.Provider;
 import static io.helidon.pico.api.CallingContext.toErrorMessage;
 
 /**
- * The default reference implementation of {@link Services}.
+ * The default reference implementation of {@link io.helidon.pico.api.Services}.
  */
 class DefaultServices implements Services, ServiceBinder, Resettable {
     private static final ServiceProviderComparator COMPARATOR = ServiceProviderComparator.create();

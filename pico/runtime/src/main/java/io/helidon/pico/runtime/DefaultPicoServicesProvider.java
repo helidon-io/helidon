@@ -33,7 +33,7 @@ import jakarta.inject.Singleton;
  * The first instance created (or first after calling deep {@link #reset}) will be the global services instance. The global
  * instance will track the set of loaded modules and applications that are loaded by this JVM.
  *
- * @see PicoServices#picoServices()
+ * @see io.helidon.pico.api.PicoServices#picoServices()
  */
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)

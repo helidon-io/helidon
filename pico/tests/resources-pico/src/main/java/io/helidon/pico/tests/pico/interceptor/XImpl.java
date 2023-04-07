@@ -30,7 +30,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
 /**
- * This test case is applying {@link InterceptorBasedAnno} (an {@link io.helidon.pico.pi.InterceptedTrigger}) using the no-arg
+ * This test case is applying {@link InterceptorBasedAnno} (an {@link io.helidon.pico.api.InterceptedTrigger}) using the no-arg
  * constructor approach - all methods are intercepted.
  * <p>
  * Also note that interception was triggered by the presence of the {@link TestNamed} and {@link InterceptorBasedAnno} triggers.

@@ -26,7 +26,7 @@ import io.helidon.builder.Builder;
 import static io.helidon.pico.api.PicoServicesConfig.TAG_DEBUG;
 
 /**
- * For internal use only to Helidon. Applicable when {@link PicoServicesConfig#TAG_DEBUG} is enabled.
+ * For internal use only to Helidon. Applicable when {@link io.helidon.pico.api.PicoServicesConfig#TAG_DEBUG} is enabled.
  */
 @Builder(interceptor = CallingContext.BuilderInterceptor.class)
 public abstract class CallingContext {
@@ -52,14 +52,14 @@ public abstract class CallingContext {
     }
 
     /**
-     * Only populated when {@link PicoServicesConfig#TAG_DEBUG} is set.
+     * Only populated when {@link io.helidon.pico.api.PicoServicesConfig#TAG_DEBUG} is set.
      *
      * @return the stack trace for who initialized
      */
     public abstract StackTraceElement[] trace();
 
     /**
-     * Only populated when {@link PicoServicesConfig#TAG_MODULE_NAME} is set.
+     * Only populated when {@link io.helidon.pico.api.PicoServicesConfig#TAG_MODULE_NAME} is set.
      *
      * @return the module name
      */

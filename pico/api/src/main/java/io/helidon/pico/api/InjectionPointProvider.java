@@ -28,7 +28,7 @@ import jakarta.inject.Provider;
  * create)".
  * <p>
  * The ordering of services, and the preferred service itself, is determined by the same as documented for
- * {@link Services}.
+ * {@link io.helidon.pico.api.Services}.
  *
  * @param <T> the type that the provider produces
  */
@@ -52,7 +52,7 @@ public interface InjectionPointProvider<T> extends Provider<T> {
      *
      * @param query the service query
      * @return the best service provider matching the criteria
-     * @throws PicoException if expected=true and resolution fails to resolve a match
+     * @throws io.helidon.pico.api.PicoException if expected=true and resolution fails to resolve a match
      */
     Optional<T> first(ContextualServiceQuery query);
 

@@ -45,7 +45,7 @@ public interface DependencyInfo {
     Set<? extends InjectionPointInfo> injectionPointDependencies();
 
     /**
-     * The {@link ServiceProvider} that this dependency is optional resolved and bound to. All dependencies
+     * The {@link io.helidon.pico.api.ServiceProvider} that this dependency is optional resolved and bound to. All dependencies
      * from {@link #injectionPointDependencies()} will be bound to this resolution.
      *
      * @return the optional resolved and bounded service provider

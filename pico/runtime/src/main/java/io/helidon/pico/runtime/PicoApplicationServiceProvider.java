@@ -24,7 +24,7 @@ import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfo;
 
 /**
- * Basic {@link Application} implementation. A Pico application is-a service provider also.
+ * Basic {@link io.helidon.pico.api.Application} implementation. A Pico application is-a service provider also.
  */
 class PicoApplicationServiceProvider extends AbstractServiceProvider<Application> {
 

@@ -53,7 +53,7 @@ public final class ServiceUtils {
     }
 
     /**
-     * Provides a {@link ServiceProvider#description()}, falling back to {@link #toString()} on the passed
+     * Provides a {@link io.helidon.pico.api.ServiceProvider#description()}, falling back to {@link #toString()} on the passed
      * provider argument.
      *
      * @param provider the provider
@@ -71,7 +71,7 @@ public final class ServiceUtils {
     }
 
     /**
-     * Provides a {@link ServiceProvider#description()}, falling back to {@link #toString()} on the passed
+     * Provides a {@link io.helidon.pico.api.ServiceProvider#description()}, falling back to {@link #toString()} on the passed
      * provider argument.
      *
      * @param coll the collection of providers
