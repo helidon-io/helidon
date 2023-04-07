@@ -24,6 +24,9 @@ import io.helidon.health.checks.DiskSpaceHealthCheck;
 import io.helidon.health.checks.HeapMemoryHealthCheck;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.http.media.jackson.JacksonSupport;
+import io.helidon.nima.http.media.jsonb.JsonbSupport;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.observe.metrics.MetricsFeature;
 import io.helidon.nima.webserver.Routing;
@@ -104,18 +107,16 @@ public final class Main {
     private static void configureJsonSupport(WebServer.Builder wsBuilder, Config config) {
         JsonLibrary jsonLibrary = getJsonLibrary(config);
 
-        /* Nima WebServer.Builder does not currently support programmatic way to set media support */
-        /* See issue https://github.com/helidon-io/helidon/issues/6278 */
         switch (jsonLibrary) {
         case JSONP:
-            //wsBuilder.addMediaSupport(JsonpSupport.create());
+            wsBuilder.addMediaSupport(JsonpSupport.create(config));
             break;
         case JSONB:
-            throw new RuntimeException(jsonLibrary + " is not a supported JSON Library. Only JSONP is supported at this time");
-            //wsBuilder.addMediaSupport(JsonbSupport.create());
+            wsBuilder.addMediaSupport(JsonbSupport.create(config));
+            break;
         case JACKSON:
-            throw new RuntimeException(jsonLibrary + " is not a supported JSON Library. Only JSONP is supported at this time");
-            //wsBuilder.addMediaSupport(JacksonSupport.create());
+            wsBuilder.addMediaSupport(JacksonSupport.create(config));
+            break;
         default:
             throw new RuntimeException("Unknown JSON library " + jsonLibrary);
         }

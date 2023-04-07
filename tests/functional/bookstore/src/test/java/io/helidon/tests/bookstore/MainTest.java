@@ -225,17 +225,20 @@ class MainTest {
     @ParameterizedTest
     @ValueSource(strings = {"se", "mp", "nima"})
     void basicTestJson(String edition) throws Exception {
+        // Run using the default json library for the edition
         runJsonFunctionalTest(edition, "");
     }
 
-    @Test
-    void basicTestJsonB() throws Exception {
-        runJsonFunctionalTest("se", "jsonb");
+    @ParameterizedTest
+    @ValueSource(strings = {"se", "nima"})
+    void basicTestJsonB(String edition) throws Exception {
+        runJsonFunctionalTest(edition, "jsonb");
     }
 
-    @Test
-    void basicTestJackson() throws Exception {
-        runJsonFunctionalTest("se", "jackson");
+    @ParameterizedTest
+    @ValueSource(strings = {"se", "nima"})
+    void basicTestJackson(String edition) throws Exception {
+        runJsonFunctionalTest(edition, "jackson");
     }
 
     @ParameterizedTest

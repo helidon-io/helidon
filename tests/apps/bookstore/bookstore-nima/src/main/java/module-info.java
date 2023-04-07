@@ -29,7 +29,8 @@ module io.helidon.tests.apps.bookstore.nima {
     requires io.helidon.nima.observe.metrics;
     requires io.helidon.nima.observe.health;
     requires io.helidon.nima.http.media.jsonp;
-    //requires io.helidon.nima.media.jackson;
+    requires io.helidon.nima.http.media.jackson;
+    requires io.helidon.nima.http.media.jsonb;
     requires io.helidon.tests.apps.bookstore.common;
     requires io.helidon.logging.common;
     requires io.helidon.logging.jul;

@@ -55,6 +55,14 @@
             <artifactId>helidon-nima-http-media-jsonp</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jsonb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jackson</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.nima.observe</groupId>
             <artifactId>helidon-nima-observe-health</artifactId>
         </dependency>
@@ -78,12 +86,6 @@
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health-checks</artifactId>
         </dependency>
-        <!-- does not exist yet
-        <dependency>
-            <groupId>io.helidon.nima.media</groupId>
-            <artifactId>helidon-nima-media-jackson</artifactId>
-        </dependency>
-        -->
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.common</groupId>
             <artifactId>helidon-tests-apps-bookstore-common</artifactId>
