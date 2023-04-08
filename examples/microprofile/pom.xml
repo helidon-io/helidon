@@ -49,5 +49,6 @@
         <module>bean-validation</module>
         <module>http-status-count-mp</module>
         <module>lra</module>
+        <module>telemetry</module>
     </modules>
 </project>
