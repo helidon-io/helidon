@@ -20,6 +20,9 @@ import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -32,6 +35,7 @@ import io.helidon.microprofile.arquillian.HelidonContainerExtension.HelidonCDIIn
 
 import jakarta.enterprise.context.control.RequestContextController;
 import org.jboss.arquillian.container.test.spi.ContainerMethodExecutor;
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.TestMethodExecutor;
 import org.jboss.arquillian.test.spi.TestResult;
 import org.junit.After;
@@ -71,6 +75,7 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
             Method method = testMethodExecutor.getMethod();
             LOGGER.log(Level.INFO, "Invoking '" + method + "' on " + instance);
             enricher.enrich(instance);
+            injectURI(testMethodExecutor);
             jUnitTestNameRule(testMethodExecutor);
             invokeBefore(instance, method);
             testMethodExecutor.invoke(enricher.resolve(method));
@@ -81,6 +86,26 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
             controller.deactivate();
         }
         return TestResult.passed();
+    }
+
+    /**
+     * Inject URL in a hard way.
+     *
+     * @param testMethodExecutor
+     * @throws java.net.MalformedURLException
+     * @throws IllegalAccessException
+     */
+    private void injectURI(TestMethodExecutor testMethodExecutor) throws IllegalAccessException, MalformedURLException {
+        Object testInstance = testMethodExecutor.getInstance();
+        Class<?> testClass = testInstance.getClass();
+        for (Field declaredField : testClass.getDeclaredFields()) {
+            if (declaredField.getAnnotation(ArquillianResource.class) != null && declaredField.getType().equals(URL.class)) {
+                declaredField.setAccessible(true);
+                if (declaredField.get(testInstance) == null) {
+                    declaredField.set(testInstance, URI.create("http://localhost:8080/").toURL());
+                }
+            }
+        }
     }
 
     private void jUnitTestNameRule(TestMethodExecutor testMethodExecutor) {
@@ -154,6 +179,7 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
         invocable.stream()
                 .filter(m -> overridden.stream().map(Method::getName).noneMatch(s -> s.equals(m.getName())))
                 .forEach(rethrow(m -> {
+                    m.setAccessible(true);
                     if (m.getParameterCount() == 1 && m.getParameterTypes()[0] == Method.class) {
                         // @BeforeMethod
                         // org.jboss.arquillian.testng.Arquillian.arquillianBeforeTest(java.lang.reflect.Method)

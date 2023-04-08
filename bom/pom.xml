@@ -826,6 +826,13 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- MP Telemetry -->
+            <dependency>
+                <groupId>io.helidon.microprofile.telemetry</groupId>
+                <artifactId>helidon-microprofile-telemetry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- REST Client -->
             <dependency>
                 <groupId>io.helidon.microprofile.rest-client</groupId>
