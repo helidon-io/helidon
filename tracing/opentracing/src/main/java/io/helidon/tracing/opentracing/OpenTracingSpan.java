@@ -92,6 +92,16 @@ class OpenTracingSpan implements Span {
     }
 
     @Override
+    public Span setBaggageItem(String key, String value) {
+        return (OpenTracingSpan) delegate.setBaggageItem(key, value);
+    }
+
+    @Override
+    public String getBaggageItem(String key) {
+        return delegate.getBaggageItem(key);
+    }
+
+    @Override
     public <T> T unwrap(Class<T> spanClass) {
         if (spanClass.isAssignableFrom(delegate.getClass())) {
             return spanClass.cast(delegate);

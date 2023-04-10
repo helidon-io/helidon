@@ -16,10 +16,12 @@
 package io.helidon.tracing.opentelemetry;
 
 import java.util.Map;
+import java.util.Objects;
 
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.SpanContext;
 
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.Span;
@@ -87,6 +89,24 @@ class OpenTelemetrySpan implements io.helidon.tracing.Span {
     @Override
     public Scope activate() {
         return new OpenTelemetryScope(delegate.makeCurrent());
+    }
+
+    @Override
+    public io.helidon.tracing.Span setBaggageItem(String key, String value) {
+        Objects.requireNonNull(key, "Baggage Key cannot be null");
+        Objects.requireNonNull(value, "Baggage Value cannot be null");
+
+        Baggage.builder()
+                .put(key, value)
+                .build()
+                .storeInContext(Context.current())
+                .makeCurrent();
+        return (io.helidon.tracing.Span) delegate;
+    }
+
+    @Override
+    public String getBaggageItem(String key) {
+        return Baggage.current().getEntryValue(key);
     }
 
     private Attributes toAttributes(Map<String, ?> attributes) {
