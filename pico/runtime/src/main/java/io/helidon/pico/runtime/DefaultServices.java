@@ -216,15 +216,17 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     }
 
     @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
                                                         boolean expected) {
         DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
                 .addContractImplemented(type.getName())
                 .build();
-        return lookupFirst(criteria, expected);
+        return (Optional) lookupFirst(criteria, expected);
     }
 
     @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
                                                         String name,
                                                         boolean expected) {
@@ -232,30 +234,30 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
                 .addContractImplemented(type.getName())
                 .addQualifier(DefaultQualifierAndValue.createNamed(name))
                 .build();
-        return lookupFirst(criteria, expected);
+        return (Optional) lookupFirst(criteria, expected);
     }
 
     @Override
-    public <T> Optional<ServiceProvider<T>> lookupFirst(ServiceInfoCriteria criteria,
-                                                        boolean expected) {
-        List<ServiceProvider<T>> result = lookup(criteria, expected, 1);
+    public Optional<ServiceProvider<?>> lookupFirst(ServiceInfoCriteria criteria,
+                                                    boolean expected) {
+        List<ServiceProvider<?>> result = lookup(criteria, expected, 1);
         assert (!expected || !result.isEmpty());
         return (result.isEmpty()) ? Optional.empty() : Optional.of(result.get(0));
     }
 
     @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public <T> List<ServiceProvider<T>> lookupAll(Class<T> type) {
         DefaultServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
                 .addContractImplemented(type.getName())
                 .build();
-        return lookup(serviceInfo, false, Integer.MAX_VALUE);
+        return (List) lookup(serviceInfo, false, Integer.MAX_VALUE);
     }
 
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public List<ServiceProvider<?>> lookupAll(ServiceInfoCriteria criteria,
                                               boolean expected) {
-        List<ServiceProvider<?>> result = (List) lookup(criteria, expected, Integer.MAX_VALUE);
+        List<ServiceProvider<?>> result = lookup(criteria, expected, Integer.MAX_VALUE);
         assert (!expected || !result.isEmpty());
         return result;
     }
@@ -346,10 +348,10 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
                 .build();
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    <T> List<ServiceProvider<T>> lookup(ServiceInfoCriteria criteria,
-                                        boolean expected,
-                                        int limit) {
+    @SuppressWarnings({"rawtypes"})
+    List<ServiceProvider<?>> lookup(ServiceInfoCriteria criteria,
+                                    boolean expected,
+                                    int limit) {
         List<ServiceProvider<?>> result;
 
         lookupCount.incrementAndGet();
@@ -389,7 +391,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
             cacheLookupCount.incrementAndGet();
             if (result != null) {
                 cacheHitCount.incrementAndGet();
-                return (List) result;
+                return result;
             }
         }
 
@@ -411,7 +413,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
             cache.put(criteria, List.copyOf(result));
         }
 
-        return (List) result;
+        return result;
     }
 
     ServiceProvider<?> serviceProviderFor(String serviceTypeName) {

@@ -110,13 +110,11 @@ public interface Services {
      * Retrieves the first match based upon the passed service info criteria.
      *
      * @param criteria the criteria to find
-     * @param <T> the type of the service
      * @return the best service provider
      * @throws io.helidon.pico.api.PicoException if resolution fails to resolve a match
      */
-    @SuppressWarnings("unchecked")
-    default <T> ServiceProvider<T> lookup(ServiceInfoCriteria criteria) {
-        return (ServiceProvider<T>) lookupFirst(criteria, true).orElseThrow();
+    default ServiceProvider<?> lookup(ServiceInfoCriteria criteria) {
+        return lookupFirst(criteria, true).orElseThrow();
     }
 
     /**
@@ -124,12 +122,11 @@ public interface Services {
      *
      * @param criteria the criteria to find
      * @param expected indicates whether the provider should throw if a match is not found
-     * @param <T> the type of the service
      * @return the best service provider matching the criteria, or {@code empty} if (@code expected = false) and no match found
      * @throws io.helidon.pico.api.PicoException if expected=true and resolution fails to resolve a match
      */
-    <T> Optional<ServiceProvider<T>> lookupFirst(ServiceInfoCriteria criteria,
-                                                 boolean expected);
+    Optional<ServiceProvider<?>> lookupFirst(ServiceInfoCriteria criteria,
+                                             boolean expected);
 
     /**
      * Retrieves the first match based upon the passed service info criteria.
@@ -140,13 +137,11 @@ public interface Services {
      * </pre>
      *
      * @param criteria the criteria to find
-     * @param <T> the type of the service
      * @return the best service provider matching the criteria
      * @throws io.helidon.pico.api.PicoException if resolution fails to resolve a match
      */
-    @SuppressWarnings("unchecked")
-    default <T> ServiceProvider<T> lookupFirst(ServiceInfoCriteria criteria) {
-        return (ServiceProvider<T>) lookupFirst(criteria, true).orElseThrow();
+    default ServiceProvider<?> lookupFirst(ServiceInfoCriteria criteria) {
+        return lookupFirst(criteria, true).orElseThrow();
     }
 
     /**
@@ -179,12 +174,10 @@ public interface Services {
      * Retrieve all services that match the criteria.
      *
      * @param criteria the criteria to find
-     * @param <T> the type of the service
      * @return the list of service providers matching criteria
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    default <T> List<ServiceProvider<T>> lookupAll(ServiceInfoCriteria criteria) {
-        return (List) lookupAll(criteria, false);
+    default List<ServiceProvider<?>> lookupAll(ServiceInfoCriteria criteria) {
+        return lookupAll(criteria, false);
     }
 
     /**

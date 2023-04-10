@@ -115,7 +115,7 @@ class InterceptorRuntimeTest {
                 .addContractImplemented(Closeable.class.getName())
                 .includeIntercepted(true)
                 .build();
-        List<ServiceProvider<Closeable>> closeableProviders = services.lookupAll(criteria);
+        List<ServiceProvider<?>> closeableProviders = services.lookupAll(criteria);
         assertThat("the interceptors should always be weighted higher than the non-interceptors",
                    toDescriptions(closeableProviders),
                    contains("XImpl$$Pico$$Interceptor:INIT", "YImpl$$Pico$$Interceptor:INIT",
@@ -160,7 +160,7 @@ class InterceptorRuntimeTest {
                    equalTo("forced"));
 
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
-        ServiceProvider<Closeable> yimplProvider = services
+        ServiceProvider<?> yimplProvider = services
                 .lookupFirst(
                         DefaultServiceInfoCriteria.builder()
                                 .addContractImplemented(Closeable.class.getName())
@@ -242,7 +242,7 @@ class InterceptorRuntimeTest {
                    equalTo(1));
 
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
-        ServiceProvider<Closeable> yimplProvider = services
+        ServiceProvider<?> yimplProvider = services
                 .lookupFirst(
                         DefaultServiceInfoCriteria.builder()
                                 .addContractImplemented(Closeable.class.getName())

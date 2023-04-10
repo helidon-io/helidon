@@ -84,7 +84,7 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
         ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
                 .runLevel(RunLevel.STARTUP)
                 .build();
-        List<ServiceProvider<Object>> startups = services.lookupAll(criteria);
+        List<ServiceProvider<?>> startups = services.lookupAll(criteria);
         List<String> desc = startups.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat(desc,
                    contains(ASimpleRunLevelService.class.getSimpleName() + ":INIT"));

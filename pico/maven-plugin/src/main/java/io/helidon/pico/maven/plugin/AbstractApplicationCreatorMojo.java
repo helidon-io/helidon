@@ -259,7 +259,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             // get the application creator only after pico services were initialized (we need to ignore any existing apps)
             ApplicationCreator creator = applicationCreator();
 
-            List<ServiceProvider<Module>> allModules = services
+            List<ServiceProvider<?>> allModules = services
                     .lookupAll(DefaultServiceInfoCriteria.builder().addContractImplemented(Module.class.getName()).build());
             getLog().info("processing modules: " + toDescriptions(allModules));
             if (allModules.isEmpty()) {
