@@ -136,6 +136,16 @@ class NoOpTracer implements Tracer {
         public io.helidon.tracing.Scope activate() {
             return SCOPE;
         }
+
+        @Override
+        public io.helidon.tracing.Span setBaggageItem(String key, String value) {
+            return null;
+        }
+
+        @Override
+        public String getBaggageItem(String key) {
+            return "no-op";
+        }
     }
 
     private static class SpanContext implements io.helidon.tracing.SpanContext {
