@@ -16,12 +16,220 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= WebSocket Introduction
-:description: Helidon WebSocket Introduction
-:keywords: helidon, webserver, websocket, nima
+= WebSocket in Helidon Nima
+:toc:
+:toc-placement: preamble
+:description: WebSocket in Helidon Nima
+:keywords: helidon, java, websocket, web, socket, nima
+:feature-name: WebSocket
 :rootdir: {docdir}/..
-
 
 include::{rootdir}/includes/nima.adoc[]
 
-== TO DO FOR NIMA
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<API, API>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+
+== Overview
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.nima.websocket</groupId>
+    <artifactId>helidon-nima-websocket-webserver</artifactId>
+</dependency>
+----
+
+To enable WebSocket client support add the following dependency:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.nima.websocket</groupId>
+    <artifactId>helidon-nima-websocket-client</artifactId>
+</dependency>
+----
+
+== API
+
+Helidon Nima provides a WebSocket API that includes support for
+client and server endpoints. The two APIs share a common interface called `WsListener`
+to handle WebSocket events; a WebSocket connection is _symmetric_ in that both
+client and server can send and receive messages, ping each other, etc. The client API
+is an alternative to the
+link:https://docs.oracle.com/en/java/javase/20/docs/api/java.net.http/module-summary.html[JDK WebSocket API].
+
+
+The `WsListener` interface defines default (empty) methods for each of the
+events that occur during the lifetime of a WebSocket connection. These events are:
+open, close, message, ping, pong, error and upgrade; a developer will normally
+only override a few of these methods depending on the application. For example,
+a service that simply echoes text messages only needs a single method:
+
+[source,java]
+----
+class EchoListener implements WsListener {
+
+    @Override
+    public void onMessage(WsSession session, String text, boolean last) {
+        session.send(text, last);
+    }
+}
+----
+
+The endpoint above, receives a single text message and sends it back
+to the originating endpoint using the `WsSession` instance. A WebSocket
+session object can also be used to ping, pong and close connections.
+
+
+NOTE: To receive binary instead of text messages, simply replace `String`
+by `BufferData` in the signature of the `onMessage` method above.
+
+Most commonly an endpoint wants to execute some logic whenever a new
+connection is created and terminated, and possibly handle any
+errors that may occur during the lifetime of the connection.
+
+[source,java]
+----
+class EchoListener implements WsListener {
+
+    @Override
+    public void onOpen(WsSession session) {
+        registerSession(session);
+    }
+
+    @Override
+    public void onMessage(WsSession session, String text, boolean last) {
+        session.send(text, last);
+    }
+
+    @Override
+    public void onClose(WsSession session, int status, String reason) {
+        deRegisterSession(session);
+    }
+
+    @Override
+    void onError(WsSession session, Throwable t) {
+        handleError(session, t);
+    }
+}
+----
+
+=== HTTP Upgrades
+
+A WebSocket connection is typically _upgraded_ from a traditional HTTP/1.1
+connection via the so-called _upgrade mechanism_. Normally, this happens behind
+the scenes, and a WebSocket endpoint is simply called every time a new
+lifecycle event occurs. Occasionally, an endpoint may decide to participate
+in the upgrade process in order to negotiate sub-protocols and extensions
+with the corresponding peer. This can be accomplished by overriding the
+`onHttpUpgrade` method as shown next:
+
+[source,java]
+----
+class EchoListener implements WsListener {
+
+    private volatile String subProtocol;
+
+    // ...
+
+    public Optional<Headers> onHttpUpgrade(HttpPrologue prologue, Headers headers)
+                             throws WsUpgradeException {
+        WritableHeaders<?> upgradeHeaders = WritableHeaders.create();
+        if (headers.contains(WsUpgrader.PROTOCOL)) {
+            List<String> subProtocols = headers.get(WsUpgrader.PROTOCOL).allValues(true);
+            if (subProtocols.contains("chat")) {
+                upgradeHeaders.set(WsUpgrader.PROTOCOL, "chat");
+                subProtocol = "chat";
+            } else {
+                throw new WsUpgradeException("Unable to negotiate WS sub-protocol");
+            }
+        } else {
+            subProtocol = null;
+        }
+        return upgradeHeaders.size() > 0 ? Optional.of(upgradeHeaders) : Optional.empty();
+    }
+}
+----
+
+The upgrade handler above, inspects the list of sub-protocols for one
+named "chat", and if found, returns a new header to be included in the response to
+the upgrade request, effectively negotiating that sub-protocol with the client.
+
+NOTE: There is a similar header `WsUpgrader.EXTENSIONS`
+that can be returned as a way to negotiate WebSocket extensions, something that
+can be accomplished using very similar code to the one shown above.
+
+=== Registration
+
+Registering your WebSocket listener requires some special steps when building
+the WebServer instance: (1) we need to register a provider that is capable
+of upgrading HTTP/1.1 to WebSocket connections (2) we need to register our
+listener on a WebServer route for it to become accessible to clients.
+
+Helidon Nima provides fluent APIs for all these tasks as shown next:
+
+[source,java]
+----
+// Create routing for WebSocket listener
+WsRouting wsRouting = WsRouting.builder()
+                .endpoint("/echo", EchoListener::new)
+                .build();
+
+// Create connection provider with WebSocket upgrade capabilities
+Http1ConnectionProvider http1ConnectionProvider = Http1ConnectionProvider.builder()
+                .addUpgradeProvider(WsUpgradeProvider.builder().build())
+                .build();
+
+// Create WebServer and register components
+WebServer webServer = WebServer.builder()
+                .addConnectionProvider(http1ConnectionProvider)
+                .addRouting(wsRouting)
+                .build();
+----
+
+=== Client API
+
+As described above, Helidon Nima also provides a WebSocket client API based
+on the same `WsListener` interface. Connecting to a WebSocket endpoint just
+requires the creation of a `WsClient` instance and single call to connect
+to the endpoint.
+
+[source,java]
+----
+// WebSocket client listener
+class ClientEchoListener implements WsListener {
+    // ...
+}
+
+WsClient wsClient = WsClient.builder().build();
+wsClient.connect(URI.create("ws://..."), new ClientEchoListener());
+----
+
+A `WsClientException` will be thrown if any errors are encountered
+during the connection process. Additional sub-protocols or extensions can be
+specified during the `WsClient` creation step as shown next:
+
+[source,java]
+----
+WsClient wsClient = WsClient.builder()
+                .subProtocols("chat")
+                .build();
+----
+
+For more information about the server upgrade mechanism, see <<HTTP Upgrades>>.
+
+== Examples
+
+See <<API>> section for examples.
+
+== Additional Information
+
+For additional information, see the
+link:{nima-faulttolerance-javadoc-base-url}/module-summary.html[Fault Tolerance Nima API Javadocs].
