@@ -135,6 +135,13 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         TypeName genericCB = createFromGenericDeclaration("CB");
         TypeName genericExtendsCB = createFromGenericDeclaration("CB extends " + configBeanType.name());
         boolean hasParent = (parentServiceTypeName != null);
+
+        if (hasParent && !isConfiguredService(parent)) {
+            // we treat this as a regular configured service, since its parent is NOT a configured service
+            hasParent = false;
+            parentServiceTypeName = null;
+        }
+
         if (hasParent) {
             // we already know our parent, but we need to morph it with our activator and new CB reference
             TypeName parentActivatorImplTypeName = ActivatorCreatorProvider.instance()
@@ -163,6 +170,13 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         extraActivatorClassComments.forEach(fn -> servicesToProcess.addExtraActivatorClassComments(serviceTypeName, fn));
 
         processServiceType(serviceTypeName, (TypeElement) element);
+    }
+
+    boolean isConfiguredService(TypeElement te) {
+        Set<AnnotationAndValue> annotations = TypeTools.createAnnotationAndValueSet(te);
+        Optional<? extends AnnotationAndValue> configuredByAnno =
+                DefaultAnnotationAndValue.findFirst(ConfiguredBy.class.getName(), annotations);
+        return configuredByAnno.isPresent();
     }
 
     void validate(TypeElement element,

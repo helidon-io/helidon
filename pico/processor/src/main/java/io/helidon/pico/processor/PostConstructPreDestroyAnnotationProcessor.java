@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -28,6 +29,7 @@ import javax.lang.model.element.Modifier;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeNames;
+import io.helidon.pico.tools.TypeTools;
 
 import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
@@ -64,6 +66,13 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
     @Override
     void doInner(ExecutableElement method,
                  Void builder) {
+        Element parentClassType = method.getEnclosingElement();
+        if (TypeTools.isAbstract(parentClassType)) {
+            // skipping abstract classes w/ a PostConstruct or PreDestroy annotation
+            warn("All PostConstruct and PreDestroy methods will be ignored on abstract base classes: " + parentClassType);
+            return;
+        }
+
         if (method.getKind() == ElementKind.CONSTRUCTOR) {
             throw new ToolsException("Invalid use of PreDestroy/PostConstruct on " + method.getEnclosingElement() + "." + method);
         }

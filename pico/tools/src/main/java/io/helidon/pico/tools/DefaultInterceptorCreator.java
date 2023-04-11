@@ -581,7 +581,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                 gatherInterfaces(result, TypeTools.toTypeElement(tm).orElse(null));
             });
 
-            return result;
+            TypeElement te = (TypeElement) processEnv.getTypeUtils().asElement(typeElement.getSuperclass());
+            return gatherInterfaces(result, te);
         }
 
         @Override
@@ -740,7 +741,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                 gatherInterfaces(result, tm);
             });
 
-            return result;
+            return gatherInterfaces(result, classInfo.getSuperclass());
         }
 
         @Override

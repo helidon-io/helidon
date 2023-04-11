@@ -331,7 +331,7 @@ class ToolBoxTest {
         List<ServiceProvider<Provider>> providers = services.lookupAll(
                 DefaultServiceInfoCriteria.builder().addContractImplemented(Provider.class.getName()).build());
         List<String> desc = providers.stream().map(ServiceProvider::description).collect(Collectors.toList());
-        // note that order matters here
+        // note that order matters here (weight ranked)
         assertThat(desc,
                 contains("ASerialProviderImpl:INIT",
                          "MyServices$MyConcreteClassContractPerRequestIPProvider:INIT",
