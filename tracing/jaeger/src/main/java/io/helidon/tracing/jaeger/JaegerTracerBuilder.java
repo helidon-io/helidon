@@ -20,6 +20,7 @@ import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -449,7 +450,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                                                .setSampler(sampler)
                                                .setResource(serviceName)
                                                .build())
-                    .setPropagators(createPropagators(propagationFormats))
+                    .setPropagators(ContextPropagators.create(TextMapPropagator.composite(createPropagators())))
                     .build();
 
             result = HelidonOpenTelemetry.create(ot, ot.getTracer(this.serviceName), tags);
@@ -508,12 +509,10 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         return enabled;
     }
 
-    private static ContextPropagators createPropagators(Set<PropagationFormat> propagatorFormats) {
-        var propagators = propagatorFormats.stream()
+    List<TextMapPropagator> createPropagators() {
+        return propagationFormats.stream()
                 .map(JaegerTracerBuilder::mapFormatToPropagator)
                 .toList();
-
-        return ContextPropagators.create(TextMapPropagator.composite(propagators));
     }
 
     private static TextMapPropagator mapFormatToPropagator(PropagationFormat propagationFormat) {
