@@ -75,7 +75,7 @@ import static io.helidon.pico.tools.TypeTools.toObjectTypeName;
  * The default {@link io.helidon.pico.tools.spi.InterceptorCreator} provider in use.
  */
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT)
+@Weight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
 @SuppressWarnings("unchecked")
 public class DefaultInterceptorCreator extends AbstractCreator implements InterceptorCreator, Resettable {
     private static final LazyValue<ScanResult> SCAN = LazyValue.create(ReflectionHandler.INSTANCE::scan);

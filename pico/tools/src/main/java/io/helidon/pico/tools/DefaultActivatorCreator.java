@@ -85,7 +85,7 @@ import static io.helidon.pico.tools.TypeTools.isPackagePrivate;
  * {@link ActivatorCreatorRequest#codeGenPaths()} for details.
  */
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT)
+@Weight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
 public class DefaultActivatorCreator extends AbstractCreator implements ActivatorCreator, Weighted {
     /**
      * The suffix name for the service type activator class.

@@ -20,12 +20,11 @@ import io.helidon.builder.config.spi.ConfigResolver;
 import io.helidon.builder.config.spi.ConfigResolverProvider;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
 
 /**
  * Service-loaded provider for {@link ConfigResolverProvider}.
  */
-@Weight(Weighted.DEFAULT_WEIGHT)
+@Weight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
 public class DefaultConfigResolverProvider implements ConfigResolverProvider {
     static final LazyValue<ConfigResolver> INSTANCE = LazyValue.create(DefaultConfigResolver::new);
 

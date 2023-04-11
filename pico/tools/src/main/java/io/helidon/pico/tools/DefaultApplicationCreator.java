@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
@@ -57,7 +56,7 @@ import static io.helidon.pico.runtime.ServiceUtils.isQualifiedInjectionTarget;
  * The default implementation for {@link io.helidon.pico.tools.spi.ApplicationCreator}.
  */
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT)
+@Weight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
 public class DefaultApplicationCreator extends AbstractCreator implements ApplicationCreator {
     /**
      * The prefix to add before the generated "Application" class name (i.e., "Pico$$" in the "Pico$$Application").

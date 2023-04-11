@@ -42,7 +42,7 @@ import static io.helidon.pico.api.ElementInfo.ElementKind;
  */
 @Generated(value = "example", comments = "API Version: N")
 @Singleton
-@Weight(DefaultServiceInfo.DEFAULT_WEIGHT)
+@Weight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
 @SuppressWarnings({"unchecked", "checkstyle:TypeName"})
 public class HelloPicoImpl$$picoActivator extends AbstractServiceProvider<HelloPicoWorldImpl> {
 
