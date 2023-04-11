@@ -48,7 +48,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     private static final String REST_RESOURCE_METHOD = "rest.resource.method";
     private static final String SPAN = "otel.span.server.span";
     private static final String SPAN_CONTEXT = "otel.span.server.context";
-    private static final String SPAN_PARENT_CONTEXT = "otel.span.server.parentContext";
     private static final String SPAN_SCOPE = "otel.span.server.scope";
     private static final String HTTP_STATUS_CODE = "http.status_code";
     private static final String HTTP_METHOD = "http.method";
@@ -122,7 +121,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         Scope scope = span.makeCurrent();
         requestContext.setProperty(SPAN, span);
         requestContext.setProperty(SPAN_CONTEXT, Context.current());
-        requestContext.setProperty(SPAN_PARENT_CONTEXT, parentContext);
         requestContext.setProperty(SPAN_SCOPE, scope);
 
 
@@ -154,7 +152,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             request.removeProperty(REST_RESOURCE_CLASS);
             request.removeProperty(REST_RESOURCE_METHOD);
             request.removeProperty(SPAN);
-            request.removeProperty(SPAN_PARENT_CONTEXT);
             request.removeProperty(SPAN_SCOPE);
         }
     }

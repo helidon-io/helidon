@@ -81,7 +81,6 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
         clientRequestContext.setProperty(CONFIG_STRING + "scope", scope);
         clientRequestContext.setProperty(CONFIG_STRING + "span", span);
         clientRequestContext.setProperty(CONFIG_STRING + "context", Context.current());
-        clientRequestContext.setProperty(CONFIG_STRING + "parentContext", parentContext);
 
         // Propagate OpenTelemetry context to next filter
         openTelemetry.getPropagators().getTextMapPropagator().inject(Context.current(), clientRequestContext,
@@ -109,7 +108,6 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
         scope.close();
 
         clientRequestContext.removeProperty(CONFIG_STRING + "context");
-        clientRequestContext.removeProperty(CONFIG_STRING + "parentContext");
     }
 
 }
