@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.microprofile.server;
 
 import io.helidon.microprofile.config.ConfigCdiExtension;
+import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -41,13 +42,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(CdiComponentProvider.class)
 @AddExtension(ConfigCdiExtension.class)
-@Disabled
+@AddConfig(key = IGNORE_EXCEPTION_RESPONSE, value = "false")
 class JerseyPropertiesTest {
     @Test
     void testIgnoreExceptionResponseOverride() {
-        JaxRsService jerseySupport = JaxRsService.create(new ResourceConfig().property(IGNORE_EXCEPTION_RESPONSE, "false"),
-                                                         null);
-        assertNotNull(jerseySupport);
+        assertNotNull(JaxRsService.create(new ResourceConfig(), null));
         assertThat(System.getProperty(IGNORE_EXCEPTION_RESPONSE), is("false"));
     }
 }
