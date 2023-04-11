@@ -18,10 +18,8 @@ package io.helidon.tracing.jaeger;
 
 import java.lang.System.Logger.Level;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -267,12 +265,12 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         config.get("client-cert-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
         config.get("trusted-cert-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
         config.get("propagation").asList(String.class)
-                        .ifPresent(propagationStrings -> {
-                            propagationStrings.stream()
-                                    .map(String::toUpperCase)
-                                    .map(PropagationFormat::valueOf)
-                                    .forEach(this::addPropagation);
-                        });
+                .ifPresent(propagationStrings -> {
+                    propagationStrings.stream()
+                            .map(String::toUpperCase)
+                            .map(PropagationFormat::valueOf)
+                            .forEach(this::addPropagation);
+                });
 
         config.get("tags").detach()
                 .asMap()
@@ -395,7 +393,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         return this;
     }
 
-
     /**
      * Add propagation format to use.
      *
@@ -512,19 +509,21 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     }
 
     private static ContextPropagators createPropagators(Set<PropagationFormat> propagatorFormats) {
-        List<TextMapPropagator> propagators = new ArrayList<>();
-
-        for (PropagationFormat propagatorFormat : propagatorFormats) {
-            switch (propagatorFormat) {
-
-            case B3 -> propagators.add(B3Propagator.injectingMultiHeaders());
-            case W3C -> propagators.add(W3CBaggagePropagator.getInstance());
-            // jaeger and unknown are jaeger
-            default -> propagators.add(JaegerPropagator.getInstance());
-            }
-        }
+        var propagators = propagatorFormats.stream()
+                .map(JaegerTracerBuilder::mapFormatToPropagator)
+                .toList();
 
         return ContextPropagators.create(TextMapPropagator.composite(propagators));
+    }
+
+    private static TextMapPropagator mapFormatToPropagator(PropagationFormat propagationFormat) {
+        return switch (propagationFormat) {
+            case B3 -> B3Propagator.injectingMultiHeaders();
+            case B3_SINGLE -> B3Propagator.injectingSingleHeader();
+            case W3C -> W3CBaggagePropagator.getInstance();
+            // jaeger and unknown are jaeger
+            default -> JaegerPropagator.getInstance();
+        };
     }
 
     /**
@@ -566,9 +565,13 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      */
     public enum PropagationFormat {
         /**
-         * The Zipkin B3 trace context propagation format.
+         * The Zipkin B3 trace context propagation format using multiple headers.
          */
         B3,
+        /**
+         * B3 trace context propagation using a single header.
+         */
+        B3_SINGLE,
         /**
          * The Jaeger trace context propagation format.
          */
