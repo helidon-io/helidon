@@ -395,6 +395,13 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         return this;
     }
 
+
+    /**
+     * Add propagation format to use.
+     *
+     * @param propagationFormat propagation value
+     * @return updated builder instance
+     */
     @ConfiguredOption(key = "propagation", kind = ConfiguredOption.Kind.LIST, type = PropagationFormat.class, value = "JAEGER")
     public JaegerTracerBuilder addPropagation(PropagationFormat propagationFormat) {
         Objects.requireNonNull(propagationFormat);
