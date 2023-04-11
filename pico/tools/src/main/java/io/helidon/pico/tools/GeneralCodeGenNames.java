@@ -24,7 +24,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * General code gen information.
  */
-@Builder
+@Builder(allowPublicOptionals = true)
 public interface GeneralCodeGenNames {
 
     /**

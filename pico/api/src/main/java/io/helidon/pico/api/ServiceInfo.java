@@ -32,7 +32,7 @@ import io.helidon.common.types.AnnotationAndValue;
  * @see Services
  * @see ServiceInfoCriteria
  */
-@Builder(interceptor = ServiceInfoBuildInterceptor.class)
+@Builder(interceptor = ServiceInfoBuildInterceptor.class, allowPublicOptionals = true)
 public interface ServiceInfo extends ServiceInfoBasics {
 
     /**

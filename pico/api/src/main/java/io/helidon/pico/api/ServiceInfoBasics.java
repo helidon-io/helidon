@@ -28,7 +28,7 @@ import io.helidon.common.Weighted;
  *
  * @see ServiceInfo
  */
-@Builder
+@Builder(allowPublicOptionals = true)
 public interface ServiceInfoBasics {
 
     /**

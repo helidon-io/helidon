@@ -876,11 +876,12 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         boolean isList = typeName.isList();
         boolean isMap = !isList && typeName.isMap();
         boolean isSet = !isMap && typeName.isSet();
+        String publicOrPkdPrivate = (!typeName.isOptional() || ctx.allowPublicOptionals()) ? "public " : "";
         boolean upLevel = isSet || isList;
 
         StringBuilder builder = new StringBuilder();
         GenerateJavadoc.setter(builder, beanAttributeName);
-        builder.append("\t\tpublic ").append(ctx.genericBuilderAliasDecl()).append(" ")
+        builder.append("\t\t").append(publicOrPkdPrivate).append(ctx.genericBuilderAliasDecl()).append(" ")
                 .append(prefixName)
                 .append(methodName).append("(")
                 .append(toGenerics(method, upLevel)).append(" val) {\n");
@@ -1102,16 +1103,6 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         }
 
         return typeName.fqName();
-    }
-
-    private static String toGenericsDecl(TypedElementName method) {
-        List<TypeName> compTypeNames = method.typeName().typeArguments();
-        if (1 == compTypeNames.size()) {
-            return avoidWildcard(compTypeNames.get(0)) + " val";
-        } else if (2 == compTypeNames.size()) {
-            return avoidWildcard(compTypeNames.get(0)) + " key, " + avoidWildcard(compTypeNames.get(1)) + " val";
-        }
-        return "Object val";
     }
 
     private static String avoidWildcard(TypeName typeName) {

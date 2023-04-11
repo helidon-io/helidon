@@ -16,8 +16,6 @@
 
 package io.helidon.builder.test;
 
-import java.util.Optional;
-
 import io.helidon.builder.test.testsubjects.DefaultPickle;
 import io.helidon.builder.test.testsubjects.DefaultPickleBarrel;
 import io.helidon.builder.test.testsubjects.Pickle;
@@ -25,15 +23,15 @@ import io.helidon.builder.test.testsubjects.PickleBarrel;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PickleBarrelTest {
 
     @Test
     void testIt() {
-        DefaultPickle.Builder pickleBuilder = DefaultPickle.builder().size(Optional.of(Pickle.Size.MEDIUM));
+        DefaultPickle.Builder pickleBuilder = DefaultPickle.builder().size(Pickle.Size.MEDIUM);
         Exception e = assertThrows(IllegalStateException.class, pickleBuilder::build);
         assertThat(e.getMessage(),
                equalTo("'type' is a required attribute and should not be null"));

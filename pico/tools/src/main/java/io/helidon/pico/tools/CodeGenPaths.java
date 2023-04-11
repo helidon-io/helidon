@@ -24,7 +24,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * Applies only to the output paths that various {@code creators} will use (e.g., {@link io.helidon.pico.tools.spi.ActivatorCreator}).
  */
-@Builder
+@Builder(allowPublicOptionals = true)
 public interface CodeGenPaths {
 
     /**
