@@ -124,7 +124,7 @@ public abstract class AbstractConfiguredByTest {
         DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
                 .addQualifier(DefaultQualifierAndValue.create(ConfiguredBy.class))
                 .build();
-        List<ServiceProvider<Object>> list = services.lookupAll(criteria);
+        List<ServiceProvider<?>> list = services.lookupAll(criteria);
         List<String> desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
         // order matters here since it should be based upon weight
         assertThat("root providers are config-driven, auto-started services unless overridden to not be driven", desc,
@@ -161,7 +161,7 @@ public abstract class AbstractConfiguredByTest {
         assertThat("root providers expected here since no configuration for this service", desc,
                    contains("FakeTlsWSNotDrivenByCB{root}:PENDING"));
 
-        ServiceProvider<Object> fakeTlsProvider = list.get(0);
+        ServiceProvider<?> fakeTlsProvider = list.get(0);
         PicoServiceProviderException e = assertThrows(PicoServiceProviderException.class, fakeTlsProvider::get);
         assertThat("There is no configuration, so cannot activate this service", e.getMessage(),
                    equalTo("Expected to find a match: service provider: FakeTlsWSNotDrivenByCB{root}:PENDING"));

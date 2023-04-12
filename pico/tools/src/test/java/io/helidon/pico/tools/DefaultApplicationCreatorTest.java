@@ -58,7 +58,7 @@ class DefaultApplicationCreatorTest extends AbstractBaseCreator {
 
         PicoServices picoServices = PicoServices.picoServices().orElseThrow();
         Services services = picoServices.services();
-        List<ServiceProvider<Object>> serviceProviders = services.lookupAll(allServices);
+        List<ServiceProvider<?>> serviceProviders = services.lookupAll(allServices);
 
         List<TypeName> serviceTypeNames = serviceProviders.stream()
                 .map(sp -> DefaultTypeName.createFromTypeName(sp.serviceInfo().serviceTypeName()))
