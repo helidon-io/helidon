@@ -30,7 +30,7 @@ public enum CompositeProviderFlag {
      * <p>
      * If succeeds, continues to the next provider.
      * To create a provider that may fail, yet that is sufficient,
-     * please configure the flag to be {@link #SUFFICIENT}, and set the provider itself ot be optional
+     * please configure the flag to be {@link #SUFFICIENT}, and set the provider itself to be optional
      * (most Helidon providers support {@code optional} configuration option), so the provider abstains instead of fails
      * when user cannot be authenticated using it.
      */
@@ -41,7 +41,7 @@ public enum CompositeProviderFlag {
      * If succeeds, no further providers are called, otherwise same as optional.
      * <p>
      * To create a provider that may fail, yet that is sufficient,
-     * use this flag, and set the provider itself ot be optional
+     * use this flag, and set the provider itself to be optional
      * (most Helidon providers support {@code optional} configuration option, so the provider abstains instead of fails
      * when user cannot be authenticated using it.
      */
