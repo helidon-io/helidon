@@ -62,7 +62,7 @@ import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
  * The default implementation for {@link io.helidon.builder.processor.spi.TypeInfoCreatorProvider}. This also contains an abundance of
  * other useful methods used for annotation processing.
  */
-@Weight(Weighted.DEFAULT_WEIGHT - 1)
+@Weight(Weighted.DEFAULT_WEIGHT - 2)   // allow all other creators to take precedence over us...
 public class BuilderTypeTools implements TypeInfoCreatorProvider {
     /**
      * Default constructor. Service loaded.

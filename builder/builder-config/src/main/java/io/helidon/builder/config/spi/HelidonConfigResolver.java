@@ -40,7 +40,7 @@ import jakarta.inject.Singleton;
  * not "full" Helidon config.
  */
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT - 1)   // allow all other creators to take precedence over us...
+@Weight(Weighted.DEFAULT_WEIGHT - 2)   // allow all other creators to take precedence over us...
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class HelidonConfigResolver implements ConfigResolver, ConfigResolverProvider {
 
