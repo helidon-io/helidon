@@ -68,7 +68,7 @@
         <!-- This is the BOM version for Jackson Databind 2.13.4.2 -->
         <version.lib.jackson>2.13.4.20221013</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.1.1</version.lib.jakarta.activation-api>
-        <version.lib.jakarta.annotation-api>2.1.0</version.lib.jakarta.annotation-api>
+        <version.lib.jakarta.annotation-api>2.1.1</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
         <version.lib.jakarta.el-api>4.0.0</version.lib.jakarta.el-api>
         <version.lib.jakarta.inject>2.0.1</version.lib.jakarta.inject>
