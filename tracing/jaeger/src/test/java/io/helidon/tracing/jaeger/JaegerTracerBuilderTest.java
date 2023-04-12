@@ -23,10 +23,14 @@ import io.helidon.config.Config;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
+import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.context.propagation.TextMapPropagator;
+import io.opentelemetry.extension.trace.propagation.B3Propagator;
+import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -110,5 +114,9 @@ class JaegerTracerBuilderTest {
 
         List<TextMapPropagator> propagators = jBuilder.createPropagators();
         assertThat(propagators, hasSize(3));
+
+        assertThat(propagators.get(0), instanceOf(B3Propagator.class));
+        assertThat(propagators.get(1), instanceOf(JaegerPropagator.class));
+        assertThat(propagators.get(2), instanceOf(W3CBaggagePropagator.class));
     }
 }
