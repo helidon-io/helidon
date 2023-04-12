@@ -126,11 +126,13 @@ public abstract class AbstractConfiguredByTest {
                 .build();
         List<ServiceProvider<Object>> list = services.lookupAll(criteria);
         List<String> desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        // order matters here since it should be based upon weight
         assertThat("root providers are config-driven, auto-started services unless overridden to not be driven", desc,
                    contains("ASingletonService{root}:ACTIVE",
                             "FakeTlsWSNotDrivenByCB{root}:PENDING",
                             "FakeWebServer{root}:ACTIVE",
-                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{root}:PENDING"
+                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{root}:PENDING",
+                            "SomeConfiguredServiceWithAnAbstractBase{root}:PENDING"
                    ));
 
         criteria = DefaultServiceInfoCriteria.builder()

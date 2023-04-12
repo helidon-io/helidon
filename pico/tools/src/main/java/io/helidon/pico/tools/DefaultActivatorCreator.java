@@ -141,21 +141,25 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         List<TypeName> activatorTypeNamesPutInModule = new ArrayList<>();
         Map<TypeName, ActivatorCodeGenDetail> activatorDetails = new LinkedHashMap<>();
         for (TypeName serviceTypeName : req.serviceTypeNames()) {
-            ActivatorCodeGenDetail activatorDetail = createActivatorCodeGenDetail(req, serviceTypeName, scan);
-            Object prev = activatorDetails.put(serviceTypeName, activatorDetail);
-            assert (prev == null);
-            codegenActivatorFilerOut(req, activatorDetail);
-            TypeName activatorTypeName = toActivatorImplTypeName(serviceTypeName);
-            activatorTypeNames.add(activatorTypeName);
-            Boolean isAbstract = serviceTypeToIsAbstractType.get(serviceTypeName);
-            isAbstract = (isAbstract != null) && isAbstract;
-            if (!isAbstract) {
-                activatorTypeNamesPutInModule.add(activatorTypeName);
-            }
+            try {
+                ActivatorCodeGenDetail activatorDetail = createActivatorCodeGenDetail(req, serviceTypeName, scan);
+                Object prev = activatorDetails.put(serviceTypeName, activatorDetail);
+                assert (prev == null);
+                codegenActivatorFilerOut(req, activatorDetail);
+                TypeName activatorTypeName = toActivatorImplTypeName(serviceTypeName);
+                activatorTypeNames.add(activatorTypeName);
+                Boolean isAbstract = serviceTypeToIsAbstractType.get(serviceTypeName);
+                isAbstract = (isAbstract != null) && isAbstract;
+                if (!isAbstract) {
+                    activatorTypeNamesPutInModule.add(activatorTypeName);
+                }
 
-            InterceptionPlan interceptionPlan = req.codeGen().serviceTypeInterceptionPlan().get(serviceTypeName);
-            if (interceptionPlan != null) {
-                codegenInterceptorFilerOut(req, builder, interceptionPlan);
+                InterceptionPlan interceptionPlan = req.codeGen().serviceTypeInterceptionPlan().get(serviceTypeName);
+                if (interceptionPlan != null) {
+                    codegenInterceptorFilerOut(req, builder, interceptionPlan);
+                }
+            } catch (Exception e) {
+                throw new ToolsException("Failed to process: " + serviceTypeName, e);
             }
         }
         builder.serviceTypeNames(activatorTypeNames)

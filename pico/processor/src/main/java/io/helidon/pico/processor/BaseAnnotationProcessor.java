@@ -193,7 +193,9 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             error(getClass().getSimpleName() + " error during processing; " + t + " @ "
                           + rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
-            throw new ToolsException("Error during processing: " + t + " @ " + rootStackTraceElementOf(t), t);
+            throw new ToolsException("Error during processing: " + t
+                                             + " @ " + rootStackTraceElementOf(t)
+                                             + " in " + getClass().getSimpleName(), t);
         }
     }
 
