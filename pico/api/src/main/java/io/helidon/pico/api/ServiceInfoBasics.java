@@ -36,7 +36,7 @@ public interface ServiceInfoBasics {
      * {@link Weighted#DEFAULT_WEIGHT} {@code - 1} in order to allow any other service implementation to
      * naturally have a higher weight (since it will use the {@code DEFAULT_WEIGHT} unless explicitly overridden.
      */
-    double DEFAULT_PICO_WEIGHT = Weighted.DEFAULT_WEIGHT;
+    double DEFAULT_PICO_WEIGHT = Weighted.DEFAULT_WEIGHT - 1;
 
     /**
      * The managed service implementation {@link Class}.
