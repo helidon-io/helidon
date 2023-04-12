@@ -42,7 +42,7 @@ public enum CompositeProviderFlag {
      * <p>
      * To create a provider that may fail, yet that is sufficient,
      * use this flag, and set the provider itself to be optional
-     * (most Helidon providers support {@code optional} configuration option, so the provider abstains instead of fails
+     * (most Helidon providers support {@code optional} configuration option), so the provider abstains instead of fails
      * when user cannot be authenticated using it.
      */
     SUFFICIENT(EnumSet.of(SecurityResponse.SecurityStatus.SUCCESS, SecurityResponse.SecurityStatus.ABSTAIN)),
