@@ -43,7 +43,7 @@ Pico's minimalist, compile-time generated dependency injection (DI) framework an
 * pre-runtime validation of the dependency injection model
 * visibility into your application by providing "less magic" - understandability and debug-ability of your application
 * deterministic behavior (instead of depending on reflection and classpath ordering, etc.)
-* performance, since binding the model at compile-time is more efficient than computing it at runtime. 
+* performance improvements since binding the model at compile-time is more efficient than computing it at runtime. 
 
 
 
@@ -71,13 +71,69 @@ To enable Pico add the following dependencies to your project's `pom.xml` (see M
 
 == Usage
 
-Once you have planned how each of your resources should support Pico, you specify the Pico behavior in one of two ways:
+These are the basic steps to help you get started with using Helidon Pico. 
+
+NOTE: The Pico examples [link] provide detailed instructions for using Helidon Pico. 
+
+1. Put these in your `pom.xml` or gradle.build file: Annotation processor dependency/path:
+
+.Builder dependencies
+[source,java]
+----
+    
+    <groupId>io.helidon.pico</groupId>
+    <artifactId>helidon-pico-processor</artifactId>
+    <version>${helidon.version}</version>
+----
+
+.Compile-time dependency:
+[source,java]
+----
+
+  <dependency>
+    <groupId>io.helidon.pico</groupId>
+    <artifactId>helidon-pico-services</artifactId>
+    <version>${helidon.version}</version>
+  </dependency>
+----
+
+
+2. Write your application using w/ standard jakarta.inject.* and jakarta.annotation.* types. Again, see any of the examples for pointers as needed.
+
+3. Build and run. In a DI-based framework, the frameworks "owns" the creation of services in accordance with the Scope each service is declared as. You therefore need to get things started by creating demand for the initial service(s) instead of ever calling new directly in your application code. Generally speaking, there are two such ways to get things started at runtime:
+
+    * If you know the class you want to create then look it up directly using the Services SPI. Here is a sample excerpt from the book example:
+
+        Services services = PicoServices.realizedServices();
+        // query
+        ServiceProvider<MyService> serviceProvider = services.lookupFirst(MyService.class);
+        // lazily activate
+        MyService myLazyActivatedService = serviceProvider.get();
+
+    * If there are a collection of services requiring activation at startup then we recommend annotating those service implementation types with `RunLevel(RunLevel.STARTUP)` and then use code below in `main()` to lazily activate those services. 
+    
+
+    
+    * While Weight determines list order, the `RunLevel` annotation is used to rank the startup ordering, from the lowest value to the highest value, where `RunLevel.STARTUP == 0`. The developer is expected to activate these directly using code like the following (the get() lazily creates and activates the underlying service type):
+
+      List<ServiceProvider<Object>> startupServices = services
+              .lookup(DefaultServiceInfoCriteria.builder().runLevel(RunLevel.STARTUP).build());
+      startupServices.stream().forEach(ServiceProvider::get);
+    
+
+
+NOTE: Whenever list-based injection is used in Pico, all services matching the injection criteria will be in the injected (and immutable) list. The list will always be in order according to the Weight annotation value, ranking from the highest weight to the lowest weight. If services are not weighted explicitly, then a default weight is assigned. If the weight is the same for two services, then the secondary ordering will be based on the FN class name of the service types. **If the ordering of the list of services is important, remember to use the Weight and/or RunLevel annotations to establish the priority / weighted ordering, and startup ordering.**
+
+
+
 
 
 
 == API
 
-Adding Pico behavior to your Helidon application involves just a few simple steps.
+The Pico framework aims to provide a minimalist API implementation. As a result, it might be surprising to learn how small the actual API is for Pico. If you are already familiar with `jakarta.inject` and `jakarta.annotation`, then you are ready to go. 
+
+
 
 === Maven Coordinates
 
@@ -112,13 +168,23 @@ The Pico API provides types that are generally useful at compile time to assign 
 
 == Configuration
 
-Pico Config builder
+Configuration can be achieved through a Pico add-on that is based on Helidon's configuration subsystem, and adds support for something called _config-driven services_ using the `@ConfiguredBy` annotation. 
+
+When applied to a target service interface, the `@ConfiguredBy` annotation will allow you to use a higher level aggregation for application configuration, and then allow the configuration to drive activation of services in the Pico Framework.
+
+NOTE: You can use Pico configuration in combination with the Helidon configuration subsystem. 
+
+There are a few additional caveats to understand about `ConfiguredBy` and its supporting infrastructure.
+
+* `@ConfigBean Builder` is used to aggregate configuration attributes to this higher-level, application-centric configuration beans.
+
+* The Pico Framework needs to be started with the supporting configdriven modules in order for configuration to drive service activation.
+
 
 
 
 == Examples
-
-//optional 
+For complete examples, see [link]. 
 
 == Additional Information
 

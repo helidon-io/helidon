@@ -184,7 +184,7 @@ Pico Builder Config is a specialization of the builder that extends the builder 
 
 There are a few additional caveats to understand about ConfigBean and its supporting infrastructure.
 
-    * @Builder can be used in conjunction with @ConfigBean. All attributed will be honored exception one...
+    * `@Builder` can be used in conjunction with `@ConfigBean`. All attributed will be honored exception one...
     * Builder.requireLibraryDependencies is not supported. All generated configuration beans and builders will minimally require a compile-time and runtime dependency on Helidon's common-config module. But for full fidelity support of Helidon's config one should instead use the full config module.
 
 
