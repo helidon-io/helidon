@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.function.Function;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Single;
-import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
 import org.glassfish.jersey.client.ClientAsyncExecutor;
@@ -40,7 +39,6 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
@@ -83,7 +81,7 @@ public class ContextTest {
             test(cb -> cb.executorService(executorService), TEST_THREAD_NAME_PREFIX, null);
         } finally {
             executorService.shutdown();
-            assertTrue(executorService.awaitTermination(TIME_OUT.toSeconds(), TimeUnit.SECONDS));
+            assertThat(executorService.awaitTermination(TIME_OUT.toSeconds(), TimeUnit.SECONDS), is(true));
         }
     }
 
@@ -135,7 +133,7 @@ public class ContextTest {
         public void dispose(ExecutorService executorService) {
             executorService.shutdown();
             try {
-                assertTrue(executorService.awaitTermination(TIME_OUT.toSeconds(), TimeUnit.SECONDS));
+                assertThat(executorService.awaitTermination(TIME_OUT.toSeconds(), TimeUnit.SECONDS), is(true));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
