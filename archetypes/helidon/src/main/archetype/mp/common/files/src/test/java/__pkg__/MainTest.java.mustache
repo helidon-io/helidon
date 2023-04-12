@@ -22,13 +22,15 @@ import {{.}};
 {{/helidon-test}}
 class MainTest {
 {{#helidon-test}}
-{{#MainTest-static-fields}}{{.}}
+{{#MainTest-static-fields}}
+{{.}}
 {{/MainTest-static-fields}}
 
     @Inject
     private WebTarget target;
 
-{{#MainTest-methods}}{{.}}
+{{#MainTest-methods}}
+{{.}}
 {{/MainTest-methods}}
 {{/helidon-test}}
 }

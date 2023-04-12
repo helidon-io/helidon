@@ -28,7 +28,8 @@ public class SimpleGreetService implements Service {
 
     private static final Logger LOGGER = Logger.getLogger(SimpleGreetService.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-{{#SimpleGreetResource-static-fields}}{{.}}
+{{#SimpleGreetResource-static-fields}}
+{{.}}
 {{/SimpleGreetResource-static-fields}}
 
     private final String greeting;
@@ -37,7 +38,8 @@ public class SimpleGreetService implements Service {
         greeting = config.get("app.greeting").asString().orElse("Ciao");
     }
 
-{{#SimpleGreetResource-constructor}}{{.}}
+{{#SimpleGreetResource-constructor}}
+{{.}}
 {{/SimpleGreetResource-constructor}}
 
     /**
@@ -48,7 +50,8 @@ public class SimpleGreetService implements Service {
     @Override
     public void update(Routing.Rules rules) {
         rules.get("/", this::getDefaultMessageHandler);
-{{#SimpleGreetResource-update}}{{.}}
+{{#SimpleGreetResource-update}}
+{{.}}
 {{/SimpleGreetResource-update}}
     }
 
@@ -67,6 +70,7 @@ public class SimpleGreetService implements Service {
         response.send(returnObject);
     }
 
-{{#SimpleGreetService-methods}}{{.}}
+{{#SimpleGreetService-methods}}
+{{.}}
 {{/SimpleGreetService-methods}}
 }
