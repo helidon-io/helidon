@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ This is a standalone configuration type, prefix from configuration root: `tracin
 |`port` |int |{nbsp} |Port to use to connect to tracing collector.
  Default is defined by each tracing integration.
 |`private-key-pem` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Private key in PEM format.
+|`propagation` |`JAEGER`    |addPropagation     |Propagation type (`jaeger`, `b3`, `b3_single`, `w3c`). Jaeger is the default, `b3` is for compatibility with Zipkin (using multiple headers), `b3_single` using a single header.
 |`protocol` |string |{nbsp} |Protocol to use (such as `http` or `https`) to connect to tracing collector.
  Default is defined by each tracing integration.
 |`sampler-param` |Number |`1` |The sampler parameter (number).
