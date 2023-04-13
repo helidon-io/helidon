@@ -31,4 +31,8 @@
         <Class name="io.helidon.integrations.cdi.jpa.DelegatingTypedQuery"/>
         <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
     </Match>
+    <Match>
+        <Class name="io.helidon.integrations.cdi.jpa.PersistenceExtension$ReferenceCountingProducer"/>
+        <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD"/>
+    </Match>
 </FindBugsFilter>
