@@ -7,7 +7,8 @@ handlers=io.helidon.common.HelidonConsoleHandler
 {{#oci-logging-entries}}
 {{#first}}
 
-{{/first}}{{.}}
+{{/first}}
+{{.}}
 {{/oci-logging-entries}}
 
 # HelidonConsoleHandler uses a SimpleFormatter subclass that replaces "!thread!" with the current thread
