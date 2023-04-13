@@ -63,6 +63,7 @@ import jakarta.inject.Singleton;
 
 import static io.helidon.common.types.DefaultTypeName.create;
 import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
+import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
 import static io.helidon.pico.tools.CommonUtils.toFlatName;
@@ -85,7 +86,7 @@ import static io.helidon.pico.tools.TypeTools.isPackagePrivate;
  * {@link ActivatorCreatorRequest#codeGenPaths()} for details.
  */
 @Singleton
-@Weight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(DEFAULT_PICO_WEIGHT)
 public class DefaultActivatorCreator extends AbstractCreator implements ActivatorCreator, Weighted {
     /**
      * The suffix name for the service type activator class.

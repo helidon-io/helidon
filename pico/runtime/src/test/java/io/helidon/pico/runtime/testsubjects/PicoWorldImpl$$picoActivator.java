@@ -27,9 +27,11 @@ import io.helidon.pico.runtime.Dependencies;
 import jakarta.annotation.Generated;
 import jakarta.inject.Singleton;
 
+import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
+
 @Generated(value = "example", comments = "API Version: n")
 @Singleton
-@Weight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(DEFAULT_PICO_WEIGHT)
 public class PicoWorldImpl$$picoActivator extends AbstractServiceProvider<PicoWorldImpl> {
     private static final DefaultServiceInfo serviceInfo =
             DefaultServiceInfo.builder()
@@ -37,7 +39,7 @@ public class PicoWorldImpl$$picoActivator extends AbstractServiceProvider<PicoWo
                     .activatorTypeName(PicoWorldImpl$$picoActivator.class.getName())
                     .addExternalContractsImplemented(PicoWorld.class.getName())
                     .addScopeTypeName(Singleton.class.getName())
-                    .declaredWeight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+                    .declaredWeight(DEFAULT_PICO_WEIGHT)
                     .build();
 
     public static final PicoWorldImpl$$picoActivator INSTANCE = new PicoWorldImpl$$picoActivator();

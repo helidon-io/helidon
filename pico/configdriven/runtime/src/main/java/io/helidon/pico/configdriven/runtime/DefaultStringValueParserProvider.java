@@ -21,10 +21,12 @@ import io.helidon.builder.config.spi.StringValueParserProvider;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 
+import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
+
 /**
  * Service-loaded provider for {@link StringValueParserProvider}.
  */
-@Weight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(DEFAULT_PICO_WEIGHT)
 public class DefaultStringValueParserProvider implements StringValueParserProvider {
     static final LazyValue<StringValueParser> INSTANCE = LazyValue.create(DefaultStringValueParser::new);
 

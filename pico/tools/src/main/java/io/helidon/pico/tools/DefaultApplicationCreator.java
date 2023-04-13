@@ -50,13 +50,14 @@ import io.helidon.pico.tools.spi.ApplicationCreator;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
+import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 import static io.helidon.pico.runtime.ServiceUtils.isQualifiedInjectionTarget;
 
 /**
  * The default implementation for {@link io.helidon.pico.tools.spi.ApplicationCreator}.
  */
 @Singleton
-@Weight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(DEFAULT_PICO_WEIGHT)
 public class DefaultApplicationCreator extends AbstractCreator implements ApplicationCreator {
     /**
      * The prefix to add before the generated "Application" class name (i.e., "Pico$$" in the "Pico$$Application").

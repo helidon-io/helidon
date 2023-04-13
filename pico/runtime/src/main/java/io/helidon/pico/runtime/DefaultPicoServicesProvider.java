@@ -27,6 +27,8 @@ import io.helidon.pico.spi.PicoServicesProvider;
 
 import jakarta.inject.Singleton;
 
+import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
+
 /**
  * The default implementation for {@link io.helidon.pico.spi.PicoServicesProvider}.
  * The first instance created (or first after calling deep {@link #reset}) will be the global services instance. The global
@@ -35,7 +37,7 @@ import jakarta.inject.Singleton;
  * @see io.helidon.pico.api.PicoServices#picoServices()
  */
 @Singleton
-@Weight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(DEFAULT_PICO_WEIGHT)
 public class DefaultPicoServicesProvider implements PicoServicesProvider, Resettable {
     private static final AtomicReference<DefaultPicoServices> INSTANCE = new AtomicReference<>();
 

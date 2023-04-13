@@ -63,6 +63,7 @@ import io.github.classgraph.ScanResult;
 import jakarta.inject.Singleton;
 
 import static io.helidon.common.types.DefaultAnnotationAndValue.create;
+import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueFromMirror;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromAnnotations;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
@@ -75,7 +76,7 @@ import static io.helidon.pico.tools.TypeTools.toObjectTypeName;
  * The default {@link io.helidon.pico.tools.spi.InterceptorCreator} provider in use.
  */
 @Singleton
-@Weight(io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(DEFAULT_PICO_WEIGHT)
 @SuppressWarnings("unchecked")
 public class DefaultInterceptorCreator extends AbstractCreator implements InterceptorCreator, Resettable {
     private static final LazyValue<ScanResult> SCAN = LazyValue.create(ReflectionHandler.INSTANCE::scan);
