@@ -109,13 +109,14 @@ class DefaultInjectionPlans {
                                     .orElse(null);
                             Object target = (resolved instanceof Optional)
                                     ? ((Optional<?>) resolved).orElse(null) : resolved;
-                            DefaultPicoInjectionPlan.Builder planBuilder = DefaultPicoInjectionPlan.builder()
-                                    .serviceProvider(self)
-                                    .injectionPointInfo(ipInfo)
-                                    .injectionPointQualifiedServiceProviders(toIpQualified(target))
-                                    .unqualifiedProviders(toIpUnqualified(target))
-                                    .wasResolved(resolved != null);
                             if (target != null) {
+                                DefaultPicoInjectionPlan.Builder planBuilder = DefaultPicoInjectionPlan.builder()
+                                        .serviceProvider(self)
+                                        .injectionPointInfo(ipInfo)
+                                        .injectionPointQualifiedServiceProviders(toIpQualified(target))
+                                        .unqualifiedProviders(toIpUnqualified(target))
+                                        .wasResolved(resolved != null);
+
                                 if (ipInfo.optionalWrapped()) {
                                     planBuilder.resolved((target instanceof Optional && ((Optional<?>) target).isEmpty())
                                                                  ? Optional.empty() : Optional.of(target));
@@ -125,9 +126,11 @@ class DefaultInjectionPlans {
                                     }
                                     planBuilder.resolved(target);
                                 }
+
+                                PicoInjectionPlan plan = planBuilder.build();
+                                Object prev = result.put(id, plan);
+                                assert (prev == null) : ipInfo;
                             }
-                            Object prev = result.put(id, planBuilder.build());
-                            assert (prev == null) : ipInfo;
                         }
                     });
         }
@@ -143,8 +146,8 @@ class DefaultInjectionPlans {
         List<ServiceProvider<?>> serviceProviders =
                 (tmpServiceProviders != null && !tmpServiceProviders.isEmpty())
                         ? tmpServiceProviders.stream()
-                        .filter(sp -> !isSelf(self, sp))
-                        .collect(Collectors.toList())
+                                .filter(sp -> !isSelf(self, sp))
+                                .collect(Collectors.toList())
                         : tmpServiceProviders;
 
         dep.injectionPointDependencies()
@@ -163,7 +166,7 @@ class DefaultInjectionPlans {
                             throw DefaultServices.resolutionBasedInjectionError(
                                     ipInfo.dependencyToServiceInfo());
                         }
-                        DefaultPicoInjectionPlan plan = DefaultPicoInjectionPlan.builder()
+                        PicoInjectionPlan plan = DefaultPicoInjectionPlan.builder()
                                 .injectionPointInfo(ipInfo)
                                 .injectionPointQualifiedServiceProviders(serviceProviders)
                                 .serviceProvider(self)

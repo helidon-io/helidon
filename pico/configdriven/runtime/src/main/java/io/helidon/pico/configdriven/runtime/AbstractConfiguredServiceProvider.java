@@ -324,7 +324,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                 .addContractImplemented(configBeanType().getName())
                 .build();
         if (!dep.matchesContracts(criteria)) {
-            return Optional.empty();
+            return Optional.empty();    // we are being injected with neither a config bean nor a service that matches ourselves
         }
 
         // if we are here then we are asking for a config bean for ourselves, or a slave/managed instance
