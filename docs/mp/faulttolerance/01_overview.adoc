@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -52,8 +52,8 @@ configuration properties that are of particular interest to MP applications.
 === Configuration
 
 Helidon's implementation uses two types of thread pools: normal and scheduled. The default
-core size of these executors is 16; however, that can be configured using an `application.yaml`
-file as follows:
+core size of these executors is 16; however, that can be configured using in your
+`application.yaml` file:
 
 [source,yaml]
 ----
@@ -64,8 +64,13 @@ scheduled-executor:
   core-pool-size: 32
 ----
 
-NOTE: There is currently _no support_ to configure these executor properties via a
-`microprofile-config.properties` file.
+or in your `microprofile-config.properties` as follows:
+
+[source,properties]
+----
+executor.core-pool-size=32
+scheduled-executor.core-pool-size=32
+----
 
 For a complete set of properties available to configure these executors, see
 link:{executor-config}[ServerThreadPoolSupplier] and
