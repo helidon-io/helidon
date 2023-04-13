@@ -20,6 +20,9 @@
 :description: about Helidon Builder
 :keywords: helidon, java, microservices, reactive, virtual threads, config, builder-config
 
+
+
+
 == Contents
 
 - <<Overview, Overview>>
@@ -27,7 +30,9 @@
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
-- <<Additional Information, Additional Information>>
+
+
+
 
 == Overview
 

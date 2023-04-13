@@ -75,7 +75,10 @@ These are the basic steps to help you get started with using Helidon Pico.
 
 NOTE: The Pico examples [link] provide detailed instructions for using Helidon Pico. 
 
-1. Put these in your `pom.xml` or gradle.build file: Annotation processor dependency/path:
+*Step 1: Update your pom.xml file*
+
+Put the following dependencies in your `pom.xml` or `gradle.build` file: 
+
 
 .Builder dependencies
 [source,java]
@@ -98,9 +101,13 @@ NOTE: The Pico examples [link] provide detailed instructions for using Helidon P
 ----
 
 
-2. Write your application using w/ standard jakarta.inject.* and jakarta.annotation.* types. Again, see any of the examples for pointers as needed.
+*Step 2: Write your application*
 
-3. Build and run. In a DI-based framework, the frameworks "owns" the creation of services in accordance with the Scope each service is declared as. You therefore need to get things started by creating demand for the initial service(s) instead of ever calling new directly in your application code. Generally speaking, there are two such ways to get things started at runtime:
+Write your application using w/ standard jakarta.inject.* and jakarta.annotation.* types. Again, see any of the examples for pointers as needed.
+
+*Step 3: Build and run*
+
+In a DI-based framework, the frameworks "owns" the creation of services in accordance with the Scope each service is declared as. You therefore need to get things started by creating demand for the initial service(s) instead of ever calling new directly in your application code. Generally speaking, there are two such ways to get things started at runtime:
 
     * If you know the class you want to create then look it up directly using the Services SPI. Here is a sample excerpt from the book example:
 
