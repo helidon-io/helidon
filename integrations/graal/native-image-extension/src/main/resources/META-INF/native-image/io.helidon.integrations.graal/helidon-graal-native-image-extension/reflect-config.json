@@ -13,5 +13,10 @@
         "name": "java.util.logging.FileHandler",
         "allDeclaredConstructors": true,
         "allPublicMethods": true
+    },
+    {
+      "name": "com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationIntrospector",
+      "allDeclaredConstructors": true,
+      "allPublicMethods": true
     }
 ]
