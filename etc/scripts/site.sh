@@ -23,4 +23,8 @@
 
 mvn ${MAVEN_ARGS} --version
 
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml -N site -Pdocs,pipeline
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml install -e -DskipTests -Declipselink.weave.skip=true -Pdocs,pipeline
+
+cd ${WS_DIR}/docs
+
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/docs/pom.xml install -e -Pdocs,pipeline
