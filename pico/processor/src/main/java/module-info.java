@@ -43,5 +43,6 @@ module io.helidon.pico.processor {
             io.helidon.pico.processor.PostConstructPreDestroyAnnotationProcessor,
             io.helidon.pico.processor.ServiceAnnotationProcessor,
             io.helidon.pico.processor.CustomAnnotationProcessor,
-            io.helidon.pico.processor.UnsupportedConstructsProcessor;
+            io.helidon.pico.processor.UnsupportedConstructsProcessor,
+            io.helidon.pico.processor.PicoAnnotationProcessor;
 }

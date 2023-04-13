@@ -37,19 +37,19 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
+import io.helidon.pico.api.DefaultInjectionPointInfo;
+import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.pico.api.DefaultServiceInfo;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.DependencyInfo;
 import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.InjectionPointInfo;
-import io.helidon.pico.api.InjectionPointInfoDefault;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.QualifierAndValue;
-import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.runtime.AbstractServiceProvider;
 import io.helidon.pico.runtime.Dependencies;
 import io.helidon.pico.tools.spi.ActivatorCreator;
@@ -61,8 +61,8 @@ import io.github.classgraph.MethodInfoList;
 import io.github.classgraph.ScanResult;
 import jakarta.inject.Singleton;
 
-import static io.helidon.common.types.TypeNameDefault.create;
-import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
+import static io.helidon.common.types.DefaultTypeName.create;
+import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
 import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
@@ -87,7 +87,7 @@ import static io.helidon.pico.tools.TypeTools.isPackagePrivate;
  */
 @Singleton
 @Weight(DEFAULT_PICO_WEIGHT)
-public class ActivatorCreatorDefault extends AbstractCreator implements ActivatorCreator, Weighted {
+public class DefaultActivatorCreator extends AbstractCreator implements ActivatorCreator, Weighted {
     /**
      * The suffix name for the service type activator class.
      */
@@ -103,7 +103,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
      * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
     @Deprecated
-    public ActivatorCreatorDefault() {
+    public DefaultActivatorCreator() {
         super(TemplateHelper.DEFAULT_TEMPLATE_NAME);
     }
 
@@ -111,7 +111,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
     public ActivatorCreatorResponse createModuleActivators(ActivatorCreatorRequest req) throws ToolsException {
         String templateName = (hasValue(req.templateName())) ? req.templateName() : templateName();
 
-        ActivatorCreatorResponseDefault.Builder builder = ActivatorCreatorResponseDefault.builder()
+        DefaultActivatorCreatorResponse.Builder builder = DefaultActivatorCreatorResponse.builder()
                 .configOptions(req.configOptions())
                 .templateName(templateName);
 
@@ -132,11 +132,11 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
     }
 
     ActivatorCreatorResponse codegen(ActivatorCreatorRequest req,
-                                     ActivatorCreatorResponseDefault.Builder builder,
+                                     DefaultActivatorCreatorResponse.Builder builder,
                                      LazyValue<ScanResult> scan) {
         boolean isApplicationPreCreated = req.configOptions().isApplicationPreCreated();
         boolean isModuleCreated = req.configOptions().isModuleCreated();
-        CodeGenPaths codeGenPaths = req.codeGenPaths();
+        CodeGenPaths codeGenPaths = req.codeGenPaths().orElse(null);
         Map<TypeName, Boolean> serviceTypeToIsAbstractType = req.codeGen().serviceTypeIsAbstractTypes();
         List<TypeName> activatorTypeNames = new ArrayList<>();
         List<TypeName> activatorTypeNamesPutInModule = new ArrayList<>();
@@ -171,7 +171,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         Map<String, List<String>> metaInfServices;
         TypeName moduleTypeName = toModuleTypeName(req, activatorTypeNames);
         if (moduleTypeName != null) {
-            String className = ApplicationCreatorDefault
+            String className = DefaultApplicationCreator
                     .toApplicationClassName(req.codeGen().classPrefixName());
             applicationTypeName = create(moduleTypeName.packageName(), className);
             builder.applicationTypeName(applicationTypeName);
@@ -222,8 +222,11 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         Map<TypeName, Set<TypeName>> serviceTypeContracts = codeGen.serviceTypeContracts();
         Map<TypeName, Set<TypeName>> externalContracts = codeGen.serviceTypeExternalContracts();
 
-        Optional<String> moduleInfoPath = req.codeGenPaths().moduleInfoPath();
-        ModuleInfoCreatorRequest moduleCreatorRequest = ModuleInfoCreatorRequestDefault.builder()
+        Optional<String> moduleInfoPath = Optional.empty();
+        if (req.codeGenPaths().isPresent()) {
+            moduleInfoPath = req.codeGenPaths().get().moduleInfoPath();
+        }
+        ModuleInfoCreatorRequest moduleCreatorRequest = DefaultModuleInfoCreatorRequest.builder()
                 .name(moduleName)
                 .moduleTypeName(moduleTypeName)
                 .applicationTypeName(applicationTypeName)
@@ -238,7 +241,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         ModuleInfoDescriptor moduleInfo = createModuleInfo(moduleCreatorRequest);
         moduleName = moduleInfo.name();
         String moduleBody = toModuleBody(req, packageName, className, moduleName, activatorTypeNamesPutInModule);
-        return ModuleDetailDefault.builder()
+        return DefaultModuleDetail.builder()
                 .moduleName(moduleName)
                 .moduleTypeName(moduleTypeName)
                 .serviceProviderActivatorTypeNames(activatorTypeNamesPutInModule)
@@ -371,14 +374,13 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
     }
 
     @Override
-    public InterceptorCreatorResponse codegenInterceptors(GeneralCreatorRequest req,
-                                                          Map<TypeName, InterceptionPlan> interceptionPlans) {
-        InterceptorCreatorResponseDefault.Builder res = InterceptorCreatorResponseDefault.builder();
-        res.interceptionPlans(interceptionPlans);
+    public InterceptorCreatorResponse codegenInterceptors(CodeGenInterceptorRequest request) {
+        DefaultInterceptorCreatorResponse.Builder res = DefaultInterceptorCreatorResponse.builder();
+        res.interceptionPlans(request.interceptionPlans());
 
-        for (Map.Entry<TypeName, InterceptionPlan> e : interceptionPlans.entrySet()) {
+        for (Map.Entry<TypeName, InterceptionPlan> e : request.interceptionPlans().entrySet()) {
             try {
-                Path filePath = codegenInterceptorFilerOut(req, null, e.getValue());
+                Path filePath = codegenInterceptorFilerOut(request.generalCreatorRequest(), null, e.getValue());
                 res.addGeneratedFile(e.getKey(), filePath);
             } catch (Throwable t) {
                 throw new ToolsException("Failed while processing: " + e.getKey(), t);
@@ -389,11 +391,11 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
     }
 
     private Path codegenInterceptorFilerOut(GeneralCreatorRequest req,
-                                            ActivatorCreatorResponseDefault.Builder builder,
+                                            DefaultActivatorCreatorResponse.Builder builder,
                                             InterceptionPlan interceptionPlan) {
         validate(interceptionPlan);
-        TypeName interceptorTypeName = InterceptorCreatorDefault.createInterceptorSourceTypeName(interceptionPlan);
-        InterceptorCreatorDefault interceptorCreator = new InterceptorCreatorDefault();
+        TypeName interceptorTypeName = DefaultInterceptorCreator.createInterceptorSourceTypeName(interceptionPlan);
+        DefaultInterceptorCreator interceptorCreator = new DefaultInterceptorCreator();
         String body = interceptorCreator.createInterceptorSourceBody(interceptionPlan);
         if (builder != null) {
             builder.addServiceTypeInterceptorPlan(interceptorTypeName, interceptionPlan);
@@ -439,7 +441,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         Collection<Object> injectionPointsSkippedInParent =
                 toCodegenInjectMethodsSkippedInParent(isSupportsJsr330InStrictMode, activatorTypeName, codeGen, scan);
 
-        ActivatorCreatorArgs args = ActivatorCreatorArgsDefault.builder()
+        ActivatorCreatorArgs args = DefaultActivatorCreatorArgs.builder()
                 .template(template)
                 .serviceTypeName(serviceTypeName)
                 .activatorTypeName(activatorTypeName)
@@ -465,7 +467,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                 .build();
         String activatorBody = toActivatorBody(args);
 
-        return ActivatorCodeGenDetailDefault.builder()
+        return DefaultActivatorCodeGenDetail.builder()
                 .serviceInfo(serviceInfo)
                 .dependencies(Optional.ofNullable(dependencies))
                 .serviceTypeName(toActivatorImplTypeName(activatorTypeName))
@@ -499,7 +501,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
             return Optional.empty();
         }
 
-        return Optional.of(ActivatorCreatorCodeGenDefault.builder()
+        return Optional.of(DefaultActivatorCreatorCodeGen.builder()
                 .serviceTypeToParentServiceTypes(toFilteredParentServiceTypes(services))
                 .serviceTypeToActivatorGenericDecl(services.activatorGenericDecls())
                 .serviceTypeHierarchy(toFilteredHierarchy(services))
@@ -517,7 +519,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                 .serviceTypeQualifiers(services.qualifiers())
                 .modulesRequired(services.requiredModules())
                 .classPrefixName((services.lastKnownTypeSuffix() != null)
-                                         ? ApplicationCreatorDefault.upperFirstChar(services.lastKnownTypeSuffix())
+                                         ? DefaultApplicationCreator.upperFirstChar(services.lastKnownTypeSuffix())
                                          : ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME)
                 .serviceTypeInterceptionPlan(services.interceptorPlans())
                 .extraCodeGen(services.extraCodeGen())
@@ -548,7 +550,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         }
 
         CodeGenPaths codeGenPaths = createCodeGenPaths(servicesToProcess);
-        return ActivatorCreatorRequestDefault.builder()
+        return DefaultActivatorCreatorRequest.builder()
                 .serviceTypeNames(servicesToProcess.serviceTypeNames())
                 .codeGen(codeGen)
                 .codeGenPaths(codeGenPaths)
@@ -777,7 +779,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
 
     String toCodegenQualifiers(QualifierAndValue qualifier) {
         String val = toCodegenQuotedString(qualifier.value().orElse(null));
-        String result = QualifierAndValueDefault.class.getName() + ".create("
+        String result = DefaultQualifierAndValue.class.getName() + ".create("
                 + qualifier.qualifierTypeName() + ".class";
         if (val != null) {
             result += ", " + val;
@@ -830,7 +832,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         dependencies.allDependencies()
                 .forEach(dep1 -> dep1.injectionPointDependencies()
                         .stream()
-                        .filter(dep2 -> InjectionPointInfoDefault.CONSTRUCTOR.equals(dep2.elementName()))
+                        .filter(dep2 -> DefaultInjectionPointInfo.CONSTRUCTOR.equals(dep2.elementName()))
                         .forEach(dep2 -> {
                             if ((nameRef.get() == null)) {
                                 nameRef.set(dep2.baseIdentity());
@@ -852,7 +854,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         AtomicInteger count = new AtomicInteger();
         AtomicReference<String> nameRef = new AtomicReference<>();
         List<String> args = new ArrayList<>();
-        List<DependencyInfo> allCtorArgs = dependencies.allDependenciesFor(InjectionPointInfoDefault.CONSTRUCTOR);
+        List<DependencyInfo> allCtorArgs = dependencies.allDependenciesFor(DefaultInjectionPointInfo.CONSTRUCTOR);
         allCtorArgs.forEach(dep1 -> dep1.injectionPointDependencies()
                         .forEach(dep2 -> {
                             if (nameRef.get() == null) {
@@ -1026,16 +1028,16 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         MethodInfoList parentMethods = parentClassInfo.getDeclaredMethodInfo();
         Map<IdAndToString, MethodInfo> injectedParentMethods = parentMethods.stream()
                 .filter(m -> (m.getAnnotationInfo(TypeNames.JAKARTA_INJECT) != null))
-                .filter(m -> ExternalModuleCreatorDefault.isPicoSupported(parentTypeName, m, logger()))
-                .collect(Collectors.toMap(ActivatorCreatorDefault::toBaseIdTag, Function.identity()));
+                .filter(m -> DefaultExternalModuleCreator.isPicoSupported(parentTypeName, m, logger()))
+                .collect(Collectors.toMap(DefaultActivatorCreator::toBaseIdTag, Function.identity()));
         if (injectedParentMethods.isEmpty()) {
             return null;
         }
 
         MethodInfoList methods = classInfo.getDeclaredMethodInfo();
         Map<IdAndToString, MethodInfo> allSupportedMethodsOnServiceType = methods.stream()
-                .filter(m -> ExternalModuleCreatorDefault.isPicoSupported(serviceTypeName, m, logger()))
-                .collect(Collectors.toMap(ActivatorCreatorDefault::toBaseIdTag, Function.identity()));
+                .filter(m -> DefaultExternalModuleCreator.isPicoSupported(serviceTypeName, m, logger()))
+                .collect(Collectors.toMap(DefaultActivatorCreator::toBaseIdTag, Function.identity()));
 
         List<Object> removeList = null;
 
@@ -1175,7 +1177,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         Set<TypeName> contracts = codeGen.serviceTypeContracts().get(serviceTypeName);
         Set<TypeName> externalContracts = codeGen.serviceTypeExternalContracts().get(serviceTypeName);
         Set<QualifierAndValue> qualifiers = codeGen.serviceTypeQualifiers().get(serviceTypeName);
-        return ServiceInfoDefault.builder()
+        return DefaultServiceInfo.builder()
                 .serviceTypeName(serviceTypeName.name())
                 .contractsImplemented(toSet(contracts, TypeName::name))
                 .externalContractsImplemented(toSet(externalContracts, TypeName::name))
@@ -1241,7 +1243,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
 
     ActivatorCreatorResponse handleError(ActivatorCreatorRequest request,
                                          ToolsException e,
-                                         ActivatorCreatorResponseDefault.Builder builder) {
+                                         DefaultActivatorCreatorResponse.Builder builder) {
         if (request.throwIfError()) {
             throw e;
         }

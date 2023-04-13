@@ -231,7 +231,8 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         String template = templateHelper().safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_APPLICATION_HBS);
         String body = templateHelper().applySubstitutions(template, subst, true).trim();
 
-        if (req.codeGenPaths().generatedSourcesPath().isPresent()) {
+        if (req.codeGenPaths().isPresent()
+                && req.codeGenPaths().get().generatedSourcesPath().isPresent()) {
             codegen(picoServices, req, application, body);
         }
 
@@ -376,16 +377,17 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
                  ApplicationCreatorRequest req,
                  TypeName applicationTypeName,
                  String body) {
-        CodeGenFiler filer = createDirectCodeGenFiler(req.codeGenPaths(), req.analysisOnly());
+        CodeGenFiler filer = createDirectCodeGenFiler(req.codeGenPaths().orElse(null), req.analysisOnly());
         Path applicationJavaFilePath = filer.codegenJavaFilerOut(applicationTypeName, body).orElse(null);
 
-        String outputDirectory = req.codeGenPaths().outputPath().orElse(null);
+        String outputDirectory = req.codeGenPaths().isEmpty()
+                ? null : req.codeGenPaths().get().outputPath().orElse(null);
         if (outputDirectory != null) {
             File outDir = new File(outputDirectory);
 
             // setup meta-inf services
             codegenMetaInfServices(filer,
-                                   req.codeGenPaths(),
+                                   req.codeGenPaths().orElse(null),
                                    Map.of(TypeNames.PICO_APPLICATION, List.of(applicationTypeName.name())));
 
             // setup module-info

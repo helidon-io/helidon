@@ -41,7 +41,7 @@ public interface GeneralCreatorRequest extends GeneralCodeGenNames {
      *
      * @return the code paths to use for reading and writing artifacts
      */
-    CodeGenPaths codeGenPaths();
+    Optional<CodeGenPaths> codeGenPaths();
 
     /**
      * Optionally, any compiler options to pass explicitly to the java compiler. Not applicable during annotation processing.

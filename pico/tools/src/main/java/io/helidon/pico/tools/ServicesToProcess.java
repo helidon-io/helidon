@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.element.TypeElement;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
@@ -825,7 +824,7 @@ public class ServicesToProcess implements Resettable {
      * @param roundEnv the round env
      */
     public static void onBeginProcessing(Messager processor,
-                                         Set<? extends TypeElement> annotations,
+                                         Set<?> annotations,
                                          RoundEnvironment roundEnv) {
         boolean reallyStarted = !annotations.isEmpty();
         if (reallyStarted && !roundEnv.processingOver()) {
@@ -843,7 +842,7 @@ public class ServicesToProcess implements Resettable {
      * @param roundEnv the round env
      */
     public static void onEndProcessing(Messager processor,
-                                       Set<? extends TypeElement> annotations,
+                                       Set<?> annotations,
                                        RoundEnvironment roundEnv) {
         boolean done = annotations.isEmpty();
         if (done && roundEnv.processingOver()) {

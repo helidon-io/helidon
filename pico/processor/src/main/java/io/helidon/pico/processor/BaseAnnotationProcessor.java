@@ -79,7 +79,6 @@ import io.helidon.pico.tools.ServicesToProcess;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeNames;
 import io.helidon.pico.tools.TypeTools;
-import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.spi.InterceptorCreator;
 
 import com.sun.source.util.TreePath;
@@ -118,6 +117,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     private final ServicesToProcess services;
     private final InterceptorCreator interceptorCreator;
     private final Map<Path, Path> deferredMoves = new LinkedHashMap<>();
+    private ActivatorCreatorHandler creator;
     private RoundEnvironment roundEnv;
 
     /**
@@ -142,9 +142,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
     @Override
     public void init(ProcessingEnvironment processingEnv) {
-        this.processingEnv = processingEnv;
         Options.init(processingEnv);
         debug("*** Processing " + getClass().getSimpleName() + " ***");
+        this.processingEnv = processingEnv;
+        this.creator = new ActivatorCreatorHandler(getClass().getSimpleName(), processingEnv, this);
         super.init(processingEnv);
     }
 
@@ -226,7 +227,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
     @Override
     public void log(String message) {
-        //        logger.log(getLevel(), getClass().getSimpleName() + ": Note: " + message);
         if (processingEnv != null && processingEnv.getMessager() != null) {
             processingEnv.getMessager().printMessage(Kind.NOTE, message);
         }
@@ -592,22 +592,19 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return list;
     }
 
-    CodeGenFiler createCodeGenFiler() {
-        AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, this);
-        return CodeGenFiler.create(filer);
-    }
-
     boolean doFiler(RoundEnvironment roundEnv) {
         // don't do filer until very end of the round
         boolean isProcessingOver = roundEnv.processingOver();
-        ActivatorCreator creator = ActivatorCreatorProvider.instance();
-        CodeGenFiler filer = createCodeGenFiler();
 
         Map<TypeName, InterceptionPlan> interceptionPlanMap = services.interceptorPlans();
         if (!interceptionPlanMap.isEmpty()) {
-            GeneralCreatorRequest req = GeneralCreatorRequestDefault.builder()
-                    .filer(filer);
-            creator.codegenInterceptors(req, interceptionPlanMap);
+            CodeGenInterceptorRequest req = CodeGenInterceptorRequestDefault.builder()
+                    .generalCreatorRequest(GeneralCreatorRequestDefault.builder()
+                                                   .filer(creator.filer())
+                                                   .build())
+                    .interceptionPlans(interceptionPlanMap)
+                    .build();
+            creator.codegenInterceptors(req);
             services.clearInterceptorPlans();
         }
 
@@ -625,7 +622,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 .moduleCreated(isProcessingOver)
                 .build();
         ActivatorCreatorRequest req = ActivatorCreatorDefault
-                .createActivatorCreatorRequest(services, codeGen, configOptions, filer, false);
+                .createActivatorCreatorRequest(services, codeGen, configOptions, creator.filer(), false);
 
         try {
             services.lastGeneratedPackageName(req.packageName().orElseThrow());
@@ -633,7 +630,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             if (!res.success()) {
                 throw new ToolsException("error during codegen", res.error().orElse(null));
             }
-            deferredMoves.putAll(filer.deferredMoves());
+            deferredMoves.putAll(creator.filer().deferredMoves());
         } catch (Exception te) {
             Object hierarchy = codeGen.serviceTypeHierarchy();
             if (hierarchy == null) {

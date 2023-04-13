@@ -16,14 +16,11 @@
 
 package io.helidon.pico.tools.spi;
 
-import java.util.Map;
-
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.Contract;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
-import io.helidon.pico.tools.GeneralCreatorRequest;
-import io.helidon.pico.tools.InterceptionPlan;
+import io.helidon.pico.tools.CodeGenInterceptorRequest;
 import io.helidon.pico.tools.InterceptorCreatorResponse;
 
 /**
@@ -57,11 +54,9 @@ public interface ActivatorCreator {
      * Generates just the interceptors.
      *
      * @param request the request for what to generate
-     * @param interceptionPlans the interceptor plans
      * @return the response result for the create operation
      */
-    InterceptorCreatorResponse codegenInterceptors(GeneralCreatorRequest request,
-                                                   Map<TypeName, InterceptionPlan> interceptionPlans);
+    InterceptorCreatorResponse codegenInterceptors(CodeGenInterceptorRequest request);
 
     /**
      * Generates the would-be implementation type name that will be generated if
