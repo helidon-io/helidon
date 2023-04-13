@@ -23,15 +23,6 @@
 
 etc/scripts/github-compile.sh
 
-#Run reactive streams tck
-cd ${WS_DIR}/tests/tck
-
-mvn -B -e \
-    ${MAVEN_ARGS} \
-    -Dmaven.test.failure.ignore=false \
-    verify
-
-# Run Microprofile tck
 cd ${WS_DIR}/microprofile/tests/tck
 
 mvn -B -e \

@@ -23,4 +23,4 @@
 
 mvn ${MAVEN_ARGS} --version
 
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml -N site -Ppipeline
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml -N site -Pdocs,pipeline
