@@ -20,8 +20,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.helidon.common.testing.junit5.ResetSystemProperties;
 import io.helidon.config.Config;
-import io.helidon.config.test.infra.ResetSystemProperties;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.proxy.HttpProxyHandler;

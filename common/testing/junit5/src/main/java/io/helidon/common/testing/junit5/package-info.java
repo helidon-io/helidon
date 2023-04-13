@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.config.test.infra;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import org.junit.jupiter.api.extension.ExtendWith;
-
 /**
- * Annotation used to reset system properties to the state before test execution.
+ * Basic testing support for Helidon.
+ * <p>
+ * Hamcrest Matchers:
+ * <ul>
+ *     <li>{@link io.helidon.common.testing.junit5.OptionalMatcher}</li>
+ * </ul>
+ * JUnit Extensions:
+ * <ul>
+ *     <li>{@link io.helidon.common.testing.junit5.RestoreSystemPropertiesExt}</li>
+ *     <li>{@link io.helidon.common.testing.junit5.TemporaryFolderExt}</li>
+ * </ul>
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-@ExtendWith(RestoreSystemPropertiesExt.class)
-public @interface ResetSystemProperties {
-}
+package io.helidon.common.testing.junit5;
