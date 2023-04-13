@@ -36,13 +36,14 @@ import jakarta.inject.Singleton;
 
 import static io.helidon.pico.api.ElementInfo.Access;
 import static io.helidon.pico.api.ElementInfo.ElementKind;
+import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 
 /**
  * Serves as an exemplar of what will is normally code generated.
  */
 @Generated(value = "example", comments = "API Version: N")
 @Singleton
-@Weight(DefaultServiceInfo.DEFAULT_WEIGHT)
+@Weight(DEFAULT_PICO_WEIGHT)
 @SuppressWarnings({"unchecked", "checkstyle:TypeName"})
 public class HelloPicoImpl$$picoActivator extends AbstractServiceProvider<HelloPicoWorldImpl> {
 

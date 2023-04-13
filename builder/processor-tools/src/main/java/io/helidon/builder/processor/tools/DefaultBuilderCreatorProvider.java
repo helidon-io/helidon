@@ -57,7 +57,7 @@ import static io.helidon.builder.processor.tools.BuilderTypeTools.hasNonBlankVal
 /**
  * Default implementation for {@link io.helidon.builder.processor.spi.BuilderCreatorProvider}.
  */
-@Weight(Weighted.DEFAULT_WEIGHT - 1)   // allow all other creators to take precedence over us...
+@Weight(Weighted.DEFAULT_WEIGHT - 2)   // allow all other creators to take precedence over us...
 public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     static final boolean DEFAULT_INCLUDE_META_ATTRIBUTES = true;
     static final boolean DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES = true;

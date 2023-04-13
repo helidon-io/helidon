@@ -20,13 +20,14 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
 import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.spi.PicoServicesProvider;
 
 import jakarta.inject.Singleton;
+
+import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 
 /**
  * The default implementation for {@link io.helidon.pico.spi.PicoServicesProvider}.
@@ -36,7 +37,7 @@ import jakarta.inject.Singleton;
  * @see io.helidon.pico.api.PicoServices#picoServices()
  */
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT)
+@Weight(DEFAULT_PICO_WEIGHT)
 public class DefaultPicoServicesProvider implements PicoServicesProvider, Resettable {
     private static final AtomicReference<DefaultPicoServices> INSTANCE = new AtomicReference<>();
 

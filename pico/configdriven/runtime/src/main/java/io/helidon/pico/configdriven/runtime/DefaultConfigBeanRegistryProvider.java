@@ -20,12 +20,13 @@ import io.helidon.builder.config.spi.ConfigBeanRegistryProvider;
 import io.helidon.builder.config.spi.HelidonConfigBeanRegistry;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
+
+import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 
 /**
  * Service-loaded provider for {@link ConfigBeanRegistry}.
  */
-@Weight(Weighted.DEFAULT_WEIGHT)
+@Weight(DEFAULT_PICO_WEIGHT)
 public class DefaultConfigBeanRegistryProvider implements ConfigBeanRegistryProvider {
     static final LazyValue<ConfigBeanRegistry> INSTANCE = LazyValue.create(DefaultPicoConfigBeanRegistry::new);
 

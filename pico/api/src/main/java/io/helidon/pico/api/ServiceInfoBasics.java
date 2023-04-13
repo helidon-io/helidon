@@ -32,10 +32,11 @@ import io.helidon.common.Weighted;
 public interface ServiceInfoBasics {
 
     /**
-     * Default weight for any weighted component (whether it implements this interface
-     * or uses {@link  io.helidon.common.Weight} annotation).
+     * Default weight for any <i>internal</i> Pico service component. It is defined to be
+     * {@link Weighted#DEFAULT_WEIGHT} {@code - 1} in order to allow any other service implementation to
+     * naturally have a higher weight (since it will use the {@code DEFAULT_WEIGHT} unless explicitly overridden.
      */
-    double DEFAULT_WEIGHT = Weighted.DEFAULT_WEIGHT;
+    double DEFAULT_PICO_WEIGHT = Weighted.DEFAULT_WEIGHT - 1;
 
     /**
      * The managed service implementation {@link Class}.
@@ -96,13 +97,13 @@ public interface ServiceInfoBasics {
     Optional<Double> declaredWeight();
 
     /**
-     * The realized weight will use the default weight if no weight was specified directly.
+     * The realized weight will use {@link Weighted#DEFAULT_WEIGHT} if no weight was specified directly.
      *
      * @return the realized weight
      * @see #declaredWeight()
      */
     default double realizedWeight() {
-        return declaredWeight().orElse(DEFAULT_WEIGHT);
+        return declaredWeight().orElse(Weighted.DEFAULT_WEIGHT);
     }
 
 }
