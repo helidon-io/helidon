@@ -515,6 +515,11 @@
                 <version>${version.lib.jakarta.websockets-api}</version>
             </dependency>
             <dependency>
+                <groupId>jakarta.websocket</groupId>
+                <artifactId>jakarta.websocket-client-api</artifactId>
+                <version>${version.lib.jakarta.websockets-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.glassfish.tyrus</groupId>
                 <artifactId>tyrus-core</artifactId>
                 <version>${version.lib.tyrus}</version>
