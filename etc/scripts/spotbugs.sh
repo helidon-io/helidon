@@ -19,22 +19,13 @@
 [ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
 
 # Load pipeline environment setup and define WS_DIR
-. $(dirname -- "${SCRIPT_PATH}")/pipeline-env.sh "${SCRIPT_PATH}" '../..'
+. $(dirname -- "${SCRIPT_PATH}")/includes/pipeline-env.sh "${SCRIPT_PATH}" '../..'
 
-etc/scripts/github-compile.sh
+# Setup error handling using default settings (defined in includes/error_handlers.sh)
+error_trap_setup
 
-#Run reactive streams tck
-cd ${WS_DIR}/tests/tck
-
-mvn -B -e \
-    ${MAVEN_ARGS} \
-    -Dmaven.test.failure.ignore=false \
-    verify
-
-# Run Microprofile tck
-cd ${WS_DIR}/microprofile/tests/tck
-
-mvn -B -e \
-    ${MAVEN_ARGS} \
-    -Dmaven.test.failure.ignore=false \
-    verify
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
+    install -e \
+    -DskipTests \
+    -Dmaven.test.skip=true \
+    -Pspotbugs,pipeline
