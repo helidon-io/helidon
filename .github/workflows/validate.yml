@@ -41,6 +41,19 @@ jobs:
           cache: maven
       - name: Checkstyle
         run: etc/scripts/checkstyle.sh
+  spotbugs:
+    timeout-minutes: 45
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v3.6.0
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Spotbugs
+        run: etc/scripts/spotbugs.sh
   build:
     timeout-minutes: 60
     strategy:
@@ -57,6 +70,19 @@ jobs:
           cache: maven
       - name: Maven build
         run: etc/scripts/github-build.sh
+  docs:
+    timeout-minutes: 10
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v3.6.0
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Docs
+        run: etc/scripts/site.sh
   tck:
     timeout-minutes: 60
     strategy:
@@ -123,6 +149,8 @@ jobs:
           components: 'native-image'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'
+          set-java-home: false
+          cache: maven
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3.6.0
         with:

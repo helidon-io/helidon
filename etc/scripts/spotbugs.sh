@@ -24,26 +24,8 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
-mvn ${MAVEN_ARGS} --version
-
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \
-    -Dmaven.test.failure.ignore=false \
     -DskipTests \
-    -Dmaven.test.skip=true
-
-#Run reactive streams tck
-cd ${WS_DIR}/tests/tck
-
-mvn -B -e \
-    ${MAVEN_ARGS} \
-    -Dmaven.test.failure.ignore=false \
-    verify
-
-# Run Microprofile tck
-cd ${WS_DIR}/microprofile/tests/tck
-
-mvn -B -e \
-    ${MAVEN_ARGS} \
-    -Dmaven.test.failure.ignore=false \
-    verify
+    -Dmaven.test.skip=true \
+    -Pspotbugs,pipeline
