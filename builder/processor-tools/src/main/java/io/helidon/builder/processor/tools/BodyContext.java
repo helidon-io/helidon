@@ -63,6 +63,7 @@ public class BodyContext {
     private final boolean requireLibraryDependencies;
     private final boolean beanStyleRequired;
     private final boolean allowNulls;
+    private final boolean allowPublicOptionals;
     private final boolean includeGeneratedAnnotation;
     private final String listType;
     private final String mapType;
@@ -102,6 +103,7 @@ public class BodyContext {
         this.requireLibraryDependencies = toRequireLibraryDependencies(builderTriggerAnnotation, typeInfo);
         this.beanStyleRequired = toRequireBeanStyle(builderTriggerAnnotation, typeInfo);
         this.allowNulls = toAllowNulls(builderTriggerAnnotation, typeInfo);
+        this.allowPublicOptionals = toAllowPublicOptionals(builderTriggerAnnotation, typeInfo);
         this.includeGeneratedAnnotation = toIncludeGeneratedAnnotation(builderTriggerAnnotation, typeInfo);
         this.listType = toListImplType(builderTriggerAnnotation, typeInfo);
         this.mapType = toMapImplType(builderTriggerAnnotation, typeInfo);
@@ -273,6 +275,16 @@ public class BodyContext {
      */
     protected boolean allowNulls() {
         return allowNulls;
+    }
+
+    /**
+     * Returns true if public {@link Optional} setters are allowed.
+     * See {@link Builder#allowPublicOptionals()}.
+     *
+     * @return true if allow public optional methods
+     */
+    protected boolean allowPublicOptionals() {
+        return allowPublicOptionals;
     }
 
     /**
@@ -490,6 +502,15 @@ public class BodyContext {
                                         TypeInfo typeInfo) {
         String val = searchForBuilderAnnotation("allowNulls", builderTriggerAnnotation, typeInfo);
         return (val == null) ? Builder.DEFAULT_ALLOW_NULLS : Boolean.parseBoolean(val);
+    }
+
+    /**
+     * In support of {@link Builder#allowPublicOptionals()}.
+     */
+    private static boolean toAllowPublicOptionals(AnnotationAndValue builderTriggerAnnotation,
+                                                TypeInfo typeInfo) {
+        String val = searchForBuilderAnnotation("allowPublicOptionals", builderTriggerAnnotation, typeInfo);
+        return (val == null) ? Builder.DEFAULT_ALLOW_PUBLIC_OPTIONALS : Boolean.parseBoolean(val);
     }
 
     /**

@@ -26,7 +26,7 @@ import io.helidon.common.types.AnnotationAndValue;
 /**
  * Abstractly describes method or field elements of a managed service type (i.e., fields, constructors, injectable methods, etc.).
  */
-@Builder
+@Builder(allowPublicOptionals = true)
 public interface ElementInfo {
 
     /**

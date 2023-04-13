@@ -69,6 +69,11 @@ public @interface Builder {
     boolean DEFAULT_ALLOW_NULLS = false;
 
     /**
+     * The default value for {@link #allowPublicOptionals()}.
+     */
+    boolean DEFAULT_ALLOW_PUBLIC_OPTIONALS = false;
+
+    /**
      * The default value for {@link #includeGeneratedAnnotation()}.
      */
     boolean DEFAULT_INCLUDE_GENERATED_ANNOTATION = true;
@@ -190,6 +195,15 @@ public @interface Builder {
      * @return true to allow for the possibility of nullable non-Optional values to be present
      */
     boolean allowNulls() default DEFAULT_ALLOW_NULLS;
+
+    /**
+     * Should any use of {@link java.util.Optional} builder methods be made public. By default this value is {@code false} resulting
+     * in these methods taking {@code Optional} to be made package private. Setting this value to {@code true} will result in these
+     * same methods to be made public instead.
+     *
+     * @return true to make {@code Optional} method public and false to make these methods package private
+     */
+    boolean allowPublicOptionals() default DEFAULT_ALLOW_PUBLIC_OPTIONALS;
 
     /**
      * Should the code generated types included the {@code Generated} annotation. Including this annotation will require an
