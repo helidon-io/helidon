@@ -318,7 +318,7 @@
                             <JOption>-J-Dhttp.agent=maven-javadoc-plugin</JOption>
                         </additionalJOptions>
                         <additionalOptions>
-                            <option>-stylesheetfile ${top.parent.basedir}/etc/helidon-javadoc.css</option>
+                            <option>--add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</option>
                         </additionalOptions>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/module-info.java</sourceFileExclude>
