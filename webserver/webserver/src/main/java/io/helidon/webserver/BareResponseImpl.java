@@ -85,10 +85,12 @@ class BareResponseImpl implements BareResponse {
     private CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
     private BackpressureStrategy backpressureStrategy;
     private final long backpressureBufferSize;
+    private volatile boolean noEntity = true;
 
     // Accessed by writeStatusHeaders(status, headers) method
     private volatile boolean lengthOptimization;
     private volatile DefaultHttpResponse response;
+    private volatile boolean forcedChunked;
 
     /**
      * @param ctx the channel handler context
@@ -198,9 +200,9 @@ class BareResponseImpl implements BareResponse {
 
         // Set chunked if length not set, may switch to length later
         boolean lengthSet = HttpUtil.isContentLengthSet(response);
+        forcedChunked = HttpUtil.isTransferEncodingChunked(response);
         if (!lengthSet) {
-            lengthOptimization = status.code() == Http.Status.OK_200.code()
-                    && !HttpUtil.isTransferEncodingChunked(response) && !isSseEventStream(headers);
+            lengthOptimization = status.code() == Http.Status.OK_200.code() && !forcedChunked && !isSseEventStream(headers);
             HttpUtil.setTransferEncodingChunked(response, true);
         }
 
@@ -249,17 +251,6 @@ class BareResponseImpl implements BareResponse {
             } else if (!headers.containsKey(HttpHeaderNames.CONNECTION.toString())) {
                 response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
             }
-        }
-
-        // Content length optimization attempt
-        if (!lengthOptimization) {
-            requestEntityAnalyzed = requestEntityAnalyzed.thenApply(listener -> {
-                if (LOGGER.isLoggable(Level.FINE)) {
-                    LOGGER.fine(() -> log("Writing headers %s", status));
-                }
-                requestContext.runInScope(() -> orderedWrite(this::initWriteResponse));
-                return listener;
-            });
         }
     }
 
@@ -343,21 +334,21 @@ class BareResponseImpl implements BareResponse {
      */
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
         boolean chunked = true;
-        if (lengthOptimization) {
-            if (throwable == null) {
-                int length = (firstChunk == null ? 0 : firstChunk.remaining());
-                HttpUtil.setTransferEncodingChunked(response, false);
-                HttpUtil.setContentLength(response, length);
-                chunked = false;
-            } else {
-                //headers not sent yet
-                response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-                //We are not using CombinedHttpHeaders
-                response.headers()
-                        .set(HttpHeaderNames.TRAILER, Response.STREAM_STATUS + "," + Response.STREAM_RESULT);
-            }
-        }
         if (response != null) {
+            if (lengthOptimization || (noEntity && !forcedChunked)) {
+                if (throwable == null) {
+                    int length = (firstChunk == null ? 0 : firstChunk.remaining());
+                    chunked = false;
+                    HttpUtil.setTransferEncodingChunked(response, chunked);
+                    HttpUtil.setContentLength(response, length);
+                } else {
+                    //headers not sent yet
+                    response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                    //We are not using CombinedHttpHeaders
+                    response.headers()
+                            .set(HttpHeaderNames.TRAILER, Response.STREAM_STATUS + "," + Response.STREAM_RESULT);
+                }
+            }
             initWriteResponse();
         }
 
@@ -426,6 +417,7 @@ class BareResponseImpl implements BareResponse {
 
                 if (lengthOptimization && firstChunk == null) {
                     firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
+                    noEntity = false;
                     subscription.tryRequest();
                     return;
                 }
@@ -443,7 +435,7 @@ class BareResponseImpl implements BareResponse {
      * @param data the data chunk.
      */
     private void onNextPipe(DataChunk data) {
-        if (lengthOptimization) {
+        if (response != null) {
             initWriteResponse();
         }
         sendData(data, true);
@@ -496,6 +488,7 @@ class BareResponseImpl implements BareResponse {
         }
 
         int size = httpContent.content().capacity();
+        noEntity = false;
 
         if (LOGGER.isLoggable(Level.FINEST)) {
             LOGGER.finest(() -> log("Sending data chunk on event loop thread", channel));

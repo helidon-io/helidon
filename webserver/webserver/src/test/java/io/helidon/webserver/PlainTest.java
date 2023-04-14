@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ import org.hamcrest.collection.IsIterableWithSize;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.webserver.utils.SocketHttpClient.entityFromResponse;
 import static io.helidon.webserver.utils.SocketHttpClient.headersFromResponse;
@@ -73,64 +75,80 @@ public class PlainTest {
                 .defaultSocket(s -> s
                         .host("localhost")
                 )
-                .routing(r -> r.any((req, res) -> {
+                .routing(r -> r
+                        // ex. path = "/emptyResponse200" or "/emptyResponse301"
+                        .get("/emptyResponse*", (req, res) -> {
+                            String path = req.path().toString();
+                            int responseStatus = Integer.valueOf(path.substring(path.length() - 3));
+                            res.status(responseStatus)
+                                    .send();
+                        })
+                        .any((req, res) -> {
                             res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
                             req.next();
                         })
-                                 .any("/exception", (req, res) -> {
-                                     throw new RuntimeException("my always thrown exception");
-                                 })
-                                 .get("/", (req, res) -> {
-                                     res.send("It works!");
-                                 })
-                                 .post("/unconsumed", (req, res) -> res.send("Payload not consumed!"))
-                                 .any("/deferred", (req, res) -> ForkJoinPool.commonPool().submit(() -> {
-                                     Thread.yield();
-                                     res.send("I'm deferred!");
-                                 }))
-                                 .trace("/trace", (req, res) -> {
-                                     res.send("In trace!");
-                                 })
-                                 .get("/force-chunked", (req, res) -> {
-                                     res.headers().put(Http.Header.TRANSFER_ENCODING, "chunked");
-                                     res.send("abcd");
-                                 })
-                                 .get("/multi", (req, res) -> {
-                                     res.send(Multi.just("test 1", "test 2", "test 3")
-                                                      .map(String::getBytes)
-                                                      .map(DataChunk::create));
-                                 })
-                                 .get("/multiFirstError", (req, res) -> {
-                                     res.send(Multi.error(TEST_EXCEPTION));
-                                 })
-                                 .get("/multiSecondError", (req, res) -> {
-                                     res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
-                                                           Multi.error(TEST_EXCEPTION)));
-                                 })
-                                 .get("/multiThirdError", (req, res) -> {
-                                     res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
-                                                           Multi.error(TEST_EXCEPTION)));
-                                 })
-                                 .get("/multiDelayedThirdError", (req, res) -> {
-                                     res.send(Multi.interval(100, 100, TimeUnit.MILLISECONDS,
-                                                             Executors.newSingleThreadScheduledExecutor())
-                                                      .peek(i -> {
-                                                          if (i > 2) {
-                                                              throw TEST_EXCEPTION;
-                                                          }
-                                                      })
-                                                      .map(i -> DataChunk.create(("test " + i).getBytes())));
-                                 })
-                                 .get("/multi", (req, res) -> {
-                                     res.send(Multi.just("test1", "test2")
-                                                      .map(i -> DataChunk.create(String.valueOf(i).getBytes())));
-                                 })
-                                 .get("/absoluteUri", (req, res) -> {
-                                     res.send(req.absoluteUri().toString());
-                                 })
-                                 .any(Handler.create(String.class, (req, res, entity) -> {
-                                     res.send("It works! Payload: " + entity);
-                                 })))
+                        .any("/exception", (req, res) -> {
+                            throw new RuntimeException("my always thrown exception");
+                        })
+                        .get("/", (req, res) -> {
+                            res.send("It works!");
+                        })
+                        .post("/unconsumed", (req, res) -> res.send("Payload not consumed!"))
+                        .any("/deferred", (req, res) -> ForkJoinPool.commonPool().submit(() -> {
+                            Thread.yield();
+                            res.send("I'm deferred!");
+                        }))
+                        .trace("/trace", (req, res) -> {
+                            res.send("In trace!");
+                        })
+                        .get("/force-chunked*", (req, res) -> {
+                            res.headers().put(Http.Header.TRANSFER_ENCODING, "chunked");
+                            if (req.path().toString().contains("-emptyResponse")) {
+                                // ex. path = "/force-chunked-emptyResponse200" or "/force-chunked-emptyResponse301"
+                                String path = req.path().toString();
+                                int responseStatus = Integer.valueOf(path.substring(path.length() - 3));
+                                res.status(responseStatus)
+                                        .send();
+                            } else {
+                                res.send("abcd");
+                            }
+                        })
+                        .get("/multi", (req, res) -> {
+                            res.send(Multi.just("test 1", "test 2", "test 3")
+                                             .map(String::getBytes)
+                                             .map(DataChunk::create));
+                        })
+                        .get("/multiFirstError", (req, res) -> {
+                            res.send(Multi.error(TEST_EXCEPTION));
+                        })
+                        .get("/multiSecondError", (req, res) -> {
+                            res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
+                                                  Multi.error(TEST_EXCEPTION)));
+                        })
+                        .get("/multiThirdError", (req, res) -> {
+                            res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
+                                                  Multi.error(TEST_EXCEPTION)));
+                        })
+                        .get("/multiDelayedThirdError", (req, res) -> {
+                            res.send(Multi.interval(100, 100, TimeUnit.MILLISECONDS,
+                                                    Executors.newSingleThreadScheduledExecutor())
+                                             .peek(i -> {
+                                                 if (i > 2) {
+                                                     throw TEST_EXCEPTION;
+                                                 }
+                                             })
+                                             .map(i -> DataChunk.create(("test " + i).getBytes())));
+                        })
+                        .get("/multi", (req, res) -> {
+                            res.send(Multi.just("test1", "test2")
+                                             .map(i -> DataChunk.create(String.valueOf(i).getBytes())));
+                        })
+                        .get("/absoluteUri", (req, res) -> {
+                            res.send(req.absoluteUri().toString());
+                        })
+                        .any(Handler.create(String.class, (req, res, entity) -> {
+                            res.send("It works! Payload: " + entity);
+                        })))
                 .build()
                 .start()
                 .await(TIMEOUT);
@@ -550,6 +568,36 @@ public class PlainTest {
         Map<String, String> headers = cutTrailerHeaders(s);
         assertThat(headers, hasEntry("stream-status", "500"));
         assertThat(headers, hasEntry("stream-result", TEST_EXCEPTION.toString()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"301", "200"})
+    void testEmptyResponse(String responseStatus) throws Exception {
+        // ex. path = "/emptyResponse200" or "/emptyResponse301"
+        String s = SocketHttpClient.sendAndReceive("/emptyResponse" + responseStatus ,
+                                                   Http.Method.GET,
+                                                   null, webServer);
+        assertThat(s, startsWith("HTTP/1.1 " + responseStatus));
+        Map<String, String> headers = headersFromResponse(s);
+        assertThat(headers, not(hasKey(Http.Header.TRANSFER_ENCODING)));
+        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.CONTENT_LENGTH), is("0")));
+        // Verify that there is no entity
+        assertThat(entityFromResponse(s, false), is(""));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"301", "200"})
+    void testForcedChunkedEmptyResponse(String responseStatus) throws Exception {
+        // ex. path = "/force-chunked-emptyResponse200" or "/force-chunked-emptyResponse301"
+        String s = SocketHttpClient.sendAndReceive("/force-chunked-emptyResponse" + responseStatus,
+                                                   Http.Method.GET,
+                                                   null, webServer);
+        assertThat(s, startsWith("HTTP/1.1 " + responseStatus));
+        Map<String, String> headers = headersFromResponse(s);
+        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.TRANSFER_ENCODING), is("chunked")));
+        assertThat(headers, not(hasKey(Http.Header.CONTENT_LENGTH)));
+        // Verify that there is no entity
+        assertThat(entityFromResponse(s, false), is("0\n\n"));
     }
 
     private Map<String, String> cutTrailerHeaders(String response) {
