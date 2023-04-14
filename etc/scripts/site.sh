@@ -23,7 +23,7 @@
 
 mvn ${MAVEN_ARGS} --version
 
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml install -e -DskipTests -Declipselink.weave.skip=true -Pdocs,pipeline
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml install -e -DskipTests -Pdocs,pipeline
 
 cd ${WS_DIR}/docs
 
