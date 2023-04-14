@@ -70,6 +70,14 @@ jobs:
           cache: maven
       - name: Maven build
         run: etc/scripts/github-build.sh
+      - name: Archive Test results
+        uses: actions/upload-artifact@v3.1.2
+        if: always()
+        with:
+          name: test-results
+          path: |
+            **/target/surefire-reports/*.txt
+            **/target/it/**/*.log
   docs:
     timeout-minutes: 10
     runs-on: ubuntu-20.04
