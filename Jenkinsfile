@@ -24,6 +24,7 @@ pipeline {
   environment {
     NPM_CONFIG_REGISTRY = credentials('npm-registry')
   }
+  stages {
     stage('release') {
       when {
         branch '**/release-*'
