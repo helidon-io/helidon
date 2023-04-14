@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,12 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.context.Context;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.config.testing.MatcherWithRetry;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.tracing.opentracing.OpenTracing;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -32,13 +34,15 @@ import io.helidon.webserver.WebServer;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.tag.Tags;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasSize;
 
 /**
  * Test tracing integration.
@@ -61,18 +65,23 @@ class TracingPropagationTest {
                 .baseUri(uri)
                 .context(context)
                 .config(Config.create().get("client"))
+                .addMediaSupport(JsonpSupport.create())
                 .build();
 
-        client.get()
+        WebClientResponse response = client.get()
                 .queryParam("some", "value")
                 .fragment("fragment")
                 .request()
-                .forSingle(WebClientResponse::close)
                 .await(TIMEOUT);
 
-        TimeUnit.MILLISECONDS.sleep(1);
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.content().as(JsonObject.class).await(TIMEOUT), notNullValue());
+        response.close();
+
+        // the server traces asynchronously, some spans may be written after we receive the response.
+        // we need to try to wait for such spans
+        MatcherWithRetry.assertThatWithRetry("There should be 3 spans reported", mockTracer::finishedSpans, hasSize(3));
         List<MockSpan> mockSpans = mockTracer.finishedSpans();
-        assertThat("At least one client and one server span expected", mockSpans.size(), greaterThanOrEqualTo(2));
 
         // we need the first span - parentId 0
         MockSpan clientSpan = findSpanWithParentId(mockSpans, 0);
