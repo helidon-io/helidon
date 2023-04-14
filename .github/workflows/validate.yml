@@ -83,6 +83,13 @@ jobs:
           cache: maven
       - name: Docs
         run: etc/scripts/site.sh
+      - name: Archive Docs
+        uses: actions/upload-artifact@v3.1.2
+        if: always()
+        with:
+          name: docs
+          path: |
+            target/site/**/*
   tck:
     timeout-minutes: 60
     strategy:
@@ -148,7 +155,6 @@ jobs:
           java-version: '11'
           components: 'native-image'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          native-image-job-reports: 'true'
           set-java-home: false
           cache: maven
       - name: Set up JDK ${{ env.JAVA_VERSION }}
