@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c)  2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -80,7 +80,7 @@ public class JmsSeTest extends AbstractJmsTest {
                 .build()
                 .start();
 
-        assertTrue(cdl.await(2, TimeUnit.SECONDS));
+        assertThat(cdl.await(2, TimeUnit.SECONDS), is(true));
         assertThat(result, containsInAnyOrder("1", "2", "3", "4"));
     }
 
