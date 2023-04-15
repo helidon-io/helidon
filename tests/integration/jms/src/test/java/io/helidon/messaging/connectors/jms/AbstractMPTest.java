@@ -30,7 +30,7 @@ import jakarta.jms.TextMessage;
 import org.hamcrest.Matchers;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.is;
 
 public abstract class AbstractMPTest extends AbstractJmsTest {
 
@@ -52,8 +52,8 @@ public abstract class AbstractMPTest extends AbstractJmsTest {
         if (expected.size() > 0) {
             // Wait till records are delivered
             boolean done = consumingBean.await();
-            assertTrue(done, String.format("Timeout waiting for results.\nExpected: %s \nBut was: %s",
-                    expected.toString(), consumingBean.consumed().toString()));
+            assertThat(String.format("Timeout waiting for results.\nExpected: %s \nBut was: %s",
+                    expected.toString(), consumingBean.consumed().toString()), done, is(true));
         }
         if (!expected.isEmpty()) {
             assertThat(consumingBean.consumed(), Matchers.containsInAnyOrder(expected.toArray()));

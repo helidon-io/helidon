@@ -34,9 +34,9 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JmsSeTest extends AbstractJmsTest {
 
@@ -81,7 +81,7 @@ public class JmsSeTest extends AbstractJmsTest {
                 .build()
                 .start();
 
-        assertTrue(cdl.await(2, TimeUnit.SECONDS));
+        assertThat(cdl.await(2, TimeUnit.SECONDS), is(true));
         assertThat(result, containsInAnyOrder("1", "2", "3", "4"));
     }
 

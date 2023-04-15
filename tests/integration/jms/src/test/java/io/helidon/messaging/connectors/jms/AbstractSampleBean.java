@@ -48,7 +48,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This class contains the outputs of the tests. In order to avoid that one test mess up in the results
@@ -249,7 +248,7 @@ abstract class AbstractSampleBean {
 
         public void await(long timeout) {
             try {
-                assertTrue(countDownLatch.await(timeout, TimeUnit.MILLISECONDS));
+                assertThat(countDownLatch.await(timeout, TimeUnit.MILLISECONDS), is(true));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -286,7 +285,7 @@ abstract class AbstractSampleBean {
 
         public void await(long timeout) {
             try {
-                assertTrue(countDownLatch.await(timeout, TimeUnit.MILLISECONDS));
+                assertThat(countDownLatch.await(timeout, TimeUnit.MILLISECONDS), is(true));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -331,7 +330,7 @@ abstract class AbstractSampleBean {
 
         public void await(long timeout) {
             try {
-                assertTrue(countDownLatch.await(timeout, TimeUnit.MILLISECONDS));
+                assertThat(countDownLatch.await(timeout, TimeUnit.MILLISECONDS), is(true));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -375,7 +374,7 @@ abstract class AbstractSampleBean {
 
         public void await(long timeout) {
             try {
-                assertTrue(countDownLatch.await(timeout, TimeUnit.MILLISECONDS));
+                assertThat(countDownLatch.await(timeout, TimeUnit.MILLISECONDS), is(true));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
