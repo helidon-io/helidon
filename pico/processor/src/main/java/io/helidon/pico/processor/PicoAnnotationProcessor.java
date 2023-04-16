@@ -136,7 +136,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
                 validate(typeInfoToCreateActivatorsForInThisModule.values());
 
                 // code generate the model
-//                doFiler(Map.copyOf(typeInfoToCreateActivatorsForInThisModule));
+                doFiler(Map.copyOf(typeInfoToCreateActivatorsForInThisModule));
             }
 
             return false;

@@ -16,10 +16,10 @@
 
 package io.helidon.pico.processor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
@@ -30,11 +30,14 @@ import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CodeGenInterceptorRequest;
+import io.helidon.pico.tools.DefaultActivatorCreatorResponse;
+import io.helidon.pico.tools.DefaultInterceptorCreatorResponse;
 import io.helidon.pico.tools.InterceptorCreatorResponse;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 
 class ActivatorCreatorHandler implements ActivatorCreator {
+    // note that this will be removed in the future - it is here to compare the "old way" to the "new way"
     private static final Map<String, List<ActivatorCreatorRequest>> historyOfCreateModuleActivators = new ConcurrentHashMap<>();
     private static final Map<String, List<CodeGenInterceptorRequest>> historyOfCodegenInterceptors = new ConcurrentHashMap<>();
     private final String name;
@@ -53,29 +56,23 @@ class ActivatorCreatorHandler implements ActivatorCreator {
 
     @Override
     public ActivatorCreatorResponse createModuleActivators(ActivatorCreatorRequest request) {
-        historyOfCreateModuleActivators.compute(name, (k, v) -> {
-            if (v == null) {
-                v = new CopyOnWriteArrayList<>();
-            }
-            v.add(request);
-            return v;
-        });
+        historyOfCreateModuleActivators.computeIfAbsent(name, (k) -> new ArrayList<>()).add(request);
 
         messager.debug(name + ": createModuleActivators(" + !simulationMode + "): " + request);
+        if (simulationMode) {
+            return DefaultActivatorCreatorResponse.builder().configOptions(request.configOptions()).build();
+        }
         return ActivatorCreatorProvider.instance().createModuleActivators(request);
     }
 
     @Override
     public InterceptorCreatorResponse codegenInterceptors(CodeGenInterceptorRequest request) {
-        historyOfCodegenInterceptors.compute(name, (k, v) -> {
-            if (v == null) {
-                v = new CopyOnWriteArrayList<>();
-            }
-            v.add(request);
-            return v;
-        });
+        historyOfCodegenInterceptors.computeIfAbsent(name, (k) -> new ArrayList<>()).add(request);
 
         messager.debug(name + ": codegenInterceptors(" + !simulationMode + "): " + request);
+        if (simulationMode) {
+            return DefaultInterceptorCreatorResponse.builder().build();
+        }
         return ActivatorCreatorProvider.instance().codegenInterceptors(request);
     }
 
