@@ -227,7 +227,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
         public Builder typeName(TypeName val) {
             Objects.requireNonNull(val);
             this.typeName = val;
-            return identity();
+            return this;
         }
 
         /**
@@ -239,7 +239,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
         public Builder value(String val) {
             Objects.requireNonNull(val);
             this.value = val;
-            return identity();
+            return this;
         }
 
         /**
@@ -252,7 +252,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
             Objects.requireNonNull(val);
             this.values.clear();
             this.values.putAll(val);
-            return identity();
+            return this;
         }
 
         /**

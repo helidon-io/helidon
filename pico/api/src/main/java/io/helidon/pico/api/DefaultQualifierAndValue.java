@@ -164,22 +164,26 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
 
         @Override
         public Builder typeName(TypeName val) {
-            return (Builder) super.typeName(val);
+            super.typeName(val);
+            return this;
         }
 
         @Override
         public Builder value(String val) {
-            return (Builder) super.value(val);
+            super.value(val);
+            return this;
         }
 
         @Override
         public Builder values(Map<String, String> val) {
-            return (Builder) super.values(val);
+            super.values(val);
+            return this;
         }
 
         @Override
         public Builder type(Class<? extends Annotation> annoType) {
-            return (Builder) super.type(annoType);
+            super.type(annoType);
+            return this;
         }
 
         /**
