@@ -19,7 +19,8 @@ import {{.}};
 
 class MainTest {
 
-{{#MainTest-static-fields}}{{.}}
+{{#MainTest-static-fields}}
+{{.}}
 {{/MainTest-static-fields}}
 
     private static WebServer webServer;
@@ -31,7 +32,8 @@ class MainTest {
 
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
-{{#MainTest-clientBuilder}}{{.}}
+{{#MainTest-clientBuilder}}
+{{.}}
 {{/MainTest-clientBuilder}}
                 .build();
     }
@@ -45,6 +47,7 @@ class MainTest {
         }
     }
 
-{{#MainTest-methods}}{{.}}
+{{#MainTest-methods}}
+{{.}}
 {{/MainTest-methods}}
 }
