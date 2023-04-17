@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -72,7 +73,7 @@ class TestCORS {
 
         WebClientResponse r = builder.path("/simple-greet")
                 .submit()
-                .await();
+                .await(Duration.ofSeconds(5));
 
         assertThat("pre-flight status", r.status().code(), is(200));
         Headers preflightResponseHeaders = r.headers();
@@ -118,20 +119,20 @@ class TestCORS {
         return builder
                 .path("/simple-greet")
                 .submit()
-                .await();
+                .await(Duration.ofSeconds(5));
     }
 
     private static String fromPayload(WebClientResponse response) {
         return response
                 .content()
                 .as(String.class)
-                .await();
+                .await(Duration.ofSeconds(5));
     }
 
     private static WebClientResponse putResponse(String message, WebClientRequestBuilder builder) {
         return builder
                 .path("/simple-greet")
                 .submit(message)
-                .await();
+                .await(Duration.ofSeconds(5));
     }
 }

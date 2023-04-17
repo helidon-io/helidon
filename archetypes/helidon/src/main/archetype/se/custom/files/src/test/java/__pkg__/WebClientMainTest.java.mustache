@@ -6,6 +6,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
@@ -20,18 +21,17 @@ class WebClientMainTest {
 
     @BeforeAll
     static void startTheServer() {
-        webServer = Main.startServer().await();
+        webServer = Main.startServer().await(Duration.ofSeconds(10));
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/simple-greet")
                 .build();
     }
 
     @AfterAll
-    static void stopServer() throws ExecutionException, InterruptedException, TimeoutException {
+    static void stopServer() {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(10, TimeUnit.SECONDS);
         }
     }
 
@@ -39,12 +39,12 @@ class WebClientMainTest {
     void getSimpleGreetTest() {
         WebClientMain.performGetMethod(webClient)
 {{#media-json}}
-                .thenAccept(it -> assertThat(it, is("{\"message\":\"Hello World!\"}")))
+                .forSingle(it -> assertThat(it, is("{\"message\":\"Hello World!\"}")))
 {{/media-json}}
 {{^media-json}}
-                .thenAccept(it -> assertThat(it, is("Hello World!")))
+                .forSingle(it -> assertThat(it, is("Hello World!")))
 {{/media-json}}
-        .await();
+        .await(Duration.ofSeconds(2));
     }
 
 }

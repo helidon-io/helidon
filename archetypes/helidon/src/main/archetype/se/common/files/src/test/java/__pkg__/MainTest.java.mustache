@@ -28,7 +28,7 @@ class MainTest {
 
     @BeforeAll
     static void startTheServer() {
-        webServer = Main.startServer().await();
+        webServer = Main.startServer().await(Duration.ofSeconds(10));
 
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
@@ -39,11 +39,9 @@ class MainTest {
     }
 
     @AfterAll
-    static void stopServer() throws ExecutionException, InterruptedException, TimeoutException {
+    static void stopServer() {
         if (webServer != null) {
-            webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+            webServer.shutdown().await(10, TimeUnit.SECONDS);
         }
     }
 

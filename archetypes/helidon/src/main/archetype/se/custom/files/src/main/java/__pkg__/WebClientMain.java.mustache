@@ -1,5 +1,7 @@
 package {{package}};
 
+import java.time.Duration;
+
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
@@ -9,7 +11,6 @@ import {{.}};
 import io.helidon.webclient.WebClient;
 
 public class WebClientMain {
-
 
     private WebClientMain() {
     }
@@ -41,7 +42,7 @@ public class WebClientMain {
 {{/WebClient-builder}}
                 .build();
 
-        performGetMethod(webClient).await();
+        performGetMethod(webClient).await(Duration.ofSeconds(5));
     }
 
     static Single<String> performGetMethod(WebClient webClient) {
