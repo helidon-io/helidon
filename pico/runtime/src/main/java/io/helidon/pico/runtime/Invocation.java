@@ -64,7 +64,7 @@ public class Invocation<V> implements Interceptor.Chain<V> {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <V> V createInvokeAndSupply(InvocationContext ctx,
                                               Supplier<V> call,
-                                              Object... args) {
+                                              Object[] args) {
         if (ctx.interceptors().isEmpty()) {
             return call.get();
         } else {

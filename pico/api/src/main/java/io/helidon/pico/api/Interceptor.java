@@ -44,8 +44,11 @@ public interface Interceptor {
     interface Chain<V> {
         /**
          * Call the next interceptor in line, or finishing with the call to the service provider.
+         * Note that that arguments are passed by reference to each interceptor ultimately leading up to the final
+         * call to the underlying intercepted target. Callers can mutable the arguments passed directly on the provided array
+         * instance.
          *
-         * @param args the arguments pass
+         * @param args the arguments passed
          * @return the result of the call
          */
         V proceed(Object[] args);

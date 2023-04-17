@@ -85,7 +85,7 @@ public class {{className}} /* extends {{parent}} */ implements {{interfaces}} {
                     .elementInfo(__ctor)
                     .interceptors(__ctor__interceptors)
                     .build(),
-                call);
+                call, null); // will be handled in https://github.com/helidon-io/helidon/issues/6542
         this.__impl = Objects.requireNonNull(result);{{#interceptedelements}}
 
         this.__{{id}}__call = new InterceptedMethod<{{parent}}, {{elementTypeName}}>(
@@ -100,7 +100,8 @@ public class {{className}} /* extends {{parent}} */ implements {{interfaces}} {
 {{#interceptedelements}}
     @Override
     {{{methodDecl}}} {
-        {{#if hasReturn}}return {{/if}}createInvokeAndSupply(__{{id}}__call.ctx(), () -> __{{id}}__call.apply({{args}}));
+        Object[] args = new Object[] { {{args}} };
+        {{#if hasReturn}}return {{/if}}createInvokeAndSupply(__{{id}}__call.ctx(), () -> __{{id}}__call.apply(args), args);
     }
 {{/interceptedelements}}
 }
