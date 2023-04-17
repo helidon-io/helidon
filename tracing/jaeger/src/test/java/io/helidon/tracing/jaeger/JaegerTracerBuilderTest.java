@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,26 @@
 
 package io.helidon.tracing.jaeger;
 
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
+import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
+import io.opentelemetry.context.propagation.TextMapPropagator;
+import io.opentelemetry.extension.trace.propagation.B3Propagator;
+import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -105,5 +112,11 @@ class JaegerTracerBuilderTest {
                 "tag6", "741"
         )));
 
+        List<TextMapPropagator> propagators = jBuilder.createPropagators();
+        assertThat(propagators, hasSize(3));
+
+        assertThat(propagators.get(0), instanceOf(B3Propagator.class));
+        assertThat(propagators.get(1), instanceOf(JaegerPropagator.class));
+        assertThat(propagators.get(2), instanceOf(W3CBaggagePropagator.class));
     }
 }
