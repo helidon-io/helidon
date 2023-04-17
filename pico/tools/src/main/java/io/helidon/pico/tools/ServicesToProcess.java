@@ -58,6 +58,7 @@ public class ServicesToProcess implements Resettable {
     private static final ServicesToProcess SERVICES = new ServicesToProcess();
 
     private static final AtomicInteger RUNNING_PROCESSORS = new AtomicInteger();
+    private static final List<Runnable> runnablesToCallWhenDone = new ArrayList<>();
 
     private final Set<TypeName> servicesTypeNames = new LinkedHashSet<>();
     private final Set<String> requiredModules = new TreeSet<>();
@@ -101,6 +102,16 @@ public class ServicesToProcess implements Resettable {
     }
 
     private ServicesToProcess() {
+    }
+
+    /**
+     * Creates a new instance, apart from the current global singleton instance exposed from {@link #servicesInstance()}.
+     *
+     * @return the new instance
+     * @see #servicesInstance()
+     */
+    public ServicesToProcess create() {
+        return new ServicesToProcess();
     }
 
     @Override
@@ -835,6 +846,15 @@ public class ServicesToProcess implements Resettable {
     }
 
     /**
+     * Called to add a runnable to call when done with all annotation processing.
+     *
+     * @param runnable the runnable to call
+     */
+    public static void addOnEndRunnable(Runnable runnable) {
+        runnablesToCallWhenDone.add(runnable);
+    }
+
+    /**
      * Called to signal the end of an annotation processing phase.
      *
      * @param processor the processor running
@@ -853,6 +873,11 @@ public class ServicesToProcess implements Resettable {
         if (done && RUNNING_PROCESSORS.get() == 0) {
             // perform module analysis to ensure the proper definitions are specified for modules and applications
             ServicesToProcess.servicesInstance().performModuleUsageValidation(processor);
+        }
+
+        if (done) {
+            runnablesToCallWhenDone.forEach(Runnable::run);
+            runnablesToCallWhenDone.clear();
         }
     }
 

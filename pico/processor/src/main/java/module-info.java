@@ -29,6 +29,7 @@ module io.helidon.pico.processor {
     requires io.helidon.builder.processor.spi;
     requires transitive io.helidon.pico.tools;
     requires io.helidon.builder.processor;
+    requires io.helidon.builder.utils;
 
     exports io.helidon.pico.processor;
 

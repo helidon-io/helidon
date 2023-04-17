@@ -17,6 +17,7 @@
 package io.helidon.pico.processor;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -29,6 +30,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
@@ -38,6 +40,7 @@ import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
+import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
@@ -125,6 +128,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
         this.roundEnv = roundEnv;
 
         ServicesToProcess.onBeginProcessing(this, getSupportedAnnotationTypes(), roundEnv);
+        ServicesToProcess.addOnEndRunnable(ActivatorCreatorHandler.reporting());
         try {
             if (!roundEnv.processingOver()) {
                 // build the model
@@ -293,7 +297,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
         }
     }
 
-    protected ActivatorCreatorRequest toActivatorCreatorRequest(Map<TypeName, TypeInfo> typesToCodeGenerate,
+    ActivatorCreatorRequest toActivatorCreatorRequest(Map<TypeName, TypeInfo> typesToCodeGenerate,
                                                                 ActivatorCreatorCodeGen codeGen,
                                                                 DefaultActivatorCreatorConfigOptions configOptions,
                                                                 CodeGenFiler filer) {
@@ -305,21 +309,71 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
                 .build();
     }
 
-    protected Optional<ActivatorCreatorCodeGen> toActivatorCreatorCodeGen(Map<TypeName, TypeInfo> typesToCodeGenerate) {
+    Optional<ActivatorCreatorCodeGen> toActivatorCreatorCodeGen(Map<TypeName, TypeInfo> typesToCodeGenerate) {
         if (typesToCodeGenerate.isEmpty()) {
             return Optional.empty();
         }
 
         DefaultActivatorCreatorCodeGen.Builder builder = DefaultActivatorCreatorCodeGen.builder();
-//        builder.serviceTypeToParentServiceTypes(serviceTypeToParentServiceTypes(typesToCodeGenerate));
-//        builder.serviceTypeHierarchy(serviceTypeHierarchy(typesToCodeGenerate));
-//        builder.
+        builder.serviceTypeToParentServiceTypes(serviceTypeToParentServiceTypes(typesToCodeGenerate));
+        builder.serviceTypeAccessLevels(serviceTypeAccessLevels(typesToCodeGenerate));
+        builder.serviceTypeScopeNames(serviceTypeScopeNames(typesToCodeGenerate));
+
 
         return Optional.of(builder.build());
     }
 
     Collection<TypeName> toServiceTypeNames(Map<TypeName, TypeInfo> typesToCodeGenerate) {
         return typesToCodeGenerate.keySet();
+    }
+
+    Map<TypeName, TypeName> serviceTypeToParentServiceTypes(Map<TypeName, TypeInfo> typesToCodeGenerate) {
+        Map<TypeName, TypeName> result = new LinkedHashMap<>();
+        typesToCodeGenerate.forEach((k, v) -> {
+            if (v.superTypeInfo().isPresent()) {
+                result.put(k, v.superTypeInfo().get().typeName());
+            }
+        });
+        return result;
+    }
+
+    Map<TypeName, ElementInfo.Access> serviceTypeAccessLevels(Map<TypeName, TypeInfo> typesToCodeGenerate) {
+        Map<TypeName, ElementInfo.Access> result = new LinkedHashMap<>();
+        typesToCodeGenerate.forEach((k, v) -> {
+            result.put(k, toAccess(v.modifierNames()));
+        });
+        return result;
+    }
+
+    Map<TypeName, Set<String>> serviceTypeScopeNames(Map<TypeName, TypeInfo> typesToCodeGenerate) {
+        Map<TypeName, Set<String>> result = new LinkedHashMap<>();
+        typesToCodeGenerate.forEach((k, v) -> {
+            result.put(k, toScopeNames(v));
+        });
+        return result;
+    }
+
+    Set<String> toScopeNames(TypeInfo typeInfo) {
+
+    }
+
+    // TODO: put this into tools instead of here
+    ElementInfo.Access toAccess(Set<String> modifierNames) {
+        if (modifierNames.contains(TypeInfo.MODIFIER_PROTECTED)) {
+            return ElementInfo.Access.PROTECTED;
+        } else if (modifierNames.contains(TypeInfo.MODIFIER_PRIVATE)) {
+            return ElementInfo.Access.PRIVATE;
+        } else if (modifierNames.contains(TypeInfo.MODIFIER_PUBLIC)) {
+            return ElementInfo.Access.PUBLIC;
+        }
+        return ElementInfo.Access.PACKAGE_PRIVATE;
+    }
+
+    // TODO: put this into tools instead of here
+    Set<String> toModifierNames(Set<Modifier> modifiers) {
+        return modifiers.stream()
+                .map(Modifier::name)
+                .collect(Collectors.toSet());
     }
 
     void gatherElementsOfInterestInThisModule(Map<TypedElementName, TypeName> result) {
@@ -348,23 +402,28 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
                 typesToProcess.forEach(it -> {
                     TypeName typeName = createTypeNameFromElement(it).orElseThrow();
                     if (!result.containsKey(typeName)) {
-                        result.put(typeName,
-                                   toTypeInfo((TypeElement) it, typeName, elementsOfInterest));
+                        Optional<TypeInfo> superTypeInfo = toTypeInfo((TypeElement) it, typeName, elementsOfInterest);
+                        superTypeInfo.ifPresent(typeInfo -> result.put(typeName, typeInfo));
                     }
                 });
             }
         }
     }
 
-    TypeInfo toTypeInfo(TypeElement typeElement,
-                        TypeName typeName,
-                        Map<TypedElementName, TypeName> elementsOfInterest) {
+    Optional<TypeInfo> toTypeInfo(TypeElement typeElement,
+                                  TypeName typeName,
+                                  Map<TypedElementName, TypeName> elementsOfInterest) {
+        if (typeName.name().equals(Object.class.getName())) {
+            return Optional.empty();
+        }
+
         try {
             assert (processingEnv != null);
             Elements elementUtils = processingEnv.getElementUtils();
             DefaultTypeInfo.Builder builder = DefaultTypeInfo.builder()
                     .typeName(typeName)
                     .annotations(createAnnotationAndValueSet(elementUtils.getTypeElement(typeName.name())))
+                    .modifierNames(toModifierNames(typeElement.getModifiers()))
                     .elementInfo(
                             toElementsOfInterestInThisClass(typeName, elementsOfInterest));
 
@@ -372,8 +431,8 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
             if (superType.isPresent()) {
                 TypeElement superTypeElement = elementUtils.getTypeElement(superType.get().name());
                 if (superTypeElement != null) {
-                    builder.superTypeInfo(
-                            toTypeInfo(superTypeElement, superType.get(), elementsOfInterest));
+                    Optional<TypeInfo> superTypeInfo = toTypeInfo(superTypeElement, superType.get(), elementsOfInterest);
+                    superTypeInfo.ifPresent(builder::superTypeInfo);
                 }
             }
 
@@ -382,13 +441,14 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
                 if (interfaceType.isPresent()) {
                     TypeElement interfaceTypeElement = elementUtils.getTypeElement(interfaceType.get().name());
                     if (interfaceTypeElement != null) {
-                        builder.addInterfaceTypeInfo(
-                                toTypeInfo(interfaceTypeElement, interfaceType.get(), elementsOfInterest));
+                        Optional<TypeInfo> superTypeInfo =
+                                toTypeInfo(interfaceTypeElement, interfaceType.get(), elementsOfInterest);
+                        superTypeInfo.ifPresent(builder::addInterfaceTypeInfo);
                     }
                 }
             });
 
-            return builder.build();
+            return Optional.of(builder.build());
         } catch (Exception e) {
             throw new IllegalStateException("Failed to process: " + typeElement, e);
         }

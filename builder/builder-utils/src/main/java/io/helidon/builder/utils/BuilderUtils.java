@@ -132,6 +132,9 @@ public final class BuilderUtils {
      */
     public static List<Diff> diff(Object leftSide,
                                   Object rightSide) {
+        Objects.requireNonNull(leftSide);
+        Objects.requireNonNull(rightSide);
+
         if (!leftSide.equals(rightSide)) {
             VisitAttributes<?> visitLeft = toVisitAttributes(leftSide, false);
             VisitAttributes<?> visitRight = toVisitAttributes(rightSide, false);
@@ -165,7 +168,7 @@ public final class BuilderUtils {
                 result.add(DefaultDiff.builder()
                                    .key(key)
                                    .leftSide(Optional.ofNullable(leftSide))
-                                   .rightSide(Optional.of(rightSide))
+                                   .rightSide(Optional.ofNullable(rightSide))
                                    .build());
             }
         }
