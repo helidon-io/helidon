@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# Shell variables: WS_DIR
+# Arguments: $1 - Script path
+#            $2 - cd to Helidon root directory from script path
+#
+# At least WS_DIR or both arguments must be passed.
+
+# WS_DIR variable verification.
+if [ -z "${WS_DIR}" ]; then
+
+    if [ -z "${1}" ]; then
+        echo "ERROR: Missing required script path, exitting"
+        exit 1
+    fi
+
+    if [ -z "${2}" ]; then
+        echo "ERROR: Missing required cd to Helidon root directory from script path, exitting"
+        exit 1
+    fi
+
+    readonly WS_DIR=$(cd $(dirname -- "${1}") ; cd ${2} ; pwd -P)
+
+fi
 
 require_env() {
     if [ -z "$(eval echo \$${1})" ] ; then
