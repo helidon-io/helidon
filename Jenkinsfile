@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,75 +25,6 @@ pipeline {
     NPM_CONFIG_REGISTRY = credentials('npm-registry')
   }
   stages {
-    stage('default') {
-      parallel {
-        stage('build'){
-          steps {
-            script {
-              try {
-                sh './etc/scripts/build.sh'
-              } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt, **/target/failsafe-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
-              }
-            }
-          }
-        }
-        stage('copyright'){
-          steps {
-            sh './etc/scripts/copyright.sh'
-          }
-        }
-        stage('checkstyle'){
-          steps {
-            sh './etc/scripts/checkstyle.sh'
-          }
-        }
-        stage('integration-tests') {
-          stages {
-            stage('test-vault') {
-              agent {
-                kubernetes {
-                  inheritFrom 'k8s-slave'
-                  yamlFile 'etc/pods/vault.yaml'
-                  yamlMergeStrategy merge()
-                }
-              }
-              steps {
-                sh './etc/scripts/test-integ-vault.sh'
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml'
-              }
-            }
-            stage('test-packaging-jar'){
-              agent {
-                label "linux"
-              }
-              steps {
-                sh 'etc/scripts/test-packaging-jar.sh'
-              }
-            }
-            stage('test-packaging-jlink'){
-              agent {
-                label "linux"
-              }
-              steps {
-                sh 'etc/scripts/test-packaging-jlink.sh'
-              }
-            }
-            stage('test-packaging-native'){
-              agent {
-                label "linux"
-              }
-              steps {
-                sh 'etc/scripts/test-packaging-native.sh'
-                archiveArtifacts artifacts: "tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1"
-              }
-            }
-          }
-        }
-      }
-    }
     stage('release') {
       when {
         branch '**/release-*'
