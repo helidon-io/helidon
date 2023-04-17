@@ -16,8 +16,11 @@
 
 package io.helidon.pico.processor;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -35,24 +38,28 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.common.types.DefaultTypeInfo;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
+import io.helidon.pico.api.Contract;
 import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
-import io.helidon.pico.tools.CodeGenFiler;
-import io.helidon.pico.tools.DefaultActivatorCreatorCodeGen;
+import io.helidon.pico.tools.DefaultActivatorCreator;
 import io.helidon.pico.tools.DefaultActivatorCreatorConfigOptions;
-import io.helidon.pico.tools.DefaultActivatorCreatorRequest;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ServicesToProcess;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeNames;
+import io.helidon.pico.tools.TypeTools;
+
+import jakarta.inject.Singleton;
 
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromMirror;
@@ -64,7 +71,6 @@ import static io.helidon.pico.tools.TypeTools.createTypedElementNameFromElement;
  * An annotation processor that will find everything needing to be processed related to Pico conde generation.
  */
 public class PicoAnnotationProcessor extends AbstractProcessor implements Messager {
-    private static final boolean FAIL_ON_ERROR = true;
     private static final Set<String> SUPPORTED_SERVICE_CLASS_TARGET_ANNOTATIONS = Set.of(
             TypeNames.JAKARTA_SINGLETON,
             TypeNames.JAVAX_SINGLETON,
@@ -257,104 +263,147 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
      * @param typesToCodeGenerate the types to code generate
      */
     protected void doFiler(Map<TypeName, TypeInfo> typesToCodeGenerate) {
-//        // don't do filer until very end of the round
-//        boolean isProcessingOver = roundEnv.processingOver();
-
-//        ActivatorCreator creator = ActivatorCreatorProvider.instance();
-//        CodeGenFiler filer = createCodeGenFiler();
-//        Map<TypeName, InterceptionPlan> interceptionPlanMap = services.interceptorPlans();
-//        if (!interceptionPlanMap.isEmpty()) {
-//            GeneralCreatorRequest req = DefaultGeneralCreatorRequest.builder()
-//                    .filer(filer);
-//            creator.codegenInterceptors(req, interceptionPlanMap);
-//            services.clearInterceptorPlans();
-//        }
+////        // don't do filer until very end of the round
+////        boolean isProcessingOver = roundEnv.processingOver();
 //
-//        if (!isProcessingOver) {
-////            return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
-//            return;
+////        ActivatorCreator creator = ActivatorCreatorProvider.instance();
+////        CodeGenFiler filer = createCodeGenFiler();
+////        Map<TypeName, InterceptionPlan> interceptionPlanMap = services.interceptorPlans();
+////        if (!interceptionPlanMap.isEmpty()) {
+////            GeneralCreatorRequest req = DefaultGeneralCreatorRequest.builder()
+////                    .filer(filer);
+////            creator.codegenInterceptors(req, interceptionPlanMap);
+////            services.clearInterceptorPlans();
+////        }
+////
+
+        ServicesToProcess services = toServicesToProcess(typesToCodeGenerate);
+        ActivatorCreatorCodeGen codeGen = DefaultActivatorCreator.createActivatorCreatorCodeGen(services).orElse(null);
+        if (codeGen == null) {
+            return;
+        }
+
+        boolean isProcessingOver = roundEnv.processingOver();
+        DefaultActivatorCreatorConfigOptions configOptions = DefaultActivatorCreatorConfigOptions.builder()
+                .applicationPreCreated(Options.isOptionEnabled(Options.TAG_APPLICATION_PRE_CREATE))
+                .moduleCreated(isProcessingOver)
+                .build();
+        ActivatorCreatorRequest req = DefaultActivatorCreator
+                .createActivatorCreatorRequest(services, codeGen, configOptions, creator.filer(), false);
+        ActivatorCreatorResponse res = creator.createModuleActivators(req);
+        if (!res.success()) {
+            ToolsException exc = new ToolsException("Error during codegen", res.error().orElse(null));
+            error(exc.getMessage(), exc);
+            // should not get here
+            throw exc;
+        }
+    }
+
+    ServicesToProcess toServicesToProcess(Map<TypeName, TypeInfo> typesToCodeGenerate) {
+        ServicesToProcess services = ServicesToProcess.create();
+
+        typesToCodeGenerate.forEach((serviceTypeName, service) -> {
+            if (service.superTypeInfo().isPresent()) {
+                services.addParentServiceType(serviceTypeName, service.superTypeInfo().get().typeName());
+            }
+
+            services.addAccessLevel(serviceTypeName,
+                                    toAccess(service.modifierNames()));
+
+            toScopeNames(service).forEach(it -> services.addScopeTypeName(serviceTypeName, it));
+
+            gatherContractsIntoServicesToProcess(services, service);
+
+        });
+
+        return services;
+    }
+
+    void gatherContractsIntoServicesToProcess(ServicesToProcess services,
+                         TypeInfo service) {
+        Set<TypeName> providerForSet = new LinkedHashSet<>();
+        Set<TypeName> contracts = toContracts(service, providerForSet);
+        Set<TypeName> externalContracts = toExternalContracts(type, externalModuleNamesRequired);
+        adjustContractsForExternals(contracts, externalContracts, externalModuleNamesRequired);
+
+        Set<String> externalModuleNamesRequired = new LinkedHashSet<>();
+    }
+
+    Set<TypeName> toContracts(TypeInfo typeInfo,
+                              Set<TypeName> providerForSet) {
+        Set<TypeName> result = new LinkedHashSet<>();
+
+        boolean autoAddInterfaces = Options.isOptionEnabled(Options.TAG_AUTO_ADD_NON_CONTRACT_INTERFACES);
+        typeInfo.superTypeInfo().ifPresent(it -> gatherContracts(result, providerForSet, it, autoAddInterfaces));
+        typeInfo.interfaceTypeInfo().forEach(it -> {
+            if (autoAddInterfaces
+                    || DefaultAnnotationAndValue.findFirst(Contract.class.getName(), it.annotations()).isPresent()) {
+                result.add(it.typeName());
+            }
+            gatherContracts(result, providerForSet, it, autoAddInterfaces);
+        });
+
+//            // if we made it here then this provider qualifies, and we take what it provides into the result
+//            TypeName teContractName = createTypeNameFromElement(teContract).orElseThrow();
+//            result.add(teContractName);
+//            if (isProviderType(teContractName.name())) {
+//                result.add(DefaultTypeName.createFromTypeName(TypeNames.JAKARTA_PROVIDER));
+//            }
+//            providerForSet.add(gTypeName);
 //        }
 
-        Optional<ActivatorCreatorCodeGen> codeGen = toActivatorCreatorCodeGen(typesToCodeGenerate);
-        if (codeGen.isPresent()) {
-            DefaultActivatorCreatorConfigOptions configOptions = DefaultActivatorCreatorConfigOptions.builder()
-                    .applicationPreCreated(Options.isOptionEnabled(Options.TAG_APPLICATION_PRE_CREATE))
-                    .moduleCreated(/*isProcessingOver*/ true)
-                    .build();
-            ActivatorCreatorRequest req =
-                    toActivatorCreatorRequest(typesToCodeGenerate, codeGen.get(), configOptions, creator.filer());
-            ActivatorCreatorResponse res = creator.createModuleActivators(req);
-            if (!res.success()) {
-                ToolsException exc = new ToolsException("Error during codegen", res.error().orElse(null));
-                if (FAIL_ON_ERROR) {
-                    error(exc.getMessage(), exc);
-                    // should not get here
-                    throw exc;
-                } else {
-                    warn(exc.getMessage(), exc);
-                }
-            }
-        }
-    }
-
-    ActivatorCreatorRequest toActivatorCreatorRequest(Map<TypeName, TypeInfo> typesToCodeGenerate,
-                                                                ActivatorCreatorCodeGen codeGen,
-                                                                DefaultActivatorCreatorConfigOptions configOptions,
-                                                                CodeGenFiler filer) {
-        return DefaultActivatorCreatorRequest.builder()
-                .codeGen(codeGen)
-                .configOptions(configOptions)
-                .filer(filer)
-                .serviceTypeNames(toServiceTypeNames(typesToCodeGenerate))
-                .build();
-    }
-
-    Optional<ActivatorCreatorCodeGen> toActivatorCreatorCodeGen(Map<TypeName, TypeInfo> typesToCodeGenerate) {
-        if (typesToCodeGenerate.isEmpty()) {
-            return Optional.empty();
-        }
-
-        DefaultActivatorCreatorCodeGen.Builder builder = DefaultActivatorCreatorCodeGen.builder();
-        builder.serviceTypeToParentServiceTypes(serviceTypeToParentServiceTypes(typesToCodeGenerate));
-        builder.serviceTypeAccessLevels(serviceTypeAccessLevels(typesToCodeGenerate));
-        builder.serviceTypeScopeNames(serviceTypeScopeNames(typesToCodeGenerate));
-
-
-        return Optional.of(builder.build());
-    }
-
-    Collection<TypeName> toServiceTypeNames(Map<TypeName, TypeInfo> typesToCodeGenerate) {
-        return typesToCodeGenerate.keySet();
-    }
-
-    Map<TypeName, TypeName> serviceTypeToParentServiceTypes(Map<TypeName, TypeInfo> typesToCodeGenerate) {
-        Map<TypeName, TypeName> result = new LinkedHashMap<>();
-        typesToCodeGenerate.forEach((k, v) -> {
-            if (v.superTypeInfo().isPresent()) {
-                result.put(k, v.superTypeInfo().get().typeName());
-            }
-        });
         return result;
     }
 
-    Map<TypeName, ElementInfo.Access> serviceTypeAccessLevels(Map<TypeName, TypeInfo> typesToCodeGenerate) {
-        Map<TypeName, ElementInfo.Access> result = new LinkedHashMap<>();
-        typesToCodeGenerate.forEach((k, v) -> {
-            result.put(k, toAccess(v.modifierNames()));
-        });
-        return result;
+    void gatherContracts(Set<TypeName> result,
+                         Set<TypeName> providerForSet,
+                         TypeInfo typeInfo,
+                         boolean autoAddInterfaces) {
+        if (autoAddInterfaces && typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
+            result.add(typeInfo.typeName());
+            return;
+        }
+
+
     }
 
-    Map<TypeName, Set<String>> serviceTypeScopeNames(Map<TypeName, TypeInfo> typesToCodeGenerate) {
-        Map<TypeName, Set<String>> result = new LinkedHashMap<>();
-        typesToCodeGenerate.forEach((k, v) -> {
-            result.put(k, toScopeNames(v));
-        });
+    Map<TypeName, List<AnnotationAndValue>> toReferencedTypeNamesToAnnotations(Collection<AnnotationAndValue> annotations) {
+        if (annotations.isEmpty()) {
+            return Map.of();
+        }
+
+        Elements elements = processingEnv.getElementUtils();
+        Map<TypeName, List<AnnotationAndValue>> result = new LinkedHashMap<>();
+        annotations.stream()
+                .filter(it -> !result.containsKey(it.typeName()))
+                .forEach(it -> {
+                    TypeElement typeElement = elements.getTypeElement(it.typeName().name());
+                    if (typeElement != null) {
+                        result.put(it.typeName(), new ArrayList<>(TypeTools.createAnnotationAndValueSet(typeElement)));
+                    }
+                });
         return result;
     }
 
     Set<String> toScopeNames(TypeInfo typeInfo) {
-
+        Set<String> scopeAnnotations = new LinkedHashSet<>();
+        typeInfo.referencedTypeNamesToAnnotations()
+                .forEach((typeName, listOfAnnotations) -> {
+                    if (listOfAnnotations.stream()
+                            .map(it -> it.typeName().name())
+                            .anyMatch(it -> it.equals(TypeNames.JAKARTA_SCOPE))) {
+                        scopeAnnotations.add(typeName.name());
+                    }
+                });
+        if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
+            boolean hasApplicationScope = scopeAnnotations.stream()
+                    .anyMatch(it -> it.equals(TypeNames.JAKARTA_APPLICATION_SCOPED)
+                            || it.equals(TypeNames.JAVAX_APPLICATION_SCOPED));
+            if (hasApplicationScope) {
+                scopeAnnotations.add(Singleton.class.getName());
+            }
+        }
+        return scopeAnnotations;
     }
 
     // TODO: put this into tools instead of here
@@ -420,9 +469,11 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
         try {
             assert (processingEnv != null);
             Elements elementUtils = processingEnv.getElementUtils();
+            Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(elementUtils.getTypeElement(typeName.name()));
             DefaultTypeInfo.Builder builder = DefaultTypeInfo.builder()
                     .typeName(typeName)
-                    .annotations(createAnnotationAndValueSet(elementUtils.getTypeElement(typeName.name())))
+                    .annotations(annotations)
+                    .referencedTypeNamesToAnnotations(toReferencedTypeNamesToAnnotations(annotations))
                     .modifierNames(toModifierNames(typeElement.getModifiers()))
                     .elementInfo(
                             toElementsOfInterestInThisClass(typeName, elementsOfInterest));
@@ -466,9 +517,9 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
         // TODO:
     }
 
-    System.Logger logger() {
-        return logger;
-    }
+//    System.Logger logger() {
+//        return logger;
+//    }
 
     System.Logger.Level loggerLevel() {
         return (Options.isOptionEnabled(Options.TAG_DEBUG)) ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;

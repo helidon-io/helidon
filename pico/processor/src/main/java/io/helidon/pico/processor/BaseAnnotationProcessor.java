@@ -92,6 +92,7 @@ import static io.helidon.pico.processor.ProcessorUtils.rootStackTraceElementOf;
 import static io.helidon.pico.processor.ProcessorUtils.toList;
 import static io.helidon.pico.processor.ProcessorUtils.toPath;
 import static io.helidon.pico.tools.ModuleUtils.toSourcePath;
+import static io.helidon.pico.tools.TypeTools.*;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromElement;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
 import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
@@ -99,7 +100,6 @@ import static io.helidon.pico.tools.TypeTools.createTypeNameFromMirror;
 import static io.helidon.pico.tools.TypeTools.isAbstract;
 import static io.helidon.pico.tools.TypeTools.isProviderType;
 import static io.helidon.pico.tools.TypeTools.needToDeclareModuleUsage;
-import static io.helidon.pico.tools.TypeTools.oppositeOf;
 import static io.helidon.pico.tools.TypeTools.toAccess;
 import static javax.tools.Diagnostic.Kind;
 
@@ -453,16 +453,9 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             services.addDeclaredRunLevel(serviceTypeName, Integer.parseInt(val));
         }
 
-        List<String> scopeAnnotations = annotationsWithAnnotationOf(type, TypeNames.JAKARTA_SCOPE);
-        if (scopeAnnotations.isEmpty()) {
-            scopeAnnotations = annotationsWithAnnotationOf(type, TypeNames.JAKARTA_CDI_NORMAL_SCOPE);
-        }
-        scopeAnnotations.forEach(scope -> services.addScopeTypeName(serviceTypeName, scope));
-        if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)
-                && (scopeAnnotations.contains(TypeNames.JAVAX_APPLICATION_SCOPED)
-                    || scopeAnnotations.contains(TypeNames.JAKARTA_APPLICATION_SCOPED))) {
-            services.addScopeTypeName(serviceTypeName, TypeNames.JAKARTA_SINGLETON);
-        }
+        List<AnnotationAndValue> scopeAnnotations = toScopeAnnotations(type);
+        List<String> scopeAnnotationNames = scopeAnnotations.stream().map(it -> it.typeName().name()).toList();
+        scopeAnnotationNames.forEach(scope -> services.addScopeTypeName(serviceTypeName, scope));
 
         Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(type);
         if (!qualifiers.isEmpty()) {
@@ -582,16 +575,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         return false;
     }
 
-    List<String> annotationsWithAnnotationOf(TypeElement type,
-                                             String annotation) {
-        List<String> list = annotationsWithAnnotationsOfNoOpposite(type, annotation);
-        if (list.isEmpty()) {
-            return annotationsWithAnnotationsOfNoOpposite(type, oppositeOf(annotation));
-        }
-
-        return list;
-    }
-
     boolean doFiler(RoundEnvironment roundEnv) {
         // don't do filer until very end of the round
         boolean isProcessingOver = roundEnv.processingOver();
@@ -628,7 +611,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             services.lastGeneratedPackageName(req.packageName().orElseThrow());
             ActivatorCreatorResponse res = creator.createModuleActivators(req);
             if (!res.success()) {
-                throw new ToolsException("error during codegen", res.error().orElse(null));
+                throw new ToolsException("Error during codegen", res.error().orElse(null));
             }
             deferredMoves.putAll(creator.filer().deferredMoves());
         } catch (Exception te) {
@@ -820,17 +803,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 .filter(it -> contraAnnotations.contains(it.typeName().name()))
                 .findFirst();
         return annotation.isPresent();
-    }
-
-    private List<String> annotationsWithAnnotationsOfNoOpposite(TypeElement type,
-                                                                String annotation) {
-        List<String> list = new ArrayList<>();
-        type.getAnnotationMirrors()
-                .forEach(am -> findAnnotationMirror(annotation,
-                                                    am.getAnnotationType().asElement()
-                                                            .getAnnotationMirrors())
-                        .ifPresent(it -> list.add(am.getAnnotationType().asElement().toString())));
-        return list;
     }
 
     private void handleDeferredMoves() {

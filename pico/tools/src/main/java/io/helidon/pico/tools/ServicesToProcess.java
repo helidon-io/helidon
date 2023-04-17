@@ -110,7 +110,7 @@ public class ServicesToProcess implements Resettable {
      * @return the new instance
      * @see #servicesInstance()
      */
-    public ServicesToProcess create() {
+    public static ServicesToProcess create() {
         return new ServicesToProcess();
     }
 

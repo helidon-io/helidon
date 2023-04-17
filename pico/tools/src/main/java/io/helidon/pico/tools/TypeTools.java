@@ -82,6 +82,7 @@ import io.github.classgraph.MethodParameterInfo;
 import io.github.classgraph.TypeArgument;
 import io.github.classgraph.TypeSignature;
 import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 
 import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
@@ -405,6 +406,41 @@ public final class TypeTools extends BuilderTypeTools {
     }
 
     /**
+     * Returns the annotations on the type having the meta annotation provided.
+     *
+     * @param type         the type to inspect
+     * @param metaAnnoType the meta annotation type name
+     * @return the annotations on the type having the meta annotation
+     */
+    public static List<AnnotationAndValue> annotationsWithAnnotationOf(TypeElement type,
+                                                                       String metaAnnoType) {
+        Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(type);
+        if (annotations.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> list = annotationsWithAnnotationsOfNoOpposite(type, metaAnnoType);
+        if (list.isEmpty()) {
+            list.addAll(annotationsWithAnnotationsOfNoOpposite(type, oppositeOf(metaAnnoType)));
+        }
+
+        return annotations.stream()
+                .filter(it -> list.contains(it.typeName().name()))
+                .collect(Collectors.toList());
+    }
+
+    private static List<String> annotationsWithAnnotationsOfNoOpposite(TypeElement type,
+                                                                       String annotation) {
+        List<String> list = new ArrayList<>();
+        type.getAnnotationMirrors()
+                .forEach(am -> findAnnotationMirror(annotation,
+                                                    am.getAnnotationType().asElement()
+                                                            .getAnnotationMirrors())
+                        .ifPresent(it -> list.add(am.getAnnotationType().asElement().toString())));
+        return list;
+    }
+
+    /**
      * Creates a set of annotations based upon class info introspection.
      *
      * @param classInfo the class info
@@ -537,6 +573,31 @@ public final class TypeTools extends BuilderTypeTools {
             }
         }
         return result;
+    }
+
+    /**
+     * Extracts all of the scope type names from the provided type.
+     *
+     * @param type the type to analyze
+     * @return the list of all scope type annotation and values
+     */
+    public static List<AnnotationAndValue> toScopeAnnotations(TypeElement type) {
+        List<AnnotationAndValue> scopeAnnotations = annotationsWithAnnotationOf(type, TypeNames.JAKARTA_SCOPE);
+        if (scopeAnnotations.isEmpty()) {
+            scopeAnnotations = annotationsWithAnnotationOf(type, TypeNames.JAKARTA_CDI_NORMAL_SCOPE);
+        }
+
+        if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
+            boolean hasApplicationScope = scopeAnnotations.stream()
+                    .map(it -> it.typeName().name())
+                    .anyMatch(it -> it.equals(TypeNames.JAKARTA_APPLICATION_SCOPED)
+                            || it.equals(TypeNames.JAVAX_APPLICATION_SCOPED));
+            if (hasApplicationScope) {
+                scopeAnnotations.add(DefaultAnnotationAndValue.create(Singleton.class));
+            }
+        }
+
+        return scopeAnnotations;
     }
 
     /**

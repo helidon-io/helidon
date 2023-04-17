@@ -108,7 +108,6 @@ class ActivatorCreatorHandler implements ActivatorCreator {
 
 
     static class DebugReporting implements Runnable {
-
         @Override
         public void run() {
             reportOnActivators();
