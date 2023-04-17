@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,14 @@
 package io.helidon.tracing.tests.it1;
 
 import java.net.URI;
-import java.util.List;
-import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
@@ -32,20 +37,21 @@ import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.core.Configuration;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.hamcrest.collection.IsEmptyCollection;
-import org.hamcrest.collection.IsMapContaining;
-import org.hamcrest.core.Is;
-import org.hamcrest.core.IsCollectionContaining;
-import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsCollectionContaining.hasItem;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The ZipkinClientTest.
  */
-public class OpentraceableClientFilterTest {
+class OpentraceableClientFilterTest {
 
     private final Tracer tracer = TracerBuilder.create("test-service").registerGlobal(false).build();
     private final ClientTracingFilter filter = new ClientTracingFilter();
@@ -53,14 +59,14 @@ public class OpentraceableClientFilterTest {
     private final Configuration configurationMock = Mockito.mock(Configuration.class);
     private final ClientRequestContext requestContextMock;
 
-    public OpentraceableClientFilterTest() {
+    OpentraceableClientFilterTest() {
         this.requestContextMock = Mockito.mock(ClientRequestContext.class);
         Mockito.when(this.requestContextMock.getUri()).thenReturn(URI.create("http://localhost/foo/bar"));
         Mockito.when(this.requestContextMock.getMethod()).thenReturn("GET");
     }
 
     @BeforeEach
-    public void connectMocks() throws Exception {
+    void connectMocks() {
         Mockito.doReturn(configurationMock)
                 .when(requestContextMock)
                 .getConfiguration();
@@ -71,55 +77,89 @@ public class OpentraceableClientFilterTest {
     }
 
     @Test
-    public void testNewSpanCreated() throws Exception {
-        Mockito.doReturn(tracer)
-                .when(requestContextMock)
-                .getProperty(Mockito.anyString());
+    void testNewSpanCreated() {
+        // this test leaves the span scope activated on current thread, so we run it in a different thread
+        runInThreadAndContext(() -> {
+            Mockito.doReturn(tracer)
+                    .when(requestContextMock)
+                    .getProperty(Mockito.anyString());
 
-        filter.filter(requestContextMock);
+            filter.filter(requestContextMock);
 
-        assertThat(map,
-                   IsMapContaining.hasEntry(Is.is("X-B3-TraceId"),
-                                            IsCollectionContaining.hasItem(IsInstanceOf.instanceOf(String.class))));
-        String traceId = (String) map.getFirst("X-B3-TraceId");
-        assertThat(map, IsMapContaining.hasEntry(Is.is("X-B3-SpanId"), IsCollectionContaining.hasItem(Is.is(traceId))));
+            assertThat(map,
+                    hasEntry(is("X-B3-TraceId"),
+                            hasItem(instanceOf(String.class))));
+            String traceId = (String) map.getFirst("X-B3-TraceId");
+            assertThat(map, hasEntry(is("X-B3-SpanId"), hasItem(is(traceId))));
+            return null;
+        });
+
     }
 
     @Test
-    public void testChildSpanGetsCreated() throws Exception {
-        Mockito.doReturn(tracer)
-                .when(configurationMock)
-                .getProperty(ClientTracingFilter.TRACER_PROPERTY_NAME);
+    void testChildSpanGetsCreated() {
+        // this test leaves the span scope activated on current thread, so we run it in a different thread
+        runInThreadAndContext(() -> {
+            Mockito.doReturn(tracer)
+                    .when(configurationMock)
+                    .getProperty(ClientTracingFilter.TRACER_PROPERTY_NAME);
 
-        Span span = tracer.spanBuilder("my-parent").start();
+            Span span = tracer.spanBuilder("my-parent").start();
 
-        Mockito.doReturn(span.context())
-                .when(requestContextMock)
-                .getProperty(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME);
+            Mockito.doReturn(span.context())
+                    .when(requestContextMock)
+                    .getProperty(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME);
 
-        filter.filter(requestContextMock);
+            filter.filter(requestContextMock);
 
-        TraceContext traceContext = ((BraveSpanContext) span.unwrap(io.opentracing.Span.class).context()).unwrap();
-        assertThat(map,
-                   IsMapContaining
-                           .hasEntry(Is.is("X-B3-TraceId"), IsCollectionContaining.hasItem(Is.is(traceContext.traceIdString()))));
-        assertThat(map,
-                   IsMapContaining.hasEntry(Is.is("X-B3-SpanId"),
-                                            IsCollectionContaining.hasItem(IsInstanceOf.instanceOf(String.class))));
-        assertThat(map,
-                   IsMapContaining.hasEntry(Is.is("X-B3-ParentSpanId"),
-                                            IsCollectionContaining.hasItem(Is.is(HexCodec.toLowerHex(traceContext.spanId())))));
+            TraceContext traceContext = ((BraveSpanContext) span.unwrap(io.opentracing.Span.class).context()).unwrap();
+            assertThat(map,
+                    hasEntry(is("X-B3-TraceId"), hasItem(is(traceContext.traceIdString()))));
+            assertThat(map,
+                    hasEntry(is("X-B3-SpanId"),
+                            hasItem(instanceOf(String.class))));
+            assertThat(map,
+                    hasEntry(is("X-B3-ParentSpanId"),
+                            hasItem(is(HexCodec.toLowerHex(traceContext.spanId())))));
 
-        for (Map.Entry<Object, List<Object>> entry : map.entrySet()) {
-            System.out.println(entry.getKey() + " = " + entry.getValue());
+            return null;
+        });
+    }
+
+    @Test
+    void testMissingTracer() {
+        // this test leaves the span scope activated on current thread, so we run it in a different thread
+
+        runInThreadAndContext(() -> {
+            filter.filter(requestContextMock);
+
+            assertThat(map.entrySet(), IsEmptyCollection.empty());
+            return null;
+        });
+    }
+
+    private void runInThreadAndContext(Callable<Void> c) {
+        CompletableFuture<Void> cf = new CompletableFuture<>();
+
+        Thread thread = new Thread(() -> {
+            Contexts.runInContext(Context.create(), () -> {
+                try {
+                    c.call();
+                    cf.complete(null);
+                } catch (Throwable e) {
+                    cf.completeExceptionally(e);
+                }
+            });
+        });
+        thread.setDaemon(true);
+        thread.start();
+
+        try {
+            cf.get(10, TimeUnit.SECONDS);
+        } catch (InterruptedException | TimeoutException e) {
+            fail(e);
+        } catch (ExecutionException e) {
+            fail(e.getCause());
         }
-    }
-
-    @Test
-    public void testMissingTracer() throws Exception {
-
-        filter.filter(requestContextMock);
-
-        assertThat(map.entrySet(), IsEmptyCollection.empty());
     }
 }
