@@ -118,7 +118,11 @@ public class Invocation<V> implements Interceptor.Chain<V> {
 
     @Override
     public V proceed(Object... args) {
-        if (!interceptorIterator.hasNext()) {
+        if (interceptorIterator.hasNext()) {
+            return interceptorIterator.next()
+                    .get()
+                    .proceed(ctx, this, args);
+        } else {
             if (this.call != null) {
                 Function<Object[], V> call = this.call;
                 this.call = null;
@@ -126,10 +130,6 @@ public class Invocation<V> implements Interceptor.Chain<V> {
             } else {
                 throw new IllegalStateException("Duplicate invocation, or unknown call type: " + this);
             }
-        } else {
-            return interceptorIterator.next()
-                    .get()
-                    .proceed(ctx, this, args);
         }
     }
 

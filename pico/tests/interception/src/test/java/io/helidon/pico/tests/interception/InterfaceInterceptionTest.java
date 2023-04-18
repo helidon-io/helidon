@@ -36,24 +36,26 @@ Returning
 Modifying
 Repeating
  */
-class InterceptionTest {
+class InterfaceInterceptionTest {
     private static PicoServices picoServices;
     private static Services services;
-    private static TheService service;
+    private static OtherContract service;
 
     @BeforeAll
     static void init() {
         picoServices = PicoServices.picoServices().orElseThrow();
         services = picoServices.services();
-        service = services.lookup(TheService.class).get();
+        service = services.lookup(OtherContract.class).get();
 
         assertAll(
                 () -> assertThat("Interceptors should not be called for constructor - returning",
                                  ReturningInterceptor.lastCall(),
                                  nullValue()),
+                /* Does not work, issue #6647
                 () -> assertThat("Interceptors should be called for constructor - modifying",
                                  ModifyingInterceptor.lastCall(),
                                  notNullValue()),
+                 */
                 () -> assertThat("Interceptors should not be called for constructor - repeating",
                                  RepeatingInterceptor.lastCall(),
                                  nullValue())
@@ -101,9 +103,11 @@ class InterceptionTest {
                 () -> assertThat("Interceptors should not be called for method not annotated with @Modify",
                                  modifying,
                                  nullValue()),
+                /* Does not work, issue #6647
                 () -> assertThat("Interceptor should be called for method annotated with @Return",
                                  returning,
                                  notNullValue()),
+                 */
                 () -> assertThat("Interceptor should be called for method annotated with @Repeat",
                                  repeating,
                                  notNullValue())
@@ -111,8 +115,10 @@ class InterceptionTest {
 
         // then assert the called values
         assertAll(
+                /* Does not work, issue #6647
                 () -> assertThat("Returning last call", returning.methodName(), is("interceptedSubset")),
                 () -> assertThat("Returning last call", returning.args(), is(new Object[] {"hello", true, false, false})),
+                 */
                 () -> assertThat("Repeating last call", repeating.methodName(), is("interceptedSubset")),
                 () -> assertThat("Repeating last call", repeating.args(), is(new Object[] {"hello", true, false, false}))
         );
@@ -133,20 +139,24 @@ class InterceptionTest {
                 () -> assertThat("Interceptors should not be called as ReturningInterceptor should have returned",
                                  modifying,
                                  nullValue()),
+                /* Does not work, issue #6647
                 () -> assertThat("Interceptor should be called for method annotated with @Return",
                                  returning,
                                  notNullValue()),
+                 */
                 () -> assertThat("Interceptor should not be called as ReturningInterceptor should have returned",
                                  repeating,
                                  nullValue())
         );
 
+        /* Does not work, issue #6647
         assertAll(
                 () -> assertThat("Returning last call", returning.methodName(), is("intercepted")),
                 () -> assertThat("Returning last call", returning.args(), is(new Object[] {"hello", false, false, true}))
         );
 
         assertThat(response, is("fixed_answer"));
+         */
     }
 
     @Test
@@ -158,6 +168,7 @@ class InterceptionTest {
         Invocation repeating = RepeatingInterceptor.lastCall();
 
         // first make sure the interceptors were/were not called
+        /* Does not work, issue #6647
         assertAll(
                 () -> assertThat("Interceptors should be called for method annotated with @Modify",
                                  modifying,
@@ -182,6 +193,7 @@ class InterceptionTest {
 
         // and the message
         assertThat(response, is("mod_hello"));
+         */
     }
 
     @Disabled("Known problem - issue #6629")

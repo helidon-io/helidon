@@ -19,30 +19,25 @@ package io.helidon.pico.tests.interception;
 import jakarta.inject.Singleton;
 
 @Singleton
-class TheService {
+class TheOtherService implements OtherContract{
     @Modify
-    TheService() {
+    TheOtherService() {
     }
 
-    // args:
-    // 0: String message
-    // 1: Boolean modify
-    // 2: Boolean repeat
-    // 3: Boolean return
-    @Modify
-    @Repeat
-    @Return
-    String intercepted(String message, boolean modify, boolean repeat, boolean doReturn) {
+    @Override
+    public String intercepted(String message, boolean modify, boolean repeat, boolean doReturn) {
         return message;
     }
 
+    // one interceptor on interface, one on implementation
     @Repeat
-    @Return
-    String interceptedSubset(String message, boolean modify, boolean repeat, boolean doReturn) {
+    @Override
+    public String interceptedSubset(String message, boolean modify, boolean repeat, boolean doReturn) {
         return message;
     }
 
-    String notIntercepted(String message, boolean modify, boolean repeat, boolean doReturn) {
+    @Override
+    public String notIntercepted(String message, boolean modify, boolean repeat, boolean doReturn) {
         return message;
     }
 }

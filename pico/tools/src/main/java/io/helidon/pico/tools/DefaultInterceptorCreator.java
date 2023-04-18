@@ -462,6 +462,11 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             return Optional.of(plan);
         }
 
+        @Override
+        public String toString() {
+            return serviceTypeName();
+        }
+
         /**
          * @return the cumulative annotations referenced by this type
          */
@@ -922,6 +927,10 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                 .toList(plan.interceptedElements(), DefaultInterceptorCreator::toBody).stream()
                 .filter(it -> !it.getId().equals(CTOR_ALIAS))
                 .collect(Collectors.toList()));
+        subst.put("ctorinterceptedelements", IdAndToString
+                .toList(plan.interceptedElements(), DefaultInterceptorCreator::toBody).stream()
+                .filter(it -> it.getId().equalsIgnoreCase(CTOR_ALIAS))
+                .toList());
         subst.put("annotationtriggertypenames", IdAndToString
                 .toList(plan.annotationTriggerTypeNames(),
                         str -> new IdAndToString(str.replace(".", "_"), str)));
