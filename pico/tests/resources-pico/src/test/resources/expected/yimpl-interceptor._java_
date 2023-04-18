@@ -112,7 +112,7 @@ public class YImpl$$Pico$$Interceptor /* extends io.helidon.pico.tests.pico.inte
                 Provider<io.helidon.pico.tests.pico.interceptor.YImpl> provider) {
         this.__provider = Objects.requireNonNull(provider);
         this.__sp = (provider instanceof ServiceProvider) ? (ServiceProvider<io.helidon.pico.tests.pico.interceptor.YImpl>) __provider : null;
-        List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse(io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno);
+        List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse();
         this.__methodIB__interceptors = mergeAndCollapse(io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno);
         this.__methodIB2__interceptors = mergeAndCollapse(io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno);
         this.__close__interceptors = mergeAndCollapse(io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno);
