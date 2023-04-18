@@ -19,7 +19,7 @@ package {{packageName}};
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
@@ -76,7 +76,7 @@ public class {{className}} extends {{parent}} {
         List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse({{#annotationtriggertypenames}}{{id}}{{#unless @last}}, {{/unless}}{{/annotationtriggertypenames}});{{#interceptedelements}}
         this.__{{{id}}}__interceptors = mergeAndCollapse({{interceptedTriggerTypeNames}});{{/interceptedelements}}
 
-        Supplier<{{parent}}> call = __provider::get;
+        Function<Object[], {{parent}}> call = args -> __provider.get();
         {{parent}} result = createInvokeAndSupply(
                 DefaultInvocationContext.builder()
                     .serviceProvider(__sp)
@@ -85,7 +85,8 @@ public class {{className}} extends {{parent}} {
                     .elementInfo(__ctor)
                     .interceptors(__ctor__interceptors)
                     .build(),
-                call, null);
+                call,
+                new Object[0]);
         this.__impl = Objects.requireNonNull(result);{{#interceptedelements}}
 
         this.__{{id}}__call = new InterceptedMethod<{{parent}}, {{elementTypeName}}>(
@@ -101,7 +102,7 @@ public class {{className}} extends {{parent}} {
     @Override
     {{{methodDecl}}} {
         Object[] args = new Object[] { {{args}} };
-        {{#if hasReturn}}return {{/if}}createInvokeAndSupply(__{{id}}__call.ctx(), () -> __{{id}}__call.apply(args), args);
+        {{#if hasReturn}}return {{/if}}createInvokeAndSupply(__{{id}}__call.ctx(), __interceptedArgs -> __{{id}}__call.apply(__interceptedArgs), args);
     }
 {{/interceptedelements}}
 }
