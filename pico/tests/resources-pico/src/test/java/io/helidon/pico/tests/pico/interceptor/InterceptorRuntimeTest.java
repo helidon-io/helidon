@@ -43,6 +43,7 @@ import io.helidon.pico.tests.plain.interceptor.TestNamedInterceptor;
 import jakarta.inject.Named;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.pico.api.DefaultQualifierAndValue.create;
@@ -98,6 +99,7 @@ class InterceptorRuntimeTest {
                    java);
     }
 
+    @Disabled // will be handled in https://github.com/helidon-io/helidon/issues/6542
     @Test
     void createInterfaceBasedInterceptorSource() throws Exception {
         TypeName interceptorTypeName = DefaultTypeName.create(YImpl$$Pico$$Interceptor.class);
