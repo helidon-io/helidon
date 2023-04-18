@@ -69,7 +69,6 @@
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-processor</artifactId>
             <optional>true</optional>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
