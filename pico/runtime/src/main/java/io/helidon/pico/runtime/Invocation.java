@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
@@ -38,10 +38,10 @@ import jakarta.inject.Provider;
 public class Invocation<V> implements Interceptor.Chain<V> {
     private final InvocationContext ctx;
     private final ListIterator<Provider<Interceptor>> interceptorIterator;
-    private Supplier<V> call;
+    private Function<Object[], V> call;
 
     private Invocation(InvocationContext ctx,
-                       Supplier<V> call) {
+                       Function<Object[], V> call) {
         this.ctx = ctx;
         this.call = Objects.requireNonNull(call);
         this.interceptorIterator = ctx.interceptors().listIterator();
@@ -63,10 +63,10 @@ public class Invocation<V> implements Interceptor.Chain<V> {
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <V> V createInvokeAndSupply(InvocationContext ctx,
-                                              Supplier<V> call,
+                                              Function<Object[], V> call,
                                               Object[] args) {
         if (ctx.interceptors().isEmpty()) {
-            return call.get();
+            return call.apply(args);
         } else {
             return (V) new Invocation(ctx, call).proceed(args);
         }
@@ -120,11 +120,11 @@ public class Invocation<V> implements Interceptor.Chain<V> {
     public V proceed(Object... args) {
         if (!interceptorIterator.hasNext()) {
             if (this.call != null) {
-                Supplier<V> call = this.call;
+                Function<Object[], V> call = this.call;
                 this.call = null;
-                return call.get();
+                return call.apply(args);
             } else {
-                throw new IllegalStateException("Unknown call type: " + this);
+                throw new IllegalStateException("Duplicate invocation, or unknown call type: " + this);
             }
         } else {
             return interceptorIterator.next()

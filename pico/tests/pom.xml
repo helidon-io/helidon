@@ -47,6 +47,7 @@
         <module>resources-plain</module>
         <module>resources-pico</module>
         <module>tck-jsr330</module>
+        <module>interception</module>
     </modules>
 
 </project>

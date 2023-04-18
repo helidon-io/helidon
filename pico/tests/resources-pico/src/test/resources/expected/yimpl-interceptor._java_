@@ -5,7 +5,7 @@ package io.helidon.pico.tests.pico.interceptor;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
@@ -117,7 +117,7 @@ public class YImpl$$Pico$$Interceptor /* extends io.helidon.pico.tests.pico.inte
         this.__methodIB2__interceptors = mergeAndCollapse(io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno);
         this.__close__interceptors = mergeAndCollapse(io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno);
 
-        Supplier<io.helidon.pico.tests.pico.interceptor.YImpl> call = __provider::get;
+        Function<Object[], io.helidon.pico.tests.pico.interceptor.YImpl> call = args -> __provider.get();
         io.helidon.pico.tests.pico.interceptor.YImpl result = createInvokeAndSupply(
                 DefaultInvocationContext.builder()
                     .serviceProvider(__sp)
@@ -126,7 +126,8 @@ public class YImpl$$Pico$$Interceptor /* extends io.helidon.pico.tests.pico.inte
                     .elementInfo(__ctor)
                     .interceptors(__ctor__interceptors)
                     .build(),
-                call);
+                call,
+                new Object[0]);
         this.__impl = Objects.requireNonNull(result);
 
         this.__methodIB__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.YImpl, java.lang.Void>(
@@ -160,17 +161,20 @@ public class YImpl$$Pico$$Interceptor /* extends io.helidon.pico.tests.pico.inte
 
     @Override
     public void methodIB(java.lang.String p1) {
-        createInvokeAndSupply(__methodIB__call.ctx(), () -> __methodIB__call.apply(p1));
+        Object[] args = new Object[] { p1 };
+        createInvokeAndSupply(__methodIB__call.ctx(), __interceptedArgs -> __methodIB__call.apply(__interceptedArgs), args);
     }
 
     @Override
     public java.lang.String methodIB2(java.lang.String p1) {
-        return createInvokeAndSupply(__methodIB2__call.ctx(), () -> __methodIB2__call.apply(p1));
+        Object[] args = new Object[] { p1 };
+        return createInvokeAndSupply(__methodIB2__call.ctx(), __interceptedArgs -> __methodIB2__call.apply(__interceptedArgs), args);
     }
 
     @Override
     public void close() throws java.io.IOException, java.lang.RuntimeException {
-        createInvokeAndSupply(__close__call.ctx(), () -> __close__call.apply());
+        Object[] args = new Object[] {  };
+        createInvokeAndSupply(__close__call.ctx(), __interceptedArgs -> __close__call.apply(__interceptedArgs), args);
     }
 
 }

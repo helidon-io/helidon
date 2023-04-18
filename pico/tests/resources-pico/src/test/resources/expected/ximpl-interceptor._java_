@@ -5,7 +5,7 @@ package io.helidon.pico.tests.pico.interceptor;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
@@ -210,7 +210,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
         this.__methodZ__interceptors = mergeAndCollapse(io_helidon_pico_tests_pico_interceptor_TestNamed);
         this.__throwRuntimeException__interceptors = mergeAndCollapse(io_helidon_pico_tests_pico_interceptor_TestNamed);
 
-        Supplier<io.helidon.pico.tests.pico.interceptor.XImpl> call = __provider::get;
+        Function<Object[], io.helidon.pico.tests.pico.interceptor.XImpl> call = args -> __provider.get();
         io.helidon.pico.tests.pico.interceptor.XImpl result = createInvokeAndSupply(
                 DefaultInvocationContext.builder()
                     .serviceProvider(__sp)
@@ -219,7 +219,8 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
                     .elementInfo(__ctor)
                     .interceptors(__ctor__interceptors)
                     .build(),
-                call, null);
+                call,
+                new Object[0]);
         this.__impl = Objects.requireNonNull(result);
 
         this.__methodIA1__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void>(
@@ -306,55 +307,55 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     @Override
     public void methodIA1() {
         Object[] args = new Object[] {  };
-        createInvokeAndSupply(__methodIA1__call.ctx(), () -> __methodIA1__call.apply(args), args);
+        createInvokeAndSupply(__methodIA1__call.ctx(), __interceptedArgs -> __methodIA1__call.apply(__interceptedArgs), args);
     }
 
     @Override
     public void methodIA2() {
         Object[] args = new Object[] {  };
-        createInvokeAndSupply(__methodIA2__call.ctx(), () -> __methodIA2__call.apply(args), args);
+        createInvokeAndSupply(__methodIA2__call.ctx(), __interceptedArgs -> __methodIA2__call.apply(__interceptedArgs), args);
     }
 
     @Override
     public void methodIB(java.lang.String p1) {
         Object[] args = new Object[] { p1 };
-        createInvokeAndSupply(__methodIB__call.ctx(), () -> __methodIB__call.apply(args), args);
+        createInvokeAndSupply(__methodIB__call.ctx(), __interceptedArgs -> __methodIB__call.apply(__interceptedArgs), args);
     }
 
     @Override
     public java.lang.String methodIB2(java.lang.String p1) {
         Object[] args = new Object[] { p1 };
-        return createInvokeAndSupply(__methodIB2__call.ctx(), () -> __methodIB2__call.apply(args), args);
+        return createInvokeAndSupply(__methodIB2__call.ctx(), __interceptedArgs -> __methodIB2__call.apply(__interceptedArgs), args);
     }
 
     @Override
     public void close() throws java.io.IOException, java.lang.RuntimeException {
         Object[] args = new Object[] {  };
-        createInvokeAndSupply(__close__call.ctx(), () -> __close__call.apply(args), args);
+        createInvokeAndSupply(__close__call.ctx(), __interceptedArgs -> __close__call.apply(__interceptedArgs), args);
     }
 
     @Override
     public long methodX(java.lang.String p1, int p2, boolean p3) throws java.io.IOException, java.lang.RuntimeException, java.lang.AssertionError {
         Object[] args = new Object[] { p1, p2, p3 };
-        return createInvokeAndSupply(__methodX__call.ctx(), () -> __methodX__call.apply(args), args);
+        return createInvokeAndSupply(__methodX__call.ctx(), __interceptedArgs -> __methodX__call.apply(__interceptedArgs), args);
     }
 
     @Override
     public java.lang.String methodY() {
         Object[] args = new Object[] {  };
-        return createInvokeAndSupply(__methodY__call.ctx(), () -> __methodY__call.apply(args), args);
+        return createInvokeAndSupply(__methodY__call.ctx(), __interceptedArgs -> __methodY__call.apply(__interceptedArgs), args);
     }
 
     @Override
     public java.lang.String methodZ() {
         Object[] args = new Object[] {  };
-        return createInvokeAndSupply(__methodZ__call.ctx(), () -> __methodZ__call.apply(args), args);
+        return createInvokeAndSupply(__methodZ__call.ctx(), __interceptedArgs -> __methodZ__call.apply(__interceptedArgs), args);
     }
 
     @Override
     public void throwRuntimeException() {
         Object[] args = new Object[] {  };
-        createInvokeAndSupply(__throwRuntimeException__call.ctx(), () -> __throwRuntimeException__call.apply(args), args);
+        createInvokeAndSupply(__throwRuntimeException__call.ctx(), __interceptedArgs -> __throwRuntimeException__call.apply(__interceptedArgs), args);
     }
 
 }
