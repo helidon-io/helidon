@@ -30,6 +30,6 @@ import io.helidon.pico.api.InterceptedTrigger;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @InterceptedTrigger
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 @interface Modify {
 }

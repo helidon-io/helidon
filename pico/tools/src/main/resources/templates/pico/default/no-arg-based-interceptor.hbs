@@ -73,8 +73,8 @@ public class {{className}} extends {{parent}} {
                 Provider<{{parent}}> provider) {
         this.__provider = Objects.requireNonNull(provider);
         this.__sp = (provider instanceof ServiceProvider) ? (ServiceProvider<{{parent}}>) __provider : null;
-        List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse({{#annotationtriggertypenames}}{{id}}{{#unless @last}}, {{/unless}}{{/annotationtriggertypenames}});{{#interceptedelements}}
-        this.__{{{id}}}__interceptors = mergeAndCollapse({{interceptedTriggerTypeNames}});{{/interceptedelements}}
+        {{#ctorinterceptedelements}}List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse({{interceptedTriggerTypeNames}}{{#unless @last}}, {{/unless}});{{/ctorinterceptedelements}}
+        {{#interceptedelements}}this.__{{{id}}}__interceptors = mergeAndCollapse({{interceptedTriggerTypeNames}});{{/interceptedelements}}
 
         Function<Object[], {{parent}}> call = args -> __provider.get();
         {{parent}} result = createInvokeAndSupply(
