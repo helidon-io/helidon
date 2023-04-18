@@ -200,7 +200,7 @@ class InterfaceInterceptionTest {
     @Test
     void testRepeat() {
         String response = service.intercepted("hello", false, true, false);
-        assertThat(response, is("mod_hello"));
+        assertThat(response, is("hello"));
 
         Invocation returning = ReturningInterceptor.lastCall();
         Invocation modifying = ModifyingInterceptor.lastCall();
