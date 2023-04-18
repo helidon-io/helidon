@@ -47,6 +47,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.api.Contract;
 import io.helidon.pico.api.ElementInfo;
+import io.helidon.pico.api.ExternalContracts;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
@@ -59,6 +60,7 @@ import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeNames;
 import io.helidon.pico.tools.TypeTools;
 
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
@@ -66,6 +68,7 @@ import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeName
 import static io.helidon.pico.processor.ProcessorUtils.rootStackTraceElementOf;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
 import static io.helidon.pico.tools.TypeTools.createTypedElementNameFromElement;
+import static io.helidon.pico.tools.TypeTools.isProviderType;
 
 /**
  * An annotation processor that will find everything needing to be processed related to Pico conde generation.
@@ -321,50 +324,54 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
 
     void gatherContractsIntoServicesToProcess(ServicesToProcess services,
                          TypeInfo service) {
+        Set<TypeName> contracts = new LinkedHashSet<>();
+        Set<TypeName> externalContracts = new LinkedHashSet<>();
         Set<TypeName> providerForSet = new LinkedHashSet<>();
-        Set<TypeName> contracts = toContracts(service, providerForSet);
-        Set<TypeName> externalContracts = toExternalContracts(type, externalModuleNamesRequired);
-        adjustContractsForExternals(contracts, externalContracts, externalModuleNamesRequired);
-
         Set<String> externalModuleNamesRequired = new LinkedHashSet<>();
-    }
-
-    Set<TypeName> toContracts(TypeInfo typeInfo,
-                              Set<TypeName> providerForSet) {
-        Set<TypeName> result = new LinkedHashSet<>();
 
         boolean autoAddInterfaces = Options.isOptionEnabled(Options.TAG_AUTO_ADD_NON_CONTRACT_INTERFACES);
-        typeInfo.superTypeInfo().ifPresent(it -> gatherContracts(result, providerForSet, it, autoAddInterfaces));
-        typeInfo.interfaceTypeInfo().forEach(it -> {
-            if (autoAddInterfaces
-                    || DefaultAnnotationAndValue.findFirst(Contract.class.getName(), it.annotations()).isPresent()) {
-                result.add(it.typeName());
-            }
-            gatherContracts(result, providerForSet, it, autoAddInterfaces);
-        });
-
-//            // if we made it here then this provider qualifies, and we take what it provides into the result
-//            TypeName teContractName = createTypeNameFromElement(teContract).orElseThrow();
-//            result.add(teContractName);
-//            if (isProviderType(teContractName.name())) {
-//                result.add(DefaultTypeName.createFromTypeName(TypeNames.JAKARTA_PROVIDER));
-//            }
-//            providerForSet.add(gTypeName);
-//        }
-
-        return result;
+        gatherContracts(contracts, externalContracts, providerForSet, externalModuleNamesRequired, service, autoAddInterfaces);
     }
 
-    void gatherContracts(Set<TypeName> result,
+    static void gatherContracts(Set<TypeName> contracts,
+                         Set<TypeName> externalContracts,
                          Set<TypeName> providerForSet,
+                         Set<String> externalModuleNamesRequired,
                          TypeInfo typeInfo,
                          boolean autoAddInterfaces) {
+        TypeName typeName = typeInfo.typeName();
         if (autoAddInterfaces && typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
-            result.add(typeInfo.typeName());
-            return;
+            contracts.add(typeName);
         }
 
+        typeInfo.superTypeInfo().ifPresent(it -> gatherContracts(contracts,
+                                                                 externalContracts,
+                                                                 providerForSet,
+                                                                 externalModuleNamesRequired,
+                                                                 it,
+                                                                 autoAddInterfaces));
 
+        if (autoAddInterfaces
+                || DefaultAnnotationAndValue.findFirst(Contract.class.getName(), it.annotations()).isPresent()) {
+            result.add(it.typeName());
+        }
+        gatherContracts(result, providerForSet, it, autoAddInterfaces);
+
+
+        qualifiedProviderType(typeName).ifPresent(providerForSet::add);
+    }
+
+    Optional<TypeName> qualifiedProviderType(TypeName typeName) {
+        TypeName componentType = (typeName.typeArguments().size() == 1) ? typeName.typeArguments().get(0) : null;
+        if (componentType == null || componentType.generic()) {
+            return Optional.empty();
+        }
+
+        if (!TypeTools.isProviderType(typeName.name())) {
+            return Optional.empty();
+        }
+
+        return Optional.of(typeName);
     }
 
     Map<TypeName, List<AnnotationAndValue>> toReferencedTypeNamesToAnnotations(Collection<AnnotationAndValue> annotations) {
