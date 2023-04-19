@@ -18,40 +18,44 @@ package io.helidon.tracing.opentelemetry;
 import java.util.Map;
 import java.util.Objects;
 
+import io.helidon.common.context.Contexts;
+import io.helidon.tracing.Span;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.SpanContext;
 
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
-import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 
-class OpenTelemetrySpan implements io.helidon.tracing.Span {
-    private final Span delegate;
+class OpenTelemetrySpan implements Span {
+    private final io.opentelemetry.api.trace.Span delegate;
 
-    OpenTelemetrySpan(Span span) {
+    OpenTelemetrySpan(io.opentelemetry.api.trace.Span span) {
         this.delegate = span;
     }
 
     @Override
-    public void tag(String key, String value) {
+    public Span tag(String key, String value) {
         delegate.setAttribute(key, value);
+        return this;
     }
 
     @Override
-    public void tag(String key, Boolean value) {
+    public Span tag(String key, Boolean value) {
         delegate.setAttribute(key, value);
+        return this;
     }
 
     @Override
-    public void tag(String key, Number value) {
+    public Span tag(String key, Number value) {
         if (value instanceof Double || value instanceof Float) {
             delegate.setAttribute(key, value.doubleValue());
         } else {
             delegate.setAttribute(key, value.longValue());
         }
+        return this;
     }
 
     @Override
@@ -92,21 +96,32 @@ class OpenTelemetrySpan implements io.helidon.tracing.Span {
     }
 
     @Override
-    public io.helidon.tracing.Span setBaggageItem(String key, String value) {
+    public io.helidon.tracing.Span baggage(String key, String value) {
         Objects.requireNonNull(key, "Baggage Key cannot be null");
         Objects.requireNonNull(value, "Baggage Value cannot be null");
+
+        // Check if OTEL Context is already available in Global Helidon Context.
+        // If not – use Current context.
+        Context context = Contexts.globalContext().get(Context.class)
+                .map(Context.class::cast)
+                .orElseGet(Context::current);
 
         Baggage.builder()
                 .put(key, value)
                 .build()
-                .storeInContext(Context.current())
+                .storeInContext(context)
                 .makeCurrent();
         return (io.helidon.tracing.Span) delegate;
     }
 
     @Override
-    public String getBaggageItem(String key) {
-        return Baggage.current().getEntryValue(key);
+    public String baggage(String key) {
+        // Check if OTEL Context is already available in Global Helidon Context.
+        // If not – use Current context.
+        Context context = Contexts.globalContext().get(Context.class)
+                .map(Context.class::cast)
+                .orElseGet(Context::current);
+        return Baggage.fromContext(context).getEntryValue(key);
     }
 
     private Attributes toAttributes(Map<String, ?> attributes) {

@@ -43,9 +43,11 @@ public interface Span {
      * Add a tag to this span.
      *
      * @param tag tag to add
+     * @return current span
      */
-    default void tag(Tag<?> tag) {
+    default Span tag(Tag<?> tag) {
         tag.apply(this);
+        return this;
     }
 
     /**
@@ -53,24 +55,27 @@ public interface Span {
      *
      * @param key   tag key
      * @param value tag value
+     * @return current span
      */
-    void tag(String key, String value);
+    Span tag(String key, String value);
 
     /**
      * Add a boolean tag.
      *
      * @param key   tag key
      * @param value tag value
+     * @return current span
      */
-    void tag(String key, Boolean value);
+    Span tag(String key, Boolean value);
 
     /**
      * Add a numeric tag.
      *
      * @param key   tag key
      * @param value tag value
+     * @return current span
      */
-    void tag(String key, Number value);
+    Span tag(String key, Number value);
 
     /**
      * Span status, mostly used to configure {@link Status#ERROR}.
@@ -131,7 +136,7 @@ public interface Span {
      * @param value String Value
      * @return this Span instance, for chaining
      */
-    Span setBaggageItem(String key, String value);
+    Span baggage(String key, String value);
 
     /**
      * Get Baggage Item by key.
@@ -139,7 +144,7 @@ public interface Span {
      * @param key String key
      * @return the value of the baggage item identified by the given key, or null if no such item could be found
      */
-    String getBaggageItem(String key);
+    String baggage(String key);
 
     /**
      * Add a new event to this span.

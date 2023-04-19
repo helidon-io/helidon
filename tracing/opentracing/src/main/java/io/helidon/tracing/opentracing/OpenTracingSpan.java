@@ -38,18 +38,21 @@ class OpenTracingSpan implements Span {
 
 
     @Override
-    public void tag(String key, String value) {
+    public Span tag(String key, String value) {
         delegate.setTag(key, value);
+        return this;
     }
 
     @Override
-    public void tag(String key, Boolean value) {
+    public Span tag(String key, Boolean value) {
         delegate.setTag(key, value);
+        return this;
     }
 
     @Override
-    public void tag(String key, Number value) {
+    public Span tag(String key, Number value) {
         delegate.setTag(key, value);
+        return this;
     }
 
     @Override
@@ -92,12 +95,12 @@ class OpenTracingSpan implements Span {
     }
 
     @Override
-    public Span setBaggageItem(String key, String value) {
+    public Span baggage(String key, String value) {
         return (OpenTracingSpan) delegate.setBaggageItem(key, value);
     }
 
     @Override
-    public String getBaggageItem(String key) {
+    public String baggage(String key) {
         return delegate.getBaggageItem(key);
     }
 

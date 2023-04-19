@@ -96,18 +96,18 @@ class NoOpTracer implements Tracer {
     private static class Span implements io.helidon.tracing.Span {
 
         @Override
-        public void tag(String key, String value) {
-
+        public io.helidon.tracing.Span tag(String key, String value) {
+            return this;
         }
 
         @Override
-        public void tag(String key, Boolean value) {
-
+        public io.helidon.tracing.Span tag(String key, Boolean value) {
+            return this;
         }
 
         @Override
-        public void tag(String key, Number value) {
-
+        public io.helidon.tracing.Span tag(String key, Number value) {
+            return this;
         }
 
         @Override
@@ -138,12 +138,12 @@ class NoOpTracer implements Tracer {
         }
 
         @Override
-        public io.helidon.tracing.Span setBaggageItem(String key, String value) {
+        public io.helidon.tracing.Span baggage(String key, String value) {
             return null;
         }
 
         @Override
-        public String getBaggageItem(String key) {
+        public String baggage(String key) {
             return "no-op";
         }
     }
