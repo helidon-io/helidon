@@ -19,8 +19,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.tracing.Span;
 import io.helidon.tracing.Scope;
+import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 
 import io.opentelemetry.api.baggage.Baggage;
