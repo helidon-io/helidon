@@ -34,12 +34,12 @@ import java.util.function.Supplier;
 import io.helidon.builder.AttributeVisitor;
 import io.helidon.builder.config.ConfigBean;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
-import io.helidon.builder.config.spi.ConfigProvider;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigException;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServiceProviderException;
 import io.helidon.pico.api.PicoServices;
@@ -185,8 +185,8 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
             Config config = PicoServices.realizedGlobalBootStrap().config().orElse(null);
             if (config == null) {
                 LOGGER.log(System.Logger.Level.WARNING,
-                           "unable to initialize - no config to read - be sure to provide or initialize "
-                                   + ConfigProvider.class.getName() + " prior to service activation.");
+                           "Unable to initialize - there is no config to read - be sure to initialize "
+                                   + Bootstrap.class.getName() + " config prior to service activation.");
                 reset(true);
                 return;
             }
