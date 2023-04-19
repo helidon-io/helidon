@@ -255,13 +255,12 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             }
         } else if (phase == Phase.FINAL_RESOLVE) {
             // post-initialize ourselves
-            if (isRootProvider()) {
-                if (drivesActivation()) {
-                    ContextualServiceQuery query = DefaultContextualServiceQuery
-                            .builder().serviceInfoCriteria(PicoServices.EMPTY_CRITERIA)
-                            .build();
-                    maybeActivate(query);
-                }
+            if (isRootProvider()
+                    && drivesActivation()) {
+                ContextualServiceQuery query = DefaultContextualServiceQuery
+                        .builder().serviceInfoCriteria(PicoServices.EMPTY_CRITERIA)
+                        .build();
+                maybeActivate(query);
             }
 
             assertInitialized(true);
@@ -668,6 +667,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      */
     // expected that the generated configured service overrides this to set its new config bean value
     protected CB acceptConfig(Config config) {
+        assertIsInitializing();
         return Objects.requireNonNull(toConfigBean(config));
     }
 
@@ -720,18 +720,14 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
             LogEntryAndResult logEntryAndResult = createLogEntryAndResult(Phase.PENDING);
             try {
+                if (csp.configBean().isEmpty()) {
+                    throw new PicoServiceProviderException("Expected service to have been configured already", this);
+                }
                 csp.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PENDING);
-                io.helidon.common.config.Config commonConfig = PicoServices.realizedGlobalBootStrap().config()
-                        .orElseThrow(this::expectedConfigurationSetGlobally);
-                csp.acceptConfig(commonConfig);
             } catch (Throwable t) {
                 csp.onFailedFinish(logEntryAndResult, t, true);
             }
         });
-    }
-
-    private PicoException expectedConfigurationSetGlobally() {
-        return new PicoException("Expected to have configuration set globally - see PicoServices.globalBootstrap()");
     }
 
     private void activateConfigDrivenServices() {

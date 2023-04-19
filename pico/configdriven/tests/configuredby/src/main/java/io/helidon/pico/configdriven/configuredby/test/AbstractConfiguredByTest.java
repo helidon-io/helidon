@@ -141,8 +141,8 @@ public abstract class AbstractConfiguredByTest {
         list = services.lookupAll(criteria);
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat("no root providers expected in result, but all are auto-started unless overridden", desc,
-                   contains("FakeWebServer{3}:ACTIVE",
-                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{2}:PENDING"));
+                   contains("FakeWebServer{fake-server}:ACTIVE",
+                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{fake-server}:PENDING"));
 
         criteria = DefaultServiceInfoCriteria.builder()
                 .serviceTypeName(FakeTlsWSNotDrivenByCB.class.getName())
@@ -173,7 +173,7 @@ public abstract class AbstractConfiguredByTest {
         list = services.lookupAll(criteria);
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat("Slave providers expected here since we have default configuration for this service", desc,
-                   contains("ASingletonService{1}:ACTIVE"));
+                   contains("ASingletonService{@default}:ACTIVE"));
     }
 
     //    @Test
