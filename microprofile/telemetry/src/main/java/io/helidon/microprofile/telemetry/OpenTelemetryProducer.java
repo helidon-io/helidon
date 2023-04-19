@@ -109,7 +109,7 @@ class OpenTelemetryProducer {
     OpenTelemetry openTelemetry() {
 
 
-        if (AgentDetector.isAgentPresent()) {
+        if (AgentDetector.isAgentPresent(config)) {
             // If we're using the agent, it will have set GlobalOpenTelemetry
             // and we must use its instance
             // all config is handled by the agent in this case
