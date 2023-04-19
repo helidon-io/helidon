@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -255,7 +255,7 @@ abstract class AbstractSampleBean {
 
         public void await(long timeout) {
             try {
-                assertTrue(countDownLatch.await(timeout, TimeUnit.MILLISECONDS));
+                assertThat(countDownLatch.await(timeout, TimeUnit.MILLISECONDS), is(true));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -292,7 +292,7 @@ abstract class AbstractSampleBean {
 
         public void await(long timeout) {
             try {
-                assertTrue(countDownLatch.await(timeout, TimeUnit.MILLISECONDS));
+                assertThat(countDownLatch.await(timeout, TimeUnit.MILLISECONDS), is(true));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -337,7 +337,7 @@ abstract class AbstractSampleBean {
 
         public void await(long timeout) {
             try {
-                assertTrue(countDownLatch.await(timeout, TimeUnit.MILLISECONDS));
+                assertThat(countDownLatch.await(timeout, TimeUnit.MILLISECONDS), is(true));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -381,7 +381,7 @@ abstract class AbstractSampleBean {
 
         public void await(long timeout) {
             try {
-                assertTrue(countDownLatch.await(timeout, TimeUnit.MILLISECONDS));
+                assertThat(countDownLatch.await(timeout, TimeUnit.MILLISECONDS), is(true));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
