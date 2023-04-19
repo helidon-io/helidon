@@ -27,6 +27,7 @@ module io.helidon.tracing.opentelemetry {
 
     requires io.helidon.common;
     requires io.helidon.common.config;
+    requires io.helidon.config;
 
     exports io.helidon.tracing.opentelemetry;
 

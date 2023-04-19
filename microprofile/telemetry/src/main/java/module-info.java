@@ -49,6 +49,7 @@ module io.helidon.microprofile.telemetry {
     requires jersey.common;
     requires microprofile.config.api;
     requires opentelemetry.instrumentation.annotations;
+    requires io.helidon.tracing.opentelemetry;
 
     exports io.helidon.microprofile.telemetry;
 

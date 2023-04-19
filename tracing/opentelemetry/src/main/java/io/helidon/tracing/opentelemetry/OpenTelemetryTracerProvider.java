@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
@@ -39,7 +40,7 @@ import io.opentelemetry.api.OpenTelemetry;
 @Weight(Weighted.DEFAULT_WEIGHT - 50)
 public class OpenTelemetryTracerProvider implements TracerProvider {
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryTracerProvider.class.getName());
-
+    private static final String OTEL_AGENT_PRESENT_PROPERTY = "otel.agent.present";
     private static final AtomicReference<Tracer> CONFIGURED_TRACER = new AtomicReference<>();
     private static final AtomicBoolean GLOBAL_SET = new AtomicBoolean();
     private static final LazyValue<Tracer> GLOBAL_TRACER;
@@ -111,5 +112,52 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
     @Override
     public boolean available() {
         return GLOBAL_SET.get();
+    }
+
+
+    /**
+     * Check if OpenTelemetry is present by indirect properties.
+     * This class does best explicit check if "otel.agent.present" config property is set and uses its
+     * value to set the behaviour of OpenTelemetry producer.
+     *
+     * If the value is not explicitly set, the detector does best effort to estimate indirect means if the agent is present.
+     * This detector may stop working if OTEL changes the indirect indicators.
+     */
+    public static class AgentDetector {
+
+        private static final Config CONFIG = Config.create();
+
+        /**
+         * Check if the OTEL Agent is present.
+         * @return boolean
+         */
+        public static boolean isAgentPresent() {
+
+
+            //Explicitly check if agent property is set
+            Optional<Boolean> agentPresent = CONFIG.get(OTEL_AGENT_PRESENT_PROPERTY).asBoolean().asOptional();
+            if (agentPresent.isPresent()){
+                return agentPresent.get();
+            }
+
+            if (checkContext() || checkSystemProperties()){
+                if (LOGGER.isLoggable(System.Logger.Level.INFO)) {
+                    LOGGER.log(System.Logger.Level.INFO, "OpenTelemetry Agent detected");
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private static boolean checkSystemProperties() {
+            return System.getProperties().stringPropertyNames()
+                    .stream()
+                    .anyMatch(property -> property.contains("io.opentelemetry.javaagent"));
+        }
+
+        private static boolean checkContext() {
+            return io.opentelemetry.context.Context.current().getClass().getName().contains("agent");
+        }
+
     }
 }
