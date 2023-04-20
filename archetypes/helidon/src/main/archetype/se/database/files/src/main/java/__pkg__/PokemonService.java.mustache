@@ -82,7 +82,7 @@ public class PokemonService implements Service {
                     .createNamedGet("select-pokemon-by-id")
                     .addParam("id", pokemonId)
                     .execute())
-                    .thenAccept(maybeRow -> maybeRow
+                    .forSingle(maybeRow -> maybeRow
                             .ifPresentOrElse(
                                     row -> sendRow(row, response),
                                     () -> sendNotFound(response, "Pokemon " + pokemonId + " not found")))
@@ -95,7 +95,7 @@ public class PokemonService implements Service {
     private void getPokemonByName(ServerRequest request, ServerResponse response) {
         String pokemonName = request.path().param("name");
         dbClient.execute(exec -> exec.namedGet("select-pokemon-by-name", pokemonName))
-                .thenAccept(it -> {
+                .forSingle(it -> {
                     if (it.isEmpty()) {
                         sendNotFound(response, "Pokemon " + pokemonName + " not found");
                     } else {
@@ -110,7 +110,7 @@ public class PokemonService implements Service {
                 .createNamedInsert("insert-pokemon")
                 .indexedParam(pokemon)
                 .execute())
-                .thenAccept(count -> response.send("Inserted: " + count + " values\n"))
+                .forSingle(count -> response.send("Inserted: " + count + " values\n"))
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 
@@ -121,7 +121,7 @@ public class PokemonService implements Service {
                     .createNamedDelete("delete-pokemon-by-id")
                     .addParam("id", id)
                     .execute())
-                    .thenAccept(count -> response.send("Deleted: " + count + " values\n"))
+                    .forSingle(count -> response.send("Deleted: " + count + " values\n"))
                     .exceptionally(throwable -> sendError(throwable, response));
         } catch (NumberFormatException ex) {
             sendError(ex, response);

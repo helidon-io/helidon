@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,13 +38,6 @@ mvn ${MAVEN_ARGS} --version
 
 echo "GRAALVM_HOME=${GRAALVM_HOME}";
 ${GRAALVM_HOME}/bin/native-image --version;
-
-# Temporary workaround until job stages will share maven repository
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
-    install -e \
-    -Dmaven.test.skip=true \
-    -DskipTests \
-    -Ppipeline
 
 # Run native image tests
 cd ${WS_DIR}/tests/integration/native-image

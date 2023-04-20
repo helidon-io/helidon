@@ -1,5 +1,6 @@
+#!/bin/bash -e
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +15,17 @@
 # limitations under the License.
 #
 
-# web server configuration
-# Use a random free port
-server.port=8080
+# Path to this script
+[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
 
-# location on classpath (e.g. src/main/resources/WEB in maven)
-server.static.classpath.location=/WEB
-server.static.classpath.welcome=resource.html
-# this is optional, defaults to "/"
-# server.static.classpath.context=/static-cp
-# server.static.path=/content
-# server.static.path.context=/static-file
+# Load pipeline environment setup and define WS_DIR
+. $(dirname -- "${SCRIPT_PATH}")/includes/pipeline-env.sh "${SCRIPT_PATH}" '../..'
+
+# Setup error handling using default settings (defined in includes/error_handlers.sh)
+error_trap_setup
+
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
+    install -e \
+    -Dmaven.test.skip=true \
+    -DskipTests \
+    -Ppipeline

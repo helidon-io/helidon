@@ -29,7 +29,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  */
 @Path("/simple-greet")
 public class SimpleGreetResource {
-{{#SimpleGreetResource-static-fields}}{{.}}
+{{#SimpleGreetResource-static-fields}}
+{{.}}
 {{/SimpleGreetResource-static-fields}}
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
@@ -54,7 +55,8 @@ public class SimpleGreetResource {
                 .build();
     }
 
-{{#SimpleGreetService-methods}}{{.}}
+{{#SimpleGreetService-methods}}
+{{.}}
 {{/SimpleGreetService-methods}}
 
 }

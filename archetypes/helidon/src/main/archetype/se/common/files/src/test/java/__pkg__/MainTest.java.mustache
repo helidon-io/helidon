@@ -19,7 +19,8 @@ import {{.}};
 
 class MainTest {
 
-{{#MainTest-static-fields}}{{.}}
+{{#MainTest-static-fields}}
+{{.}}
 {{/MainTest-static-fields}}
 
     private static WebServer webServer;
@@ -27,24 +28,24 @@ class MainTest {
 
     @BeforeAll
     static void startTheServer() {
-        webServer = Main.startServer().await();
+        webServer = Main.startServer().await(Duration.ofSeconds(10));
 
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
-{{#MainTest-clientBuilder}}{{.}}
+{{#MainTest-clientBuilder}}
+{{.}}
 {{/MainTest-clientBuilder}}
                 .build();
     }
 
     @AfterAll
-    static void stopServer() throws ExecutionException, InterruptedException, TimeoutException {
+    static void stopServer() {
         if (webServer != null) {
-            webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+            webServer.shutdown().await(10, TimeUnit.SECONDS);
         }
     }
 
-{{#MainTest-methods}}{{.}}
+{{#MainTest-methods}}
+{{.}}
 {{/MainTest-methods}}
 }

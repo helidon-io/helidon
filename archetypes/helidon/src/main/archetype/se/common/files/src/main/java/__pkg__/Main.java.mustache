@@ -49,7 +49,8 @@ public final class Main {
 
         WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
-{{#Main-serverBuilder}}{{.}}
+{{#Main-serverBuilder}}
+{{.}}
 {{/Main-serverBuilder}}
                 .build();
 
@@ -57,7 +58,7 @@ public final class Main {
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        webserver.thenAccept(ws -> {
+        webserver.forSingle(ws -> {
             {{Main-readyMessage}}
             ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
         })
@@ -76,14 +77,17 @@ public final class Main {
      * @param config configuration of this server
      */
     private static Routing createRouting(Config config) {
-{{#Main-createRouting}}{{.}}
+{{#Main-createRouting}}
+{{.}}
 {{/Main-createRouting}}
 
         Routing.Builder builder = Routing.builder()
-{{#Main-routingBuilder}}{{.}}{{#last}}; {{/last}}
+{{#Main-routingBuilder}}
+{{.}}{{#last}}; {{/last}}
 {{/Main-routingBuilder}}
 
-{{#Main-security-routing-section}}{{.}}
+{{#Main-security-routing-section}}
+{{.}}
 {{/Main-security-routing-section}}
 
         return builder.build();

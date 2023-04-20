@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,12 @@
 package io.helidon.tracing.jaeger;
 
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
@@ -31,11 +35,14 @@ import io.helidon.tracing.opentelemetry.OpenTelemetryTracerProvider;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.context.propagation.ContextPropagators;
+import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
 import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporterBuilder;
 import io.opentelemetry.extension.trace.propagation.B3Propagator;
+import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -147,6 +154,8 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final int DEFAULT_HTTP_PORT = 14250;
 
     private final Map<String, String> tags = new HashMap<>();
+    // this is a backward incompatible change, but the correct choice is Jaeger, not B3
+    private final Set<PropagationFormat> propagationFormats = EnumSet.noneOf(PropagationFormat.class);
     private String serviceName;
     private String protocol = "http";
     private String host = DEFAULT_HTTP_HOST;
@@ -256,6 +265,13 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         config.get("private-key-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
         config.get("client-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
         config.get("trusted-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
+        config.get("propagation").asList(String.class)
+                .ifPresent(propagationStrings -> {
+                    propagationStrings.stream()
+                            .map(String::toUpperCase)
+                            .map(PropagationFormat::valueOf)
+                            .forEach(this::addPropagation);
+                });
 
         config.get("tags").detach()
                 .asMap()
@@ -379,6 +395,22 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     }
 
     /**
+     * Add propagation format to use.
+     * Default propagation is {@code b3} and {@code jaeger}, to be compatible both with 3.0 (backward), and with
+     * 4.x, which uses {@code jaeger} as default.
+     * If any propagation is specified either in configuration or through this method, defaults will not be honored.
+     *
+     * @param propagationFormat propagation value
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "propagation", kind = ConfiguredOption.Kind.LIST, type = PropagationFormat.class, value = "B3,JAEGER")
+    public JaegerTracerBuilder addPropagation(PropagationFormat propagationFormat) {
+        Objects.requireNonNull(propagationFormat);
+        this.propagationFormats.add(propagationFormat);
+        return this;
+    }
+
+    /**
      * Builds the {@link io.helidon.tracing.Tracer} for Jaeger based on the configured parameters.
      *
      * @return the tracer
@@ -421,7 +453,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                                                .setSampler(sampler)
                                                .setResource(serviceName)
                                                .build())
-                    .setPropagators(ContextPropagators.create(B3Propagator.injectingMultiHeaders()))
+                    .setPropagators(ContextPropagators.create(TextMapPropagator.composite(createPropagators())))
                     .build();
 
             result = HelidonOpenTelemetry.create(ot, ot.getTracer(this.serviceName), tags);
@@ -480,6 +512,28 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         return enabled;
     }
 
+    List<TextMapPropagator> createPropagators() {
+        if (propagationFormats.isEmpty()) {
+            // for backward compatibility, we add B3 if nothing is defined
+            propagationFormats.add(PropagationFormat.B3);
+            // and to be compatible with 4.x, we add Jaeger, which is the default for the future
+            propagationFormats.add(PropagationFormat.JAEGER);
+        }
+        return propagationFormats.stream()
+                .map(JaegerTracerBuilder::mapFormatToPropagator)
+                .toList();
+    }
+
+    private static TextMapPropagator mapFormatToPropagator(PropagationFormat propagationFormat) {
+        return switch (propagationFormat) {
+            case B3 -> B3Propagator.injectingMultiHeaders();
+            case B3_SINGLE -> B3Propagator.injectingSingleHeader();
+            case W3C -> W3CBaggagePropagator.getInstance();
+            // jaeger and unknown are jaeger
+            default -> JaegerPropagator.getInstance();
+        };
+    }
+
     /**
      * Sampler type definition.
      * Available options are "const", "probabilistic", "ratelimiting" and "remote".
@@ -512,5 +566,27 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         String config() {
             return config;
         }
+    }
+
+    /**
+     * Supported Jaeger trace context propagation formats.
+     */
+    public enum PropagationFormat {
+        /**
+         * The Zipkin B3 trace context propagation format using multiple headers.
+         */
+        B3,
+        /**
+         * B3 trace context propagation using a single header.
+         */
+        B3_SINGLE,
+        /**
+         * The Jaeger trace context propagation format.
+         */
+        JAEGER,
+        /**
+         * The W3C trace context propagation format.
+         */
+        W3C
     }
 }

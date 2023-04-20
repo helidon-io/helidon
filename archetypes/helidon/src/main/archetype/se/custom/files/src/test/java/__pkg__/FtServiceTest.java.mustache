@@ -22,7 +22,7 @@ class FtServiceTest {
     private static WebClient client;
 
     @BeforeAll
-    static void initClass() throws ExecutionException, InterruptedException {
+    static void initClass() {
         server = Main.startServer()
                 .await(10, TimeUnit.SECONDS);
 

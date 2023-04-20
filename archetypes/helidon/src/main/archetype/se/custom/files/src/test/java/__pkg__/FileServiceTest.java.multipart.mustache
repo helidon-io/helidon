@@ -1,6 +1,14 @@
 
 package {{package}};
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.media.multipart.FileFormParams;
@@ -17,13 +25,6 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -42,7 +43,7 @@ class FileServiceTest {
 
     @BeforeAll
     static void startTheServer() {
-        webServer = Main.startServer().await();
+        webServer = Main.startServer().await(Duration.ofSeconds(5));
 
         webClient = WebClient.builder()
                              .baseUri("http://localhost:8080/multipart")
@@ -69,7 +70,7 @@ class FileServiceTest {
                 .submit(FileFormParams.builder()
                                       .addFile("file[]", "foo.txt", file)
                                       .build())
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(response.status().code(), is(200));
     }
 
@@ -97,9 +98,9 @@ class FileServiceTest {
                 .get()
                 .contentType(MediaType.APPLICATION_JSON)
                 .request()
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(response.status().code(), Matchers.is(200));
-        JsonObject json = response.content().as(JsonObject.class).await();
+        JsonObject json = response.content().as(JsonObject.class).await(Duration.ofSeconds(2));
         assertThat(json, Matchers.is(notNullValue()));
         List<String> files = json.getJsonArray("files").getValuesAs(v -> ((JsonString) v).getString());
         assertThat(files, hasItem("foo.txt"));
@@ -113,11 +114,11 @@ class FileServiceTest {
                 .path("foo.txt")
                 .accept(MediaType.APPLICATION_OCTET_STREAM)
                 .request()
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(response.status().code(), is(200));
         assertThat(response.headers().first("Content-Disposition").orElse(null),
                 containsString("filename=\"foo.txt\""));
-        byte[] bytes = response.content().as(byte[].class).await();
+        byte[] bytes = response.content().as(byte[].class).await(Duration.ofSeconds(2));
         assertThat(new String(bytes, StandardCharsets.UTF_8), Matchers.is("bar\n"));
     }
 }

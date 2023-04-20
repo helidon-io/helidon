@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -153,14 +153,14 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
         String get = webClient.get()
                 .path("/simple-greet/greet-count")
                 .request(String.class)
-                .await();
+                .await(Duration.ofSeconds(5));
 
         assertThat(get, containsString("Hello World!"));
 
         String openMetricsOutput = webClient.get()
                 .path("/metrics")
                 .request(String.class)
-                .await();
+                .await(Duration.ofSeconds(5));
 
         assertThat("Metrics output", openMetricsOutput, containsString("application_accessctr_total"));
     }]]></value>
@@ -270,14 +270,14 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
         String get = webClient.get()
                 .path("/micrometer-greet/greet-count")
                 .request(String.class)
-                .await();
+                .await(Duration.ofSeconds(5));
 
         assertThat(get, containsString("Hello World!"));
 
         String openMetricsOutput = webClient.get()
                 .path("/micrometer")
                 .request(String.class)
-                .await();
+                .await(Duration.ofSeconds(5));
 
         assertThat("Metrics output", openMetricsOutput, containsString("allRequests_total 1"));
     }]]></value>
@@ -355,7 +355,7 @@ allRequests_total 0.0
         WebClientResponse response = webClient.get()
                 .path("/metrics")
                 .request()
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(response.status().code(), is(200));
     }]]></value>
                                 </list>
@@ -431,7 +431,8 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <value template="mustache" order="0"><![CDATA[
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks()) // Adds a convenient set of checks
-{{#Main-healthBuilder}}{{.}}
+{{#Main-healthBuilder}}
+{{.}}
 {{/Main-healthBuilder}}
                 .build();]]>
                                     </value>
@@ -455,7 +456,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
         WebClientResponse response = webClient.get()
                 .path("health")
                 .request()
-                .await();
+                .await(Duration.ofSeconds(5));
         assertThat(response.status().code(), is(200));
     }]]></value>
                                 </list>

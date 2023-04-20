@@ -55,6 +55,16 @@
                         <exec src="flavor.xml"/>
                     </entrypoint>
                     <inputFiltersFile>filters.properties</inputFiltersFile>
+                    <validations>
+                        <validation>
+                            <match>any</match>
+                            <fail>true</fail>
+                            <patterns>
+                                <pattern>**/*.mustache</pattern>
+                                <pattern>**/__pkg__/**</pattern>
+                            </patterns>
+                        </validation>
+                    </validations>
                 </configuration>
             </plugin>
             <plugin>
