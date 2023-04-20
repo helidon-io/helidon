@@ -65,6 +65,8 @@ public class PlainTest {
     private static final Logger LOGGER = Logger.getLogger(PlainTest.class.getName());
     private static final RuntimeException TEST_EXCEPTION = new RuntimeException("BOOM!");
     private static WebServer webServer;
+    private static String singleEntityResponse = "SingleEntity";
+    private static String sSEEntityResponse = "id: 1\ndata: foo\nevent: bar";
 
     /**
      * Start the Web Server
@@ -78,10 +80,17 @@ public class PlainTest {
                 .routing(r -> r
                         // ex. path = "/emptyResponse200" or "/emptyResponse301"
                         .get("/emptyResponse*", (req, res) -> {
-                            String path = req.path().toString();
-                            int responseStatus = Integer.valueOf(path.substring(path.length() - 3));
-                            res.status(responseStatus)
-                                    .send();
+                            setResponseStatusCodeFromPath(req, res);
+                            res.send();
+                        })
+                        // ex. path = "/singleResponse200" or "/singleResponse301"
+                        .get("/singleEntityResponse*", (req, res) -> {
+                            setResponseStatusCodeFromPath(req, res);
+                            res.send(singleEntityResponse);
+                        })
+                        .get("/SSE", (req, res) -> {
+                            res.headers().add(Http.Header.CONTENT_TYPE, "text/event-stream");
+                            res.send(sSEEntityResponse);
                         })
                         .any((req, res) -> {
                             res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
@@ -105,10 +114,8 @@ public class PlainTest {
                             res.headers().put(Http.Header.TRANSFER_ENCODING, "chunked");
                             if (req.path().toString().contains("-emptyResponse")) {
                                 // ex. path = "/force-chunked-emptyResponse200" or "/force-chunked-emptyResponse301"
-                                String path = req.path().toString();
-                                int responseStatus = Integer.valueOf(path.substring(path.length() - 3));
-                                res.status(responseStatus)
-                                        .send();
+                                setResponseStatusCodeFromPath(req, res);
+                                res.send();
                             } else {
                                 res.send("abcd");
                             }
@@ -574,7 +581,7 @@ public class PlainTest {
     @ValueSource(strings = {"301", "200"})
     void testEmptyResponse(String responseStatus) throws Exception {
         // ex. path = "/emptyResponse200" or "/emptyResponse301"
-        String s = SocketHttpClient.sendAndReceive("/emptyResponse" + responseStatus ,
+        String s = SocketHttpClient.sendAndReceive("/emptyResponse" + responseStatus,
                                                    Http.Method.GET,
                                                    null, webServer);
         assertThat(s, startsWith("HTTP/1.1 " + responseStatus));
@@ -598,6 +605,44 @@ public class PlainTest {
         assertThat(headers, not(hasKey(Http.Header.CONTENT_LENGTH)));
         // Verify that there is no entity
         assertThat(entityFromResponse(s, false), is("0\n\n"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"301", "200"})
+    void testSingleEntityResponse(String responseStatus) throws Exception {
+        // ex. path = "/singleResponse200" or "/singleResponse301"
+        String s = SocketHttpClient.sendAndReceive("/singleEntityResponse" + responseStatus,
+                                                   Http.Method.GET,
+                                                   null, webServer);
+        assertThat(s, startsWith("HTTP/1.1 " + responseStatus));
+        Map<String, String> headers = headersFromResponse(s);
+        assertThat(headers, not(hasKey(Http.Header.TRANSFER_ENCODING)));
+        assertThat(headers,
+                   hasEntry(equalToIgnoringCase(Http.Header.CONTENT_LENGTH), is(String.valueOf(singleEntityResponse.length()))));
+        // Verify that entity received is correct
+        assertThat(entityFromResponse(s, false), is(singleEntityResponse));
+    }
+
+    @Test
+    void testSSEShouldBeChunked() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/SSE",
+                                                   Http.Method.GET,
+                                                   null, webServer);
+        assertThat(s, startsWith("HTTP/1.1 200 OK"));
+        Map<String, String> headers = headersFromResponse(s);
+        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.TRANSFER_ENCODING), is("chunked")));
+        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.CONNECTION), is("keep-alive")));
+        assertThat(headers, not(hasKey(Http.Header.CONTENT_LENGTH)));
+        // Verify that entity received is correct
+        assertThat(entityFromResponse(s, false),
+                   is(Integer.toHexString(sSEEntityResponse.length()) + "\n" + sSEEntityResponse + "\n0\n\n"));
+    }
+
+    // Extract last 3 string from path and use as response status code
+    private static void setResponseStatusCodeFromPath(ServerRequest req, ServerResponse res) {
+        String path = req.path().toString();
+        int responseStatus = Integer.valueOf(path.substring(path.length() - 3));
+        res.status(responseStatus);
     }
 
     private Map<String, String> cutTrailerHeaders(String response) {
