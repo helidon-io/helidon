@@ -22,14 +22,57 @@ package io.helidon.pico.api;
 public class InvocationException extends PicoServiceProviderException {
 
     /**
+     * Tracks whether the target being intercepted was called once.
+     */
+    private final boolean targetWasCalled;
+
+    /**
+     * Constructor.
+     *
+     * @param msg               the message
+     * @param targetWasCalled   set to true if the target of interception was ultimately called
+     */
+    public InvocationException(String msg,
+                               boolean targetWasCalled) {
+        super(msg);
+        this.targetWasCalled = targetWasCalled;
+    }
+    /**
+     * Constructor.
+     *
+     * @param msg               the message
+     * @param cause             the root cause
+     * @param targetWasCalled   set to true if the target of interception was ultimately called
+     */
+    public InvocationException(String msg,
+                               Throwable cause,
+                               boolean targetWasCalled) {
+        super(msg, cause);
+        this.targetWasCalled = targetWasCalled;
+    }
+    /**
      * Constructor.
      *
      * @param msg               the message
      * @param cause             the root cause
      * @param serviceProvider   the service provider
+     * @param targetWasCalled   set to true if the target of interception was ultimately called
      */
-    public InvocationException(String msg, Throwable cause, ServiceProvider<?> serviceProvider) {
+    public InvocationException(String msg,
+                               Throwable cause,
+                               ServiceProvider<?> serviceProvider,
+                               boolean targetWasCalled) {
         super(msg, cause, serviceProvider);
+        this.targetWasCalled = targetWasCalled;
+    }
+
+    /**
+     * Returns true if the final target of interception was successfully called.
+     *
+     * @return if the target was successfully called
+     */
+    public boolean targetWasCalled() {
+        return targetWasCalled;
     }
 
 }

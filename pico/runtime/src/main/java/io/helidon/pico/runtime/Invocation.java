@@ -19,32 +19,35 @@ package io.helidon.pico.runtime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Objects;
 import java.util.function.Function;
 
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
+import io.helidon.pico.api.InvocationException;
 import io.helidon.pico.api.ServiceProvider;
 
 import jakarta.inject.Provider;
 
 /**
  * Handles the invocation of {@link Interceptor} methods.
+ * Note that upon a successful call to the {@link io.helidon.pico.api.Interceptor.Chain#proceed(Object[])} or to the ultimate
+ * target, the invocation will be preveted
  *
  * @see io.helidon.pico.api.InvocationContext
  * @param <V> the invocation type
  */
 public class Invocation<V> implements Interceptor.Chain<V> {
     private final InvocationContext ctx;
-    private final ListIterator<Provider<Interceptor>> interceptorIterator;
+    private final List<Provider<Interceptor>> interceptors;
+    private int interceptorPos;
     private Function<Object[], V> call;
 
     private Invocation(InvocationContext ctx,
                        Function<Object[], V> call) {
         this.ctx = ctx;
         this.call = Objects.requireNonNull(call);
-        this.interceptorIterator = ctx.interceptors().listIterator();
+        this.interceptors = List.copyOf(ctx.interceptors());
     }
 
     @Override
@@ -118,18 +121,47 @@ public class Invocation<V> implements Interceptor.Chain<V> {
 
     @Override
     public V proceed(Object... args) {
-        if (interceptorIterator.hasNext()) {
-            return interceptorIterator.next()
-                    .get()
-                    .proceed(ctx, this, args);
-        } else {
-            if (this.call != null) {
-                Function<Object[], V> call = this.call;
-                this.call = null;
-                return call.apply(args);
-            } else {
-                throw new IllegalStateException("Duplicate invocation, or unknown call type: " + this);
+        if (this.call == null) {
+            throw new InvocationException("Duplicate invocation, or unknown call type: " + this, true);
+        }
+
+        if (interceptorPos < interceptors.size()) {
+            Provider<Interceptor> interceptorProvider =  interceptors.get(interceptorPos);
+            Interceptor interceptor = interceptorProvider.get();
+            interceptorPos++;
+            try {
+                return interceptor.proceed(ctx, this, args);
+            } catch (Throwable t) {
+                interceptorPos--;
+
+                if (t instanceof InvocationException) {
+                    throw t;
+                }
+
+                throw (interceptorProvider instanceof ServiceProvider)
+                        ? new InvocationException("Error in interceptor chain processing",
+                                                  t,
+                                                  (ServiceProvider<?>) interceptorProvider,
+                                                  call == null)
+                        : new InvocationException("Error in interceptor chain processing",
+                                                  t,
+                                                  call == null);
             }
+        }
+
+        Function<Object[], V> call = this.call;
+        this.call = null;
+
+        try {
+            return call.apply(args);
+        } catch (Throwable t) {
+            if (t instanceof InvocationException) {
+                throw t;
+            }
+
+            this.call = call;
+
+            throw new InvocationException("Error in interceptor chain processing", t, true);
         }
     }
 

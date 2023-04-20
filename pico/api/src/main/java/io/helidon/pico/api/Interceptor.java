@@ -32,6 +32,7 @@ public interface Interceptor {
      * @param args  the arguments to the call
      * @param <V>   the return value type (or {@link Void} for void method elements)
      * @return the return value to the caller
+     * @throws InvocationException if there is an errors during invocation chain processing
      */
     <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args);
 
@@ -50,6 +51,7 @@ public interface Interceptor {
          *
          * @param args the arguments passed
          * @return the result of the call
+         * @throws InvocationException if there is an errors during invocation chain processing
          */
         V proceed(Object[] args);
     }

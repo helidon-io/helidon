@@ -159,7 +159,7 @@ class InterceptorRuntimeTest {
                    equalTo("forced: service provider: XImpl:ACTIVE"));
         RuntimeException re = assertThrows(RuntimeException.class, x::throwRuntimeException);
         assertThat(re.getMessage(),
-                   equalTo("forced"));
+                   equalTo("forced: service provider: XImpl:ACTIVE"));
 
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
         ServiceProvider<?> yimplProvider = services
@@ -238,7 +238,7 @@ class InterceptorRuntimeTest {
                    equalTo("forced: service provider: XImpl:ACTIVE"));
         RuntimeException re = assertThrows(RuntimeException.class, xIntercepted::throwRuntimeException);
         assertThat(re.getMessage(),
-                   equalTo("forced"));
+                   equalTo("forced: service provider: XImpl:ACTIVE"));
 
         assertThat(TestNamedInterceptor.ctorCount.get(),
                    equalTo(1));
