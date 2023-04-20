@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 package io.helidon.tests.integration.restclient;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
@@ -25,7 +29,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
-
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
@@ -70,6 +73,25 @@ public class GreetResourceProxy {
     public JsonObject getDefaultMessage() {
         JsonObject msg1 = injectedClient.getDefaultMessage();
         JsonObject msg2 = builderClient.getDefaultMessage();
+        if (!msg1.getString("message").equals(msg2.getString("message"))) {
+            throw new IllegalStateException("Oops");
+        }
+        return msg1;
+    }
+
+    /**
+     * Test both clients and compares responses before returning one. Async version.
+     *
+     * @return JSON response.
+     */
+    @GET
+    @Path("async")
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonObject getDefaultMessageAsync() throws ExecutionException, InterruptedException, TimeoutException {
+        JsonObject msg1 = injectedClient.getDefaultMessageAsync()
+                .toCompletableFuture().get(5, TimeUnit.SECONDS);
+        JsonObject msg2 = builderClient.getDefaultMessageAsync()
+                .toCompletableFuture().get(5, TimeUnit.SECONDS);
         if (!msg1.getString("message").equals(msg2.getString("message"))) {
             throw new IllegalStateException("Oops");
         }

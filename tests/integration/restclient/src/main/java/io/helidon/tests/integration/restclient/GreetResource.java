@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.tests.integration.restclient;
 
+import java.util.Collections;
+
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
@@ -23,7 +25,6 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import java.util.Collections;
 
 /**
  * A typical greet resource that only handles a single GET for a default message.
@@ -36,6 +37,13 @@ public class GreetResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getDefaultMessage() {
+        return createResponse("World");
+    }
+
+    @GET
+    @Path("async")
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonObject getDefaultMessageAsync() {
         return createResponse("World");
     }
 
