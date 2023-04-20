@@ -32,7 +32,7 @@ import jakarta.inject.Provider;
 /**
  * Handles the invocation of {@link Interceptor} methods.
  * Note that upon a successful call to the {@link io.helidon.pico.api.Interceptor.Chain#proceed(Object[])} or to the ultimate
- * target, the invocation will be preveted
+ * target, the invocation will be prevented from being executed again.
  *
  * @see io.helidon.pico.api.InvocationContext
  * @param <V> the invocation type
