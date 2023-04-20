@@ -107,6 +107,7 @@ public class YImpl$$Pico$$Interceptor /* extends io.helidon.pico.tests.pico.inte
     private final InterceptedMethod<io.helidon.pico.tests.pico.interceptor.YImpl, java.lang.Void> __close__call;
 
     @Inject
+    @SuppressWarnings("unchecked")
     YImpl$$Pico$$Interceptor(
                 @Named("io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno") List<Provider<Interceptor>> io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno,
                 Provider<io.helidon.pico.tests.pico.interceptor.YImpl> provider) {

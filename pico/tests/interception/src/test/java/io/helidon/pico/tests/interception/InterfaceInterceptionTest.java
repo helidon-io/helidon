@@ -196,7 +196,7 @@ class InterfaceInterceptionTest {
          */
     }
 
-    @Disabled("Known problem - issue #6629")
+    @Disabled("Known problem - issue #6647")
     @Test
     void testRepeat() {
         String response = service.intercepted("hello", false, true, false);
@@ -226,7 +226,7 @@ class InterfaceInterceptionTest {
                 () -> assertThat("Modifying last call", modifying.methodName(), is("intercepted")),
                 () -> assertThat("Modifying last call", modifying.args(), is(new Object[] {"hello", false, true, false})),
                 () -> assertThat("Repeating last call", repeating.methodName(), is("intercepted")),
-                () -> assertThat("Repeating last call", repeating.args(), is(new Object[] {"hello", true, false, false}))
+                () -> assertThat("Repeating last call", repeating.args(), is(new Object[] {"hello", false, true, false}))
         );
     }
 

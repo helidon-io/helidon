@@ -67,9 +67,9 @@ public class InvocationException extends PicoServiceProviderException {
     }
 
     /**
-     * Returns true if the final target of interception was successfully called.
+     * Returns true if the final target of interception was ultimately called.
      *
-     * @return if the target was successfully called
+     * @return if the target being intercepted was ultimately called
      */
     public boolean targetWasCalled() {
         return targetWasCalled;

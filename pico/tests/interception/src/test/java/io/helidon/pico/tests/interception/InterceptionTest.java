@@ -21,7 +21,6 @@ import io.helidon.pico.api.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -66,6 +65,7 @@ class InterceptionTest {
         ReturningInterceptor.lastCall();
         ModifyingInterceptor.lastCall();
         RepeatingInterceptor.lastCall();
+        service.throwException(false);
     }
 
     @Test
@@ -184,11 +184,11 @@ class InterceptionTest {
         assertThat(response, is("mod_hello"));
     }
 
-    @Disabled("Known problem - issue #6629")
     @Test
     void testRepeat() {
+        service.throwException(true);
         String response = service.intercepted("hello", false, true, false);
-        assertThat(response, is("hello"));
+        assertThat(response, nullValue());
 
         Invocation returning = ReturningInterceptor.lastCall();
         Invocation modifying = ModifyingInterceptor.lastCall();
@@ -214,7 +214,7 @@ class InterceptionTest {
                 () -> assertThat("Modifying last call", modifying.methodName(), is("intercepted")),
                 () -> assertThat("Modifying last call", modifying.args(), is(new Object[] {"hello", false, true, false})),
                 () -> assertThat("Repeating last call", repeating.methodName(), is("intercepted")),
-                () -> assertThat("Repeating last call", repeating.args(), is(new Object[] {"hello", true, false, false}))
+                () -> assertThat("Repeating last call", repeating.args(), is(new Object[] {"hello", false, true, false}))
         );
     }
 

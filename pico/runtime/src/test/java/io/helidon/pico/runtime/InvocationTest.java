@@ -47,7 +47,7 @@ class InvocationTest {
     ArrayList<Object[]> calls = new ArrayList<>();
 
     @Test
-    void normalCase() {
+    void normalCaseWithInterceptors() {
         Object[] args = new Object[] {};
         Boolean result = Invocation.createInvokeAndSupply(dummyCtx, (arguments) -> calls.add(arguments), args);
         assertThat(result, is(true));
@@ -58,6 +58,34 @@ class InvocationTest {
         assertThat(second.proceedCount.get(), equalTo(1));
         assertThat(second.downstreamExceptionCount.get(), equalTo(0));
         assertThat(calls.size(), equalTo(1));
+    }
+
+    @Test
+    void normalCaseWithNoInterceptors() {
+        InvocationContext dummyCtx = DefaultInvocationContext.builder()
+                .elementInfo(DefaultTypedElementName.builder().elementName("test").typeName(InvocationTest.class).build())
+                .interceptors(List.of());
+
+        Object[] args = new Object[] {};
+        Boolean result = Invocation.createInvokeAndSupply(dummyCtx, (arguments) -> calls.add(arguments), args);
+        assertThat(result, is(true));
+        assertThat(first.callCount.get(), equalTo(0));
+        assertThat(first.proceedCount.get(), equalTo(0));
+        assertThat(first.downstreamExceptionCount.get(), equalTo(0));
+        assertThat(second.callCount.get(), equalTo(0));
+        assertThat(second.proceedCount.get(), equalTo(0));
+        assertThat(second.downstreamExceptionCount.get(), equalTo(0));
+        assertThat(calls.size(), equalTo(1));
+
+        calls.clear();
+        RuntimeException re = new RuntimeException("forced");
+        Function<Object[], Object> fnc = (arguments) -> { throw re; };
+        InvocationException e = assertThrows(InvocationException.class,
+                                             () -> Invocation.createInvokeAndSupply(dummyCtx, fnc, args));
+        assertThat(e.getMessage(), equalTo("Error in interceptor chain processing"));
+        assertThat(e.targetWasCalled(), is(true));
+        assertThat(e.getCause(), is(re));
+        assertThat(calls.size(), equalTo(0));
     }
 
     @Test

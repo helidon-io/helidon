@@ -63,16 +63,34 @@ public class Invocation<V> implements Interceptor.Chain<V> {
      * @param args  the call arguments
      * @param <V>   the type returned from the method element
      * @return the invocation instance
+     * @throws InvocationException if there are errors during invocation chain processing
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <V> V createInvokeAndSupply(InvocationContext ctx,
                                               Function<Object[], V> call,
                                               Object[] args) {
         if (ctx.interceptors().isEmpty()) {
-            return call.apply(args);
+            try {
+                return call.apply(args);
+            } catch (Throwable t) {
+                throw new InvocationException("Error in interceptor chain processing", t, true);
+            }
         } else {
             return (V) new Invocation(ctx, call).proceed(args);
         }
+    }
+
+    /**
+     * The degenerate case for {@link #mergeAndCollapse(List[])}. This is here only to eliminate the unchecked varargs compiler
+     * warnings that would otherwise be issued in code that does not have any interceptors on a method.
+     *
+     * @param <T>   the type of the provider
+     * @return an empty list
+     * @deprecated this method should only be called by generated code
+     */
+    @Deprecated
+    public static <T> List<Provider<T>> mergeAndCollapse() {
+        return List.of();
     }
 
     /**
@@ -81,7 +99,7 @@ public class Invocation<V> implements Interceptor.Chain<V> {
      *
      * @param lists the lists to merge
      * @param <T>   the type of the provider
-     * @return the merged result, or null instead of empty lists
+     * @return the merged result or empty list if there is o interceptor providers
      */
     @SuppressWarnings("unchecked")
     public static <T> List<Provider<T>> mergeAndCollapse(List<Provider<T>>... lists) {

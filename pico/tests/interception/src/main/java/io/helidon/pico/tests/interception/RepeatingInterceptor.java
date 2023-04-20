@@ -48,8 +48,17 @@ class RepeatingInterceptor implements Interceptor {
         // 2: Boolean repeat
         // 3: Boolean return
         if ((Boolean) args[2]) {
-            chain.proceed(args);
+            try {
+                chain.proceed(args);
+            } catch (Exception e) {
+                System.getLogger(getClass().getName()).log(System.Logger.Level.DEBUG, e.getMessage(), e);
+            }
         }
-        return chain.proceed(args);
+        try {
+            return chain.proceed(args);
+        } catch (Exception e) {
+            System.getLogger(getClass().getName()).log(System.Logger.Level.DEBUG, e.getMessage(), e);
+            return null;
+        }
     }
 }

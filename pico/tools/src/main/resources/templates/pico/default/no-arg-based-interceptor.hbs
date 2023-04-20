@@ -68,6 +68,7 @@ public class {{className}} extends {{parent}} {
     private final InterceptedMethod<{{parent}}, {{elementTypeName}}> __{{id}}__call;{{/interceptedelements}}
 
     @Inject
+    @SuppressWarnings("unchecked")
     {{this.className}}({{#annotationtriggertypenames}}
                 @Named("{{{.}}}") List<Provider<Interceptor>> {{id}},{{/annotationtriggertypenames}}
                 Provider<{{parent}}> provider) {
