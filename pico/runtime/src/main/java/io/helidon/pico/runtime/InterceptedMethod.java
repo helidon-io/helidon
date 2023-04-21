@@ -129,12 +129,12 @@ public abstract class InterceptedMethod<I, V> implements Function<Object[], V> {
         try {
             return invoke(args);
         } catch (Throwable t) {
-            boolean targetWasCalled = false;
+            boolean targetWasCalledSuccessfully = false;
             if (t instanceof InvocationException) {
-                targetWasCalled = ((InvocationException) t).targetWasCalled();
+                targetWasCalledSuccessfully = ((InvocationException) t).targetWasCalled();
             }
 
-            throw new InvocationException(t.getMessage(), t, ctx.serviceProvider(), targetWasCalled);
+            throw new InvocationException(t.getMessage(), t, ctx.serviceProvider(), targetWasCalledSuccessfully);
         }
     }
 

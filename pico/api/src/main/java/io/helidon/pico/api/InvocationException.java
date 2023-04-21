@@ -22,7 +22,8 @@ package io.helidon.pico.api;
 public class InvocationException extends PicoServiceProviderException {
 
     /**
-     * Tracks whether the target being intercepted was called once.
+     * Tracks whether the target being intercepted was called once successfully - meaning that the target was called and it
+     * did not result in any exception being thrown.
      */
     private final boolean targetWasCalled;
 
@@ -30,7 +31,7 @@ public class InvocationException extends PicoServiceProviderException {
      * Constructor.
      *
      * @param msg               the message
-     * @param targetWasCalled   set to true if the target of interception was ultimately called
+     * @param targetWasCalled   set to true if the target of interception was ultimately called successfully
      */
     public InvocationException(String msg,
                                boolean targetWasCalled) {
@@ -42,7 +43,7 @@ public class InvocationException extends PicoServiceProviderException {
      *
      * @param msg               the message
      * @param cause             the root cause
-     * @param targetWasCalled   set to true if the target of interception was ultimately called
+     * @param targetWasCalled   set to true if the target of interception was ultimately called successfully
      */
     public InvocationException(String msg,
                                Throwable cause,
@@ -56,7 +57,7 @@ public class InvocationException extends PicoServiceProviderException {
      * @param msg               the message
      * @param cause             the root cause
      * @param serviceProvider   the service provider
-     * @param targetWasCalled   set to true if the target of interception was ultimately called
+     * @param targetWasCalled   set to true if the target of interception was ultimately called successfully
      */
     public InvocationException(String msg,
                                Throwable cause,
@@ -69,7 +70,7 @@ public class InvocationException extends PicoServiceProviderException {
     /**
      * Returns true if the final target of interception was ultimately called.
      *
-     * @return if the target being intercepted was ultimately called
+     * @return if the target being intercepted was ultimately called successfully
      */
     public boolean targetWasCalled() {
         return targetWasCalled;

@@ -29,4 +29,7 @@ interface OtherContract {
     String interceptedSubset(String message, boolean modify, boolean repeat, boolean doReturn);
 
     String notIntercepted(String message, boolean modify, boolean repeat, boolean doReturn);
+
+    void throwException(boolean throwException);
+
 }

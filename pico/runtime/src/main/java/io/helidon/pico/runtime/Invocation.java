@@ -174,11 +174,15 @@ public class Invocation<V> implements Interceptor.Chain<V> {
             return call.apply(args);
         } catch (Throwable t) {
             if (t instanceof InvocationException) {
+                if (!((InvocationException) t).targetWasCalled()) {
+                    // allow the call to happen again
+                    this.call = call;
+                }
                 throw t;
             }
 
+            // allow the call to happen again
             this.call = call;
-
             throw new InvocationException("Error in interceptor chain processing", t, true);
         }
     }

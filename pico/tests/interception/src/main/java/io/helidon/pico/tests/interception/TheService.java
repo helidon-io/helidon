@@ -40,6 +40,7 @@ class TheService {
     @Return
     String intercepted(String message, boolean modify, boolean repeat, boolean doReturn) {
         if (throwException) {
+            throwException = false;
             throw new RuntimeException("forced");
         }
 
@@ -50,6 +51,7 @@ class TheService {
     @Return
     String interceptedSubset(String message, boolean modify, boolean repeat, boolean doReturn) {
         if (throwException) {
+            throwException = false;
             throw new RuntimeException("forced");
         }
 
@@ -58,9 +60,11 @@ class TheService {
 
     String notIntercepted(String message, boolean modify, boolean repeat, boolean doReturn) {
         if (throwException) {
+            throwException = false;
             throw new RuntimeException("forced");
         }
 
         return message;
     }
+
 }

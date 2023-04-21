@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
+import io.helidon.pico.api.InvocationException;
 
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -51,13 +52,15 @@ class RepeatingInterceptor implements Interceptor {
             try {
                 chain.proceed(args);
             } catch (Exception e) {
-                System.getLogger(getClass().getName()).log(System.Logger.Level.DEBUG, e.getMessage(), e);
+                System.out.println("exception 1: " + e.getClass().getName() + ": " + e.getMessage());
             }
         }
         try {
             return chain.proceed(args);
+        } catch (InvocationException e) {
+            throw e;
         } catch (Exception e) {
-            System.getLogger(getClass().getName()).log(System.Logger.Level.DEBUG, e.getMessage(), e);
+            System.out.println("exception 2: " + e.getClass().getName() + ": " + e.getMessage());
             return null;
         }
     }
