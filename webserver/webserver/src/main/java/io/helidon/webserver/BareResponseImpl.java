@@ -91,7 +91,6 @@ class BareResponseImpl implements BareResponse {
     // lengthOptimization if true, will set content length and happens if there is 0 or 1 entity packet sent
     // and response is not TransferEncodingChunked and not an SSE Event Stream
     private volatile boolean lengthOptimization = true;
-    private volatile boolean forcedChunked;
 
     /**
      * @param ctx the channel handler context
@@ -199,12 +198,8 @@ class BareResponseImpl implements BareResponse {
                 .filter(header -> header.startsWith(HTTP_2_HEADER_PREFIX))
                 .forEach(header -> response.headers().add(header, requestHeaders.get(header)));
 
-        // Set chunked if length not set, may switch to length later
-        boolean lengthSet = HttpUtil.isContentLengthSet(response);
-        forcedChunked = HttpUtil.isTransferEncodingChunked(response);
-        if (!lengthSet) {
-            lengthOptimization = isSseEventStream(headers) ? false : lengthOptimization;
-            HttpUtil.setTransferEncodingChunked(response, true);
+        if (!HttpUtil.isContentLengthSet(response) && isSseEventStream(headers)) {
+            lengthOptimization = false;
         }
 
         // Add keep alive header as per:
@@ -252,7 +247,9 @@ class BareResponseImpl implements BareResponse {
             } else if (!headers.containsKey(HttpHeaderNames.CONNECTION.toString())) {
                 response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
             }
-            LOGGER.fine(() -> log("Response status is set to '%s'", status));
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine(() -> log("Response status is set to '%s'", status));
+            }
         }
     }
 
@@ -337,7 +334,7 @@ class BareResponseImpl implements BareResponse {
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
         boolean chunked = true;
         if (response != null) {
-            if (lengthOptimization && !forcedChunked) {
+            if (lengthOptimization && !HttpUtil.isTransferEncodingChunked(response)) {
                 if (throwable == null) {
                     int length = (firstChunk == null ? 0 : firstChunk.remaining());
                     chunked = false;
@@ -437,6 +434,9 @@ class BareResponseImpl implements BareResponse {
      */
     private void onNextPipe(DataChunk data) {
         if (response != null) {
+            if (!HttpUtil.isContentLengthSet(response) && !HttpUtil.isTransferEncodingChunked(response)) {
+                HttpUtil.setTransferEncodingChunked(response, true);
+            }
             initWriteResponse();
         }
         sendData(data, true);
@@ -449,7 +449,9 @@ class BareResponseImpl implements BareResponse {
      * @return Future of response or first chunk.
      */
     private void initWriteResponse() {
-        LOGGER.fine(() -> log("Initiate write of response"));
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine(() -> log("Initiate write of response"));
+        }
         channel.write(false, response, f -> f
                 .addListener(future -> NettyChannel.completeFuture(future, headersFuture, this))
                 .addListener(completeOnFailureListener("An exception occurred when writing headers."))
