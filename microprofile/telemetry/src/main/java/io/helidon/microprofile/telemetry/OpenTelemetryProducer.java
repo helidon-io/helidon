@@ -17,6 +17,7 @@ package io.helidon.microprofile.telemetry;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
@@ -155,7 +156,15 @@ class OpenTelemetryProducer {
     // Process "otel." properties from microprofile config file.
     private Map<String, String> getTelemetryProperties() {
 
-        HashMap<String, String> telemetryProperties = new HashMap<>(config.detach().asMap().orElseGet(Map::of));
+        HashMap<String, String> telemetryProperties = new HashMap<>(config
+                .detach()
+                .asMap()
+                .orElseGet(Map::of)
+                .entrySet()
+                .stream()
+                .filter(k -> k.getKey().contains("otel"))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+        );
 
         telemetryProperties.putIfAbsent(OTEL_METRICS_EXPORTER, "none");
         telemetryProperties.putIfAbsent(OTEL_LOGS_EXPORTER, "none");
