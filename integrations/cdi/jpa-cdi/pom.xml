@@ -322,6 +322,11 @@
                                 <artifactId>junit-jupiter-api</artifactId>
                                 <version>${version.lib.junit}</version>
                             </dependency>
+                            <dependency>
+                                <groupId>org.hamcrest</groupId>
+                                <artifactId>hamcrest-all</artifactId>
+                                <version>${version.lib.hamcrest}</version>
+                            </dependency>
                         </dependencies>
                         <executions>
                             <execution>
