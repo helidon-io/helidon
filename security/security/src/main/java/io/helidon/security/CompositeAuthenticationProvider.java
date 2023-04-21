@@ -75,12 +75,11 @@ final class CompositeAuthenticationProvider implements AuthenticationProvider {
     public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         AtnResponse atnResponse = new AtnResponse(ABSTAIN_RESPONSE);
 
-        for (Atn providerConfig : providers) {
-            // go through all providers and validate each response, collecting successes
-            atnResponse = invokeProvider(atnResponse, providerConfig, providerRequest);
-        }
-
         try {
+            for (Atn providerConfig : providers) {
+                // go through all providers and validate each response, collecting successes
+                atnResponse = invokeProvider(atnResponse, providerConfig, providerRequest);
+            }
             List<AuthenticationResponse> successes = atnResponse.successResponses;
             if (successes.isEmpty()) {
                 // no success - abstain
