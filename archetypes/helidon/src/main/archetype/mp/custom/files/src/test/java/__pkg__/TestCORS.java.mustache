@@ -1,141 +1,108 @@
 package {{package}};
 
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.microprofile.server.Server;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
-import io.helidon.reactive.webclient.WebClientRequestHeaders;
-import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webclient.WebClientResponseHeaders;
 import io.helidon.cors.CrossOriginConfig;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Optional;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 
+@HelidonTest
 class TestCORS {
 
-    private static WebClient client;
-    private static Server server;
+    @Inject
+    private WebTarget target;
+    private static final String ALLOW_RESTRICTED_HEADERS = "sun.net.http.allowRestrictedHeaders";
+    private static boolean originalAllowRestrictedHeaders;
 
     @BeforeAll
-    static void init() {
-        Config serverConfig = Config.create().get("server");
-        Server.Builder serverBuilder = Server.builder();
-        serverConfig.ifExists(serverBuilder::config);
-        server = serverBuilder
-                .port(-1) // override the port for testing
-                .build()
-                .start();
-        client = WebClient.builder()
-                .baseUri("http://localhost:" + server.port())
-                .build();
+    static void permitCorsHeaders() {
+        originalAllowRestrictedHeaders = Boolean.getBoolean(ALLOW_RESTRICTED_HEADERS);
+        System.setProperty(ALLOW_RESTRICTED_HEADERS, "true");
     }
 
     @AfterAll
-    static void cleanup() {
-        if (server != null) {
-            server.stop();
-        }
+    static void restoreHeadersSetting() {
+        System.setProperty(ALLOW_RESTRICTED_HEADERS, Boolean.toString(originalAllowRestrictedHeaders));
     }
 
     @Test
     void testAnonymousGreetWithCors() {
-        WebClientRequestBuilder builder = client.get();
-        WebClientRequestHeaders headers = builder.headers();
-        headers.set(Http.Header.ORIGIN, "http://foo.com");
-        headers.set(Http.Header.HOST, "here.com");
+        Response r = target.path("/simple-greet")
+                .request()
+                .header(Http.Header.ORIGIN.defaultCase(), "http://foo.com")
+                .header(Http.Header.HOST.defaultCase(), "here.com")
+                .get();
 
-        WebClientResponse r = getResponse(builder);
-        assertThat("HTTP response", r.status().code(), is(200));
+        assertThat("HTTP response", r.getStatus(), is(200));
         String payload = fromPayload(r);
         assertThat("HTTP response payload", payload, is("{\"message\":\"Hello World!\"}"));
-        WebClientResponseHeaders resHeaders = r.headers();
-        Optional<String> allowOrigin = resHeaders.value(Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is present",
-                allowOrigin.isPresent(), is(true));
-        assertThat("CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin.get(), is("*"));
+        assertThat("CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
+                r.getHeaders().getFirst(Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()),
+                is("http://foo.com"));
     }
 
     @Test
     void testCustomGreetingWithCors() {
+        Response r = target.path("/simple-greet")
+                .request()
+                .header(Http.Header.ORIGIN.defaultCase(), "http://foo.com")
+                .header(Http.Header.HOST.defaultCase(), "here.com")
+                .header("Access-Control-Request-Method", "PUT")
+                .options();
 
-        WebClientRequestBuilder builder = client.method("OPTIONS");
-        WebClientRequestHeaders headers = builder.headers();
-        headers.set(Http.Header.ORIGIN, "http://foo.com");
-        headers.set(Http.Header.HOST, "here.com");
-        headers.add("Access-Control-Request-Method", "PUT");
+        assertThat("pre-flight status", r.getStatus(), is(200));
+        MultivaluedMap<String, Object> responseHeaders = r.getHeaders();
+        assertThat("Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS,
+                r.getHeaders().getFirst(Http.Header.ACCESS_CONTROL_ALLOW_METHODS.defaultCase()),
+                is("PUT"));
+        assertThat( "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
+                r.getHeaders().getFirst(Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()),
+                is("http://foo.com"));
 
-        WebClientResponse r = builder.path("/simple-greet")
-                .submit()
-                .await();
-
-        assertThat("pre-flight status", r.status().code(), is(200));
-        WebClientResponseHeaders responseHeaders = r.headers();
-        Headers preflightResponseHeaders = responseHeaders;
-        List<String> allowMethods = preflightResponseHeaders.values(Http.Header.ACCESS_CONTROL_ALLOW_METHODS);
-        assertThat("pre-flight response check for " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS,
-                allowMethods, is(not(empty())));
-        assertThat("Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS, allowMethods, contains("PUT"));
-        List<String> allowOrigins = preflightResponseHeaders.values(Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertThat("pre-flight response check for " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
-                allowOrigins, is(not(empty())));
-        assertThat( "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, contains("http://foo.com"));
-
-        builder = client.put();
-        headers = builder.headers();
-        headers.set(Http.Header.ORIGIN, "http://foo.com");
-        headers.set(Http.Header.HOST, "here.com");
-        headers.addAll(preflightResponseHeaders);
+        Invocation.Builder builder = target.path("/simple-greet")
+                .request()
+                .headers(responseHeaders)
+                .header(Http.Header.ORIGIN.defaultCase(), "http://foo.com")
+                .header(Http.Header.HOST.defaultCase(), "here.com");
 
         r = putResponse("Cheers", builder);
-        assertThat("HTTP response3", r.status().code(), is(200));
-        responseHeaders = r.headers();
-        allowOrigins = headers.values(Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
-                allowOrigins, is(not(empty())));
-        assertThat( "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, contains("http://foo.com"));
+        assertThat("HTTP response3", r.getStatus(), is(200));
+        assertThat( "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
+                r.getHeaders().getFirst(Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()),
+                is("http://foo.com"));
         assertThat(fromPayload(r), containsString("Cheers World!"));
     }
 
     @Test
     void testGreetingChangeWithCorsAndOtherOrigin() {
-        WebClientRequestBuilder builder = client.put();
-        WebClientRequestHeaders headers = builder.headers();
-        headers.set(Http.Header.ORIGIN, "http://other.com");
-        headers.set(Http.Header.HOST, "here.com");
+        Invocation.Builder builder = target.path("/simple-greet")
+                .request()
+                .header(Http.Header.ORIGIN.defaultCase(), "http://other.com")
+                .header(Http.Header.HOST.defaultCase(), "here.com");
 
-        WebClientResponse r = putResponse("Ahoy", builder);
+        Response r = putResponse("Ahoy", builder);
         boolean isOverriding = Config.create().get("cors").exists();
-        assertThat("HTTP response3", r.status().code(), is(isOverriding ? 204 : 403));
+        assertThat("HTTP response3", r.getStatus(), is(isOverriding ? 204 : 403));
     }
 
-
-    private static WebClientResponse getResponse(WebClientRequestBuilder builder) {
-        return builder
-                .path("/simple-greet")
-                .submit()
-                .await();
+    private static String fromPayload(Response response) {
+        return response.readEntity(String.class);
     }
 
-    private static String fromPayload(WebClientResponse response) {
-        return response
-                .content()
-                .as(String.class)
-                .await();
-    }
-
-    private static WebClientResponse putResponse(String message, WebClientRequestBuilder builder) {
-        return builder
-                .path("/simple-greet")
-                .submit(message)
-                .await();
+    private static Response putResponse(String message, Invocation.Builder builder) {
+        return builder.put(Entity.entity(message, MediaType.TEXT_PLAIN_TYPE));
     }
 }
