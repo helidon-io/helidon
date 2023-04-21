@@ -49,7 +49,6 @@
             <!-- only needed for compilation, not required in runtime -->
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -61,7 +60,6 @@
             <!-- only needed for compilation, not required in runtime -->
             <groupId>org.eclipse.microprofile.config</groupId>
             <artifactId>microprofile-config-api</artifactId>
-            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
 
