@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tests.interception;
+package io.helidon.pico.runtime;
 
-import io.helidon.pico.api.Contract;
+import java.util.Optional;
 
-@Contract
-interface OtherContract {
-    @Modify
-    @Repeat
-    @Return
-    String intercepted(String message, boolean modify, boolean repeat, boolean doReturn);
+import io.helidon.builder.Builder;
+import io.helidon.config.metadata.ConfiguredOption;
 
-    @Return
-    String interceptedSubset(String message, boolean modify, boolean repeat, boolean doReturn);
-
-    String notIntercepted(String message, boolean modify, boolean repeat, boolean doReturn);
-
-    void throwException(boolean throwException);
-
+@Builder
+abstract class Control {
+    abstract Optional<RuntimeException> exceptionBeforeProceed();
+    abstract Optional<RuntimeException> exceptionAfterProceed();
+    abstract Optional<Object> shortCircuitValue();
+    abstract int timesToCatchException();
+    @ConfiguredOption("1") abstract int timesToCallProceed();
 }

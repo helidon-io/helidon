@@ -193,6 +193,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
     private final InterceptedMethod<io.helidon.pico.tests.pico.interceptor.XImpl, java.lang.Void> __throwRuntimeException__call;
 
     @Inject
+    @SuppressWarnings("unchecked")
     XImpl$$Pico$$Interceptor(
                 @Named("io.helidon.pico.tests.pico.interceptor.TestNamed") List<Provider<Interceptor>> io_helidon_pico_tests_pico_interceptor_TestNamed,
                 @Named("io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno") List<Provider<Interceptor>> io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno,

@@ -16,6 +16,7 @@
 
 package io.helidon.pico.tests.interception;
 
+import io.helidon.pico.api.InvocationException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.Services;
 
@@ -24,11 +25,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
 Order of interceptors:
@@ -196,11 +199,25 @@ class InterfaceInterceptionTest {
          */
     }
 
-    @Disabled("Known problem - issue #6629")
+    /**
+     * Once the target is called once successfully it should not be allowed to repeat normally.
+     */
+    @Disabled("Known problem - issue #6647")
     @Test
-    void testRepeat() {
+    void testRepeatWithNoExceptionThrownFromTarget() {
+        InvocationException e = assertThrows(InvocationException.class,
+                                         () -> service.intercepted("hello", false, true, false));
+        assertThat(e.getMessage(), equalTo("Duplicate invocation, or unknown call type: java.lang.String intercepted"));
+        assertThat(e.targetWasCalled(), is(true));
+    }
+
+    @Disabled("Known problem - issue #6647")
+    @Test
+    void testRepeatWithExceptionThrownFromTarget() {
+        service.throwException(true);
+
         String response = service.intercepted("hello", false, true, false);
-        assertThat(response, is("hello"));
+        assertThat(response, equalTo("hello"));
 
         Invocation returning = ReturningInterceptor.lastCall();
         Invocation modifying = ModifyingInterceptor.lastCall();
@@ -226,7 +243,7 @@ class InterfaceInterceptionTest {
                 () -> assertThat("Modifying last call", modifying.methodName(), is("intercepted")),
                 () -> assertThat("Modifying last call", modifying.args(), is(new Object[] {"hello", false, true, false})),
                 () -> assertThat("Repeating last call", repeating.methodName(), is("intercepted")),
-                () -> assertThat("Repeating last call", repeating.args(), is(new Object[] {"hello", true, false, false}))
+                () -> assertThat("Repeating last call", repeating.args(), is(new Object[] {"hello", false, true, false}))
         );
     }
 

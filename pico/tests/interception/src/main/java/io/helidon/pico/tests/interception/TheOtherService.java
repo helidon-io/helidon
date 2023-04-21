@@ -20,12 +20,24 @@ import jakarta.inject.Singleton;
 
 @Singleton
 class TheOtherService implements OtherContract{
+    private boolean throwException;
+
     @Modify
     TheOtherService() {
     }
 
     @Override
+    public void throwException(boolean throwException) {
+        this.throwException = throwException;
+    }
+
+    @Override
     public String intercepted(String message, boolean modify, boolean repeat, boolean doReturn) {
+        if (throwException) {
+            throwException = false;
+            throw new RuntimeException("forced");
+        }
+
         return message;
     }
 
@@ -33,11 +45,22 @@ class TheOtherService implements OtherContract{
     @Repeat
     @Override
     public String interceptedSubset(String message, boolean modify, boolean repeat, boolean doReturn) {
+        if (throwException) {
+            throwException = false;
+            throw new RuntimeException("forced");
+        }
+
         return message;
     }
 
     @Override
     public String notIntercepted(String message, boolean modify, boolean repeat, boolean doReturn) {
+        if (throwException) {
+            throwException = false;
+            throw new RuntimeException("forced");
+        }
+
         return message;
     }
+
 }

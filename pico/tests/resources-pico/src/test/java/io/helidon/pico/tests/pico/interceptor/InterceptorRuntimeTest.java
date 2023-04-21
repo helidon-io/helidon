@@ -155,11 +155,13 @@ class InterceptorRuntimeTest {
         assertThat(x.methodZ(),
                    equalTo("methodZ"));
         PicoException pe = assertThrows(PicoException.class, x::close);
-        assertThat(pe.getMessage(),
-                   equalTo("forced: service provider: XImpl:ACTIVE"));
+        assertThat("the error handling should be the same if there are interceptors or not",
+                   pe.getMessage(),
+                   equalTo("Error in interceptor chain processing: service provider: XImpl:ACTIVE"));
         RuntimeException re = assertThrows(RuntimeException.class, x::throwRuntimeException);
-        assertThat(re.getMessage(),
-                   equalTo("forced"));
+        assertThat("the error handling should be the same if there are interceptors or not",
+                   re.getMessage(),
+                   equalTo("Error in interceptor chain processing: service provider: XImpl:ACTIVE"));
 
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
         ServiceProvider<?> yimplProvider = services
@@ -238,7 +240,7 @@ class InterceptorRuntimeTest {
                    equalTo("forced: service provider: XImpl:ACTIVE"));
         RuntimeException re = assertThrows(RuntimeException.class, xIntercepted::throwRuntimeException);
         assertThat(re.getMessage(),
-                   equalTo("forced"));
+                   equalTo("forced: service provider: XImpl:ACTIVE"));
 
         assertThat(TestNamedInterceptor.ctorCount.get(),
                    equalTo(1));

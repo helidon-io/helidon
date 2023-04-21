@@ -32,6 +32,7 @@ public interface Interceptor {
      * @param args  the arguments to the call
      * @param <V>   the return value type (or {@link Void} for void method elements)
      * @return the return value to the caller
+     * @throws InvocationException if there are errors during invocation chain processing
      */
     <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args);
 
@@ -43,13 +44,14 @@ public interface Interceptor {
      */
     interface Chain<V> {
         /**
-         * Call the next interceptor in line, or finishing with the call to the service provider.
+         * Call the next interceptor in line, or finishing with the call to the service provider being intercepted.
          * Note that that arguments are passed by reference to each interceptor ultimately leading up to the final
-         * call to the underlying intercepted target. Callers can mutable the arguments passed directly on the provided array
+         * call to the underlying intercepted target. Callers can mutate the arguments passed directly on the provided array
          * instance.
          *
          * @param args the arguments passed
          * @return the result of the call
+         * @throws InvocationException if there are errors during invocation chain processing
          */
         V proceed(Object[] args);
     }

@@ -264,7 +264,7 @@ public abstract class AbstractServiceProvider<T>
         }
         this.interceptor = interceptor;
         if (interceptor instanceof AbstractServiceProvider<?>) {
-            ((AbstractServiceProvider) interceptor).intercepted(this);
+            ((AbstractServiceProvider<?>) interceptor).intercepted(this);
         }
     }
 

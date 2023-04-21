@@ -37,6 +37,7 @@ class ReturningInterceptor implements Interceptor {
         return LAST_CALL.getAndSet(null);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args) {
         LAST_CALL.set(new Invocation(ctx.elementInfo().elementName(), Arrays.copyOf(args, args.length)));

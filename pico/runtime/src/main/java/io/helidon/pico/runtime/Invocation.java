@@ -19,32 +19,35 @@ package io.helidon.pico.runtime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Objects;
 import java.util.function.Function;
 
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
+import io.helidon.pico.api.InvocationException;
 import io.helidon.pico.api.ServiceProvider;
 
 import jakarta.inject.Provider;
 
 /**
  * Handles the invocation of {@link Interceptor} methods.
+ * Note that upon a successful call to the {@link io.helidon.pico.api.Interceptor.Chain#proceed(Object[])} or to the ultimate
+ * target, the invocation will be prevented from being executed again.
  *
  * @see io.helidon.pico.api.InvocationContext
  * @param <V> the invocation type
  */
 public class Invocation<V> implements Interceptor.Chain<V> {
     private final InvocationContext ctx;
-    private final ListIterator<Provider<Interceptor>> interceptorIterator;
+    private final List<Provider<Interceptor>> interceptors;
+    private int interceptorPos;
     private Function<Object[], V> call;
 
     private Invocation(InvocationContext ctx,
                        Function<Object[], V> call) {
         this.ctx = ctx;
         this.call = Objects.requireNonNull(call);
-        this.interceptorIterator = ctx.interceptors().listIterator();
+        this.interceptors = List.copyOf(ctx.interceptors());
     }
 
     @Override
@@ -60,16 +63,34 @@ public class Invocation<V> implements Interceptor.Chain<V> {
      * @param args  the call arguments
      * @param <V>   the type returned from the method element
      * @return the invocation instance
+     * @throws InvocationException if there are errors during invocation chain processing
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <V> V createInvokeAndSupply(InvocationContext ctx,
                                               Function<Object[], V> call,
                                               Object[] args) {
         if (ctx.interceptors().isEmpty()) {
-            return call.apply(args);
+            try {
+                return call.apply(args);
+            } catch (Throwable t) {
+                throw new InvocationException("Error in interceptor chain processing", t, true);
+            }
         } else {
             return (V) new Invocation(ctx, call).proceed(args);
         }
+    }
+
+    /**
+     * The degenerate case for {@link #mergeAndCollapse(List[])}. This is here only to eliminate the unchecked varargs compiler
+     * warnings that would otherwise be issued in code that does not have any interceptors on a method.
+     *
+     * @param <T>   the type of the provider
+     * @return an empty list
+     * @deprecated this method should only be called by generated code
+     */
+    @Deprecated
+    public static <T> List<Provider<T>> mergeAndCollapse() {
+        return List.of();
     }
 
     /**
@@ -78,7 +99,7 @@ public class Invocation<V> implements Interceptor.Chain<V> {
      *
      * @param lists the lists to merge
      * @param <T>   the type of the provider
-     * @return the merged result, or null instead of empty lists
+     * @return the merged result or empty list if there is o interceptor providers
      */
     @SuppressWarnings("unchecked")
     public static <T> List<Provider<T>> mergeAndCollapse(List<Provider<T>>... lists) {
@@ -118,18 +139,51 @@ public class Invocation<V> implements Interceptor.Chain<V> {
 
     @Override
     public V proceed(Object... args) {
-        if (interceptorIterator.hasNext()) {
-            return interceptorIterator.next()
-                    .get()
-                    .proceed(ctx, this, args);
-        } else {
-            if (this.call != null) {
-                Function<Object[], V> call = this.call;
-                this.call = null;
-                return call.apply(args);
-            } else {
-                throw new IllegalStateException("Duplicate invocation, or unknown call type: " + this);
+        if (this.call == null) {
+            throw new InvocationException("Duplicate invocation, or unknown call type: " + this, true);
+        }
+
+        if (interceptorPos < interceptors.size()) {
+            Provider<Interceptor> interceptorProvider =  interceptors.get(interceptorPos);
+            Interceptor interceptor = interceptorProvider.get();
+            interceptorPos++;
+            try {
+                return interceptor.proceed(ctx, this, args);
+            } catch (Throwable t) {
+                interceptorPos--;
+
+                if (t instanceof InvocationException) {
+                    throw t;
+                }
+
+                throw (interceptorProvider instanceof ServiceProvider)
+                        ? new InvocationException("Error in interceptor chain processing",
+                                                  t,
+                                                  (ServiceProvider<?>) interceptorProvider,
+                                                  call == null)
+                        : new InvocationException("Error in interceptor chain processing",
+                                                  t,
+                                                  call == null);
             }
+        }
+
+        Function<Object[], V> call = this.call;
+        this.call = null;
+
+        try {
+            return call.apply(args);
+        } catch (Throwable t) {
+            if (t instanceof InvocationException) {
+                if (!((InvocationException) t).targetWasCalled()) {
+                    // allow the call to happen again
+                    this.call = call;
+                }
+                throw t;
+            }
+
+            // allow the call to happen again
+            this.call = call;
+            throw new InvocationException("Error in interceptor chain processing", t, true);
         }
     }
 
