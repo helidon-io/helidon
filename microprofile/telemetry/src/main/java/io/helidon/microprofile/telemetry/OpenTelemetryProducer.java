@@ -19,7 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.common.LazyValue;
-import io.helidon.tracing.opentelemetry.OpenTelemetryTracerProvider;
+import io.helidon.config.Config;
+import io.helidon.tracing.opentelemetry.HelidonOpenTelemetry;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -33,7 +34,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.Config;
 
 /**
  * A producer of {@link io.opentelemetry.api.OpenTelemetry}, {@link io.opentelemetry.api.trace.Tracer},
@@ -108,7 +108,7 @@ class OpenTelemetryProducer {
     OpenTelemetry openTelemetry() {
 
 
-        if (OpenTelemetryTracerProvider.AgentDetector.isAgentPresent()) {
+        if (HelidonOpenTelemetry.AgentDetector.isAgentPresent(config)) {
             // If we're using the agent, it will have set GlobalOpenTelemetry
             // and we must use its instance
             // all config is handled by the agent in this case
@@ -155,13 +155,7 @@ class OpenTelemetryProducer {
     // Process "otel." properties from microprofile config file.
     private Map<String, String> getTelemetryProperties() {
 
-        HashMap<String, String> telemetryProperties = new HashMap<>();
-        for (String propertyName : config.getPropertyNames()) {
-            if (propertyName.startsWith("otel.")) {
-                config.getOptionalValue(propertyName, String.class).ifPresent(
-                        value -> telemetryProperties.put(propertyName, value));
-            }
-        }
+        HashMap<String, String> telemetryProperties = new HashMap<>(config.detach().asMap().orElseGet(Map::of));
 
         telemetryProperties.putIfAbsent(OTEL_METRICS_EXPORTER, "none");
         telemetryProperties.putIfAbsent(OTEL_LOGS_EXPORTER, "none");
