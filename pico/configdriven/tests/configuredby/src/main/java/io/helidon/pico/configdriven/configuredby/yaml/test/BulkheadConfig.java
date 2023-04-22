@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-/**
- * For testing.
- */
-package io.helidon.pico.configdriven.configuredby.test;
+package io.helidon.pico.configdriven.configuredby.yaml.test;
+
+import io.helidon.builder.config.ConfigBean;
+
+@ConfigBean("ft.bulkheads")
+interface BulkheadConfig {
+
+    int queue();
+
+}

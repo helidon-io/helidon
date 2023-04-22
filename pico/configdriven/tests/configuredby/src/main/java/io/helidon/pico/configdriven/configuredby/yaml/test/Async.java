@@ -14,7 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * For testing.
- */
-package io.helidon.pico.configdriven.configuredby.test;
+package io.helidon.pico.configdriven.configuredby.yaml.test;
+
+import io.helidon.pico.configdriven.api.ConfiguredBy;
+
+import jakarta.inject.Inject;
+
+@ConfiguredBy(AsyncConfig.class)
+class Async {
+
+    final AsyncConfig cfg;
+
+    @Inject
+    Async(AsyncConfig cfg) {
+        this.cfg = cfg;
+    }
+
+}

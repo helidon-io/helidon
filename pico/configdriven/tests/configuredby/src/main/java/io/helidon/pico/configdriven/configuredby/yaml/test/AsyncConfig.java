@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-/**
- * For testing.
- */
-package io.helidon.pico.configdriven.configuredby.test;
+package io.helidon.pico.configdriven.configuredby.yaml.test;
+
+import java.util.Optional;
+
+import io.helidon.builder.config.ConfigBean;
+
+@ConfigBean("ft.asyncs")
+interface AsyncConfig {
+
+    Optional<String> executor();
+
+}

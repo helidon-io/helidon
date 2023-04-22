@@ -15,6 +15,6 @@
  */
 
 /**
- * For testing.
+ * Pico ConfiguredBy tests driven testing from the {@code application.yaml} config under test/resources.
  */
-package io.helidon.pico.configdriven.configuredby.test;
+package io.helidon.pico.configdriven.configuredby.yaml.test;
