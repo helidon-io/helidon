@@ -16,9 +16,12 @@
 
 package io.helidon.pico.configdriven.configuredby.yaml.test;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
+import io.helidon.builder.config.spi.GeneratedConfigBean;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -77,7 +80,10 @@ class NamedConfiguredByTest {
 
     @Test
     void namedConfiguredServices() {
-        System.out.println("here");
+        ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
+        Map<String, Collection<GeneratedConfigBean>> all = cbr.allConfigBeans();
+
+        System.out.println(all);
     }
 
 }

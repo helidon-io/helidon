@@ -208,7 +208,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                                    String tag,
                                    AtomicBoolean needsCustomMapOf) {
         builder.append("\t\t").append(tag);
-        builder.append(".put(\"__meta\", Map.of(").append(ConfigBeanInfo.class.getName());
+        builder.append(".put(" + ConfigBeanInfo.class.getName() + ".TAG_META, Map.of(").append(ConfigBeanInfo.class.getName());
         builder.append(".class.getName(),\n\t\t\t\t").append(MetaConfigBeanInfo.class.getName()).append(".builder()\n");
         appendConfigBeanInfoAttributes(builder,
                                        ctx.typeInfo(),

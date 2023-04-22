@@ -19,7 +19,7 @@ package io.helidon.pico.configdriven.configuredby.yaml.test;
 import io.helidon.builder.config.ConfigBean;
 
 @ConfigBean(value = "server", repeatable = false)
-interface ServerConfig {
+public interface ServerConfig {
 
     int port();
 

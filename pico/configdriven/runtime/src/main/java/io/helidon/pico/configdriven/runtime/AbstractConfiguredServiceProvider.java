@@ -307,7 +307,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
     // note that all responsibilities to resolve is delegated to the root provider
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public Optional<Object> resolve(InjectionPointInfo ipInfo,
                                     PicoServices picoServices,
                                     ServiceProvider<?> serviceProvider,
@@ -335,7 +335,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             return Optional.of(configBeanType());
         }
 
-        return (Optional<Object>) configBean();
+        return (Optional) configBean();
     }
 
     /**

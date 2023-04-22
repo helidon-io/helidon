@@ -47,7 +47,7 @@ public class HelidonConfigResolver implements ConfigResolver, ConfigResolverProv
     /**
      * Tag that represents meta information about the attribute. Used in the maps for various methods herein.
      */
-    public static final String TAG_META = "__meta";
+    public static final String TAG_META = ConfigBeanInfo.TAG_META;
 
     /**
      * Tag that represents the component type.

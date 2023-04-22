@@ -21,7 +21,7 @@ import io.helidon.pico.configdriven.api.ConfiguredBy;
 import jakarta.inject.Inject;
 
 @ConfiguredBy(AsyncConfig.class)
-class Async {
+public class Async {
 
     final AsyncConfig cfg;
 

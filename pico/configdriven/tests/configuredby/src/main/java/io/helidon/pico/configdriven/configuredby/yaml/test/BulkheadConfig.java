@@ -19,7 +19,7 @@ package io.helidon.pico.configdriven.configuredby.yaml.test;
 import io.helidon.builder.config.ConfigBean;
 
 @ConfigBean("ft.bulkheads")
-interface BulkheadConfig {
+public interface BulkheadConfig {
 
     int queue();
 

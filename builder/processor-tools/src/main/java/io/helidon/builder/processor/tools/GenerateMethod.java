@@ -67,6 +67,10 @@ final class GenerateMethod {
         builder.append("\tpublic static Map<String, Map<String, Object>> __metaAttributes() {\n"
                                + "\t\treturn ").append(BodyContext.TAG_META_PROPS).append(";\n"
                                + "\t}\n\n");
+
+        GenerateJavadoc.internalMetaAttributes(builder);
+        builder.append("\tpublic Map<String, Map<String, Object>> __metaProps() {\n"
+                               + "\t\treturn __metaAttributes();\n\t}\n\n");
     }
 
     static void nonOptionalSetter(StringBuilder builder,

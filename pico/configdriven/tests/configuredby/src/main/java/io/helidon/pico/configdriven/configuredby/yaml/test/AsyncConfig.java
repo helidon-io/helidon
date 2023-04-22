@@ -21,7 +21,7 @@ import java.util.Optional;
 import io.helidon.builder.config.ConfigBean;
 
 @ConfigBean("ft.asyncs")
-interface AsyncConfig {
+public interface AsyncConfig {
 
     Optional<String> executor();
 
