@@ -32,7 +32,7 @@ import io.helidon.pico.api.DefaultActivationRequest;
 import io.helidon.pico.api.DefaultBootstrap;
 import io.helidon.pico.api.DefaultInjectorOptions;
 import io.helidon.pico.api.Injector;
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
@@ -91,7 +91,7 @@ class HelloPicoWorldSanityTest {
     void sanity() {
         Services services = PicoServices.realizedServices();
 
-        List<ServiceProvider<Module>> moduleProviders = services.lookupAll(Module.class);
+        List<ServiceProvider<ModuleComponent>> moduleProviders = services.lookupAll(ModuleComponent.class);
         assertThat(moduleProviders.size(),
                    equalTo(EXPECTED_MODULES));
         List<String> descriptions = ServiceUtils.toDescriptions(moduleProviders);

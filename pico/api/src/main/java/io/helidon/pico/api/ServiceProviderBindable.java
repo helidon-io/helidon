@@ -23,7 +23,7 @@ import java.util.Optional;
  * and thereby works in conjunction with the {@link ServiceBinder} during pico service registry
  * initialization.
  * <p>
- * The only guarantee the provider implementation has is ensuring that {@link Module} instances
+ * The only guarantee the provider implementation has is ensuring that {@link ModuleComponent} instances
  * are bound to the pico services instances, as well as informed on the module name.
  * <p>
  * Generally this class should be called internally by the framework, and typically occurs only during initialization sequences.
@@ -36,7 +36,7 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
 
     /**
      * Called to inform a service provider the module name it is bound to. Will only be called when there is a non-null
-     * module name associated for the given {@link Module}. A service provider can be associated with
+     * module name associated for the given {@link ModuleComponent}. A service provider can be associated with
      * 0..1 modules.
      *
      * @param moduleName the non-null module name

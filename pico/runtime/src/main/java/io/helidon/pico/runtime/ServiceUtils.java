@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.DependenciesInfo;
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceProvider;
 
@@ -48,7 +48,7 @@ public final class ServiceUtils {
         DependenciesInfo deps = sp.dependencies();
         return (deps != AbstractServiceProvider.NO_DEPS)
                 || (!contractsImplemented.isEmpty()
-                    && !contractsImplemented.contains(Module.class.getName())
+                    && !contractsImplemented.contains(ModuleComponent.class.getName())
                     && !contractsImplemented.contains(Application.class.getName()));
     }
 

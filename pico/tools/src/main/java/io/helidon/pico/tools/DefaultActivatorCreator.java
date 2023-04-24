@@ -77,7 +77,7 @@ import static io.helidon.pico.tools.TypeTools.isPackagePrivate;
  * <ol>
  * <li>The {@link io.helidon.pico.api.ServiceProvider} for each service type implementation passed in.
  * <li>The {@link io.helidon.pico.api.Activator} and {@link io.helidon.pico.api.DeActivator} for each service type implementation passed in.
- * <li>The {@link io.helidon.pico.api.Module} for the aggregate service provider bindings for the same set of service type names.
+ * <li>The {@link io.helidon.pico.api.ModuleComponent} for the aggregate service provider bindings for the same set of service type names.
  * <li>The module-info as appropriate for the above set of services (and contracts).
  * <li>The /META-INF/services entries as appropriate.
  * </ol>

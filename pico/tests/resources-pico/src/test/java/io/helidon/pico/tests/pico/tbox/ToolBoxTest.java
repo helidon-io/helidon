@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import io.helidon.config.Config;
 import io.helidon.pico.api.ActivationResult;
 import io.helidon.pico.api.DefaultServiceInfoCriteria;
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.RunLevel;
@@ -174,7 +174,7 @@ class ToolBoxTest {
 
     @Test
     void modules() {
-        List<ServiceProvider<Module>> allModules = services.lookupAll(Module.class);
+        List<ServiceProvider<ModuleComponent>> allModules = services.lookupAll(ModuleComponent.class);
         List<String> desc = allModules.stream().map(ServiceProvider::description).collect(Collectors.toList());
         // note that order matters here
         assertThat("ensure that Annotation Processors are enabled in the tools module meta-inf/services",

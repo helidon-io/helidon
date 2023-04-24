@@ -36,7 +36,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.DefaultServiceInfoCriteria;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.InjectionPointInfo;
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceInfoCriteria;
@@ -420,7 +420,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
     static TypeName moduleServiceTypeOf(PicoServices picoServices,
                                         String moduleName) {
         Services services = picoServices.services();
-        ServiceProvider<?> serviceProvider = services.lookup(Module.class, moduleName);
+        ServiceProvider<?> serviceProvider = services.lookup(ModuleComponent.class, moduleName);
         return DefaultTypeName.createFromTypeName(serviceProvider.serviceInfo().serviceTypeName());
     }
 

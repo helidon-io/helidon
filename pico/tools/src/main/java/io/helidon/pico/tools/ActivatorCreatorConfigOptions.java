@@ -49,7 +49,7 @@ public interface ActivatorCreatorConfigOptions {
     boolean isSupportsJsr330InStrictMode();
 
     /**
-     * Should a {@link io.helidon.pico.api.Module} be created during activator creation. The default is true.
+     * Should a {@link io.helidon.pico.api.ModuleComponent} be created during activator creation. The default is true.
      *
      * @return true if the module should be created
      */

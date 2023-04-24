@@ -29,7 +29,7 @@ import java.util.Optional;
  * @see Application
  */
 @Contract
-public interface Module extends OptionallyNamed {
+public interface ModuleComponent extends OptionallyNamed {
 
     /**
      * Called by the provider implementation at bootstrapping time to bind all services / service providers to the
