@@ -17,7 +17,6 @@ package io.helidon.microprofile.telemetry;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
