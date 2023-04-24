@@ -106,11 +106,7 @@ class JaegerScopeManagerTest {
         JaegerScopeManager.ThreadScope scope2 = (JaegerScopeManager.ThreadScope) scopeManager.activate(span2);
         assertThat(scopeManager.activeSpan(), is(span2));
 
-        scope1.close();                                         // out of order
-        assertThat(scope1.isClosed(), is(false));
-        assertThat(scopeManager.activeSpan(), is(span2));
-
-        scope2.close();                                         // should close both scopes
+        scope1.close();             // closes scope1 and its child scope2
         assertThat(scope1.isClosed(), is(true));
         assertThat(scope2.isClosed(), is(true));
         assertThat(scopeManager.activeSpan(), nullValue());
@@ -130,21 +126,54 @@ class JaegerScopeManagerTest {
         JaegerScopeManager.ThreadScope scope3 = (JaegerScopeManager.ThreadScope) scopeManager.activate(span3);
         assertThat(scopeManager.activeSpan(), is(span3));
 
-        scope1.close();                                         // out of order
-        assertThat(scope1.isClosed(), is(false));
-        assertThat(scopeManager.activeSpan(), is(span3));
-
-        scope2.close();                                         // out of order
-        assertThat(scope2.isClosed(), is(false));
-        assertThat(scopeManager.activeSpan(), is(span3));
-
-        scope3.close();                                          // should close all scopes
-        assertThat(scope1.isClosed(), is(true));
+        scope2.close();             // closes scope2 and its child scope3
         assertThat(scope2.isClosed(), is(true));
         assertThat(scope3.isClosed(), is(true));
+        assertThat(scopeManager.activeSpan(), is(span1));
+        assertThat(JaegerScopeManager.SCOPES.size(), is(1));
+
+        scope1.close();
+        assertThat(scope1.isClosed(), is(true));
         assertThat(scopeManager.activeSpan(), nullValue());
         assertThat(JaegerScopeManager.SCOPES.size(), is(0));
     }
+
+    @Test
+    void testScopeManagerStackUnorderedClose5() {
+        JaegerScopeManager scopeManager = (JaegerScopeManager) tracer.scopeManager();
+        Span span1 = tracer.buildSpan("test-span1").start();
+        JaegerScopeManager.ThreadScope scope1 = (JaegerScopeManager.ThreadScope) scopeManager.activate(span1);
+        assertThat(scopeManager.activeSpan(), is(span1));
+        Span span2 = tracer.buildSpan("test-span2").start();
+        JaegerScopeManager.ThreadScope scope2 = (JaegerScopeManager.ThreadScope) scopeManager.activate(span2);
+        assertThat(scopeManager.activeSpan(), is(span2));
+        Span span3 = tracer.buildSpan("test-span3").start();
+        JaegerScopeManager.ThreadScope scope3 = (JaegerScopeManager.ThreadScope) scopeManager.activate(span3);
+        assertThat(scopeManager.activeSpan(), is(span3));
+        Span span4 = tracer.buildSpan("test-span4").start();
+        JaegerScopeManager.ThreadScope scope4 = (JaegerScopeManager.ThreadScope) scopeManager.activate(span4);
+        assertThat(scopeManager.activeSpan(), is(span4));
+        Span span5 = tracer.buildSpan("test-span3").start();
+        JaegerScopeManager.ThreadScope scope5 = (JaegerScopeManager.ThreadScope) scopeManager.activate(span5);
+        assertThat(scopeManager.activeSpan(), is(span5));
+
+        scope4.close();             // closes scope4 and its child scope5
+        assertThat(scope4.isClosed(), is(true));
+        assertThat(scope5.isClosed(), is(true));
+        assertThat(scopeManager.activeSpan(), is(span3));
+        assertThat(JaegerScopeManager.SCOPES.size(), is(1));
+
+        scope2.close();             // closes scope2 and its child scope3
+        assertThat(scope2.isClosed(), is(true));
+        assertThat(scope3.isClosed(), is(true));
+        assertThat(scopeManager.activeSpan(), is(span1));
+        assertThat(JaegerScopeManager.SCOPES.size(), is(1));
+
+        scope1.close();
+        assertThat(scopeManager.activeSpan(), nullValue());
+        assertThat(JaegerScopeManager.SCOPES.size(), is(0));
+    }
+
 
     @Test
     void testScopeManagerConcurrent() throws InterruptedException {

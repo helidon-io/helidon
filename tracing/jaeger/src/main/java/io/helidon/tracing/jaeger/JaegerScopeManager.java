@@ -47,63 +47,56 @@ class JaegerScopeManager implements ScopeManager {
 
     static class ThreadScope implements Scope {
         private final Span span;
-        private final ThreadScope previousScope;
+        private final ThreadScope parentScope;
+        private ThreadScope childScope;
         private final long creatingThreadId;
         private boolean closed;
-        private boolean closePreviousScope;
 
         ThreadScope(Span span) {
             this.span = span;
             this.creatingThreadId = Thread.currentThread().getId();
-            this.previousScope = SCOPES.put(this.creatingThreadId, this);
+            this.parentScope = SCOPES.put(this.creatingThreadId, this);
+            if (this.parentScope != null) {
+                this.parentScope.childScope = this;
+            }
         }
 
         /**
-         * Close this scope. Normally scopes are closed innermost to outermost, in
-         * order. However, with async processing, it is possible for the close
-         * operations to come out of other. This method needs to handle that, yet
-         * still close the scopes in innermost-to-outermost order.
+         * Closes this scope and all of its children scopes by setting the
+         * private flag {@code closed}. Updates {@code SCOPES} map accordingly.
          */
         @Override
         public void close() {
             LOCK.lock();
             try {
                 if (!closed) {
-                    ThreadScope innermost = SCOPES.get(creatingThreadId);
-                    // Are we closing innermost scope?
-                    if (innermost == this) {
-                        if (previousScope == null) {
-                            SCOPES.remove(creatingThreadId);
-                            closed = true;
-                        } else {
-                            SCOPES.put(creatingThreadId, previousScope);
-                            closed = true;
-                            if (closePreviousScope) {
-                                previousScope.close();
-                            }
+                    ThreadScope scope = SCOPES.get(creatingThreadId);
+
+                    // handle out-of-order closings
+                    while (scope != null && scope != this) {
+                        scope = scope.parentScope;
+                    }
+
+                    if (scope != null) {
+                        scope.closed = true;
+
+                        // close all children scopes
+                        ThreadScope child = scope.childScope;
+                        while (child != null) {
+                            child.closed = true;
+                            child = child.childScope;
                         }
-                    } else {
-                        // Delay closing to after we close all inner scopes
-                        innermost.delayClose(this);
+
+                        // update SCOPES setting parent as current
+                        if (scope.parentScope == null) {
+                            SCOPES.remove(creatingThreadId);
+                        } else {
+                            SCOPES.put(creatingThreadId, scope.parentScope);
+                        }
                     }
                 }
             } finally {
                 LOCK.unlock();
-            }
-        }
-
-        /**
-         * Turns on {@code closePreviousScope} flag on immediate child of
-         * the scope.
-         *
-         * @param scope the scope to delay closing on
-         */
-        private void delayClose(ThreadScope scope) {
-            assert scope != this && scope != null;
-            if (scope == previousScope) {
-                closePreviousScope = true;
-            } else if (previousScope != null) {
-                previousScope.delayClose(scope);
             }
         }
 
