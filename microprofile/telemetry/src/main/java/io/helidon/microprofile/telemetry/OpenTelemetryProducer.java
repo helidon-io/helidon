@@ -15,8 +15,8 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
@@ -55,9 +55,12 @@ class OpenTelemetryProducer {
 
     private Config config;
 
+    private org.eclipse.microprofile.config.Config mpConfig;
+
     @Inject
-    OpenTelemetryProducer(Config config) {
+    OpenTelemetryProducer(Config config, org.eclipse.microprofile.config.Config mpConfig) {
         this.config = config;
+        this.mpConfig = mpConfig;
     }
 
     @PostConstruct
@@ -155,16 +158,17 @@ class OpenTelemetryProducer {
     // Process "otel." properties from microprofile config file.
     private Map<String, String> getTelemetryProperties() {
 
-        Map<String, String> filteredOTELProperties = config
-                .traverse()
-                .filter(Config::exists)
-                .filter(e -> e.asString().isPresent())
-                .filter(e -> !e.key().toString().equalsIgnoreCase(""))
-                .filter(e -> e.key().toString().startsWith("otel."))
-                .collect(Collectors.toMap(item -> item.key().name(), item -> item.asString().get()));
-        filteredOTELProperties.putIfAbsent(OTEL_METRICS_EXPORTER, "none");
-        filteredOTELProperties.putIfAbsent(OTEL_LOGS_EXPORTER, "none");
-        return filteredOTELProperties;
+        HashMap<String, String> telemetryProperties = new HashMap<>();
+        for (String propertyName : mpConfig.getPropertyNames()) {
+            if (propertyName.startsWith("otel.")) {
+                mpConfig.getOptionalValue(propertyName, String.class).ifPresent(
+                        value -> telemetryProperties.put(propertyName, value));
+            }
+        }
+
+        telemetryProperties.putIfAbsent(OTEL_METRICS_EXPORTER, "none");
+        telemetryProperties.putIfAbsent(OTEL_LOGS_EXPORTER, "none");
+        return telemetryProperties;
     }
 
     // Check if Telemetry is disabled.
