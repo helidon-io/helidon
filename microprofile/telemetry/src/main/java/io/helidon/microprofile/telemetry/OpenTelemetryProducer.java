@@ -156,19 +156,17 @@ class OpenTelemetryProducer {
     // Process "otel." properties from microprofile config file.
     private Map<String, String> getTelemetryProperties() {
 
-        HashMap<String, String> telemetryProperties = new HashMap<>(config
-                .asMap()
-                .orElseGet(Map::of)
-                .entrySet()
-                .stream()
-                .filter(k -> k.getKey().contains("otel"))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-        );
+        Map<String, String> filteredProperties = new HashMap<>();
+        for (Map.Entry<String, String> node : config.asMap().orElseGet(Map::of).entrySet()) {
+            if (node.getKey().startsWith("otel.")){
+                filteredProperties.put(node.getKey(), node.getValue());
+            }
+        }
 
-        telemetryProperties.putIfAbsent(OTEL_METRICS_EXPORTER, "none");
-        telemetryProperties.putIfAbsent(OTEL_LOGS_EXPORTER, "none");
+        filteredProperties.putIfAbsent(OTEL_METRICS_EXPORTER, "none");
+        filteredProperties.putIfAbsent(OTEL_LOGS_EXPORTER, "none");
 
-        return telemetryProperties;
+        return filteredProperties;
     }
 
     // Check if Telemetry is disabled.
