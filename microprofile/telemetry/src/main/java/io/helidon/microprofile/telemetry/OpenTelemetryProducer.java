@@ -159,6 +159,7 @@ class OpenTelemetryProducer {
                 .traverse()
                 .filter(Config::exists)
                 .filter(e -> e.asString().isPresent())
+                .filter(e -> !e.key().toString().equalsIgnoreCase(""))
                 .filter(e -> e.key().toString().startsWith("otel."))
                 .collect(Collectors.toMap(item -> item.key().name(), item -> item.asString().get()));
         filteredOTELProperties.putIfAbsent(OTEL_METRICS_EXPORTER, "none");
