@@ -40,6 +40,7 @@ import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
 import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 
 class NamedConfiguredByTest {
     PicoServices picoServices;
@@ -73,10 +74,6 @@ class NamedConfiguredByTest {
                 .disableEnvironmentVariablesSource()
                 .build();
         resetWith(config);
-
-        this.picoServices = PicoServices.picoServices().get();
-        // this line is needed!
-        picoServices.services();
     }
 
     @Disabled("Will be addressed in #6674")
@@ -84,8 +81,8 @@ class NamedConfiguredByTest {
     void namedConfiguredServices() {
         ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
         Map<String, Collection<GeneratedConfigBean>> all = cbr.allConfigBeans();
-
-//        System.out.println(all);
+        assertThat(all.keySet(),
+                   containsInAnyOrder("ft.asyncs.first", "ft.asyncs.second", "ft.bulkheads", "server"));
     }
 
 }
