@@ -161,10 +161,8 @@ class OpenTelemetryProducer {
                 .filter(e -> e.asString().isPresent())
                 .filter(e -> e.key().toString().startsWith("otel."))
                 .collect(Collectors.toMap(item -> item.key().name(), item -> item.asString().get()));
-
         filteredOTELProperties.putIfAbsent(OTEL_METRICS_EXPORTER, "none");
         filteredOTELProperties.putIfAbsent(OTEL_LOGS_EXPORTER, "none");
-
         return filteredOTELProperties;
     }
 
