@@ -887,7 +887,8 @@ public class ServicesToProcess implements Resettable {
         if (wasModuleDefined) {
             Optional<ModuleInfoItem> moduleInfoItem = lastKnownModuleInfoDescriptor.first(ModuleComponent.class.getName());
             if (moduleInfoItem.isEmpty() || !moduleInfoItem.get().provides()) {
-                IllegalStateException te = new IllegalStateException("Expected to have a 'provides " + ModuleComponent.class.getName()
+                IllegalStateException te = new IllegalStateException("Expected to have a 'provides "
+                                                                             + ModuleComponent.class.getName()
                                                                + " with ... ' entry in " + lastKnownModuleInfoFilePath + message);
                 if (shouldWarnOnly) {
                     processor.warn(te.getMessage(), te);
