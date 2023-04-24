@@ -157,7 +157,6 @@ class OpenTelemetryProducer {
     private Map<String, String> getTelemetryProperties() {
 
         HashMap<String, String> telemetryProperties = new HashMap<>(config
-                .detach()
                 .asMap()
                 .orElseGet(Map::of)
                 .entrySet()
