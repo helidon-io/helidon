@@ -16,7 +16,9 @@
 package io.helidon.microprofile.telemetry;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
@@ -155,17 +157,17 @@ class OpenTelemetryProducer {
     // Process "otel." properties from microprofile config file.
     private Map<String, String> getTelemetryProperties() {
 
-        Map<String, String> filteredProperties = new HashMap<>();
-        for (Map.Entry<String, String> node : config.asMap().orElseGet(Map::of).entrySet()) {
-            if (node.getKey().startsWith("otel.")){
-                filteredProperties.put(node.getKey(), node.getValue());
-            }
-        }
+        Map<String, String> filteredOTELProperties = config
+                .traverse()
+                .filter(Config::exists)
+                .filter(e -> e.asString().isPresent())
+                .filter(e -> e.key().toString().startsWith("otel."))
+                .collect(Collectors.toMap(item -> item.key().name(), item -> item.asString().get()));
 
-        filteredProperties.putIfAbsent(OTEL_METRICS_EXPORTER, "none");
-        filteredProperties.putIfAbsent(OTEL_LOGS_EXPORTER, "none");
+        filteredOTELProperties.putIfAbsent(OTEL_METRICS_EXPORTER, "none");
+        filteredOTELProperties.putIfAbsent(OTEL_LOGS_EXPORTER, "none");
 
-        return filteredProperties;
+        return filteredOTELProperties;
     }
 
     // Check if Telemetry is disabled.
