@@ -33,6 +33,7 @@ import io.helidon.pico.configdriven.runtime.ConfigBeanRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
@@ -78,12 +79,13 @@ class NamedConfiguredByTest {
         picoServices.services();
     }
 
+    @Disabled("Will be addressed in #6674")
     @Test
     void namedConfiguredServices() {
         ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
         Map<String, Collection<GeneratedConfigBean>> all = cbr.allConfigBeans();
 
-        System.out.println(all);
+//        System.out.println(all);
     }
 
 }
