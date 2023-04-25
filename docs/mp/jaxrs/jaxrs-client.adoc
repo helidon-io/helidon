@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Jakarta REST (JAX-RS) Client
+= Jakarta REST Client
 :feature-name: Jakarta REST Client
-:description: Jakarta REST (JAX-RS) Client
+:description: Jakarta REST Client
 :keywords: helidon, rest, jax-rs, client, microprofile, micro-profile
 :rootdir: {docdir}/../..
 
@@ -72,7 +72,7 @@ Response res = client
 
 In the snippet above, the call to `target` returns a `WebTarget`, and the call to
 `request` returns an `Invocation.Builder`; finally, the call to `get` returns the `Response`
-that results from accessing the service resource.
+that results from accessing the remote resource.
 
 Given that this API is fully integrated with message body readers and writers, it is
 possible to request the response body be provided after conversion to a Java type
@@ -91,8 +91,8 @@ Alternatively, there are also methods in `Response` that can trigger similar con
 
 Configuration can be specified at the `Client` or `WebTarget` level, as both types implement
 `Configurable<T>`. This enables common configuration to be inherited by a `WebTarget` created
-from a `Client` instance. In either case, methods such as `register` can be used to
-register providers such as filters and exception mappers.
+from a `Client` instance. In either case, several `register` methods can be used to
+configure providers such as filters and exception mappers.
 
 [source,java]
 ----
