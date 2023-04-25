@@ -31,13 +31,13 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -54,10 +54,8 @@ import io.helidon.security.spi.SubjectMappingProvider;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 
-import static io.helidon.security.providers.oidc.common.OidcConfig.postJsonResponse;
-
 /**
- * Common functionality for IDCS role mapping using reactive {@link io.helidon.reactive.webclient.WebClient}.
+ * Common functionality for IDCS role mapping using {@link io.helidon.nima.webclient.http1.Http1Client}.
  */
 public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProvider {
     /**
@@ -173,30 +171,38 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
         return builder.build();
     }
 
-    protected List<? extends Grant> processRoleRequest(WebClientRequestBuilder request,
-                                                               Object entity,
-                                                               String subjectName) {
-        return postJsonResponse(request,
-                                entity,
-                                json -> processServerResponse(json, subjectName),
-                                (status, errorEntity) -> {
-                                    LOGGER.log(Level.WARNING, "Cannot read groups for user \""
-                                                           + subjectName
-                                                           + "\". Response code: "
-                                                           + status
-                                                           + (
-                                            status == Http.Status.UNAUTHORIZED_401 ? ", make sure your IDCS client has role "
-                                                    + "\"Authenticator Client\" added on the client configuration page" : "")
-                                                           + ", error entity: " + errorEntity);
-                                    return Optional.of(List.of());
-                                },
-                                (t, errorMessage) -> {
-                                    LOGGER.log(Level.WARNING, "Cannot read groups for user \""
-                                                       + subjectName
-                                                       + "\". Error message: " + errorMessage,
-                                               t);
-                                    return Optional.of(List.of());
-                                });
+    protected List<? extends Grant> processRoleRequest(Http1ClientRequest request, Object entity, String subjectName) {
+        try (Http1ClientResponse response = request.submit(entity)) {
+            if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+                try {
+                    JsonObject jsonObject = response.as(JsonObject.class);
+                    return processServerResponse(jsonObject, subjectName);
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING, "Cannot read groups for user \"" + subjectName + "\". "
+                                       + "Error message: Failed to read JSON from response",
+                               e);
+                }
+            } else {
+                String message;
+                try {
+                    message = response.as(String.class);
+                    LOGGER.log(Level.WARNING, "Cannot read groups for user \"" + subjectName + "\". "
+                            + "Response code: " + response.status()
+                            + (response.status() == Http.Status.UNAUTHORIZED_401 ? ", make sure your IDCS client has role "
+                                    + "\"Authenticator Client\" added on the client configuration page" : "")
+                            + ", error entity: " + message);
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING, "Cannot read groups for user \"" + subjectName + "\". "
+                                       + "Error message: Failed to process error entity",
+                               e);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Cannot read groups for user \"" + subjectName + "\". "
+                               + "Error message: Failed to invoke request",
+                       e);
+        }
+        return List.of();
     }
 
     /**
@@ -375,11 +381,11 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
         private static final List<Validator<Jwt>> TIME_VALIDATORS = Jwt.defaultTimeValidators();
 
         private final AtomicReference<LazyValue<AppTokenData>> token = new AtomicReference<>();
-        private final WebClient webClient;
+        private final Http1Client webClient;
         private final URI tokenEndpointUri;
         private final Duration tokenRefreshSkew;
 
-        protected AppTokenRx(WebClient webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
+        protected AppTokenRx(Http1Client webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
             this.webClient = webClient;
             this.tokenEndpointUri = tokenEndpointUri;
             this.tokenRefreshSkew = tokenRefreshSkew;
@@ -440,29 +446,41 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
             tracing.findParent()
                     .ifPresent(childContext::register);
 
-            WebClientRequestBuilder request = webClient.post()
+            Http1ClientRequest request = webClient.post()
                     .uri(tokenEndpointUri)
-                    .context(childContext)
-                    .accept(HttpMediaType.APPLICATION_JSON);
+                    .header(Http.HeaderValues.ACCEPT_JSON);
 
-            return postJsonResponse(request,
-                             params,
-                             json -> {
-                                 String accessToken = json.getString(ACCESS_TOKEN_KEY);
-                                 LOGGER.log(Level.TRACE, () -> "Access token: " + accessToken);
-                                 SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
-                                 return new AppTokenData(accessToken, signedJwt.getJwt());
-                             },
-                             (status, message) -> {
-                                 LOGGER.log(Level.ERROR, "Failed to obtain access token for application to read "
-                                         + "groups from IDCS. Status: " + status + ", error message: " + message);
-                                 return Optional.of(new AppTokenData());
-                             },
-                             (t, message) -> {
-                                 LOGGER.log(Level.ERROR, "Failed to obtain access token for application to read "
-                                         + "groups from IDCS. Failed with exception: " + message, t);
-                                 return Optional.of(new AppTokenData());
-                             });
+            try (Http1ClientResponse response = request.submit(params)) {
+                if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+                    try {
+                        JsonObject jsonObject = response.as(JsonObject.class);
+                        String accessToken = jsonObject.getString(ACCESS_TOKEN_KEY);
+                        LOGGER.log(Level.TRACE, () -> "Access token: " + accessToken);
+                        SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
+                        return new AppTokenData(accessToken, signedJwt.getJwt());
+                    } catch (Exception e) {
+                        LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
+                                + "groups from IDCS. Failed with exception:  Failed to read JSON from response",
+                                   e);
+                    }
+                } else {
+                    String message;
+                    try {
+                        message = response.as(String.class);
+                        LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
+                                + "groups from IDCS. Status: " + response.status() + ", error message: " + message);
+                    } catch (Exception e) {
+                        LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
+                                           + "groups from IDCS. Failed with exception:  Failed to process error entity",
+                                   e);
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
+                                   + "groups from IDCS. Failed with exception:  Failed to invoke request",
+                           e);
+            }
+            return new AppTokenData();
         }
     }
 

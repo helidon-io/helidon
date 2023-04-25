@@ -34,9 +34,9 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
 import io.helidon.common.http.Http;
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -45,6 +45,7 @@ import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityException;
 import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
@@ -60,7 +61,8 @@ import io.helidon.security.providers.oidc.common.Tenant;
 import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.security.util.TokenHandler;
 
-import static io.helidon.security.providers.oidc.common.OidcConfig.postJsonResponse;
+import jakarta.json.JsonObject;
+
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
@@ -112,10 +114,10 @@ class TenantAuthenticationHandler {
                 Parameters.Builder form = Parameters.builder("oidc-form-params")
                         .add("token", signedJwt.tokenContent());
 
-                WebClientRequestBuilder post = tenant.appWebClient()
+                Http1ClientRequest post = tenant.appWebClient()
                         .post()
                         .uri(tenant.introspectUri())
-                        .accept(MediaTypes.APPLICATION_JSON)
+                        .header(Http.HeaderValues.ACCEPT_JSON)
                         .headers(it -> {
                             it.add(Http.Header.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
                             return it;
@@ -123,24 +125,32 @@ class TenantAuthenticationHandler {
 
                 OidcUtil.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, tenantConfig, form);
 
-                return postJsonResponse(post,
-                                        form.build(),
-                                        json -> {
-                                            if (!json.getBoolean("active")) {
-                                                collector.fatal(json, "Token is not active");
-                                            }
-                                            return collector;
-                                        },
-                                        (status, message) ->
-                                                Optional.of(collector.fatal(status,
-                                                                            "Failed to validate token, response "
-                                                                                    + "status: "
-                                                                                    + status
-                                                                                    + ", entity: " + message)),
-                                        (t, message) ->
-                                                Optional.of(collector.fatal(t,
-                                                                            "Failed to validate token, request failed: "
-                                                                                    + message)));
+                try (Http1ClientResponse response = post.submit(form.build())) {
+                    if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+                        try {
+                            JsonObject jsonObject = response.as(JsonObject.class);
+                            if (!jsonObject.getBoolean("active")) {
+                                collector.fatal(jsonObject, "Token is not active");
+                            }
+                        } catch (Exception e) {
+                            collector.fatal(e, "Failed to validate token, request failed: "
+                                    + "Failed to read JSON from response");
+                        }
+                    } else {
+                        String message;
+                        try {
+                            message = response.as(String.class);
+                            collector.fatal(response.status(),
+                                            "Failed to validate token, response " + "status: " + response.status() + ", "
+                                                    + "entity: " + message);
+                        } catch (Exception e) {
+                            collector.fatal(e, "Failed to validate token, request failed: Failed to process error entity");
+                        }
+                    }
+                } catch (Exception e) {
+                    collector.fatal(e, "Failed to validate token, request failed: Failed to invoke request");
+                }
+                return collector;
             };
         }
         // clean the scope audience - must end with / if exists

@@ -36,8 +36,10 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.nima.webclient.HttpClient;
+import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -357,8 +359,8 @@ public final class OidcConfig extends TenantConfigImpl {
     private final boolean forceHttpsRedirects;
     private final Duration tokenRefreshSkew;
     private final boolean relativeUris;
-    private final WebClient webClient;
-    private final Supplier<WebClient.Builder> webClientBuilderSupplier;
+    private final Http1Client webClient;
+    private final Supplier<Http1Client.Http1ClientBuilder> webClientBuilderSupplier;
     private final LazyValue<Tenant> defaultTenant;
     private final boolean useParam;
     private final String paramName;
@@ -423,57 +425,6 @@ public final class OidcConfig extends TenantConfigImpl {
         return OidcConfig.builder()
                 .config(config)
                 .build();
-    }
-
-    /**
-     * Processing of {@link io.helidon.reactive.webclient.WebClient} submit using a POST method.
-     * This is a helper method to handle possible cases (success, failure with readable entity, failure).
-     *
-     * @param requestBuilder       WebClient request builder
-     * @param toSubmit             object to submit (such as {@link io.helidon.common.parameters.Parameters}
-     * @param jsonProcessor        processor of successful JSON response
-     * @param errorEntityProcessor processor of an error that has an entity
-     * @param errorProcessor       processor of an error that does not have an entity
-     * @param <T>                  type of the result the call
-     * @return a future that completes successfully if processed from json, or if an error processor returns a non-empty value,
-     * completes with error otherwise
-     */
-    public static <T> T postJsonResponse(WebClientRequestBuilder requestBuilder,
-                                         Object toSubmit,
-                                         Function<JsonObject, T> jsonProcessor,
-                                         BiFunction<Http.Status, String, Optional<T>> errorEntityProcessor,
-                                         BiFunction<Throwable, String, Optional<T>> errorProcessor) {
-
-        //This does not work exactly as it used to before. needs to be properly rewritten when implementing with Níma client!
-        return requestBuilder.submit(toSubmit)
-                .map(response -> {
-                    if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
-                        try {
-                            JsonObject jsonObject = response.content()
-                                    .as(JsonObject.class)
-                                    .await(Duration.ofSeconds(10));
-                            return jsonProcessor.apply(jsonObject);
-                        } catch (Exception e) {
-                            return errorProcessor.apply(e, "Failed to read JSON from response")
-                                    .orElseThrow(() -> new RuntimeException(e));
-                        }
-                    } else {
-                        try {
-                            String message = response.content()
-                                    .as(String.class)
-                                    .await(Duration.ofSeconds(10));
-
-                            return errorEntityProcessor.apply(response.status(), message)
-                                    .orElseThrow(() -> new SecurityException("Failed to process request: " + message));
-                        } catch (Exception e) {
-                            return errorProcessor.apply(e, "Failed to process error entity")
-                                    .orElseThrow(() -> new RuntimeException(e));
-                        }
-                    }
-                })
-                .onError(t -> errorProcessor.apply(t, "Failed to invoke request")
-                        .orElseThrow(() -> new RuntimeException(t)))
-                .await(Duration.ofSeconds(5));
     }
 
     /**
@@ -737,7 +688,7 @@ public final class OidcConfig extends TenantConfigImpl {
      *
      * @return client for general use.
      */
-    public WebClient generalWebClient() {
+    public Http1Client generalWebClient() {
         return webClient;
     }
 
@@ -746,7 +697,7 @@ public final class OidcConfig extends TenantConfigImpl {
      *
      * @return client for communicating with OIDC identity server
      */
-    public WebClient appWebClient() {
+    public Http1Client appWebClient() {
         return defaultTenant.get().appWebClient();
     }
 
@@ -822,7 +773,7 @@ public final class OidcConfig extends TenantConfigImpl {
         return defaultTenant.get().introspectUri();
     }
 
-    Supplier<WebClient.Builder> webClientBuilderSupplier() {
+    Supplier<Http1Client.Http1ClientBuilder> webClientBuilderSupplier() {
         return webClientBuilderSupplier;
     }
 
@@ -921,8 +872,8 @@ public final class OidcConfig extends TenantConfigImpl {
         private String proxyHost;
         private String proxyProtocol = DEFAULT_PROXY_PROTOCOL;
         private int proxyPort = DEFAULT_PROXY_PORT;
-        private WebClient webClient;
-        private Supplier<WebClient.Builder> webClientBuilderSupplier;
+        private Http1Client webClient;
+        private Supplier<Http1Client.Http1ClientBuilder> webClientBuilderSupplier;
         private String paramName = DEFAULT_PARAM_NAME;
         private String tenantParamName = DEFAULT_TENANT_PARAM_NAME;
         private boolean useHeader = DEFAULT_HEADER_USE;

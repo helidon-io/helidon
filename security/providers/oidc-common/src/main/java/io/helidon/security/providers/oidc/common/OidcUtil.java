@@ -18,14 +18,14 @@ package io.helidon.security.providers.oidc.common;
 
 import java.lang.System.Logger.Level;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Errors;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.Proxy;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.tracing.WebClientTracing;
-
+import io.helidon.common.config.Config;
+import io.helidon.common.socket.SocketOptions;
+import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
+import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.http1.Http1Client;
 
 final class OidcUtil {
     private static final System.Logger LOGGER = System.getLogger(OidcUtil.class.getName());
@@ -47,26 +47,34 @@ final class OidcUtil {
         return serverType;
     }
 
-    static WebClient.Builder webClientBaseBuilder(String proxyProtocol,
-                                                  String proxyHost,
-                                                  int proxyPort,
-                                                  boolean relativeUris,
-                                                  Duration clientTimeout) {
-        WebClient.Builder webClientBuilder = WebClient.builder()
-                .addService(WebClientTracing.create())
-                .addMediaSupport(JsonpSupport.create())
-                .connectTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                .readTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                .relativeUris(relativeUris);
+    static Http1Client.Http1ClientBuilder webClientBaseBuilder(String proxyProtocol,
+                                                               String proxyHost,
+                                                               int proxyPort,
+                                                               boolean relativeUris,
+                                                               Duration clientTimeout) {
+        Http1Client.Http1ClientBuilder webClientBuilder = WebClient.builder()
+                //TODO Níma client tracing
+//                .addService(WebClientTracing.create())
+                .mediaContext(MediaContext.builder()
+                                      .discoverServices(false)
+                                      .addMediaSupport(JsonpSupport.create(Config.empty()))
+                                      .build())
+                .channelOptions(SocketOptions.builder()
+                                        .connectTimeout(clientTimeout)
+                                        .readTimeout(clientTimeout)
+                                        .build());
+//        TODO Níma relative uris
+//                .relativeUris(relativeUris);
 
-        if (proxyHost != null) {
-            Proxy.ProxyType proxyType = Proxy.ProxyType.valueOf(proxyProtocol.toUpperCase());
-            webClientBuilder.proxy(Proxy.builder()
-                                           .type(proxyType)
-                                           .host(proxyHost)
-                                           .port(proxyPort)
-                                           .build());
-        }
+        //TODO Níma client proxy
+//        if (proxyHost != null) {
+//            Proxy.ProxyType proxyType = Proxy.ProxyType.valueOf(proxyProtocol.toUpperCase());
+//            webClientBuilder.proxy(Proxy.builder()
+//                                           .type(proxyType)
+//                                           .host(proxyHost)
+//                                           .port(proxyPort)
+//                                           .build());
+//        }
         return webClientBuilder;
     }
 

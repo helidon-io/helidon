@@ -33,13 +33,13 @@ import java.util.stream.Collectors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.SetCookie;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.reactive.webserver.RequestHeaders;
 import io.helidon.reactive.webserver.ResponseHeaders;
 import io.helidon.reactive.webserver.Routing;
@@ -48,6 +48,7 @@ import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.reactive.webserver.Service;
 import io.helidon.reactive.webserver.cors.CorsSupport;
 import io.helidon.security.Security;
+import io.helidon.security.SecurityException;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.oidc.OidcProviderService;
 import io.helidon.security.providers.oidc.common.OidcConfig;
@@ -362,27 +363,47 @@ public final class OidcSupport implements Service {
     private void processCodeWithTenant(String code, ServerRequest req, ServerResponse res, String tenantName, Tenant tenant) {
         TenantConfig tenantConfig = tenant.tenantConfig();
 
-        WebClient webClient = tenant.appWebClient();
+        Http1Client webClient = tenant.appWebClient();
 
         Parameters.Builder form = Parameters.builder("oidc-form-params")
                 .add("grant_type", "authorization_code")
                 .add("code", code)
                 .add("redirect_uri", redirectUri(req, tenantName));
 
-        WebClientRequestBuilder post = webClient.post()
+        Http1ClientRequest post = webClient.post()
                 .uri(tenant.tokenEndpointUri())
-                .accept(HttpMediaType.APPLICATION_JSON);
+                .header(Http.HeaderValues.ACCEPT_JSON);
 
         if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_POST) {
             form.add("client_id", tenantConfig.clientId());
             form.add("client_secret", tenantConfig.clientSecret());
         }
 
-        OidcConfig.postJsonResponse(post,
-                                    form.build(),
-                                    json -> processJsonResponse(req, res, json, tenantName),
-                                    (status, errorEntity) -> processError(res, status, errorEntity),
-                                    (t, message) -> processError(res, t, message));
+        try (Http1ClientResponse response = post.submit(form.build())) {
+            if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+                try {
+                    JsonObject jsonObject = response.as(JsonObject.class);
+                    processJsonResponse(req, res, jsonObject, tenantName);
+                } catch (Exception e) {
+                    processError(res, e, "Failed to read JSON from response");
+                }
+            } else {
+                String message;
+                try {
+                    message = response.as(String.class);
+                } catch (Exception e) {
+                    processError(res, e, "Failed to process error entity");
+                    return;
+                }
+                try {
+                    processError(res, response.status(), message);
+                } catch (Exception e) {
+                    throw new SecurityException("Failed to process request: " + message);
+                }
+            }
+        } catch (Exception e) {
+            processError(res, e, "Failed to invoke request");
+        }
     }
 
     private Object postLogoutUri(ServerRequest req) {

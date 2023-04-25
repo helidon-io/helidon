@@ -63,10 +63,6 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-nima</artifactId>
             <optional>true</optional>
@@ -101,16 +97,16 @@
             <artifactId>helidon-bundles-config</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-client</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-media-jsonp</artifactId>
-            <scope>provided</scope>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.helidon.jersey</groupId>-->
+<!--            <artifactId>helidon-jersey-client</artifactId>-->
+<!--            <scope>provided</scope>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>io.helidon.jersey</groupId>-->
+<!--            <artifactId>helidon-jersey-media-jsonp</artifactId>-->
+<!--            <scope>provided</scope>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
