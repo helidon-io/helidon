@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -245,7 +245,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
      *
      * @param persistenceXMLSchemaVersion a {@link String}
      * representation of the version of JPA being supported; may be
-     * {@code null} in which case "{@code 2.2}" will be used instead
+     * {@code null} in which case "{@code 3.1}" will be used instead
      *
      * @param persistenceProviderClassName the fully-qualified class
      * name of a {@link PersistenceProvider} implementation; may be
@@ -402,7 +402,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
      *
      * @param persistenceXMLSchemaVersion a {@link String}
      * representation of the version of JPA being supported; may be
-     * {@code null} in which case "{@code 2.2}" will be used instead
+     * {@code null} in which case "{@code 3.1}" will be used instead
      *
      * @param persistenceProviderClassName the fully-qualified class
      * name of a {@link PersistenceProvider} implementation; may be
@@ -535,7 +535,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         this.persistenceUnitName = persistenceUnitName;
         this.persistenceUnitRootUrl = persistenceUnitRootUrl;
         this.persistenceProviderClassName = persistenceProviderClassName;
-        this.persistenceXMLSchemaVersion = persistenceXMLSchemaVersion == null ? "2.2" : persistenceXMLSchemaVersion;
+        this.persistenceXMLSchemaVersion = persistenceXMLSchemaVersion == null ? "3.1" : persistenceXMLSchemaVersion;
         this.originalClassLoader = classLoader;
         this.classLoader = classLoader;
         this.tempClassLoaderSupplier = tempClassLoaderSupplier;
@@ -1075,7 +1075,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         final PersistenceUnitInfoBean returnValue =
             new PersistenceUnitInfoBean(name,
                                         rootUrl,
-                                        "2.2",
+                                        "3.1",
                                         persistenceUnit.getProvider(),
                                         classLoader,
                                         tempClassLoaderSupplier,
