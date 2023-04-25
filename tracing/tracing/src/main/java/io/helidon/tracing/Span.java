@@ -124,17 +124,9 @@ public interface Span {
     /**
      * Sets a baggage item in the Span (and its SpanContext) as a key/value pair.
      *
-     * Baggage enables powerful distributed context propagation functionality where arbitrary application data can be
-     * carried along the full path of request execution throughout the system.
-     *
-     * Note 1: Baggage is only propagated to the future (recursive) children of this SpanContext.
-     *
-     * Note 2: Baggage is sent in-band with every subsequent local and remote calls, so this feature must be used with
-     * care.
-     *
      * @param key String Key
      * @param value String Value
-     * @return this Span instance, for chaining
+     * @return current Span instance
      */
     Span baggage(String key, String value);
 
@@ -142,7 +134,7 @@ public interface Span {
      * Get Baggage Item by key.
      *
      * @param key String key
-     * @return the value of the baggage item identified by the given key, or null if no such item could be found
+     * @return the value of the baggage item
      */
     String baggage(String key);
 
