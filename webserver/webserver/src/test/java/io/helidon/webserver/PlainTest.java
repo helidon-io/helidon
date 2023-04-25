@@ -66,6 +66,7 @@ public class PlainTest {
     private static final RuntimeException TEST_EXCEPTION = new RuntimeException("BOOM!");
     private static WebServer webServer;
     private static String singleEntityResponse = "SingleEntity";
+    private static String contentLengthDataPrefix = "Server:";
     private static String sSEEntityResponse = "id: 1\ndata: foo\nevent: bar";
 
     /**
@@ -91,6 +92,33 @@ public class PlainTest {
                         .get("/SSE", (req, res) -> {
                             res.headers().add(Http.Header.CONTENT_TYPE, "text/event-stream");
                             res.send(sSEEntityResponse);
+                        })
+                        // ex. path = "/multiFirstError" or "/multiFirstErrorChunked"
+                        .get("/multiFirstError*", (req, res) -> {
+                            setResponseToChunkFromPath(req, res);
+                            res.send(Multi.error(TEST_EXCEPTION));
+                        })
+                        // ex. path = "/multiSecondError" or "/multiSecondErrorChunked"
+                        .get("/multiSecondError*", (req, res) -> {
+                            setResponseToChunkFromPath(req, res);
+                            res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
+                                                  Multi.error(TEST_EXCEPTION)));
+                        })
+                        // ex. path = "/multiThirdError" or "/multiThirdErrorChunked"
+                        .get("/multiThirdError*", (req, res) -> {
+                            setResponseToChunkFromPath(req, res);
+                            res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
+                                                  Multi.just("test2\n").map(s -> DataChunk.create(s.getBytes())),
+                                                  Multi.error(TEST_EXCEPTION)));
+                        })
+                        .get("/contentLength*", (req, res) -> {
+                            String path = req.path().toString();
+                            int noOfChunks = Integer.valueOf(path.substring(path.length() - 1));
+                            res.addHeader(Http.Header.CONTENT_LENGTH, String.valueOf((contentLengthDataPrefix.length() + 1) * noOfChunks))
+                                    .send(Multi.range(0, noOfChunks)
+                                                  .map(i -> contentLengthDataPrefix + i)
+                                                  .map(String::getBytes)
+                                                  .map(DataChunk::create));
                         })
                         .any((req, res) -> {
                             res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
@@ -124,17 +152,6 @@ public class PlainTest {
                             res.send(Multi.just("test 1", "test 2", "test 3")
                                              .map(String::getBytes)
                                              .map(DataChunk::create));
-                        })
-                        .get("/multiFirstError", (req, res) -> {
-                            res.send(Multi.error(TEST_EXCEPTION));
-                        })
-                        .get("/multiSecondError", (req, res) -> {
-                            res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
-                                                  Multi.error(TEST_EXCEPTION)));
-                        })
-                        .get("/multiThirdError", (req, res) -> {
-                            res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
-                                                  Multi.error(TEST_EXCEPTION)));
                         })
                         .get("/multiDelayedThirdError", (req, res) -> {
                             res.send(Multi.interval(100, 100, TimeUnit.MILLISECONDS,
@@ -514,37 +531,52 @@ public class PlainTest {
      * stream-status: 500
      * stream-result: java.lang.RuntimeException: BOOM!
      */
-    @Test
-    public void testMultiFirstError() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/multiFirstError",
+    @ParameterizedTest
+    @ValueSource(strings = {"", "Chunked"})
+    public void testMultiFirstError(String pathSuffix) throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/multiFirstError" + pathSuffix,
                                                    Http.Method.GET,
                                                    null, webServer);
-        System.out.println(s);
 
+        // Response status has not been sent yet before the exception took place, so server has still a chance to set it to 500.
         assertThat(s, startsWith("HTTP/1.1 500 Internal Server Error\n"));
+        Map<String, String> headers = headersFromResponse(s);
+        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.TRANSFER_ENCODING), is("chunked")));
+
         assertThat(headersFromResponse(s), hasKey(equalToIgnoringCase(Http.Header.TRAILER)));
         Map<String, String> trailerHeaders = cutTrailerHeaders(s);
         assertThat(trailerHeaders, hasEntry(equalToIgnoringCase("stream-status"), is("500")));
         assertThat(trailerHeaders, hasEntry(equalToIgnoringCase("stream-result"), is(TEST_EXCEPTION.toString())));
     }
 
-    @Test
-    public void testMultiSecondError() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/multiSecondError",
+    @ParameterizedTest
+    @ValueSource(strings = {"", "Chunked"})
+    public void testMultiSecondError(String pathSuffix) throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/multiSecondError" + pathSuffix,
                                                    Http.Method.GET,
                                                    null, webServer);
-        assertThat(s, startsWith("HTTP/1.1 200 OK\n"));
+        // When response is not chunked and no content-length is set, and the error takes place after the 1st chunk, the
+        // status has not been sent yet, so it still has a chance to set it to 500. On the other hand, if response is set to
+        // chunked, the status has already been sent before the error took place and hence will get the actual status code.
+        String expectedStatus = pathSuffix.isEmpty() ? "500 Internal Server Error" : "200 OK";
+        assertThat(s, startsWith("HTTP/1.1 " + expectedStatus + "\n"));
+        Map<String, String> headers = headersFromResponse(s);
+        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.TRANSFER_ENCODING), is("chunked")));
         Map<String, String> trailerHeaders = cutTrailerHeaders(s);
         assertThat(trailerHeaders, hasEntry("stream-status", "500"));
         assertThat(trailerHeaders, hasEntry("stream-result", TEST_EXCEPTION.toString()));
     }
 
-    @Test
-    public void testMultiThirdError() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/multiThirdError",
+    @ParameterizedTest
+    @ValueSource(strings = {"", "Chunked"})
+    public void testMultiThirdError(String pathSuffix) throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/multiThirdError" + pathSuffix,
                                                    Http.Method.GET,
                                                    null, webServer);
+        // Response status has already been sent before the exception took place, hence getting the 200 instead of 500.
         assertThat(s, startsWith("HTTP/1.1 200 OK\n"));
+        Map<String, String> headers = headersFromResponse(s);
+        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.TRANSFER_ENCODING), is("chunked")));
         Map<String, String> trailerHeaders = cutTrailerHeaders(s);
         assertThat(trailerHeaders, hasEntry("stream-status", "500"));
         assertThat(trailerHeaders, hasEntry("stream-result", TEST_EXCEPTION.toString()));
@@ -623,6 +655,24 @@ public class PlainTest {
         assertThat(entityFromResponse(s, false), is(singleEntityResponse));
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 5})
+    void testContentLength(int entityCount) throws Exception {
+        // ex. path = "/contentLength0" or "/contentLength1" or "/contentLength5"
+        String s = SocketHttpClient.sendAndReceive("/contentLength" + entityCount,
+                                                   Http.Method.GET,
+                                                   null, webServer);
+        assertThat(s, startsWith("HTTP/1.1 200 OK\n"));
+        Map<String, String> headers = headersFromResponse(s);
+        String contentLength = String.valueOf((contentLengthDataPrefix.length() + 1) * entityCount);
+        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.CONTENT_LENGTH), is(contentLength)));
+        String expectedResponse = "";
+        for (int i = 0; i < entityCount; i++) {
+            expectedResponse += contentLengthDataPrefix + i;
+        }
+        assertThat(entityFromResponse(s, false), is(expectedResponse));
+    }
+
     @Test
     void testSSEShouldBeChunked() throws Exception {
         String s = SocketHttpClient.sendAndReceive("/SSE",
@@ -643,6 +693,12 @@ public class PlainTest {
         String path = req.path().toString();
         int responseStatus = Integer.valueOf(path.substring(path.length() - 3));
         res.status(responseStatus);
+    }
+
+    private static void setResponseToChunkFromPath(ServerRequest req, ServerResponse res) {
+        if (req.path().toString().endsWith("Chunked")) {
+            res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
+        }
     }
 
     private Map<String, String> cutTrailerHeaders(String response) {

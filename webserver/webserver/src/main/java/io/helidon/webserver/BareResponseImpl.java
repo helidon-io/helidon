@@ -87,10 +87,25 @@ class BareResponseImpl implements BareResponse {
     private final long backpressureBufferSize;
 
     // Accessed by writeStatusHeaders(status, headers) method
-    private volatile DefaultHttpResponse response;
-    // lengthOptimization if true, will set content length and happens if there is 0 or 1 entity packet sent
-    // and response is not TransferEncodingChunked and not an SSE Event Stream
+    /*
+    Details about lengthOptimization:
+    +--------------------+-----------------------------------------------------+
+    | lengthOptimization | Conditions                                          |
+    | Value              |                                                     |
+    +--------------------+-----------------------------------------------------+
+    | false              | Content-Length is set                               |
+    + -------------------+-----------------------------------------------------+
+    | false              | Content-Type contains text/event-stream (SSE Event) |
+    + -------------------+-----------------------------------------------------+
+    | false              | Transfer-Encoding contains chunked                  |
+    + -------------------+-----------------------------------------------------+
+    | true               | Contains 0 or 1 Entity and none of the above        |
+    + -------------------------------------------------------------------------+
+    Note: lengthOptimization if true, will set content length on the response header
+    */
     private volatile boolean lengthOptimization = true;
+    private volatile DefaultHttpResponse response;
+    private volatile boolean lengthSet;
 
     /**
      * @param ctx the channel handler context
@@ -198,7 +213,8 @@ class BareResponseImpl implements BareResponse {
                 .filter(header -> header.startsWith(HTTP_2_HEADER_PREFIX))
                 .forEach(header -> response.headers().add(header, requestHeaders.get(header)));
 
-        if (!HttpUtil.isContentLengthSet(response) && isSseEventStream(headers)) {
+        lengthSet = HttpUtil.isContentLengthSet(response);
+        if (lengthSet || isSseEventStream(headers) || HttpUtil.isTransferEncodingChunked(response)) {
             lengthOptimization = false;
         }
 
@@ -334,13 +350,13 @@ class BareResponseImpl implements BareResponse {
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
         boolean chunked = true;
         if (response != null) {
-            if (lengthOptimization && !HttpUtil.isTransferEncodingChunked(response)) {
+            if (lengthOptimization) {
                 if (throwable == null) {
                     int length = (firstChunk == null ? 0 : firstChunk.remaining());
                     chunked = false;
-                    HttpUtil.setTransferEncodingChunked(response, chunked);
                     HttpUtil.setContentLength(response, length);
                 } else {
+                    HttpUtil.setTransferEncodingChunked(response, true);
                     //headers not sent yet
                     response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
                     //We are not using CombinedHttpHeaders
@@ -434,9 +450,10 @@ class BareResponseImpl implements BareResponse {
      */
     private void onNextPipe(DataChunk data) {
         if (response != null) {
-            if (!HttpUtil.isContentLengthSet(response) && !HttpUtil.isTransferEncodingChunked(response)) {
+            if (!lengthSet) {
                 HttpUtil.setTransferEncodingChunked(response, true);
             }
+            // lengthOptimization will be set to false in initWriteResponse
             initWriteResponse();
         }
         sendData(data, true);
