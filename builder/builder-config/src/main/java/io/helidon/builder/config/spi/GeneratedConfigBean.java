@@ -16,6 +16,10 @@
 
 package io.helidon.builder.config.spi;
 
+import java.util.Optional;
+
+import io.helidon.common.config.Config;
+
 /**
  * Every {@link io.helidon.builder.config.ConfigBean}-annotated type will also implement this contract.
  */
@@ -28,17 +32,25 @@ public interface GeneratedConfigBean extends GeneratedConfigBeanCommon {
  */
 
     /**
-     * Set the instance id of this config bean.
+     * Returns the instance id assigned to this bean.
+     * Note that the instance id is typically assigned the {@link Config#key()} in most circumstances.
      *
-     * @param val the new instance identifier
-     */
-    void __instanceId(String val);
-
-    /**
-     * Returns the existing instance identifier.
-     *
-     * @return the instance identifier
+     * @return the instance id assigned to this bean
      */
     String __instanceId();
+
+    /**
+     * Returns the {@link Config#name()} if available.
+     *
+     * @return the config name or else empty
+     */
+    Optional<String> __name();
+
+    /**
+     * Returns the generated config bean meta information.
+     *
+     * @return the config bean meta information
+     */
+    MetaConfigBeanInfo __metaInfo();
 
 }

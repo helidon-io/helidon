@@ -15,6 +15,6 @@
  */
 
 /**
- * For Testing.
+ * For testing.
  */
 package io.helidon.pico.configdriven.configuredby.test;

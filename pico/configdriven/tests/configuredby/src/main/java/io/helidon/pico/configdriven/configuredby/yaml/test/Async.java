@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.config.spi;
+package io.helidon.pico.configdriven.configuredby.yaml.test;
 
-import java.util.Collection;
-import java.util.Map;
+import io.helidon.pico.configdriven.api.ConfiguredBy;
 
-/**
- * The highest weighted service-loaded instance of this contract will be responsible for managing the active
- * {@link io.helidon.builder.config.ConfigBean} instances running in the JVM.
- */
-public interface HelidonConfigBeanRegistry {
+import jakarta.inject.Inject;
 
-    /**
-     * Returns all config beans indexed by its config key.
-     *
-     * @param <GCB> the generated config bean type
-     * @return all config beans
-     */
-    <GCB extends GeneratedConfigBean> Map<String, Collection<GCB>> allConfigBeans();
+@ConfiguredBy(AsyncConfig.class)
+public class Async {
+
+    final AsyncConfig cfg;
+
+    @Inject
+    Async(AsyncConfig cfg) {
+        this.cfg = cfg;
+    }
 
 }

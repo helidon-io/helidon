@@ -19,6 +19,8 @@ package io.helidon.builder.config.test;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.builder.config.spi.GeneratedConfigBean;
+import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.builder.config.testsubjects.DefaultTestClientConfig;
 import io.helidon.builder.config.testsubjects.DefaultTestServerConfig;
 import io.helidon.builder.config.testsubjects.TestClientConfig;
@@ -72,6 +74,18 @@ class BasicConfigBeanTest {
                    contains("a", "b", "c"));
         assertThat(serverConfig.toString(),
                    endsWith("(name=server, port=8080, cipherSuites=[a, b, c], pswd=not-null, description=Optional[test])"));
+        GeneratedConfigBean generatedCB = (GeneratedConfigBean) serverConfig;
+        assertThat(generatedCB.__name(),
+                   optionalValue(equalTo("")));
+        assertThat(generatedCB.__metaInfo(),
+                   equalTo(MetaConfigBeanInfo.builder()
+                                   .value("test-server")
+                                   .repeatable(true)
+                                   .drivesActivation(false)
+                                   .atLeastOne(true)
+                                   .wantDefaultConfigBean(false)
+                                   .levelType(io.helidon.builder.config.ConfigBean.LevelType.ROOT)
+                                   .build()));
 
         TestClientConfig clientConfig = DefaultTestClientConfig.toBuilder(cfg).build();
         assertThat(clientConfig.name(),
@@ -91,6 +105,18 @@ class BasicConfigBeanTest {
         assertThat(clientConfig.toString(),
                    endsWith("(name=server, port=8080, cipherSuites=[a, b, c], pswd=not-null, "
                                     + "serverPort=0, headers={headers.1=header2, headers.0=header1})"));
+        generatedCB = (GeneratedConfigBean) clientConfig;
+        assertThat(generatedCB.__name(),
+                   optionalValue(equalTo("")));
+        assertThat(generatedCB.__metaInfo(),
+                   equalTo(MetaConfigBeanInfo.builder()
+                                   .value("test-client")
+                                   .repeatable(true)
+                                   .drivesActivation(false)
+                                   .atLeastOne(false)
+                                   .wantDefaultConfigBean(false)
+                                   .levelType(io.helidon.builder.config.ConfigBean.LevelType.ROOT)
+                                   .build()));
     }
 
     @Test
@@ -103,6 +129,10 @@ class BasicConfigBeanTest {
                    equalTo("default"));
         assertThat(serverConfig.port(),
                    equalTo(0));
+
+        GeneratedConfigBean generatedCB = (GeneratedConfigBean) serverConfig;
+        assertThat(generatedCB.__name(),
+                   optionalValue(equalTo("")));
     }
 
     /**
@@ -148,6 +178,10 @@ class BasicConfigBeanTest {
                    equalTo(Map.of()));
         assertThat(clientConfig.cipherSuites(),
                    equalTo(List.of()));
+
+        GeneratedConfigBean generatedCB = (GeneratedConfigBean) clientConfig;
+        assertThat(generatedCB.__name(),
+                   optionalEmpty());
     }
 
     @Test

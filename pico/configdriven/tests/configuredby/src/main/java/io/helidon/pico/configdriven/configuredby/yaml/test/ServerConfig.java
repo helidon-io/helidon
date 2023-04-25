@@ -14,23 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.config.spi;
+package io.helidon.pico.configdriven.configuredby.yaml.test;
 
-import java.util.Collection;
-import java.util.Map;
+import io.helidon.builder.config.ConfigBean;
 
-/**
- * The highest weighted service-loaded instance of this contract will be responsible for managing the active
- * {@link io.helidon.builder.config.ConfigBean} instances running in the JVM.
- */
-public interface HelidonConfigBeanRegistry {
+@ConfigBean(value = "server", repeatable = false)
+public interface ServerConfig {
 
-    /**
-     * Returns all config beans indexed by its config key.
-     *
-     * @param <GCB> the generated config bean type
-     * @return all config beans
-     */
-    <GCB extends GeneratedConfigBean> Map<String, Collection<GCB>> allConfigBeans();
+    int port();
 
 }

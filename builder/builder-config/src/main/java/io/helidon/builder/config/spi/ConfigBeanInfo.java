@@ -30,6 +30,11 @@ import io.helidon.builder.config.ConfigBean;
 public interface ConfigBeanInfo extends ConfigBean {
 
     /**
+     * The tag used to represent the meta properties.
+     */
+    String TAG_META = "__meta";
+
+    /**
      * The attribute name for {@link #value()} ()}.
      */
     String TAG_KEY = "value";

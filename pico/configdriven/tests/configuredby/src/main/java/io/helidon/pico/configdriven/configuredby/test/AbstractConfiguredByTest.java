@@ -125,7 +125,10 @@ public abstract class AbstractConfiguredByTest {
                 .addQualifier(DefaultQualifierAndValue.create(ConfiguredBy.class))
                 .build();
         List<ServiceProvider<?>> list = services.lookupAll(criteria);
-        List<String> desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        List<String> desc = list.stream()
+                .filter(it -> !it.serviceInfo().serviceTypeName().contains(".yaml."))
+                .map(ServiceProvider::description)
+                .collect(Collectors.toList());
         // order matters here since it should be based upon weight
         assertThat("root providers are config-driven, auto-started services unless overridden to not be driven", desc,
                    contains("ASingletonService{root}:ACTIVE",
