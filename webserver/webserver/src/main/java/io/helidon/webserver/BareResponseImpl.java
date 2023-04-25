@@ -89,18 +89,18 @@ class BareResponseImpl implements BareResponse {
     // Accessed by writeStatusHeaders(status, headers) method
     /*
     Details about lengthOptimization:
-    +--------------------+-----------------------------------------------------+
-    | lengthOptimization | Conditions                                          |
-    | Value              |                                                     |
-    +--------------------+-----------------------------------------------------+
-    | false              | Content-Length is set                               |
-    + -------------------+-----------------------------------------------------+
-    | false              | Content-Type contains text/event-stream (SSE Event) |
-    + -------------------+-----------------------------------------------------+
-    | false              | Transfer-Encoding contains chunked                  |
-    + -------------------+-----------------------------------------------------+
-    | true               | Contains 0 or 1 Entity and none of the above        |
-    + -------------------------------------------------------------------------+
+    +-----------------------------------------------------+--------------------+
+    | Conditions                                          | lengthOptimization |
+    |                                                     | Value              |
+    +-----------------------------------------------------+--------------------+
+    | Content-Length is set                               | false              |
+    +-----------------------------------------------------+--------------------+
+    | Content-Type contains text/event-stream (SSE Event) | false              |
+    +-----------------------------------------------------+--------------------+
+    | Transfer-Encoding contains chunked                  | false              |
+    +-----------------------------------------------------+--------------------+
+    | Contains 0 or 1 Entity and none of the above        | true               |
+    +-----------------------------------------------------+--------------------+
     Note: lengthOptimization if true, will set content length on the response header
     */
     private volatile boolean lengthOptimization = true;
