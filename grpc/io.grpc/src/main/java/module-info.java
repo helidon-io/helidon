@@ -37,7 +37,8 @@ module io.grpc {
 
     provides io.grpc.LoadBalancerProvider
             with io.grpc.internal.PickFirstLoadBalancerProvider,
-                 io.grpc.util.SecretRoundRobinLoadBalancerProvider.Provider;
+                 io.grpc.util.SecretRoundRobinLoadBalancerProvider.Provider,
+                 io.grpc.util.OutlierDetectionLoadBalancerProvider;
 
     provides io.grpc.NameResolverProvider
             with io.grpc.internal.DnsNameResolverProvider;
