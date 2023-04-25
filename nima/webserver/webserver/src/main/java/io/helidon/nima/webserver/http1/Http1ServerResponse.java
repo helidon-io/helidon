@@ -615,7 +615,12 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         void commit() {
-            delegate.commit();
+            try {
+                flush();
+                delegate.commit();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 }
