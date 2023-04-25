@@ -54,7 +54,7 @@ import io.helidon.pico.api.Event;
 import io.helidon.pico.api.Injector;
 import io.helidon.pico.api.InjectorOptions;
 import io.helidon.pico.api.Metrics;
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
@@ -75,7 +75,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
     private final AtomicBoolean initializingServicesFinished = new AtomicBoolean(false);
     private final AtomicBoolean isBinding = new AtomicBoolean(false);
     private final AtomicReference<DefaultServices> services = new AtomicReference<>();
-    private final AtomicReference<List<Module>> moduleList = new AtomicReference<>();
+    private final AtomicReference<List<ModuleComponent>> moduleList = new AtomicReference<>();
     private final AtomicReference<List<Application>> applicationList = new AtomicReference<>();
     private final Bootstrap bootstrap;
     private final PicoServicesConfig cfg;
@@ -303,7 +303,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
 
         if (isGlobal) {
             // iterate over all modules, binding to each one's set of services, but with NO activations
-            List<Module> modules = findModules(true);
+            List<ModuleComponent> modules = findModules(true);
             try {
                 isBinding.set(true);
                 bindModules(thisServices, modules);
@@ -372,16 +372,16 @@ class DefaultPicoServices implements PicoServices, Resettable {
         return result;
     }
 
-    private List<Module> findModules(boolean load) {
-        List<Module> result = moduleList.get();
+    private List<ModuleComponent> findModules(boolean load) {
+        List<ModuleComponent> result = moduleList.get();
         if (result != null) {
             return result;
         }
 
         result = new ArrayList<>();
         if (load) {
-            ServiceLoader<Module> serviceLoader = ServiceLoader.load(Module.class);
-            for (Module module : serviceLoader) {
+            ServiceLoader<ModuleComponent> serviceLoader = ServiceLoader.load(ModuleComponent.class);
+            for (ModuleComponent module : serviceLoader) {
                 result.add(module);
             }
 
@@ -413,14 +413,14 @@ class DefaultPicoServices implements PicoServices, Resettable {
     }
 
     private void bindModules(DefaultServices services,
-                             Collection<Module> modules) {
+                             Collection<ModuleComponent> modules) {
         if (!cfg.usesCompileTimeModules()) {
             LOGGER.log(System.Logger.Level.DEBUG, "module binding is disabled");
             return;
         }
 
         if (modules.isEmpty()) {
-            LOGGER.log(System.Logger.Level.WARNING, "no " + Module.class.getName() + " was found.");
+            LOGGER.log(System.Logger.Level.WARNING, "no " + ModuleComponent.class.getName() + " was found.");
         } else {
             modules.forEach(module -> services.bind(this, module, isBinding.get()));
         }

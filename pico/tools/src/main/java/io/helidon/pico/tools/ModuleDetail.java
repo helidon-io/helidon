@@ -23,7 +23,7 @@ import io.helidon.builder.Builder;
 import io.helidon.common.types.TypeName;
 
 /**
- * The specifics for a single {@link io.helidon.pico.api.Module} that was codegen'ed.
+ * The specifics for a single {@link io.helidon.pico.api.ModuleComponent} that was codegen'ed.
  *
  * @see ActivatorCreatorResponse#moduleDetail
  */

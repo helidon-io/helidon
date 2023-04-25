@@ -38,7 +38,7 @@ import io.helidon.pico.api.DefaultServiceInfoCriteria;
 import io.helidon.pico.api.InjectionException;
 import io.helidon.pico.api.Intercepted;
 import io.helidon.pico.api.Metrics;
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
@@ -460,7 +460,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     }
 
     void bind(PicoServices picoServices,
-              Module module,
+              ModuleComponent module,
               boolean initializing) {
         String moduleName = module.named().orElse(module.getClass().getName());
         boolean isLoggable = DefaultPicoServices.LOGGER.isLoggable(System.Logger.Level.TRACE);
@@ -475,7 +475,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         }
     }
 
-    private ServiceProvider<?> createServiceProvider(Module module,
+    private ServiceProvider<?> createServiceProvider(ModuleComponent module,
                                                      String moduleName,
                                                      PicoServices picoServices) {
         return new PicoModuleServiceProvider(module, moduleName, picoServices);

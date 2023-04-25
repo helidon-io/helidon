@@ -18,27 +18,27 @@ package io.helidon.pico.runtime;
 
 import io.helidon.pico.api.DefaultQualifierAndValue;
 import io.helidon.pico.api.DefaultServiceInfo;
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfo;
 
 /**
- * Basic {@link io.helidon.pico.api.Module} implementation. A Pico module is-a service provider also.
+ * Basic {@link ModuleComponent} implementation. A Pico module is-a service provider also.
  */
-class PicoModuleServiceProvider extends AbstractServiceProvider<Module> {
+class PicoModuleServiceProvider extends AbstractServiceProvider<ModuleComponent> {
 
-    PicoModuleServiceProvider(Module module,
+    PicoModuleServiceProvider(ModuleComponent module,
                               String moduleName,
                               PicoServices picoServices) {
         super(module, PicoServices.terminalActivationPhase(), createServiceInfo(module, moduleName), picoServices);
         serviceRef(module);
     }
 
-    static ServiceInfo createServiceInfo(Module module,
+    static ServiceInfo createServiceInfo(ModuleComponent module,
                                          String moduleName) {
         DefaultServiceInfo.Builder builder = DefaultServiceInfo.builder()
                 .serviceTypeName(module.getClass().getName())
-                .addContractsImplemented(Module.class.getName());
+                .addContractsImplemented(ModuleComponent.class.getName());
         if (moduleName != null) {
             builder.moduleName(moduleName)
                     .addQualifier(DefaultQualifierAndValue.createNamed(moduleName));

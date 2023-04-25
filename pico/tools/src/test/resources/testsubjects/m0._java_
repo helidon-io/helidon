@@ -9,6 +9,6 @@ module io.helidon.pico {
 
     provides io.helidon.pico.api.PicoServices with io.helidon.pico.spi.impl.DefaultPicoServices;
 
-    uses io.helidon.pico.api.Module;
+    uses io.helidon.pico.api.ModuleComponent;
     uses io.helidon.pico.api.Application;
 }

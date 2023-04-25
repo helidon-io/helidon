@@ -154,7 +154,7 @@ class ModuleInfoDescriptorTest {
                                    + "    exports io.helidon.pico.spi.impl;\n"
                                    + "    provides io.helidon.pico.api.PicoServices with io.helidon.pico.spi.impl"
                                         + ".DefaultPicoServices;\n"
-                                   + "    uses io.helidon.pico.api.Module;\n"
+                                   + "    uses io.helidon.pico.api.ModuleComponent;\n"
                                    + "    uses io.helidon.pico.api.Application;\n"
                                    + "}"));
 
@@ -194,7 +194,7 @@ class ModuleInfoDescriptorTest {
                                    + "    exports io.helidon.pico.spi.impl;\n"
                                    + "    provides io.helidon.pico.api.PicoServices with io.helidon.pico.spi.impl"
                                    + ".DefaultPicoServices;\n"
-                                   + "    uses io.helidon.pico.api.Module;\n"
+                                   + "    uses io.helidon.pico.api.ModuleComponent;\n"
                                    + "    uses io.helidon.pico.api.Application;\n"
                                    + "}"));
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> descriptor.mergeCreate(descriptor));

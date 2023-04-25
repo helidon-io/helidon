@@ -37,7 +37,7 @@ import io.helidon.pico.api.CallingContext;
 import io.helidon.pico.api.CallingContextFactory;
 import io.helidon.pico.api.DefaultCallingContext;
 import io.helidon.pico.api.DefaultServiceInfoCriteria;
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceProvider;
@@ -143,9 +143,9 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         return moduleName;
     }
 
-    ServiceProvider<Module> lookupThisModule(String name,
-                                             Services services) {
-        return services.lookupFirst(Module.class, name, false).orElseThrow(() -> noModuleFoundError(name));
+    ServiceProvider<ModuleComponent> lookupThisModule(String name,
+                                                      Services services) {
+        return services.lookupFirst(ModuleComponent.class, name, false).orElseThrow(() -> noModuleFoundError(name));
     }
 
     String getClassPrefixName() {
@@ -260,7 +260,9 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             ApplicationCreator creator = applicationCreator();
 
             List<ServiceProvider<?>> allModules = services
-                    .lookupAll(DefaultServiceInfoCriteria.builder().addContractImplemented(Module.class.getName()).build());
+                    .lookupAll(DefaultServiceInfoCriteria.builder()
+                                       .addContractImplemented(ModuleComponent.class.getName())
+                                       .build());
             getLog().info("processing modules: " + toDescriptions(allModules));
             if (allModules.isEmpty()) {
                 warn("no modules to process");
@@ -284,7 +286,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     ? moduleInfoPathRef.get().getPath()
                     : null;
             String moduleInfoModuleName = getThisModuleName();
-            ServiceProvider<Module> moduleSp = lookupThisModule(moduleInfoModuleName, services);
+            ServiceProvider<ModuleComponent> moduleSp = lookupThisModule(moduleInfoModuleName, services);
             String packageName = determinePackageName(Optional.ofNullable(moduleSp), serviceTypeNames, descriptor, true);
 
             CodeGenPaths codeGenPaths = DefaultCodeGenPaths.builder()

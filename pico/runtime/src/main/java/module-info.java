@@ -31,6 +31,6 @@ module io.helidon.pico.runtime {
     provides io.helidon.pico.spi.PicoServicesProvider
             with io.helidon.pico.runtime.DefaultPicoServicesProvider;
 
-    uses io.helidon.pico.api.Module;
+    uses io.helidon.pico.api.ModuleComponent;
     uses io.helidon.pico.api.Application;
 }

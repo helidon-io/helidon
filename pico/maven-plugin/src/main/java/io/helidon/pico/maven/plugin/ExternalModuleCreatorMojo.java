@@ -51,7 +51,7 @@ import static io.helidon.pico.maven.plugin.MavenPluginUtils.activatorCreator;
 import static io.helidon.pico.maven.plugin.MavenPluginUtils.externalModuleCreator;
 
 /**
- * Responsible for creating pico {@link io.helidon.pico.api.Activator}'s and a {@link io.helidon.pico.api.Module}
+ * Responsible for creating pico {@link io.helidon.pico.api.Activator}'s and a {@link io.helidon.pico.api.ModuleComponent}
  * wrapping a set of packages from an external third-party jar.
  */
 @Mojo(name = "external-module-create", defaultPhase = LifecyclePhase.GENERATE_SOURCES, threadSafe = true,

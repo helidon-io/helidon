@@ -346,7 +346,7 @@ public class CodeGenFiler {
     }
 
     /**
-     * Code generates the {@link io.helidon.pico.api.Module} source.
+     * Code generates the {@link io.helidon.pico.api.ModuleComponent} source.
      *
      * @param moduleDetail the module details
      */
