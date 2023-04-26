@@ -57,7 +57,7 @@ class ClientRequestImpl implements Http2ClientRequest {
     private final long maxHeaderListSize;
     private final int connectionPrefetch;
 
-    private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
+    private WritableHeaders<?> explicitHeaders;
     private Tls tls;
     private int priority;
     private boolean priorKnowledge;
@@ -88,6 +88,7 @@ class ClientRequestImpl implements Http2ClientRequest {
         this.query = query;
         this.followRedirects = client.followRedirects();
         this.maxRedirects = client.maxRedirects();
+        this.explicitHeaders = WritableHeaders.create(client.defaultHeaders());
     }
 
     @Override

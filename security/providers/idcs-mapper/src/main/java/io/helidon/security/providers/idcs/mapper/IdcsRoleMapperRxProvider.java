@@ -27,7 +27,7 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -192,18 +192,15 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
         tracing.findParent()
                 .ifPresent(childContext::register);
 
-        WebClientRequestBuilder request = oidcConfig().generalWebClient()
+        Http1ClientRequest request = oidcConfig().generalWebClient()
                 .post()
                 .uri(asserterUri)
-                .context(childContext)
                 .headers(it -> {
                     it.add(Http.Header.AUTHORIZATION, "Bearer " + appToken);
                     return it;
                 });
 
-        return processRoleRequest(request,
-                                  requestBuilder.build(),
-                                  subjectName);
+        return processRoleRequest(request, requestBuilder.build(), subjectName);
     }
 
     /**

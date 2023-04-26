@@ -30,8 +30,8 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -253,9 +253,8 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
         tracing.findParent()
                 .ifPresent(childContext::register);
 
-        WebClientRequestBuilder post = oidcConfig().generalWebClient()
+        Http1ClientRequest post = oidcConfig().generalWebClient()
                 .post()
-                .context(childContext)
                 .uri(multitenantEndpoints.assertEndpoint(idcsTenantId))
                 .headers(it -> {
                     it.add(Http.Header.AUTHORIZATION, "Bearer " + appToken);
@@ -423,8 +422,8 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
         private final String urlPrefix;
         private final String assertUrlSuffix;
         private final String tokenUrlSuffix;
-        private final WebClient appClient;
-        private final WebClient generalClient;
+        private final Http1Client appClient;
+        private final Http1Client generalClient;
 
         // we want to cache endpoints for each tenant
         private final ConcurrentHashMap<String, URI> assertEndpointCache = new ConcurrentHashMap<>();

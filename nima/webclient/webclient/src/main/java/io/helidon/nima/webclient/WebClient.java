@@ -17,6 +17,8 @@
 package io.helidon.nima.webclient;
 
 import java.net.URI;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -182,24 +184,50 @@ public interface WebClient {
         }
 
         /**
-         * Add default header of this client.
+         * Configure a custom header to be sent. Some headers cannot be modified.
          *
-         * @param header header value
-         * @return updated builder
+         * @param header header to add
+         * @return updated builder instance
          */
         public B header(Http.HeaderValue header) {
+            Objects.requireNonNull(header);
             this.defaultHeaders.set(header);
             return identity();
         }
 
         /**
-         * Add default headers of this client.
+         * Set header with multiple values. Some headers cannot be modified.
          *
-         * @param headersFunction header supplying function
-         * @return updated builder
+         * @param name header name
+         * @param values header values
+         * @return updated builder instance
          */
-        public B headers(Function<ClientRequestHeaders, WritableHeaders<?>> headersFunction) {
-            this.defaultHeaders = headersFunction.apply(ClientRequestHeaders.create(defaultHeaders));
+        public B header(Http.HeaderName name, List<String> values) {
+            Objects.requireNonNull(name);
+            this.defaultHeaders.set(name, values);
+            return identity();
+        }
+
+        /**
+         * Update headers.
+         *
+         * @param headersConsumer consumer of client headers
+         * @return updated builder instance
+         */
+        public B headers(Function<ClientRequestHeaders, WritableHeaders<?>> headersConsumer) {
+            this.defaultHeaders = headersConsumer.apply(ClientRequestHeaders.create(defaultHeaders));
+            return identity();
+        }
+
+        /**
+         * Remove header with the selected name from the default headers.
+         *
+         * @param name header name
+         * @return updated builder instance
+         */
+        protected B removeHeader(Http.HeaderName name) {
+            Objects.requireNonNull(name);
+            this.defaultHeaders.remove(name);
             return identity();
         }
 
@@ -245,6 +273,7 @@ public interface WebClient {
         int maxRedirect() {
             return maxRedirect;
         }
+
         WritableHeaders<?> defaultHeaders() {
             return defaultHeaders;
         }

@@ -76,7 +76,6 @@ public interface WsClient extends WebClient {
         private static final Http.HeaderValue HEADER_WS_VERSION = Http.Header.createCached(Http.Header.create(
                 "Sec-WebSocket-Version"), SUPPORTED_VERSION);
         private final List<String> subprotocols = new ArrayList<>();
-        private final WritableHeaders<?> headers = WritableHeaders.create();
 
         private Builder() {
             // until we use the same parent for HTTP/1 and websocket, we need to have these defined as defaults
@@ -87,13 +86,13 @@ public interface WsClient extends WebClient {
         @Override
         public WsClient build() {
             // these headers cannot be modified by user
-            headers.set(HEADER_UPGRADE_WS);
-            headers.set(HEADER_WS_VERSION);
-            headers.set(Http.HeaderValues.CONTENT_LENGTH_ZERO);
+            header(HEADER_UPGRADE_WS);
+            header(HEADER_WS_VERSION);
+            header(Http.HeaderValues.CONTENT_LENGTH_ZERO);
             if (subprotocols.isEmpty()) {
-                headers.remove(HEADER_WS_PROTOCOL);
+                removeHeader(HEADER_WS_PROTOCOL);
             } else {
-                headers.set(HEADER_WS_PROTOCOL, subprotocols);
+                header(HEADER_WS_PROTOCOL, subprotocols);
             }
 
             return new WsClientImpl(this);
@@ -123,22 +122,6 @@ public interface WsClient extends WebClient {
             subprotocols.clear();
             Collections.addAll(subprotocols, preferred);
             return this;
-        }
-
-        /**
-         * Configure a custom header to be sent. Some headers cannot be modified (Upgrade, WebSocket version, Content Length).
-         *
-         * @param header header to add
-         * @return updated builder instance
-         */
-        public Builder header(Http.HeaderValue header) {
-            Objects.requireNonNull(header);
-            headers.set(header);
-            return this;
-        }
-
-        Headers headers() {
-            return headers;
         }
     }
 }
