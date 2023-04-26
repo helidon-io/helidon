@@ -71,6 +71,7 @@ import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromMirror;
 import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
+import static io.helidon.pico.processor.GeneralProcessorUtils.*;
 import static io.helidon.pico.processor.GeneralProcessorUtils.hasValue;
 import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElementOf;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
@@ -101,6 +102,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
             TypeNames.JAVAX_PRE_DESTROY,
             TypeNames.JAVAX_POST_CONSTRUCT);
 
+    private final ConcurrentHashMap<TypeName, TypeInfo> typeInfoToCreateActivatorsForInThisModule = new ConcurrentHashMap<>();
     private ActiveProcessorUtils utils;
     private ActivatorCreatorHandler creator;
     private boolean autoAddInterfaces;
@@ -150,14 +152,14 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
                 List<TypedElementName> elementsOfInterest = new ArrayList<>();
                 gatherElementsOfInterestInThisModule(elementsOfInterest);
 
-                ConcurrentHashMap<TypeName, TypeInfo> typeInfoToCreateActivatorsForInThisModule = new ConcurrentHashMap<>();
+                // cumulatively collect the types to process in the module
                 gatherTypeInfosToProcessInThisModule(typeInfoToCreateActivatorsForInThisModule, elementsOfInterest);
 
-                // validate the model
+                // optionally intercept and validate the model
                 Map<TypeName, TypeInfo> filtered = interceptorAndValidate(typeInfoToCreateActivatorsForInThisModule);
 
                 // code generate the model
-                doFiler(Map.copyOf(filtered));
+                doFiler(filtered);
             }
 
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
@@ -222,8 +224,6 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
 ////
 
         ServicesToProcess services = toServicesToProcess(typesToCodeGenerate);
-        utils.relayModuleInfoToServicesToProcess(services);
-
         ActivatorCreatorCodeGen codeGen = DefaultActivatorCreator.createActivatorCreatorCodeGen(services).orElse(null);
         if (codeGen == null) {
             return;
@@ -246,15 +246,21 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
     }
 
     private ServicesToProcess toServicesToProcess(Map<TypeName, TypeInfo> typesToCodeGenerate) {
+        // vvv : will need to be replaced with the global services instance (eventually) since the config-driven processor
+        //       additionally adds to the global ServicesToProcess instance
         ServicesToProcess services = ServicesToProcess.create();
+        // ^^^ : note that these will be removed in the future - it is here to compare the "old way" to the "new way"
+        utils.relayModuleInfoToServicesToProcess(services);
+
         typesToCodeGenerate.forEach((serviceTypeName, service) -> {
-            utils.log("processing: " + serviceTypeName);
+            utils.debug("processing: " + serviceTypeName);
             try {
                 process(services, typesToCodeGenerate.keySet(), serviceTypeName, service);
             } catch (Throwable t) {
                 throw new ToolsException("Error processing: " + serviceTypeName, t);
             }
         });
+
         return services;
     }
 
@@ -308,12 +314,12 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
     }
 
     private void gatherContracts(Set<TypeName> contracts,
-                                        Set<TypeName> externalContracts,
-                                        Set<TypeName> providerForSet,
-                                        Set<String> externalModuleNamesRequired,
-                                        TypeInfo typeInfo,
-                                        Set<TypeName> serviceTypeNamesToCodeGenerate,
-                                        boolean thisTypeQualifiesAsContract) {
+                                 Set<TypeName> externalContracts,
+                                 Set<TypeName> providerForSet,
+                                 Set<String> externalModuleNamesRequired,
+                                 TypeInfo typeInfo,
+                                 Set<TypeName> serviceTypeNamesToCodeGenerate,
+                                 boolean thisTypeQualifiesAsContract) {
         TypeName typeName = typeInfo.typeName();
         String moduleName = typeInfo.referencedModuleNames().get(typeName);
         if ((thisTypeQualifiesAsContract && serviceTypeNamesToCodeGenerate.contains(typeName))
@@ -438,9 +444,8 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
     private Optional<String> toPostConstructMethod(TypeInfo service) {
         List<String> postConstructs = service.elementInfo().stream()
                 .filter(it -> {
-                    AnnotationAndValue postConstructAnno =
-                            DefaultAnnotationAndValue.findFirst(PostConstruct.class, it.annotations()).orElse(null);
-                    return (postConstructAnno != null);
+                    AnnotationAndValue anno = findFirst(PostConstruct.class, it.annotations()).orElse(null);
+                    return (anno != null);
                 })
                 .map(TypedElementName::elementName)
                 .toList();
@@ -462,9 +467,8 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
     private Optional<String> toPreDestroyMethod(TypeInfo service) {
         List<String> preDestroys = service.elementInfo().stream()
                 .filter(it -> {
-                    AnnotationAndValue postConstructAnno =
-                            DefaultAnnotationAndValue.findFirst(PreDestroy.class, it.annotations()).orElse(null);
-                    return (postConstructAnno != null);
+                    AnnotationAndValue anno = findFirst(PreDestroy.class, it.annotations()).orElse(null);
+                    return (anno != null);
                 })
                 .map(TypedElementName::elementName)
                 .toList();
@@ -485,6 +489,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
 
     private Set<String> toScopeNames(TypeInfo service) {
         Set<String> scopeAnnotations = new LinkedHashSet<>();
+
         service.referencedTypeNamesToAnnotations()
                 .forEach((typeName, listOfAnnotations) -> {
                     if (listOfAnnotations.stream()
@@ -493,6 +498,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
                         scopeAnnotations.add(typeName.name());
                     }
                 });
+
         if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
             boolean hasApplicationScope = scopeAnnotations.stream()
                     .anyMatch(it -> it.equals(TypeNames.JAKARTA_APPLICATION_SCOPED)
@@ -501,6 +507,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
                 scopeAnnotations.add(Singleton.class.getName());
             }
         }
+
         return scopeAnnotations;
     }
 
@@ -522,7 +529,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
 
         for (AnnotationAndValue anno : service.annotations()) {
             List<AnnotationAndValue> metaAnnotations = service.referencedTypeNamesToAnnotations().get(anno.typeName());
-            Optional<? extends AnnotationAndValue> qual = DefaultAnnotationAndValue.findFirst(Qualifier.class, metaAnnotations);
+            Optional<? extends AnnotationAndValue> qual = findFirst(Qualifier.class, metaAnnotations);
             if (qual.isPresent()) {
                 result.add(DefaultQualifierAndValue.convert(anno));
             }
@@ -549,6 +556,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
 
     private void gatherTypeInfosToProcessInThisModule(Map<TypeName, TypeInfo> result,
                                                       List<TypedElementName> elementsOfInterest) {
+        // this section gathers based upon the class-level annotations in order to discover what to process
         for (String annoType : supportedServiceClassTargetAnnotations()) {
             // annotation may not be on the classpath, in such a case just ignore it
             TypeElement annoTypeElement = processingEnv.getElementUtils().getTypeElement(annoType);
@@ -564,6 +572,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
             }
         }
 
+        // this section gathers based upon the element-level annotations in order to discover what to process
         Set<TypeName> enclosingElementsOfInterest = elementsOfInterest.stream()
                 .map(TypedElementName::enclosingTypeName)
                 .collect(Collectors.toSet());

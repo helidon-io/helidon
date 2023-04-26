@@ -17,8 +17,10 @@
 package io.helidon.pico.processor;
 
 import java.io.File;
+import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,10 +36,13 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ServicesToProcess;
+import io.helidon.pico.tools.TypeTools;
 
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;

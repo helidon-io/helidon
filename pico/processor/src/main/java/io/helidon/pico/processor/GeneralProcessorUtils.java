@@ -16,6 +16,7 @@
 
 package io.helidon.pico.processor;
 
+import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,6 +26,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.pico.tools.TypeTools;
 
 /**
  * Carries static methods that are agnostic to the active processing environment.
@@ -120,6 +125,23 @@ final class GeneralProcessorUtils {
      */
     static boolean hasValue(String val) {
         return (val != null && !val.isBlank());
+    }
+
+    /**
+     * Looks for either a jakarta or javax annotation.
+     *
+     * @param jakartaAnno the jakarta annotation class type
+     * @param annotations the set of annotations to look in
+     * @return the optional annotation if there is a match
+     */
+    static Optional<? extends AnnotationAndValue> findFirst(Class<? extends Annotation> jakartaAnno,
+                                                            Collection<? extends AnnotationAndValue> annotations) {
+        Optional<? extends AnnotationAndValue> anno = DefaultAnnotationAndValue.findFirst(jakartaAnno, annotations);
+        if (anno.isPresent()) {
+            return anno;
+        }
+
+        return DefaultAnnotationAndValue.findFirst(TypeTools.oppositeOf(jakartaAnno.getName()), annotations);
     }
 
 }

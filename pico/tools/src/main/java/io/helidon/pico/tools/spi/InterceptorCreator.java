@@ -107,18 +107,18 @@ public interface InterceptorCreator {
         return allowListedAnnotationTypes().contains(annotationType);
     }
 
-    /**
-     * After an annotation qualifies the enclosing service for interception, this method will be used to provide
-     * the injection plan that applies to that service type.
-     *
-     * @param interceptedService        the service being intercepted
-     * @param processingEnvironment     optionally, the processing environment (if being called by annotation processing)
-     * @param annotationTypeTriggers    the set of annotation names that are associated with interception.
-     * @return the injection plan, or empty for the implementation to use the default strategy for creating a plan
-     */
-    Optional<InterceptionPlan> createInterceptorPlan(ServiceInfoBasics interceptedService,
-                                                     ProcessingEnvironment processingEnvironment,
-                                                     Set<String> annotationTypeTriggers);
+//    /**
+//     * After an annotation qualifies the enclosing service for interception, this method will be used to provide
+//     * the injection plan that applies to that service type.
+//     *
+//     * @param interceptedService        the service being intercepted
+//     * @param processingEnvironment     optionally, the processing environment (if being called by annotation processing)
+//     * @param annotationTypeTriggers    the set of annotation names that are associated with interception.
+//     * @return the injection plan, or empty for the implementation to use the default strategy for creating a plan
+//     */
+//    Optional<InterceptionPlan> createInterceptorPlan(ServiceInfoBasics interceptedService,
+//                                                     ProcessingEnvironment processingEnvironment,
+//                                                     Set<String> annotationTypeTriggers);
 
     /**
      * Returns the processor appropriate for the context revealed in the calling arguments, favoring reflection if

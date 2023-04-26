@@ -49,7 +49,7 @@ class ActivatorCreatorHandler implements ActivatorCreator {
     private static final List<String> HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES = new ArrayList<>();
     private static final Set<String> NAMES_IN_SIMULATION_MODE = new LinkedHashSet<>();
     private boolean simulationMode;
-    // ^^^
+    // ^^^ : note that these will be removed in the future - it is here to compare the "old way" to the "new way"
     private final String name;
     private final CodeGenFiler filer;
     private final Messager messager;
@@ -97,16 +97,19 @@ class ActivatorCreatorHandler implements ActivatorCreator {
         return filer;
     }
 
+    // vvv : note that these will be removed in the future - it is here to compare the "old way" to the "new way"
     void activateSimulationMode() {
         this.simulationMode = true;
         NAMES_IN_SIMULATION_MODE.add(name);
     }
+    // ^^^ : note that these will be removed in the future - it is here to compare the "old way" to the "new way"
 
     static Runnable reporting() {
         return new DebugReporting();
     }
 
 
+    // vvv : note that these will be removed in the future - it is here to compare the "old way" to the "new way"
     static class DebugReporting implements Runnable {
         @Override
         public void run() {
@@ -115,9 +118,12 @@ class ActivatorCreatorHandler implements ActivatorCreator {
         }
 
         private void reportOnActivators() {
-            System.out.println("History of code generation activators: " + HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES);
+            System.out.println("History of code generation of activators: " + HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES);
 
-            if (HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES.size() <= 1) {
+            if (HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES.size() < 1) {
+                return;
+            } else if (HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES.size() == 1) {
+                System.err.println("Activator creator was expected to be called > 1 times but only was called once");
                 return;
             }
 
@@ -140,40 +146,52 @@ class ActivatorCreatorHandler implements ActivatorCreator {
             }
 
             List<Diff> diffs = BuilderUtils.diff(leftSide, rightSide);
-            System.out.println("Activators diff between: "
-                                       + leftSideName + " < and > " + rightSideName + ":\n" + diffs + "\n");
+            if (diffs.isEmpty()) {
+                System.out.println("Activators diff between: "
+                                           + leftSideName + " < and > " + rightSideName + ": none\n");
+            } else {
+                System.err.println("Activators diff between: "
+                                           + leftSideName + " < and > " + rightSideName + ":\n" + diffs + "\n");
+            }
         }
 
         private void reportOnInterceptors() {
-            System.out.println("History of code generation interceptors: " + HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES);
+            System.out.println("History of code generation of interceptors: " + HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES);
 
-            if (HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.size() <= 1) {
+            if (HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.size() < 1) {
+                return;
+            } else if (HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.size() == 1) {
+                System.err.println("Interceptor creator was expected to be called > 1 times but only was called once");
                 return;
             }
 
             // the right side is always the last one we finished
             int pos = HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.size() - 1;
-            String lastNameProcessed = HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.get(pos);
-            List<CodeGenInterceptorRequest> list = HISTORY_OF_CODE_GEN_INTERCEPTORS.get(lastNameProcessed);
+
+            String leftSideName = null;
+            String rightSideName = HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.get(pos);
+            List<CodeGenInterceptorRequest> list = HISTORY_OF_CODE_GEN_INTERCEPTORS.get(rightSideName);
             CodeGenInterceptorRequest rightSide = list.get(list.size() - 1);
             CodeGenInterceptorRequest leftSide = null;
-
-            String previousToLastNameProcessed = null;
-            while (--pos >= 0 && (previousToLastNameProcessed == null)) {
-                previousToLastNameProcessed = HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.get(pos);
-                if (previousToLastNameProcessed.equals(lastNameProcessed)) {
+            while (--pos >= 0 && (leftSideName == null)) {
+                leftSideName = HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.get(pos);
+                if (leftSideName.equals(rightSideName)) {
                     leftSide = list.get(list.size() - 2);
                 } else {
-                    list = HISTORY_OF_CODE_GEN_INTERCEPTORS.get(previousToLastNameProcessed);
+                    list = HISTORY_OF_CODE_GEN_INTERCEPTORS.get(leftSideName);
                     leftSide = list.get(list.size() - 1);
                 }
             }
 
             List<Diff> diffs = BuilderUtils.diff(leftSide, rightSide);
-            System.out.println("Interceptors diff between: "
-                                       + previousToLastNameProcessed + " < and > " + lastNameProcessed + ":\n" + diffs + "\n");
+            if (diffs.isEmpty()) {
+                System.out.println("Activators diff between: "
+                                           + leftSideName + " < and > " + rightSideName + ": none\n");
+            } else {
+                System.err.println("Interceptors diff between: "
+                                           + leftSideName + " < and > " + rightSideName + ":\n" + diffs + "\n");
+            }
         }
-
     }
 
 }
