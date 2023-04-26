@@ -19,11 +19,11 @@ package io.helidon.pico.runtime;
 import java.util.Objects;
 
 import io.helidon.pico.api.ActivationResult;
+import io.helidon.pico.api.ActivationResultDefault;
 import io.helidon.pico.api.Activator;
 import io.helidon.pico.api.DeActivationRequest;
-import io.helidon.pico.api.DeActivator;
-import io.helidon.pico.api.ActivationResultDefault;
 import io.helidon.pico.api.DeActivationRequestDefault;
+import io.helidon.pico.api.DeActivator;
 import io.helidon.pico.api.Injector;
 import io.helidon.pico.api.InjectorOptions;
 import io.helidon.pico.api.PicoException;

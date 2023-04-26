@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;

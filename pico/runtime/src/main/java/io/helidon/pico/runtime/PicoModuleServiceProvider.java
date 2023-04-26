@@ -17,10 +17,10 @@
 package io.helidon.pico.runtime;
 
 import io.helidon.pico.api.DefaultQualifierAndValue;
-import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfo;
+import io.helidon.pico.api.ServiceInfoDefault;
 
 /**
  * Basic {@link ModuleComponent} implementation. A Pico module is-a service provider also.

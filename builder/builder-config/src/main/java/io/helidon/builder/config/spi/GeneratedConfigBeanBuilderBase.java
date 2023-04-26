@@ -26,7 +26,7 @@ import io.helidon.common.config.Config;
 /**
  * Minimal implementation for the {@link GeneratedConfigBeanBuilder}.
  */
-public abstract class GeneratedConfigBeanBuilderBase<B extends GeneratedConfigBeanBuilderBase<B>> implements GeneratedConfigBeanBuilder {
+public abstract class GeneratedConfigBeanBuilderBase implements GeneratedConfigBeanBuilder {
     private Config cfg;
 
     /**
@@ -70,12 +70,10 @@ public abstract class GeneratedConfigBeanBuilderBase<B extends GeneratedConfigBe
      *
      * @param cfg configuration to update this builder from
      */
-    @SuppressWarnings("unchecked")
-    public B config(Config cfg) {
+    public void config(Config cfg) {
         acceptConfig(cfg,
                      ConfigResolverHolder.configResolver().get(),
                      ConfigBeanBuilderValidator.empty());
-        return (B) this;
     }
 
     /**

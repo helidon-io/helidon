@@ -27,14 +27,14 @@ import io.helidon.common.types.DefaultTypedElementName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
-import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.processor.testsubjects.BasicEndpoint;
 import io.helidon.pico.processor.testsubjects.ExtensibleGET;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
-import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequestDefault;
+import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 import org.junit.jupiter.api.Test;

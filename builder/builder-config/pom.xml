@@ -31,6 +31,10 @@
     <artifactId>helidon-builder-config</artifactId>
     <name>Helidon Builder ConfigBean Builder</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.builder</groupId>

@@ -19,7 +19,6 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -36,10 +35,6 @@ import io.helidon.nima.faulttolerance.Async;
 import io.helidon.nima.faulttolerance.Bulkhead;
 import io.helidon.nima.faulttolerance.CircuitBreaker;
 import io.helidon.nima.faulttolerance.CircuitBreaker.State;
-import io.helidon.nima.faulttolerance.BulkheadConfigDefault;
-import io.helidon.nima.faulttolerance.CircuitBreakerConfigDefault;
-import io.helidon.nima.faulttolerance.RetryConfigDefault;
-import io.helidon.nima.faulttolerance.TimeoutConfigDefault;
 import io.helidon.nima.faulttolerance.Fallback;
 import io.helidon.nima.faulttolerance.FaultTolerance;
 import io.helidon.nima.faulttolerance.FtHandlerTyped;
@@ -460,29 +455,29 @@ class MethodInvoker implements FtSupplier<Object> {
      */
     private void initMethodHandler(MethodState methodState) {
         if (introspector.hasBulkhead()) {
-            methodState.bulkhead = Bulkhead.create(BulkheadConfigDefault.builder()
+            methodState.bulkhead = Bulkhead.builder()
                     .limit(introspector.getBulkhead().value())
                     .queueLength(introspector.isAsynchronous() ? introspector.getBulkhead().waitingTaskQueue() : 0)
-                    .build());
+                    .build();
         }
 
         if (introspector.hasTimeout()) {
-            methodState.timeout = Timeout.create(TimeoutConfigDefault.builder()
+            methodState.timeout = Timeout.builder()
                     .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
                     .currentThread(!introspector.isAsynchronous())
-                    .build());
+                    .build();
         }
 
         if (introspector.hasCircuitBreaker()) {
-            methodState.breaker = CircuitBreaker.create(CircuitBreakerConfigDefault.builder()
+            methodState.breaker = CircuitBreaker.builder()
                     .delay(Duration.of(introspector.getCircuitBreaker().delay(),
                             introspector.getCircuitBreaker().delayUnit()))
                     .successThreshold(introspector.getCircuitBreaker().successThreshold())
                     .errorRatio((int) (introspector.getCircuitBreaker().failureRatio() * 100))
                     .volume(introspector.getCircuitBreaker().requestVolumeThreshold())
-                    .applyOn(Set.of(mapTypes(introspector.getCircuitBreaker().failOn())))
-                    .skipOn(Set.of(mapTypes(introspector.getCircuitBreaker().skipOn())))
-                    .build());
+                    .applyOn(mapTypes(introspector.getCircuitBreaker().failOn()))
+                    .skipOn(mapTypes(introspector.getCircuitBreaker().skipOn()))
+                    .build();
         }
     }
 
@@ -519,7 +514,7 @@ class MethodInvoker implements FtSupplier<Object> {
             } else {
                 maxRetries++;       // add 1 for initial call
             }
-            methodState.retry = Retry.create(RetryConfigDefault.builder()
+            methodState.retry = Retry.builder()
                     .retryPolicy(Retry.JitterRetryPolicy.builder()
                             .calls(maxRetries)
                             .delay(Duration.of(introspector.getRetry().delay(),
@@ -529,9 +524,9 @@ class MethodInvoker implements FtSupplier<Object> {
                             .build())
                     .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
                             introspector.getRetry().durationUnit()))
-                    .applyOn(Set.of(mapTypes(introspector.getRetry().retryOn())))
-                    .skipOn(Set.of(mapTypes(introspector.getRetry().abortOn())))
-                    .build());
+                    .applyOn(mapTypes(introspector.getRetry().retryOn()))
+                    .skipOn(mapTypes(introspector.getRetry().abortOn()))
+                    .build();
             builder.addRetry(methodState.retry);
         }
 

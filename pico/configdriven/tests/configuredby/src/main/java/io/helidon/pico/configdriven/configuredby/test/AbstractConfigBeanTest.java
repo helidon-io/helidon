@@ -19,10 +19,10 @@ package io.helidon.pico.configdriven.configuredby.test;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.builder.config.testsubjects.TestClientConfigDefault;
-import io.helidon.builder.config.testsubjects.TestServerConfigDefault;
 import io.helidon.builder.config.testsubjects.TestClientConfig;
+import io.helidon.builder.config.testsubjects.TestClientConfigDefault;
 import io.helidon.builder.config.testsubjects.TestServerConfig;
+import io.helidon.builder.config.testsubjects.TestServerConfigDefault;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 

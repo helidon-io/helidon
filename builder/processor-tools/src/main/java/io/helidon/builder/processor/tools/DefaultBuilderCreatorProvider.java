@@ -1685,7 +1685,6 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             }
         }
 
-        // TODO: hardcoded, should update StringValueParser
         if (Duration.class.getName().equals(type.name())) {
             builder.append("java.time.Duration.parse(\"").append(defaultVal).append("\")");
             return;

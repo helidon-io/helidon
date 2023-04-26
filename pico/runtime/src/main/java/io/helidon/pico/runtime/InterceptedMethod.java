@@ -23,9 +23,9 @@ import java.util.function.Function;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
-import io.helidon.pico.api.InvocationContextDefault;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
+import io.helidon.pico.api.InvocationContextDefault;
 import io.helidon.pico.api.InvocationException;
 import io.helidon.pico.api.ServiceProvider;
 

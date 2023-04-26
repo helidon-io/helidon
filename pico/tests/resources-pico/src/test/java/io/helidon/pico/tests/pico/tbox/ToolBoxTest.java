@@ -24,11 +24,11 @@ import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
 import io.helidon.pico.api.ActivationResult;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.RunLevel;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.testing.PicoTestingSupport;

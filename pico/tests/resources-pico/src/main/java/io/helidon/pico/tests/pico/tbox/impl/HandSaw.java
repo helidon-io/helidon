@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.pico.api.ContextualServiceQueryDefault;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.InjectionPointProvider;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.tests.pico.tbox.AbstractBlade;
 import io.helidon.pico.tests.pico.tbox.AbstractSaw;

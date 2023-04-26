@@ -23,10 +23,10 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.Weight;
-import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.PostConstructMethod;
 import io.helidon.pico.api.PreDestroyMethod;
+import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.runtime.AbstractServiceProvider;
 import io.helidon.pico.runtime.Dependencies;
 

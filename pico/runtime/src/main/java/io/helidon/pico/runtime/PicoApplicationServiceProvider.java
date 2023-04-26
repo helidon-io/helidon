@@ -18,10 +18,10 @@ package io.helidon.pico.runtime;
 
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.DefaultQualifierAndValue;
-import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfo;
+import io.helidon.pico.api.ServiceInfoDefault;
 
 /**
  * Basic {@link io.helidon.pico.api.Application} implementation. A Pico application is-a service provider also.

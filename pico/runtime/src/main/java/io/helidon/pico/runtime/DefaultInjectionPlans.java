@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.pico.api.ContextualServiceQuery;
 import io.helidon.pico.api.ContextualServiceQueryDefault;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.DependencyInfo;
 import io.helidon.pico.api.InjectionException;
@@ -39,6 +38,7 @@ import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.ServiceProviderBindable;
 import io.helidon.pico.api.ServiceProviderProvider;

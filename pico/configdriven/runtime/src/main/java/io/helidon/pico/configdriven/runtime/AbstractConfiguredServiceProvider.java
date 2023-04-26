@@ -42,12 +42,9 @@ import io.helidon.common.config.Config;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.pico.api.CallingContext;
 import io.helidon.pico.api.CallingContextFactory;
-import io.helidon.pico.api.CommonQualifiers;
 import io.helidon.pico.api.ContextualServiceQuery;
 import io.helidon.pico.api.ContextualServiceQueryDefault;
 import io.helidon.pico.api.DefaultQualifierAndValue;
-import io.helidon.pico.api.ServiceInfoDefault;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.Event;
 import io.helidon.pico.api.InjectionException;
 import io.helidon.pico.api.InjectionPointInfo;
@@ -59,6 +56,8 @@ import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
+import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.ServiceProviderBindable;
 import io.helidon.pico.api.ServiceProviderProvider;
@@ -67,6 +66,7 @@ import io.helidon.pico.runtime.AbstractServiceProvider;
 import io.helidon.pico.spi.InjectionResolver;
 
 import static io.helidon.pico.api.CallingContext.toErrorMessage;
+import static io.helidon.pico.api.CommonQualifiers.WILDCARD_NAMED;
 import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.hasValue;
 import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.isBlank;
 
@@ -210,9 +210,9 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         if (isRootProvider()) {
             // override out service info to account for any named lookup
             ServiceInfo serviceInfo = Objects.requireNonNull(serviceInfo());
-            if (!serviceInfo.qualifiers().contains(CommonQualifiers.WILDCARD_NAMED)) {
+            if (!serviceInfo.qualifiers().contains(WILDCARD_NAMED)) {
                 serviceInfo = ServiceInfoDefault.toBuilder(serviceInfo)
-                        .addQualifier(CommonQualifiers.WILDCARD_NAMED)
+                        .addQualifier(WILDCARD_NAMED)
                         .build();
                 serviceInfo(serviceInfo);
             }
@@ -379,7 +379,9 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                     && (blankCriteria || hasValue || configuredByQualifier.isEmpty());
             boolean rootQualifies = wantThis
                     && (blankCriteria
-                                || (managedConfiguredServicesMap.isEmpty() && (qualifiers.isEmpty() || qualifiers.contains(CommonQualifiers.WILDCARD_NAMED))
+                                || (managedConfiguredServicesMap.isEmpty()
+                                            && (qualifiers.isEmpty()
+                                                        || qualifiers.contains(WILDCARD_NAMED))
                                 || (!hasValue && configuredByQualifier.isPresent())));
 
             if (slavesQualify) {
@@ -580,9 +582,9 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             assertIsRootProvider(true, false);
 
             // override our service info to account for any named lookup
-            if (isRootProvider() && !serviceInfo.qualifiers().contains(CommonQualifiers.WILDCARD_NAMED)) {
+            if (isRootProvider() && !serviceInfo.qualifiers().contains(WILDCARD_NAMED)) {
                 serviceInfo = ServiceInfoDefault.toBuilder(serviceInfo)
-                        .addQualifier(CommonQualifiers.WILDCARD_NAMED)
+                        .addQualifier(WILDCARD_NAMED)
                         .build();
             }
         }

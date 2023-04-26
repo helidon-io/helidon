@@ -19,8 +19,8 @@ package io.helidon.pico.runtime.testsubjects;
 import java.util.Map;
 
 import io.helidon.common.Weight;
-import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.runtime.AbstractServiceProvider;
 import io.helidon.pico.runtime.Dependencies;
 
