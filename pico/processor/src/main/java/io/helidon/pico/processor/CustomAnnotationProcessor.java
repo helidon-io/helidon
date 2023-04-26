@@ -53,7 +53,9 @@ import io.helidon.pico.tools.CustomAnnotationTemplateResponseDefault;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
-import static io.helidon.pico.processor.ProcessorUtils.*;
+import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
+import static io.helidon.pico.processor.GeneralProcessorUtils.hasValue;
+import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElementOf;
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
 import static io.helidon.pico.tools.TypeTools.createTypedElementNameFromElement;
 import static io.helidon.pico.tools.TypeTools.isStatic;
@@ -128,7 +130,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
         } catch (Throwable t) {
-            error(getClass().getSimpleName() + " error during processing; " + t + " @ "
+            utils().error(getClass().getSimpleName() + " error during processing; " + t + " @ "
                           + rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
             throw new ToolsException("Error while processing: " + t + " @ "
@@ -168,7 +170,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 CustomAnnotationTemplateResponseDefault.Builder res = CustomAnnotationTemplateResponseDefault.builder()
                         .request(req);
                 for (CustomAnnotationTemplateCreator producer : producers) {
-                    req.genericTemplateCreator(new DefaultGenericTemplateCreator(producer.getClass(), this));
+                    req.genericTemplateCreator(new DefaultGenericTemplateCreator(producer.getClass(), utils()));
                     CustomAnnotationTemplateResponse producerResponse = process(producer, req);
                     if (producerResponse != null) {
                         res = CustomAnnotationTemplateResponse.aggregate(req, res, producerResponse);
@@ -185,7 +187,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     }
 
     void doFiler(CustomAnnotationTemplateResponse response) {
-        AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, this);
+        AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, utils());
         CodeGenFiler codegen = CodeGenFiler.create(filer);
         response.generatedSourceCode().forEach(codegen::codegenJavaFilerOut);
         response.generatedResources().forEach((typedElementName, resourceBody) -> {

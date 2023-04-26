@@ -29,7 +29,12 @@
     </Match>
     <Match>
         <!-- Path comes from config or code -->
-        <Class name="io.helidon.pico.processor.ProcessorUtils"/>
+        <Class name="io.helidon.pico.processor.ActiveProcessorUtils"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+    <Match>
+        <!-- Path comes from config or code -->
+        <Class name="io.helidon.pico.processor.GeneralProcessorUtils"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
 

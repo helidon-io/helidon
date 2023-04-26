@@ -64,7 +64,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Expectation here is that the annotation processor ran, and we can use standard injection and pico-di registry services, etc.
  */
 class ToolBoxTest {
-
     Config config = PicoTestingSupport.basicTestableConfig();
     PicoServices picoServices;
     Services services;

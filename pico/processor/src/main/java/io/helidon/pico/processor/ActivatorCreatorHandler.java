@@ -43,11 +43,11 @@ import io.helidon.pico.tools.spi.ActivatorCreator;
 
 class ActivatorCreatorHandler implements ActivatorCreator {
     // vvv : note that these will be removed in the future - it is here to compare the "old way" to the "new way"
-    private static final Map<String, List<ActivatorCreatorRequest>> historyOfCodeGenActivators = new LinkedHashMap<>();
-    private static final Map<String, List<CodeGenInterceptorRequest>> historyOfCodeGenInterceptors = new LinkedHashMap<>();
-    private static final List<String> historyOfCodeGenActivatorNames = new ArrayList<>();
-    private static final List<String> historyOfCodeGenInterceptorsNames = new ArrayList<>();
-    private static final Set<String> namesInSimulationMode = new LinkedHashSet<>();
+    private static final Map<String, List<ActivatorCreatorRequest>> HISTORY_OF_CODE_GEN_ACTIVATORS = new LinkedHashMap<>();
+    private static final Map<String, List<CodeGenInterceptorRequest>> HISTORY_OF_CODE_GEN_INTERCEPTORS = new LinkedHashMap<>();
+    private static final List<String> HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES = new ArrayList<>();
+    private static final List<String> HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES = new ArrayList<>();
+    private static final Set<String> NAMES_IN_SIMULATION_MODE = new LinkedHashSet<>();
     private boolean simulationMode;
     // ^^^
     private final String name;
@@ -64,8 +64,8 @@ class ActivatorCreatorHandler implements ActivatorCreator {
 
     @Override
     public ActivatorCreatorResponse createModuleActivators(ActivatorCreatorRequest request) {
-        historyOfCodeGenActivatorNames.add(name);
-        historyOfCodeGenActivators.computeIfAbsent(name, (k) -> new ArrayList<>()).add(request);
+        HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES.add(name);
+        HISTORY_OF_CODE_GEN_ACTIVATORS.computeIfAbsent(name, (k) -> new ArrayList<>()).add(request);
 
         messager.debug(name + ": createModuleActivators(" + !simulationMode + "): " + request);
         if (simulationMode) {
@@ -76,8 +76,8 @@ class ActivatorCreatorHandler implements ActivatorCreator {
 
     @Override
     public InterceptorCreatorResponse codegenInterceptors(CodeGenInterceptorRequest request) {
-        historyOfCodeGenInterceptorsNames.add(name);
-        historyOfCodeGenInterceptors.computeIfAbsent(name, (k) -> new ArrayList<>()).add(request);
+        HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.add(name);
+        HISTORY_OF_CODE_GEN_INTERCEPTORS.computeIfAbsent(name, (k) -> new ArrayList<>()).add(request);
 
         messager.debug(name + ": codegenInterceptors(" + !simulationMode + "): " + request);
         if (simulationMode) {
@@ -99,7 +99,7 @@ class ActivatorCreatorHandler implements ActivatorCreator {
 
     void activateSimulationMode() {
         this.simulationMode = true;
-        namesInSimulationMode.add(name);
+        NAMES_IN_SIMULATION_MODE.add(name);
     }
 
     static Runnable reporting() {
@@ -115,26 +115,26 @@ class ActivatorCreatorHandler implements ActivatorCreator {
         }
 
         private void reportOnActivators() {
-            System.out.println("History of code generation activators: " + historyOfCodeGenActivatorNames);
+            System.out.println("History of code generation activators: " + HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES);
 
-            if (historyOfCodeGenActivatorNames.size() <= 1) {
+            if (HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES.size() <= 1) {
                 return;
             }
 
             // the right side is always the last one we finished
-            int pos = historyOfCodeGenActivatorNames.size() - 1;
+            int pos = HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES.size() - 1;
             String leftSideName = null;
-            String rightSideName = historyOfCodeGenActivatorNames.get(pos);
-            List<ActivatorCreatorRequest> list = historyOfCodeGenActivators.get(rightSideName);
+            String rightSideName = HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES.get(pos);
+            List<ActivatorCreatorRequest> list = HISTORY_OF_CODE_GEN_ACTIVATORS.get(rightSideName);
             ActivatorCreatorRequest leftSide = null;
             ActivatorCreatorRequest rightSide = list.get(list.size() - 1);
 
             while (--pos >= 0 && (leftSideName == null)) {
-                leftSideName = historyOfCodeGenActivatorNames.get(pos);
+                leftSideName = HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES.get(pos);
                 if (leftSideName.equals(rightSideName)) {
                     leftSide = list.get(list.size() - 2);
                 } else {
-                    list = historyOfCodeGenActivators.get(leftSideName);
+                    list = HISTORY_OF_CODE_GEN_ACTIVATORS.get(leftSideName);
                     leftSide = list.get(list.size() - 1);
                 }
             }
@@ -145,26 +145,26 @@ class ActivatorCreatorHandler implements ActivatorCreator {
         }
 
         private void reportOnInterceptors() {
-            System.out.println("History of code generation interceptors: " + historyOfCodeGenInterceptorsNames);
+            System.out.println("History of code generation interceptors: " + HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES);
 
-            if (historyOfCodeGenInterceptorsNames.size() <= 1) {
+            if (HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.size() <= 1) {
                 return;
             }
 
             // the right side is always the last one we finished
-            int pos = historyOfCodeGenInterceptorsNames.size() - 1;
-            String lastNameProcessed = historyOfCodeGenInterceptorsNames.get(pos);
-            List<CodeGenInterceptorRequest> list = historyOfCodeGenInterceptors.get(lastNameProcessed);
+            int pos = HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.size() - 1;
+            String lastNameProcessed = HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.get(pos);
+            List<CodeGenInterceptorRequest> list = HISTORY_OF_CODE_GEN_INTERCEPTORS.get(lastNameProcessed);
             CodeGenInterceptorRequest rightSide = list.get(list.size() - 1);
             CodeGenInterceptorRequest leftSide = null;
 
             String previousToLastNameProcessed = null;
             while (--pos >= 0 && (previousToLastNameProcessed == null)) {
-                previousToLastNameProcessed = historyOfCodeGenInterceptorsNames.get(pos);
+                previousToLastNameProcessed = HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.get(pos);
                 if (previousToLastNameProcessed.equals(lastNameProcessed)) {
                     leftSide = list.get(list.size() - 2);
                 } else {
-                    list = historyOfCodeGenInterceptors.get(previousToLastNameProcessed);
+                    list = HISTORY_OF_CODE_GEN_INTERCEPTORS.get(previousToLastNameProcessed);
                     leftSide = list.get(list.size() - 1);
                 }
             }

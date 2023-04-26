@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
@@ -71,7 +72,6 @@ import io.helidon.pico.tools.GeneralCreatorRequest;
 import io.helidon.pico.tools.GeneralCreatorRequestDefault;
 import io.helidon.pico.tools.InterceptionPlan;
 import io.helidon.pico.tools.InterceptorCreatorProvider;
-import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ServicesToProcess;
 import io.helidon.pico.tools.ToolsException;
@@ -83,9 +83,10 @@ import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeName
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValue;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
-import static io.helidon.pico.processor.ProcessorUtils.hasValue;
-import static io.helidon.pico.processor.ProcessorUtils.rootStackTraceElementOf;
-import static io.helidon.pico.processor.ProcessorUtils.toList;
+import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
+import static io.helidon.pico.processor.GeneralProcessorUtils.hasValue;
+import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElementOf;
+import static io.helidon.pico.processor.GeneralProcessorUtils.toList;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromElement;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
 import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
@@ -102,17 +103,13 @@ import static javax.tools.Diagnostic.Kind;
  *
  * @param <B> the type handled by this anno processor
  */
-abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements Messager {
-    static final boolean MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR = false;
-    static final String TARGET_DIR = "/target/";
-    static final String SRC_MAIN_JAVA_DIR = "/src/main/java";
-
+abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
     private final System.Logger logger = System.getLogger(getClass().getName());
     private final ServicesToProcess services;
     private final InterceptorCreator interceptorCreator;
     private final Map<Path, Path> deferredMoves = new LinkedHashMap<>();
+    private ActiveProcessorUtils utils;
     private ActivatorCreatorHandler creator;
-    private RoundEnvironment roundEnv;
 
     /**
      * Service loader based constructor.
@@ -132,10 +129,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
     @Override
     public void init(ProcessingEnvironment processingEnv) {
-        Options.init(processingEnv);
-        debug("*** Processing " + getClass().getSimpleName() + " ***");
-        this.processingEnv = processingEnv;
-        this.creator = new ActivatorCreatorHandler(getClass().getSimpleName(), processingEnv, this);
+        this.utils = new ActiveProcessorUtils(this, processingEnv, null);
+        this.creator = new ActivatorCreatorHandler(getClass().getSimpleName(), processingEnv, utils);
         super.init(processingEnv);
     }
 
@@ -152,10 +147,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     @Override
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
-        this.roundEnv = roundEnv;
+        utils.roundEnv(roundEnv);
 
         try {
-            ServicesToProcess.onBeginProcessing(this, annotations, roundEnv);
+            ServicesToProcess.onBeginProcessing(utils, annotations, roundEnv);
 
             if (!roundEnv.processingOver()) {
                 for (String annoType : annoTypes()) {
@@ -178,78 +173,15 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             }
 
             boolean claimedResult = doFiler(roundEnv);
-            ServicesToProcess.onEndProcessing(this, annotations, roundEnv);
+            ServicesToProcess.onEndProcessing(utils, annotations, roundEnv);
             return claimedResult;
         } catch (Throwable t) {
-            error(getClass().getSimpleName() + " error during processing; " + t + " @ "
+            utils.error(getClass().getSimpleName() + " error during processing; " + t + " @ "
                           + rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
             throw new ToolsException("Error during processing: " + t
                                              + " @ " + rootStackTraceElementOf(t)
                                              + " in " + getClass().getSimpleName(), t);
-        }
-    }
-
-    @Override
-    public void debug(String message,
-                      Throwable t) {
-        if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
-            if (logger.isLoggable(loggerLevel())) {
-                logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message, t);
-            }
-        }
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.OTHER, message);
-        }
-    }
-
-    @Override
-    public void debug(String message) {
-        if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
-            if (logger.isLoggable(loggerLevel())) {
-                logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message);
-            }
-        }
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.OTHER, message);
-        }
-    }
-
-    @Override
-    public void log(String message) {
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.NOTE, message);
-        }
-    }
-
-    @Override
-    public void warn(String message,
-                     Throwable t) {
-        if (Options.isOptionEnabled(Options.TAG_DEBUG) && t != null) {
-            logger.log(Level.WARNING, getClass().getSimpleName() + ": Warning: " + message, t);
-            t.printStackTrace();
-        }
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.WARNING, message);
-        }
-    }
-
-    @Override
-    public void warn(String message) {
-        if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
-            logger.log(Level.WARNING, getClass().getSimpleName() + ": Warning: " + message);
-        }
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.WARNING, message);
-        }
-    }
-
-    @Override
-    public void error(String message,
-                      Throwable t) {
-        logger.log(Level.ERROR, getClass().getSimpleName() + ": Error: " + message, t);
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Kind.ERROR, message);
         }
     }
 
@@ -370,7 +302,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
         Optional<InterceptionPlan> plan = processor.createInterceptorPlan(annotationTypeTriggers);
         if (plan.isEmpty()) {
-            warn("unable to produce an interception plan for: " + serviceTypeName);
+            utils.warn("unable to produce an interception plan for: " + serviceTypeName);
         }
         services.addInterceptorPlanFor(serviceTypeName, plan);
     }
@@ -400,7 +332,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         allContracts.addAll(externalContracts);
         allContracts.addAll(providerForSet);
 
-        debug("found contracts " + allContracts + " for " + serviceTypeName);
+        utils.debug("found contracts " + allContracts + " for " + serviceTypeName);
         for (TypeName contract : allContracts) {
             boolean isExternal = externalContracts.contains(contract);
             services.addTypeForContract(serviceTypeName, contract, isExternal);
@@ -419,11 +351,11 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             return;
         }
 
-        debug("processing service type basics for " + serviceTypeName);
+        utils.debug("processing service type basics for " + serviceTypeName);
         if (type == null) {
             type = processingEnv.getElementUtils().getTypeElement(serviceTypeName.name());
             if (type == null) {
-                warn("expected to find a typeElement for " + serviceTypeName);
+                utils.warn("expected to find a typeElement for " + serviceTypeName);
                 return;
             }
         }
@@ -506,7 +438,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         for (TypeName contract : contracts) {
             Optional<TypeElement> typeElement = toTypeElement(contract);
             if (typeElement.isPresent()
-                    && !isInThisModule(typeElement.get(), externalModuleName)) {
+                    && !utils.isTypeInThisModule(typeElement.get(), externalModuleName)) {
                 maybeAddExternalModule(externalModuleName.get(), externalModuleNamesRequired);
                 externalContracts.add(contract);
             }
@@ -515,8 +447,9 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         for (TypeName externalContract : externalContracts) {
             Optional<TypeElement> typeElement = toTypeElement(externalContract);
             if (typeElement.isPresent()
-                    && isInThisModule(typeElement.get(), externalModuleName)) {
-                warn(externalContract + " is actually in this module and therefore should not be labelled as external.", null);
+                    && utils.isTypeInThisModule(typeElement.get(), externalModuleName)) {
+                utils.warn(externalContract
+                                   + " is actually in this module and therefore should not be labelled as external.", null);
                 maybeAddExternalModule(externalModuleName.get(), externalModuleNamesRequired);
             }
         }
@@ -529,11 +462,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         if (needToDeclareModuleUsage(externalModuleName)) {
             externalModuleNamesRequired.add(externalModuleName);
         }
-    }
-
-    boolean isInThisModule(TypeElement type,
-                           AtomicReference<String> moduleName) {
-        return ProcessorUtils.isInThisModule(type, moduleName, roundEnv, processingEnv, this);
     }
 
     boolean doFiler(RoundEnvironment roundEnv) {
@@ -578,13 +506,13 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         } catch (Exception te) {
             Object hierarchy = codeGen.serviceTypeHierarchy();
             if (hierarchy == null) {
-                warn("expected to have a known service type hierarchy in the context");
+                utils.warn("expected to have a known service type hierarchy in the context");
             } else {
-                debug("service type hierarchy is " + hierarchy);
+                utils.debug("service type hierarchy is " + hierarchy);
             }
 
             ToolsException revisedTe = new ToolsException("Error detected while processing " + req.serviceTypeNames(), te);
-            error(revisedTe.getMessage(), revisedTe);
+            utils.error(revisedTe.getMessage(), revisedTe);
         } finally {
             if (isProcessingOver) {
                 handleDeferredMoves();
@@ -657,7 +585,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         }
 
         if (!result.isEmpty()) {
-            debug("Contracts for " + type + " was " + result + " w/ providerSet " + providerForSet);
+            utils.debug("Contracts for " + type + " was " + result + " w/ providerSet " + providerForSet);
         }
         return result;
     }
@@ -739,7 +667,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         }
 
         if (!result.isEmpty()) {
-            debug("ExternalContracts for " + type + " was " + result + " w/ modulesRequired " + externalModulesRequired);
+            utils.debug("ExternalContracts for " + type + " was " + result + " w/ modulesRequired " + externalModulesRequired);
         }
         return result;
     }
@@ -779,6 +707,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             throw new ToolsException(e.getMessage(), e);
         }
         deferredMoves.clear();
+    }
+
+    ActiveProcessorUtils utils() {
+        return Objects.requireNonNull(utils);
     }
 
 }

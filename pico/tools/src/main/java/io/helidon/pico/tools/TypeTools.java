@@ -54,6 +54,7 @@ import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.LazyValue;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.AnnotationAndValueDefault;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.ElementInfo;
@@ -1449,7 +1450,7 @@ public final class TypeTools extends BuilderTypeTools {
     /**
      * Converts the modifiers to an {@link io.helidon.pico.api.ElementInfo.Access} type.
      *
-     * @param modifiers the moifiers
+     * @param modifiers the modifiers
      * @return the access
      */
     static InjectionPointInfo.Access toAccess(int modifiers) {
@@ -1462,6 +1463,23 @@ public final class TypeTools extends BuilderTypeTools {
         } else {
             return InjectionPointInfo.Access.PACKAGE_PRIVATE;
         }
+    }
+
+    /**
+     * Converts the modifiers to an {@link io.helidon.pico.api.ElementInfo.Access} type.
+     *
+     * @param modifiers the modifiers
+     * @return the access
+     */
+    public static ElementInfo.Access toAccess(Set<String> modifiers) {
+        if (modifiers.contains(TypeInfo.MODIFIER_PROTECTED)) {
+            return ElementInfo.Access.PROTECTED;
+        } else if (modifiers.contains(TypeInfo.MODIFIER_PRIVATE)) {
+            return ElementInfo.Access.PRIVATE;
+        } else if (modifiers.contains(TypeInfo.MODIFIER_PUBLIC)) {
+            return ElementInfo.Access.PUBLIC;
+        }
+        return ElementInfo.Access.PACKAGE_PRIVATE;
     }
 
     /**

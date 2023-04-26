@@ -58,7 +58,7 @@ public class ServicesToProcess implements Resettable {
     private static final ServicesToProcess SERVICES = new ServicesToProcess();
 
     private static final AtomicInteger RUNNING_PROCESSORS = new AtomicInteger();
-    private static final List<Runnable> runnablesToCallWhenDone = new ArrayList<>();
+    private static final List<Runnable> RUNNABLES_TO_CALL_WHEN_DONE = new ArrayList<>();
 
     private final Set<TypeName> servicesTypeNames = new LinkedHashSet<>();
     private final Set<String> requiredModules = new TreeSet<>();
@@ -850,8 +850,8 @@ public class ServicesToProcess implements Resettable {
      *
      * @param runnable the runnable to call
      */
-    public static void addOnEndRunnable(Runnable runnable) {
-        runnablesToCallWhenDone.add(runnable);
+    public static void addOnDoneRunnable(Runnable runnable) {
+        RUNNABLES_TO_CALL_WHEN_DONE.add(runnable);
     }
 
     /**
@@ -876,8 +876,8 @@ public class ServicesToProcess implements Resettable {
         }
 
         if (done) {
-            runnablesToCallWhenDone.forEach(Runnable::run);
-            runnablesToCallWhenDone.clear();
+            RUNNABLES_TO_CALL_WHEN_DONE.forEach(Runnable::run);
+            RUNNABLES_TO_CALL_WHEN_DONE.clear();
         }
     }
 

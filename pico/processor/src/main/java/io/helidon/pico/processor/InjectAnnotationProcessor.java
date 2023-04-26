@@ -137,7 +137,7 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
                 .optionalWrapped(isOptional.get())
                 .staticDeclaration(isStatic);
         DependencyInfo ipInfo = continuation.commitLastDependency().orElseThrow();
-        debug("dependency for " + varType + " was " + ipInfo);
+        utils().debug("dependency for " + varType + " was " + ipInfo);
     }
 
     @Override

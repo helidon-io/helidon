@@ -69,7 +69,7 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
         Element parentClassType = method.getEnclosingElement();
         if (TypeTools.isAbstract(parentClassType)) {
             // skipping abstract classes w/ a PostConstruct or PreDestroy annotation
-            warn("All PostConstruct and PreDestroy methods will be ignored on abstract base classes: " + parentClassType);
+            utils().warn("All PostConstruct and PreDestroy methods will be ignored on abstract base classes: " + parentClassType);
             return;
         }
 
