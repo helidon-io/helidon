@@ -27,7 +27,7 @@ import io.helidon.builder.config.spi.HelidonConfigBeanRegistry;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.api.DefaultBootstrap;
+import io.helidon.pico.api.BootstrapDefault;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.PicoServicesHolder;
@@ -130,7 +130,7 @@ public class PicoTestingSupport {
 
     private static LazyValue<PicoServices> lazyCreate(Config config) {
         return LazyValue.create(() -> {
-            PicoServices.globalBootstrap(DefaultBootstrap.builder().config(config).build());
+            PicoServices.globalBootstrap(BootstrapDefault.builder().config(config).build());
             return PicoServices.picoServices().orElseThrow();
         });
     }

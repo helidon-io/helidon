@@ -36,7 +36,7 @@ import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
 import io.helidon.nima.http2.WindowSize;
 import io.helidon.nima.http2.webclient.Http2Client;
-import io.helidon.nima.http2.webserver.DefaultHttp2Config;
+import io.helidon.nima.http2.webserver.Http2ConfigDefault;
 import io.helidon.nima.http2.webserver.Http2ConnectionProvider;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -76,7 +76,7 @@ class FlowControlTest {
     static void setUpServer(WebServer.Builder serverBuilder) {
         serverBuilder
                 .addConnectionProvider(Http2ConnectionProvider.builder()
-                                               .http2Config(DefaultHttp2Config.builder()
+                                               .http2Config(Http2ConfigDefault.builder()
                                                                     .initialWindowSize(WindowSize.DEFAULT_WIN_SIZE)
                                                )
                                                .build())

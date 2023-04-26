@@ -16,10 +16,10 @@
 
 package io.helidon.builder.test;
 
-import io.helidon.builder.test.testsubjects.DefaultPickle;
-import io.helidon.builder.test.testsubjects.DefaultPickleBarrel;
 import io.helidon.builder.test.testsubjects.Pickle;
 import io.helidon.builder.test.testsubjects.PickleBarrel;
+import io.helidon.builder.test.testsubjects.PickleBarrelDefault;
+import io.helidon.builder.test.testsubjects.PickleDefault;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +31,7 @@ class PickleBarrelTest {
 
     @Test
     void testIt() {
-        DefaultPickle.Builder pickleBuilder = DefaultPickle.builder().size(Pickle.Size.MEDIUM);
+        PickleDefault.Builder pickleBuilder = PickleDefault.builder().size(Pickle.Size.MEDIUM);
         Exception e = assertThrows(IllegalStateException.class, pickleBuilder::build);
         assertThat(e.getMessage(),
                equalTo("'type' is a required attribute and should not be null"));
@@ -41,7 +41,7 @@ class PickleBarrelTest {
         assertThat(pickle.toString(),
                equalTo("Pickle(type=DILL, size=Optional[MEDIUM])"));
 
-        DefaultPickleBarrel.Builder pickleBarrelBuilder = DefaultPickleBarrel.builder();
+        PickleBarrelDefault.Builder pickleBarrelBuilder = PickleBarrelDefault.builder();
         e = assertThrows(IllegalStateException.class, pickleBarrelBuilder::build);
         assertThat(e.getMessage(),
                equalTo("'id' is a required attribute and should not be null"));

@@ -28,9 +28,9 @@ import io.helidon.pico.api.ActivationRequest;
 import io.helidon.pico.api.ActivationResult;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.DeActivationRequest;
-import io.helidon.pico.api.DefaultActivationRequest;
-import io.helidon.pico.api.DefaultBootstrap;
-import io.helidon.pico.api.DefaultInjectorOptions;
+import io.helidon.pico.api.ActivationRequestDefault;
+import io.helidon.pico.api.BootstrapDefault;
+import io.helidon.pico.api.InjectorOptionsDefault;
 import io.helidon.pico.api.Injector;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.Phase;
@@ -78,7 +78,7 @@ class HelloPicoWorldSanityTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-        PicoServices.globalBootstrap(DefaultBootstrap.builder().config(config).build());
+        PicoServices.globalBootstrap(BootstrapDefault.builder().config(config).build());
     }
 
     @AfterEach
@@ -208,7 +208,7 @@ class HelloPicoWorldSanityTest {
         HelloPicoImpl$$picoActivator subversiveWay = new HelloPicoImpl$$picoActivator();
         subversiveWay.picoServices(Optional.of(picoServices));
 
-        ActivationResult result = injector.activateInject(subversiveWay, DefaultInjectorOptions.builder().build());
+        ActivationResult result = injector.activateInject(subversiveWay, InjectorOptionsDefault.builder().build());
         assertThat(result.finished(), is(true));
         assertThat(result.success(), is(true));
 
@@ -230,7 +230,7 @@ class HelloPicoWorldSanityTest {
         assertThat(realHelloProvider.currentActivationPhase(),
                    equalTo(Phase.INIT));
 
-        result = injector.deactivate(subversiveWay, DefaultInjectorOptions.builder().build());
+        result = injector.deactivate(subversiveWay, InjectorOptionsDefault.builder().build());
         assertThat(result.success(), is(true));
     }
 
@@ -271,7 +271,7 @@ class HelloPicoWorldSanityTest {
         assertThat(resolutions.size(), equalTo(injectionPlan.size()));
 
         // now take us through activation
-        result = activator.activate(DefaultActivationRequest.builder()
+        result = activator.activate(ActivationRequestDefault.builder()
                                             .startingPhase(activator.currentActivationPhase())
                                             .build());
         assertThat(result.success(), is(true));

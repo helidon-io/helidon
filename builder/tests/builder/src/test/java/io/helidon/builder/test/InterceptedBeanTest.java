@@ -16,8 +16,8 @@
 
 package io.helidon.builder.test;
 
-import io.helidon.builder.test.testsubjects.DefaultInterceptedBean;
 import io.helidon.builder.test.testsubjects.InterceptedBean;
+import io.helidon.builder.test.testsubjects.InterceptedBeanDefault;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,13 +28,13 @@ class InterceptedBeanTest {
 
     @Test
     void testMutation() {
-        InterceptedBean val = DefaultInterceptedBean.builder()
+        InterceptedBean val = InterceptedBeanDefault.builder()
                 .name("Larry")
                 .build();
         assertThat(val.name(), equalTo("Larry"));
         assertThat(val.helloMessage(), equalTo("Hello Larry"));
 
-        InterceptedBean val2 = DefaultInterceptedBean.builder()
+        InterceptedBean val2 = InterceptedBeanDefault.builder()
                 .name("Larry")
                 .build();
         assertThat(val, equalTo(val2));

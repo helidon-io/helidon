@@ -20,7 +20,8 @@
 module io.helidon.builder.config {
     requires static jakarta.annotation;
     requires static jakarta.inject;
-    requires io.helidon.builder;
+    // used in generated code
+    requires transitive io.helidon.builder;
     requires io.helidon.common;
     requires io.helidon.common.config;
 

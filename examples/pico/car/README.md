@@ -83,11 +83,11 @@ The Pico generated <i>Car$$picoActivator</i>:
  */
 // @Singleton 
 @SuppressWarnings("unchecked")
-@Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+@Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
 public class Car$$picoActivator
         extends io.helidon.pico.runtime.AbstractServiceProvider<Car> {
-   private static final DefaultServiceInfo serviceInfo =
-           DefaultServiceInfo.builder()
+   private static final ServiceInfoDefault serviceInfo =
+           ServiceInfoDefault.builder()
                    .serviceTypeName(io.helidon.examples.pico.car.pico.Car.class.getName())
                    .addContractsImplemented(io.helidon.examples.pico.car.pico.Vehicle.class.getName())
                    .activatorTypeName(Car$$picoActivator.class.getName())
@@ -201,15 +201,15 @@ On the topic of extensibility - Pico is centered around extensibility of its too
 8. Pico generates a suggested <i>module-info.java</i> based upon analysis of your injection/dependency model (see ./target/classes/module-info.java.pico).
 
 ```./target/classes/module-info.java.pico
-// @Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+// @Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
 module io.helidon.examples.pico.car.pico {
     exports io.helidon.examples.pico.car.pico;
-    // pico module - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+    // pico module - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     provides io.helidon.pico.Module with io.helidon.examples.pico.car.pico.Pico$$Module;
-    // pico external contract usage - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+    // pico external contract usage - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     uses jakarta.inject.Provider;
     uses io.helidon.pico.InjectionPointProvider;
-    // pico services - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+    // pico services - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     requires transitive io.helidon.pico;
 }
 ```

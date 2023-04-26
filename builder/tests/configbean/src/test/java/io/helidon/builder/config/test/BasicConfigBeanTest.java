@@ -21,8 +21,8 @@ import java.util.Map;
 
 import io.helidon.builder.config.spi.GeneratedConfigBean;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
-import io.helidon.builder.config.testsubjects.DefaultTestClientConfig;
-import io.helidon.builder.config.testsubjects.DefaultTestServerConfig;
+import io.helidon.builder.config.testsubjects.TestClientConfigDefault;
+import io.helidon.builder.config.testsubjects.TestServerConfigDefault;
 import io.helidon.builder.config.testsubjects.TestClientConfig;
 import io.helidon.builder.config.testsubjects.TestServerConfig;
 import io.helidon.config.Config;
@@ -59,7 +59,7 @@ class BasicConfigBeanTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-        TestServerConfig serverConfig = DefaultTestServerConfig.toBuilder(cfg).build();
+        TestServerConfig serverConfig = TestServerConfigDefault.toBuilder(cfg).build();
         assertThat(serverConfig.description(),
                    optionalValue(equalTo("test")));
         assertThat(serverConfig.name(),
@@ -80,14 +80,14 @@ class BasicConfigBeanTest {
         assertThat(generatedCB.__metaInfo(),
                    equalTo(MetaConfigBeanInfo.builder()
                                    .value("test-server")
-                                   .repeatable(true)
+                                   .repeatable(false)
                                    .drivesActivation(false)
                                    .atLeastOne(true)
                                    .wantDefaultConfigBean(false)
                                    .levelType(io.helidon.builder.config.ConfigBean.LevelType.ROOT)
                                    .build()));
 
-        TestClientConfig clientConfig = DefaultTestClientConfig.toBuilder(cfg).build();
+        TestClientConfig clientConfig = TestClientConfigDefault.toBuilder(cfg).build();
         assertThat(clientConfig.name(),
                    equalTo("server"));
         assertThat(clientConfig.port(),
@@ -122,7 +122,7 @@ class BasicConfigBeanTest {
     @Test
     void emptyConfig() {
         Config cfg = Config.create();
-        TestServerConfig serverConfig = DefaultTestServerConfig.toBuilder(cfg).build();
+        TestServerConfig serverConfig = TestServerConfigDefault.toBuilder(cfg).build();
         assertThat(serverConfig.description(),
                    optionalEmpty());
         assertThat(serverConfig.name(),
@@ -140,7 +140,7 @@ class BasicConfigBeanTest {
      */
     @Test
     void noConfig() {
-        TestServerConfig serverConfig = DefaultTestServerConfig.builder().build();
+        TestServerConfig serverConfig = TestServerConfigDefault.builder().build();
         assertThat(serverConfig.description(), optionalEmpty());
         assertThat(serverConfig.name(),
                    equalTo("default"));
@@ -149,7 +149,7 @@ class BasicConfigBeanTest {
         assertThat(serverConfig.cipherSuites(),
                    equalTo(List.of()));
 
-        serverConfig = DefaultTestServerConfig.toBuilder(serverConfig).port(123).build();
+        serverConfig = TestServerConfigDefault.toBuilder(serverConfig).port(123).build();
         assertThat(serverConfig.description(),
                    optionalEmpty());
         assertThat(serverConfig.name(),
@@ -159,7 +159,7 @@ class BasicConfigBeanTest {
         assertThat(serverConfig.cipherSuites(),
                    equalTo(List.of()));
 
-        TestClientConfig clientConfig = DefaultTestClientConfig.builder().build();
+        TestClientConfig clientConfig = TestClientConfigDefault.builder().build();
         assertThat(clientConfig.name(),
                    equalTo("default"));
         assertThat(clientConfig.port(),
@@ -169,7 +169,7 @@ class BasicConfigBeanTest {
         assertThat(clientConfig.cipherSuites(),
                    equalTo(List.of()));
 
-        clientConfig = DefaultTestClientConfig.toBuilder(clientConfig).port(123).build();
+        clientConfig = TestClientConfigDefault.toBuilder(clientConfig).port(123).build();
         assertThat(clientConfig.name(),
                    equalTo("default"));
         assertThat(clientConfig.port(),
@@ -193,7 +193,7 @@ class BasicConfigBeanTest {
                 .disableSystemPropertiesSource()
                 .build();
         Config serverCfg = cfg.get("test-server");
-        DefaultTestServerConfig.Builder serverConfigBeanManualBuilder = DefaultTestServerConfig.builder()
+        TestServerConfigDefault.Builder serverConfigBeanManualBuilder = TestServerConfigDefault.builder()
                 .port(serverCfg.get("port").asInt().get());
         serverCfg.get("name").asString().ifPresent(serverConfigBeanManualBuilder::name);
         serverCfg.get("pswd").asString().ifPresent(serverConfigBeanManualBuilder::pswd);
@@ -201,7 +201,7 @@ class BasicConfigBeanTest {
         TestServerConfig serverConfigBeanManual = serverConfigBeanManualBuilder.build();
 
         Config clientCfg = cfg.get("test-client");
-        DefaultTestClientConfig.Builder clientConfigBeanManualBuilder = DefaultTestClientConfig.builder()
+        TestClientConfigDefault.Builder clientConfigBeanManualBuilder = TestClientConfigDefault.builder()
                 .port(clientCfg.get("port").asInt().get())
                 .serverPort(clientCfg.get("server-port").asInt().get())
                 .cipherSuites(clientCfg.get("cipher-suites").asList(String.class).get())
@@ -211,8 +211,8 @@ class BasicConfigBeanTest {
         TestClientConfig clientConfigBeanManual = clientConfigBeanManualBuilder.build();
 
         // juxtaposed to the new ConfigBean approach
-        TestServerConfig serverConfigBean = DefaultTestServerConfig.toBuilder(serverCfg).build();
-        TestClientConfig clientConfigBean = DefaultTestClientConfig.toBuilder(clientCfg).build();
+        TestServerConfig serverConfigBean = TestServerConfigDefault.toBuilder(serverCfg).build();
+        TestClientConfig clientConfigBean = TestClientConfigDefault.toBuilder(clientCfg).build();
 
         assertThat(serverConfigBeanManual, equalTo(serverConfigBean));
         assertThat(clientConfigBeanManual, equalTo(clientConfigBean));

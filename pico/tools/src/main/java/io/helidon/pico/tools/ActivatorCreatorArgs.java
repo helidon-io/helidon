@@ -27,7 +27,7 @@ import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
 
 /**
- * See {@link DefaultActivatorCreator}.
+ * See {@link ActivatorCreatorDefault}.
  */
 @Builder
 abstract class ActivatorCreatorArgs {

@@ -33,7 +33,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.ModuleComponent;
@@ -58,11 +58,11 @@ import static io.helidon.pico.runtime.ServiceUtils.isQualifiedInjectionTarget;
  */
 @Singleton
 @Weight(DEFAULT_PICO_WEIGHT)
-public class DefaultApplicationCreator extends AbstractCreator implements ApplicationCreator {
+public class ApplicationCreatorDefault extends AbstractCreator implements ApplicationCreator {
     /**
      * The prefix to add before the generated "Application" class name (i.e., "Pico$$" in the "Pico$$Application").
      */
-    public static final String NAME_PREFIX = DefaultActivatorCreator.NAME_PREFIX;
+    public static final String NAME_PREFIX = ActivatorCreatorDefault.NAME_PREFIX;
 
     /**
      * The "Application" part of the name.
@@ -87,7 +87,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
      * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
     @Deprecated
-    public DefaultApplicationCreator() {
+    public ApplicationCreatorDefault() {
         super(TemplateHelper.DEFAULT_TEMPLATE_NAME);
     }
 
@@ -99,7 +99,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
      */
     @Override
     public ApplicationCreatorResponse createApplication(ApplicationCreatorRequest req) {
-        DefaultApplicationCreatorResponse.Builder builder = DefaultApplicationCreatorResponse.builder();
+        ApplicationCreatorResponseDefault.Builder builder = ApplicationCreatorResponseDefault.builder();
 
         if (req.serviceTypeNames() == null) {
             return handleError(req, new ToolsException("ServiceTypeNames is required to be passed"), builder);
@@ -163,7 +163,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
     }
 
     static ServiceInfoCriteria toServiceInfoCriteria(TypeName typeName) {
-        return DefaultServiceInfoCriteria.builder().serviceTypeName(typeName.name()).build();
+        return ServiceInfoCriteriaDefault.builder().serviceTypeName(typeName.name()).build();
     }
 
     static ServiceProvider<?> toServiceProvider(TypeName typeName,
@@ -194,7 +194,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
     }
 
     ApplicationCreatorResponse codegen(ApplicationCreatorRequest req,
-                                       DefaultApplicationCreatorResponse.Builder builder) {
+                                       ApplicationCreatorResponseDefault.Builder builder) {
         PicoServices picoServices = PicoServices.picoServices().orElseThrow();
 
         String serviceTypeBindingTemplate = templateHelper()
@@ -235,11 +235,11 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             codegen(picoServices, req, application, body);
         }
 
-        GeneralCodeGenDetail codeGenDetail = DefaultGeneralCodeGenDetail.builder()
+        GeneralCodeGenDetail codeGenDetail = GeneralCodeGenDetailDefault.builder()
                 .serviceTypeName(application)
                 .body(body)
                 .build();
-        ApplicationCreatorCodeGen codeGenResponse = DefaultApplicationCreatorCodeGen.builder()
+        ApplicationCreatorCodeGen codeGenResponse = ApplicationCreatorCodeGenDefault.builder()
                 .packageName(application.packageName())
                 .className(application.className())
                 .classPrefixName(req.codeGen().classPrefixName())
@@ -439,7 +439,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
 
             TypeName moduleTypeName = moduleServiceTypeOf(picoServices, moduleName);
             String typePrefix = req.codeGen().classPrefixName();
-            ModuleInfoCreatorRequest moduleBuilderRequest = DefaultModuleInfoCreatorRequest.builder()
+            ModuleInfoCreatorRequest moduleBuilderRequest = ModuleInfoCreatorRequestDefault.builder()
                     .name(moduleName)
                     .moduleTypeName(moduleTypeName)
                     .applicationTypeName(applicationTypeName)
@@ -466,7 +466,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
 
     ApplicationCreatorResponse handleError(ApplicationCreatorRequest request,
                                            ToolsException e,
-                                           DefaultApplicationCreatorResponse.Builder builder) {
+                                           ApplicationCreatorResponseDefault.Builder builder) {
         if (request.throwIfError()) {
             throw e;
         }

@@ -34,7 +34,7 @@ module io.helidon.pico.tests.pico {
 
     provides io.helidon.pico.api.ModuleComponent with io.helidon.pico.tests.pico.Pico$$Module;
     provides io.helidon.pico.api.Application with io.helidon.pico.tests.pico.Pico$$Application;
-    // pico external contract usage - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+    // pico external contract usage - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     requires test1;
     requires test2;
     uses jakarta.inject.Provider;
@@ -42,6 +42,6 @@ module io.helidon.pico.tests.pico {
     uses io.helidon.pico.tests.plain.interceptor.IB;
     uses io.helidon.pico.api.InjectionPointProvider;
     uses io.helidon.pico.api.OptionallyNamed;
-    // pico contract usage - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+    // pico contract usage - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     exports io.helidon.pico.tests.pico.provider;
 }

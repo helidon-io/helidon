@@ -16,10 +16,10 @@
 
 package io.helidon.builder.test;
 
-import io.helidon.builder.test.testsubjects.DefaultTestNotNullable;
-import io.helidon.builder.test.testsubjects.DefaultTestNullable;
 import io.helidon.builder.test.testsubjects.TestNotNullable;
+import io.helidon.builder.test.testsubjects.TestNotNullableDefault;
 import io.helidon.builder.test.testsubjects.TestNullable;
+import io.helidon.builder.test.testsubjects.TestNullableDefault;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,24 +32,24 @@ class AllowNullsTest {
 
     @Test
     void testIt() {
-        TestNullable nullable = DefaultTestNullable.builder().build();
+        TestNullable nullable = TestNullableDefault.builder().build();
         assertThat(nullable.val(), nullValue());
 
-        nullable = DefaultTestNullable.builder().val(null).build();
+        nullable = TestNullableDefault.builder().val(null).build();
         assertThat(nullable.val(), nullValue());
 
-        nullable = DefaultTestNullable.toBuilder(nullable).build();
+        nullable = TestNullableDefault.toBuilder(nullable).build();
         assertThat(nullable.val(), nullValue());
 
         TestNotNullable fake = () -> null;
         try {
-            DefaultTestNotNullable.toBuilder(fake);
+            TestNotNullableDefault.toBuilder(fake);
             fail();
         } catch (NullPointerException e) {
             // expected
         }
 
-        DefaultTestNotNullable.Builder notNullableBuilder = DefaultTestNotNullable.builder();
+        TestNotNullableDefault.Builder notNullableBuilder = TestNotNullableDefault.builder();
         assertThrows(NullPointerException.class, () -> notNullableBuilder.val(null));
         assertThrows(IllegalStateException.class, notNullableBuilder::build);
     }

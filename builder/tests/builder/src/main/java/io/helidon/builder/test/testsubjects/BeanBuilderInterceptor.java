@@ -21,11 +21,11 @@ import io.helidon.builder.BuilderInterceptor;
 /**
  * See {@link InterceptedBean}.
  */
-class BeanBuilderInterceptor implements BuilderInterceptor<DefaultInterceptedBean.Builder> {
+class BeanBuilderInterceptor implements BuilderInterceptor<InterceptedBeanDefault.Builder> {
     private int callCount;
 
     @Override
-    public DefaultInterceptedBean.Builder intercept(DefaultInterceptedBean.Builder target) {
+    public InterceptedBeanDefault.Builder intercept(InterceptedBeanDefault.Builder target) {
         if (callCount++ > 0) {
             throw new AssertionError();
         }

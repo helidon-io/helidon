@@ -13,7 +13,7 @@ import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.DefaultTypedElementName;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
-import io.helidon.pico.api.DefaultInvocationContext;
+import io.helidon.pico.api.InvocationContextDefault;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationException;
 import io.helidon.pico.api.ServiceProvider;
@@ -36,7 +36,7 @@ import static io.helidon.pico.runtime.Invocation.mergeAndCollapse;
 @io.helidon.pico.api.Intercepted(io.helidon.pico.tests.pico.interceptor.XImpl.class)
 @Singleton
 @SuppressWarnings("ALL")
-@jakarta.annotation.Generated(value = "io.helidon.pico.tools.DefaultInterceptorCreator", comments = "version=1")
+@jakarta.annotation.Generated(value = "io.helidon.pico.tools.InterceptorCreatorDefault", comments = "version=1")
 public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interceptor.XImpl {
     private static final List<AnnotationAndValue> __serviceLevelAnnotations = List.of(
             DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class),
@@ -213,7 +213,7 @@ public class XImpl$$Pico$$Interceptor extends io.helidon.pico.tests.pico.interce
 
         Function<Object[], io.helidon.pico.tests.pico.interceptor.XImpl> call = args -> __provider.get();
         io.helidon.pico.tests.pico.interceptor.XImpl result = createInvokeAndSupply(
-                DefaultInvocationContext.builder()
+                InvocationContextDefault.builder()
                     .serviceProvider(__sp)
                     .serviceTypeName(__serviceTypeName)
                     .classAnnotations(__serviceLevelAnnotations)

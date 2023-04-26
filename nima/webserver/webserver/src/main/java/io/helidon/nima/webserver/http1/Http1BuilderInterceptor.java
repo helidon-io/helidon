@@ -18,16 +18,16 @@ package io.helidon.nima.webserver.http1;
 
 import io.helidon.builder.BuilderInterceptor;
 
-class Http1BuilderInterceptor implements BuilderInterceptor<DefaultHttp1Config.Builder> {
+class Http1BuilderInterceptor implements BuilderInterceptor<Http1ConfigDefault.Builder> {
     @Override
-    public DefaultHttp1Config.Builder intercept(DefaultHttp1Config.Builder target) {
+    public Http1ConfigDefault.Builder intercept(Http1ConfigDefault.Builder target) {
         receiveListeners(target);
         sentListeners(target);
 
         return target;
     }
 
-    private void sentListeners(DefaultHttp1Config.Builder target) {
+    private void sentListeners(Http1ConfigDefault.Builder target) {
         var listeners = target.sendListeners();
         if (listeners.isEmpty() && target.sendLog()) {
             target.addReceiveListener(new Http1LoggingConnectionListener("send"));
@@ -36,7 +36,7 @@ class Http1BuilderInterceptor implements BuilderInterceptor<DefaultHttp1Config.B
         target.compositeSendListener(Http1ConnectionListener.create(listeners));
     }
 
-    private void receiveListeners(DefaultHttp1Config.Builder target) {
+    private void receiveListeners(Http1ConfigDefault.Builder target) {
         var listeners = target.receiveListeners();
         if (listeners.isEmpty() && target.receiveLog()) {
             target.addReceiveListener(new Http1LoggingConnectionListener("recv"));

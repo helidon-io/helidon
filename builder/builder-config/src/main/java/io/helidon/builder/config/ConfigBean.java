@@ -108,7 +108,7 @@ public @interface ConfigBean {
      *
      * @return true if repeatable
      */
-    boolean repeatable() default true;
+    boolean repeatable() default false;
 
     /**
      * An instance of this bean will be created if there are no instances discovered by the configuration provider(s) post

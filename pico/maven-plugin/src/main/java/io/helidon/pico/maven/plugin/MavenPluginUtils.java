@@ -29,7 +29,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.api.DefaultBootstrap;
+import io.helidon.pico.api.BootstrapDefault;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesHolder;
@@ -109,7 +109,7 @@ final class MavenPluginUtils {
 
     static LazyValue<PicoServices> lazyCreate(Config config) {
         return LazyValue.create(() -> {
-            PicoServices.globalBootstrap(DefaultBootstrap.builder()
+            PicoServices.globalBootstrap(BootstrapDefault.builder()
                                                  .config(config)
                                                  .limitRuntimePhase(Phase.GATHERING_DEPENDENCIES)
                                                  .build());

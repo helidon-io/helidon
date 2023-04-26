@@ -27,8 +27,8 @@ import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.api.DefaultServiceInfo;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoDefault;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
@@ -113,7 +113,7 @@ class InterceptorRuntimeTest {
 
     @Test
     void runtimeWithNoInterception() throws Exception {
-        ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(Closeable.class.getName())
                 .includeIntercepted(true)
                 .build();
@@ -123,7 +123,7 @@ class InterceptorRuntimeTest {
                    contains("XImpl$$Pico$$Interceptor:INIT", "YImpl$$Pico$$Interceptor:INIT",
                             "XImpl:INIT", "YImpl:INIT"));
 
-        criteria = DefaultServiceInfoCriteria.builder()
+        criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(Closeable.class.getName())
                 .includeIntercepted(false)
                 .build();
@@ -166,7 +166,7 @@ class InterceptorRuntimeTest {
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
         ServiceProvider<?> yimplProvider = services
                 .lookupFirst(
-                        DefaultServiceInfoCriteria.builder()
+                        ServiceInfoCriteriaDefault.builder()
                                 .addContractImplemented(Closeable.class.getName())
                                 .qualifiers(Set.of(create(Named.class, "ClassY")))
                                 .build());
@@ -194,7 +194,7 @@ class InterceptorRuntimeTest {
         setUp(config);
         bind(picoServices, ReflectionBasedSingletonServiceProvider
                               .create(TestNamedInterceptor.class,
-                                      DefaultServiceInfo.builder()
+                                      ServiceInfoDefault.builder()
                                               .serviceTypeName(TestNamedInterceptor.class.getName())
                                               .addQualifier(createNamed(TestNamed.class.getName()))
                                               .addQualifier(createNamed(InterceptorBasedAnno.class.getName()))
@@ -248,7 +248,7 @@ class InterceptorRuntimeTest {
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
         ServiceProvider<?> yimplProvider = services
                 .lookupFirst(
-                        DefaultServiceInfoCriteria.builder()
+                        ServiceInfoCriteriaDefault.builder()
                                 .addContractImplemented(Closeable.class.getName())
                                 .qualifiers(Set.of(create(Named.class, "ClassY")))
                                 .build());

@@ -36,12 +36,12 @@ public interface PicoServices {
     /**
      * Empty criteria will match anything and everything.
      */
-    ServiceInfoCriteria EMPTY_CRITERIA = DefaultServiceInfoCriteria.builder().build();
+    ServiceInfoCriteria EMPTY_CRITERIA = ServiceInfoCriteriaDefault.builder().build();
 
     /**
      * Denotes a match to any (default) service, but required to be matched to at least one.
      */
-    ContextualServiceQuery SERVICE_QUERY_REQUIRED = DefaultContextualServiceQuery.builder()
+    ContextualServiceQuery SERVICE_QUERY_REQUIRED = ContextualServiceQueryDefault.builder()
             .serviceInfoCriteria(EMPTY_CRITERIA)
             .expected(true)
             .build();
@@ -234,8 +234,8 @@ public interface PicoServices {
      *
      * @return the activation request
      */
-    static ActivationRequest createDefaultActivationRequest() {
-        return DefaultActivationRequest.builder().targetPhase(terminalActivationPhase()).build();
+    static ActivationRequest createActivationRequestDefault() {
+        return ActivationRequestDefault.builder().targetPhase(terminalActivationPhase()).build();
     }
 
     /**

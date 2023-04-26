@@ -37,7 +37,7 @@ class MetaConfigBeanInfoTest {
         ConfigBean cfg = Objects.requireNonNull(getClass().getAnnotation(ConfigBean.class));
         MetaConfigBeanInfo metaCfg = ConfigBeanInfo.toMetaConfigBeanInfo(cfg, ConfigBean.class);
         assertThat(metaCfg.annotationType(), sameInstance(ConfigBean.class));
-        assertThat(metaCfg.repeatable(), is(true));
+        assertThat(metaCfg.repeatable(), is(false));
         assertThat(metaCfg.drivesActivation(), is(false));
         assertThat(metaCfg.atLeastOne(), is(false));
         assertThat(metaCfg.wantDefaultConfigBean(), is(false));

@@ -37,23 +37,22 @@ import java.util.stream.Collectors;
 
 import io.helidon.pico.api.ActivationLog;
 import io.helidon.pico.api.ActivationLogEntry;
+import io.helidon.pico.api.ActivationLogEntryDefault;
 import io.helidon.pico.api.ActivationLogQuery;
 import io.helidon.pico.api.ActivationPhaseReceiver;
 import io.helidon.pico.api.ActivationResult;
+import io.helidon.pico.api.ActivationResultDefault;
 import io.helidon.pico.api.ActivationStatus;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.CallingContext;
 import io.helidon.pico.api.CallingContextFactory;
-import io.helidon.pico.api.DefaultActivationLogEntry;
-import io.helidon.pico.api.DefaultActivationResult;
-import io.helidon.pico.api.DefaultInjectorOptions;
-import io.helidon.pico.api.DefaultMetrics;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
 import io.helidon.pico.api.Event;
 import io.helidon.pico.api.Injector;
 import io.helidon.pico.api.InjectorOptions;
+import io.helidon.pico.api.InjectorOptionsDefault;
 import io.helidon.pico.api.Metrics;
+import io.helidon.pico.api.MetricsDefault;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoException;
@@ -61,6 +60,7 @@ import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 
 import static io.helidon.pico.api.CallingContext.toErrorMessage;
@@ -125,7 +125,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
         DefaultServices thisServices = services.get();
         if (thisServices == null) {
             // never has been any lookup yet
-            return Optional.of(DefaultMetrics.builder().build());
+            return Optional.of(MetricsDefault.builder().build());
         }
         return Optional.of(thisServices.metrics());
     }
@@ -427,7 +427,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
     }
 
     private void log(String message) {
-        ActivationLogEntry entry = DefaultActivationLogEntry.builder()
+        ActivationLogEntry entry = ActivationLogEntryDefault.builder()
                 .message(message)
                 .build();
         log.record(entry);
@@ -435,7 +435,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
 
     private void errorLog(String message,
                           Throwable t) {
-        ActivationLogEntry entry = DefaultActivationLogEntry.builder()
+        ActivationLogEntry entry = ActivationLogEntryDefault.builder()
                 .message(message)
                 .error(t)
                 .build();
@@ -450,7 +450,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
         private final State state;
         private final ActivationLog log;
         private final Injector injector;
-        private final InjectorOptions opts = DefaultInjectorOptions.builder().build();
+        private final InjectorOptions opts = InjectorOptionsDefault.builder().build();
         private final Map<String, ActivationResult> map = new LinkedHashMap<>();
 
         Shutdown(DefaultServices services,
@@ -488,7 +488,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
             }
 
             // next get all services that are beyond INIT state, and sort by runlevel order, and shut those down also
-            List<ServiceProvider<?>> serviceProviders = services.lookupAll(DefaultServiceInfoCriteria.builder().build(), false);
+            List<ServiceProvider<?>> serviceProviders = services.lookupAll(ServiceInfoCriteriaDefault.builder().build(), false);
             serviceProviders = serviceProviders.stream()
                     .filter(sp -> sp.currentActivationPhase().eligibleForDeactivation())
                     .collect(Collectors.toList());
@@ -513,7 +513,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
                     result = injector.deactivate(csp, opts);
                 } catch (Throwable t) {
                     errorLog("error during shutdown", t);
-                    result = DefaultActivationResult.builder()
+                    result = ActivationResultDefault.builder()
                             .serviceProvider(csp)
                             .startingActivationPhase(startingActivationPhase)
                             .targetActivationPhase(Phase.DESTROYED)

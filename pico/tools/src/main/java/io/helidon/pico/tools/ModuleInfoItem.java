@@ -212,7 +212,7 @@ public interface ModuleInfoItem {
             throw new IllegalArgumentException();
         }
 
-        DefaultModuleInfoItem.Builder newOne = DefaultModuleInfoItem.toBuilder(another);
+        ModuleInfoItemDefault.Builder newOne = ModuleInfoItemDefault.toBuilder(another);
         another.precomments().forEach(newOne::addPrecomment);
         newOne.requires(requires() || another.requires());
         newOne.uses(uses() || another.uses());

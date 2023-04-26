@@ -17,6 +17,9 @@
 package io.helidon.pico.tools;
 
 import java.util.List;
+import java.util.Optional;
+
+import javax.lang.model.element.Element;
 
 import io.helidon.builder.Builder;
 import io.helidon.common.types.TypeInfo;
@@ -98,4 +101,10 @@ public interface CustomAnnotationTemplateRequest {
      */
     GenericTemplateCreator genericTemplateCreator();
 
+    /**
+     * Current element that is processed, if available.
+     *
+     * @return processed element
+     */
+    Optional<Element> processedElement();
 }

@@ -27,8 +27,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.DefaultContextualServiceQuery;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.ContextualServiceQueryDefault;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.DependencyInfo;
 import io.helidon.pico.api.InjectionException;
@@ -110,7 +110,7 @@ class DefaultInjectionPlans {
                             Object target = (resolved instanceof Optional)
                                     ? ((Optional<?>) resolved).orElse(null) : resolved;
                             if (target != null) {
-                                DefaultPicoInjectionPlan.Builder planBuilder = DefaultPicoInjectionPlan.builder()
+                                PicoInjectionPlanDefault.Builder planBuilder = PicoInjectionPlanDefault.builder()
                                         .serviceProvider(self)
                                         .injectionPointInfo(ipInfo)
                                         .injectionPointQualifiedServiceProviders(toIpQualified(target))
@@ -166,7 +166,7 @@ class DefaultInjectionPlans {
                             throw DefaultServices.resolutionBasedInjectionError(
                                     ipInfo.dependencyToServiceInfo());
                         }
-                        PicoInjectionPlan plan = DefaultPicoInjectionPlan.builder()
+                        PicoInjectionPlan plan = PicoInjectionPlanDefault.builder()
                                 .injectionPointInfo(ipInfo)
                                 .injectionPointQualifiedServiceProviders(serviceProviders)
                                 .serviceProvider(self)
@@ -192,18 +192,18 @@ class DefaultInjectionPlans {
                                           ServiceProvider<?> self,
                                           ServiceInfo selfInfo) {
         ServiceInfoCriteria criteria = dep.dependencyTo();
-        DefaultServiceInfoCriteria.Builder builder = null;
+        ServiceInfoCriteriaDefault.Builder builder = null;
         if (selfInfo.declaredWeight().isPresent()
                 && selfInfo.contractsImplemented().containsAll(criteria.contractsImplemented())) {
             // if we have a weight on ourselves, and we inject an interface that we actually offer, then
             // be sure to use it to get lower weighted injection points
-            builder = DefaultServiceInfoCriteria.toBuilder(criteria)
+            builder = ServiceInfoCriteriaDefault.toBuilder(criteria)
                     .weight(selfInfo.declaredWeight().get());
         }
 
         if ((self instanceof ServiceProviderBindable) && ((ServiceProviderBindable<?>) self).isInterceptor()) {
             if (builder == null) {
-                builder = DefaultServiceInfoCriteria.toBuilder(criteria);
+                builder = ServiceInfoCriteriaDefault.toBuilder(criteria);
             }
             builder = builder.includeIntercepted(true);
         }
@@ -377,7 +377,7 @@ class DefaultInjectionPlans {
                                                    boolean expected) {
         List<?> result = new ArrayList<>();
 
-        ContextualServiceQuery query = DefaultContextualServiceQuery.builder()
+        ContextualServiceQuery query = ContextualServiceQueryDefault.builder()
                 .injectionPointInfo(ipInfo)
                 .serviceInfoCriteria(ipInfo.dependencyToServiceInfo())
                 .expected(expected);

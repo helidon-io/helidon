@@ -17,6 +17,7 @@
 package io.helidon.builder.processor.tools;
 
 import java.lang.annotation.Annotation;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,6 +64,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     static final boolean DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES = true;
     static final String DEFAULT_IMPL_PREFIX = Builder.DEFAULT_IMPL_PREFIX;
     static final String DEFAULT_ABSTRACT_IMPL_PREFIX = Builder.DEFAULT_ABSTRACT_IMPL_PREFIX;
+    static final String DEFAULT_ABSTRACT_IMPL_SUFFIX = Builder.DEFAULT_ABSTRACT_IMPL_SUFFIX;
     static final String DEFAULT_SUFFIX = Builder.DEFAULT_SUFFIX;
     static final String DEFAULT_LIST_TYPE = Builder.DEFAULT_LIST_TYPE.getName();
     static final String DEFAULT_MAP_TYPE = Builder.DEFAULT_MAP_TYPE.getName();
@@ -160,7 +162,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                               AnnotationAndValue builderAnnotation) {
         String toPackageName = toPackageName(typeName.packageName(), builderAnnotation);
         String prefix = toAbstractImplTypePrefix(builderAnnotation);
-        String suffix = toImplTypeSuffix(builderAnnotation);
+        String suffix = toAbstractImplTypeSuffix(builderAnnotation);
         return DefaultTypeName.create(toPackageName, prefix + typeName.className() + suffix);
     }
 
@@ -1138,6 +1140,13 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     /**
+     * In support of {@link io.helidon.builder.Builder#abstractImplSuffix()}.
+     */
+    private String toAbstractImplTypeSuffix(AnnotationAndValue builderAnnotation) {
+        return builderAnnotation.value("abstractImplSuffix").orElse(DEFAULT_ABSTRACT_IMPL_SUFFIX);
+    }
+
+    /**
      * In support of {@link io.helidon.builder.Builder#implPrefix()}.
      */
     private static String toImplTypePrefix(AnnotationAndValue builderAnnotation) {
@@ -1674,6 +1683,12 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             if (!type.typeArguments().isEmpty()) {
                 type = type.typeArguments().get(0);
             }
+        }
+
+        // TODO: hardcoded, should update StringValueParser
+        if (Duration.class.getName().equals(type.name())) {
+            builder.append("java.time.Duration.parse(\"").append(defaultVal).append("\")");
+            return;
         }
 
         boolean isString = type.name().equals(String.class.getName()) && !type.array();

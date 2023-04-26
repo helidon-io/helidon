@@ -56,10 +56,10 @@ import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.DefaultElementInfo;
-import io.helidon.pico.api.DefaultInjectionPointInfo;
+import io.helidon.pico.api.ElementInfoDefault;
+import io.helidon.pico.api.InjectionPointInfoDefault;
 import io.helidon.pico.api.DefaultQualifierAndValue;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.InjectionPointProvider;
@@ -769,10 +769,10 @@ public final class TypeTools extends BuilderTypeTools {
         int elemArgs = elemInfo.getParameterInfo().length;
         ElementInfo.Access access = toAccess(elemInfo.getModifiers());
         String packageName = serviceTypeName.packageName();
-        ServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
+        ServiceInfoCriteria serviceInfo = ServiceInfoCriteriaDefault.builder()
                 .serviceTypeName(elemType)
                 .build();
-        return DefaultInjectionPointInfo.builder()
+        return InjectionPointInfoDefault.builder()
                 .baseIdentity(Dependencies.toMethodBaseIdentity(elemName, elemArgs, access, () -> packageName))
                 .id(Dependencies.toMethodIdentity(elemName, elemArgs, elemOffset, access, () -> packageName))
                 .dependencyToServiceInfo(serviceInfo)
@@ -811,7 +811,7 @@ public final class TypeTools extends BuilderTypeTools {
         }
         List<String> throwables = extractThrowableTypeNames(methodInfo);
         List<ElementInfo> parameters = createParameterInfo(serviceTypeName, methodInfo);
-        return DefaultMethodElementInfo.builder()
+        return MethodElementInfoDefault.builder()
                 .serviceTypeName(serviceTypeName.name())
                 .elementName(methodInfo.isConstructor()
                                      ? InjectionPointInfo.CONSTRUCTOR : methodInfo.getName())
@@ -849,7 +849,7 @@ public final class TypeTools extends BuilderTypeTools {
         }
         List<String> throwables = extractThrowableTypeNames(ee);
         List<ElementInfo> parameters = createParameterInfo(serviceTypeName, ee);
-        return DefaultMethodElementInfo.builder()
+        return MethodElementInfoDefault.builder()
                 .serviceTypeName(serviceTypeName.name())
                 .elementName((ee.getKind() == ElementKind.CONSTRUCTOR)
                                      ? InjectionPointInfo.CONSTRUCTOR : ee.getSimpleName().toString())
@@ -940,13 +940,13 @@ public final class TypeTools extends BuilderTypeTools {
      * @param elemOffset        the argument position - starts at 1 not 0
      * @return the element info
      */
-    static DefaultElementInfo createParameterInfo(TypeName serviceTypeName,
+    static ElementInfoDefault createParameterInfo(TypeName serviceTypeName,
                                                   MethodInfo elemInfo,
                                                   int elemOffset) {
         MethodParameterInfo paramInfo = elemInfo.getParameterInfo()[elemOffset - 1];
         String elemType = paramInfo.getTypeDescriptor().toString();
         Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(paramInfo.getAnnotationInfo());
-        return DefaultElementInfo.builder()
+        return ElementInfoDefault.builder()
                 .serviceTypeName(serviceTypeName.name())
                 .elementName("p" + elemOffset)
                 .elementKind(elemInfo.isConstructor()
@@ -968,13 +968,13 @@ public final class TypeTools extends BuilderTypeTools {
      * @param elemOffset        the argument position - starts at 1 not 0
      * @return the element info
      */
-    static DefaultElementInfo createParameterInfo(TypeName serviceTypeName,
+    static ElementInfoDefault createParameterInfo(TypeName serviceTypeName,
                                                   ExecutableElement elemInfo,
                                                   int elemOffset) {
         VariableElement paramInfo = elemInfo.getParameters().get(elemOffset - 1);
         TypeName elemTypeName = TypeTools.createTypeNameFromElement(paramInfo).orElseThrow();
         Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(paramInfo.getAnnotationMirrors());
-        return DefaultElementInfo.builder()
+        return ElementInfoDefault.builder()
                 .serviceTypeName(serviceTypeName.name())
                 .elementName("p" + elemOffset)
                 .elementKind(elemInfo.getKind() == ElementKind.CONSTRUCTOR
@@ -1004,10 +1004,10 @@ public final class TypeTools extends BuilderTypeTools {
         Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(elemInfo);
         String elemName = elemInfo.getName();
         String id = Dependencies.toFieldIdentity(elemName, serviceTypeName::packageName);
-        ServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
+        ServiceInfoCriteria serviceInfo = ServiceInfoCriteriaDefault.builder()
                 .serviceTypeName(elemType)
                 .build();
-        return DefaultInjectionPointInfo.builder()
+        return InjectionPointInfoDefault.builder()
                 .baseIdentity(id)
                 .id(id)
                 .dependencyToServiceInfo(serviceInfo)

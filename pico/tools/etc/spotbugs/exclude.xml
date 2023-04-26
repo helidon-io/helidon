@@ -49,7 +49,7 @@
     </Match>
     <Match>
         <!-- Path comes from config or code -->
-        <Class name="io.helidon.pico.tools.DefaultApplicationCreator"/>
+        <Class name="io.helidon.pico.tools.ApplicationCreatorDefault"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>
@@ -65,7 +65,7 @@
 
     <Match>
         <!-- package private/internal class IdAndToString does not need to implement equals() -->
-        <Class name="io.helidon.pico.tools.DefaultInterceptorCreator$InterceptedMethodCodeGen"/>
+        <Class name="io.helidon.pico.tools.InterceptorCreatorDefault$InterceptedMethodCodeGen"/>
         <Bug pattern="EQ_DOESNT_OVERRIDE_EQUALS"/>
     </Match>
 

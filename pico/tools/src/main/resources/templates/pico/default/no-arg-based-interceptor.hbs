@@ -27,7 +27,7 @@ import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.DefaultTypedElementName;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
-import io.helidon.pico.api.DefaultInvocationContext;
+import io.helidon.pico.api.InvocationContextDefault;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationException;
 import io.helidon.pico.api.ServiceProvider;
@@ -79,7 +79,7 @@ public class {{className}} extends {{parent}} {
 
         Function<Object[], {{parent}}> call = args -> __provider.get();
         {{parent}} result = createInvokeAndSupply(
-                DefaultInvocationContext.builder()
+                InvocationContextDefault.builder()
                     .serviceProvider(__sp)
                     .serviceTypeName(__serviceTypeName)
                     .classAnnotations(__serviceLevelAnnotations)

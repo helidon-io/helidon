@@ -31,6 +31,16 @@ import io.helidon.builder.AttributeVisitor;
  */
 @FunctionalInterface
 public interface ConfigBeanBuilderValidator<CBB> {
+    /**
+     * Validator that does nothing.
+     *
+     * @return empty typed validator
+     * @param <T> type of the config bean builder
+     */
+    @SuppressWarnings("unchecked")
+    static <T> ConfigBeanBuilderValidator<T> empty() {
+        return (ConfigBeanBuilderValidator<T>) ConfigBeanBuilderValidatorHolder.EMPTY;
+    }
 
     /**
      * Creates a validation round for all the config bean attributes of the provided config bean.

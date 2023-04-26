@@ -19,7 +19,7 @@ package io.helidon.builder.test;
 import java.util.Arrays;
 
 import io.helidon.builder.test.testsubjects.AnnotationCase;
-import io.helidon.builder.test.testsubjects.DefaultAnnotationCaseExt;
+import io.helidon.builder.test.testsubjects.AnnotationCaseExtDefault;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +32,7 @@ class AnnotationCaseTest {
 
     @Test
     void testIt() {
-        DefaultAnnotationCaseExt annotationCase = DefaultAnnotationCaseExt.builder().build();
+        AnnotationCaseExtDefault annotationCase = AnnotationCaseExtDefault.builder().build();
         assertThat(annotationCase.annotationType(), sameInstance(AnnotationCase.class));
         assertThat(annotationCase.value(), equalTo("hello"));
         assertThat(Arrays.asList(annotationCase.strArr()), contains("a", "b", "c"));

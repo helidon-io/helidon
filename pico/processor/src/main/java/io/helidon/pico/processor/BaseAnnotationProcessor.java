@@ -55,7 +55,7 @@ import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.Contract;
-import io.helidon.pico.api.DefaultServiceInfo;
+import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.ExternalContracts;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.QualifierAndValue;
@@ -63,13 +63,13 @@ import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
+import io.helidon.pico.tools.ActivatorCreatorDefault;
 import io.helidon.pico.tools.ActivatorCreatorProvider;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
 import io.helidon.pico.tools.CodeGenFiler;
-import io.helidon.pico.tools.DefaultActivatorCreator;
-import io.helidon.pico.tools.DefaultActivatorCreatorConfigOptions;
-import io.helidon.pico.tools.DefaultGeneralCreatorRequest;
+import io.helidon.pico.tools.ActivatorCreatorConfigOptionsDefault;
+import io.helidon.pico.tools.GeneralCreatorRequestDefault;
 import io.helidon.pico.tools.GeneralCreatorRequest;
 import io.helidon.pico.tools.InterceptionPlan;
 import io.helidon.pico.tools.InterceptorCreatorProvider;
@@ -386,7 +386,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     }
 
     ServiceInfoBasics toInterceptedServiceInfoFor(TypeName serviceTypeName) {
-        return DefaultServiceInfo.builder()
+        return ServiceInfoDefault.builder()
                 .serviceTypeName(serviceTypeName.name())
                 .declaredWeight(Optional.ofNullable(services.weightedPriorities().get(serviceTypeName)))
                 .declaredRunLevel(Optional.ofNullable(services.runLevels().get(serviceTypeName)))
@@ -605,7 +605,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
         Map<TypeName, InterceptionPlan> interceptionPlanMap = services.interceptorPlans();
         if (!interceptionPlanMap.isEmpty()) {
-            GeneralCreatorRequest req = DefaultGeneralCreatorRequest.builder()
+            GeneralCreatorRequest req = GeneralCreatorRequestDefault.builder()
                     .filer(filer);
             creator.codegenInterceptors(req, interceptionPlanMap);
             services.clearInterceptorPlans();
@@ -615,16 +615,16 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
         }
 
-        ActivatorCreatorCodeGen codeGen = DefaultActivatorCreator.createActivatorCreatorCodeGen(services).orElse(null);
+        ActivatorCreatorCodeGen codeGen = ActivatorCreatorDefault.createActivatorCreatorCodeGen(services).orElse(null);
         if (codeGen == null) {
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
         }
 
-        DefaultActivatorCreatorConfigOptions configOptions = DefaultActivatorCreatorConfigOptions.builder()
+        ActivatorCreatorConfigOptionsDefault configOptions = ActivatorCreatorConfigOptionsDefault.builder()
                 .applicationPreCreated(Options.isOptionEnabled(Options.TAG_APPLICATION_PRE_CREATE))
                 .moduleCreated(isProcessingOver)
                 .build();
-        ActivatorCreatorRequest req = DefaultActivatorCreator
+        ActivatorCreatorRequest req = ActivatorCreatorDefault
                 .createActivatorCreatorRequest(services, codeGen, configOptions, filer, false);
 
         try {

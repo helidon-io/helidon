@@ -25,13 +25,13 @@ class NoDepsBuilderInterceptorBeanTest {
 
     @Test
     void testMutation() {
-        NoDepsInterceptedBean val = DefaultNoDepsInterceptedBean.builder()
+        NoDepsInterceptedBean val = NoDepsInterceptedBeanDefault.builder()
                 .name("Larry")
                 .build();
         assertThat(val.name(), equalTo("Larry"));
         assertThat(val.helloMessage(), equalTo("Hello Larry"));
 
-        NoDepsInterceptedBean val2 = DefaultNoDepsInterceptedBean.builder()
+        NoDepsInterceptedBean val2 = NoDepsInterceptedBeanDefault.builder()
                 .name("Larry")
                 .build();
         assertThat(val, equalTo(val2));

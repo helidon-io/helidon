@@ -32,7 +32,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.DefaultGenericTemplateCreatorRequest;
+import io.helidon.pico.tools.GenericTemplateCreatorRequestDefault;
 import io.helidon.pico.tools.GenericTemplateCreator;
 import io.helidon.pico.tools.GenericTemplateCreatorRequest;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
@@ -90,7 +90,7 @@ public class HttpMethodCreator implements CustomAnnotationTemplateCreator {
         TypeName generatedTypeName = DefaultTypeName.create(enclosingType.typeName().packageName(), classname);
 
         GenericTemplateCreator genericTemplateCreator = request.genericTemplateCreator();
-        GenericTemplateCreatorRequest genericCreatorRequest = DefaultGenericTemplateCreatorRequest.builder()
+        GenericTemplateCreatorRequest genericCreatorRequest = GenericTemplateCreatorRequestDefault.builder()
                 .customAnnotationTemplateRequest(request)
                 .template(Templates.loadTemplate("nima", "http-method.java.hbs"))
                 .generatedTypeName(generatedTypeName)

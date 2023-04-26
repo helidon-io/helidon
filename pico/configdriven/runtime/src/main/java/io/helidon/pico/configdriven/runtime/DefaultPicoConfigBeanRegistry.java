@@ -18,7 +18,6 @@ package io.helidon.pico.configdriven.runtime;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +37,6 @@ import io.helidon.builder.config.spi.GeneratedConfigBean;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigException;
-import io.helidon.config.ConfigValue;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.PicoException;
@@ -50,7 +48,6 @@ import io.helidon.pico.runtime.ServiceProviderComparator;
 
 import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.hasValue;
 import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.safeDowncastOf;
-import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.toNumeric;
 import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.validatedConfigKey;
 
 /**
@@ -332,65 +329,35 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
                     + config.key().toString());
         }
 
-        ConfigValue<List<io.helidon.config.Config>> nodeList = config.asNodeList();
-        GCB baseConfigBean = maybeLoadBaseConfigBean(config, nodeList, configuredServiceProvider);
-        Map<String, GCB> mapOfInstanceBasedConfig = maybeLoadConfigBeans(nodeList, configuredServiceProvider);
-
-        // validate what we've loaded, to ensure it complies to the meta config info policy
-        if (!metaConfigBeanInfo.repeatable() && !mapOfInstanceBasedConfig.isEmpty()) {
-            throw new ConfigException("Expected to only have a single base, non-repeatable configuration for "
-                                              + configuredServiceProvider.serviceType() + " with config: "
-                                              + config.key().toString());
-        }
-
-        if (baseConfigBean != null) {
+        if (metaConfigBeanInfo.repeatable()) {
+            // this config bean may be more than once - if list, use children, otherwise use child nodes
+            registerChildConfigBeans(config, configuredServiceProvider, metaAttributes);
+        } else {
+            // not a repeatable one, use this node directly, if list, this is a problem
+            if (config.isList()) {
+                throw new ConfigException("Expected to only have a single base, non-repeatable configuration for "
+                                                  + configuredServiceProvider.serviceType() + " with config: "
+                                                  + config.key().toString());
+            }
+            GCB baseConfigBean = toConfigBean(config, configuredServiceProvider);
             registerConfigBean(baseConfigBean, null, config, configuredServiceProvider, metaAttributes);
         }
-        mapOfInstanceBasedConfig
-                .forEach((instanceId, configBean) ->
-                                 registerConfigBean(configBean,
-                                                    config.key().toString() + "." + instanceId,
-                                                    config.get(instanceId),
-                                                    configuredServiceProvider,
-                                                    metaAttributes));
     }
 
-    /**
-     * The base config bean must be a root config, and is only available if there is a non-numeric
-     * key in our node list (e.g., "x.y" not "x.1.y").
-     */
-    <T, GCB extends GeneratedConfigBean> GCB maybeLoadBaseConfigBean(io.helidon.config.Config config,
-                                                                     ConfigValue<List<io.helidon.config.Config>> nodeList,
-                                                                     ConfiguredServiceProvider<T, ?> configuredServiceProvider) {
-        boolean hasAnyNonNumericNodes = nodeList.get().stream()
-                .anyMatch(cfg -> toNumeric(cfg.name()).isEmpty());
-        if (!hasAnyNonNumericNodes) {
-            return null;
-        }
-
-        return toConfigBean(config, configuredServiceProvider);
-    }
-
-    /**
-     * These are any {config}.N instances, not the base w/o the N.
-     */
-    <T, GCB extends GeneratedConfigBean> Map<String, GCB> maybeLoadConfigBeans(
-            ConfigValue<List<io.helidon.config.Config>> nodeList,
-            ConfiguredServiceProvider<T, GCB> configuredServiceProvider) {
-        Map<String, GCB> result = new LinkedHashMap<>();
-
-        nodeList.get().stream()
-                .filter(cfg -> toNumeric(cfg.name()).isPresent())
-                .map(ConfigDrivenUtils::safeDowncastOf)
-                .forEach(cfg -> {
-                    String key = cfg.name();
-                    GCB configBean = toConfigBean(cfg, configuredServiceProvider);
-                    Object prev = result.put(key, configBean);
-                    assert (prev == null) : prev + " and " + configBean;
+    <T, CB extends GeneratedConfigBean> void registerChildConfigBeans(io.helidon.config.Config config,
+                                          ConfiguredServiceProvider<T, CB> configuredServiceProvider,
+                                          Map<String, Map<String, Object>> metaAttributes) {
+        config.asNodeList()
+                .ifPresent(list -> {
+                    list.forEach(beanCfg -> {
+                        // use explicit name, otherwise index or name of the config node
+                        String name = beanCfg.get("name").asString().orElse(beanCfg.name());
+                        CB configBean = toConfigBean(beanCfg, configuredServiceProvider);
+                        registerConfigBean(configBean, name, beanCfg, configuredServiceProvider, metaAttributes);
+                    });
                 });
-
-        return result;
     }
+
 
     <T, GCB extends GeneratedConfigBean> GCB toConfigBean(io.helidon.config.Config config,
                                                           ConfiguredServiceProvider<T, ?> configuredServiceProvider) {

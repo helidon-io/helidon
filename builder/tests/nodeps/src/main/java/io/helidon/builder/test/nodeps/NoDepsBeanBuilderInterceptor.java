@@ -32,7 +32,7 @@ class NoDepsBeanBuilderInterceptor /* implements Interceptor<DefaultInterceptedB
     }
 
 //    @Override
-    DefaultNoDepsInterceptedBean.Builder intercept(DefaultNoDepsInterceptedBean.Builder target) {
+    NoDepsInterceptedBeanDefault.Builder intercept(NoDepsInterceptedBeanDefault.Builder target) {
         if (callCount++ > 0) {
             throw new AssertionError();
         }

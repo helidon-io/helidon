@@ -64,7 +64,7 @@ import static io.helidon.pico.tools.TypeTools.toAccess;
  */
 @Singleton
 @Weight(DEFAULT_PICO_WEIGHT)
-public class DefaultExternalModuleCreator extends AbstractCreator implements ExternalModuleCreator {
+public class ExternalModuleCreatorDefault extends AbstractCreator implements ExternalModuleCreator {
     private final LazyValue<ScanResult> scan = LazyValue.create(ReflectionHandler.INSTANCE.scan());
     private final ServicesToProcess services = ServicesToProcess.servicesInstance();
 
@@ -74,7 +74,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
      * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
     @Deprecated
-    public DefaultExternalModuleCreator() {
+    public ExternalModuleCreatorDefault() {
         super(TemplateHelper.DEFAULT_TEMPLATE_NAME);
     }
 
@@ -82,8 +82,8 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
     public ExternalModuleCreatorResponse prepareToCreateExternalModule(ExternalModuleCreatorRequest req) {
         Objects.requireNonNull(req);
 
-        DefaultExternalModuleCreatorResponse.Builder responseBuilder =
-                DefaultExternalModuleCreatorResponse.builder();
+        ExternalModuleCreatorResponseDefault.Builder responseBuilder =
+                ExternalModuleCreatorResponseDefault.builder();
         Collection<String> packageNames = req.packageNamesToScan();
         if (packageNames.isEmpty()) {
             return handleError(req, new ToolsException("Package names to scan are required"), responseBuilder);
@@ -111,9 +111,9 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
                     .filter((classInfo) -> !classInfo.isInnerClass() || req.innerClassesProcessed())
                     .forEach(this::processServiceType);
 
-            ActivatorCreatorCodeGen activatorCreatorCodeGen = DefaultActivatorCreator
+            ActivatorCreatorCodeGen activatorCreatorCodeGen = ActivatorCreatorDefault
                     .createActivatorCreatorCodeGen(services).orElseThrow();
-            ActivatorCreatorRequest activatorCreatorRequest = DefaultActivatorCreator
+            ActivatorCreatorRequest activatorCreatorRequest = ActivatorCreatorDefault
                     .createActivatorCreatorRequest(services, activatorCreatorCodeGen,
                                                    req.activatorCreatorConfigOptions(),
                                                    req.filer(),
@@ -171,7 +171,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         services.addTypeForContract(serviceTypeName, serviceTypeName, true);
         services.addExternalRequiredModules(serviceTypeName, requiresModule);
         services.addParentServiceType(serviceTypeName, createTypeNameFromClassInfo(classInfo.getSuperclass()));
-        List<TypeName> hierarchy = DefaultActivatorCreator.serviceTypeHierarchy(serviceTypeName, scan);
+        List<TypeName> hierarchy = ActivatorCreatorDefault.serviceTypeHierarchy(serviceTypeName, scan);
         services.addServiceTypeHierarchy(serviceTypeName, hierarchy);
         if (hierarchy != null) {
             hierarchy.stream()
@@ -302,7 +302,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
 
     ExternalModuleCreatorResponse handleError(ExternalModuleCreatorRequest request,
                                               ToolsException e,
-                                              DefaultExternalModuleCreatorResponse.Builder builder) {
+                                              ExternalModuleCreatorResponseDefault.Builder builder) {
         if (request == null || request.throwIfError()) {
             throw e;
         }

@@ -73,7 +73,7 @@ public interface DependenciesInfo {
         return allDependencies().stream()
                 .flatMap(dep -> dep.injectionPointDependencies().stream()
                         .filter(ipi -> elemName.equals(ipi.elementName()))
-                        .map(ipi -> DefaultDependencyInfo.toBuilder(dep)
+                        .map(ipi -> DependencyInfoDefault.toBuilder(dep)
                                 .injectionPointDependencies(Set.of(ipi))
                                 .build()))
                 .sorted(comparator())

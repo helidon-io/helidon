@@ -47,9 +47,9 @@ import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.DefaultActivatorCreator;
-import io.helidon.pico.tools.DefaultCustomAnnotationTemplateRequest;
-import io.helidon.pico.tools.DefaultCustomAnnotationTemplateResponse;
+import io.helidon.pico.tools.ActivatorCreatorDefault;
+import io.helidon.pico.tools.CustomAnnotationTemplateRequestDefault;
+import io.helidon.pico.tools.CustomAnnotationTemplateResponseDefault;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
@@ -159,13 +159,13 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
         for (Element typeToProcess : typesToProcess) {
             try {
-                DefaultCustomAnnotationTemplateRequest.Builder req =
+                CustomAnnotationTemplateRequestDefault.Builder req =
                         toRequestBuilder(annoTypeName, typeToProcess, roundEnv, true);
                 if (req == null) {
                     continue;
                 }
 
-                DefaultCustomAnnotationTemplateResponse.Builder res = DefaultCustomAnnotationTemplateResponse.builder()
+                CustomAnnotationTemplateResponseDefault.Builder res = CustomAnnotationTemplateResponseDefault.builder()
                         .request(req);
                 for (CustomAnnotationTemplateCreator producer : producers) {
                     req.genericTemplateCreator(new DefaultGenericTemplateCreator(producer.getClass(), this));
@@ -220,7 +220,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         }
     }
 
-    DefaultCustomAnnotationTemplateRequest.Builder toRequestBuilder(TypeName annoTypeName,
+    CustomAnnotationTemplateRequestDefault.Builder toRequestBuilder(TypeName annoTypeName,
                                                                     Element typeToProcess,
                                                                     RoundEnvironment ignoredRoundEnv,
                                                                     boolean wantDefaultMethods) {
@@ -243,7 +243,8 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 .createTypeInfo(annoTypeName, enclosingClassTypeName, enclosingClassType, processingEnv, wantDefaultMethods)
                 .orElseThrow();
         Elements elements = processingEnv.getElementUtils();
-        return DefaultCustomAnnotationTemplateRequest.builder()
+        return CustomAnnotationTemplateRequestDefault.builder()
+                .processedElement(typeToProcess)
                 .filerEnabled(true)
                 .annoTypeName(annoTypeName)
                 .serviceInfo(siInfo)
@@ -256,11 +257,11 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     ServiceInfoBasics toBasicServiceInfo(TypeName enclosingClassType) {
         ActivatorCreatorCodeGen codeGen =
-                DefaultActivatorCreator.createActivatorCreatorCodeGen(servicesToProcess()).orElse(null);
+                ActivatorCreatorDefault.createActivatorCreatorCodeGen(servicesToProcess()).orElse(null);
         if (codeGen == null) {
             return null;
         }
-        return DefaultActivatorCreator.toServiceInfo(enclosingClassType, codeGen);
+        return ActivatorCreatorDefault.toServiceInfo(enclosingClassType, codeGen);
     }
 
     List<TypedElementName> toArgs(Element typeToProcess) {

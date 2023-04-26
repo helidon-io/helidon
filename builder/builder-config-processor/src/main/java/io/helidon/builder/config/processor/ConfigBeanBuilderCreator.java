@@ -33,7 +33,7 @@ import io.helidon.builder.config.ConfigBean;
 import io.helidon.builder.config.spi.ConfigBeanBuilderValidator;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.config.spi.ConfigResolver;
-import io.helidon.builder.config.spi.DefaultConfigResolverRequest;
+import io.helidon.builder.config.spi.ConfigResolverRequestDefault;
 import io.helidon.builder.config.spi.GeneratedConfigBean;
 import io.helidon.builder.config.spi.GeneratedConfigBeanBase;
 import io.helidon.builder.config.spi.GeneratedConfigBeanBuilder;
@@ -325,12 +325,12 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                 }
 
                 builder.append("\t\t\tctx.resolver().").append(ofClause);
-                builder.append("(ctx, __metaAttributes(), ").append(DefaultConfigResolverRequest.class.getPackage().getName());
-                builder.append(".DefaultConfigResolver");
+                builder.append("(ctx, __metaAttributes(), ").append(ConfigResolverRequestDefault.class.getPackage().getName());
+                builder.append(".ConfigResolver");
                 if (isMap) {
                     builder.append("Map");
                 }
-                builder.append("Request.builder()\n\t\t\t\t\t");
+                builder.append("RequestDefault.builder()\n\t\t\t\t\t");
                 builder.append(".configKey(\"").append(configKey);
                 builder.append("\").attributeName(\"").append(attrName).append("\")");
                 builder.append(".valueType(").append(outerTypeName).append(".class)");

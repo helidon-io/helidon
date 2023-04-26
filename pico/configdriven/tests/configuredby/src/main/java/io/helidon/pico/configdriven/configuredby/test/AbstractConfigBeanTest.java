@@ -19,8 +19,8 @@ package io.helidon.pico.configdriven.configuredby.test;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.builder.config.testsubjects.DefaultTestClientConfig;
-import io.helidon.builder.config.testsubjects.DefaultTestServerConfig;
+import io.helidon.builder.config.testsubjects.TestClientConfigDefault;
+import io.helidon.builder.config.testsubjects.TestServerConfigDefault;
 import io.helidon.builder.config.testsubjects.TestClientConfig;
 import io.helidon.builder.config.testsubjects.TestServerConfig;
 import io.helidon.config.Config;
@@ -45,7 +45,7 @@ public class AbstractConfigBeanTest {
     @Test
     void emptyConfig() {
         Config cfg = Config.create();
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> DefaultTestServerConfig.toBuilder(cfg).build());
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> TestServerConfigDefault.toBuilder(cfg).build());
         assertThat(e.getMessage(),
                    equalTo("'port' is a required attribute and cannot be null"));
     }
@@ -62,7 +62,7 @@ public class AbstractConfigBeanTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-        TestServerConfig serverConfig = DefaultTestServerConfig.toBuilder(cfg).build();
+        TestServerConfig serverConfig = TestServerConfigDefault.toBuilder(cfg).build();
         assertThat(serverConfig.description(),
                    optionalEmpty());
         assertThat(serverConfig.name(),
@@ -72,7 +72,7 @@ public class AbstractConfigBeanTest {
         assertThat(serverConfig.cipherSuites(),
                    contains("a", "b", "c"));
 
-        TestClientConfig clientConfig = DefaultTestClientConfig.toBuilder(cfg).build();
+        TestClientConfig clientConfig = TestClientConfigDefault.toBuilder(cfg).build();
         assertThat(clientConfig.pswd(),
                    nullValue());
         assertThat(clientConfig.name(),
@@ -92,7 +92,7 @@ public class AbstractConfigBeanTest {
      */
     @Test
     void noConfig() {
-        TestServerConfig serverConfig = DefaultTestServerConfig.builder().build();
+        TestServerConfig serverConfig = TestServerConfigDefault.builder().build();
         assertThat(serverConfig.description(),
                    optionalEmpty());
         assertThat(serverConfig.name(),
@@ -102,7 +102,7 @@ public class AbstractConfigBeanTest {
         assertThat(serverConfig.cipherSuites(),
                    equalTo(List.of()));
 
-        serverConfig = DefaultTestServerConfig.toBuilder(serverConfig).port(123).build();
+        serverConfig = TestServerConfigDefault.toBuilder(serverConfig).port(123).build();
         assertThat(serverConfig.description(),
                    optionalEmpty());
         assertThat(serverConfig.name(),
@@ -112,7 +112,7 @@ public class AbstractConfigBeanTest {
         assertThat(serverConfig.cipherSuites(),
                    equalTo(List.of()));
 
-        TestClientConfig clientConfig = DefaultTestClientConfig.builder().build();
+        TestClientConfig clientConfig = TestClientConfigDefault.builder().build();
         assertThat(clientConfig.name(),
                    equalTo("default"));
         assertThat(clientConfig.port(),
@@ -122,7 +122,7 @@ public class AbstractConfigBeanTest {
         assertThat(clientConfig.cipherSuites(),
                    equalTo(List.of()));
 
-        clientConfig = DefaultTestClientConfig.toBuilder(clientConfig).port(123).build();
+        clientConfig = TestClientConfigDefault.toBuilder(clientConfig).port(123).build();
         assertThat(clientConfig.name(),
                    equalTo("default"));
         assertThat(clientConfig.port(),

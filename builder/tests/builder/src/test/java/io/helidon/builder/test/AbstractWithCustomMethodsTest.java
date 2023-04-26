@@ -17,7 +17,7 @@
 package io.helidon.builder.test;
 
 import io.helidon.builder.test.testsubjects.AbstractWithCustomMethods;
-import io.helidon.builder.test.testsubjects.DefaultAbstractWithCustomMethods;
+import io.helidon.builder.test.testsubjects.AbstractWithCustomMethodsDefault;
 import io.helidon.builder.test.testsubjects.GeneralInterceptor;
 
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ class AbstractWithCustomMethodsTest {
      */
     @Test
     void testIt() {
-        AbstractWithCustomMethods val = DefaultAbstractWithCustomMethods.builder()
+        AbstractWithCustomMethods val = AbstractWithCustomMethodsDefault.builder()
                 .name("test")
                 .isStatic(true)
                 .isClass(false)
