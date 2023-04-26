@@ -87,8 +87,25 @@ class BareResponseImpl implements BareResponse {
     private final long backpressureBufferSize;
 
     // Accessed by writeStatusHeaders(status, headers) method
-    private volatile boolean lengthOptimization;
+    /*
+    Details about lengthOptimization:
+    +-----------------------------------------------------+--------------------+
+    | Conditions                                          | lengthOptimization |
+    |                                                     | Value              |
+    +-----------------------------------------------------+--------------------+
+    | Content-Length is set                               | false              |
+    +-----------------------------------------------------+--------------------+
+    | Content-Type contains text/event-stream (SSE Event) | false              |
+    +-----------------------------------------------------+--------------------+
+    | Transfer-Encoding contains chunked                  | false              |
+    +-----------------------------------------------------+--------------------+
+    | Contains 0 or 1 Entity and none of the above        | true               |
+    +-----------------------------------------------------+--------------------+
+    Note: lengthOptimization if true, will set content length on the response header
+    */
+    private volatile boolean lengthOptimization = true;
     private volatile DefaultHttpResponse response;
+    private volatile boolean lengthSet;
 
     /**
      * @param ctx the channel handler context
@@ -196,12 +213,9 @@ class BareResponseImpl implements BareResponse {
                 .filter(header -> header.startsWith(HTTP_2_HEADER_PREFIX))
                 .forEach(header -> response.headers().add(header, requestHeaders.get(header)));
 
-        // Set chunked if length not set, may switch to length later
-        boolean lengthSet = HttpUtil.isContentLengthSet(response);
-        if (!lengthSet) {
-            lengthOptimization = status.code() == Http.Status.OK_200.code()
-                    && !HttpUtil.isTransferEncodingChunked(response) && !isSseEventStream(headers);
-            HttpUtil.setTransferEncodingChunked(response, true);
+        lengthSet = HttpUtil.isContentLengthSet(response);
+        if (lengthSet || isSseEventStream(headers) || HttpUtil.isTransferEncodingChunked(response)) {
+            lengthOptimization = false;
         }
 
         // Add keep alive header as per:
@@ -249,17 +263,9 @@ class BareResponseImpl implements BareResponse {
             } else if (!headers.containsKey(HttpHeaderNames.CONNECTION.toString())) {
                 response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
             }
-        }
-
-        // Content length optimization attempt
-        if (!lengthOptimization) {
-            requestEntityAnalyzed = requestEntityAnalyzed.thenApply(listener -> {
-                if (LOGGER.isLoggable(Level.FINE)) {
-                    LOGGER.fine(() -> log("Writing headers %s", status));
-                }
-                requestContext.runInScope(() -> orderedWrite(this::initWriteResponse));
-                return listener;
-            });
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine(() -> log("Response status is set to '%s'", status));
+            }
         }
     }
 
@@ -343,21 +349,21 @@ class BareResponseImpl implements BareResponse {
      */
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
         boolean chunked = true;
-        if (lengthOptimization) {
-            if (throwable == null) {
-                int length = (firstChunk == null ? 0 : firstChunk.remaining());
-                HttpUtil.setTransferEncodingChunked(response, false);
-                HttpUtil.setContentLength(response, length);
-                chunked = false;
-            } else {
-                //headers not sent yet
-                response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
-                //We are not using CombinedHttpHeaders
-                response.headers()
-                        .set(HttpHeaderNames.TRAILER, Response.STREAM_STATUS + "," + Response.STREAM_RESULT);
-            }
-        }
         if (response != null) {
+            if (lengthOptimization) {
+                if (throwable == null) {
+                    int length = (firstChunk == null ? 0 : firstChunk.remaining());
+                    chunked = false;
+                    HttpUtil.setContentLength(response, length);
+                } else {
+                    HttpUtil.setTransferEncodingChunked(response, true);
+                    //headers not sent yet
+                    response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                    //We are not using CombinedHttpHeaders
+                    response.headers()
+                            .set(HttpHeaderNames.TRAILER, Response.STREAM_STATUS + "," + Response.STREAM_RESULT);
+                }
+            }
             initWriteResponse();
         }
 
@@ -443,7 +449,11 @@ class BareResponseImpl implements BareResponse {
      * @param data the data chunk.
      */
     private void onNextPipe(DataChunk data) {
-        if (lengthOptimization) {
+        if (response != null) {
+            if (!lengthSet) {
+                HttpUtil.setTransferEncodingChunked(response, true);
+            }
+            // lengthOptimization will be set to false in initWriteResponse
             initWriteResponse();
         }
         sendData(data, true);
@@ -456,6 +466,9 @@ class BareResponseImpl implements BareResponse {
      * @return Future of response or first chunk.
      */
     private void initWriteResponse() {
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine(() -> log("Initiate write of response"));
+        }
         channel.write(false, response, f -> f
                 .addListener(future -> NettyChannel.completeFuture(future, headersFuture, this))
                 .addListener(completeOnFailureListener("An exception occurred when writing headers."))
