@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -60,10 +60,7 @@
                         <value>src</value>
                     </list>
                     <list key="native-sections" if="${db} &amp;&amp; ${flavor} == 'mp'">
-                        <value file="/se/database/files/README.native.md" if="${docker.native-image}" template="mustache"/>
-                    </list>
-                    <list key="native-sections" if="${db} &amp;&amp; ${flavor} == 'se'">
-                        <value file="/se/database/files/README.native.md" if="${docker.native-image} &amp;&amp; ${db.server} != 'mongodb'" template="mustache"/>
+                        <value file="files/README.native.md.mustache" if="${docker.native-image}" template="mustache"/>
                     </list>
                     <list key="readme-sections">
                         <value order="50" template="mustache">

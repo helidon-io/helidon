@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,60 +23,31 @@
     <step name="Extra" optional="true">
         <inputs>
             <list id="extra" name="Select Additional Components" optional="true">
-                <option value="webclient" name="WebClient" description="Reactive HTTP client" if="${flavor} == 'se'">
-                    <output>
-                        <templates engine="mustache" transformations="mustache,packaged">
-                            <directory>files</directory>
-                            <includes>
-                                <include>src/*/java/**/WebClientMain.java.mustache</include>
-                                <include>src/*/java/**/WebClientMainTest.java.mustache</include>
-                            </includes>
-                        </templates>
-                    </output>
-                </option>
                 <option value="fault-tolerance" name="Fault Tolerance" description="System for building resilient applications">
                     <output>
                         <templates engine="mustache" transformations="mustache,packaged">
                             <directory>files</directory>
                             <includes>
-                                <include>src/*/java/**/FtService.java.mustache</include>
-                                <include>src/*/java/**/FtServiceTest.java.mustache</include>
                                 <include>src/*/java/**/FtResource.java.mustache</include>
                                 <include>src/*/java/**/FtResourceTest.java.mustache</include>
                             </includes>
                         </templates>
                         <model>
-                            <list key="dependencies" if="${flavor} == 'se'">
-                                <map>
-                                    <value key="groupId">io.helidon.reactive.fault-tolerance</value>
-                                    <value key="artifactId">helidon-reactive-fault-tolerance</value>
-                                </map>
-                            </list>
                             <list key="dependencies" if="${flavor} == 'mp'">
                                 <map>
                                     <value key="groupId">io.helidon.microprofile</value>
                                     <value key="artifactId">helidon-microprofile-fault-tolerance</value>
                                 </map>
+                                <map>
+                                    <value key="groupId">io.helidon.microprofile.metrics</value>
+                                    <value key="artifactId">helidon-microprofile-metrics</value>
+                                </map>
                             </list>
                             <list key="Main-helidon-imports">
                                 <value>io.helidon.common.http.Http</value>
-                                <value>io.helidon.reactive.faulttolerance.BulkheadException</value>
-                                <value>io.helidon.reactive.faulttolerance.CircuitBreakerOpenException</value>
                             </list>
                             <list key="Main-other-imports">
                                 <value>java.util.concurrent.TimeoutException</value>
-                            </list>
-                            <list key="Main-routingBuilder">
-                                <value><![CDATA[                .register("/ft", new FtService())
-                .error(BulkheadException.class,
-                        (req, res, ex) -> res.status(Http.Status.SERVICE_UNAVAILABLE_503).send("bulkhead"))
-                .error(CircuitBreakerOpenException.class,
-                        (req, res, ex) -> res.status(Http.Status.SERVICE_UNAVAILABLE_503).send("circuit breaker"))
-                .error(TimeoutException.class,
-                        (req, res, ex) -> res.status(Http.Status.REQUEST_TIMEOUT_408).send("timeout"))
-                .error(Throwable.class,
-                        (req, res, ex) -> res.status(Http.Status.INTERNAL_SERVER_ERROR_500)
-                                .send(ex.getClass().getName() + ": " + ex.getMessage()))]]></value>
                             </list>
                         </model>
                     </output>
@@ -87,7 +58,6 @@
                             <directory>files</directory>
                             <includes>
                                 <include>src/*/java/**/TestCORS.java.mustache</include>
-                                <include if="${flavor} == 'se'">src/*/java/**/CorsService.java.mustache</include>
                             </includes>
                         </templates>
                         <model>
@@ -96,10 +66,6 @@
                                     <value key="groupId">io.helidon.microprofile</value>
                                     <value key="artifactId">helidon-microprofile-cors</value>
                                 </map>
-                                <map if="${flavor} == 'se'">
-                                    <value key="groupId">io.helidon.reactive.webserver</value>
-                                    <value key="artifactId">helidon-reactive-webserver-cors</value>
-                                </map>
                             </list>
                             <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">
                                 <value>io.helidon.microprofile.cors.CrossOrigin</value>
@@ -107,23 +73,6 @@
                                 <value>jakarta.ws.rs.PUT</value>
                                 <value>jakarta.ws.rs.core.Response</value>
                                 <value>jakarta.ws.rs.HttpMethod</value>
-                            </list>
-                            <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                <value>io.helidon.reactive.webserver.cors.CorsSupport</value>
-                                <value>io.helidon.cors.CrossOriginConfig</value>
-                            </list>
-                            <list key="Main-createRouting" if="${flavor} == 'se'">
-                                <value><![CDATA[
-        CorsSupport corsSupport = CorsSupport.builder()
-                .addCrossOrigin(CrossOriginConfig.builder()
-                        .allowOrigins("http://foo.com", "http://there.com")
-                        .allowMethods("PUT", "DELETE")
-                        .build())
-                .addCrossOrigin(CrossOriginConfig.create())
-                .build();]]></value>
-                            </list>
-                            <list key="Main-routingBuilder" if="${flavor} == 'se'">
-                                <value><![CDATA[                .register("/cors", corsSupport, new CorsService())]]></value>
                             </list>
                             <list key="SimpleGreetService-methods" if="${flavor} == 'mp'">
                                 <value><![CDATA[

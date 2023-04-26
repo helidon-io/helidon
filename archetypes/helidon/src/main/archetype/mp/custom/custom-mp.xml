@@ -38,7 +38,7 @@
                 <value file="files/README.md"/>
             </list>
             <list key="native-sections" if="${docker}">
-                <value file="files/README.native.md"
+                <value file="files/README.native.md.mustache"
                        if="${docker.native-image} &amp;&amp; !(${db})"
                        template="mustache"/>
             </list>
