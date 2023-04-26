@@ -41,13 +41,11 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import javax.tools.JavaFileObject;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
@@ -81,18 +79,13 @@ import io.helidon.pico.tools.TypeNames;
 import io.helidon.pico.tools.TypeTools;
 import io.helidon.pico.tools.spi.InterceptorCreator;
 
-import com.sun.source.util.TreePath;
-import com.sun.source.util.Trees;
-
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValue;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
+import static io.helidon.pico.processor.ProcessorUtils.hasValue;
 import static io.helidon.pico.processor.ProcessorUtils.rootStackTraceElementOf;
 import static io.helidon.pico.processor.ProcessorUtils.toList;
-import static io.helidon.pico.processor.ProcessorUtils.toPath;
-import static io.helidon.pico.tools.ModuleUtils.toSourcePath;
-import static io.helidon.pico.tools.TypeTools.*;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromElement;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
 import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
@@ -101,6 +94,7 @@ import static io.helidon.pico.tools.TypeTools.isAbstract;
 import static io.helidon.pico.tools.TypeTools.isProviderType;
 import static io.helidon.pico.tools.TypeTools.needToDeclareModuleUsage;
 import static io.helidon.pico.tools.TypeTools.toAccess;
+import static io.helidon.pico.tools.TypeTools.toScopeAnnotations;
 import static javax.tools.Diagnostic.Kind;
 
 /**
@@ -134,10 +128,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             logger().log(Level.ERROR, "failed to initialize: " + t.getMessage(), t);
             throw new ToolsException("Failed to initialize: " + t.getMessage(), t);
         }
-    }
-
-    static boolean hasValue(String val) {
-        return (val != null && !val.isBlank());
     }
 
     @Override
@@ -543,36 +533,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
     boolean isInThisModule(TypeElement type,
                            AtomicReference<String> moduleName) {
-        if (roundEnv.getRootElements().contains(type)) {
-            return true;
-        }
-
-        moduleName.set(null);
-        // if there is no module-info in use we need to try to find the type is in our source path and if
-        // not found then assume it is external
-        try {
-            Trees trees = Trees.instance(processingEnv);
-            TreePath path = trees.getPath(type);
-            if (path == null) {
-                return false;
-            }
-            JavaFileObject sourceFile = path.getCompilationUnit().getSourceFile();
-            Optional<Path> filePath = toPath(sourceFile.toUri());
-            filePath.flatMap(it -> toSourcePath(it, type))
-                    .ifPresent(services::lastKnownSourcePathBeingProcessed);
-            return true;
-        } catch (Throwable t) {
-            debug("unable to determine if contract is external: " + type + "; " + t.getMessage(), t);
-        }
-
-        ModuleElement module = processingEnv.getElementUtils().getModuleOf(type);
-        if (!module.isUnnamed()) {
-            String name = module.getQualifiedName().toString();
-            moduleName.set(name);
-        }
-
-        // assumed external, but unknown module name
-        return false;
+        return ProcessorUtils.isInThisModule(type, moduleName, roundEnv, processingEnv, this);
     }
 
     boolean doFiler(RoundEnvironment roundEnv) {
@@ -745,7 +706,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             if (externalContracts != null) {
                 Collection<AnnotationAndValue> annotations = createAnnotationAndValueSet(teContract);
                 Optional<? extends AnnotationAndValue> annotation = AnnotationAndValueDefault
-                        .findFirst(ExternalContracts.class.getName(), annotations);
+                        .findFirst(ExternalContracts.class, annotations);
                 List<String> values = (annotation.isPresent() && annotation.get().value().isPresent())
                         ? toList(annotation.get().value().get()) : List.of();
                 for (String externalContract : values) {

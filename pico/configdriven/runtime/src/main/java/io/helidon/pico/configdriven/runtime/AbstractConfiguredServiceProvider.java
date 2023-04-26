@@ -371,7 +371,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         if (isRootProvider()) {
             Set<QualifierAndValue> qualifiers = criteria.qualifiers();
             Optional<? extends AnnotationAndValue> configuredByQualifier = QualifierAndValueDefault
-                    .findFirst(EMPTY_CONFIGURED_BY.typeName().name(), qualifiers);
+                    .findFirst(EMPTY_CONFIGURED_BY.typeName(), qualifiers);
             boolean hasValue = configuredByQualifier.isPresent()
                     && hasValue(configuredByQualifier.get().value().orElse(null));
             boolean blankCriteria = qualifiers.isEmpty() && isBlank(criteria);

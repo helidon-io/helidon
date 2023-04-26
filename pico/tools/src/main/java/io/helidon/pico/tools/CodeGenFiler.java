@@ -93,6 +93,11 @@ public class CodeGenFiler {
         this.enabled = enabled;
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(outputPath=" + targetOutputPath + ")";
+    }
+
     /**
      * Creates a new code gen filer.
      *

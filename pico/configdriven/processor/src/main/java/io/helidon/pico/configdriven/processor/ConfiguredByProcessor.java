@@ -175,7 +175,7 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     boolean isConfiguredService(TypeElement te) {
         Set<AnnotationAndValue> annotations = TypeTools.createAnnotationAndValueSet(te);
         Optional<? extends AnnotationAndValue> configuredByAnno =
-                AnnotationAndValueDefault.findFirst(ConfiguredBy.class.getName(), annotations);
+                AnnotationAndValueDefault.findFirst(ConfiguredBy.class, annotations);
         return configuredByAnno.isPresent();
     }
 
@@ -191,7 +191,7 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     void assertNoAnnotation(TypeName annoType,
                             TypeElement element) {
         Set<AnnotationAndValue> annos = TypeTools.createAnnotationAndValueSet(element);
-        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault.findFirst(annoType.name(), annos);
+        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault.findFirst(annoType, annos);
         if (anno.isPresent()) {
             throw new IllegalStateException(annoType + " cannot be used in conjunction with "
                                                     + ConfiguredBy.class + " on " + element);

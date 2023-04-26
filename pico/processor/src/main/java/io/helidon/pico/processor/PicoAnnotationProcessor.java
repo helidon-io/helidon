@@ -22,9 +22,11 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,6 +40,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 
+import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.common.types.DefaultTypeInfo;
@@ -46,8 +49,11 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.api.Contract;
+import io.helidon.pico.api.DefaultQualifierAndValue;
 import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.ExternalContracts;
+import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
@@ -60,15 +66,20 @@ import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeNames;
 import io.helidon.pico.tools.TypeTools;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import jakarta.inject.Provider;
+import jakarta.inject.Qualifier;
 import jakarta.inject.Singleton;
 
+import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromMirror;
+import static io.helidon.pico.processor.ProcessorUtils.hasValue;
+import static io.helidon.pico.processor.ProcessorUtils.isInThisModule;
 import static io.helidon.pico.processor.ProcessorUtils.rootStackTraceElementOf;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
 import static io.helidon.pico.tools.TypeTools.createTypedElementNameFromElement;
-import static io.helidon.pico.tools.TypeTools.isProviderType;
 
 /**
  * An annotation processor that will find everything needing to be processed related to Pico conde generation.
@@ -141,7 +152,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
         try {
             if (!roundEnv.processingOver()) {
                 // build the model
-                Map<TypedElementName, TypeName> elementsOfInterest = new ConcurrentHashMap<>();
+                List<TypedElementName> elementsOfInterest = new ArrayList<>();
                 gatherElementsOfInterestInThisModule(elementsOfInterest);
                 gatherTypeInfosToProcessInThisModule(typeInfoToCreateActivatorsForInThisModule, elementsOfInterest);
 
@@ -304,44 +315,113 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
 
     ServicesToProcess toServicesToProcess(Map<TypeName, TypeInfo> typesToCodeGenerate) {
         ServicesToProcess services = ServicesToProcess.create();
-
         typesToCodeGenerate.forEach((serviceTypeName, service) -> {
-            if (service.superTypeInfo().isPresent()) {
-                services.addParentServiceType(serviceTypeName, service.superTypeInfo().get().typeName());
+            logger.log(loggerLevel(), "processing: " + serviceTypeName);
+            try {
+                process(services, typesToCodeGenerate.keySet(), serviceTypeName, service);
+            } catch (Throwable t) {
+                throw new ToolsException("Error processing: " + serviceTypeName, t);
             }
-
-            services.addAccessLevel(serviceTypeName,
-                                    toAccess(service.modifierNames()));
-
-            toScopeNames(service).forEach(it -> services.addScopeTypeName(serviceTypeName, it));
-
-            gatherContractsIntoServicesToProcess(services, service);
-
         });
-
         return services;
     }
 
+    void process(ServicesToProcess services,
+                 Set<TypeName> serviceTypeNamesToCodeGenerate,
+                 TypeName serviceTypeName,
+                 TypeInfo service) {
+        TypeInfo superTypeInfo = service.superTypeInfo().orElse(null);
+        if (superTypeInfo != null) {
+            TypeName superTypeName = superTypeInfo.typeName();
+            services.addParentServiceType(serviceTypeName, superTypeName);
+        }
+
+        toRunLevel(service).ifPresent(it -> services.addDeclaredRunLevel(serviceTypeName, it));
+        toWeight(service).ifPresent(it -> services.addDeclaredWeight(serviceTypeName, it));
+        toScopeNames(service).forEach(it -> services.addScopeTypeName(serviceTypeName, it));
+        toPostConstructMethod(service).ifPresent(it -> services.addPostConstructMethod(serviceTypeName, it));
+        toPreDestroyMethod(service).ifPresent(it -> services.addPreDestroyMethod(serviceTypeName, it));
+        services.addAccessLevel(serviceTypeName,
+                                toAccess(service.modifierNames()));
+        services.addIsAbstract(serviceTypeName,
+                               service.modifierNames().contains(TypeInfo.MODIFIER_ABSTRACT));
+        services.addServiceTypeHierarchy(serviceTypeName,
+                                         toServiceTypeHierarchy(service));
+        services.addQualifiers(serviceTypeName,
+                               toQualifiers(service));
+        gatherContractsIntoServicesToProcess(services, serviceTypeName, service, serviceTypeNamesToCodeGenerate);
+    }
+
     void gatherContractsIntoServicesToProcess(ServicesToProcess services,
-                         TypeInfo service) {
+                                              TypeName serviceTypeName,
+                                              TypeInfo service,
+                                              Set<TypeName> serviceTypeNamesToCodeGenerate) {
         Set<TypeName> contracts = new LinkedHashSet<>();
         Set<TypeName> externalContracts = new LinkedHashSet<>();
         Set<TypeName> providerForSet = new LinkedHashSet<>();
-        Set<String> externalModuleNamesRequired = new LinkedHashSet<>();
+        Set<String> externalModuleNames = new LinkedHashSet<>();
 
         boolean autoAddInterfaces = Options.isOptionEnabled(Options.TAG_AUTO_ADD_NON_CONTRACT_INTERFACES);
-        gatherContracts(contracts, externalContracts, providerForSet, externalModuleNamesRequired, service, autoAddInterfaces);
+        gatherContracts(contracts,
+                        externalContracts,
+                        providerForSet,
+                        externalModuleNames,
+                        service,
+                        serviceTypeNamesToCodeGenerate,
+                        autoAddInterfaces,
+                        false);
+
+        contracts.forEach(it -> services.addTypeForContract(serviceTypeName, it, false));
+        externalContracts.forEach(it -> services.addTypeForContract(serviceTypeName, it, true));
+        services.addProviderFor(serviceTypeName, providerForSet);
+        services.addExternalRequiredModules(serviceTypeName, externalModuleNames);
     }
 
     static void gatherContracts(Set<TypeName> contracts,
-                         Set<TypeName> externalContracts,
-                         Set<TypeName> providerForSet,
-                         Set<String> externalModuleNamesRequired,
-                         TypeInfo typeInfo,
-                         boolean autoAddInterfaces) {
+                                Set<TypeName> externalContracts,
+                                Set<TypeName> providerForSet,
+                                Set<String> externalModuleNamesRequired,
+                                TypeInfo typeInfo,
+                                Set<TypeName> serviceTypeNamesToCodeGenerate,
+                                boolean autoAddInterfaces,
+                                boolean thisTypeQualifiesAsContract) {
         TypeName typeName = typeInfo.typeName();
-        if (autoAddInterfaces && typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)) {
-            contracts.add(typeName);
+        String moduleName = typeInfo.referencedModuleNames().get(typeName);
+        if ((thisTypeQualifiesAsContract && serviceTypeNamesToCodeGenerate.contains(typeName))
+                || (autoAddInterfaces && typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE))
+                || DefaultAnnotationAndValue.findFirst(Contract.class, typeInfo.annotations()).isPresent()) {
+            addContract(contracts, providerForSet, typeName);
+
+            if (!providerForSet.isEmpty()) {
+                externalContracts.add(DefaultTypeName.create(Provider.class));
+            }
+
+            if (moduleName != null) {
+                externalContracts.add(typeName.genericTypeName());
+            }
+        }
+
+        AnnotationAndValue anno = DefaultAnnotationAndValue
+                .findFirst(ExternalContracts.class, typeInfo.annotations())
+                .orElse(null);
+        if (anno != null) {
+            TypeName externalContract = DefaultTypeName.createFromTypeName(anno.value().orElseThrow());
+            addContract(externalContracts, null, externalContract);
+
+            String[] moduleNames = anno.value("moduleNames").orElseThrow().split(",[ \t]*");
+            if (moduleNames.length > 0) {
+                for (String externalModuleName : moduleNames) {
+                    if (!externalModuleName.isBlank()) {
+                        externalModuleNamesRequired.add(externalModuleName);
+                    }
+                }
+            } else {
+                // try to determine the external module name
+                String externalModuleName = typeInfo.referencedModuleNames().get(externalContract);
+                if (externalModuleName != null && !isBuiltInJavaType(externalContract)) {
+                    externalModuleNamesRequired.add(externalModuleName);
+                }
+            }
         }
 
         typeInfo.superTypeInfo().ifPresent(it -> gatherContracts(contracts,
@@ -349,19 +429,34 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
                                                                  providerForSet,
                                                                  externalModuleNamesRequired,
                                                                  it,
-                                                                 autoAddInterfaces));
-
-        if (autoAddInterfaces
-                || DefaultAnnotationAndValue.findFirst(Contract.class.getName(), it.annotations()).isPresent()) {
-            result.add(it.typeName());
-        }
-        gatherContracts(result, providerForSet, it, autoAddInterfaces);
-
-
-        qualifiedProviderType(typeName).ifPresent(providerForSet::add);
+                                                                 serviceTypeNamesToCodeGenerate,
+                                                                 autoAddInterfaces,
+                                                                 true));
+        typeInfo.interfaceTypeInfo().forEach(it -> gatherContracts(contracts,
+                                                                   externalContracts,
+                                                                   providerForSet,
+                                                                   externalModuleNamesRequired,
+                                                                   it,
+                                                                   serviceTypeNamesToCodeGenerate,
+                                                                   autoAddInterfaces,
+                                                                   false));
     }
 
-    Optional<TypeName> qualifiedProviderType(TypeName typeName) {
+    static void addContract(Set<TypeName> contracts,
+                            Set<TypeName> providerForSet,
+                            TypeName typeName) {
+        TypeName providerType = qualifiedProviderType(typeName).orElse(null);
+        if (providerType != null) {
+            if (providerForSet != null) {
+                providerForSet.add(providerType.genericTypeName());
+            }
+            contracts.add(providerType.genericTypeName());
+        } else {
+            contracts.add(typeName.genericTypeName());
+        }
+    }
+
+    static Optional<TypeName> qualifiedProviderType(TypeName typeName) {
         TypeName componentType = (typeName.typeArguments().size() == 1) ? typeName.typeArguments().get(0) : null;
         if (componentType == null || componentType.generic()) {
             return Optional.empty();
@@ -371,7 +466,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
             return Optional.empty();
         }
 
-        return Optional.of(typeName);
+        return Optional.of(componentType);
     }
 
     Map<TypeName, List<AnnotationAndValue>> toReferencedTypeNamesToAnnotations(Collection<AnnotationAndValue> annotations) {
@@ -392,9 +487,77 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
         return result;
     }
 
-    Set<String> toScopeNames(TypeInfo typeInfo) {
+    Optional<Integer> toRunLevel(TypeInfo service) {
+        AnnotationAndValue runLevelAnno =
+                DefaultAnnotationAndValue.findFirst(RunLevel.class, service.annotations()).orElse(null);
+        if (runLevelAnno != null) {
+            return Optional.of(Integer.valueOf(runLevelAnno.value().orElseThrow()));
+        }
+
+        return Optional.empty();
+    }
+
+    Optional<Double> toWeight(TypeInfo service) {
+        AnnotationAndValue weightAnno =
+                DefaultAnnotationAndValue.findFirst(Weight.class, service.annotations()).orElse(null);
+        if (weightAnno != null) {
+            return Optional.of(Double.valueOf(weightAnno.value().orElseThrow()));
+        }
+
+        return Optional.empty();
+    }
+
+    Optional<String> toPostConstructMethod(TypeInfo service) {
+        List<String> postConstructs = service.elementInfo().stream()
+                .filter(it -> {
+                    AnnotationAndValue postConstructAnno =
+                            DefaultAnnotationAndValue.findFirst(PostConstruct.class, it.annotations()).orElse(null);
+                    return (postConstructAnno != null);
+                })
+                .map(TypedElementName::elementName)
+                .toList();
+        if (postConstructs.size() == 1) {
+            return Optional.of(postConstructs.get(0));
+        } else if (postConstructs.size() > 1) {
+            throw new IllegalStateException("There can be at most one "
+                                                    + PostConstruct.class.getName()
+                                                    + " annotated method per type: " + service.typeName());
+        }
+
+        if (service.superTypeInfo().isPresent()) {
+            return toPostConstructMethod(service.superTypeInfo().get());
+        }
+
+        return Optional.empty();
+    }
+
+    Optional<String> toPreDestroyMethod(TypeInfo service) {
+        List<String> preDestroys = service.elementInfo().stream()
+                .filter(it -> {
+                    AnnotationAndValue postConstructAnno =
+                            DefaultAnnotationAndValue.findFirst(PreDestroy.class, it.annotations()).orElse(null);
+                    return (postConstructAnno != null);
+                })
+                .map(TypedElementName::elementName)
+                .toList();
+        if (preDestroys.size() == 1) {
+            return Optional.of(preDestroys.get(0));
+        } else if (preDestroys.size() > 1) {
+            throw new IllegalStateException("There can be at most one "
+                                                    + PreDestroy.class.getName()
+                                                    + " annotated method per type: " + service.typeName());
+        }
+
+        if (service.superTypeInfo().isPresent()) {
+            return toPostConstructMethod(service.superTypeInfo().get());
+        }
+
+        return Optional.empty();
+    }
+
+    Set<String> toScopeNames(TypeInfo service) {
         Set<String> scopeAnnotations = new LinkedHashSet<>();
-        typeInfo.referencedTypeNamesToAnnotations()
+        service.referencedTypeNamesToAnnotations()
                 .forEach((typeName, listOfAnnotations) -> {
                     if (listOfAnnotations.stream()
                             .map(it -> it.typeName().name())
@@ -432,24 +595,45 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
                 .collect(Collectors.toSet());
     }
 
-    void gatherElementsOfInterestInThisModule(Map<TypedElementName, TypeName> result) {
+    List<TypeName> toServiceTypeHierarchy(TypeInfo service) {
+        List<TypeName> result = new ArrayList<>();
+        result.add(service.typeName());
+        service.superTypeInfo().ifPresent(it -> result.addAll(toServiceTypeHierarchy(it)));
+        return result;
+    }
+
+    Set<QualifierAndValue> toQualifiers(TypeInfo service) {
+        Set<QualifierAndValue> result = new LinkedHashSet<>();
+
+        for (AnnotationAndValue anno : service.annotations()) {
+            List<AnnotationAndValue> metaAnnotations = service.referencedTypeNamesToAnnotations().get(anno.typeName());
+            Optional<? extends AnnotationAndValue> qual = DefaultAnnotationAndValue.findFirst(Qualifier.class, metaAnnotations);
+            if (qual.isPresent()) {
+                result.add(DefaultQualifierAndValue.convert(anno));
+            }
+        }
+
+        // TODO:
+//        service.superTypeInfo().ifPresent(it -> result.addAll(toQualifiers(it)));
+//        service.interfaceTypeInfo().forEach(it -> result.addAll(toQualifiers(it)));
+
+        return result;
+    }
+
+    void gatherElementsOfInterestInThisModule(List<TypedElementName> result) {
         Elements elementUtils = processingEnv.getElementUtils();
         for (String annoType : supportedElementTargetAnnotations()) {
             // annotation may not be on the classpath, in such a case just ignore it
             TypeElement annoTypeElement = elementUtils.getTypeElement(annoType);
             if (annoTypeElement != null) {
                 Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoTypeElement);
-                typesToProcess.forEach(it -> {
-                            TypeName enclosingClassElement = createTypeNameFromElement(it.getEnclosingElement()).orElseThrow();
-                            TypedElementName element = createTypedElementNameFromElement(it, elementUtils);
-                            result.put(element, enclosingClassElement);
-                        });
+                typesToProcess.forEach(it -> result.add(createTypedElementNameFromElement(it, elementUtils)));
             }
         }
     }
 
     void gatherTypeInfosToProcessInThisModule(Map<TypeName, TypeInfo> result,
-                                              Map<TypedElementName, TypeName> elementsOfInterest) {
+                                              List<TypedElementName> elementsOfInterest) {
         for (String annoType : supportedServiceClassTargetAnnotations()) {
             // annotation may not be on the classpath, in such a case just ignore it
             TypeElement annoTypeElement = processingEnv.getElementUtils().getTypeElement(annoType);
@@ -458,78 +642,106 @@ public class PicoAnnotationProcessor extends AbstractProcessor implements Messag
                 typesToProcess.forEach(it -> {
                     TypeName typeName = createTypeNameFromElement(it).orElseThrow();
                     if (!result.containsKey(typeName)) {
-                        Optional<TypeInfo> superTypeInfo = toTypeInfo((TypeElement) it, typeName, elementsOfInterest);
-                        superTypeInfo.ifPresent(typeInfo -> result.put(typeName, typeInfo));
+                        Optional<TypeInfo> typeInfo = toTypeInfo((TypeElement) it, typeName, elementsOfInterest);
+                        typeInfo.ifPresent(it2 -> result.put(typeName, it2));
                     }
                 });
             }
         }
+
+        Set<TypeName> enclosingElementsOfInterest = elementsOfInterest.stream()
+                .map(TypedElementName::enclosingTypeName)
+                .collect(Collectors.toSet());
+        enclosingElementsOfInterest.removeAll(result.keySet());
+        enclosingElementsOfInterest.forEach(it -> {
+            TypeElement element = Objects.requireNonNull(processingEnv.getElementUtils().getTypeElement(it.name()), it.name());
+            result.put(it, toTypeInfo(element, it, elementsOfInterest).orElseThrow());
+        });
     }
 
-    Optional<TypeInfo> toTypeInfo(TypeElement typeElement,
+    Optional<TypeInfo> toTypeInfo(TypeElement element,
                                   TypeName typeName,
-                                  Map<TypedElementName, TypeName> elementsOfInterest) {
+                                  List<TypedElementName> elementsOfInterest) {
         if (typeName.name().equals(Object.class.getName())) {
             return Optional.empty();
         }
 
         try {
-            assert (processingEnv != null);
             Elements elementUtils = processingEnv.getElementUtils();
             Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(elementUtils.getTypeElement(typeName.name()));
+            Map<TypeName, List<AnnotationAndValue>> referencedAnnotations = toReferencedTypeNamesToAnnotations(annotations);
+
+            List<TypeName> allTypeNames = new ArrayList<>();
+            allTypeNames.add(typeName);
+            allTypeNames.addAll(referencedAnnotations.keySet());
+
             DefaultTypeInfo.Builder builder = DefaultTypeInfo.builder()
                     .typeName(typeName)
+                    .typeKind(String.valueOf(element.getKind()))
                     .annotations(annotations)
-                    .referencedTypeNamesToAnnotations(toReferencedTypeNamesToAnnotations(annotations))
-                    .modifierNames(toModifierNames(typeElement.getModifiers()))
-                    .elementInfo(
-                            toElementsOfInterestInThisClass(typeName, elementsOfInterest));
+                    .referencedTypeNamesToAnnotations(referencedAnnotations)
+                    .modifierNames(toModifierNames(element.getModifiers()))
+                    .elementInfo(toElementsOfInterestEnclosedInThisType(typeName, elementsOfInterest));
 
-            Optional<DefaultTypeName> superType = createTypeNameFromMirror(typeElement.getSuperclass());
-            if (superType.isPresent()) {
-                TypeElement superTypeElement = elementUtils.getTypeElement(superType.get().name());
+            TypeName superType = createTypeNameFromMirror(element.getSuperclass()).orElse(null);
+            if (superType != null) {
+                TypeElement superTypeElement = elementUtils.getTypeElement(superType.name());
                 if (superTypeElement != null) {
-                    Optional<TypeInfo> superTypeInfo = toTypeInfo(superTypeElement, superType.get(), elementsOfInterest);
+                    Optional<TypeInfo> superTypeInfo = toTypeInfo(superTypeElement, superType, elementsOfInterest);
                     superTypeInfo.ifPresent(builder::superTypeInfo);
+                    superTypeInfo.ifPresent(it -> allTypeNames.add(it.typeName()));
                 }
             }
 
-            typeElement.getInterfaces().forEach(it -> {
-                Optional<DefaultTypeName> interfaceType = createTypeNameFromMirror(it);
-                if (interfaceType.isPresent()) {
-                    TypeElement interfaceTypeElement = elementUtils.getTypeElement(interfaceType.get().name());
+            element.getInterfaces().forEach(it -> {
+                TypeName interfaceType = createTypeNameFromMirror(it).orElse(null);
+                if (interfaceType != null) {
+                    allTypeNames.add(interfaceType);
+                    TypeElement interfaceTypeElement = elementUtils.getTypeElement(interfaceType.name());
                     if (interfaceTypeElement != null) {
-                        Optional<TypeInfo> superTypeInfo =
-                                toTypeInfo(interfaceTypeElement, interfaceType.get(), elementsOfInterest);
+                        Optional<TypeInfo> superTypeInfo = toTypeInfo(interfaceTypeElement, interfaceType, elementsOfInterest);
                         superTypeInfo.ifPresent(builder::addInterfaceTypeInfo);
                     }
                 }
             });
 
+            builder.referencedModuleNames(toReferencedModuleNames(allTypeNames));
+
             return Optional.of(builder.build());
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to process: " + typeElement, e);
+            throw new IllegalStateException("Failed to process: " + element, e);
         }
     }
 
-    Collection<TypedElementName> toElementsOfInterestInThisClass(TypeName typeName,
-                                                                 Map<TypedElementName, TypeName> allElementsOfInterest) {
-        return allElementsOfInterest.entrySet().stream()
-                .filter(e -> typeName.equals(e.getValue()))
-                .map(Map.Entry::getKey)
+    Map<TypeName, String> toReferencedModuleNames(List<TypeName> allTypeNames) {
+        Map<TypeName, String> result = new LinkedHashMap<>();
+        Elements elementUtils = processingEnv.getElementUtils();
+        AtomicReference<String> moduleName = new AtomicReference<>();
+        allTypeNames.forEach(it -> {
+            TypeElement typeElement = elementUtils.getTypeElement(it.name());
+            if (typeElement == null
+                    || !isInThisModule(typeElement, moduleName, roundEnv, processingEnv, this)) {
+                if (hasValue(moduleName.get())) {
+                    result.put(it, moduleName.get());
+                }
+            }
+        });
+        return result;
+    }
+
+    List<TypedElementName> toElementsOfInterestEnclosedInThisType(TypeName typeName,
+                                                                  List<TypedElementName> allElementsOfInterest) {
+        return allElementsOfInterest.stream()
+                .filter(it -> typeName.equals(it.enclosingTypeName()))
                 .collect(Collectors.toList());
+    }
+
+    System.Logger.Level loggerLevel() {
+        return (Options.isOptionEnabled(Options.TAG_DEBUG)) ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
     }
 
     void validate(Collection<TypeInfo> typesToCreateActivatorsFor) {
         // TODO:
-    }
-
-//    System.Logger logger() {
-//        return logger;
-//    }
-
-    System.Logger.Level loggerLevel() {
-        return (Options.isOptionEnabled(Options.TAG_DEBUG)) ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
     }
 
 }

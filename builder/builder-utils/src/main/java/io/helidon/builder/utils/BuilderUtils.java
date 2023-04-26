@@ -19,11 +19,14 @@ package io.helidon.builder.utils;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -46,7 +49,7 @@ public final class BuilderUtils {
      * @throws IllegalStateException if the provided argument is not a builder-generated target instance
      */
     public static Map<String, String> expand(Object builtTarget) {
-        return expand(builtTarget, false);
+        return expand(builtTarget, DefaultExpandOptions.builder().build());
     }
 
     /**
@@ -54,12 +57,12 @@ public final class BuilderUtils {
      * optionally includes the type information for each attribute if that attribute is found to be a builder target type.
      *
      * @param builtTarget  the built target value
-     * @param includeTypes true to include type information
+     * @param expandOptions the expand options
      * @return the flattened map of key-value pairs
      * @throws IllegalStateException if the provided argument is not a builder-generated target instance
      */
     public static Map<String, String> expand(Object builtTarget,
-                                             boolean includeTypes) {
+                                             ExpandOptions expandOptions) {
         Objects.requireNonNull(builtTarget);
 
         Map<String, String> result = new LinkedHashMap<>();
@@ -72,7 +75,7 @@ public final class BuilderUtils {
             prefix += attrName;
             VisitAttributes<String> visitAttributes = toVisitAttributes(val, false);
             if (visitAttributes != null) {
-                if (includeTypes) {
+                if (expandOptions.includeTypeInformation()) {
                     result.put(prefix, val.getClass().getName());
                 }
                 visitAttributes.visitAttributes(ref.get(), prefix);
@@ -85,42 +88,81 @@ public final class BuilderUtils {
                     VisitAttributes<String> subVisitAttributes = toVisitAttributes(subVal, false);
                     String tag = prefix + "[" + i + "]";
                     if (subVisitAttributes != null) {
-                        if (includeTypes) {
+                        if (expandOptions.includeTypeInformation()) {
                             result.put(tag, subVal.getClass().getName());
                         }
                         subVisitAttributes.visitAttributes(ref.get(), tag);
                     } else {
-                        result.put(tag, String.valueOf(subVal));
+                        result.put(tag, stringValueOf(subVal, expandOptions));
                     }
                     i++;
                 }
             } else if (val instanceof Map) {
+                if (expandOptions.sortCollections()) {
+                    try {
+                        val = (val instanceof TreeMap) ? (TreeMap<?, ?>) val : new TreeMap<>((Map<?, ?>) val);
+                    } catch (Exception e) {
+                        // swallow it - this was just a best effort anyway
+                    }
+                }
+
                 for (Map.Entry<?, ?> e : ((Map<?, ?>) val).entrySet()) {
-                    VisitAttributes<String> subVisitAttributes = toVisitAttributes(e.getValue(), false);
+                    Object subVal = e.getValue();
+                    VisitAttributes<String> subVisitAttributes = toVisitAttributes(subVal, false);
                     String tag = prefix + "[\"" + e.getKey() + "\"]";
                     if (subVisitAttributes != null) {
-                        if (includeTypes) {
-                            result.put(tag, e.getValue().getClass().getName());
+                        if (expandOptions.includeTypeInformation()) {
+                            result.put(tag, subVal.getClass().getName());
                         }
                         subVisitAttributes.visitAttributes(ref.get(), tag);
                         return;
                     } else {
-                        result.put(tag, String.valueOf(e.getValue()));
+                        result.put(tag, stringValueOf(subVal, expandOptions));
                     }
                 }
             } else if (val instanceof Optional<?>) {
                 Optional<?> optVal = (Optional<?>) val;
                 if (optVal.isPresent()) {
-                    result.put(prefix, String.valueOf(optVal.get()));
+                    result.put(prefix, stringValueOf(optVal.get(), expandOptions));
                 }
             } else {
-                result.put(prefix, String.valueOf(val));
+                result.put(prefix, stringValueOf(val, expandOptions));
             }
         };
         ref.set(mapCollectorVisitor);
         VisitAttributes<String> visitAttributes = toVisitAttributes(builtTarget, true);
         visitAttributes.visitAttributes(ref.get(), "");
         return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String stringValueOf(Object val,
+                                        ExpandOptions expandOptions) {
+        if (val == null) {
+            return null;
+        }
+
+        if (val instanceof Collection<?>) {
+            if (expandOptions.emptyCollectionMapsToNull() && ((Collection<?>) val).isEmpty()) {
+                return null;
+            }
+
+            if (expandOptions.sortCollections()) {
+                try {
+                    if (val instanceof Set<?>) {
+                        val = new TreeSet<>((Collection<?>) val);
+                    } else if (val instanceof List<?>) {
+                        List list = new ArrayList<>((Collection<?>) val);
+                        Collections.sort(list);
+                        val = list;
+                    }
+                } catch (Exception e) {
+                    // swallow it - this was just a best effort anyway
+                }
+            }
+        }
+
+        return String.valueOf(val);
     }
 
     /**
@@ -132,6 +174,20 @@ public final class BuilderUtils {
      */
     public static List<Diff> diff(Object leftSide,
                                   Object rightSide) {
+        return diff(leftSide, rightSide, DefaultDiffOptions.builder().build());
+    }
+
+    /**
+     * Computes the set of difference between two {@link io.helidon.builder.Builder}-generated target instances.
+     *
+     * @param leftSide the left builder target
+     * @param rightSide the right builder target to compare to the left side
+     * @param diffOptions the diff options
+     * @return the list of differences
+     */
+    public static List<Diff> diff(Object leftSide,
+                                  Object rightSide,
+                                  DiffOptions diffOptions) {
         Objects.requireNonNull(leftSide);
         Objects.requireNonNull(rightSide);
 
@@ -140,22 +196,23 @@ public final class BuilderUtils {
             VisitAttributes<?> visitRight = toVisitAttributes(rightSide, false);
 
             if (visitLeft != null && visitRight != null) {
-                Map<String, String> leftExpand = expand(leftSide, true);
-                Map<String, String> rightExpand = expand(rightSide, true);
+                Map<String, String> leftExpand = expand(leftSide, diffOptions);
+                Map<String, String> rightExpand = expand(rightSide, diffOptions);
                 return diff(leftExpand, rightExpand);
             } else {
-                return List.of(DefaultDiff.builder()
-                                       .leftSide(String.valueOf(leftSide))
-                                       .rightSide(String.valueOf(rightSide))
-                                       .build());
+                Diff diff = DefaultDiff.builder()
+                        .leftSide(String.valueOf(leftSide))
+                        .rightSide(String.valueOf(rightSide))
+                        .build();
+                return List.of(diff);
             }
         }
 
         return List.of();
     }
 
-    static List<Diff> diff(Map<String, String> left,
-                           Map<String, String> right) {
+    private static List<Diff> diff(Map<String, String> left,
+                                   Map<String, String> right) {
         TreeSet<String> allKeys = new TreeSet<>();
         allKeys.addAll(left.keySet());
         allKeys.addAll(right.keySet());
@@ -165,11 +222,12 @@ public final class BuilderUtils {
             String leftSide = left.get(key);
             String rightSide = right.get(key);
             if (!Objects.equals(leftSide, rightSide)) {
-                result.add(DefaultDiff.builder()
-                                   .key(key)
-                                   .leftSide(Optional.ofNullable(leftSide))
-                                   .rightSide(Optional.ofNullable(rightSide))
-                                   .build());
+                Diff diff = DefaultDiff.builder()
+                        .key(key)
+                        .leftSide(Optional.ofNullable(leftSide))
+                        .rightSide(Optional.ofNullable(rightSide))
+                        .build();
+                result.add(diff);
             }
         }
 

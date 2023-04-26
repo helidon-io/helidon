@@ -233,12 +233,12 @@ public class ServicesToProcess implements Resettable {
      */
     public void addAccessLevel(TypeName serviceTypeName,
                                InjectionPointInfo.Access access) {
+        Objects.requireNonNull(serviceTypeName);
+        Objects.requireNonNull(access);
         addServiceTypeName(serviceTypeName);
-        if (access != null) {
-            Object prev = servicesToAccess.put(serviceTypeName, access);
-            if (prev != null && !access.equals(prev)) {
-                throw new IllegalStateException("Can only support one access level for " + serviceTypeName);
-            }
+        Object prev = servicesToAccess.put(serviceTypeName, access);
+        if (prev != null && !access.equals(prev)) {
+            throw new IllegalStateException("Can only support one access level for " + serviceTypeName);
         }
     }
 

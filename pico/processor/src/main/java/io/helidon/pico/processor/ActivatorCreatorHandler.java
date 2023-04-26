@@ -123,25 +123,25 @@ class ActivatorCreatorHandler implements ActivatorCreator {
 
             // the right side is always the last one we finished
             int pos = historyOfCodeGenActivatorNames.size() - 1;
-            String lastNameProcessed = historyOfCodeGenActivatorNames.get(pos);
-            List<ActivatorCreatorRequest> list = historyOfCodeGenActivators.get(lastNameProcessed);
-            ActivatorCreatorRequest rightSide = list.get(list.size() - 1);
+            String leftSideName = null;
+            String rightSideName = historyOfCodeGenActivatorNames.get(pos);
+            List<ActivatorCreatorRequest> list = historyOfCodeGenActivators.get(rightSideName);
             ActivatorCreatorRequest leftSide = null;
+            ActivatorCreatorRequest rightSide = list.get(list.size() - 1);
 
-            String previousToLastNameProcessed = null;
-            while (--pos >= 0 && (previousToLastNameProcessed == null)) {
-                previousToLastNameProcessed = historyOfCodeGenActivatorNames.get(pos);
-                if (previousToLastNameProcessed.equals(lastNameProcessed)) {
+            while (--pos >= 0 && (leftSideName == null)) {
+                leftSideName = historyOfCodeGenActivatorNames.get(pos);
+                if (leftSideName.equals(rightSideName)) {
                     leftSide = list.get(list.size() - 2);
                 } else {
-                    list = historyOfCodeGenActivators.get(previousToLastNameProcessed);
+                    list = historyOfCodeGenActivators.get(leftSideName);
                     leftSide = list.get(list.size() - 1);
                 }
             }
 
             List<Diff> diffs = BuilderUtils.diff(leftSide, rightSide);
-            System.out.println("Activators Diff between: "
-                                       + previousToLastNameProcessed + " < and > " + lastNameProcessed + ":\n" + diffs + "\n");
+            System.out.println("Activators diff between: "
+                                       + leftSideName + " < and > " + rightSideName + ":\n" + diffs + "\n");
         }
 
         private void reportOnInterceptors() {
@@ -170,7 +170,7 @@ class ActivatorCreatorHandler implements ActivatorCreator {
             }
 
             List<Diff> diffs = BuilderUtils.diff(leftSide, rightSide);
-            System.out.println("Interceptors Diff between: "
+            System.out.println("Interceptors diff between: "
                                        + previousToLastNameProcessed + " < and > " + lastNameProcessed + ":\n" + diffs + "\n");
         }
 
