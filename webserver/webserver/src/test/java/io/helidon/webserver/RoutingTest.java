@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.webserver;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.context.Context;
@@ -28,6 +30,7 @@ import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -56,6 +59,33 @@ public class RoutingTest {
         checker.reset();
         routing.route(mockRequest("/user/john", Http.Method.GET), mockResponse());
         assertThat(checker.handlersInvoked(), is("namedUserHandler"));
+    }
+
+    @Test
+    public void nextedThrowable() {
+        final RoutingChecker checker = new RoutingChecker();
+        List<Exception> errors = new ArrayList<>();
+        Routing routing = Routing.builder()
+                                 .any("/", (req, resp) -> {
+                                     // make it "nexted"
+                                     req.next();
+                                     // propagate an exception while already "nexted"
+                                     req.next(new Exception("Booh"));
+                                 })
+                                 .get("/", (req, res) -> {
+                                     checker.handlerInvoked("terminalHandler");
+                                 })
+                                 .error(Exception.class, (req, res, ex) -> {
+                                     errors.add(ex);
+                                 })
+                                 .build();
+
+        routing.route(mockRequest("/", Http.Method.GET), mockResponse());
+        assertThat(checker.handlersInvoked(), is("terminalHandler"));
+        assertThat(errors.size(), is(1));
+        Exception ex = errors.get(0);
+        assertThat(ex.getCause(), is(notNullValue()));
+        assertThat(ex.getCause().getMessage(), is("Booh"));
     }
 
     @Test
