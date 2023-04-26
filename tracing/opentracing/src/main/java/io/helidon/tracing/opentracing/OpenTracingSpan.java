@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,18 +38,21 @@ class OpenTracingSpan implements Span {
 
 
     @Override
-    public void tag(String key, String value) {
+    public Span tag(String key, String value) {
         delegate.setTag(key, value);
+        return this;
     }
 
     @Override
-    public void tag(String key, Boolean value) {
+    public Span tag(String key, Boolean value) {
         delegate.setTag(key, value);
+        return this;
     }
 
     @Override
-    public void tag(String key, Number value) {
+    public Span tag(String key, Number value) {
         delegate.setTag(key, value);
+        return this;
     }
 
     @Override
@@ -89,6 +92,16 @@ class OpenTracingSpan implements Span {
     @Override
     public Scope activate() {
         return new OpenTracingScope(tracer.activateSpan(delegate));
+    }
+
+    @Override
+    public Span baggage(String key, String value) {
+        return (OpenTracingSpan) delegate.setBaggageItem(key, value);
+    }
+
+    @Override
+    public String baggage(String key) {
+        return delegate.getBaggageItem(key);
     }
 
     @Override
