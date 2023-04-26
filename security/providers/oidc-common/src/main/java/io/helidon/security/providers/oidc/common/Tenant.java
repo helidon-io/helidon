@@ -17,8 +17,11 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import io.helidon.common.Errors;
+import io.helidon.common.http.Http;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
@@ -119,6 +122,10 @@ public final class Tenant {
 
             //TODO Níma client security?
 //            webClientBuilder.addService(WebClientSecurity.create(tokenOutboundSecurity));
+            //This is workaround for missing Níma client security. This adds Authorization header to be used in every request.
+            String base64 = Base64.getEncoder()
+                    .encodeToString((tenantConfig.clientId() + ":" + tenantConfig.clientSecret()).getBytes(StandardCharsets.UTF_8));
+            webClientBuilder.header(Http.Header.create(Http.Header.AUTHORIZATION, "Basic " + base64));
         }
 
         Http1Client appWebClient = webClientBuilder.build();
