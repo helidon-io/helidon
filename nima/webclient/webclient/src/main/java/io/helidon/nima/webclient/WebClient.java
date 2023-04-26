@@ -17,8 +17,12 @@
 package io.helidon.nima.webclient;
 
 import java.net.URI;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.http.ClientRequestHeaders;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.http1.Http1;
@@ -66,6 +70,7 @@ public interface WebClient {
         private DnsAddressLookup dnsAddressLookup;
         private boolean followRedirect;
         private int maxRedirect;
+        private WritableHeaders<?> defaultHeaders = WritableHeaders.create();
 
         /**
          * Common builder base for all the client builder.
@@ -177,6 +182,28 @@ public interface WebClient {
         }
 
         /**
+         * Add default header of this client.
+         *
+         * @param header header value
+         * @return updated builder
+         */
+        public B header(Http.HeaderValue header) {
+            this.defaultHeaders.set(header);
+            return identity();
+        }
+
+        /**
+         * Add default headers of this client.
+         *
+         * @param headersFunction header supplying function
+         * @return updated builder
+         */
+        public B headers(Function<ClientRequestHeaders, WritableHeaders<?>> headersFunction) {
+            this.defaultHeaders = headersFunction.apply(ClientRequestHeaders.create(defaultHeaders));
+            return identity();
+        }
+
+        /**
          * Channel options.
          *
          * @return socket options
@@ -218,5 +245,9 @@ public interface WebClient {
         int maxRedirect() {
             return maxRedirect;
         }
+        WritableHeaders<?> defaultHeaders() {
+            return defaultHeaders;
+        }
+
     }
 }

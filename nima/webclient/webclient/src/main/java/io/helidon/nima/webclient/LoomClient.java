@@ -21,6 +21,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.http.Headers;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.spi.DnsResolver;
@@ -43,6 +45,7 @@ public class LoomClient implements WebClient {
     private final DnsAddressLookup dnsAddressLookup;
     private final int maxRedirects;
     private final boolean followRedirects;
+    private final Headers defaultHeaders;
 
     /**
      * Construct this instance from a subclass of builder.
@@ -57,6 +60,7 @@ public class LoomClient implements WebClient {
         this.dnsAddressLookup = builder.dnsAddressLookup();
         this.maxRedirects = builder.maxRedirect();
         this.followRedirects = builder.followRedirect();
+        this.defaultHeaders = builder.defaultHeaders();
     }
 
     /**
@@ -129,6 +133,15 @@ public class LoomClient implements WebClient {
      */
     public int maxRedirects() {
         return maxRedirects;
+    }
+
+    /**
+     * Default headers to be used in every request performed by this client.
+     *
+     * @return default headers
+     */
+    public Headers defaultHeaders() {
+        return defaultHeaders;
     }
 
 }

@@ -18,8 +18,6 @@ package io.helidon.nima.webclient.http1;
 
 import java.net.URI;
 import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
@@ -91,6 +89,8 @@ class ClientRequestImpl implements Http1ClientRequest {
         this.maxRedirects = request.maxRedirects;
         this.tls = request.tls;
         this.connection = request.connection;
+        this.explicitHeaders = WritableHeaders.create(client.defaultHeaders());
+
 
         this.requestId = "http1-client-" + COUNTER.getAndIncrement();
     }
