@@ -31,10 +31,12 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.builder.AttributeVisitor;
+import io.helidon.builder.BuilderInterceptor;
 
 /**
  * Utilities for {@link io.helidon.builder.Builder}-generated targets.
  */
+@SuppressWarnings("rawtypes")
 public final class BuilderUtils {
 
     private BuilderUtils() {
@@ -162,7 +164,7 @@ public final class BuilderUtils {
             }
         }
 
-        return String.valueOf(val);
+        return expandOptions.toStringFunction().orElseThrow().apply(val);
     }
 
     /**
@@ -201,8 +203,8 @@ public final class BuilderUtils {
                 return diff(leftExpand, rightExpand);
             } else {
                 Diff diff = DefaultDiff.builder()
-                        .leftSide(String.valueOf(leftSide))
-                        .rightSide(String.valueOf(rightSide))
+                        .leftSide(diffOptions.toStringFunction().orElseThrow().apply(leftSide))
+                        .rightSide(diffOptions.toStringFunction().orElseThrow().apply(rightSide))
                         .build();
                 return List.of(diff);
             }
@@ -251,6 +253,18 @@ public final class BuilderUtils {
                 throw new IllegalStateException("Expected to find a usable visitAttributes method", e);
             }
             return null;
+        }
+    }
+
+
+    static final class ExpandOptionsInterceptor implements BuilderInterceptor<AbstractExpandOptions.Builder> {
+        @Override
+        @SuppressWarnings("unchecked")
+        public AbstractExpandOptions.Builder intercept(AbstractExpandOptions.Builder target) {
+            if (target.toStringFunction().isEmpty()) {
+                target.toStringFunction(String::valueOf);
+            }
+            return target;
         }
     }
 

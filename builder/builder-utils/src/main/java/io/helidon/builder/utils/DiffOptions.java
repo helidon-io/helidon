@@ -21,7 +21,7 @@ import io.helidon.builder.Builder;
 /**
  * Used by {@link BuilderUtils#diff(Object, Object, DiffOptions)}.
  */
-@Builder
+@Builder(interceptor = BuilderUtils.ExpandOptionsInterceptor.class)
 public interface DiffOptions extends ExpandOptions {
 
 }

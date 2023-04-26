@@ -16,13 +16,16 @@
 
 package io.helidon.builder.utils;
 
+import java.util.Optional;
+import java.util.function.Function;
+
 import io.helidon.builder.Builder;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Used by {@link BuilderUtils#expand(Object, ExpandOptions)}.
  */
-@Builder
+@Builder(interceptor = BuilderUtils.ExpandOptionsInterceptor.class)
 public interface ExpandOptions {
 
     /**
@@ -50,5 +53,12 @@ public interface ExpandOptions {
      */
     @ConfiguredOption("true")
     boolean sortCollections();
+
+    /**
+     * The function that will generically convert an object to a {@link String}, defaulting to {@link String#valueOf(Object)}.
+     *
+     * @return the string conversion function
+     */
+    Optional<Function<Object, String>> toStringFunction();
 
 }
