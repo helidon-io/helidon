@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,11 @@ import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 
 /**
- * Intercepts calls to FT methods and implements annotation semantics.
+ * <p>Intercepts calls to FT methods and implements annotation semantics.</p>
+ *
+ * <p>There is special code to handle async calls coming from the RestClient
+ * implementation in Jersey due to an issue with the default invocation context
+ * in Weld. See issue https://github.com/helidon-io/helidon/issues/6580.</p>
  */
 @Interceptor
 @CommandBinding
@@ -32,6 +36,8 @@ import jakarta.interceptor.InvocationContext;
 class CommandInterceptor {
 
     private static final Logger LOGGER = Logger.getLogger(CommandInterceptor.class.getName());
+    private static final String INVOCATION_CONTEXT_KEY =
+            "org.glassfish.jersey.microprofile.restclient.InterceptorInvocationContext";
 
     /**
      * Intercepts a call to bean method annotated by any of the fault tolerance
@@ -44,16 +50,25 @@ class CommandInterceptor {
     @AroundInvoke
     public Object interceptCommand(InvocationContext context) throws Throwable {
         try {
-            LOGGER.fine("Interceptor called for '" + context.getTarget().getClass()
+            LOGGER.fine(() -> "Interceptor called for '" + context.getTarget().getClass()
                         + "::" + context.getMethod().getName() + "'");
 
             // Create method introspector and executer retrier
             MethodIntrospector introspector = new MethodIntrospector(context.getTarget().getClass(),
                     context.getMethod());
-            MethodInvoker runner = new MethodInvoker(context, introspector);
-            return runner.get();
+
+            // If async call triggered by RestClient, use its invocation context instead
+            if (introspector.isAsynchronous() && context.getContextData().containsKey(INVOCATION_CONTEXT_KEY)) {
+                InvocationContext override = (InvocationContext) context.getContextData().get(INVOCATION_CONTEXT_KEY);
+                LOGGER.fine(() -> "Overriding invocation context from map " + override);
+                MethodInvoker runner = new MethodInvoker(override, introspector);
+                return runner.get();
+            } else {
+                MethodInvoker runner = new MethodInvoker(context, introspector);
+                return runner.get();
+            }
         } catch (Throwable t) {
-            LOGGER.fine("Throwable caught by interceptor '" + t.getMessage() + "'");
+            LOGGER.fine(() -> "Throwable caught by interceptor '" + t.getMessage() + "'");
             throw t;
         }
     }
