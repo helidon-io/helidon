@@ -29,6 +29,7 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.security.providers.common;
     requires io.helidon.security.jwt;
     requires io.helidon.security.providers.httpauth;
+    requires io.helidon.common.context;
     requires io.helidon.common.crypto;
     requires static io.helidon.config.metadata;
     requires io.helidon.cors;
