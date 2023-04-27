@@ -1,0 +1,244 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Testing in Helidon Níma
+:h1Prefix: Níma
+:pagename: Testing in Helidon Níma
+:description: Testing in Helidon Níma
+:keywords: helidon, nima, test, testing, junit
+:feature-name: Helidon Níma Testing Framework
+:rootdir: {docdir}/..
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+- <<Reference, Reference>>
+
+== Overview
+
+Helidon provides built-in test support for Helidon Níma testing with JUnit5.
+
+include::{rootdir}/includes/dependencies.adoc[]
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.nima.testing.junit5</groupId>
+    <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+== Usage
+Helidon nima provides a rich set of testing extensions based on JUnit5. Testing can be done with automatic server startup, configuration and shutdown, as well as testing without full server start up with so called `DrirectClient`. There is a rich set of annotations for this.
+
+== API
+
+There are two annotations that can be used to test Níma server.
+
+* `@ServerTest` is an integration test annotation, that starts server (opens ports) and provides client injection pre-configured for
+the server port(s).
+* `@RoutingTest` is a unit test annotation, that does not start server and does not open ports, but provides direct client (with
+same API as the usual network client) to test routing.
+
+Additional annotation `@Socket` can be used to qualify injection of parameters into test constructors or methods, such as to obtain a client configured for the named socket.
+
+Extensions can exist that enhance the features for the module `helidon-nima-testing-junit5-webserver` to support additional
+protocols. Known are listed here.
+
+The following table lists supported types of parameters for `@SetUpRoute` annotated methods. Such methods MUST be static,
+and may have any name. `@SetUpRoute` annotation has `value` with socket name (to customize setup for a different socket).
+
+- Parameter type - supported class of a parameter
+- Annotation - which annotation(s) support this parameter
+- Modules - which Níma extension modules support this signature
+
+|===
+|Parameter Type |Annotation |Modules |Notes
+
+|`HttpRouting.Builder`
+|`@ServerTest`, `@RoutingTest`
+|
+|
+
+|`HttpRules`
+|`@ServerTest`, `@RoutingTest`
+|
+|Same as `HttpRouting.Builder`, only routing setup
+
+|`Router.RouterBuilder<?>`
+|`@ServerTest`, `@RoutingTest`
+|
+|
+
+|`SocketListener.Builder`
+|`@ServerTest`
+|
+|
+
+|`WebSocketRouting.Builder`
+|`@ServerTest`, `@RoutingTest`
+|websocket
+|
+
+|===
+
+In addition, a static method annotated with `@SetUpServer` can be defined for `@ServerTest`, that has a single parameter
+of `WebServer.Builder`.
+
+The following table lists injectable types (through constructor or method injection).
+
+- Type - type that can be injected
+- Socket? - if checked, you can use `@Socket` annotation to obtain value specific to that named socket
+- Annotation - which annotation(s) support this injection
+- Modules - which Níma extension modules support this injection
+- Notes - additional details
+
+[options="header"]
+|===
+|Type |Socket? |Annotation |Modules |Notes
+|`WebServer`
+|
+|`@ServerTest`
+|
+|Server instance (already started)
+
+|`URI`
+|x
+|`@ServerTest`
+|
+|URI pointing to a port of the webserver
+
+|`SocketHttpClient`
+|x
+|`@ServerTest`
+|
+|Client that allows sending of anything, to test bad request and such.
+
+|`Http1Client`
+|x
+|`@ServerTest`
+|
+|
+
+|`DirectClient`
+|x
+|`@RoutingTest`
+|
+|Implements `Http1Client` API
+
+|`WsClient`
+|x
+|`@ServerTest`
+|websocket
+|
+
+|`DirectWsClient`
+|x
+|`@RoutingTest`
+|websocket
+|Implements `WsClient` API
+
+|===
+
+== Examples
+
+If we want to test our server to return the correct response, we can create the following test.
+
+[source, java]
+----
+class IntegrationTest {
+
+    private final Http1Client client;
+
+    protected IntegrationTest(Http1Client client) { <1>
+        this.client = client;
+    }
+
+    @SetUpRoute <2>
+    static void routing(HttpRouting.Builder builder) {
+        QuickstartMain.routing(builder);
+    }
+
+    @Test <3>
+    void testRootRoute() {
+        try (Http1ClientResponse response = client.get("/greet")
+                .request()) {   <4>
+
+            assertThat(response.status(), is(Http.Status.OK_200));  <5>
+            JsonObject json = response.as(JsonObject.class);
+            assertThat(json.getString("message"), is("Hello World!"));
+        }
+    }
+}
+----
+<1> Inject `Http1Client` for the test;
+<2> SetUp routing for the test;
+<3> Regular `JUnit` test method;
+<4> Call the `client` obtain server response;
+<5> Perform necessary assertions;
+
+If there is no need to set up and run server, and only routing tests are required, a `DirectClient` can be passed as a parameter:
+
+
+[source, java]
+----
+class RoutingTest {
+
+    private final Http1Client client;
+
+    protected RoutingTest(DirectClient client) { <1>
+        this.client = client;
+    }
+
+    @SetUpRoute <2>
+    static void routing(HttpRouting.Builder builder) {
+        QuickstartMain.routing(builder);
+    }
+
+    @Test <3>
+    void testRootRoute() {
+        try (Http1ClientResponse response = client.get("/greet")
+                .request()) {   <4>
+
+            assertThat(response.status(), is(Http.Status.OK_200));  <5>
+            JsonObject json = response.as(JsonObject.class);
+            assertThat(json.getString("message"), is("Hello World!"));
+        }
+    }
+}
+----
+<1> Inject `DirectClient` for the test;
+<2> SetUp routing for the test;
+<3> Regular `JUnit` test method;
+<4> Call the `client` obtain server response;
+<5> Perform necessary assertions;
+
+This way, no real sockets will be crated.
+
+
+== Additional Information
+
+Testing Guide <insert link here>
+
+== Reference
+
+* https://junit.org/junit5/docs/current/user-guide/[JUnit 5 User Guide]
