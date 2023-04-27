@@ -337,7 +337,8 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
             if (config.isList()) {
                 throw new ConfigException("Expected to only have a single base, non-repeatable configuration for "
                                                   + configuredServiceProvider.serviceType() + " with config: "
-                                                  + config.key().toString());
+                                                  + config.key().toString()
+                                                  + ", you can set repeatable=\"true\" when expecting a list.");
             }
             GCB baseConfigBean = toConfigBean(config, configuredServiceProvider);
             registerConfigBean(baseConfigBean, null, config, configuredServiceProvider, metaAttributes);
@@ -350,8 +351,8 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
         config.asNodeList()
                 .ifPresent(list -> {
                     list.forEach(beanCfg -> {
-                        // use explicit name, otherwise index or name of the config node
-                        String name = beanCfg.get("name").asString().orElse(beanCfg.name());
+                        // use explicit name, otherwise index or name of the config node (for lists, the name is 0 bases index)
+                        String name = beanCfg.get("name").asString().orElseGet(beanCfg::name);
                         CB configBean = toConfigBean(beanCfg, configuredServiceProvider);
                         registerConfigBean(configBean, name, beanCfg, configuredServiceProvider, metaAttributes);
                     });

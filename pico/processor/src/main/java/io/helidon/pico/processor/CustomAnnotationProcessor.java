@@ -244,7 +244,6 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 .orElseThrow();
         Elements elements = processingEnv.getElementUtils();
         return CustomAnnotationTemplateRequestDefault.builder()
-                .processedElement(typeToProcess)
                 .filerEnabled(true)
                 .annoTypeName(annoTypeName)
                 .serviceInfo(siInfo)

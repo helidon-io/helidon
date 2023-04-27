@@ -100,11 +100,4 @@ public interface CustomAnnotationTemplateRequest {
      * @return the generic template creator
      */
     GenericTemplateCreator genericTemplateCreator();
-
-    /**
-     * Current element that is processed, if available.
-     *
-     * @return processed element
-     */
-    Optional<Element> processedElement();
 }
