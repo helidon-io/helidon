@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,7 +67,7 @@ class OpenTelemetryProducer {
     @PostConstruct
     private void init() {
 
-        telemetryProperties  = getTelemetryProperties();
+        telemetryProperties  = Collections.unmodifiableMap(getTelemetryProperties());
 
         //Initialize OpenTelemetry in a lazy way.
         if (!isTelemetryDisabled()) {
@@ -97,7 +98,7 @@ class OpenTelemetryProducer {
             if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                 LOGGER.log(System.Logger.Level.TRACE, "Telemetry Disabled by configuration");
             }
-            openTelemetry = LazyValue.create(() -> OpenTelemetry.noop());
+            openTelemetry = LazyValue.create(OpenTelemetry::noop);
         }
     }
 
@@ -125,7 +126,7 @@ class OpenTelemetryProducer {
     /**
      * Provides an instance of the current OpenTelemetry Tracer.
      *
-     * @param openTelemetry
+     * @param openTelemetry instance of OpenTelemetry.
      * @return Tracer.
      */
     @Produces

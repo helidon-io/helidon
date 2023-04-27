@@ -26,7 +26,7 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
      * Used to register {@code HelidonTelemetryContainerFilter} and {@code HelidonTelemetryClientFilter}
      * filers.
      *
-     * @param ctx
+     * @param ctx FeatureContext which is used to register the filters.
      */
     @Override
     public void configure(jakarta.ws.rs.core.FeatureContext ctx) {

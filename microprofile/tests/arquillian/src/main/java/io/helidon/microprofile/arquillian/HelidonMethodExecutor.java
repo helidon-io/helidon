@@ -89,11 +89,11 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
     }
 
     /**
-     * Inject URL in a hard way.
+     * In order to bypass the Arquillian lifecycle, the URI is injected at an erly stage.
      *
-     * @param testMethodExecutor
-     * @throws java.net.MalformedURLException
-     * @throws IllegalAccessException
+     * @param testMethodExecutor an instance of {@link TestMethodExecutor}.
+     * @throws java.net.MalformedURLException in case of invalid URI injected.
+     * @throws IllegalAccessException in case of illegal reflection usage.
      */
     private void injectURI(TestMethodExecutor testMethodExecutor) throws IllegalAccessException, MalformedURLException {
         Object testInstance = testMethodExecutor.getInstance();

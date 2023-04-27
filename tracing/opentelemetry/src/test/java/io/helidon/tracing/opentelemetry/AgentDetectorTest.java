@@ -34,11 +34,8 @@ import static org.hamcrest.Matchers.is;
 @AddExtension(ServerCdiExtension.class)
 class AgentDetectorTest {
 
-    public static final String OTEL_AGENT_PRESENT = "otel.agent.present";
-    public static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
-
     @Test
-    @AddConfig(key = OTEL_AGENT_PRESENT, value = "true")
+    @AddConfig(key = HelidonOpenTelemetry.OTEL_AGENT_PRESENT_PROPERTY, value = "true")
     void shouldBeNoOpTelemetry(){
         Config config = CDI.current().select(Config.class).get();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
@@ -46,7 +43,7 @@ class AgentDetectorTest {
     }
 
     @Test
-    @AddConfig(key = OTEL_AGENT_PRESENT, value = "false")
+    @AddConfig(key = HelidonOpenTelemetry.OTEL_AGENT_PRESENT_PROPERTY, value = "false")
     void shouldNotBeNoOpTelemetry(){
         Config config = CDI.current().select(Config.class).get();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
@@ -55,7 +52,7 @@ class AgentDetectorTest {
 
     @Test
     void checkEnvVariable(){
-        System.setProperty(IO_OPENTELEMETRY_JAVAAGENT, "true");
+        System.setProperty(HelidonOpenTelemetry.IO_OPENTELEMETRY_JAVAAGENT, "true");
         Config config = CDI.current().select(Config.class).get();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
         assertThat(present, is(true));

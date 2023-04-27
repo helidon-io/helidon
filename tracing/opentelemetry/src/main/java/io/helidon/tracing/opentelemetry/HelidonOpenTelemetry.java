@@ -31,7 +31,8 @@ import io.opentelemetry.api.trace.Tracer;
 public final class HelidonOpenTelemetry {
 
     private static final System.Logger LOGGER = System.getLogger(HelidonOpenTelemetry.class.getName());
-    private static final String OTEL_AGENT_PRESENT_PROPERTY = "otel.agent.present";
+    static final String OTEL_AGENT_PRESENT_PROPERTY = "otel.agent.present";
+    static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
     private HelidonOpenTelemetry() {
     }
     /**
@@ -58,7 +59,7 @@ public final class HelidonOpenTelemetry {
 
     /**
      * Check if OpenTelemetry is present by indirect properties.
-     * This class does best explicit check if "otel.agent.present" config property is set and uses its
+     * This class does best explicit check if OTEL_AGENT_PRESENT_PROPERTY config property is set and uses its
      * value to set the behaviour of OpenTelemetry producer.
      *
      * If the value is not explicitly set, the detector does best effort to estimate indirect means if the agent is present.
@@ -92,7 +93,7 @@ public final class HelidonOpenTelemetry {
         private static boolean checkSystemProperties() {
             return System.getProperties().stringPropertyNames()
                     .stream()
-                    .anyMatch(property -> property.contains("io.opentelemetry.javaagent"));
+                    .anyMatch(property -> property.contains(IO_OPENTELEMETRY_JAVAAGENT));
         }
 
         private static boolean checkContext() {

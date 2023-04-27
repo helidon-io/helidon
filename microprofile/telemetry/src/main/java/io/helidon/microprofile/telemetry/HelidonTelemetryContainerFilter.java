@@ -44,8 +44,6 @@ import static java.net.HttpURLConnection.HTTP_OK;
 @Provider
 class HelidonTelemetryContainerFilter implements ContainerRequestFilter, ContainerResponseFilter {
     private static final System.Logger LOGGER = System.getLogger(HelidonTelemetryContainerFilter.class.getName());
-    private static final String REST_RESOURCE_CLASS = "rest.resource.class";
-    private static final String REST_RESOURCE_METHOD = "rest.resource.method";
     private static final String SPAN = "otel.span.server.span";
     private static final String SPAN_CONTEXT = "otel.span.server.context";
     private static final String SPAN_SCOPE = "otel.span.server.scope";
@@ -101,9 +99,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             parentContext = extractedContext;
         }
 
-        requestContext.setProperty(REST_RESOURCE_CLASS, resourceInfo.getResourceClass());
-        requestContext.setProperty(REST_RESOURCE_METHOD, resourceInfo.getResourceMethod());
-
         String annotatedPath = requestContext.getUriInfo().getPath();
         if (resourceInfo.getResourceMethod().getAnnotation(Path.class) != null) {
             annotatedPath = resourceInfo.getResourceMethod().getAnnotation(Path.class).value();
@@ -149,8 +144,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             Scope scope = (Scope) request.getProperty(SPAN_SCOPE);
             scope.close();
         } finally {
-            request.removeProperty(REST_RESOURCE_CLASS);
-            request.removeProperty(REST_RESOURCE_METHOD);
             request.removeProperty(SPAN);
             request.removeProperty(SPAN_SCOPE);
         }

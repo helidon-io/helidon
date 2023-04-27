@@ -63,8 +63,6 @@ class WithSpanInterceptor {
 
         WithSpan annotation = method.getAnnotation(WithSpan.class);
 
-        Scope scope = null;
-
         String spanName = annotation.value();
 
         //Process span name. Should be class name, as well as inner classes.
@@ -81,18 +79,13 @@ class WithSpanInterceptor {
                 .setParent(Context.current())
                 .startSpan();
 
-        scope = span.makeCurrent();
-
-        try {
+        try (Scope scope = span.makeCurrent()){
             return context.proceed();
         } catch (Exception e) {
             span.recordException(e);
             return context.proceed();
         } finally {
             span.end();
-            if (scope != null) {
-                scope.close();
-            }
         }
     }
 
