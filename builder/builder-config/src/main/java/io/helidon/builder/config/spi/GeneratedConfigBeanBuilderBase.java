@@ -68,7 +68,7 @@ public abstract class GeneratedConfigBeanBuilderBase implements GeneratedConfigB
     /**
      * Update status of this builder from configuration, overriding existing values if config defines them.
      *
-     * @param cfg configuration to update this builder from
+     * @param cfg the configuration to use in order to update this builder
      */
     public void config(Config cfg) {
         acceptConfig(cfg,
