@@ -58,27 +58,6 @@
    <cve>CVE-2023-28867</cve>
 </suppress>
 
-<!-- False Postive. This CVE is against the kafka server. This is the kafka client
--->
-<suppress>
-   <notes><![CDATA[
-   file name: kafka-clients-2.8.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
-   <cve>CVE-2022-34917</cve>
-</suppress>
-
-<!-- False Postive. This CVE is against the kafka connect server. We use the kafka client
--->
-<suppress>
-   <notes><![CDATA[
-   file name: kafka-clients-2.8.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
-   <cve>CVE-2023-25194</cve>
-</suppress>
-
-
 <!-- False Postives. CVE CVE-2022-45129 is against Payara not jakarta.resource-api nor microprofile
  -->
 <suppress>

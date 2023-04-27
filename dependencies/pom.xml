@@ -94,7 +94,7 @@
         <version.lib.jersey>3.1.1</version.lib.jersey>
         <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
         <version.lib.junit>5.7.0</version.lib.junit>
-        <version.lib.kafka>2.8.1</version.lib.kafka>
+        <version.lib.kafka>3.4.0</version.lib.kafka>
         <version.lib.log4j>2.18.0</version.lib.log4j>
         <version.lib.logback>1.4.0</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
