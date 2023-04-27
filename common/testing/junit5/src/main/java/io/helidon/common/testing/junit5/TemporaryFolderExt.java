@@ -46,7 +46,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * the test class have finished.
  *
  */
-@Deprecated
 public class TemporaryFolderExt implements BeforeEachCallback, AfterEachCallback {
 
     private Path root;

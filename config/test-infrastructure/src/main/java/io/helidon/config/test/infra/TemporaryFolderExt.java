@@ -45,7 +45,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * The extension automatically deletes the temporary files after all tests in
  * the test class have finished.
  *
+ * @deprecated Please use {@code io.helidon.common.testing.junit5.TemporaryFolderExt}
+ * form {@code helidon-common-testing-junit5} module instead
  */
+@Deprecated(forRemoval = true, since = "3.2.1")
 public class TemporaryFolderExt implements BeforeEachCallback, AfterEachCallback {
 
     private Path root;

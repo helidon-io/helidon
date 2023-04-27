@@ -31,7 +31,10 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store;
  * Annotate each test method that modifies system properties using
  * <code>@ExtendWith(RestoreSystemPropertiesExt.class)</code>
  *
+ * @deprecated Please use {@code io.helidon.common.testing.junit5.RestoreSystemPropertiesExt}
+ * form {@code helidon-common-testing-junit5} module instead
  */
+@Deprecated(forRemoval = true, since = "3.2.1")
 public class RestoreSystemPropertiesExt implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
 
     private static final String SYSPROPS_KEY = "systemProps";
