@@ -90,6 +90,9 @@ class GreetResourceMockedTest {
         public void setRegion(Region region) {}
 
         @Override
+        public void useRealmSpecificEndpointTemplate(boolean b) {}
+
+        @Override
         public void setEndpoint(String endpoint) {
             this.endpoint = endpoint;
         }
@@ -122,6 +125,9 @@ class GreetResourceMockedTest {
 
         @Override
         public void setRegion(Region region) {}
+
+        @Override
+        public void useRealmSpecificEndpointTemplate(boolean b) {}
 
         @Override
         public void setRegion(String s) {}
