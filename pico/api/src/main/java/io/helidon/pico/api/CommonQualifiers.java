@@ -16,8 +16,8 @@
 
 package io.helidon.pico.api;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 
 import jakarta.inject.Named;
 
@@ -29,12 +29,12 @@ public final class CommonQualifiers {
     /**
      * Represents a {@link jakarta.inject.Named} type name with no value.
      */
-    public static final TypeName NAMED = DefaultTypeName.create(Named.class);
+    public static final TypeName NAMED = TypeNameDefault.create(Named.class);
 
     /**
      * Represents a wildcard {@link #NAMED} qualifier.
      */
-    public static final QualifierAndValue WILDCARD_NAMED = DefaultQualifierAndValue.createNamed("*");
+    public static final QualifierAndValue WILDCARD_NAMED = QualifierAndValueDefault.createNamed("*");
 
     private CommonQualifiers() {
     }

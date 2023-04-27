@@ -16,9 +16,9 @@
 
 package io.helidon.pico.runtime;
 
-import io.helidon.pico.api.DefaultQualifierAndValue;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoDefault;
 
@@ -41,7 +41,7 @@ class PicoModuleServiceProvider extends AbstractServiceProvider<ModuleComponent>
                 .addContractsImplemented(ModuleComponent.class.getName());
         if (moduleName != null) {
             builder.moduleName(moduleName)
-                    .addQualifier(DefaultQualifierAndValue.createNamed(moduleName));
+                    .addQualifier(QualifierAndValueDefault.createNamed(moduleName));
         }
         return builder.build();
     }

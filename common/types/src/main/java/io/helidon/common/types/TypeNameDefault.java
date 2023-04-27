@@ -25,7 +25,7 @@ import java.util.Objects;
 /**
  * Default implementation for {@link TypeName}.
  */
-public class DefaultTypeName implements TypeName {
+public class TypeNameDefault implements TypeName {
     private final String packageName;
     private final String className;
     private final boolean primitive;
@@ -40,7 +40,7 @@ public class DefaultTypeName implements TypeName {
      * @param b the builder
      * @see #builder()
      */
-    protected DefaultTypeName(Builder b) {
+    protected TypeNameDefault(Builder b) {
         this.packageName = b.packageName;
         this.className = b.className;
         this.primitive = b.primitive;
@@ -95,8 +95,8 @@ public class DefaultTypeName implements TypeName {
      * @param className   the simple class type name
      * @return the TypeName for the provided package and class names
      */
-    public static DefaultTypeName create(String packageName, String className) {
-        return DefaultTypeName.builder().packageName(packageName).className(className).build();
+    public static TypeNameDefault create(String packageName, String className) {
+        return TypeNameDefault.builder().packageName(packageName).className(className).build();
     }
 
     /**
@@ -105,7 +105,7 @@ public class DefaultTypeName implements TypeName {
      * @param classType the class type
      * @return the TypeName for the provided class type
      */
-    public static DefaultTypeName create(Class<?> classType) {
+    public static TypeNameDefault create(Class<?> classType) {
         return builder().type(classType).build();
     }
 
@@ -115,7 +115,7 @@ public class DefaultTypeName implements TypeName {
      * @param genericAliasTypeName the generic alias type name
      * @return the TypeName for the provided type name
      */
-    public static DefaultTypeName createFromGenericDeclaration(String genericAliasTypeName) {
+    public static TypeNameDefault createFromGenericDeclaration(String genericAliasTypeName) {
         return builder()
                 .generic(true)
                 .className(Objects.requireNonNull(genericAliasTypeName))
@@ -128,7 +128,7 @@ public class DefaultTypeName implements TypeName {
      * @param typeName the FQN of the class type
      * @return the TypeName for the provided type name
      */
-    public static DefaultTypeName createFromTypeName(String typeName) {
+    public static TypeNameDefault createFromTypeName(String typeName) {
         Objects.requireNonNull(typeName);
         if (typeName.startsWith("?")) {
             if (typeName.startsWith("? extends ")) {
@@ -137,7 +137,7 @@ public class DefaultTypeName implements TypeName {
                         .wildcard(true)
                         .build();
             } else {
-                return DefaultTypeName.builder()
+                return TypeNameDefault.builder()
                         .type(Object.class)
                         .wildcard(true)
                         .build();
@@ -163,7 +163,7 @@ public class DefaultTypeName implements TypeName {
         }
 
         if (packageElements.isEmpty()) {
-            return DefaultTypeName.builder()
+            return TypeNameDefault.builder()
                     .className(typeName)
                     .build();
         }
@@ -333,7 +333,7 @@ public class DefaultTypeName implements TypeName {
     /**
      * The fluent builder.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, DefaultTypeName> {
+    public static class Builder implements io.helidon.common.Builder<Builder, TypeNameDefault> {
         private final List<TypeName> typeArguments = new ArrayList<>();
 
         private String packageName;
@@ -363,11 +363,11 @@ public class DefaultTypeName implements TypeName {
          *
          * @return the built instance
          */
-        public DefaultTypeName build() {
+        public TypeNameDefault build() {
             Objects.requireNonNull(className, "Class name must be specified");
             packageName = packageName == null ? "" : packageName;
 
-            return new DefaultTypeName(this);
+            return new TypeNameDefault(this);
         }
 
         /**

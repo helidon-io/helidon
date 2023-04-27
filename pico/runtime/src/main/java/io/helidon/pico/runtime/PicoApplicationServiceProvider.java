@@ -17,9 +17,9 @@
 package io.helidon.pico.runtime;
 
 import io.helidon.pico.api.Application;
-import io.helidon.pico.api.DefaultQualifierAndValue;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoDefault;
 
@@ -37,7 +37,7 @@ class PicoApplicationServiceProvider extends AbstractServiceProvider<Application
         ServiceInfoDefault.Builder builder = ServiceInfoDefault.builder()
                 .serviceTypeName(app.getClass().getName())
                 .addContractsImplemented(Application.class.getName());
-        app.named().ifPresent(name -> builder.addQualifier(DefaultQualifierAndValue.createNamed(name)));
+        app.named().ifPresent(name -> builder.addQualifier(QualifierAndValueDefault.createNamed(name)));
         return builder.build();
     }
 

@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.ActivationLog;
 import io.helidon.pico.api.ActivationLogEntryDefault;
 import io.helidon.pico.api.ActivationPhaseReceiver;
@@ -318,7 +318,7 @@ public abstract class AbstractServiceProvider<T>
      */
     public String name(boolean simple) {
         String name = serviceInfo().serviceTypeName();
-        return (simple) ? DefaultTypeName.createFromTypeName(name).className() : name;
+        return (simple) ? TypeNameDefault.createFromTypeName(name).className() : name;
     }
 
     @SuppressWarnings("unchecked")

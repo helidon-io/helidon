@@ -19,8 +19,8 @@ package io.helidon.pico.tools;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.api.ServiceInfoCriteriaDefault;
@@ -61,7 +61,7 @@ class ApplicationCreatorDefaultTest extends AbstractBaseCreator {
         List<ServiceProvider<?>> serviceProviders = services.lookupAll(allServices);
 
         List<TypeName> serviceTypeNames = serviceProviders.stream()
-                .map(sp -> DefaultTypeName.createFromTypeName(sp.serviceInfo().serviceTypeName()))
+                .map(sp -> TypeNameDefault.createFromTypeName(sp.serviceInfo().serviceTypeName()))
                 .collect(Collectors.toList());
 
         CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()

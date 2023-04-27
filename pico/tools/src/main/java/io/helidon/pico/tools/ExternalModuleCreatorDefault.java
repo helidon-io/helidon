@@ -45,7 +45,7 @@ import io.github.classgraph.PackageInfo;
 import io.github.classgraph.ScanResult;
 import jakarta.inject.Singleton;
 
-import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
+import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 import static io.helidon.pico.tools.TypeTools.createInjectionPointInfo;
 import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;

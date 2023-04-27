@@ -22,11 +22,11 @@ import java.util.Set;
 import javax.lang.model.element.ElementKind;
 
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultTypeInfo;
-import io.helidon.common.types.DefaultTypedElementName;
 import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeInfoDefault;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementNameDefault;
 import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.api.ServiceInfoDefault;
@@ -39,8 +39,8 @@ import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.types.DefaultTypeName.create;
-import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
+import static io.helidon.common.types.TypeNameDefault.create;
+import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static io.helidon.pico.processor.TestUtils.loadStringFromResource;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromAnnotations;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -64,16 +64,16 @@ class CustomAnnotationProcessorTest {
         CustomAnnotationProcessor processor = new CustomAnnotationProcessor();
 
         List<AnnotationAndValue> annotations = createAnnotationAndValueListFromAnnotations(BasicEndpoint.class.getAnnotations());
-        TypeInfo enclosingTypeInfo = DefaultTypeInfo.builder()
+        TypeInfo enclosingTypeInfo = TypeInfoDefault.builder()
                 .typeName(create(BasicEndpoint.class))
                 .annotations(annotations)
                 .build();
-        TypedElementName target = DefaultTypedElementName.builder()
+        TypedElementName target = TypedElementNameDefault.builder()
                 .typeName(create(String.class))
                 .elementKind(ElementKind.METHOD.name())
                 .elementName("itWorks")
                 .build();
-        TypedElementName arg1 = DefaultTypedElementName.builder()
+        TypedElementName arg1 = TypedElementNameDefault.builder()
                 .typeName(create(String.class))
                 .elementName("header")
                 .build();

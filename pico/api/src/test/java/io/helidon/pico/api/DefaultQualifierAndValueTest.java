@@ -16,7 +16,7 @@
 
 package io.helidon.pico.api;
 
-import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.AnnotationAndValueDefault;
 
 import jakarta.inject.Named;
 import org.junit.jupiter.api.Test;
@@ -28,11 +28,11 @@ class DefaultQualifierAndValueTest {
 
     @Test
     void buildAndCompare() {
-        DefaultQualifierAndValue qav1 = DefaultQualifierAndValue.builder()
+        QualifierAndValueDefault qav1 = QualifierAndValueDefault.builder()
                 .type(Named.class)
                 .value("x.y")
                 .build();
-        DefaultAnnotationAndValue qav2 = DefaultQualifierAndValue.builder()
+        AnnotationAndValueDefault qav2 = QualifierAndValueDefault.builder()
                 .type(Named.class)
                 .value("x.y")
                 .build();

@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.spi.ExternalModuleCreator;
 
@@ -70,9 +70,9 @@ class ExternalModuleCreatorDefaultTest extends AbstractBaseCreator {
                 .addPackageNamesToScan("org.atinject.tck.auto")
                 .addPackageNamesToScan("org.atinject.tck.auto.accessories")
                 .addServiceTypeToQualifiersMap(SpareTire.class.getName(),
-                                         Set.of(DefaultQualifierAndValue.createNamed("spare")))
+                                         Set.of(QualifierAndValueDefault.createNamed("spare")))
                 .addServiceTypeToQualifiersMap(DriversSeat.class.getName(),
-                                         Set.of(DefaultQualifierAndValue.create(Drivers.class)))
+                                         Set.of(QualifierAndValueDefault.create(Drivers.class)))
                 .activatorCreatorConfigOptions(activatorCreatorConfigOptions)
                 .innerClassesProcessed(false)
                 .codeGenPaths(codeGenPaths)

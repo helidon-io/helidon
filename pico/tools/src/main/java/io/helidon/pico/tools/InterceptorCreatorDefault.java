@@ -47,8 +47,8 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.InterceptedTrigger;
@@ -62,7 +62,7 @@ import io.github.classgraph.MethodTypeSignature;
 import io.github.classgraph.ScanResult;
 import jakarta.inject.Singleton;
 
-import static io.helidon.common.types.DefaultAnnotationAndValue.create;
+import static io.helidon.common.types.AnnotationAndValueDefault.create;
 import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueFromMirror;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromAnnotations;
@@ -990,7 +990,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
     }
 
     private static IdAndToString toDecl(AnnotationAndValue anno) {
-        StringBuilder builder = new StringBuilder("DefaultAnnotationAndValue.create(" + anno.typeName() + ".class");
+        StringBuilder builder = new StringBuilder("AnnotationAndValueDefault.create(" + anno.typeName() + ".class");
         Map<String, String> map = anno.values();
         String val = anno.value().orElse(null);
         if (map != null && !map.isEmpty()) {
@@ -1061,7 +1061,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         }
         String methodDecl = builder.toString();
         builder.append(" {\n");
-        TypeName supplierType = (hasReturn) ? toObjectTypeName(mi.elementTypeName()) : DefaultTypeName.create(Void.class);
+        TypeName supplierType = (hasReturn) ? toObjectTypeName(mi.elementTypeName()) : TypeNameDefault.create(Void.class);
 
         String elementArgInfo = "";
         if (hasArgs) {
@@ -1073,8 +1073,8 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
     }
 
     private static TypeName toInterceptorTypeName(String serviceTypeName) {
-        TypeName typeName = DefaultTypeName.createFromTypeName(serviceTypeName);
-        return DefaultTypeName.create(typeName.packageName(), typeName.className()
+        TypeName typeName = TypeNameDefault.createFromTypeName(serviceTypeName);
+        return TypeNameDefault.create(typeName.packageName(), typeName.className()
                                                                       + INNER_INTERCEPTOR_CLASS_NAME);
     }
 

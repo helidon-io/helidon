@@ -22,8 +22,8 @@ import java.lang.annotation.Target;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.AnnotationAndValueDefault;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.InterceptedTrigger;
 import io.helidon.pico.api.ServiceInfoBasicsDefault;
 import io.helidon.pico.tools.spi.InterceptorCreator;
@@ -59,9 +59,9 @@ class InterceptorCreatorDefaultTest extends AbstractBaseCreator {
         AnnotationTypeNameResolver resolver = createResolverFromReflection();
         assertThat(resolver.resolve(InterceptedTrigger.class.getName()),
                    containsInAnyOrder(
-                           DefaultAnnotationAndValue.create(Documented.class),
-                           DefaultAnnotationAndValue.create(Retention.class, "java.lang.annotation.RetentionPolicy.CLASS"),
-                           DefaultAnnotationAndValue.create(Target.class, "{java.lang.annotation.ElementType.ANNOTATION_TYPE}")
+                           AnnotationAndValueDefault.create(Documented.class),
+                           AnnotationAndValueDefault.create(Retention.class, "java.lang.annotation.RetentionPolicy.CLASS"),
+                           AnnotationAndValueDefault.create(Target.class, "{java.lang.annotation.ElementType.ANNOTATION_TYPE}")
                    ));
     }
 
@@ -76,7 +76,7 @@ class InterceptorCreatorDefaultTest extends AbstractBaseCreator {
                                                                                             Optional.empty());
         InterceptionPlan plan = processor.createInterceptorPlan(Set.of(Singleton.class.getName())).orElseThrow();
         assertThat(plan.hasNoArgConstructor(), is(false));
-        assertThat(plan.interfaces(), contains(DefaultTypeName.create(HelloPicoWorld.class)));
+        assertThat(plan.interfaces(), contains(TypeNameDefault.create(HelloPicoWorld.class)));
     }
 
 }

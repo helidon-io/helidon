@@ -22,9 +22,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.DependenciesInfoDefault;
 import io.helidon.pico.api.DependencyInfo;
@@ -33,6 +32,7 @@ import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.InjectionPointInfoDefault;
 import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 
@@ -194,7 +194,7 @@ public class Dependencies {
     }
 
     private static Supplier<String> toPackageName(String serviceTypeName) {
-        return () -> toPackageName(DefaultTypeName.createFromTypeName(serviceTypeName));
+        return () -> toPackageName(TypeNameDefault.createFromTypeName(serviceTypeName));
     }
 
     private static String toPackageName(TypeName typeName) {
@@ -399,7 +399,7 @@ public class Dependencies {
          * @return the builder
          */
         public BuilderContinuation named(String val) {
-            ipInfoBuilder.addQualifier(DefaultQualifierAndValue.createNamed(val));
+            ipInfoBuilder.addQualifier(QualifierAndValueDefault.createNamed(val));
             return this;
         }
 
@@ -411,7 +411,7 @@ public class Dependencies {
          */
         // note: called from generated code
         public BuilderContinuation addQualifier(Class<? extends Annotation> val) {
-            ipInfoBuilder.addQualifier(DefaultQualifierAndValue.create(val));
+            ipInfoBuilder.addQualifier(QualifierAndValueDefault.create(val));
             return this;
         }
 

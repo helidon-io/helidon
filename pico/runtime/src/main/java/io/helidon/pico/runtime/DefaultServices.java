@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.CallingContext;
 import io.helidon.pico.api.CallingContextFactory;
-import io.helidon.pico.api.DefaultQualifierAndValue;
 import io.helidon.pico.api.InjectionException;
 import io.helidon.pico.api.Intercepted;
 import io.helidon.pico.api.Metrics;
@@ -43,6 +42,7 @@ import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.api.ServiceBinder;
 import io.helidon.pico.api.ServiceInfo;
@@ -232,7 +232,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
                                                         boolean expected) {
         ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(type.getName())
-                .addQualifier(DefaultQualifierAndValue.createNamed(name))
+                .addQualifier(QualifierAndValueDefault.createNamed(name))
                 .build();
         return (Optional) lookupFirst(criteria, expected);
     }

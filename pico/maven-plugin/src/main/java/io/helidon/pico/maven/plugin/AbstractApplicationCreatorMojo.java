@@ -31,8 +31,8 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.CallingContext;
 import io.helidon.pico.api.CallingContextDefault;
 import io.helidon.pico.api.CallingContextFactory;
@@ -355,7 +355,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         }
 
         return permittedProviderQualifierTypeNames.stream()
-                .map(DefaultTypeName::createFromTypeName)
+                .map(TypeNameDefault::createFromTypeName)
                 .collect(Collectors.toList());
     }
 
@@ -364,7 +364,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         services.forEach(sp -> {
             sp = DefaultServiceBinder.toRootProvider(sp);
             String serviceType = sp.serviceInfo().serviceTypeName();
-            TypeName name = DefaultTypeName.createFromTypeName(serviceType);
+            TypeName name = TypeNameDefault.createFromTypeName(serviceType);
             ServiceProvider<?> prev = result.put(name, sp);
             if (prev != null) {
                 if (!(prev instanceof ServiceProviderProvider)) {

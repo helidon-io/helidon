@@ -31,8 +31,8 @@ import java.util.stream.Collectors;
 import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.ModuleComponent;
@@ -278,7 +278,7 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
             packageName = PicoServicesConfig.NAME;
         }
         String className = Objects.requireNonNull(codeGen.className().orElse(null));
-        return DefaultTypeName.create(packageName, className);
+        return TypeNameDefault.create(packageName, className);
     }
 
     static String toModuleName(ApplicationCreatorRequest req) {
@@ -421,7 +421,7 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
                                         String moduleName) {
         Services services = picoServices.services();
         ServiceProvider<?> serviceProvider = services.lookup(ModuleComponent.class, moduleName);
-        return DefaultTypeName.createFromTypeName(serviceProvider.serviceInfo().serviceTypeName());
+        return TypeNameDefault.createFromTypeName(serviceProvider.serviceInfo().serviceTypeName());
     }
 
     void codegenModuleInfoDescriptor(CodeGenFiler filer,

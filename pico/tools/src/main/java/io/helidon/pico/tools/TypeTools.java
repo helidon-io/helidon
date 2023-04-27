@@ -53,10 +53,9 @@ import javax.lang.model.util.Elements;
 import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.LazyValue;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.ElementInfoDefault;
 import io.helidon.pico.api.InjectionPointInfo;
@@ -64,6 +63,7 @@ import io.helidon.pico.api.InjectionPointInfoDefault;
 import io.helidon.pico.api.InjectionPointProvider;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.runtime.Dependencies;
@@ -93,14 +93,14 @@ import static io.helidon.pico.tools.CommonUtils.hasValue;
 public final class TypeTools extends BuilderTypeTools {
     private static final LazyValue<Map<String, TypeName>> OBJ_TYPES = LazyValue.create(() -> {
         Map<String, TypeName> map = new LinkedHashMap<>();
-        map.put(boolean.class.getName(), DefaultTypeName.create(Boolean.class));
-        map.put(byte.class.getName(), DefaultTypeName.create(Byte.class));
-        map.put(char.class.getName(), DefaultTypeName.create(Character.class));
-        map.put(short.class.getName(), DefaultTypeName.create(Short.class));
-        map.put(int.class.getName(), DefaultTypeName.create(Integer.class));
-        map.put(long.class.getName(), DefaultTypeName.create(Long.class));
-        map.put(float.class.getName(), DefaultTypeName.create(Float.class));
-        map.put(double.class.getName(), DefaultTypeName.create(Double.class));
+        map.put(boolean.class.getName(), TypeNameDefault.create(Boolean.class));
+        map.put(byte.class.getName(), TypeNameDefault.create(Byte.class));
+        map.put(char.class.getName(), TypeNameDefault.create(Character.class));
+        map.put(short.class.getName(), TypeNameDefault.create(Short.class));
+        map.put(int.class.getName(), TypeNameDefault.create(Integer.class));
+        map.put(long.class.getName(), TypeNameDefault.create(Long.class));
+        map.put(float.class.getName(), TypeNameDefault.create(Float.class));
+        map.put(double.class.getName(), TypeNameDefault.create(Double.class));
         return map;
     });
 
@@ -151,7 +151,7 @@ public final class TypeTools extends BuilderTypeTools {
         if (classInfo == null) {
             return null;
         }
-        return DefaultTypeName.create(classInfo.getPackageName(), classInfo.getSimpleName());
+        return TypeNameDefault.create(classInfo.getPackageName(), classInfo.getSimpleName());
     }
 
     /**
@@ -162,7 +162,7 @@ public final class TypeTools extends BuilderTypeTools {
      */
     static TypeName toObjectTypeName(String type) {
         TypeName result = OBJ_TYPES.get().get(type);
-        return (result == null) ? DefaultTypeName.createFromTypeName(type) : result;
+        return (result == null) ? TypeNameDefault.createFromTypeName(type) : result;
     }
 
     /**
@@ -174,7 +174,7 @@ public final class TypeTools extends BuilderTypeTools {
      */
     @Deprecated
     static AnnotationAndValue createAnnotationAndValueFromAnnotation(Annotation annotation) {
-        return DefaultAnnotationAndValue.create(DefaultTypeName.create(annotation.annotationType()), extractValues(annotation));
+        return AnnotationAndValueDefault.create(TypeNameDefault.create(annotation.annotationType()), extractValues(annotation));
     }
 
     /**
@@ -334,7 +334,7 @@ public final class TypeTools extends BuilderTypeTools {
             return Set.of();
         }
 
-        return set.stream().map(DefaultQualifierAndValue::convert)
+        return set.stream().map(QualifierAndValueDefault::convert)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -371,7 +371,7 @@ public final class TypeTools extends BuilderTypeTools {
                         break;
                     }
                 }
-                DefaultQualifierAndValue.Builder qualifier = DefaultQualifierAndValue.builder();
+                QualifierAndValueDefault.Builder qualifier = QualifierAndValueDefault.builder();
                 qualifier.typeName(TypeTools.createTypeNameFromDeclaredType(annoMirror.getAnnotationType()).orElseThrow());
                 if (val != null) {
                     qualifier.value(val);
@@ -395,8 +395,8 @@ public final class TypeTools extends BuilderTypeTools {
                         values.put(method.getSimpleName().toString(), String.valueOf(value.getValue()));
                     });
 
-                    TypeName annot = DefaultTypeName.createFromTypeName(annoMirror.getAnnotationType().toString());
-                    result.add(DefaultQualifierAndValue.create(annot, values));
+                    TypeName annot = TypeNameDefault.createFromTypeName(annoMirror.getAnnotationType().toString());
+                    result.add(QualifierAndValueDefault.create(annot, values));
                 }
             }
         }
@@ -460,7 +460,7 @@ public final class TypeTools extends BuilderTypeTools {
      */
     static AnnotationAndValue createAnnotationAndValue(AnnotationInfo annotationInfo) {
         TypeName annoTypeName = createTypeNameFromClassInfo(annotationInfo.getClassInfo());
-        return DefaultAnnotationAndValue.create(annoTypeName, extractValues(annotationInfo.getParameterValues()));
+        return AnnotationAndValueDefault.create(annoTypeName, extractValues(annotationInfo.getParameterValues()));
     }
 
     /**
@@ -471,7 +471,7 @@ public final class TypeTools extends BuilderTypeTools {
      */
     static AnnotationAndValue createAnnotationAndValue(AnnotationMirror annotationMirror) {
         TypeName annoTypeName = createTypeNameFromMirror(annotationMirror.getAnnotationType()).orElseThrow();
-        return DefaultAnnotationAndValue.create(annoTypeName, extractValues(annotationMirror.getElementValues()));
+        return AnnotationAndValueDefault.create(annoTypeName, extractValues(annotationMirror.getElementValues()));
     }
 
     /**
@@ -543,19 +543,19 @@ public final class TypeTools extends BuilderTypeTools {
 
         Set<AnnotationAndValue> result = new LinkedHashSet<>();
         for (AnnotationInfo ai : list) {
-            TypeName annotationType = DefaultTypeName.createFromTypeName(translate(ai.getName()));
+            TypeName annotationType = TypeNameDefault.createFromTypeName(translate(ai.getName()));
             AnnotationParameterValueList values = ai.getParameterValues();
             if (values == null || values.isEmpty()) {
-                result.add(DefaultAnnotationAndValue.create(annotationType));
+                result.add(AnnotationAndValueDefault.create(annotationType));
             } else if (values.size() > 1) {
                 Map<String, String> strVals = extractValues(values);
-                result.add(DefaultAnnotationAndValue.create(annotationType, strVals));
+                result.add(AnnotationAndValueDefault.create(annotationType, strVals));
             } else {
                 Object value = values.get(0).getValue();
                 String strValue = (value != null) ? String.valueOf(value) : null;
                 AnnotationAndValue annotationAndValue = (strValue == null)
-                        ? DefaultAnnotationAndValue.create(annotationType)
-                        : DefaultAnnotationAndValue.create(annotationType, strValue);
+                        ? AnnotationAndValueDefault.create(annotationType)
+                        : AnnotationAndValueDefault.create(annotationType, strValue);
                 result.add(annotationAndValue);
             }
         }

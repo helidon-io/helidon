@@ -43,10 +43,10 @@ import io.helidon.builder.processor.spi.TypeAndBody;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -69,7 +69,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     static final String DEFAULT_LIST_TYPE = Builder.DEFAULT_LIST_TYPE.getName();
     static final String DEFAULT_MAP_TYPE = Builder.DEFAULT_MAP_TYPE.getName();
     static final String DEFAULT_SET_TYPE = Builder.DEFAULT_SET_TYPE.getName();
-    static final TypeName BUILDER_ANNO_TYPE_NAME = DefaultTypeName.create(Builder.class);
+    static final TypeName BUILDER_ANNO_TYPE_NAME = TypeNameDefault.create(Builder.class);
     static final boolean SUPPORT_STREAMS_ON_IMPL = false;
     static final boolean SUPPORT_STREAMS_ON_BUILDER = true;
 
@@ -163,7 +163,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         String toPackageName = toPackageName(typeName.packageName(), builderAnnotation);
         String prefix = toAbstractImplTypePrefix(builderAnnotation);
         String suffix = toAbstractImplTypeSuffix(builderAnnotation);
-        return DefaultTypeName.create(toPackageName, prefix + typeName.className() + suffix);
+        return TypeNameDefault.create(toPackageName, prefix + typeName.className() + suffix);
     }
 
     /**
@@ -178,7 +178,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         String toPackageName = toPackageName(typeName.packageName(), builderAnnotation);
         String prefix = toImplTypePrefix(builderAnnotation);
         String suffix = toImplTypeSuffix(builderAnnotation);
-        return DefaultTypeName.create(toPackageName, prefix + typeName.className() + suffix);
+        return TypeNameDefault.create(toPackageName, prefix + typeName.className() + suffix);
     }
 
     /**
@@ -844,7 +844,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      * @return the (singular) name of the element
      */
     protected static String nameOf(TypedElementName elem) {
-        return DefaultAnnotationAndValue.findFirst(Singular.class.getName(), elem.annotations())
+        return AnnotationAndValueDefault.findFirst(Singular.class.getName(), elem.annotations())
                 .flatMap(AnnotationAndValue::value)
                 .filter(BuilderTypeTools::hasNonBlankValue)
                 .orElseGet(elem::elementName);
@@ -1069,7 +1069,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             }
         }
 
-        TypeName searchFor = DefaultTypeName.create(annoType);
+        TypeName searchFor = TypeNameDefault.create(annoType);
         for (AnnotationAndValue anno : method.annotations()) {
             if (anno.typeName().equals(searchFor)) {
                 Optional<String> val = anno.value();
@@ -1773,7 +1773,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     private String mapOf(String attrName,
                          TypedElementName method,
                          AtomicBoolean needsCustomMapOf) {
-        Optional<? extends AnnotationAndValue> configuredOptions = DefaultAnnotationAndValue
+        Optional<? extends AnnotationAndValue> configuredOptions = AnnotationAndValueDefault
                 .findFirst(ConfiguredOption.class.getName(), method.annotations());
 
         TypeName typeName = method.typeName();

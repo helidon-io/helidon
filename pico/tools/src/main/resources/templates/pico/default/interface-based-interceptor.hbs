@@ -22,9 +22,9 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
-import io.helidon.common.types.DefaultTypedElementName;
+import io.helidon.common.types.AnnotationAndValueDefault;
+import io.helidon.common.types.TypeNameDefault;
+import io.helidon.common.types.TypedElementNameDefault;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.api.InvocationContextDefault;
@@ -38,7 +38,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-import static io.helidon.common.types.DefaultTypeName.create;
+import static io.helidon.common.types.TypeNameDefault.create;
 import static io.helidon.pico.runtime.Invocation.createInvokeAndSupply;
 import static io.helidon.pico.runtime.Invocation.mergeAndCollapse;
 
@@ -55,11 +55,11 @@ public class {{className}} /* extends {{parent}} */ implements {{interfaces}} {
     private static final List<AnnotationAndValue> __serviceLevelAnnotations = List.of({{#servicelevelannotations}}
             {{{.}}}{{#unless @last}},{{/unless}}{{/servicelevelannotations}});
 {{#interceptedmethoddecls}}
-    private static final TypedElementName __{{id}} = DefaultTypedElementName.builder()
+    private static final TypedElementName __{{id}} = TypedElementNameDefault.builder()
             {{{.}}}
             .build();{{/interceptedmethoddecls}}
 
-    private static final TypeName __serviceTypeName = DefaultTypeName.create({{parent}}.class);
+    private static final TypeName __serviceTypeName = TypeNameDefault.create({{parent}}.class);
 
     private final Provider<{{parent}}> __provider;
     private final ServiceProvider<{{parent}}> __sp;

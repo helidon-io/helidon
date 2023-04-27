@@ -51,9 +51,9 @@ import javax.tools.JavaFileObject;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.Contract;
 import io.helidon.pico.api.ExternalContracts;
 import io.helidon.pico.api.InjectionPointInfo;
@@ -169,7 +169,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             if (!roundEnv.processingOver()) {
                 for (String annoType : annoTypes()) {
                     // annotation may not be on the classpath, in such a case just ignore it
-                    TypeName annoName = DefaultTypeName.createFromTypeName(annoType);
+                    TypeName annoName = TypeNameDefault.createFromTypeName(annoType);
                     Optional<TypeElement> annoTypeElement = toTypeElement(annoName);
                     if (annoTypeElement.isPresent()) {
                         Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoTypeElement.get());
@@ -708,7 +708,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             TypeName teContractName = createTypeNameFromElement(teContract).orElseThrow();
             result.add(teContractName);
             if (isProviderType(teContractName.name())) {
-                result.add(DefaultTypeName.createFromTypeName(TypeNames.JAKARTA_PROVIDER));
+                result.add(TypeNameDefault.createFromTypeName(TypeNames.JAKARTA_PROVIDER));
             }
             providerForSet.add(gTypeName);
         }
@@ -762,12 +762,12 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                                                                       teContract.getAnnotationMirrors()).orElse(null);
             if (externalContracts != null) {
                 Collection<AnnotationAndValue> annotations = createAnnotationAndValueSet(teContract);
-                Optional<? extends AnnotationAndValue> annotation = DefaultAnnotationAndValue
+                Optional<? extends AnnotationAndValue> annotation = AnnotationAndValueDefault
                         .findFirst(ExternalContracts.class.getName(), annotations);
                 List<String> values = (annotation.isPresent() && annotation.get().value().isPresent())
                         ? toList(annotation.get().value().get()) : List.of();
                 for (String externalContract : values) {
-                    result.add(DefaultTypeName.createFromTypeName(externalContract));
+                    result.add(TypeNameDefault.createFromTypeName(externalContract));
                 }
                 Map<String, String> map = extractValues(externalContracts, processingEnv.getElementUtils());
                 String moduleNames = map.get("moduleNames");

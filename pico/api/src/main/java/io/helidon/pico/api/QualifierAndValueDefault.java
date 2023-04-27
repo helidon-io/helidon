@@ -21,15 +21,15 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 
 /**
  * Describes a {@link jakarta.inject.Qualifier} type annotation associated with a service being provided or dependant upon.
  * In Pico these are generally determined at compile time to avoid any use of reflection at runtime.
  */
-public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
+public class QualifierAndValueDefault extends AnnotationAndValueDefault
         implements QualifierAndValue, Comparable<AnnotationAndValue> {
 
     /**
@@ -38,7 +38,7 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
      * @param b the builder
      * @see #builder()
      */
-    protected DefaultQualifierAndValue(Builder b) {
+    protected QualifierAndValueDefault(Builder b) {
         super(b);
     }
 
@@ -48,7 +48,7 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
      * @param name the name
      * @return named qualifier
      */
-    public static DefaultQualifierAndValue createNamed(String name) {
+    public static QualifierAndValueDefault createNamed(String name) {
         Objects.requireNonNull(name);
         return builder().typeName(CommonQualifiers.NAMED).value(name).build();
     }
@@ -59,9 +59,9 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
      * @param qualifierType the qualifier type
      * @return qualifier
      */
-    public static DefaultQualifierAndValue create(Class<? extends Annotation> qualifierType) {
+    public static QualifierAndValueDefault create(Class<? extends Annotation> qualifierType) {
         Objects.requireNonNull(qualifierType);
-        return builder().typeName(DefaultTypeName.create(qualifierType)).build();
+        return builder().typeName(TypeNameDefault.create(qualifierType)).build();
     }
 
     /**
@@ -71,9 +71,9 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
      * @param val           the value
      * @return qualifier
      */
-    public static DefaultQualifierAndValue create(Class<? extends Annotation> qualifierType, String val) {
+    public static QualifierAndValueDefault create(Class<? extends Annotation> qualifierType, String val) {
         Objects.requireNonNull(qualifierType);
-        return builder().typeName(DefaultTypeName.create(qualifierType)).value(val).build();
+        return builder().typeName(TypeNameDefault.create(qualifierType)).value(val).build();
     }
 
     /**
@@ -83,9 +83,9 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
      * @param val               the value
      * @return qualifier
      */
-    public static DefaultQualifierAndValue create(String qualifierTypeName, String val) {
+    public static QualifierAndValueDefault create(String qualifierTypeName, String val) {
         return builder()
-                .typeName(DefaultTypeName.createFromTypeName(qualifierTypeName))
+                .typeName(TypeNameDefault.createFromTypeName(qualifierTypeName))
                 .value(val)
                 .build();
     }
@@ -97,7 +97,7 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
      * @param val           the value
      * @return qualifier
      */
-    public static DefaultQualifierAndValue create(TypeName qualifierType, String val) {
+    public static QualifierAndValueDefault create(TypeName qualifierType, String val) {
         return builder()
                 .typeName(qualifierType)
                 .value(val)
@@ -111,7 +111,7 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
      * @param vals           the values
      * @return qualifier
      */
-    public static DefaultQualifierAndValue create(TypeName qualifierType, Map<String, String> vals) {
+    public static QualifierAndValueDefault create(TypeName qualifierType, Map<String, String> vals) {
         return builder()
                 .typeName(qualifierType)
                 .values(vals)
@@ -155,7 +155,7 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
     /**
      * The fluent builder.
      */
-    public static class Builder extends DefaultAnnotationAndValue.Builder {
+    public static class Builder extends AnnotationAndValueDefault.Builder {
         /**
          * Fluent builder constructor.
          */
@@ -192,8 +192,8 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
          * @return the built instance
          */
         @Override
-        public DefaultQualifierAndValue build() {
-            return new DefaultQualifierAndValue(this);
+        public QualifierAndValueDefault build() {
+            return new QualifierAndValueDefault(this);
         }
     }
 

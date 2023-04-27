@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.GenericTemplateCreatorRequest;
@@ -57,7 +57,7 @@ public class HttpEndpointCreator implements CustomAnnotationTemplateCreator {
         }
 
         String classname = enclosingType.typeName().className() + "_GeneratedService";
-        TypeName generatedTypeName = DefaultTypeName.create(enclosingType.typeName().packageName(), classname);
+        TypeName generatedTypeName = TypeNameDefault.create(enclosingType.typeName().packageName(), classname);
 
         String template = Templates.loadTemplate("nima", "http-endpoint.java.hbs");
         GenericTemplateCreatorRequest genericCreatorRequest = GenericTemplateCreatorRequestDefault.builder()

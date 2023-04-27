@@ -35,8 +35,8 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
@@ -610,7 +610,7 @@ public interface ModuleInfoDescriptor {
         line = cleanLine(result.toString());
         if (line.startsWith("import ")) {
             String[] split = line.split("\\s+");
-            TypeName typeName = DefaultTypeName.createFromTypeName(split[split.length - 1]);
+            TypeName typeName = TypeNameDefault.createFromTypeName(split[split.length - 1]);
             importAliases.put(typeName.className(), typeName);
             line = cleanLine(reader, preComments, importAliases);
         }

@@ -37,9 +37,9 @@ import javax.lang.model.util.Elements;
 
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.tools.AbstractFilerMessager;
@@ -84,7 +84,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             try {
                 Set<String> annoTypes = creator.annoTypes();
                 annoTypes.forEach(annoType -> {
-                    PRODUCERS_BY_ANNOTATION.compute(DefaultTypeName.createFromTypeName(annoType), (k, v) -> {
+                    PRODUCERS_BY_ANNOTATION.compute(TypeNameDefault.createFromTypeName(annoType), (k, v) -> {
                         if (v == null) {
                             v = new LinkedHashSet<>();
                         }
@@ -115,7 +115,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         try {
             if (!roundEnv.processingOver()) {
                 for (String annoType : annoTypes()) {
-                    TypeName annoName = DefaultTypeName.createFromTypeName(annoType);
+                    TypeName annoName = TypeNameDefault.createFromTypeName(annoType);
                     Optional<TypeElement> annoElement = toTypeElement(annoName);
                     if (annoElement.isEmpty()) {
                         continue;
@@ -208,7 +208,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             CustomAnnotationTemplateResponse res = producer.create(req).orElse(null);
             if (res != null && req.isFilerEnabled() && !res.generatedSourceCode().isEmpty()) {
                 res.generatedSourceCode().entrySet().forEach(entry -> {
-                    DefaultTypeName.ensureIsFQN(entry.getKey());
+                    TypeNameDefault.ensureIsFQN(entry.getKey());
                     if (!hasValue(entry.getValue())) {
                         throw new ToolsException("expected to have valid code for: " + req + " for " + entry);
                     }

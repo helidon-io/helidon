@@ -19,7 +19,7 @@ package io.helidon.pico.tests.pico.stacking;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.config.Config;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceProvider;
@@ -70,7 +70,7 @@ class InterceptorStackingTest {
 
         List<String> injections = allIntercepted.stream().map(sp -> {
             Intercepted inner = sp.get().getInner();
-            return DefaultTypeName.createFromTypeName(sp.serviceInfo().serviceTypeName()).className() + " injected with "
+            return TypeNameDefault.createFromTypeName(sp.serviceInfo().serviceTypeName()).className() + " injected with "
                     + (inner == null ? null : inner.getClass().getSimpleName());
         }).collect(Collectors.toList());
         // order matters here

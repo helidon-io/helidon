@@ -19,7 +19,7 @@ package io.helidon.pico.tools;
 import java.util.Collections;
 import java.util.List;
 
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.testsubjects.HelloPicoWorldImpl;
 
@@ -58,7 +58,7 @@ class ActivatorCreatorDefaultTest extends AbstractBaseCreator {
         CodeGenFiler filer = CodeGenFiler.create(directFiler);
         ActivatorCreatorCodeGenDefault codeGen = ActivatorCreatorCodeGenDefault.builder().build();
         ActivatorCreatorRequest req = ActivatorCreatorRequestDefault.builder()
-                .serviceTypeNames(List.of(DefaultTypeName.create(HelloPicoWorldImpl.class)))
+                .serviceTypeNames(List.of(TypeNameDefault.create(HelloPicoWorldImpl.class)))
                 .codeGen(codeGen)
                 .codeGenPaths(codeGenPaths)
                 .configOptions(ActivatorCreatorConfigOptionsDefault.builder().build())
@@ -69,7 +69,7 @@ class ActivatorCreatorDefaultTest extends AbstractBaseCreator {
         assertEquals("Failed in create", te.getMessage());
 
         ActivatorCreatorRequest req2 = ActivatorCreatorRequestDefault.builder()
-                .serviceTypeNames(Collections.singletonList(DefaultTypeName.create(HelloPicoWorldImpl.class)))
+                .serviceTypeNames(Collections.singletonList(TypeNameDefault.create(HelloPicoWorldImpl.class)))
                 .codeGenPaths(CodeGenPathsDefault.builder().build())
                 .throwIfError(Boolean.FALSE)
                 .codeGen(codeGen)

@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.pico.api.Interceptor;
@@ -46,12 +46,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.pico.api.DefaultQualifierAndValue.create;
-import static io.helidon.pico.api.DefaultQualifierAndValue.createNamed;
 import static io.helidon.pico.api.PicoServicesConfig.KEY_PERMITS_DYNAMIC;
 import static io.helidon.pico.api.PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS;
 import static io.helidon.pico.api.PicoServicesConfig.KEY_USES_COMPILE_TIME_MODULES;
 import static io.helidon.pico.api.PicoServicesConfig.NAME;
+import static io.helidon.pico.api.QualifierAndValueDefault.create;
+import static io.helidon.pico.api.QualifierAndValueDefault.createNamed;
 import static io.helidon.pico.testing.PicoTestingSupport.basicTestableConfig;
 import static io.helidon.pico.testing.PicoTestingSupport.bind;
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
@@ -90,7 +90,7 @@ class InterceptorRuntimeTest {
 
     @Test
     void createNoArgBasedInterceptorSource() throws Exception {
-        TypeName interceptorTypeName = DefaultTypeName.create(XImpl$$Pico$$Interceptor.class);
+        TypeName interceptorTypeName = TypeNameDefault.create(XImpl$$Pico$$Interceptor.class);
         String path = toFilePath(interceptorTypeName);
         File file = new File("./target/generated-sources/annotations", path);
         assertThat(file.exists(), is(true));
@@ -102,7 +102,7 @@ class InterceptorRuntimeTest {
     @Disabled // will be handled in https://github.com/helidon-io/helidon/issues/6542
     @Test
     void createInterfaceBasedInterceptorSource() throws Exception {
-        TypeName interceptorTypeName = DefaultTypeName.create(YImpl$$Pico$$Interceptor.class);
+        TypeName interceptorTypeName = TypeNameDefault.create(YImpl$$Pico$$Interceptor.class);
         String path = toFilePath(interceptorTypeName);
         File file = new File("./target/generated-sources/annotations", path);
         assertThat(file.exists(), is(true));

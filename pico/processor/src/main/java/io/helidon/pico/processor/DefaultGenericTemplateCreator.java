@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponseDefault;
@@ -63,7 +63,7 @@ class DefaultGenericTemplateCreator implements GenericTemplateCreator {
     @Override
     public Optional<CustomAnnotationTemplateResponse> create(GenericTemplateCreatorRequest req) {
         Objects.requireNonNull(req);
-        if (!DefaultTypeName.isFQN(req.generatedTypeName())) {
+        if (!TypeNameDefault.isFQN(req.generatedTypeName())) {
             messager.debug("skipping custom template production for: " + req.generatedTypeName() + " = " + req);
             return Optional.empty();
         }

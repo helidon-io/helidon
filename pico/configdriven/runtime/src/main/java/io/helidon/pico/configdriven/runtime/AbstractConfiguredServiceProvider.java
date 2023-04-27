@@ -44,7 +44,6 @@ import io.helidon.pico.api.CallingContext;
 import io.helidon.pico.api.CallingContextFactory;
 import io.helidon.pico.api.ContextualServiceQuery;
 import io.helidon.pico.api.ContextualServiceQueryDefault;
-import io.helidon.pico.api.DefaultQualifierAndValue;
 import io.helidon.pico.api.Event;
 import io.helidon.pico.api.InjectionException;
 import io.helidon.pico.api.InjectionPointInfo;
@@ -54,6 +53,7 @@ import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServiceProviderException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.api.ServiceInfoCriteriaDefault;
@@ -82,7 +82,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                    ServiceProviderProvider,
                    InjectionPointProvider<T>,
                    InjectionResolver {
-    private static final QualifierAndValue EMPTY_CONFIGURED_BY = DefaultQualifierAndValue.create(ConfiguredBy.class);
+    private static final QualifierAndValue EMPTY_CONFIGURED_BY = QualifierAndValueDefault.create(ConfiguredBy.class);
     private static final CBInstanceComparator BEAN_INSTANCE_ID_COMPARATOR = new CBInstanceComparator();
     private static final System.Logger LOGGER = System.getLogger(AbstractConfiguredServiceProvider.class.getName());
     private static final LazyValue<BindableConfigBeanRegistry> CONFIG_BEAN_REGISTRY
@@ -370,7 +370,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                                                      boolean thisAlreadyMatches) {
         if (isRootProvider()) {
             Set<QualifierAndValue> qualifiers = criteria.qualifiers();
-            Optional<? extends AnnotationAndValue> configuredByQualifier = DefaultQualifierAndValue
+            Optional<? extends AnnotationAndValue> configuredByQualifier = QualifierAndValueDefault
                     .findFirst(EMPTY_CONFIGURED_BY.typeName().name(), qualifiers);
             boolean hasValue = configuredByQualifier.isPresent()
                     && hasValue(configuredByQualifier.get().value().orElse(null));
@@ -799,7 +799,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         assert (instance != this);
 
         ServiceInfoDefault newServiceInfo = ServiceInfoDefault.toBuilder(instance.serviceInfo())
-                .addQualifier(DefaultQualifierAndValue.createNamed(instanceId))
+                .addQualifier(QualifierAndValueDefault.createNamed(instanceId))
                 .build();
 
         // override our service info

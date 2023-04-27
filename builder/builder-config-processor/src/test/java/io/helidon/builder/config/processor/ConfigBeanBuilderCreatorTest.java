@@ -24,13 +24,13 @@ import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
 import io.helidon.builder.config.ConfigBean;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeInfo;
-import io.helidon.common.types.DefaultTypeName;
-import io.helidon.common.types.DefaultTypedElementName;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeInfoDefault;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementNameDefault;
 
 import org.junit.jupiter.api.Test;
 
@@ -53,13 +53,13 @@ class ConfigBeanBuilderCreatorTest {
 
     @Test
     void preValidateConfigBeansMustBeInterfaces() {
-        TypeName implTypeName = DefaultTypeName.create(getClass());
-        TypeInfo typeInfo = DefaultTypeInfo.builder()
+        TypeName implTypeName = TypeNameDefault.create(getClass());
+        TypeInfo typeInfo = TypeInfoDefault.builder()
                 .typeKind(TypeInfo.KIND_CLASS)
-                .typeName(DefaultTypeName.create(getClass()))
+                .typeName(TypeNameDefault.create(getClass()))
                 .build();
-        DefaultAnnotationAndValue configBeanAnno = DefaultAnnotationAndValue.builder()
-                .typeName(DefaultTypeName.create(ConfigBean.class))
+        AnnotationAndValueDefault configBeanAnno = AnnotationAndValueDefault.builder()
+                .typeName(TypeNameDefault.create(ConfigBean.class))
                 .values(Map.of(
                         ConfigBeanInfo.TAG_LEVEL_TYPE, ConfigBean.LevelType.ROOT.name(),
                         ConfigBeanInfo.TAG_DRIVES_ACTIVATION, "true"))
@@ -72,13 +72,13 @@ class ConfigBeanBuilderCreatorTest {
 
     @Test
     void preValidateConfigBeansMustBeRootToDriveActivation() {
-        TypeName implTypeName = DefaultTypeName.create(getClass());
-        TypeInfo typeInfo = DefaultTypeInfo.builder()
+        TypeName implTypeName = TypeNameDefault.create(getClass());
+        TypeInfo typeInfo = TypeInfoDefault.builder()
                 .typeKind(TypeInfo.KIND_INTERFACE)
-                .typeName(DefaultTypeName.create(getClass()))
+                .typeName(TypeNameDefault.create(getClass()))
                 .build();
-        DefaultAnnotationAndValue configBeanAnno = DefaultAnnotationAndValue.builder()
-                .typeName(DefaultTypeName.create(ConfigBean.class))
+        AnnotationAndValueDefault configBeanAnno = AnnotationAndValueDefault.builder()
+                .typeName(TypeNameDefault.create(ConfigBean.class))
                 .values(Map.of(
                         ConfigBeanInfo.TAG_LEVEL_TYPE, ConfigBean.LevelType.NESTED.name(),
                         ConfigBeanInfo.TAG_DRIVES_ACTIVATION, "true"))
@@ -91,13 +91,13 @@ class ConfigBeanBuilderCreatorTest {
 
     @Test
     void preValidateConfigBeansMustBeRootToHaveDefaults() {
-        TypeName implTypeName = DefaultTypeName.create(getClass());
-        TypeInfo typeInfo = DefaultTypeInfo.builder()
+        TypeName implTypeName = TypeNameDefault.create(getClass());
+        TypeInfo typeInfo = TypeInfoDefault.builder()
                 .typeKind(TypeInfo.KIND_INTERFACE)
-                .typeName(DefaultTypeName.create(getClass()))
+                .typeName(TypeNameDefault.create(getClass()))
                 .build();
-        DefaultAnnotationAndValue configBeanAnno = DefaultAnnotationAndValue.builder()
-                .typeName(DefaultTypeName.create(ConfigBean.class))
+        AnnotationAndValueDefault configBeanAnno = AnnotationAndValueDefault.builder()
+                .typeName(TypeNameDefault.create(ConfigBean.class))
                 .values(Map.of(
                         ConfigBeanInfo.TAG_LEVEL_TYPE, ConfigBean.LevelType.NESTED.name(),
                         ConfigBeanInfo.TAG_DRIVES_ACTIVATION, "false",
@@ -111,23 +111,23 @@ class ConfigBeanBuilderCreatorTest {
 
     @Test
     void preValidateConfigBeansMustNotHaveDuplicateSingularNames() {
-        TypedElementName method1 = DefaultTypedElementName.builder()
+        TypedElementName method1 = TypedElementNameDefault.builder()
                 .elementName("socket")
                 .typeName(String.class)
                 .build();
-        TypedElementName method2 = DefaultTypedElementName.builder()
+        TypedElementName method2 = TypedElementNameDefault.builder()
                 .elementName("socketSet")
                 .typeName(String.class)
-                .addAnnotation(DefaultAnnotationAndValue.create(Singular.class, "socket"))
+                .addAnnotation(AnnotationAndValueDefault.create(Singular.class, "socket"))
                 .build();
-        TypeName implTypeName = DefaultTypeName.create(getClass());
-        TypeInfo typeInfo = DefaultTypeInfo.builder()
+        TypeName implTypeName = TypeNameDefault.create(getClass());
+        TypeInfo typeInfo = TypeInfoDefault.builder()
                 .typeKind(TypeInfo.KIND_INTERFACE)
-                .typeName(DefaultTypeName.create(getClass()))
+                .typeName(TypeNameDefault.create(getClass()))
                 .elementInfo(Set.of(method1, method2))
                 .build();
-        DefaultAnnotationAndValue configBeanAnno = DefaultAnnotationAndValue.builder()
-                .typeName(DefaultTypeName.create(ConfigBean.class))
+        AnnotationAndValueDefault configBeanAnno = AnnotationAndValueDefault.builder()
+                .typeName(TypeNameDefault.create(ConfigBean.class))
                 .values(Map.of(
                         ConfigBeanInfo.TAG_LEVEL_TYPE, ConfigBean.LevelType.NESTED.name(),
                         ConfigBeanInfo.TAG_DRIVES_ACTIVATION, "false",
@@ -141,23 +141,23 @@ class ConfigBeanBuilderCreatorTest {
 
     @Test
     void preValidateConfigBeansMustHaveMapTypesWithNestedConfigBeans() {
-        TypedElementName method1 = DefaultTypedElementName.builder()
+        TypedElementName method1 = TypedElementNameDefault.builder()
                 .elementName("socket")
-                .typeName(DefaultTypeName.builder()
+                .typeName(TypeNameDefault.builder()
                                   .type(Map.class)
                                   .typeArguments(List.of(
-                                          DefaultTypeName.create(String.class),
-                                          DefaultTypeName.create(String.class)))
+                                          TypeNameDefault.create(String.class),
+                                          TypeNameDefault.create(String.class)))
                                   .build())
                 .build();
-        TypeName implTypeName = DefaultTypeName.create(getClass());
-        TypeInfo typeInfo = DefaultTypeInfo.builder()
+        TypeName implTypeName = TypeNameDefault.create(getClass());
+        TypeInfo typeInfo = TypeInfoDefault.builder()
                 .typeKind(TypeInfo.KIND_INTERFACE)
-                .typeName(DefaultTypeName.create(getClass()))
+                .typeName(TypeNameDefault.create(getClass()))
                 .elementInfo(Set.of(method1))
                 .build();
-        DefaultAnnotationAndValue configBeanAnno = DefaultAnnotationAndValue.builder()
-                .typeName(DefaultTypeName.create(ConfigBean.class))
+        AnnotationAndValueDefault configBeanAnno = AnnotationAndValueDefault.builder()
+                .typeName(TypeNameDefault.create(ConfigBean.class))
                 .values(Map.of(
                         ConfigBeanInfo.TAG_LEVEL_TYPE, ConfigBean.LevelType.NESTED.name(),
                         ConfigBeanInfo.TAG_DRIVES_ACTIVATION, "false",
@@ -172,32 +172,32 @@ class ConfigBeanBuilderCreatorTest {
         creator.preValidate(implTypeName, typeInfo, configBeanAnno);
 
         // now we will validate the exceptions when ConfigBeans are attempted to be embedded
-        TypedElementName method2 = DefaultTypedElementName.builder()
+        TypedElementName method2 = TypedElementNameDefault.builder()
                 .elementName("unsupported1")
-                .typeName(DefaultTypeName.builder()
+                .typeName(TypeNameDefault.builder()
                                   .type(Map.class)
                                   // here we register a known config bean value (see below)
                                   .typeArguments(List.of(
-                                          DefaultTypeName.create(String.class),
-                                          DefaultTypeName.create(getClass())))
+                                          TypeNameDefault.create(String.class),
+                                          TypeNameDefault.create(getClass())))
                                   .build())
                 .build();
-        TypedElementName method3 = DefaultTypedElementName.builder()
+        TypedElementName method3 = TypedElementNameDefault.builder()
                 .elementName("unsupported2")
-                .typeName(DefaultTypeName.builder()
+                .typeName(TypeNameDefault.builder()
                                   .type(Map.class)
                         // here we will just leave it generic, and this should fail
 //                                  .typeArguments(List.of(
-//                                          DefaultTypeName.create(String.class),
-//                                          DefaultTypeName.create(getClass())))
+//                                          TypeNameDefault.create(String.class),
+//                                          TypeNameDefault.create(getClass())))
                                   .build())
                 .build();
-        TypeInfo typeInfo2 = DefaultTypeInfo.builder()
+        TypeInfo typeInfo2 = TypeInfoDefault.builder()
                 .typeKind(TypeInfo.KIND_INTERFACE)
-                .typeName(DefaultTypeName.create(getClass()))
+                .typeName(TypeNameDefault.create(getClass()))
                 .elementInfo(List.of(method2, method3))
-                .referencedTypeNamesToAnnotations(Map.of(DefaultTypeName.create(getClass()),
-                                                         List.of(DefaultAnnotationAndValue.create(Builder.class))))
+                .referencedTypeNamesToAnnotations(Map.of(TypeNameDefault.create(getClass()),
+                                                         List.of(AnnotationAndValueDefault.create(Builder.class))))
                 .build();
         IllegalStateException e = assertThrows(IllegalStateException.class,
                                                () -> creator.preValidate(implTypeName, typeInfo2, configBeanAnno));

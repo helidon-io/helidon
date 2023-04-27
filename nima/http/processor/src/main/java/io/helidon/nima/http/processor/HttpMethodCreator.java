@@ -26,9 +26,9 @@ import java.util.Set;
 import javax.lang.model.element.ElementKind;
 
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
@@ -87,7 +87,7 @@ public class HttpMethodCreator implements CustomAnnotationTemplateCreator {
         String classname = enclosingType.typeName().className() + "_"
                 + request.annoTypeName().className() + "_"
                 + request.targetElement().elementName();
-        TypeName generatedTypeName = DefaultTypeName.create(enclosingType.typeName().packageName(), classname);
+        TypeName generatedTypeName = TypeNameDefault.create(enclosingType.typeName().packageName(), classname);
 
         GenericTemplateCreator genericTemplateCreator = request.genericTemplateCreator();
         GenericTemplateCreatorRequest genericCreatorRequest = GenericTemplateCreatorRequestDefault.builder()

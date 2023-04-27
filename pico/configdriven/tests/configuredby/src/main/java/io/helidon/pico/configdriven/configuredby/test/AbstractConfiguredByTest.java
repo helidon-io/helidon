@@ -25,11 +25,11 @@ import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.pico.api.DefaultQualifierAndValue;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServiceProviderException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
@@ -122,7 +122,7 @@ public abstract class AbstractConfiguredByTest {
     //    @Test
     void testRegistry() {
         ServiceInfoCriteriaDefault criteria = ServiceInfoCriteriaDefault.builder()
-                .addQualifier(DefaultQualifierAndValue.create(ConfiguredBy.class))
+                .addQualifier(QualifierAndValueDefault.create(ConfiguredBy.class))
                 .build();
         List<ServiceProvider<?>> list = services.lookupAll(criteria);
         List<String> desc = list.stream()
@@ -157,7 +157,7 @@ public abstract class AbstractConfiguredByTest {
 
         criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(FakeTlsWSNotDrivenByCB.class.getName())
-                .addQualifier(DefaultQualifierAndValue.createNamed("*"))
+                .addQualifier(QualifierAndValueDefault.createNamed("*"))
                 .build();
         list = services.lookupAll(criteria);
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
@@ -171,7 +171,7 @@ public abstract class AbstractConfiguredByTest {
 
         criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(ASingletonService.class.getName())
-                .addQualifier(DefaultQualifierAndValue.createNamed("jane"))
+                .addQualifier(QualifierAndValueDefault.createNamed("jane"))
                 .build();
         list = services.lookupAll(criteria);
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());

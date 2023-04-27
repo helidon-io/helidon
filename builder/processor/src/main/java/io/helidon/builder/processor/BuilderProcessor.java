@@ -46,9 +46,9 @@ import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weights;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 
 /**
  * The processor for handling any annotation having a {@link io.helidon.builder.BuilderTrigger}.
@@ -167,7 +167,7 @@ public class BuilderProcessor extends AbstractProcessor {
             return;
         }
 
-        Set<BuilderCreatorProvider> creators = getProducersForType(DefaultTypeName.create(annoType));
+        Set<BuilderCreatorProvider> creators = getProducersForType(TypeNameDefault.create(annoType));
         Optional<List<TypeAndBody>> result = creators.stream()
                 .map(it -> it.create(typeInfo.get(), builderAnno))
                 .filter(it -> !it.isEmpty())
@@ -204,7 +204,7 @@ public class BuilderProcessor extends AbstractProcessor {
                     .asList();
             producers.forEach(producer -> {
                 producer.supportedAnnotationTypes().forEach(annoType -> {
-                    PRODUCERS_BY_ANNOTATION.computeIfAbsent(DefaultTypeName.create(annoType), it -> new LinkedHashSet<>())
+                    PRODUCERS_BY_ANNOTATION.computeIfAbsent(TypeNameDefault.create(annoType), it -> new LinkedHashSet<>())
                             .add(producer);
                 });
             });

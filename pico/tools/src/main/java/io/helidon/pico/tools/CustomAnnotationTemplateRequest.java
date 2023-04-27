@@ -17,9 +17,6 @@
 package io.helidon.pico.tools;
 
 import java.util.List;
-import java.util.Optional;
-
-import javax.lang.model.element.Element;
 
 import io.helidon.builder.Builder;
 import io.helidon.common.types.TypeInfo;

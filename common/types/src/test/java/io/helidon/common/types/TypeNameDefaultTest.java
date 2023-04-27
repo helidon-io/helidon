@@ -29,16 +29,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static io.helidon.common.types.DefaultTypeName.builder;
-import static io.helidon.common.types.DefaultTypeName.create;
-import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
+import static io.helidon.common.types.TypeNameDefault.builder;
+import static io.helidon.common.types.TypeNameDefault.create;
+import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThan;
 
-class DefaultTypeNameTest {
+class TypeNameDefaultTest {
 
     @Test
     void testNameFromString() {
@@ -198,9 +198,9 @@ class DefaultTypeNameTest {
 
     @Test
     void typeArguments() {
-        DefaultTypeName typeName = DefaultTypeName.create(List.class)
+        TypeNameDefault typeName = TypeNameDefault.create(List.class)
                 .toBuilder()
-                .typeArguments(Collections.singletonList(DefaultTypeName.create(String.class)))
+                .typeArguments(Collections.singletonList(TypeNameDefault.create(String.class)))
                 .build();
         assertThat(typeName.fqName(),
                    is("java.util.List<java.lang.String>"));
@@ -209,7 +209,7 @@ class DefaultTypeNameTest {
         assertThat(typeName.name(),
                    is("java.util.List"));
 
-        typeName = DefaultTypeName.createFromTypeName("? extends pkg.Something");
+        typeName = TypeNameDefault.createFromTypeName("? extends pkg.Something");
         assertThat(typeName.wildcard(), is(true));
         assertThat(typeName.fqName(),
                    is("? extends pkg.Something"));
@@ -222,7 +222,7 @@ class DefaultTypeNameTest {
         assertThat(typeName.className(),
                    is("Something"));
 
-        typeName = DefaultTypeName.createFromTypeName("?");
+        typeName = TypeNameDefault.createFromTypeName("?");
         assertThat(typeName.wildcard(), is(true));
         assertThat(typeName.fqName(),
                    is("?"));
@@ -235,9 +235,9 @@ class DefaultTypeNameTest {
         assertThat(typeName.className(),
                    is(Object.class.getSimpleName()));
 
-        typeName = DefaultTypeName.create(List.class)
+        typeName = TypeNameDefault.create(List.class)
                 .toBuilder()
-                .typeArguments(Collections.singletonList(DefaultTypeName.createFromTypeName("? extends pkg.Something")))
+                .typeArguments(Collections.singletonList(TypeNameDefault.createFromTypeName("? extends pkg.Something")))
                 .build();
         assertThat(typeName.fqName(),
                    is("java.util.List<? extends pkg.Something>"));
@@ -253,23 +253,23 @@ class DefaultTypeNameTest {
         List<Optional<char[]>> list = new ArrayList<>();
         List<Optional<char[]>>[] arrayOfLists = new List[] {};
 
-        assertThat(DefaultTypeName.create(char.class).declaredName(), equalTo("char"));
-        assertThat(DefaultTypeName.create(char[].class).declaredName(), equalTo("char[]"));
-        assertThat(DefaultTypeName.create(list.getClass()).declaredName(), equalTo("java.util.ArrayList"));
-        assertThat(DefaultTypeName.create(arrayOfLists.getClass()).declaredName(), equalTo("java.util.List[]"));
-        assertThat(DefaultTypeName.create(List[].class).declaredName(), equalTo("java.util.List[]"));
+        assertThat(TypeNameDefault.create(char.class).declaredName(), equalTo("char"));
+        assertThat(TypeNameDefault.create(char[].class).declaredName(), equalTo("char[]"));
+        assertThat(TypeNameDefault.create(list.getClass()).declaredName(), equalTo("java.util.ArrayList"));
+        assertThat(TypeNameDefault.create(arrayOfLists.getClass()).declaredName(), equalTo("java.util.List[]"));
+        assertThat(TypeNameDefault.create(List[].class).declaredName(), equalTo("java.util.List[]"));
     }
 
     @Test
     void genericDecl() {
-        DefaultTypeName genericTypeName = DefaultTypeName.createFromGenericDeclaration("CB");
+        TypeNameDefault genericTypeName = TypeNameDefault.createFromGenericDeclaration("CB");
         assertThat(genericTypeName.name(), equalTo("CB"));
         assertThat(genericTypeName.fqName(), equalTo("CB"));
         assertThat(genericTypeName.toString(), equalTo("CB"));
         assertThat(genericTypeName.generic(), is(true));
         assertThat(genericTypeName.wildcard(), is(false));
 
-        DefaultTypeName typeName = DefaultTypeName.builder()
+        TypeNameDefault typeName = TypeNameDefault.builder()
                 .packageName(Optional.class.getPackageName())
                 .className(Optional.class.getSimpleName())
                 .typeArguments(Collections.singletonList(genericTypeName))
@@ -279,8 +279,8 @@ class DefaultTypeNameTest {
         assertThat(typeName.toString(), equalTo("java.util.Optional<CB>"));
 
         List<TypeName> typeArguments =
-                List.of(DefaultTypeName.createFromGenericDeclaration("K"), genericTypeName);
-        typeName = DefaultTypeName.builder()
+                List.of(TypeNameDefault.createFromGenericDeclaration("K"), genericTypeName);
+        typeName = TypeNameDefault.builder()
                 .packageName(Map.class.getPackageName())
                 .className(Map.class.getSimpleName())
                 .typeArguments(typeArguments)
@@ -290,7 +290,7 @@ class DefaultTypeNameTest {
         assertThat(typeName.toString(), equalTo(typeName.fqName()));
 
         // note: in the future was can always add getBoundedTypeName()
-        genericTypeName = DefaultTypeName.createFromGenericDeclaration("CB extends MyClass");
+        genericTypeName = TypeNameDefault.createFromGenericDeclaration("CB extends MyClass");
         assertThat(genericTypeName.name(), equalTo("CB extends MyClass"));
         assertThat(genericTypeName.fqName(), equalTo("CB extends MyClass"));
         assertThat(genericTypeName.toString(), equalTo(genericTypeName.fqName()));
@@ -300,7 +300,7 @@ class DefaultTypeNameTest {
 
     @Test
     void builderOfType() {
-        TypeName primitiveTypeName = DefaultTypeName.builder().type(boolean[].class).build();
+        TypeName primitiveTypeName = TypeNameDefault.builder().type(boolean[].class).build();
         assertThat(primitiveTypeName.name(), equalTo("boolean"));
         assertThat(primitiveTypeName.fqName(), equalTo("boolean[]"));
         assertThat(primitiveTypeName.declaredName(), equalTo("boolean[]"));
@@ -310,7 +310,7 @@ class DefaultTypeNameTest {
         assertThat(primitiveTypeName.packageName(), equalTo("java.lang"));
         assertThat(primitiveTypeName.className(), equalTo("boolean"));
 
-        TypeName objTypeName = DefaultTypeName.builder().type(Boolean[].class).build();
+        TypeName objTypeName = TypeNameDefault.builder().type(Boolean[].class).build();
         assertThat(primitiveTypeName.name(), equalTo("boolean"));
         assertThat(primitiveTypeName.fqName(), equalTo("boolean[]"));
         assertThat(primitiveTypeName.declaredName(), equalTo("boolean[]"));
@@ -323,7 +323,7 @@ class DefaultTypeNameTest {
 
     @Test
     void extendsTypeName() {
-        TypeName extendsName = DefaultTypeName.createExtendsTypeName(create(Map.class));
+        TypeName extendsName = TypeNameDefault.createExtendsTypeName(create(Map.class));
         assertThat(extendsName.fqName(), equalTo("? extends java.util.Map"));
         assertThat(extendsName.declaredName(), equalTo("java.util.Map"));
         assertThat(extendsName.name(), equalTo("java.util.Map"));
@@ -331,31 +331,31 @@ class DefaultTypeNameTest {
 
     @Test
     void testDefaultMethods() {
-        TypeName typeName = DefaultTypeName.create(Optional.class);
+        TypeName typeName = TypeNameDefault.create(Optional.class);
         assertThat("isOptional() for: " + typeName.name(), typeName.isOptional(), is(true));
         assertThat("isList() for: " + typeName.name(), typeName.isList(), is(false));
         assertThat("isMap() for: " + typeName.name(), typeName.isMap(), is(false));
         assertThat("isSet() for: " + typeName.name(), typeName.isSet(), is(false));
 
-        typeName = DefaultTypeName.create(Set.class);
+        typeName = TypeNameDefault.create(Set.class);
         assertThat("isOptional() for: " + typeName.name(), typeName.isOptional(), is(false));
         assertThat("isList() for: " + typeName.name(), typeName.isList(), is(false));
         assertThat("isMap() for: " + typeName.name(), typeName.isMap(), is(false));
         assertThat("isSet() for: " + typeName.name(), typeName.isSet(), is(true));
 
-        typeName = DefaultTypeName.create(List.class);
+        typeName = TypeNameDefault.create(List.class);
         assertThat("isOptional() for: " + typeName.name(), typeName.isOptional(), is(false));
         assertThat("isList() for: " + typeName.name(), typeName.isList(), is(true));
         assertThat("isMap() for: " + typeName.name(), typeName.isMap(), is(false));
         assertThat("isSet() for: " + typeName.name(), typeName.isSet(), is(false));
 
-        typeName = DefaultTypeName.create(Map.class);
+        typeName = TypeNameDefault.create(Map.class);
         assertThat("isOptional() for: " + typeName.name(), typeName.isOptional(), is(false));
         assertThat("isList() for: " + typeName.name(), typeName.isList(), is(false));
         assertThat("isMap() for: " + typeName.name(), typeName.isMap(), is(true));
         assertThat("isSet() for: " + typeName.name(), typeName.isSet(), is(false));
 
-        typeName = DefaultTypeName.create(String.class);
+        typeName = TypeNameDefault.create(String.class);
         assertThat("isOptional() for: " + typeName.name(), typeName.isOptional(), is(false));
         assertThat("isList() for: " + typeName.name(), typeName.isList(), is(false));
         assertThat("isMap() for: " + typeName.name(), typeName.isMap(), is(false));
@@ -392,32 +392,32 @@ class DefaultTypeNameTest {
 
     private static Stream<EqualsData> equalsAndCompareSource() {
         return Stream.of(
-                new EqualsData(create(DefaultTypeNameTest.class), create(DefaultTypeNameTest.class), true),
-                new EqualsData(create(DefaultTypeNameTest.class),
-                               builder().type(DefaultTypeNameTest.class).array(true).build(),
+                new EqualsData(create(TypeNameDefaultTest.class), create(TypeNameDefaultTest.class), true),
+                new EqualsData(create(TypeNameDefaultTest.class),
+                               builder().type(TypeNameDefaultTest.class).array(true).build(),
                                false),
-                new EqualsData(create(DefaultTypeNameTest.class),
-                               builder().type(DefaultTypeNameTest.class).primitive(true).build(),
+                new EqualsData(create(TypeNameDefaultTest.class),
+                               builder().type(TypeNameDefaultTest.class).primitive(true).build(),
                                false),
-                new EqualsData(create(DefaultTypeNameTest.class),
-                               builder().type(DefaultTypeNameTest.class).primitive(true).array(true).build(),
+                new EqualsData(create(TypeNameDefaultTest.class),
+                               builder().type(TypeNameDefaultTest.class).primitive(true).array(true).build(),
                                false),
-                new EqualsData(builder().type(DefaultTypeNameTest.class).array(true).build(),
-                               builder().type(DefaultTypeNameTest.class).array(true).build(),
+                new EqualsData(builder().type(TypeNameDefaultTest.class).array(true).build(),
+                               builder().type(TypeNameDefaultTest.class).array(true).build(),
                                true),
-                new EqualsData(builder().type(DefaultTypeNameTest.class).array(true).build(),
-                               builder().type(DefaultTypeNameTest.class).array(true).primitive(true).build(),
+                new EqualsData(builder().type(TypeNameDefaultTest.class).array(true).build(),
+                               builder().type(TypeNameDefaultTest.class).array(true).primitive(true).build(),
                                false),
-                new EqualsData(builder().type(DefaultTypeNameTest.class).primitive(true).build(),
-                               builder().type(DefaultTypeNameTest.class).primitive(true).build(),
+                new EqualsData(builder().type(TypeNameDefaultTest.class).primitive(true).build(),
+                               builder().type(TypeNameDefaultTest.class).primitive(true).build(),
                                true),
-                new EqualsData(builder().type(DefaultTypeNameTest.class).primitive(true).build(),
-                               builder().type(DefaultTypeNameTest.class).array(true).primitive(true).build(),
+                new EqualsData(builder().type(TypeNameDefaultTest.class).primitive(true).build(),
+                               builder().type(TypeNameDefaultTest.class).array(true).primitive(true).build(),
                                false),
                 new EqualsData(create(long.class),
                                builder().className("long").primitive(false).build(),
                                false),
-                new EqualsData(create(DefaultTypeNameTest.class), "Some string", false, false)
+                new EqualsData(create(TypeNameDefaultTest.class), "Some string", false, false)
                 );
     }
 
