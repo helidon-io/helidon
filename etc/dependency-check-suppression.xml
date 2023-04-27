@@ -71,26 +71,6 @@
    <cve>CVE-2023-28867</cve>
 </suppress>
 
-<!-- False Postive. This CVE is against the kafka server. This is the kafka client
--->
-<suppress>
-   <notes><![CDATA[
-   file name: kafka-clients-2.8.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
-   <cve>CVE-2022-34917</cve>
-</suppress>
-
-<!-- False Positive. CVE-2023-25194 is against Kafka Connect, not the client -->
-<!-- See https://github.com/jeremylong/DependencyCheck/issues/5469 -->
-<suppress>
-   <notes><![CDATA[
-   file name: kafka-clients-2.8.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
-   <cve>CVE-2023-25194</cve>
-</suppress>
-
 <!-- False Positive. This CVE is against H2 1.x.
 -->
 <suppress>
