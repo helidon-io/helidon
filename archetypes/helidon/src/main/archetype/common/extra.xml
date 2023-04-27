@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -57,6 +57,10 @@
                                     <value key="groupId">io.helidon.microprofile</value>
                                     <value key="artifactId">helidon-microprofile-fault-tolerance</value>
                                 </map>
+                                <map>
+                                    <value key="groupId">io.helidon.webclient</value>
+                                    <value key="artifactId">helidon-webclient</value>
+                                </map>
                             </list>
                             <list key="Main-helidon-imports">
                                 <value>io.helidon.common.http.Http</value>
@@ -96,10 +100,28 @@
                                     <value key="groupId">io.helidon.microprofile</value>
                                     <value key="artifactId">helidon-microprofile-cors</value>
                                 </map>
+                                <map if="${flavor} == 'mp'">
+                                    <value key="groupId">io.helidon.webclient</value>
+                                    <value key="artifactId">helidon-webclient</value>
+                                </map>
+                                <map if="${flavor} == 'mp'">
+                                    <value key="groupId">io.helidon.webclient</value>
+                                    <value key="artifactId">helidon-webclient</value>
+                                </map>
+                                <map if="${flavor} == 'mp'">
+                                    <value key="groupId">io.helidon.microprofile.metrics</value>
+                                    <value key="artifactId">helidon-microprofile-metrics</value>
+                                </map>
                                 <map if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.webserver</value>
                                     <value key="artifactId">helidon-webserver-cors</value>
                                 </map>
+                            </list>
+                            <list key="FileServiceTest-annotations" if="${media} contains 'multipart'">
+                                <value>@AddExtension(CorsCdiExtension.class)</value>
+                            </list>
+                            <list key="FileServiceTest-helidon-imports" if="${media} contains 'multipart'">
+                                <value>io.helidon.microprofile.cors.CorsCdiExtension</value>
                             </list>
                             <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">
                                 <value>io.helidon.microprofile.cors.CrossOrigin</value>

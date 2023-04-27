@@ -517,6 +517,9 @@ curl -s -X GET http://localhost:8080/health
                                     <list key="readme-sections">
                                         <value file="/common/files/README.jaeger.md"/>
                                     </list>
+                                    <list key="test-config-properties">
+                                        <value>tracing.global=false</value>
+                                    </list>
                                 </model>
                             </output>
                         </option>
