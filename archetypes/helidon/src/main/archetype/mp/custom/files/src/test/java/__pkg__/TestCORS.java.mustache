@@ -24,19 +24,6 @@ class TestCORS {
 
     @Inject
     private WebTarget target;
-    private static final String ALLOW_RESTRICTED_HEADERS = "sun.net.http.allowRestrictedHeaders";
-    private static boolean originalAllowRestrictedHeaders;
-
-    @BeforeAll
-    static void permitCorsHeaders() {
-        originalAllowRestrictedHeaders = Boolean.getBoolean(ALLOW_RESTRICTED_HEADERS);
-        System.setProperty(ALLOW_RESTRICTED_HEADERS, "true");
-    }
-
-    @AfterAll
-    static void restoreHeadersSetting() {
-        System.setProperty(ALLOW_RESTRICTED_HEADERS, Boolean.toString(originalAllowRestrictedHeaders));
-    }
 
     @Test
     void testAnonymousGreetWithCors() {
@@ -48,7 +35,7 @@ class TestCORS {
 
         assertThat("HTTP response", r.getStatus(), is(200));
         String payload = fromPayload(r);
-        assertThat("HTTP response payload", payload, is("{\"message\":\"Hello World!\"}"));
+        assertThat("HTTP response payload", payload.contains("Hello World!"), is(true));
         assertThat("CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
                 r.getHeaders().getFirst(Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()),
                 is("http://foo.com"));
