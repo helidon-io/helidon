@@ -59,6 +59,7 @@ import static io.helidon.common.types.TypeNameDefault.toBuilder;
 /**
  * Processor for @{@link io.helidon.pico.configdriven.api.ConfiguredBy} type annotations.
  */
+// NOTE: Scheduled for destruction
 public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     private final System.Logger logger = System.getLogger(getClass().getName());
     private final LinkedHashSet<Element> elementsProcessed = new LinkedHashSet<>();

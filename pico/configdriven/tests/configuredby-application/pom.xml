@@ -98,7 +98,7 @@
                 <configuration>
                     <compilerArgs>
                         <arg>-Apico.debug=${pico.debug}</arg>
-                        <arg>-Apico.autoAddNonContractInterfaces=true</arg>
+<!--                        <arg>-Apico.autoAddNonContractInterfaces=true</arg>-->
                         <arg>-Apico.application.pre.create=true</arg>
                         <arg>-Apico.mapApplicationToSingletonScope=true</arg>
                     </compilerArgs>

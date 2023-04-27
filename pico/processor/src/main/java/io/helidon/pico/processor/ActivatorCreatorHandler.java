@@ -41,6 +41,9 @@ import io.helidon.pico.tools.InterceptorCreatorResponse;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 
+/**
+ * Provides wrapping of the {@link ActivatorCreator}}.
+ */
 class ActivatorCreatorHandler implements ActivatorCreator {
     // vvv : note that these will be removed in the future - it is here to compare the "old way" to the "new way"
     private static final Map<String, List<ActivatorCreatorRequest>> HISTORY_OF_CODE_GEN_ACTIVATORS = new LinkedHashMap<>();
@@ -62,6 +65,7 @@ class ActivatorCreatorHandler implements ActivatorCreator {
         this.messager = Objects.requireNonNull(messager);
     }
 
+    // note: overrides ActivatorCreator
     @Override
     public ActivatorCreatorResponse createModuleActivators(ActivatorCreatorRequest request) {
         HISTORY_OF_CODE_GEN_ACTIVATOR_NAMES.add(name);
@@ -74,6 +78,7 @@ class ActivatorCreatorHandler implements ActivatorCreator {
         return ActivatorCreatorProvider.instance().createModuleActivators(request);
     }
 
+    // note: overrides ActivatorCreator
     @Override
     public InterceptorCreatorResponse codegenInterceptors(CodeGenInterceptorRequest request) {
         HISTORY_OF_CODE_GEN_INTERCEPTORS_NAMES.add(name);
@@ -86,6 +91,7 @@ class ActivatorCreatorHandler implements ActivatorCreator {
         return ActivatorCreatorProvider.instance().codegenInterceptors(request);
     }
 
+    // note: overrides ActivatorCreator
     @Override
     public TypeName toActivatorImplTypeName(TypeName activatorTypeName) {
         messager.debug(name + ": toActivatorImplTypeName(" + !simulationMode + "): " + activatorTypeName);

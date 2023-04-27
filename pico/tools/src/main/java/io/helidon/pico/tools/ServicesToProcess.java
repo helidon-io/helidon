@@ -456,6 +456,7 @@ public class ServicesToProcess implements Resettable {
     /**
      * Introduces a new set of dependencies to the model.
      *
+     * @param serviceTypeName the service type name
      * @param dependencies the dependencies
      */
     public void addDependencies(DependenciesInfo dependencies) {

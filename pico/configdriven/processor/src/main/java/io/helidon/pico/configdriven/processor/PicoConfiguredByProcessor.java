@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.processor;
+package io.helidon.pico.configdriven.processor;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
-import javax.lang.model.element.TypeElement;
-
-import io.helidon.pico.tools.TypeNames;
+import io.helidon.pico.configdriven.api.ConfiguredBy;
+import io.helidon.pico.processor.PicoAnnotationProcessor;
 
 /**
- * Handles {@code @Contract} annotations.
+ * Extension to {@link PicoAnnotationProcessor} that will handled {@link io.helidon.pico.configdriven.api.ConfiguredBy} services.
  */
-// NOTE: Scheduled for destruction
-public class ContractAnnotationProcessor extends BaseAnnotationProcessor<Void> {
+// NOTE: This will be renamed to simply ConfiguredByProcessor once the LegacyConfiguredByProcessor is removed
+public class PicoConfiguredByProcessor extends PicoAnnotationProcessor {
 
     /**
      * Service loader based constructor.
@@ -34,18 +34,16 @@ public class ContractAnnotationProcessor extends BaseAnnotationProcessor<Void> {
      * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
     @Deprecated
-    public ContractAnnotationProcessor() {
+    public PicoConfiguredByProcessor() {
     }
 
     @Override
-    public Set<String> annoTypes() {
-        return Set.of(TypeNames.PICO_CONTRACT);
+    protected Set<String> supportedServiceClassTargetAnnotations() {
+        Set<String> supported = new LinkedHashSet<>(super.supportedServiceClassTargetAnnotations());
+        supported.add(ConfiguredBy.class.getName());
+        return supported;
     }
 
-    @Override
-    public void doInner(TypeElement type,
-                        Void ignored) {
-        // NOP (disable base processing)
-    }
+
 
 }

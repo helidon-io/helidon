@@ -103,6 +103,7 @@ import static javax.tools.Diagnostic.Kind;
  *
  * @param <B> the type handled by this anno processor
  */
+// NOTE: Scheduled for destruction
 abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
     private final System.Logger logger = System.getLogger(getClass().getName());
     private final ServicesToProcess services;

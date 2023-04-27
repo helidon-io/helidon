@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,9 +47,11 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.api.Contract;
 import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.ExternalContracts;
 import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.api.RunLevel;
+import io.helidon.pico.runtime.Dependencies;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
@@ -63,6 +64,7 @@ import io.helidon.pico.tools.TypeNames;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Qualifier;
 import jakarta.inject.Singleton;
@@ -71,7 +73,7 @@ import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromMirror;
 import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
-import static io.helidon.pico.processor.GeneralProcessorUtils.*;
+import static io.helidon.pico.processor.GeneralProcessorUtils.findFirst;
 import static io.helidon.pico.processor.GeneralProcessorUtils.hasValue;
 import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElementOf;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
@@ -80,7 +82,7 @@ import static io.helidon.pico.tools.TypeTools.isProviderType;
 import static io.helidon.pico.tools.TypeTools.toAccess;
 
 /**
- * An annotation processor that will find everything needing to be processed related to Pico conde generation.
+ * An annotation processor that will find everything needing to be processed related to core Pico conde generation.
  */
 public class PicoAnnotationProcessor extends AbstractProcessor {
     private static final Set<String> SUPPORTED_SERVICE_CLASS_TARGET_ANNOTATIONS = Set.of(
@@ -102,7 +104,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
             TypeNames.JAVAX_PRE_DESTROY,
             TypeNames.JAVAX_POST_CONSTRUCT);
 
-    private final ConcurrentHashMap<TypeName, TypeInfo> typeInfoToCreateActivatorsForInThisModule = new ConcurrentHashMap<>();
+    private final Map<TypeName, TypeInfo> typeInfoToCreateActivatorsForInThisModule = new LinkedHashMap<>();
     private ActiveProcessorUtils utils;
     private ActivatorCreatorHandler creator;
     private boolean autoAddInterfaces;
@@ -159,7 +161,8 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
                 Map<TypeName, TypeInfo> filtered = interceptorAndValidate(typeInfoToCreateActivatorsForInThisModule);
 
                 // code generate the model
-                doFiler(filtered);
+                ServicesToProcess services = toServicesToProcess(filtered, elementsOfInterest);
+                doFiler(services);
             }
 
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
@@ -206,9 +209,9 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
     /**
      * Code generate these {@link io.helidon.pico.api.Activator}'s ad {@link io.helidon.pico.api.ModuleComponent}'s.
      *
-     * @param typesToCodeGenerate the types to code generate
+     * @param services the services to code generate
      */
-    protected void doFiler(Map<TypeName, TypeInfo> typesToCodeGenerate) {
+    protected void doFiler(ServicesToProcess services) {
 ////        // don't do filer until very end of the round
 ////        boolean isProcessingOver = roundEnv.processingOver();
 //
@@ -223,7 +226,6 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
 ////        }
 ////
 
-        ServicesToProcess services = toServicesToProcess(typesToCodeGenerate);
         ActivatorCreatorCodeGen codeGen = DefaultActivatorCreator.createActivatorCreatorCodeGen(services).orElse(null);
         if (codeGen == null) {
             return;
@@ -245,29 +247,32 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
         }
     }
 
-    private ServicesToProcess toServicesToProcess(Map<TypeName, TypeInfo> typesToCodeGenerate) {
-        // vvv : will need to be replaced with the global services instance (eventually) since the config-driven processor
-        //       additionally adds to the global ServicesToProcess instance
-        ServicesToProcess services = ServicesToProcess.create();
-        // ^^^ : note that these will be removed in the future - it is here to compare the "old way" to the "new way"
-        utils.relayModuleInfoToServicesToProcess(services);
-
-        typesToCodeGenerate.forEach((serviceTypeName, service) -> {
-            utils.debug("processing: " + serviceTypeName);
-            try {
-                process(services, typesToCodeGenerate.keySet(), serviceTypeName, service);
-            } catch (Throwable t) {
-                throw new ToolsException("Error processing: " + serviceTypeName, t);
-            }
-        });
-
-        return services;
+    /**
+     * Provides a means for anyone to validate and intercept the collection of types to process.
+     *
+     * @param typesToCreateActivatorsFor the types to process (where key is the proposed generated name)
+     * @return the (possibly revised) map of types to process
+     */
+    protected Map<TypeName, TypeInfo> interceptorAndValidate(Map<TypeName, TypeInfo> typesToCreateActivatorsFor) {
+        return Objects.requireNonNull(typesToCreateActivatorsFor);
     }
 
-    private void process(ServicesToProcess services,
-                         Set<TypeName> serviceTypeNamesToCodeGenerate,
-                         TypeName serviceTypeName,
-                         TypeInfo service) {
+    /**
+     * Called to process a single service that will eventually be code generated. The default implementation will take the
+     * provided service {@link TypeInfo} and translate that into the {@link ServicesToProcess} instance. Eventually, the
+     * {@link ServicesToProcess} instance will be fed as request inputs to one or more of the creators (e.g.,
+     * {@link io.helidon.pico.tools.spi.ActivatorCreator}, {@link io.helidon.pico.tools.spi.InterceptorCreator}, etc.).
+     *
+     * @param services                          the services to process builder
+     * @param service                           the service type info to process right now
+     * @param serviceTypeNamesToCodeGenerate    the entire set of types that are planned to be code-generated
+     * @param allElementsOfInterest             all of the elements of interest that pico "knows" about
+     */
+    protected void process(ServicesToProcess services,
+                           TypeInfo service,
+                           Set<TypeName> serviceTypeNamesToCodeGenerate,
+                           List<TypedElementName> allElementsOfInterest) {
+        TypeName serviceTypeName = service.typeName();
         TypeInfo superTypeInfo = service.superTypeInfo().orElse(null);
         if (superTypeInfo != null) {
             TypeName superTypeName = superTypeInfo.typeName();
@@ -279,6 +284,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
         toScopeNames(service).forEach(it -> services.addScopeTypeName(serviceTypeName, it));
         toPostConstructMethod(service).ifPresent(it -> services.addPostConstructMethod(serviceTypeName, it));
         toPreDestroyMethod(service).ifPresent(it -> services.addPreDestroyMethod(serviceTypeName, it));
+        toInjectionDependencies(service, allElementsOfInterest).ifPresent(it -> services.addDependencies(serviceTypeName, it));
         services.addAccessLevel(serviceTypeName,
                                 toAccess(service.modifierNames()));
         services.addIsAbstract(serviceTypeName,
@@ -288,6 +294,26 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
         services.addQualifiers(serviceTypeName,
                                toQualifiers(service));
         gatherContractsIntoServicesToProcess(services, serviceTypeName, service, serviceTypeNamesToCodeGenerate);
+    }
+
+    private ServicesToProcess toServicesToProcess(Map<TypeName, TypeInfo> typesToCodeGenerate,
+                                                  List<TypedElementName> allElementsOfInterest) {
+        // vvv : will need to be replaced with the global services instance (eventually) since the config-driven processor
+        //       additionally adds to the global ServicesToProcess instance
+        ServicesToProcess services = ServicesToProcess.create();
+        // ^^^ : note that these will be removed in the future - it is here to compare the "old way" to the "new way"
+        utils.relayModuleInfoToServicesToProcess(services);
+
+        typesToCodeGenerate.forEach((serviceTypeName, service) -> {
+            utils.debug("processing: " + serviceTypeName);
+            try {
+                process(services, service, typesToCodeGenerate.keySet(), allElementsOfInterest);
+            } catch (Throwable t) {
+                throw new ToolsException("Error processing: " + serviceTypeName, t);
+            }
+        });
+
+        return services;
     }
 
     private void gatherContractsIntoServicesToProcess(ServicesToProcess services,
@@ -542,6 +568,34 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
         return result;
     }
 
+    private Optional<DependenciesInfo> toInjectionDependencies(TypeInfo service,
+                                                               List<TypedElementName> allElementsOfInterest) {
+        Dependencies.BuilderContinuation builder = Dependencies.builder(service.typeName().name());
+        gatherInjectionPoints(builder, service, allElementsOfInterest);
+        return Optional.of(builder.build());
+    }
+
+    private void gatherInjectionPoints(Dependencies.BuilderContinuation builder,
+                                       TypeInfo service,
+                                       List<TypedElementName> allElementsOfInterest) {
+        List<TypedElementName> injectableElementsForThisService = allElementsOfInterest.stream()
+                .filter(it -> it.enclosingTypeName().orElseThrow().equals(service.typeName()))
+                .filter(it -> {
+                    Optional<? extends AnnotationAndValue> anno = findFirst(Inject.class, it.annotations());
+                    return anno.isPresent();
+                }).toList();
+        if (!injectableElementsForThisService.isEmpty()) {
+            injectableElementsForThisService.forEach(it -> {
+                System.out.println("it: " + it);
+
+                // TO
+            });
+        }
+
+        // recursive up the hierarchy
+        service.superTypeInfo().ifPresent(it -> gatherInjectionPoints(builder, it, allElementsOfInterest));
+    }
+
     private void gatherElementsOfInterestInThisModule(List<TypedElementName> result) {
         Elements elementUtils = processingEnv.getElementUtils();
         for (String annoType : supportedElementTargetAnnotations()) {
@@ -575,6 +629,8 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
         // this section gathers based upon the element-level annotations in order to discover what to process
         Set<TypeName> enclosingElementsOfInterest = elementsOfInterest.stream()
                 .map(TypedElementName::enclosingTypeName)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toSet());
         enclosingElementsOfInterest.removeAll(result.keySet());
         enclosingElementsOfInterest.forEach(it -> {
@@ -594,6 +650,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
             Elements elementUtils = processingEnv.getElementUtils();
             Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(elementUtils.getTypeElement(typeName.name()));
             Map<TypeName, List<AnnotationAndValue>> referencedAnnotations = toReferencedTypeNamesToAnnotations(annotations);
+            List<TypedElementName> elements = toElementsOfInterestEnclosedInThisType(typeName, elementsOfInterest);
 
             List<TypeName> allTypeNames = new ArrayList<>();
             allTypeNames.add(typeName);
@@ -605,7 +662,20 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
                     .annotations(annotations)
                     .referencedTypeNamesToAnnotations(referencedAnnotations)
                     .modifierNames(toModifierNames(element.getModifiers()))
-                    .elementInfo(toElementsOfInterestEnclosedInThisType(typeName, elementsOfInterest));
+                    .elementInfo(elements);
+
+            // add all of the element's and parameters to the references annotation set
+            elements.forEach(it -> {
+                List<AnnotationAndValue> annos = it.annotations();
+                Map<TypeName, List<AnnotationAndValue>> resolved = toReferencedTypeNamesToAnnotations(annos);
+                resolved.forEach(builder::addReferencedTypeNamesToAnnotations);
+
+                it.parameterArguments().forEach(arg -> {
+                    List<AnnotationAndValue> argAnnos = arg.annotations();
+                    Map<TypeName, List<AnnotationAndValue>> resolvedArgAnnos = toReferencedTypeNamesToAnnotations(argAnnos);
+                    resolvedArgAnnos.forEach(builder::addReferencedTypeNamesToAnnotations);
+                });
+            });
 
             TypeName superType = createTypeNameFromMirror(element.getSuperclass()).orElse(null);
             if (superType != null) {
@@ -655,18 +725,8 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
     private List<TypedElementName> toElementsOfInterestEnclosedInThisType(TypeName typeName,
                                                                           List<TypedElementName> allElementsOfInterest) {
         return allElementsOfInterest.stream()
-                .filter(it -> typeName.equals(it.enclosingTypeName()))
+                .filter(it -> typeName.equals(it.enclosingTypeName().orElseThrow()))
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Provides a means for anyone to validate and intercept the collection of types to process.
-     *
-     * @param typesToCreateActivatorsFor the types to process (where key is the proposed generated name)
-     * @return the (possibly revised) map of types to process
-     */
-    protected Map<TypeName, TypeInfo> interceptorAndValidate(Map<TypeName, TypeInfo> typesToCreateActivatorsFor) {
-        return Objects.requireNonNull(typesToCreateActivatorsFor);
     }
 
 }

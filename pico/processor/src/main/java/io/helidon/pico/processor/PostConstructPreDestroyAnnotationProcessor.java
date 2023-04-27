@@ -37,6 +37,7 @@ import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
 /**
  * Handling for {@link jakarta.annotation.PostConstruct} and {@link jakarta.annotation.PreDestroy}.
  */
+// NOTE: Scheduled for destruction
 public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     private static final Set<String> SUPPORTED_TARGETS = Set.of(TypeNames.JAKARTA_PRE_DESTROY,

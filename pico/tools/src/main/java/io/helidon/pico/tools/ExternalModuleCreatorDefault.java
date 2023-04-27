@@ -248,7 +248,7 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
         }
 
         DependenciesInfo dependencies = continuation.build();
-        services.addDependencies(dependencies);
+        services.addDependencies(serviceTypeName, dependencies);
     }
 
     private Dependencies.BuilderContinuation continuationProcess(TypeName serviceTypeName,

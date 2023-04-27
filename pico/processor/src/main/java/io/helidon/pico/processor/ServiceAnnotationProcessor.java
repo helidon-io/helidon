@@ -29,6 +29,7 @@ import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElem
 /**
  * Processor for @{@link jakarta.inject.Singleton} type annotations.
  */
+// NOTE: Scheduled for destruction
 public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     private static final Set<String> SUPPORTED_TARGETS = Set.of(
@@ -65,8 +66,7 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         try {
             if (!roundEnv.processingOver()
                     && (servicesToProcess().moduleName() == null)) {
-                ActiveProcessorUtils utils = new ActiveProcessorUtils(this, processingEnv, roundEnv);
-                utils.relayModuleInfoToServicesToProcess(servicesToProcess());
+                utils().relayModuleInfoToServicesToProcess(servicesToProcess());
             }
 
             return super.process(annotations, roundEnv);

@@ -17,10 +17,8 @@
 package io.helidon.pico.processor;
 
 import java.io.File;
-import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,13 +34,10 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ServicesToProcess;
-import io.helidon.pico.tools.TypeTools;
 
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
@@ -150,8 +145,8 @@ final class ActiveProcessorUtils implements Messager {
      * {@code moduleName} is set to the module name if it has a qualified module name, and not from an internal java module system
      * type.
      *
-     * @param type          the type element to analyze
-     * @param moduleName    the module name to populate if it is determinable
+     * @param type       the type element to analyze
+     * @param moduleName the module name to populate if it is determinable
      * @return true if the type is defined in this module, false otherwise
      */
     boolean isTypeInThisModule(TypeElement type,
@@ -190,9 +185,9 @@ final class ActiveProcessorUtils implements Messager {
     /**
      * Attempts to load the {@link ModuleInfoDescriptor} for the (src or test) module being processed.
      *
-     * @param typeSuffix        this function will populate this with an empty string for src and "test" for test
-     * @param moduleInfoFile    this function will populate this with the file path to the module-info source file
-     * @param srcPath           this function will populate this with the source path
+     * @param typeSuffix     this function will populate this with an empty string for src and "test" for test
+     * @param moduleInfoFile this function will populate this with the file path to the module-info source file
+     * @param srcPath        this function will populate this with the source path
      * @return the module info descriptor if the module being processed has one available
      */
     // note: Atomic here is merely a convenience as a pass-by-reference holder, no async is actually needed here
@@ -235,6 +230,18 @@ final class ActiveProcessorUtils implements Messager {
         if (moduleInfoFile.get() != null) {
             servicesToProcess.lastKnownModuleInfoFilePath(moduleInfoFile.get().toPath());
         }
+    }
+
+    System.Logger.Level loggerLevel() {
+        return (Options.isOptionEnabled(Options.TAG_DEBUG)) ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
+    }
+
+    RoundEnvironment roundEnv() {
+        return roundEnv;
+    }
+
+    void roundEnv(RoundEnvironment roundEnv) {
+        this.roundEnv = roundEnv;
     }
 
     // note: Atomic here is merely a convenience as a pass-by-reference holder, no async is actually needed here
@@ -296,18 +303,6 @@ final class ActiveProcessorUtils implements Messager {
         }
 
         return Optional.empty();
-    }
-
-    System.Logger.Level loggerLevel() {
-        return (Options.isOptionEnabled(Options.TAG_DEBUG)) ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
-    }
-
-    RoundEnvironment roundEnv() {
-        return roundEnv;
-    }
-
-    void roundEnv(RoundEnvironment roundEnv) {
-        this.roundEnv = roundEnv;
     }
 
 }
