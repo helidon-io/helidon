@@ -133,13 +133,13 @@ class NoOpTracer implements Tracer {
         }
 
         @Override
-        public io.helidon.tracing.Scope activate() {
+        public Scope activate() {
             return SCOPE;
         }
 
         @Override
-        public io.helidon.tracing.Span baggage(String key, String value) {
-            return null;
+        public Span baggage(String key, String value) {
+            return this;
         }
 
         @Override
