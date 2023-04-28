@@ -710,7 +710,9 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             if (isProviderType(teContractName.name())) {
                 result.add(TypeNameDefault.createFromTypeName(TypeNames.JAKARTA_PROVIDER));
             }
-            providerForSet.add(gTypeName);
+            if (!gTypeName.generic()) {
+                providerForSet.add(gTypeName);
+            }
         }
 
         if (!result.isEmpty()) {
