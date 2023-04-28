@@ -106,7 +106,7 @@ class OpenTelemetrySpan implements Span {
                 .build()
                 .storeInContext(getContext())
                 .makeCurrent();
-        return (io.helidon.tracing.Span) delegate;
+        return this;
     }
 
     @Override
@@ -118,8 +118,8 @@ class OpenTelemetrySpan implements Span {
     // Check if OTEL Context is already available in Global Helidon Context.
     // If not – use Current context.
     private static Context getContext() {
-        return Contexts.globalContext().get(Context.class)
-                .map(Context.class::cast)
+        return Contexts.context()
+                .flatMap(ctx -> ctx.get(Context.class))
                 .orElseGet(Context::current);
     }
 
