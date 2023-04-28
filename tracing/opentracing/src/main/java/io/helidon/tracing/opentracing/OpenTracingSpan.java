@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.tracing.opentracing;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
@@ -38,18 +40,21 @@ class OpenTracingSpan implements Span {
 
 
     @Override
-    public void tag(String key, String value) {
+    public Span tag(String key, String value) {
         delegate.setTag(key, value);
+        return this;
     }
 
     @Override
-    public void tag(String key, Boolean value) {
+    public Span tag(String key, Boolean value) {
         delegate.setTag(key, value);
+        return this;
     }
 
     @Override
-    public void tag(String key, Number value) {
+    public Span tag(String key, Number value) {
         delegate.setTag(key, value);
+        return this;
     }
 
     @Override
@@ -89,6 +94,22 @@ class OpenTracingSpan implements Span {
     @Override
     public Scope activate() {
         return new OpenTracingScope(tracer.activateSpan(delegate));
+    }
+
+    @Override
+    public Span baggage(String key, String value) {
+        Objects.requireNonNull(key, "Baggage Key cannot be null");
+        Objects.requireNonNull(value, "Baggage Value cannot be null");
+
+        delegate.setBaggageItem(key, value);
+        return this;
+    }
+
+    @Override
+    public Optional<String> baggage(String key) {
+        Objects.requireNonNull(key, "Baggage Key cannot be null");
+
+        return Optional.ofNullable(delegate.getBaggageItem(key));
     }
 
     @Override

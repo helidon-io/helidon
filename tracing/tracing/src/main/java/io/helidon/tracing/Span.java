@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,11 @@ public interface Span {
      * Add a tag to this span.
      *
      * @param tag tag to add
+     * @return current span
      */
-    default void tag(Tag<?> tag) {
+    default Span tag(Tag<?> tag) {
         tag.apply(this);
+        return this;
     }
 
     /**
@@ -53,24 +55,27 @@ public interface Span {
      *
      * @param key   tag key
      * @param value tag value
+     * @return current span
      */
-    void tag(String key, String value);
+    Span tag(String key, String value);
 
     /**
      * Add a boolean tag.
      *
      * @param key   tag key
      * @param value tag value
+     * @return current span
      */
-    void tag(String key, Boolean value);
+    Span tag(String key, Boolean value);
 
     /**
      * Add a numeric tag.
      *
      * @param key   tag key
      * @param value tag value
+     * @return current span
      */
-    void tag(String key, Number value);
+    Span tag(String key, Number value);
 
     /**
      * Span status, mostly used to configure {@link Status#ERROR}.
@@ -115,6 +120,23 @@ public interface Span {
      * @return current scope
      */
     Scope activate();
+
+    /**
+     * Sets a baggage item in the Span (and its SpanContext) as a key/value pair.
+     *
+     * @param key String Key
+     * @param value String Value
+     * @return current Span instance
+     */
+    Span baggage(String key, String value);
+
+    /**
+     * Get Baggage Item by key.
+     *
+     * @param key String key
+     * @return {@link Optional} of the value of the baggage item
+     */
+    Optional<String> baggage(String key);
 
     /**
      * Add a new event to this span.
