@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import io.helidon.grpc.server.test.EchoServiceGrpc;
 
 import com.oracle.bedrock.runtime.LocalPlatform;
 import com.oracle.bedrock.runtime.network.AvailablePortIterator;
-import io.grpc.Channel;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.GrpcSslContexts;
@@ -41,7 +40,7 @@ import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
-import org.junit.AfterClass;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -86,7 +85,7 @@ public class SslIT {
     // ----- test lifecycle -------------------------------------------------
 
     @BeforeAll
-    public static void setup() throws Exception {
+    public static void setup() {
         LogConfig.configureRuntime();
 
         AvailablePortIterator ports = LocalPlatform.get().getAvailablePorts();
@@ -100,7 +99,7 @@ public class SslIT {
         grpcServer_2WaySSLConfig = startGrpcServer(port2WaySSLConfig, true/*mutual*/, true /*useConfig*/);
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanup() throws Exception
     {
         CompletableFuture<?>[] futures =
@@ -120,7 +119,7 @@ public class SslIT {
         // client do not have to provide certs for 1way ssl
         SslContext sslContext = clientSslContext(tlsCaCert, null, null);
 
-        Channel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_1WaySSL.port())
+        ManagedChannel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_1WaySSL.port())
                 .negotiationType(NegotiationType.TLS)
                 .sslContext(sslContext)
                 .build();
@@ -129,7 +128,7 @@ public class SslIT {
         Echo.EchoResponse response = EchoServiceGrpc.newBlockingStub(channel).echo(Echo.EchoRequest.newBuilder().setMessage("foo").build());
         assertThat(response.getMessage(), is("foo"));
 
-        ((ManagedChannel) channel).shutdown().awaitTermination(5, TimeUnit.SECONDS);
+        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 
     @Test
@@ -137,7 +136,7 @@ public class SslIT {
         // client do not have to provide certs for 1way ssl
         SslContext sslContext = clientSslContext(null, null, null);
 
-        Channel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_1WaySSL.port())
+        ManagedChannel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_1WaySSL.port())
                 .negotiationType(NegotiationType.TLS)
                 .sslContext(sslContext)
                 .build();
@@ -146,7 +145,7 @@ public class SslIT {
         Assertions.assertThrows(StatusRuntimeException.class,
                                 ()->EchoServiceGrpc.newBlockingStub(channel).echo(Echo.EchoRequest.newBuilder().setMessage("foo").build()));
 
-        ((ManagedChannel) channel).shutdown().awaitTermination(5, TimeUnit.SECONDS);
+        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 
     @Test
@@ -157,7 +156,7 @@ public class SslIT {
 
         SslContext sslContext = clientSslContext(tlsCaCert, tlsClientCert, tlsClientKey);
 
-        Channel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_2WaySSL.port())
+        ManagedChannel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_2WaySSL.port())
                     .negotiationType(NegotiationType.TLS)
                     .sslContext(sslContext)
                     .build();
@@ -166,7 +165,7 @@ public class SslIT {
         Echo.EchoResponse response = EchoServiceGrpc.newBlockingStub(channel).echo(Echo.EchoRequest.newBuilder().setMessage("foo").build());
         assertThat(response.getMessage(), is("foo"));
 
-        ((ManagedChannel) channel).shutdown().awaitTermination(5, TimeUnit.SECONDS);
+        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 
     @Test
@@ -175,7 +174,7 @@ public class SslIT {
         Resource tlsClientKey = Resource.create(CLIENT_KEY);
         SslContext sslContext = clientSslContext(null, tlsClientCert, tlsClientKey);
 
-        Channel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_2WaySSL.port())
+        ManagedChannel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_2WaySSL.port())
                 .negotiationType(NegotiationType.TLS)
                 .sslContext(sslContext)
                 .build();
@@ -184,7 +183,7 @@ public class SslIT {
         Assertions.assertThrows(StatusRuntimeException.class,
                                 ()->EchoServiceGrpc.newBlockingStub(channel).echo(Echo.EchoRequest.newBuilder().setMessage("foo").build()));
 
-        ((ManagedChannel) channel).shutdown().awaitTermination(5, TimeUnit.SECONDS);
+        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 
     @Test
@@ -193,7 +192,7 @@ public class SslIT {
         Resource tlsClientKey = Resource.create(CLIENT_KEY);
         SslContext sslContext = clientSslContext(tlsCaCert, null, tlsClientKey);
 
-        Channel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_2WaySSL.port())
+        ManagedChannel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_2WaySSL.port())
                 .negotiationType(NegotiationType.TLS)
                 .sslContext(sslContext)
                 .build();
@@ -202,7 +201,7 @@ public class SslIT {
         Assertions.assertThrows(StatusRuntimeException.class,
                                 ()->EchoServiceGrpc.newBlockingStub(channel).echo(Echo.EchoRequest.newBuilder().setMessage("foo").build()));
 
-        ((ManagedChannel) channel).shutdown().awaitTermination(5, TimeUnit.SECONDS);
+        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 
     @Test
@@ -212,7 +211,7 @@ public class SslIT {
         Resource tlsClientKey = Resource.create(CLIENT_KEY);
         SslContext sslContext = clientSslContext(tlsCaCert, tlsClientCert, tlsClientKey);
 
-        Channel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_2WaySSLConfig.port())
+        ManagedChannel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_2WaySSLConfig.port())
                 .negotiationType(NegotiationType.TLS)
                 .sslContext(sslContext)
                 .build();
@@ -221,7 +220,7 @@ public class SslIT {
         Echo.EchoResponse response = EchoServiceGrpc.newBlockingStub(channel).echo(Echo.EchoRequest.newBuilder().setMessage("foo").build());
         assertThat(response.getMessage(), is("foo"));
 
-        ((ManagedChannel) channel).shutdown().awaitTermination(5, TimeUnit.SECONDS);
+        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 
     @Test
@@ -230,7 +229,7 @@ public class SslIT {
         Resource tlsClientKey = Resource.create(CLIENT_KEY);
         SslContext sslContext = clientSslContext(tlsCaCert, null, tlsClientKey);
 
-        Channel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_2WaySSLConfig.port())
+        ManagedChannel channel = NettyChannelBuilder.forAddress("localhost", grpcServer_2WaySSLConfig.port())
                 .negotiationType(NegotiationType.TLS)
                 .sslContext(sslContext)
                 .build();
@@ -239,7 +238,7 @@ public class SslIT {
         Assertions.assertThrows(StatusRuntimeException.class,
                                 ()->EchoServiceGrpc.newBlockingStub(channel).echo(Echo.EchoRequest.newBuilder().setMessage("foo").build()));
 
-        ((ManagedChannel) channel).shutdown().awaitTermination(5, TimeUnit.SECONDS);
+        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 
     // ----- helper methods -------------------------------------------------
@@ -260,10 +259,8 @@ public class SslIT {
 
     /**
      * Start the gRPC Server listening on the specified nPort.
-     *
-     * @throws Exception in case of an error
      */
-    private static GrpcServer startGrpcServer(int nPort, boolean mutual, boolean useConfig ) throws Exception {
+    private static GrpcServer startGrpcServer(int nPort, boolean mutual, boolean useConfig ) {
         Resource tlsCert = Resource.create(SERVER_CERT);
         Resource tlsKey = Resource.create(SERVER_KEY);
         Resource tlsCaCert = Resource.create(CA_CERT);
