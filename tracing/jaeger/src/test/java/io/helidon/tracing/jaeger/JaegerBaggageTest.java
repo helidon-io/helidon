@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.tracing.opentelemetery;
+package io.helidon.tracing.jaeger;
 
 import java.util.Optional;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
@@ -32,18 +34,18 @@ import static org.hamcrest.core.IsEqual.equalTo;
 /**
  * Test if baggage is handled correctly.
  */
-class BaggageTest {
+class JaegerBaggageTest {
 
-    private final Tracer tracer = TracerBuilder.create("test-service").registerGlobal(false).build();
+    private final Tracer tracer = TracerBuilder.create("test-baggage-service").registerGlobal(false).build();
 
     @Test
     void testBaggage(){
         Span span = tracer.spanBuilder("test-span").start();
         Span spanWithBaggage = span.baggage("key", "value");
         Optional<String> result = spanWithBaggage.baggage("key");
-        span.end();
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), equalTo("value"));
+
     }
 
     @Test
