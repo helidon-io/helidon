@@ -31,28 +31,30 @@
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
 
-
+//the purpose of this article is to introduce Helidon Builder and provide some high-level information about how and why its used. The examples and eventual Builder guide will provide the detailed steps. 
 
 
 == Overview
 
-Helidon Builder is an annotation processor that code-generates fluent builder support just by adding `@Builder` to your declared Java types. This declarative style of using annotations helps you by reducing the amount of boilerplate code you need to write. 
+Helidon Builder is an annotation processor that code-generates fluent builder support just by adding `@Builder` to your declared Java types. This declarative style of using annotations helps you by reducing the amount of boilerplate [redundant?] code you need to write. 
 
 Specifically, Helidon Builder offers a rich set of capabilities, including:
 
-* Extensibility. Helidon Builder is designed to be customized and extended in order to integrate directly with the Helidon Configuration system.  
+* Extensibility:  Helidon Builder is designed to be customized and extended in order to integrate directly with the Helidon Configuration system.  
 
-* Visitor Pattern. Helidon Builder allows every attribute in the @Builder-annotated target type to be visited for your general use.
+* Visitor Pattern: Helidon Builder allows every attribute in the @Builder-annotated target type to be visited for your general use.
 
-* Validation. Having the visitor pattern available allows some convenient mix-in behaviors, one of which is checking for required attributes that must be set as part of the build() method of your target. By default, all non-Optional attributes are considered to be required attributes. Helidon Builder provides validation out of the box in the generated implementation classes.
+* Validation: Having the visitor pattern available allows some convenient mix-in behaviors, one of which is checking for required attributes that must be set as part of the build() method of your target. By default, all non-Optional attributes are considered to be required attributes. Helidon Builder provides validation out of the box in the generated implementation classes.
 
-* Interception. You can provide other custom semantics during the build() method (similar to validation) for other types of interception or decoration on your target builders.
+* Interception:  You can provide other custom semantics during the build() method (similar to validation) for other types of interception or decoration on your target builders.
 
-* Packaging and usage choice. Helidon Builder can be used as a standalone module in your build today as long as you are using Java 11 or later. When used in a standalone manner in your build, you can use the requireLibraryDependencies() attribute to toggle between supporting libraries (like validation) to be either generated directly into your application, or otherwise have it supplied by Helidon libraries. This gives you an opportunity to use Helidon's tooling in isolation in your project build, even if you don't plan to use Helidon in any other part of your application runtime!
+* Packaging and usage choice: Helidon Builder can be used as a standalone module in your build as long as you are using Java 11 or later. When used in a standalone manner in your build, you can use the `requireLibraryDependencies()` attribute to toggle between supporting libraries (like validation). This allows you to either generate code directly into your application, or have it supplied by Helidon libraries. This gives you an opportunity to use Helidon's tooling in isolation in your project build, even if you don't plan to use Helidon in any other part of your application runtime. 
+
+//Do we want to say you don't plan to use Helidon??? 
 
 == Maven Coordinates
 
-To enable Builder add the following dependencies and annotation processor path to your project's `pom.xml` (see Managing Dependencies).
+To enable Builder, add the following dependencies and annotation processor path to your project's `pom.xml`:
 
 .Builder dependencies
 [source,java]
@@ -94,6 +96,8 @@ To enable Builder add the following dependencies and annotation processor path t
 ----
 
 == Usage
+
+Helidon Builder can be used in the following scenarios:
 
 === Coding and Testing
 
@@ -171,7 +175,9 @@ The Helidon Builder's annotation processor generates source code whenever it pro
 
 == Configuration
 
-Pico Builder Config is a specialization of the builder that extends the builder to support additional integration with Helidon's configuration subsystem. It adds support for the @ConfigBean annotation. When applied to a target interface it will map that interface to configuration via a new toBuilder method generated on the implementation as follows:
+//I wasn't sure how to position Builder Config. It seems like it fits in with Builder but perhaps we want to keep it separate? Also, are we using the term Pico Builder Config or something else?
+
+Pico Builder Config is a specialization of Builder that extends the builder to support additional integration with Helidon's configuration subsystem. It adds support for the `@ConfigBean` annotation. When applied to a target interface it will map that interface to configuration via a new toBuilder method generated on the implementation as follows:
 
 .toBuilder method
 [source,java]
@@ -187,17 +193,17 @@ Pico Builder Config is a specialization of the builder that extends the builder 
         
 ----
 
-There are a few additional caveats to understand about ConfigBean and its supporting infrastructure.
+There are a few additional points to understand about ConfigBean and its supporting infrastructure:
 
     * `@Builder` can be used in conjunction with `@ConfigBean`. All attributed will be honored exception one...
-    * Builder.requireLibraryDependencies is not supported. All generated configuration beans and builders will minimally require a compile-time and runtime dependency on Helidon's common-config module. But for full fidelity support of Helidon's config one should instead use the full config module.
+    * `Builder.requireLibraryDependencies` is not supported. All generated configuration beans and builders will minimally require a compile-time and runtime dependency on Helidon's common-config module. But for full fidelity support of Helidon's config one should instead use the full config module.
 
 
 == Examples
 
-* See https://github.com/helidon-io/helidon/blob/4.0.0-ALPHA4/builder/tests/builder[tests/builder] for additional builder usage examples.
+* See https://github.com/helidon-io/helidon/blob/4.0.0-ALPHA4/builder/tests/builder[tests/builder] for additional Helidon Builder usage examples.
 
-* See https://github.com/helidon-io/helidon/tree/4.0.0-ALPHA4/pico/builder-config/tests[pico/builder-config/tests] for additional usage examples for builder-config.
+* See https://github.com/helidon-io/helidon/tree/4.0.0-ALPHA4/pico/builder-config/tests[pico/builder-config/tests] for additional usage examples for Builder Configuration.
 
 
 

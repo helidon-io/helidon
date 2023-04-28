@@ -51,7 +51,7 @@ Pico's minimalist, compile-time generated dependency injection (DI) framework an
 
 == Maven Coordinates
 
-To enable Pico add the following dependencies to your project's `pom.xml` (see Managing Dependencies).
+To enable Pico, add the following dependencies to your project's `pom.xml` (see Managing Dependencies).
 
 .Pico dependencies
 [source,java]
@@ -195,6 +195,6 @@ For complete examples, see [link].
 
 == Additional Information
 
-
+//Closer to release we can provide links to blog articles, guides, etc. 
 
 
