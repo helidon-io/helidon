@@ -213,7 +213,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
         appendConfigBeanInfoAttributes(builder,
                                        ctx.typeInfo(),
                                        AnnotationAndValueDefault
-                                               .findFirst(ConfigBean.class.getTypeName(),
+                                               .findFirst(ConfigBean.class,
                                                           ctx.typeInfo().annotations()).orElseThrow());
         builder.append("\t\t\t\t\t\t.build()));\n");
         super.appendMetaProps(builder, ctx, tag, needsCustomMapOf);
@@ -375,10 +375,10 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                                                    TypeInfo typeInfo) {
         typeInfo.referencedTypeNamesToAnnotations().forEach((k, v) -> {
             AnnotationAndValue builderAnnotation = AnnotationAndValueDefault
-                    .findFirst(io.helidon.builder.Builder.class.getName(), v).orElse(null);
+                    .findFirst(io.helidon.builder.Builder.class, v).orElse(null);
             if (builderAnnotation == null) {
                 builderAnnotation = AnnotationAndValueDefault
-                        .findFirst(ConfigBean.class.getName(), v).orElse(null);
+                        .findFirst(ConfigBean.class, v).orElse(null);
             }
 
             if (builderAnnotation != null) {
@@ -453,7 +453,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                                AnnotationAndValue ignoredBuilderAnnotation) {
         String configKey = null;
         Optional<? extends AnnotationAndValue> configuredOptions = AnnotationAndValueDefault
-                .findFirst(ConfiguredOption.class.getName(), method.annotations());
+                .findFirst(ConfiguredOption.class, method.annotations());
         if (configuredOptions.isPresent()) {
             configKey = configuredOptions.get().value("key").orElse(null);
         }

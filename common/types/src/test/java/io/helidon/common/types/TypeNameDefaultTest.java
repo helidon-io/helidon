@@ -299,6 +299,44 @@ class TypeNameDefaultTest {
     }
 
     @Test
+    void genericTypeName() {
+        TypeNameDefault genericTypeName = TypeNameDefault.createFromGenericDeclaration("CB");
+        assertThat(genericTypeName.genericTypeName().name(), equalTo("CB"));
+        assertThat(genericTypeName.genericTypeName().fqName(), equalTo("CB"));
+        assertThat(genericTypeName.genericTypeName().declaredName(), equalTo("CB"));
+
+        TypeName typeName = TypeNameDefault.builder()
+                .packageName(Optional.class.getPackageName())
+                .className(Optional.class.getSimpleName())
+                .typeArguments(List.of(genericTypeName))
+                .array(true)
+                .build();
+        assertThat(typeName.genericTypeName().name(), equalTo("java.util.Optional"));
+        assertThat(typeName.genericTypeName().fqName(), equalTo("java.util.Optional"));
+        assertThat(typeName.genericTypeName().declaredName(), equalTo("java.util.Optional"));
+    }
+
+    @Test
+    void generics() {
+        TypeName genericTypeName = TypeNameDefault.createFromGenericDeclaration("CB");
+        assertThat(genericTypeName.generic(), is(true));
+        assertThat(genericTypeName.wildcard(), is(false));
+
+        genericTypeName = TypeNameDefault.createFromGenericDeclaration("?");
+        assertThat(genericTypeName.generic(), is(true));
+        assertThat(genericTypeName.wildcard(), is(true));
+
+        TypeName typeName = TypeNameDefault.builder()
+                .packageName(Optional.class.getPackageName())
+                .className(Optional.class.getSimpleName())
+                .typeArguments(List.of(genericTypeName))
+                .array(true)
+                .build();
+        assertThat(typeName.generic(), is(false));
+        assertThat(typeName.wildcard(), is(false));
+    }
+
+    @Test
     void builderOfType() {
         TypeName primitiveTypeName = TypeNameDefault.builder().type(boolean[].class).build();
         assertThat(primitiveTypeName.name(), equalTo("boolean"));

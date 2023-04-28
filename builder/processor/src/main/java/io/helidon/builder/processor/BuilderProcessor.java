@@ -94,14 +94,14 @@ public class BuilderProcessor extends AbstractProcessor {
                 .orElse(null);
 
         if (tools == null) {
-            String msg = "no available " + TypeInfoCreatorProvider.class.getSimpleName() + " instances found";
+            String msg = "No available " + TypeInfoCreatorProvider.class.getSimpleName() + " instances found";
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             throw new IllegalStateException(msg);
         }
         LOGGER.log(System.Logger.Level.DEBUG, TypeInfoCreatorProvider.class.getSimpleName() + ": " + tools);
 
         if (PRODUCERS.isEmpty()) {
-            String msg = "no available " + BuilderCreatorProvider.class.getSimpleName() + " instances found";
+            String msg = "No available " + BuilderCreatorProvider.class.getSimpleName() + " instances found";
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             throw new IllegalStateException(msg);
         }
@@ -159,7 +159,7 @@ public class BuilderProcessor extends AbstractProcessor {
         TypeName typeName = BuilderTypeTools.createTypeNameFromElement(element).orElse(null);
         boolean defineDefaultMethods = Boolean.parseBoolean(builderAnno.value("defineDefaultMethods").orElse(null));
         Optional<TypeInfo> typeInfo = tools
-                .createTypeInfo(builderAnno.typeName(), typeName, (TypeElement) element, processingEnv, defineDefaultMethods);
+            .createBuilderTypeInfo(builderAnno.typeName(), typeName, (TypeElement) element, processingEnv, defineDefaultMethods);
         if (typeInfo.isEmpty()) {
             String msg = "Nothing to process, skipping: " + element;
             LOGGER.log(System.Logger.Level.WARNING, msg);

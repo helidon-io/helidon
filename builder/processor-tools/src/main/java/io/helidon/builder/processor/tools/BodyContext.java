@@ -559,7 +559,7 @@ public class BodyContext {
 
         if (!builderTriggerAnnotation.typeName().equals(BUILDER_ANNO_TYPE_NAME)) {
             AnnotationAndValue builderAnnotation = AnnotationAndValueDefault
-                    .findFirst(BUILDER_ANNO_TYPE_NAME.name(), typeInfo.annotations()).orElse(null);
+                    .findFirst(BUILDER_ANNO_TYPE_NAME, typeInfo.annotations()).orElse(null);
             if (builderAnnotation != null) {
                 val = builderAnnotation.value(key).orElse(null);
             }
@@ -576,7 +576,7 @@ public class BodyContext {
         TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
         if (superTypeInfo != null) {
             Optional<? extends AnnotationAndValue> superBuilderAnnotation = AnnotationAndValueDefault
-                    .findFirst(builderTriggerAnnotation.typeName().name(), superTypeInfo.annotations());
+                    .findFirst(builderTriggerAnnotation.typeName(), superTypeInfo.annotations());
             if (superBuilderAnnotation.isEmpty()) {
                 gatherAllAttributeNames(superTypeInfo);
             } else {
@@ -692,7 +692,7 @@ public class BodyContext {
         TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
         if (superTypeInfo != null) {
             Optional<? extends AnnotationAndValue> superBuilderAnnotation = AnnotationAndValueDefault
-                    .findFirst(builderTriggerAnnotation.typeName().name(), superTypeInfo.annotations());
+                    .findFirst(builderTriggerAnnotation.typeName(), superTypeInfo.annotations());
             if (superBuilderAnnotation.isEmpty()) {
                 return toParentTypeName(builderTriggerAnnotation, superTypeInfo);
             }

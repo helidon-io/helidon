@@ -19,6 +19,7 @@ package io.helidon.common.types;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.types.TypeNameDefault.create;
+import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -71,6 +72,24 @@ class TypedElementNameDefaultTest {
                            .typeName(create(void.class))
                            .build().toString(),
                    is("void arg"));
+
+        assertThat(TypedElementNameDefault.builder()
+                           .enclosingTypeName(createFromTypeName("MyClass"))
+                           .elementName("hello")
+                           .typeName(create(void.class))
+                           .elementKind(TypeInfo.KIND_METHOD)
+                           .addParameterArgument(TypedElementNameDefault.builder()
+                                                         .elementName("arg1")
+                                                         .typeName(create(String.class))
+                                                         .elementKind(TypeInfo.KIND_PARAMETER)
+                                                         .build())
+                           .addParameterArgument(TypedElementNameDefault.builder()
+                                                         .elementName("arg2")
+                                                         .typeName(create(int.class))
+                                                         .elementKind(TypeInfo.KIND_PARAMETER)
+                                                         .build())
+                           .build().toString(),
+                   is("MyClass::void hello(java.lang.String arg1, int arg2)"));
     }
 
 }

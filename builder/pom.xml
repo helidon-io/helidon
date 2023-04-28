@@ -43,6 +43,7 @@
         <module>processor</module>
         <module>builder-config</module>
         <module>builder-config-processor</module>
+        <module>testing</module>
         <module>tests</module>
     </modules>
 </project>
