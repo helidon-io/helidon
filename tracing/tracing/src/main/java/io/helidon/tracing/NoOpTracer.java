@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,18 +96,18 @@ class NoOpTracer implements Tracer {
     private static class Span implements io.helidon.tracing.Span {
 
         @Override
-        public void tag(String key, String value) {
-
+        public io.helidon.tracing.Span tag(String key, String value) {
+            return this;
         }
 
         @Override
-        public void tag(String key, Boolean value) {
-
+        public io.helidon.tracing.Span tag(String key, Boolean value) {
+            return this;
         }
 
         @Override
-        public void tag(String key, Number value) {
-
+        public io.helidon.tracing.Span tag(String key, Number value) {
+            return this;
         }
 
         @Override
@@ -133,8 +133,18 @@ class NoOpTracer implements Tracer {
         }
 
         @Override
-        public io.helidon.tracing.Scope activate() {
+        public Scope activate() {
             return SCOPE;
+        }
+
+        @Override
+        public Span baggage(String key, String value) {
+            return this;
+        }
+
+        @Override
+        public Optional<String> baggage(String key) {
+            return Optional.empty();
         }
     }
 
