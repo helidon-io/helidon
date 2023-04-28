@@ -18,18 +18,16 @@ package io.helidon.tracing.jaeger;
 
 import java.util.Optional;
 
-import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test if baggage is handled correctly.
@@ -51,8 +49,8 @@ class JaegerBaggageTest {
     @Test
     void testBadBaggage(){
         Span span = tracer.spanBuilder("test-bad-span").start();
-        Assertions.assertThrows(NullPointerException.class, () -> span.baggage(null, "value"));
-        Assertions.assertThrows(NullPointerException.class, () -> span.baggage("key", null));
-        Assertions.assertThrows(NullPointerException.class, () -> span.baggage(null, null));
+        assertThrows(NullPointerException.class, () -> span.baggage(null, "value"));
+        assertThrows(NullPointerException.class, () -> span.baggage("key", null));
+        assertThrows(NullPointerException.class, () -> span.baggage(null, null));
     }
 }
