@@ -143,8 +143,8 @@ class NoOpTracer implements Tracer {
         }
 
         @Override
-        public String baggage(String key) {
-            return "no-op";
+        public Optional<String> baggage(String key) {
+            return Optional.empty();
         }
     }
 

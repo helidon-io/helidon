@@ -134,9 +134,9 @@ public interface Span {
      * Get Baggage Item by key.
      *
      * @param key String key
-     * @return the value of the baggage item
+     * @return {@link Optional} of the value of the baggage item
      */
-    String baggage(String key);
+    Optional<String> baggage(String key);
 
     /**
      * Add a new event to this span.
