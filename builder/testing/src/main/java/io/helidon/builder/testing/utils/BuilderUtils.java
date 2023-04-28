@@ -51,7 +51,7 @@ public final class BuilderUtils {
      * @throws IllegalStateException if the provided argument is not a builder-generated target instance
      */
     public static Map<String, String> expand(Object builtTarget) {
-        return expand(builtTarget, DefaultExpandOptions.builder().build());
+        return expand(builtTarget, ExpandOptionsDefault.builder().build());
     }
 
     /**
@@ -176,7 +176,7 @@ public final class BuilderUtils {
      */
     public static List<Diff> diff(Object leftSide,
                                   Object rightSide) {
-        return diff(leftSide, rightSide, DefaultDiffOptions.builder().build());
+        return diff(leftSide, rightSide, DiffOptionsDefault.builder().build());
     }
 
     /**
@@ -202,7 +202,7 @@ public final class BuilderUtils {
                 Map<String, String> rightExpand = expand(rightSide, diffOptions);
                 return diff(leftExpand, rightExpand);
             } else {
-                Diff diff = DefaultDiff.builder()
+                Diff diff = DiffDefault.builder()
                         .leftSide(diffOptions.toStringFunction().orElseThrow().apply(leftSide))
                         .rightSide(diffOptions.toStringFunction().orElseThrow().apply(rightSide))
                         .build();
@@ -224,7 +224,7 @@ public final class BuilderUtils {
             String leftSide = left.get(key);
             String rightSide = right.get(key);
             if (!Objects.equals(leftSide, rightSide)) {
-                Diff diff = DefaultDiff.builder()
+                Diff diff = DiffDefault.builder()
                         .key(key)
                         .leftSide(Optional.ofNullable(leftSide))
                         .rightSide(Optional.ofNullable(rightSide))
@@ -257,10 +257,10 @@ public final class BuilderUtils {
     }
 
 
-    static final class ExpandOptionsInterceptor implements BuilderInterceptor<AbstractExpandOptions.Builder> {
+    static final class ExpandOptionsInterceptor implements BuilderInterceptor<ExpandOptionsBase.Builder> {
         @Override
         @SuppressWarnings("unchecked")
-        public AbstractExpandOptions.Builder intercept(AbstractExpandOptions.Builder target) {
+        public ExpandOptionsBase.Builder intercept(ExpandOptionsBase.Builder target) {
             if (target.toStringFunction().isEmpty()) {
                 target.toStringFunction(String::valueOf);
             }

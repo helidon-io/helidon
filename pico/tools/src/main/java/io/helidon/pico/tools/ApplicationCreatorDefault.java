@@ -62,7 +62,7 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
     /**
      * The prefix to add before the generated "Application" class name (i.e., "Pico$$" in the "Pico$$Application").
      */
-    public static final String NAME_PREFIX = ActivatorCreatorDefault.NAME_PREFIX;
+    public static final String NAME_PREFIX = AbstractCreator.NAME_PREFIX;
 
     /**
      * The "Application" part of the name.

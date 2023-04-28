@@ -33,11 +33,11 @@ import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorProvider;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
+import io.helidon.pico.tools.ActivatorCreatorResponseDefault;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CodeGenInterceptorRequest;
-import io.helidon.pico.tools.DefaultActivatorCreatorResponse;
-import io.helidon.pico.tools.DefaultInterceptorCreatorResponse;
 import io.helidon.pico.tools.InterceptorCreatorResponse;
+import io.helidon.pico.tools.InterceptorCreatorResponseDefault;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 
@@ -73,7 +73,7 @@ class ActivatorCreatorHandler implements ActivatorCreator {
 
         messager.debug(name + ": createModuleActivators(" + !simulationMode + "): " + request);
         if (simulationMode) {
-            return DefaultActivatorCreatorResponse.builder().configOptions(request.configOptions()).build();
+            return ActivatorCreatorResponseDefault.builder().configOptions(request.configOptions()).build();
         }
         return ActivatorCreatorProvider.instance().createModuleActivators(request);
     }
@@ -86,7 +86,7 @@ class ActivatorCreatorHandler implements ActivatorCreator {
 
         messager.debug(name + ": codegenInterceptors(" + !simulationMode + "): " + request);
         if (simulationMode) {
-            return DefaultInterceptorCreatorResponse.builder().build();
+            return InterceptorCreatorResponseDefault.builder().build();
         }
         return ActivatorCreatorProvider.instance().codegenInterceptors(request);
     }

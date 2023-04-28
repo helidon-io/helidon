@@ -594,7 +594,7 @@ public final class TypeTools extends BuilderTypeTools {
                     .anyMatch(it -> it.equals(TypeNames.JAKARTA_APPLICATION_SCOPED)
                             || it.equals(TypeNames.JAVAX_APPLICATION_SCOPED));
             if (hasApplicationScope) {
-                scopeAnnotations.add(DefaultAnnotationAndValue.create(Singleton.class));
+                scopeAnnotations.add(AnnotationAndValueDefault.create(Singleton.class));
             }
         }
 

@@ -91,7 +91,7 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
                 throw new ToolsException("There can be max of 1 injectable constructor for " + serviceTypeName);
             }
             DependenciesInfo dependencies = builder.build();
-            servicesToProcess().addDependencies(serviceTypeName, dependencies);
+            servicesToProcess().addDependencies(dependencies);
             maybeSetBasicsForServiceType(serviceTypeName, null);
         }
 

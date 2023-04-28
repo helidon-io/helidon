@@ -22,7 +22,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.builder.testing.utils.DefaultDiff.*;
+import static io.helidon.builder.testing.utils.DiffDefault.builder;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -35,16 +35,16 @@ class BuilderUtilsTest {
 
     @Test
     void expand() {
-        Cart cart = DefaultCart.builder()
+        Cart cart = CartDefault.builder()
                 .build();
         Map<String, String> map = BuilderUtils.expand(cart);
         assertThat(map.toString(), map.size(),
                    is(0));
 
-        cart = DefaultCart.toBuilder(cart)
-                .addFruit(DefaultApple.builder().color("red").peel(DefaultPeel.builder().edible(true).build()).build())
-                .addFruit(DefaultApple.builder().color("green").peel(DefaultPeel.builder().edible(true).build()).build())
-                .addFruit(DefaultOrange.builder().peel(DefaultPeel.builder().edible(false).build()))
+        cart = CartDefault.toBuilder(cart)
+                .addFruit(AppleDefault.builder().color("red").peel(PeelDefault.builder().edible(true).build()).build())
+                .addFruit(AppleDefault.builder().color("green").peel(PeelDefault.builder().edible(true).build()).build())
+                .addFruit(OrangeDefault.builder().peel(PeelDefault.builder().edible(false).build()))
                 .build();
         map = BuilderUtils.expand(cart);
         assertThat(map.toString(), map,
@@ -67,21 +67,21 @@ class BuilderUtilsTest {
 
     @Test
     void diff() {
-        Cart cart1 = DefaultCart.builder()
-                .addFruit(DefaultApple.builder().color("red").peel(DefaultPeel.builder().edible(true).build()).build())
-                .addFruit(DefaultOrange.builder().peel(DefaultPeel.builder().edible(false).build()))
+        Cart cart1 = CartDefault.builder()
+                .addFruit(AppleDefault.builder().color("red").peel(PeelDefault.builder().edible(true).build()).build())
+                .addFruit(OrangeDefault.builder().peel(PeelDefault.builder().edible(false).build()))
                 .build();
-        Cart cart2 = DefaultCart.builder()
-                .addFruit(DefaultApple.builder().color("green").peel(DefaultPeel.builder().edible(true).build()).build())
-                .addFruit(DefaultOrange.builder().peel(DefaultPeel.builder().edible(false).build()))
-                .addFruit(DefaultApple.builder().color("yellow").peel(DefaultPeel.builder().edible(true).build()).build())
+        Cart cart2 = CartDefault.builder()
+                .addFruit(AppleDefault.builder().color("green").peel(PeelDefault.builder().edible(true).build()).build())
+                .addFruit(OrangeDefault.builder().peel(PeelDefault.builder().edible(false).build()))
+                .addFruit(AppleDefault.builder().color("yellow").peel(PeelDefault.builder().edible(true).build()).build())
                 .build();
         List<Diff> diffs = BuilderUtils.diff(cart1, cart2);
         assertThat(diffs, contains(
                 builder().key("fruits[0].color").leftSide("red").rightSide("green").build(),
-                builder().key("fruits[2]").rightSide("io.helidon.builder.testing.utils.DefaultApple").build(),
+                builder().key("fruits[2]").rightSide("io.helidon.builder.testing.utils.AppleDefault").build(),
                 builder().key("fruits[2].color").rightSide("yellow").build(),
-                builder().key("fruits[2].peel").rightSide("io.helidon.builder.testing.utils.DefaultPeel").build(),
+                builder().key("fruits[2].peel").rightSide("io.helidon.builder.testing.utils.PeelDefault").build(),
                 builder().key("fruits[2].peel.edible").rightSide("true").build()
                ));
     }

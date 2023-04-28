@@ -36,7 +36,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
@@ -47,10 +47,10 @@ import io.helidon.pico.api.ExternalContracts;
 import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.runtime.Dependencies;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
+import io.helidon.pico.tools.ActivatorCreatorConfigOptionsDefault;
+import io.helidon.pico.tools.ActivatorCreatorDefault;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
-import io.helidon.pico.tools.DefaultActivatorCreator;
-import io.helidon.pico.tools.DefaultActivatorCreatorConfigOptions;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ServicesToProcess;
 import io.helidon.pico.tools.ToolsException;
@@ -59,7 +59,7 @@ import io.helidon.pico.tools.TypeNames;
 import jakarta.inject.Inject;
 
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
-import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
+import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
 import static io.helidon.pico.processor.GeneralProcessorUtils.findFirst;
 import static io.helidon.pico.processor.GeneralProcessorUtils.isProviderType;
@@ -215,16 +215,16 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
 ////        }
 ////
 
-        ActivatorCreatorCodeGen codeGen = DefaultActivatorCreator.createActivatorCreatorCodeGen(services).orElse(null);
+        ActivatorCreatorCodeGen codeGen = ActivatorCreatorDefault.createActivatorCreatorCodeGen(services).orElse(null);
         if (codeGen == null) {
             return;
         }
 
-        DefaultActivatorCreatorConfigOptions configOptions = DefaultActivatorCreatorConfigOptions.builder()
+        ActivatorCreatorConfigOptionsDefault configOptions = ActivatorCreatorConfigOptionsDefault.builder()
                 .applicationPreCreated(Options.isOptionEnabled(Options.TAG_APPLICATION_PRE_CREATE))
                 .moduleCreated(moduleCreated)
                 .build();
-        ActivatorCreatorRequest req = DefaultActivatorCreator
+        ActivatorCreatorRequest req = ActivatorCreatorDefault
                 .createActivatorCreatorRequest(services, codeGen, configOptions, creator.filer(), false);
         ActivatorCreatorResponse res = creator.createModuleActivators(req);
         if (!res.success()) {
@@ -274,7 +274,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
         toScopeNames(service).forEach(it -> services.addScopeTypeName(serviceTypeName, it));
         toPostConstructMethod(service).ifPresent(it -> services.addPostConstructMethod(serviceTypeName, it));
         toPreDestroyMethod(service).ifPresent(it -> services.addPreDestroyMethod(serviceTypeName, it));
-        toInjectionDependencies(service, allElementsOfInterest).ifPresent(it -> services.addDependencies(serviceTypeName, it));
+        toInjectionDependencies(service, allElementsOfInterest).ifPresent(services::addDependencies);
         services.addAccessLevel(serviceTypeName,
                                 toAccess(service.modifierNames()));
         services.addIsAbstract(serviceTypeName,
@@ -373,7 +373,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
                     typeInfo.moduleNameOf(jakartaProviderTypeName).ifPresent(externalModuleNamesRequired::add);
                 }
             } else if (serviceTypeNamesToCodeGenerate.contains(genericTypeName)) {
-                AnnotationAndValue contractAnno = DefaultAnnotationAndValue
+                AnnotationAndValue contractAnno = AnnotationAndValueDefault
                         .findFirst(Contract.class, typeInfo.annotations())
                         .orElse(null);
                 boolean isTypeAnInterface = typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE);
@@ -391,7 +391,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
             }
         }
 
-        AnnotationAndValue externalContractAnno = DefaultAnnotationAndValue
+        AnnotationAndValue externalContractAnno = AnnotationAndValueDefault
                 .findFirst(ExternalContracts.class, typeInfo.annotations())
                 .orElse(null);
         if (externalContractAnno != null) {

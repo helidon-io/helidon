@@ -32,12 +32,12 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
-import io.helidon.pico.api.DefaultQualifierAndValue;
 import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.TypeNames;
@@ -142,7 +142,7 @@ final class GeneralProcessorUtils {
      */
     static Optional<Integer> toRunLevel(TypeInfo service) {
         AnnotationAndValue runLevelAnno =
-                DefaultAnnotationAndValue.findFirst(RunLevel.class, service.annotations()).orElse(null);
+                AnnotationAndValueDefault.findFirst(RunLevel.class, service.annotations()).orElse(null);
         if (runLevelAnno != null) {
             return Optional.of(Integer.valueOf(runLevelAnno.value().orElseThrow()));
         }
@@ -158,7 +158,7 @@ final class GeneralProcessorUtils {
      */
     static Optional<Double> toWeight(TypeInfo service) {
         AnnotationAndValue weightAnno =
-                DefaultAnnotationAndValue.findFirst(Weight.class, service.annotations()).orElse(null);
+                AnnotationAndValueDefault.findFirst(Weight.class, service.annotations()).orElse(null);
         if (weightAnno != null) {
             return Optional.of(Double.valueOf(weightAnno.value().orElseThrow()));
         }
@@ -280,7 +280,7 @@ final class GeneralProcessorUtils {
             List<AnnotationAndValue> metaAnnotations = service.referencedTypeNamesToAnnotations().get(anno.typeName());
             Optional<? extends AnnotationAndValue> qual = findFirst(Qualifier.class, metaAnnotations);
             if (qual.isPresent()) {
-                result.add(DefaultQualifierAndValue.convert(anno));
+                result.add(QualifierAndValueDefault.convert(anno));
             }
         }
 
@@ -307,7 +307,7 @@ final class GeneralProcessorUtils {
             Optional<? extends AnnotationAndValue> qual = (metaAnnotations == null)
                     ? Optional.empty() : findFirst(Qualifier.class, metaAnnotations);
             if (qual.isPresent()) {
-                result.add(DefaultQualifierAndValue.convert(anno));
+                result.add(QualifierAndValueDefault.convert(anno));
             }
         }
 
@@ -348,12 +348,12 @@ final class GeneralProcessorUtils {
      */
     static Optional<? extends AnnotationAndValue> findFirst(Class<? extends Annotation> jakartaAnno,
                                                             Collection<? extends AnnotationAndValue> annotations) {
-        Optional<? extends AnnotationAndValue> anno = DefaultAnnotationAndValue.findFirst(jakartaAnno, annotations);
+        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault.findFirst(jakartaAnno, annotations);
         if (anno.isPresent()) {
             return anno;
         }
 
-        return DefaultAnnotationAndValue.findFirst(TypeTools.oppositeOf(jakartaAnno.getName()), annotations);
+        return AnnotationAndValueDefault.findFirst(TypeTools.oppositeOf(jakartaAnno.getName()), annotations);
     }
 
 }
