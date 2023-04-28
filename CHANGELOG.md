@@ -9,6 +9,44 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.1]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+This release upgrades Kafka Clients from 2.8.1 to 3.4.0. If you encounter issues running against older Kafka servers or the OCI Streaming Service you might need to use the work-around docomented in [6718](https://github.com/helidon-io/helidon/issues/6718)
+
+- FT: Switch metrics API jar scope to compile from provided [6666](https://github.com/helidon-io/helidon/pull/6666)
+- JPA: Adds an enabled flag to JpaExtension to permit subsequent refactoring and replacement [6512](https://github.com/helidon-io/helidon/pull/6512)
+- JPA: Adds more classes as part of overall JPA refactoring effort [6584](https://github.com/helidon-io/helidon/pull/6584)
+- JPA: Improving JPA pom.xml as part of overall JPA refactoring [6508](https://github.com/helidon-io/helidon/pull/6508)
+- MicroProfile: RestClient and FT intergration changes [6665](https://github.com/helidon-io/helidon/pull/6665)
+- Native image: native-image configuration for Jackson in Helidon MP. [6607](https://github.com/helidon-io/helidon/pull/6607)
+- Security: Unauthenticated status code fix  [6482](https://github.com/helidon-io/helidon/pull/6482)
+- Tracing: Add baggage to Helidon Span [6692](https://github.com/helidon-io/helidon/pull/6692)
+- Tracing: Support for different propagators for Jaeger OpenTelemetry [6611](https://github.com/helidon-io/helidon/pull/6611)
+- WebClient: Add option to disable DNS Resolver for WebClient [6492](https://github.com/helidon-io/helidon/pull/6492)
+- WebClient: Proxy now properly selects proxy settings from system properties [6526](https://github.com/helidon-io/helidon/pull/6526)
+- WebServer: Fixed problem in AUTO_FLUSH backpressure strategy  [6556](https://github.com/helidon-io/helidon/pull/6556)
+- WebServer: Response should not be chunked if there is no entity [6637](https://github.com/helidon-io/helidon/pull/6637)
+- WebServer: Use checkNested(Throwable) for req.next(Throwable) [6699](https://github.com/helidon-io/helidon/pull/6699)
+- Build: Use GitHub Action for helidon-3.x branch [6500](https://github.com/helidon-io/helidon/pull/6500)
+- Builds: update helidon-version-is-release in doc files when updating release to fix links [6689](https://github.com/helidon-io/helidon/pull/6689)
+- Dependencies: Kafka bump up 2.8.1 > 3.4.0 [6706](https://github.com/helidon-io/helidon/pull/6706)
+- Dependencies: Update grpc-java version to 1.54.1 and clean up grpc tests [6685](https://github.com/helidon-io/helidon/pull/6685)
+- Dependencies: Upgrade graphql to 17.5 [6533](https://github.com/helidon-io/helidon/pull/6533)
+- Dependencies: Upgrade hibernate to 6.1.7.Final and eclipselink asm to 9.4.0 [6514](https://github.com/helidon-io/helidon/pull/6514)
+- Dependencies: upgrade netty to 4.1.90.Final [6511](https://github.com/helidon-io/helidon/pull/6511)
+- Docs: Fix Openapi links issue 6605 [6678](https://github.com/helidon-io/helidon/pull/6678)
+- Docs: Update documentation of composite provider flag. (#6597) [6635](https://github.com/helidon-io/helidon/pull/6635)
+- Docs: Updated doc to reflect current support for FT thread pool properties [6621](https://github.com/helidon-io/helidon/pull/6621)
+- Examples: Add await timeout and replace thenAccept to forSingle  [6558](https://github.com/helidon-io/helidon/pull/6558)
+- Examples: Create file validations [6609](https://github.com/helidon-io/helidon/pull/6609)
+- Examples: Fix Helidon Archetype generates broken projects  [6721](https://github.com/helidon-io/helidon/pull/6721)
+- Examples: archetypes generating poorly formatted code [6623](https://github.com/helidon-io/helidon/pull/6623)
+- Examples: Update streaming example to use IoMulti [6604](https://github.com/helidon-io/helidon/pull/6604)
+- Test: Use Hamcrest assertions instead of JUnit [6449](https://github.com/helidon-io/helidon/pull/6449) [6638](https://github.com/helidon-io/helidon/pull/6638)
+
+
 ## [3.2.0]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -654,6 +692,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.1]: https://github.com/helidon-io/helidon/compare/3.2.0...3.2.1
 [3.2.0]: https://github.com/helidon-io/helidon/compare/3.1.2...3.2.0
 [3.1.2]: https://github.com/helidon-io/helidon/compare/3.1.1...3.1.2
 [3.1.1]: https://github.com/helidon-io/helidon/compare/3.1.0...3.1.1
