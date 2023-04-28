@@ -2,7 +2,6 @@
 
 ## Build and run
 
-With JDK11+
 ```bash
 mvn install && java -jar ./target/helidon-examples-microprofile-lra.jar
 ```
@@ -18,7 +17,7 @@ mp.lra.coordinator.url: http://localhost:8070/lra-coordinator
 
 ```shell
 docker build -t helidon/lra-coordinator https://github.com/oracle/helidon.git#:lra/coordinator/server
-docker run -dp 8070:8070 --name lra-coordinator --network="host" helidon/lra-coordinator
+docker run --rm --name lra-coordinator --network="host" helidon/lra-coordinator
 ```
 
 ### Test LRA resource

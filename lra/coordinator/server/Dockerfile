@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,28 +14,34 @@
 # limitations under the License.
 #
 
-FROM maven:3.6.3-openjdk-17-slim as build
+FROM container-registry.oracle.com/java/openjdk:17 as build
 
-WORKDIR /helidon    
-ARG HELIDON_BRANCH=master
+WORKDIR /usr/share
+
+# Install maven
+RUN set -x && \
+    curl -O https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz && \
+    tar -xvf apache-maven-*-bin.tar.gz  && \
+    rm apache-maven-*-bin.tar.gz && \
+    mv apache-maven-* maven && \
+    ln -s /usr/share/maven/bin/mvn /bin/
+
+WORKDIR /helidon
+ARG HELIDON_BRANCH=helidon-3.x
 ARG HELIDON_REPOSITORY=oracle/helidon
 
 ENV HELIDON_BRANCH ${HELIDON_BRANCH}
 ENV HELIDON_REPOSITORY ${HELIDON_REPOSITORY}
 
-RUN apt-get -qq update && apt-get -qq -y install wget unzip git
-RUN wget -q -O helidon_repo.zip https://github.com/${HELIDON_REPOSITORY}/archive/refs/heads/${HELIDON_BRANCH}.zip
-
-RUN unzip helidon_repo.zip -d ./helidon_repo
-    
-RUN mv ./helidon_repo/*/* ./
+RUN dnf -y update && dnf -y install wget unzip git
+RUN wget -q -O helidon_repo.zip https://github.com/${HELIDON_REPOSITORY}/archive/refs/heads/${HELIDON_BRANCH}.zip && \
+    unzip helidon_repo.zip -d ./helidon_repo && mv ./helidon_repo/*/* ./
 
 # Build only required modules
-RUN mvn install -pl :helidon-lra-coordinator-server -am -DskipTests
+RUN mvn install -pl :helidon-lra-coordinator-server -am -DskipTests && \
+    echo "Helidon LRA Coordinator build successfully finished"
 
-RUN echo "Helidon LRA Coordinator build successfully fished"
-
-FROM openjdk:17-jdk-slim
+FROM container-registry.oracle.com/java/openjdk:17
 WORKDIR /helidon
 
 COPY --from=build /helidon/lra/coordinator/server/target/helidon-lra-coordinator-server.jar ./
