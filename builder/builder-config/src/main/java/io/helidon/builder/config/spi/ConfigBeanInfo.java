@@ -26,7 +26,7 @@ import io.helidon.builder.config.ConfigBean;
  * Represents all the attributes belonging to {@link io.helidon.builder.config.ConfigBean} available in a
  * {@link io.helidon.builder.Builder} style usage pattern.
  */
-@Builder(implPrefix = "Meta")
+@Builder(implPrefix = "Meta", implSuffix = "")
 public interface ConfigBeanInfo extends ConfigBean {
 
     /**

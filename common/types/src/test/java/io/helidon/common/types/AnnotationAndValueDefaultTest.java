@@ -26,24 +26,24 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class DefaultAnnotationAndValueTest {
+class AnnotationAndValueDefaultTest {
 
     @Test
     void sanity() {
-        DefaultAnnotationAndValue val1 = DefaultAnnotationAndValue.create(Test.class);
+        AnnotationAndValueDefault val1 = AnnotationAndValueDefault.create(Test.class);
         assertThat(val1.typeName().toString(), equalTo(Test.class.getName()));
         assertThat(val1.toString(),
                    containsString("typeName=" + Test.class.getName()));
 
-        DefaultAnnotationAndValue val2 = DefaultAnnotationAndValue.create(Test.class);
+        AnnotationAndValueDefault val2 = AnnotationAndValueDefault.create(Test.class);
         assertThat(val2, equalTo(val1));
         assertThat(val2.compareTo(val1), is(0));
 
-        DefaultAnnotationAndValue val3 = DefaultAnnotationAndValue.create(Target.class, "name");
+        AnnotationAndValueDefault val3 = AnnotationAndValueDefault.create(Target.class, "name");
         assertThat(val3.toString(),
                    containsString("typeName=java.lang.annotation.Target, value=name"));
 
-        DefaultAnnotationAndValue val4 = DefaultAnnotationAndValue.create(Test.class, Map.of("a", "1"));
+        AnnotationAndValueDefault val4 = AnnotationAndValueDefault.create(Test.class, Map.of("a", "1"));
         assertThat(val4.toString(),
                    containsString("typeName=" + Test.class.getName() + ", values={a=1}"));
     }

@@ -27,7 +27,7 @@ import java.util.Set;
 /**
  * Default implementation for {@link io.helidon.common.types.TypedElementName}.
  */
-public class DefaultTypedElementName implements TypedElementName {
+public class TypedElementNameDefault implements TypedElementName {
     private final TypeName typeName;
     private final List<TypeName> componentTypeNames;
     private final String elementName;
@@ -43,7 +43,7 @@ public class DefaultTypedElementName implements TypedElementName {
      * @param b the builder
      * @see #builder()
      */
-    protected DefaultTypedElementName(Builder b) {
+    protected TypedElementNameDefault(Builder b) {
         this.typeName = b.typeName;
         this.componentTypeNames = List.copyOf(b.componentTypeNames);
         this.elementName = b.elementName;
@@ -176,7 +176,7 @@ public class DefaultTypedElementName implements TypedElementName {
          * @return the fluent builder
          */
         public Builder typeName(Class<?> type) {
-            return typeName(DefaultTypeName.create(type));
+            return typeName(TypeNameDefault.create(type));
         }
 
         /**
@@ -296,9 +296,9 @@ public class DefaultTypedElementName implements TypedElementName {
          *
          * @return the built instance
          */
-        public DefaultTypedElementName build() {
+        public TypedElementNameDefault build() {
             Objects.requireNonNull(typeName);
-            return new DefaultTypedElementName(this);
+            return new TypedElementNameDefault(this);
         }
     }
 

@@ -22,9 +22,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.DefaultQualifierAndValue;
 import io.helidon.pico.api.InjectionPointProvider;
 import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.tests.pico.tbox.AbstractBlade;
 
@@ -38,9 +38,9 @@ import jakarta.inject.Singleton;
 @Named("*")
 public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
 
-    static final QualifierAndValue all = DefaultQualifierAndValue.createNamed("*");
-    static final QualifierAndValue coarse = DefaultQualifierAndValue.createNamed("coarse");
-    static final QualifierAndValue fine = DefaultQualifierAndValue.createNamed("fine");
+    static final QualifierAndValue all = QualifierAndValueDefault.createNamed("*");
+    static final QualifierAndValue coarse = QualifierAndValueDefault.createNamed("coarse");
+    static final QualifierAndValue fine = QualifierAndValueDefault.createNamed("fine");
 
     @Override
     public Optional<AbstractBlade> first(ContextualServiceQuery query) {

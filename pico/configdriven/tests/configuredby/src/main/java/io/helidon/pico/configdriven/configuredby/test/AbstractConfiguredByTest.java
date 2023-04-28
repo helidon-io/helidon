@@ -25,12 +25,12 @@ import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.pico.api.DefaultQualifierAndValue;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServiceProviderException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.configdriven.api.ConfiguredBy;
@@ -121,8 +121,8 @@ public abstract class AbstractConfiguredByTest {
 
     //    @Test
     void testRegistry() {
-        DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
-                .addQualifier(DefaultQualifierAndValue.create(ConfiguredBy.class))
+        ServiceInfoCriteriaDefault criteria = ServiceInfoCriteriaDefault.builder()
+                .addQualifier(QualifierAndValueDefault.create(ConfiguredBy.class))
                 .build();
         List<ServiceProvider<?>> list = services.lookupAll(criteria);
         List<String> desc = list.stream()
@@ -138,7 +138,7 @@ public abstract class AbstractConfiguredByTest {
                             "SomeConfiguredServiceWithAnAbstractBase{root}:PENDING"
                    ));
 
-        criteria = DefaultServiceInfoCriteria.builder()
+        criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(FakeWebServerContract.class.getName())
                 .build();
         list = services.lookupAll(criteria);
@@ -147,7 +147,7 @@ public abstract class AbstractConfiguredByTest {
                    contains("FakeWebServer{fake-server}:ACTIVE",
                             "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{fake-server}:PENDING"));
 
-        criteria = DefaultServiceInfoCriteria.builder()
+        criteria = ServiceInfoCriteriaDefault.builder()
                 .serviceTypeName(FakeTlsWSNotDrivenByCB.class.getName())
                 .build();
         list = services.lookupAll(criteria);
@@ -155,9 +155,9 @@ public abstract class AbstractConfiguredByTest {
         assertThat("root providers expected here since we looked up by service type name", desc,
                    contains("FakeTlsWSNotDrivenByCB{root}:PENDING"));
 
-        criteria = DefaultServiceInfoCriteria.builder()
+        criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(FakeTlsWSNotDrivenByCB.class.getName())
-                .addQualifier(DefaultQualifierAndValue.createNamed("jimmy"))
+                .addQualifier(QualifierAndValueDefault.createNamed("*"))
                 .build();
         list = services.lookupAll(criteria);
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
@@ -169,9 +169,9 @@ public abstract class AbstractConfiguredByTest {
         assertThat("There is no configuration, so cannot activate this service", e.getMessage(),
                    equalTo("Expected to find a match: service provider: FakeTlsWSNotDrivenByCB{root}:PENDING"));
 
-        criteria = DefaultServiceInfoCriteria.builder()
+        criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(ASingletonService.class.getName())
-                .addQualifier(DefaultQualifierAndValue.createNamed("jane"))
+                .addQualifier(QualifierAndValueDefault.createNamed("jane"))
                 .build();
         list = services.lookupAll(criteria);
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());

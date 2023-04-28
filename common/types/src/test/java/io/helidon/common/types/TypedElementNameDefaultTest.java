@@ -18,55 +18,55 @@ package io.helidon.common.types;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.types.DefaultTypeName.create;
+import static io.helidon.common.types.TypeNameDefault.create;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class DefaultTypedElementNameTest {
+class TypedElementNameDefaultTest {
 
     @Test
     void declarations() {
-        assertThat(DefaultTypedElementName.builder()
+        assertThat(TypedElementNameDefault.builder()
                            .elementName("arg")
                            .typeName(create(boolean.class))
                            .build().toString(),
                    is("boolean arg"));
-        assertThat(DefaultTypedElementName.builder()
+        assertThat(TypedElementNameDefault.builder()
                            .elementName("arg")
                            .typeName(create(byte.class))
                            .build().toString(),
                    is("byte arg"));
-        assertThat(DefaultTypedElementName.builder()
+        assertThat(TypedElementNameDefault.builder()
                            .elementName("arg")
                            .typeName(create(short.class))
                            .build().toString(),
                    is("short arg"));
-        assertThat(DefaultTypedElementName.builder()
+        assertThat(TypedElementNameDefault.builder()
                            .elementName("arg")
                            .typeName(create(int.class))
                            .build().toString(),
                    is("int arg"));
-        assertThat(DefaultTypedElementName.builder()
+        assertThat(TypedElementNameDefault.builder()
                            .elementName("arg")
                            .typeName(create(long.class))
                            .build().toString(),
                    is("long arg"));
-        assertThat(DefaultTypedElementName.builder()
+        assertThat(TypedElementNameDefault.builder()
                            .elementName("arg")
                            .typeName(create(char.class))
                            .build().toString(),
                    is("char arg"));
-        assertThat(DefaultTypedElementName.builder()
+        assertThat(TypedElementNameDefault.builder()
                            .elementName("arg")
                            .typeName(create(float.class))
                            .build().toString(),
                    is("float arg"));
-        assertThat(DefaultTypedElementName.builder()
+        assertThat(TypedElementNameDefault.builder()
                            .elementName("arg")
                            .typeName(create(double.class))
                            .build().toString(),
                    is("double arg"));
-        assertThat(DefaultTypedElementName.builder()
+        assertThat(TypedElementNameDefault.builder()
                            .elementName("arg")
                            .typeName(create(void.class))
                            .build().toString(),

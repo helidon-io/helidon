@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.spi.ExternalModuleCreator;
 
@@ -38,23 +38,23 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
- * Tests for {@link io.helidon.pico.tools.DefaultExternalModuleCreator}. This test
+ * Tests for {@link ExternalModuleCreatorDefault}. This test
  * effectively demonstrates the behavior of the pico-maven-plugin.
  */
-class DefaultExternalModuleCreatorTest extends AbstractBaseCreator {
+class ExternalModuleCreatorDefaultTest extends AbstractBaseCreator {
 
     final ExternalModuleCreator externalModuleCreator = loadAndCreate(ExternalModuleCreator.class);
 
     @Test
     void sanity() {
-        assertThat(externalModuleCreator.getClass(), equalTo(DefaultExternalModuleCreator.class));
+        assertThat(externalModuleCreator.getClass(), equalTo(ExternalModuleCreatorDefault.class));
     }
 
     @Test
     void tck330Gen() {
-        Thread.currentThread().setContextClassLoader(DefaultExternalModuleCreatorTest.class.getClassLoader());
+        Thread.currentThread().setContextClassLoader(ExternalModuleCreatorDefaultTest.class.getClassLoader());
 
-        CodeGenPaths codeGenPaths = DefaultCodeGenPaths.builder()
+        CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
                 .generatedSourcesPath("target/pico/generated-sources")
                 .outputPath("target/pico/generated-classes")
                 .build();
@@ -62,17 +62,17 @@ class DefaultExternalModuleCreatorTest extends AbstractBaseCreator {
                 .createDirectFiler(codeGenPaths, System.getLogger(getClass().getName()));
         CodeGenFiler filer = CodeGenFiler.create(directFiler);
 
-        ActivatorCreatorConfigOptions activatorCreatorConfigOptions = DefaultActivatorCreatorConfigOptions.builder()
+        ActivatorCreatorConfigOptions activatorCreatorConfigOptions = ActivatorCreatorConfigOptionsDefault.builder()
                 .supportsJsr330InStrictMode(true)
                 .build();
 
-        ExternalModuleCreatorRequest req = DefaultExternalModuleCreatorRequest.builder()
+        ExternalModuleCreatorRequest req = ExternalModuleCreatorRequestDefault.builder()
                 .addPackageNamesToScan("org.atinject.tck.auto")
                 .addPackageNamesToScan("org.atinject.tck.auto.accessories")
                 .addServiceTypeToQualifiersMap(SpareTire.class.getName(),
-                                         Set.of(DefaultQualifierAndValue.createNamed("spare")))
+                                         Set.of(QualifierAndValueDefault.createNamed("spare")))
                 .addServiceTypeToQualifiersMap(DriversSeat.class.getName(),
-                                         Set.of(DefaultQualifierAndValue.create(Drivers.class)))
+                                         Set.of(QualifierAndValueDefault.create(Drivers.class)))
                 .activatorCreatorConfigOptions(activatorCreatorConfigOptions)
                 .innerClassesProcessed(false)
                 .codeGenPaths(codeGenPaths)

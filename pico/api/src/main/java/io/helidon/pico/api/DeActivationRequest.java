@@ -49,7 +49,7 @@ public abstract class DeActivationRequest {
 
     static class Init {
         static final LazyValue<DeActivationRequest> DEFAULT =
-                LazyValue.create(() -> DefaultDeActivationRequest.builder().build());
+                LazyValue.create(() -> DeActivationRequestDefault.builder().build());
     }
 
 }

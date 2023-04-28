@@ -29,7 +29,7 @@ import java.util.Set;
 /**
  * Default implementation for {@link TypeInfo}.
  */
-public class DefaultTypeInfo implements TypeInfo {
+public class TypeInfoDefault implements TypeInfo {
     private final TypeName typeName;
     private final String typeKind;
     private final List<AnnotationAndValue> annotations;
@@ -45,7 +45,7 @@ public class DefaultTypeInfo implements TypeInfo {
      * @param b the builder
      * @see #builder()
      */
-    protected DefaultTypeInfo(Builder b) {
+    protected TypeInfoDefault(Builder b) {
         this.typeName = b.typeName;
         this.typeKind = b.typeKind;
         this.annotations = List.copyOf(b.annotations);
@@ -126,7 +126,7 @@ public class DefaultTypeInfo implements TypeInfo {
     /**
      * Builder for this type.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, DefaultTypeInfo> {
+    public static class Builder implements io.helidon.common.Builder<Builder, TypeInfoDefault> {
         private final List<AnnotationAndValue> annotations = new ArrayList<>();
         private final List<TypedElementName> elementInfo = new ArrayList<>();
         private final List<TypedElementName> otherElementInfo = new ArrayList<>();
@@ -149,8 +149,8 @@ public class DefaultTypeInfo implements TypeInfo {
          * @return the built instance
          */
         @Override
-        public DefaultTypeInfo build() {
-            return new DefaultTypeInfo(this);
+        public TypeInfoDefault build() {
+            return new TypeInfoDefault(this);
         }
 
         /**

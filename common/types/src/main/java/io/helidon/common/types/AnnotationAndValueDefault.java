@@ -26,7 +26,7 @@ import java.util.Optional;
 /**
  * The default implementation for {@link AnnotationAndValue}.
  */
-public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable<AnnotationAndValue> {
+public class AnnotationAndValueDefault implements AnnotationAndValue, Comparable<AnnotationAndValue> {
     private final TypeName typeName;
     private final Map<String, String> values;
 
@@ -36,7 +36,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @param b the builder
      * @see #builder()
      */
-    protected DefaultAnnotationAndValue(Builder b) {
+    protected AnnotationAndValueDefault(Builder b) {
         LinkedHashMap<String, String> map = new LinkedHashMap<>(b.values);
         if (b.value != null) {
             String prev = map.put("value", b.value);
@@ -52,7 +52,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @param annoType the annotation type
      * @return the new instance
      */
-    public static DefaultAnnotationAndValue create(Class<? extends Annotation> annoType) {
+    public static AnnotationAndValueDefault create(Class<? extends Annotation> annoType) {
         return builder()
                 .type(annoType)
                 .build();
@@ -64,7 +64,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @param annoType the annotation type
      * @return the new instance
      */
-    public static DefaultAnnotationAndValue create(TypeName annoType) {
+    public static AnnotationAndValueDefault create(TypeName annoType) {
         return builder()
                 .typeName(annoType)
                 .build();
@@ -77,9 +77,9 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @param value the annotation value
      * @return the new instance
      */
-    public static DefaultAnnotationAndValue create(Class<? extends Annotation> annoType,
+    public static AnnotationAndValueDefault create(Class<? extends Annotation> annoType,
                                                    String value) {
-        return create(DefaultTypeName.create(annoType), value);
+        return create(TypeNameDefault.create(annoType), value);
     }
 
     /**
@@ -89,9 +89,9 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @param values the annotation values
      * @return the new instance
      */
-    public static DefaultAnnotationAndValue create(Class<? extends Annotation> annoType,
+    public static AnnotationAndValueDefault create(Class<? extends Annotation> annoType,
                                                    Map<String, String> values) {
-        return create(DefaultTypeName.create(annoType), values);
+        return create(TypeNameDefault.create(annoType), values);
     }
 
     /**
@@ -101,9 +101,9 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @param value the annotation value
      * @return the new instance
      */
-    public static DefaultAnnotationAndValue create(TypeName annoTypeName,
+    public static AnnotationAndValueDefault create(TypeName annoTypeName,
                                                    String value) {
-        return DefaultAnnotationAndValue.builder().typeName(annoTypeName).value(value).build();
+        return AnnotationAndValueDefault.builder().typeName(annoTypeName).value(value).build();
     }
 
     /**
@@ -113,9 +113,9 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @param values the annotation values
      * @return the new instance
      */
-    public static DefaultAnnotationAndValue create(TypeName annoTypeName,
+    public static AnnotationAndValueDefault create(TypeName annoTypeName,
                                                    Map<String, String> values) {
-        return DefaultAnnotationAndValue.builder().typeName(annoTypeName).values(values).build();
+        return AnnotationAndValueDefault.builder().typeName(annoTypeName).values(values).build();
     }
 
     /**
@@ -199,9 +199,9 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
     }
 
     /**
-     * Fluent API builder for {@link DefaultAnnotationAndValue}.
+     * Fluent API builder for {@link AnnotationAndValueDefault}.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, DefaultAnnotationAndValue> {
+    public static class Builder implements io.helidon.common.Builder<Builder, AnnotationAndValueDefault> {
         private final Map<String, String> values = new LinkedHashMap<>();
 
         private TypeName typeName;
@@ -214,8 +214,8 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
         }
 
         @Override
-        public DefaultAnnotationAndValue build() {
-            return new DefaultAnnotationAndValue(this);
+        public AnnotationAndValueDefault build() {
+            return new AnnotationAndValueDefault(this);
         }
 
         /**
@@ -263,7 +263,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
          */
         public Builder type(Class<? extends Annotation> annoType) {
             Objects.requireNonNull(annoType);
-            return typeName(DefaultTypeName.create(annoType));
+            return typeName(TypeNameDefault.create(annoType));
         }
     }
 

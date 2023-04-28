@@ -31,15 +31,15 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.CallingContext;
+import io.helidon.pico.api.CallingContextDefault;
 import io.helidon.pico.api.CallingContextFactory;
-import io.helidon.pico.api.DefaultCallingContext;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.ServiceProviderProvider;
 import io.helidon.pico.api.Services;
@@ -47,17 +47,17 @@ import io.helidon.pico.runtime.DefaultServiceBinder;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ApplicationCreatorCodeGen;
+import io.helidon.pico.tools.ApplicationCreatorCodeGenDefault;
 import io.helidon.pico.tools.ApplicationCreatorConfigOptions;
+import io.helidon.pico.tools.ApplicationCreatorConfigOptionsDefault;
 import io.helidon.pico.tools.ApplicationCreatorRequest;
+import io.helidon.pico.tools.ApplicationCreatorRequestDefault;
 import io.helidon.pico.tools.ApplicationCreatorResponse;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CodeGenPaths;
+import io.helidon.pico.tools.CodeGenPathsDefault;
 import io.helidon.pico.tools.CompilerOptions;
-import io.helidon.pico.tools.DefaultApplicationCreatorCodeGen;
-import io.helidon.pico.tools.DefaultApplicationCreatorConfigOptions;
-import io.helidon.pico.tools.DefaultApplicationCreatorRequest;
-import io.helidon.pico.tools.DefaultCodeGenPaths;
-import io.helidon.pico.tools.DefaultCompilerOptions;
+import io.helidon.pico.tools.CompilerOptionsDefault;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.spi.ApplicationCreator;
@@ -229,7 +229,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         this.permittedProviderType = PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
 
         CallingContext callCtx = null;
-        Optional<DefaultCallingContext.Builder> callingContextBuilder =
+        Optional<CallingContextDefault.Builder> callingContextBuilder =
                 CallingContextFactory.createBuilder(false);
         if (callingContextBuilder.isPresent()) {
             callingContextBuilder.get().moduleName(Optional.ofNullable(getThisModuleName()));
@@ -260,7 +260,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             ApplicationCreator creator = applicationCreator();
 
             List<ServiceProvider<?>> allModules = services
-                    .lookupAll(DefaultServiceInfoCriteria.builder()
+                    .lookupAll(ServiceInfoCriteriaDefault.builder()
                                        .addContractImplemented(ModuleComponent.class.getName())
                                        .build());
             getLog().info("processing modules: " + toDescriptions(allModules));
@@ -270,7 +270,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
             // retrieves all the services in the registry
             List<ServiceProvider<?>> allServices = services
-                    .lookupAll(DefaultServiceInfoCriteria.builder().build(), false);
+                    .lookupAll(ServiceInfoCriteriaDefault.builder().build(), false);
             if (allServices.isEmpty()) {
                 warn("no services to process");
                 return;
@@ -289,18 +289,18 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             ServiceProvider<ModuleComponent> moduleSp = lookupThisModule(moduleInfoModuleName, services);
             String packageName = determinePackageName(Optional.ofNullable(moduleSp), serviceTypeNames, descriptor, true);
 
-            CodeGenPaths codeGenPaths = DefaultCodeGenPaths.builder()
+            CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
                     .generatedSourcesPath(getGeneratedSourceDirectory().getPath())
                     .outputPath(getOutputDirectory().getPath())
                     .moduleInfoPath(ofNullable(moduleInfoPath))
                     .build();
-            ApplicationCreatorCodeGen applicationCodeGen = DefaultApplicationCreatorCodeGen.builder()
+            ApplicationCreatorCodeGen applicationCodeGen = ApplicationCreatorCodeGenDefault.builder()
                     .packageName(packageName)
                     .className(getGeneratedClassName())
                     .classPrefixName(classPrefixName)
                     .build();
             List<String> compilerArgs = getCompilerArgs();
-            CompilerOptions compilerOptions = DefaultCompilerOptions.builder()
+            CompilerOptions compilerOptions = CompilerOptionsDefault.builder()
                     .classpath(classpath)
                     .modulepath(modulepath)
                     .sourcepath(getSourceRootPaths())
@@ -308,7 +308,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     .target(getTarget())
                     .commandLineArguments((compilerArgs != null) ? compilerArgs : List.of())
                     .build();
-            ApplicationCreatorConfigOptions configOptions = DefaultApplicationCreatorConfigOptions.builder()
+            ApplicationCreatorConfigOptions configOptions = ApplicationCreatorConfigOptionsDefault.builder()
                     .permittedProviderTypes(permittedProviderType)
                     .permittedProviderNames(permittedProviderTypeNames)
                     .permittedProviderQualifierTypeNames(toTypeNames(permittedProviderQualifierTypeNames))
@@ -316,7 +316,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             String moduleName = getModuleName();
             AbstractFilerMessager directFiler = AbstractFilerMessager.createDirectFiler(codeGenPaths, getLogger());
             CodeGenFiler codeGenFiler = CodeGenFiler.create(directFiler);
-            DefaultApplicationCreatorRequest.Builder reqBuilder = DefaultApplicationCreatorRequest.builder()
+            ApplicationCreatorRequestDefault.Builder reqBuilder = ApplicationCreatorRequestDefault.builder()
                     .codeGen(applicationCodeGen)
                     .messager(new Messager2LogAdapter())
                     .filer(codeGenFiler)
@@ -355,7 +355,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         }
 
         return permittedProviderQualifierTypeNames.stream()
-                .map(DefaultTypeName::createFromTypeName)
+                .map(TypeNameDefault::createFromTypeName)
                 .collect(Collectors.toList());
     }
 
@@ -364,7 +364,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         services.forEach(sp -> {
             sp = DefaultServiceBinder.toRootProvider(sp);
             String serviceType = sp.serviceInfo().serviceTypeName();
-            TypeName name = DefaultTypeName.createFromTypeName(serviceType);
+            TypeName name = TypeNameDefault.createFromTypeName(serviceType);
             ServiceProvider<?> prev = result.put(name, sp);
             if (prev != null) {
                 if (!(prev instanceof ServiceProviderProvider)) {
@@ -377,7 +377,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     void warn(String msg) {
-        Optional<DefaultCallingContext.Builder> optBuilder = CallingContextFactory.createBuilder(false);
+        Optional<CallingContextDefault.Builder> optBuilder = CallingContextFactory.createBuilder(false);
         CallingContext callCtx = (optBuilder.isPresent())
                 ? optBuilder.get().moduleName(Optional.ofNullable(getThisModuleName())).build() : null;
         String desc = "no modules to process";

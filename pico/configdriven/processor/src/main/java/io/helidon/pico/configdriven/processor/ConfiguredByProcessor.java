@@ -37,7 +37,7 @@ import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.config.Config;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.configdriven.api.ConfiguredBy;
 import io.helidon.pico.configdriven.runtime.AbstractConfiguredServiceProvider;
@@ -51,10 +51,10 @@ import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeName
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.toTypeElement;
-import static io.helidon.common.types.DefaultTypeName.create;
-import static io.helidon.common.types.DefaultTypeName.createFromGenericDeclaration;
-import static io.helidon.common.types.DefaultTypeName.createFromTypeName;
-import static io.helidon.common.types.DefaultTypeName.toBuilder;
+import static io.helidon.common.types.TypeNameDefault.create;
+import static io.helidon.common.types.TypeNameDefault.createFromGenericDeclaration;
+import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
+import static io.helidon.common.types.TypeNameDefault.toBuilder;
 
 /**
  * Processor for @{@link io.helidon.pico.configdriven.api.ConfiguredBy} type annotations.
@@ -175,7 +175,7 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     boolean isConfiguredService(TypeElement te) {
         Set<AnnotationAndValue> annotations = TypeTools.createAnnotationAndValueSet(te);
         Optional<? extends AnnotationAndValue> configuredByAnno =
-                DefaultAnnotationAndValue.findFirst(ConfiguredBy.class.getName(), annotations);
+                AnnotationAndValueDefault.findFirst(ConfiguredBy.class.getName(), annotations);
         return configuredByAnno.isPresent();
     }
 
@@ -191,7 +191,7 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     void assertNoAnnotation(TypeName annoType,
                             TypeElement element) {
         Set<AnnotationAndValue> annos = TypeTools.createAnnotationAndValueSet(element);
-        Optional<? extends AnnotationAndValue> anno = DefaultAnnotationAndValue.findFirst(annoType.name(), annos);
+        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault.findFirst(annoType.name(), annos);
         if (anno.isPresent()) {
             throw new IllegalStateException(annoType + " cannot be used in conjunction with "
                                                     + ConfiguredBy.class + " on " + element);

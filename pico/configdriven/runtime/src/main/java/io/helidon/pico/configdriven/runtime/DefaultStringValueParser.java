@@ -16,11 +16,13 @@
 
 package io.helidon.pico.configdriven.runtime;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.builder.config.spi.StringValueParser;
+import io.helidon.pico.api.PicoException;
 
 /**
  * Default implementation of {@link StringValueParser}.
@@ -41,6 +43,7 @@ class DefaultStringValueParser implements StringValueParser {
         MAP.put(boolean.class, BooleanParser::parse);
         MAP.put(Boolean.class, BooleanParser::parse);
         MAP.put(char[].class, CharArrayParser::parse);
+        MAP.put(Duration.class, DurationParser::parse);
     }
 
     DefaultStringValueParser() {
@@ -101,6 +104,17 @@ class DefaultStringValueParser implements StringValueParser {
         public static Optional parse(String val,
                                      Class ignoredType) {
             return Optional.ofNullable(null == val ? null : val.toCharArray());
+        }
+    }
+
+    static class DurationParser {
+        public static Optional parse(String val,
+                                     Class ignoredType) {
+            try {
+                return Optional.ofNullable(null == val ? null : Duration.parse(val));
+            } catch (Exception e) {
+                throw new PicoException("Failed to parse duration: \"" + val + "\"", e);
+            }
         }
     }
 

@@ -71,18 +71,18 @@ jtrent@jtrent-mac logger % find pico -type f  -not -path '*/.*' | grep -v target
 9. Pico generates a suggested <i>module-info.java</i> based upon analysis of your injection/dependency model (see /target/classes/module-info.java.pico).
 
 ```./target/classes/module-info.java.pico
-// @Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+// @Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
 module helidon.examples.pico.logger.common {
     exports io.helidon.examples.pico.logger.common;
-    // pico module - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+    // pico module - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     provides io.helidon.pico.Module with io.helidon.examples.pico.logger.common.Pico$$Module;
-    // pico external contract usage - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+    // pico external contract usage - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     requires helidon.examples.pico.logger.common;
     uses io.helidon.examples.pico.logger.common.CommunicationMode;
     uses io.helidon.examples.pico.logger.common.Communicator;
     uses jakarta.inject.Provider;
     uses javax.inject.Provider;
-    // pico services - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+    // pico services - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     requires transitive io.helidon.pico.services;
 }
 ```

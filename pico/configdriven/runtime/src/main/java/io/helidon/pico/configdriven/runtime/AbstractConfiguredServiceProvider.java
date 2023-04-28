@@ -42,12 +42,8 @@ import io.helidon.common.config.Config;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.pico.api.CallingContext;
 import io.helidon.pico.api.CallingContextFactory;
-import io.helidon.pico.api.CommonQualifiers;
 import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.DefaultContextualServiceQuery;
-import io.helidon.pico.api.DefaultQualifierAndValue;
-import io.helidon.pico.api.DefaultServiceInfo;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.pico.api.ContextualServiceQueryDefault;
 import io.helidon.pico.api.Event;
 import io.helidon.pico.api.InjectionException;
 import io.helidon.pico.api.InjectionPointInfo;
@@ -57,8 +53,11 @@ import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServiceProviderException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
+import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.ServiceProviderBindable;
 import io.helidon.pico.api.ServiceProviderProvider;
@@ -67,6 +66,7 @@ import io.helidon.pico.runtime.AbstractServiceProvider;
 import io.helidon.pico.spi.InjectionResolver;
 
 import static io.helidon.pico.api.CallingContext.toErrorMessage;
+import static io.helidon.pico.api.CommonQualifiers.WILDCARD_NAMED;
 import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.hasValue;
 import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.isBlank;
 
@@ -82,7 +82,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                    ServiceProviderProvider,
                    InjectionPointProvider<T>,
                    InjectionResolver {
-    private static final QualifierAndValue EMPTY_CONFIGURED_BY = DefaultQualifierAndValue.create(ConfiguredBy.class);
+    private static final QualifierAndValue EMPTY_CONFIGURED_BY = QualifierAndValueDefault.create(ConfiguredBy.class);
     private static final CBInstanceComparator BEAN_INSTANCE_ID_COMPARATOR = new CBInstanceComparator();
     private static final System.Logger LOGGER = System.getLogger(AbstractConfiguredServiceProvider.class.getName());
     private static final LazyValue<BindableConfigBeanRegistry> CONFIG_BEAN_REGISTRY
@@ -210,9 +210,9 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         if (isRootProvider()) {
             // override out service info to account for any named lookup
             ServiceInfo serviceInfo = Objects.requireNonNull(serviceInfo());
-            if (!serviceInfo.qualifiers().contains(CommonQualifiers.WILDCARD_NAMED)) {
-                serviceInfo = DefaultServiceInfo.toBuilder(serviceInfo)
-                        .addQualifier(CommonQualifiers.WILDCARD_NAMED)
+            if (!serviceInfo.qualifiers().contains(WILDCARD_NAMED)) {
+                serviceInfo = ServiceInfoDefault.toBuilder(serviceInfo)
+                        .addQualifier(WILDCARD_NAMED)
                         .build();
                 serviceInfo(serviceInfo);
             }
@@ -257,7 +257,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             // post-initialize ourselves
             if (isRootProvider()
                     && drivesActivation()) {
-                ContextualServiceQuery query = DefaultContextualServiceQuery
+                ContextualServiceQuery query = ContextualServiceQueryDefault
                         .builder().serviceInfoCriteria(PicoServices.EMPTY_CRITERIA)
                         .build();
                 maybeActivate(query);
@@ -319,7 +319,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         }
 
         ServiceInfoCriteria dep = ipInfo.dependencyToServiceInfo();
-        DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+        ServiceInfoCriteriaDefault criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(configBeanType().getName())
                 .build();
         if (!dep.matchesContracts(criteria)) {
@@ -370,7 +370,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                                                      boolean thisAlreadyMatches) {
         if (isRootProvider()) {
             Set<QualifierAndValue> qualifiers = criteria.qualifiers();
-            Optional<? extends AnnotationAndValue> configuredByQualifier = DefaultQualifierAndValue
+            Optional<? extends AnnotationAndValue> configuredByQualifier = QualifierAndValueDefault
                     .findFirst(EMPTY_CONFIGURED_BY.typeName().name(), qualifiers);
             boolean hasValue = configuredByQualifier.isPresent()
                     && hasValue(configuredByQualifier.get().value().orElse(null));
@@ -379,8 +379,10 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                     && (blankCriteria || hasValue || configuredByQualifier.isEmpty());
             boolean rootQualifies = wantThis
                     && (blankCriteria
-                                || managedConfiguredServicesMap.isEmpty()
-                                || (!hasValue && configuredByQualifier.isPresent()));
+                                || (managedConfiguredServicesMap.isEmpty()
+                                            && (qualifiers.isEmpty()
+                                                        || qualifiers.contains(WILDCARD_NAMED))
+                                || (!hasValue && configuredByQualifier.isPresent())));
 
             if (slavesQualify) {
                 List<ServiceProvider<?>> slaves = managedServiceProviders(criteria)
@@ -580,9 +582,9 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             assertIsRootProvider(true, false);
 
             // override our service info to account for any named lookup
-            if (isRootProvider() && !serviceInfo.qualifiers().contains(CommonQualifiers.WILDCARD_NAMED)) {
-                serviceInfo = DefaultServiceInfo.toBuilder(serviceInfo)
-                        .addQualifier(CommonQualifiers.WILDCARD_NAMED)
+            if (isRootProvider() && !serviceInfo.qualifiers().contains(WILDCARD_NAMED)) {
+                serviceInfo = ServiceInfoDefault.toBuilder(serviceInfo)
+                        .addQualifier(WILDCARD_NAMED)
                         .build();
             }
         }
@@ -766,7 +768,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
     private void innerActivate() {
         // this may go into a wait state if other threads are trying to also initialize at the same time - expected behavior
-        ContextualServiceQuery query = DefaultContextualServiceQuery
+        ContextualServiceQuery query = ContextualServiceQueryDefault
                 .builder().serviceInfoCriteria(PicoServices.EMPTY_CRITERIA)
                 .build();
         Optional<T> service = maybeActivate(query); // triggers the post-construct
@@ -796,8 +798,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         AbstractConfiguredServiceProvider<T, CB> instance = createInstance(configBean);
         assert (instance != this);
 
-        DefaultServiceInfo newServiceInfo = DefaultServiceInfo.toBuilder(instance.serviceInfo())
-                .addQualifier(DefaultQualifierAndValue.createNamed(instanceId))
+        ServiceInfoDefault newServiceInfo = ServiceInfoDefault.toBuilder(instance.serviceInfo())
+                .addQualifier(QualifierAndValueDefault.createNamed(instanceId))
                 .build();
 
         // override our service info

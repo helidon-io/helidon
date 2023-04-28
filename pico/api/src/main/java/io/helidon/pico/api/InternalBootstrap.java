@@ -53,8 +53,8 @@ abstract class InternalBootstrap {
         if (callingContext == null) {
             callingContext = CallingContextFactory.create(false).orElse(null);
         }
-        return DefaultInternalBootstrap.builder()
-                .bootStrap((bootstrap == null) ? DefaultBootstrap.builder().build() : bootstrap)
+        return InternalBootstrapDefault.builder()
+                .bootStrap((bootstrap == null) ? BootstrapDefault.builder().build() : bootstrap)
                 .callingContext(Optional.ofNullable(callingContext))
                 .build();
     }

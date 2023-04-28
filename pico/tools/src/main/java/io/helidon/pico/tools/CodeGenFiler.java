@@ -46,8 +46,8 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.PicoServicesConfig;
 
 import static io.helidon.pico.tools.ModuleUtils.PICO_MODULE_INFO_JAVA_NAME;
@@ -539,7 +539,7 @@ public class CodeGenFiler {
      */
     Optional<Path> toSourceLocation(String name) {
         if (filer instanceof AbstractFilerMessager.DirectFilerMessager) {
-            TypeName typeName = DefaultTypeName.createFromTypeName(name);
+            TypeName typeName = TypeNameDefault.createFromTypeName(name);
             Optional<Path> path = Optional.ofNullable(((AbstractFilerMessager.DirectFilerMessager) filer)
                                                .toSourcePath(StandardLocation.SOURCE_PATH, typeName));
             if (path.isPresent()) {

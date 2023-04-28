@@ -17,7 +17,7 @@
 package io.helidon.nima.webserver;
 
 import io.helidon.config.Config;
-import io.helidon.pico.api.DefaultBootstrap;
+import io.helidon.pico.api.BootstrapDefault;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceProvider;
@@ -48,7 +48,7 @@ class WebServerConfigDrivenTest {
 
         if (NORMAL_PRODUCTION_PATH) {
             // bootstrap Pico with our config tree when it initializes
-            PicoServices.globalBootstrap(DefaultBootstrap.builder().config(config).build());
+            PicoServices.globalBootstrap(BootstrapDefault.builder().config(config).build());
         }
 
         // initialize Pico, and drive all activations based upon what has been configured

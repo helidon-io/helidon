@@ -16,8 +16,11 @@
 
 package io.helidon.builder.config.spi;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
@@ -28,6 +31,9 @@ import io.helidon.common.LazyValue;
  * @see ConfigBeanBuilderValidatorProvider
  */
 public class ConfigBeanBuilderValidatorHolder {
+    private static final ConfigBeanBuilderValidator.ValidationRound EMPTY_ROUND = new EmptyRound();
+    static final ConfigBeanBuilderValidator EMPTY = (builder, configBeanBuilderType) -> EMPTY_ROUND;
+
     private static final LazyValue<Optional<ConfigBeanBuilderValidator<?>>> INSTANCE =
             LazyValue.create(ConfigBeanBuilderValidatorHolder::load);
 
@@ -63,6 +69,31 @@ public class ConfigBeanBuilderValidatorHolder {
         }
 
         return Optional.of(provider.get().configBeanBuilderValidator());
+    }
+
+    private static class EmptyRound implements ConfigBeanBuilderValidator.ValidationRound {
+        @Override
+        public List<ConfigBeanBuilderValidator.ValidationIssue> issues() {
+            return List.of();
+        }
+
+        @Override
+        public boolean isCompleted() {
+            return true;
+        }
+
+        @Override
+        public ConfigBeanBuilderValidator.ValidationRound validate(String attributeName,
+                                                                   Supplier<?> valueSupplier,
+                                                                   Class<?> cbType,
+                                                                   Map<String, Object> meta) {
+            return this;
+        }
+
+        @Override
+        public ConfigBeanBuilderValidator.ValidationRound finish(boolean throwIfErrors) {
+            return this;
+        }
     }
 
 }

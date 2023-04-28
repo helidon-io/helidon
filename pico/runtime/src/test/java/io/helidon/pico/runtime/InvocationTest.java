@@ -22,10 +22,10 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import io.helidon.common.types.DefaultTypedElementName;
-import io.helidon.pico.api.DefaultInvocationContext;
+import io.helidon.common.types.TypedElementNameDefault;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
+import io.helidon.pico.api.InvocationContextDefault;
 import io.helidon.pico.api.InvocationException;
 
 import jakarta.inject.Provider;
@@ -41,8 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class InvocationTest {
     TestInterceptor first = new TestInterceptor("first");
     TestInterceptor second = new TestInterceptor("second");
-    InvocationContext dummyCtx = DefaultInvocationContext.builder()
-            .elementInfo(DefaultTypedElementName.builder().elementName("test").typeName(InvocationTest.class).build())
+    InvocationContext dummyCtx = InvocationContextDefault.builder()
+            .elementInfo(TypedElementNameDefault.builder().elementName("test").typeName(InvocationTest.class).build())
             .interceptors(List.of(first.provider, second.provider));
     ArrayList<Object[]> calls = new ArrayList<>();
 
@@ -62,8 +62,8 @@ class InvocationTest {
 
     @Test
     void normalCaseWithNoInterceptors() {
-        InvocationContext dummyCtx = DefaultInvocationContext.builder()
-                .elementInfo(DefaultTypedElementName.builder().elementName("test").typeName(InvocationTest.class).build())
+        InvocationContext dummyCtx = InvocationContextDefault.builder()
+                .elementInfo(TypedElementNameDefault.builder().elementName("test").typeName(InvocationTest.class).build())
                 .interceptors(List.of());
 
         Object[] args = new Object[] {};
@@ -272,7 +272,7 @@ class InvocationTest {
         AtomicInteger callCount = new AtomicInteger();
         AtomicInteger proceedCount = new AtomicInteger();
         AtomicInteger downstreamExceptionCount = new AtomicInteger();
-        DefaultControl.Builder control = DefaultControl.builder();
+        ControlDefault.Builder control = ControlDefault.builder();
         ConcreteProvider<Interceptor> provider = new ConcreteProvider<>(new Interceptor() {
             @Override
             public <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args) {

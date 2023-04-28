@@ -50,14 +50,14 @@ public abstract class InjectorOptions {
     /**
      * This will ensure that the activation request is populated.
      */
-    static class Interceptor implements BuilderInterceptor<DefaultInjectorOptions.Builder> {
+    static class Interceptor implements BuilderInterceptor<InjectorOptionsDefault.Builder> {
         Interceptor() {
         }
 
         @Override
-        public DefaultInjectorOptions.Builder intercept(DefaultInjectorOptions.Builder target) {
+        public InjectorOptionsDefault.Builder intercept(InjectorOptionsDefault.Builder target) {
             if (target.activationRequest() == null) {
-                target.activationRequest(PicoServices.createDefaultActivationRequest());
+                target.activationRequest(PicoServices.createActivationRequestDefault());
             }
             return target;
         }

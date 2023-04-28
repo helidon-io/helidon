@@ -59,7 +59,7 @@ public class ConnectionConfigTest {
         @Override
         public ServerConnectionSelector create(Function<String, Config> configs) {
             config = configs.apply("http_1_1");
-            http1Config = DefaultHttp1Config.toBuilder(config).build();
+            http1Config = Http1ConfigDefault.toBuilder(config).build();
             return mock(ServerConnectionSelector.class);
         }
 

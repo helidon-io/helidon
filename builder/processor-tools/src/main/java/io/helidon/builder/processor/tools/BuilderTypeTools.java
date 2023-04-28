@@ -48,13 +48,13 @@ import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeInfo;
-import io.helidon.common.types.DefaultTypeName;
-import io.helidon.common.types.DefaultTypedElementName;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeInfoDefault;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementNameDefault;
 
 import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
 
@@ -103,7 +103,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                 .map(Modifier::toString)
                 .map(String::toUpperCase)
                 .collect(Collectors.toSet());
-        return Optional.of(DefaultTypeInfo.builder()
+        return Optional.of(TypeInfoDefault.builder()
                                    .typeName(typeName)
                                    .typeKind(String.valueOf(element.getKind()))
                                    .annotations(
@@ -240,7 +240,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param type the element type
      * @return the associated type name instance
      */
-    public static Optional<DefaultTypeName> createTypeNameFromDeclaredType(DeclaredType type) {
+    public static Optional<TypeNameDefault> createTypeNameFromDeclaredType(DeclaredType type) {
         return createTypeNameFromElement(type.asElement());
     }
 
@@ -250,7 +250,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param type the element type
      * @return the associated type name instance
      */
-    public static Optional<DefaultTypeName> createTypeNameFromElement(Element type) {
+    public static Optional<TypeNameDefault> createTypeNameFromElement(Element type) {
         if (type instanceof VariableElement) {
             return createTypeNameFromMirror(type.asType());
         }
@@ -271,7 +271,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
 
         Element packageName = type.getEnclosingElement() == null ? type : type.getEnclosingElement();
 
-        return Optional.of(DefaultTypeName.create(packageName.toString(), className));
+        return Optional.of(TypeNameDefault.create(packageName.toString(), className));
     }
 
     /**
@@ -280,7 +280,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param typeMirror the type mirror
      * @return the type name associated with the type mirror, or empty for generic type variables
      */
-    public static Optional<DefaultTypeName> createTypeNameFromMirror(TypeMirror typeMirror) {
+    public static Optional<TypeNameDefault> createTypeNameFromMirror(TypeMirror typeMirror) {
         TypeKind kind = typeMirror.getKind();
         if (kind.isPrimitive()) {
             Class<?> type;
@@ -313,15 +313,15 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                 throw new IllegalStateException("Unknown primitive type: " + kind);
             }
 
-            return Optional.of(DefaultTypeName.create(type));
+            return Optional.of(TypeNameDefault.create(type));
         }
 
         if (TypeKind.VOID == kind) {
-            return Optional.of(DefaultTypeName.create(void.class));
+            return Optional.of(TypeNameDefault.create(void.class));
         } else if (TypeKind.TYPEVAR == kind) {
             return Optional.empty();
         } else if (TypeKind.WILDCARD == kind) {
-            return Optional.of(DefaultTypeName.createFromTypeName(typeMirror.toString()));
+            return Optional.of(TypeNameDefault.createFromTypeName(typeMirror.toString()));
         }
 
         if (typeMirror instanceof ArrayType) {
@@ -339,7 +339,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                     .flatMap(Optional::stream)
                     .collect(Collectors.toList());
 
-            DefaultTypeName result = createTypeNameFromElement(declaredType.asElement()).orElse(null);
+            TypeNameDefault result = createTypeNameFromElement(declaredType.asElement()).orElse(null);
             if (typeParams.isEmpty() || result == null) {
                 return Optional.ofNullable(result);
             }
@@ -373,9 +373,9 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      */
     public static Optional<AnnotationAndValue> createAnnotationAndValueFromMirror(AnnotationMirror am,
                                                                                   Elements elements) {
-        Optional<DefaultTypeName> val = createTypeNameFromMirror(am.getAnnotationType());
+        Optional<TypeNameDefault> val = createTypeNameFromMirror(am.getAnnotationType());
 
-        return val.map(it -> DefaultAnnotationAndValue.create(it, extractValues(am, elements)));
+        return val.map(it -> AnnotationAndValueDefault.create(it, extractValues(am, elements)));
     }
 
     /**
@@ -478,7 +478,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
         }
         componentTypeNames = (componentTypeNames == null) ? List.of() : componentTypeNames;
 
-        DefaultTypedElementName.Builder builder = DefaultTypedElementName.builder()
+        TypedElementNameDefault.Builder builder = TypedElementNameDefault.builder()
                 .typeName(type)
                 .componentTypeNames(componentTypeNames)
                 .elementName(v.getSimpleName().toString())

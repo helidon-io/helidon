@@ -37,8 +37,8 @@ public class CallingContextFactory {
      * @see io.helidon.pico.api.PicoServices#isDebugEnabled()
      */
     public static Optional<CallingContext> create(boolean force) {
-        Optional<DefaultCallingContext.Builder> optBuilder = createBuilder(force);
-        return optBuilder.map(DefaultCallingContext.Builder::build);
+        Optional<CallingContextDefault.Builder> optBuilder = createBuilder(force);
+        return optBuilder.map(CallingContextDefault.Builder::build);
 
     }
 
@@ -50,13 +50,13 @@ public class CallingContextFactory {
      * @return a new calling context builder if there is an indication that debug mode is enabled, or if the force flag is set
      * @see io.helidon.pico.api.PicoServices#isDebugEnabled()
      */
-    public static Optional<DefaultCallingContext.Builder> createBuilder(boolean force) {
+    public static Optional<CallingContextDefault.Builder> createBuilder(boolean force) {
         boolean createIt = (force || PicoServices.isDebugEnabled());
         if (!createIt) {
             return Optional.empty();
         }
 
-        return Optional.of(DefaultCallingContext.builder()
+        return Optional.of(CallingContextDefault.builder()
                                    .trace(new RuntimeException().getStackTrace()));
     }
 

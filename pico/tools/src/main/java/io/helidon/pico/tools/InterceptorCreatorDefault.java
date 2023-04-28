@@ -47,8 +47,8 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.InterceptedTrigger;
@@ -62,7 +62,7 @@ import io.github.classgraph.MethodTypeSignature;
 import io.github.classgraph.ScanResult;
 import jakarta.inject.Singleton;
 
-import static io.helidon.common.types.DefaultAnnotationAndValue.create;
+import static io.helidon.common.types.AnnotationAndValueDefault.create;
 import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueFromMirror;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromAnnotations;
@@ -78,7 +78,7 @@ import static io.helidon.pico.tools.TypeTools.toObjectTypeName;
 @Singleton
 @Weight(DEFAULT_PICO_WEIGHT)
 @SuppressWarnings("unchecked")
-public class DefaultInterceptorCreator extends AbstractCreator implements InterceptorCreator, Resettable {
+public class InterceptorCreatorDefault extends AbstractCreator implements InterceptorCreator, Resettable {
     private static final LazyValue<ScanResult> SCAN = LazyValue.create(ReflectionHandler.INSTANCE::scan);
 
     private static final String INTERCEPTOR_NAME_SUFFIX = "Interceptor";
@@ -97,7 +97,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
     @Deprecated
-    public DefaultInterceptorCreator() {
+    public InterceptorCreatorDefault() {
         super(TemplateHelper.DEFAULT_TEMPLATE_NAME);
     }
 
@@ -113,7 +113,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      * @param allowListedAnnotationTypes the allow-listed annotation types
      * @return this instance
      */
-    public DefaultInterceptorCreator allowListedAnnotationTypes(Set<String> allowListedAnnotationTypes) {
+    public InterceptorCreatorDefault allowListedAnnotationTypes(Set<String> allowListedAnnotationTypes) {
         this.allowListedAnnoTypeNames = allowListedAnnotationTypes;
         return this;
     }
@@ -451,7 +451,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             }
 
             Set<AnnotationAndValue> serviceLevelAnnotations = getServiceLevelAnnotations();
-            InterceptionPlan plan = DefaultInterceptionPlan.builder()
+            InterceptionPlan plan = InterceptionPlanDefault.builder()
                     .interceptedService(interceptedService)
                     .serviceLevelAnnotations(serviceLevelAnnotations)
                     .annotationTriggerTypeNames(interceptorAnnotationTriggers)
@@ -694,7 +694,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             Set<String> applicableTriggers = new LinkedHashSet<>(interceptorAnnotationTriggers);
             applicableTriggers.retainAll(elementInfo.annotations().stream()
                                                  .map(a -> a.typeName().name()).collect(Collectors.toSet()));
-            return DefaultInterceptedElement.builder()
+            return InterceptedElementDefault.builder()
                     .interceptedTriggerTypeNames(applicableTriggers)
                     .elementInfo(elementInfo)
                     .build();
@@ -818,7 +818,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             Set<String> applicableTriggers = new LinkedHashSet<>(interceptorAnnotationTriggers);
             applicableTriggers.retainAll(elementInfo.annotations().stream()
                                                  .map(a -> a.typeName().name()).collect(Collectors.toSet()));
-            return DefaultInterceptedElement.builder()
+            return InterceptedElementDefault.builder()
                     .interceptedTriggerTypeNames(applicableTriggers)
                     .elementInfo(elementInfo)
                     .build();
@@ -829,7 +829,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      * Create an annotation resolver based on annotation processing.
      *
      * @param processEnv the processing env
-     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AnnotationTypeNameResolver} to use
+     * @return the {@link InterceptorCreatorDefault.AnnotationTypeNameResolver} to use
      */
     static AnnotationTypeNameResolver createResolverFromProcessor(ProcessingEnvironment processEnv) {
         return new ProcessorResolver(processEnv.getElementUtils());
@@ -838,7 +838,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
     /**
      * Create an annotation resolver based on reflective processing.
      *
-     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AnnotationTypeNameResolver} to use
+     * @return the {@link InterceptorCreatorDefault.AnnotationTypeNameResolver} to use
      */
     static AnnotationTypeNameResolver createResolverFromReflection() {
         return new ReflectionResolver(SCAN.get());
@@ -863,7 +863,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      * @param interceptedService    the service being processed
      * @param delegateCreator       the real/delegate creator
      * @param processEnv            the processing env, if available
-     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AbstractInterceptorProcessor} to use
+     * @return the {@link InterceptorCreatorDefault.AbstractInterceptorProcessor} to use
      */
     AbstractInterceptorProcessor createInterceptorProcessorFromProcessor(ServiceInfoBasics interceptedService,
                                                                          InterceptorCreator delegateCreator,
@@ -884,7 +884,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      *
      * @param interceptedService the service being processed
      * @param realCreator        the real/delegate creator
-     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AbstractInterceptorProcessor} to use
+     * @return the {@link InterceptorCreatorDefault.AbstractInterceptorProcessor} to use
      */
     AbstractInterceptorProcessor createInterceptorProcessorFromReflection(ServiceInfoBasics interceptedService,
                                                                           InterceptorCreator realCreator) {
@@ -924,18 +924,18 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         subst.put("interceptedmethoddecls", toInterceptedMethodDecls(plan));
         subst.put("interfaces", toInterfacesDecl(plan));
         subst.put("interceptedelements", IdAndToString
-                .toList(plan.interceptedElements(), DefaultInterceptorCreator::toBody).stream()
+                .toList(plan.interceptedElements(), InterceptorCreatorDefault::toBody).stream()
                 .filter(it -> !it.getId().equals(CTOR_ALIAS))
                 .collect(Collectors.toList()));
         subst.put("ctorinterceptedelements", IdAndToString
-                .toList(plan.interceptedElements(), DefaultInterceptorCreator::toBody).stream()
+                .toList(plan.interceptedElements(), InterceptorCreatorDefault::toBody).stream()
                 .filter(it -> it.getId().equalsIgnoreCase(CTOR_ALIAS))
                 .toList());
         subst.put("annotationtriggertypenames", IdAndToString
                 .toList(plan.annotationTriggerTypeNames(),
                         str -> new IdAndToString(str.replace(".", "_"), str)));
         subst.put("servicelevelannotations", IdAndToString
-                .toList(plan.serviceLevelAnnotations(), DefaultInterceptorCreator::toDecl));
+                .toList(plan.serviceLevelAnnotations(), InterceptorCreatorDefault::toDecl));
         String template = templateHelper().safeLoadTemplate(
                 plan.hasNoArgConstructor() ? NO_ARG_INTERCEPTOR_HBS : INTERFACES_INTERCEPTOR_HBS);
         return templateHelper().applySubstitutions(template, subst, true).trim();
@@ -990,7 +990,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
     }
 
     private static IdAndToString toDecl(AnnotationAndValue anno) {
-        StringBuilder builder = new StringBuilder("DefaultAnnotationAndValue.create(" + anno.typeName() + ".class");
+        StringBuilder builder = new StringBuilder("AnnotationAndValueDefault.create(" + anno.typeName() + ".class");
         Map<String, String> map = anno.values();
         String val = anno.value().orElse(null);
         if (map != null && !map.isEmpty()) {
@@ -1033,7 +1033,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         boolean hasArgs = (args.length() > 0);
         if (hasArgs) {
             argDecls = mi.parameterInfo().stream()
-                    .map(DefaultInterceptorCreator::toDecl)
+                    .map(InterceptorCreatorDefault::toDecl)
                     .map(IdAndToString::toString)
                     .collect(Collectors.joining(", "));
             AtomicInteger count = new AtomicInteger();
@@ -1061,7 +1061,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
         String methodDecl = builder.toString();
         builder.append(" {\n");
-        TypeName supplierType = (hasReturn) ? toObjectTypeName(mi.elementTypeName()) : DefaultTypeName.create(Void.class);
+        TypeName supplierType = (hasReturn) ? toObjectTypeName(mi.elementTypeName()) : TypeNameDefault.create(Void.class);
 
         String elementArgInfo = "";
         if (hasArgs) {
@@ -1073,8 +1073,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
     }
 
     private static TypeName toInterceptorTypeName(String serviceTypeName) {
-        TypeName typeName = DefaultTypeName.createFromTypeName(serviceTypeName);
-        return DefaultTypeName.create(typeName.packageName(), typeName.className()
+        TypeName typeName = TypeNameDefault.createFromTypeName(serviceTypeName);
+        return TypeNameDefault.create(typeName.packageName(), typeName.className()
                                                                       + INNER_INTERCEPTOR_CLASS_NAME);
     }
 

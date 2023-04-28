@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.TypeElement;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.InjectionPointInfo;
@@ -450,7 +450,7 @@ public class ServicesToProcess implements Resettable {
      */
     public void addDependencies(DependenciesInfo dependencies) {
         TypeName serviceTypeName =
-                DefaultTypeName.createFromTypeName(dependencies.fromServiceTypeName().orElseThrow());
+                TypeNameDefault.createFromTypeName(dependencies.fromServiceTypeName().orElseThrow());
         addServiceTypeName(serviceTypeName);
         DependenciesInfo prevDependencies = servicesToDependencies.get(serviceTypeName);
         if (prevDependencies != null) {

@@ -25,7 +25,7 @@ public class BrandProvider implements Provider<Brand> {
 
     @Override
     public Brand get() {
-        return DefaultBrand.builder().name(brandName).build();
+        return BrandDefault.builder().name(brandName).build();
     }
 
 }

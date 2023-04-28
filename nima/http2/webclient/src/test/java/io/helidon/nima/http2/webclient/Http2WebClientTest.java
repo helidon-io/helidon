@@ -32,7 +32,7 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.nima.common.tls.Tls;
-import io.helidon.nima.http2.webserver.DefaultHttp2Config;
+import io.helidon.nima.http2.webserver.Http2ConfigDefault;
 import io.helidon.nima.http2.webserver.Http2ConnectionProvider;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -103,7 +103,7 @@ class Http2WebClientTest {
                         .host("localhost")
                 )
                 .addConnectionProvider(Http2ConnectionProvider.builder()
-                                               .http2Config(DefaultHttp2Config.builder()
+                                               .http2Config(Http2ConfigDefault.builder()
                                                                     .initialWindowSize(10))
                                                .build())
                 .socket("https",

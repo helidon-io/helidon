@@ -26,15 +26,15 @@ import java.util.Set;
 import javax.lang.model.element.ElementKind;
 
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.DefaultGenericTemplateCreatorRequest;
 import io.helidon.pico.tools.GenericTemplateCreator;
 import io.helidon.pico.tools.GenericTemplateCreatorRequest;
+import io.helidon.pico.tools.GenericTemplateCreatorRequestDefault;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
@@ -87,10 +87,10 @@ public class HttpMethodCreator implements CustomAnnotationTemplateCreator {
         String classname = enclosingType.typeName().className() + "_"
                 + request.annoTypeName().className() + "_"
                 + request.targetElement().elementName();
-        TypeName generatedTypeName = DefaultTypeName.create(enclosingType.typeName().packageName(), classname);
+        TypeName generatedTypeName = TypeNameDefault.create(enclosingType.typeName().packageName(), classname);
 
         GenericTemplateCreator genericTemplateCreator = request.genericTemplateCreator();
-        GenericTemplateCreatorRequest genericCreatorRequest = DefaultGenericTemplateCreatorRequest.builder()
+        GenericTemplateCreatorRequest genericCreatorRequest = GenericTemplateCreatorRequestDefault.builder()
                 .customAnnotationTemplateRequest(request)
                 .template(Templates.loadTemplate("nima", "http-method.java.hbs"))
                 .generatedTypeName(generatedTypeName)

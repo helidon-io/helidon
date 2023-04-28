@@ -92,13 +92,13 @@ public interface ActivationLogEntry {
     /**
      * Ensures that the non-nullable fields are populated with default values.
      */
-    class Interceptor implements BuilderInterceptor<DefaultActivationLogEntry.Builder> {
+    class Interceptor implements BuilderInterceptor<ActivationLogEntryDefault.Builder> {
 
         Interceptor() {
         }
 
         @Override
-        public DefaultActivationLogEntry.Builder intercept(DefaultActivationLogEntry.Builder b) {
+        public ActivationLogEntryDefault.Builder intercept(ActivationLogEntryDefault.Builder b) {
             if (b.time() == null) {
                 b.time(Instant.now());
             }

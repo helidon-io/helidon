@@ -76,7 +76,7 @@ public class Http2UpgradeProvider implements Http1UpgradeProvider {
         Http2Config usedConfig;
 
         if (http2Config == null) {
-            usedConfig = DefaultHttp2Config.toBuilder(config.apply(Http2ConnectionProvider.CONFIG_NAME)).build();
+            usedConfig = Http2ConfigDefault.toBuilder(config.apply(Http2ConnectionProvider.CONFIG_NAME)).build();
         } else {
             usedConfig = http2Config;
         }

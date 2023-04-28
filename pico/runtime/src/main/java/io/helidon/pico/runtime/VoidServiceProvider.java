@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.DefaultServiceInfo;
+import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.ServiceProvider;
 
 import jakarta.inject.Singleton;
@@ -34,7 +34,7 @@ class VoidServiceProvider extends AbstractServiceProvider<Void> {
     static final List<ServiceProvider<?>> LIST_INSTANCE = List.of(INSTANCE);
 
     private VoidServiceProvider() {
-        serviceInfo(DefaultServiceInfo.builder()
+        serviceInfo(ServiceInfoDefault.builder()
                 .serviceTypeName(serviceTypeName())
                 .addContractsImplemented(serviceTypeName())
                 .activatorTypeName(VoidServiceProvider.class.getName())

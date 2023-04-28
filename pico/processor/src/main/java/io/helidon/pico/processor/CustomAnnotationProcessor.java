@@ -37,19 +37,19 @@ import javax.lang.model.util.Elements;
 
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
+import io.helidon.pico.tools.ActivatorCreatorDefault;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
+import io.helidon.pico.tools.CustomAnnotationTemplateRequestDefault;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.DefaultActivatorCreator;
-import io.helidon.pico.tools.DefaultCustomAnnotationTemplateRequest;
-import io.helidon.pico.tools.DefaultCustomAnnotationTemplateResponse;
+import io.helidon.pico.tools.CustomAnnotationTemplateResponseDefault;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
@@ -84,7 +84,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             try {
                 Set<String> annoTypes = creator.annoTypes();
                 annoTypes.forEach(annoType -> {
-                    PRODUCERS_BY_ANNOTATION.compute(DefaultTypeName.createFromTypeName(annoType), (k, v) -> {
+                    PRODUCERS_BY_ANNOTATION.compute(TypeNameDefault.createFromTypeName(annoType), (k, v) -> {
                         if (v == null) {
                             v = new LinkedHashSet<>();
                         }
@@ -115,7 +115,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         try {
             if (!roundEnv.processingOver()) {
                 for (String annoType : annoTypes()) {
-                    TypeName annoName = DefaultTypeName.createFromTypeName(annoType);
+                    TypeName annoName = TypeNameDefault.createFromTypeName(annoType);
                     Optional<TypeElement> annoElement = toTypeElement(annoName);
                     if (annoElement.isEmpty()) {
                         continue;
@@ -159,13 +159,13 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
         for (Element typeToProcess : typesToProcess) {
             try {
-                DefaultCustomAnnotationTemplateRequest.Builder req =
+                CustomAnnotationTemplateRequestDefault.Builder req =
                         toRequestBuilder(annoTypeName, typeToProcess, roundEnv, true);
                 if (req == null) {
                     continue;
                 }
 
-                DefaultCustomAnnotationTemplateResponse.Builder res = DefaultCustomAnnotationTemplateResponse.builder()
+                CustomAnnotationTemplateResponseDefault.Builder res = CustomAnnotationTemplateResponseDefault.builder()
                         .request(req);
                 for (CustomAnnotationTemplateCreator producer : producers) {
                     req.genericTemplateCreator(new DefaultGenericTemplateCreator(producer.getClass(), this));
@@ -208,7 +208,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             CustomAnnotationTemplateResponse res = producer.create(req).orElse(null);
             if (res != null && req.isFilerEnabled() && !res.generatedSourceCode().isEmpty()) {
                 res.generatedSourceCode().entrySet().forEach(entry -> {
-                    DefaultTypeName.ensureIsFQN(entry.getKey());
+                    TypeNameDefault.ensureIsFQN(entry.getKey());
                     if (!hasValue(entry.getValue())) {
                         throw new ToolsException("expected to have valid code for: " + req + " for " + entry);
                     }
@@ -220,7 +220,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         }
     }
 
-    DefaultCustomAnnotationTemplateRequest.Builder toRequestBuilder(TypeName annoTypeName,
+    CustomAnnotationTemplateRequestDefault.Builder toRequestBuilder(TypeName annoTypeName,
                                                                     Element typeToProcess,
                                                                     RoundEnvironment ignoredRoundEnv,
                                                                     boolean wantDefaultMethods) {
@@ -243,7 +243,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 .createTypeInfo(annoTypeName, enclosingClassTypeName, enclosingClassType, processingEnv, wantDefaultMethods)
                 .orElseThrow();
         Elements elements = processingEnv.getElementUtils();
-        return DefaultCustomAnnotationTemplateRequest.builder()
+        return CustomAnnotationTemplateRequestDefault.builder()
                 .filerEnabled(true)
                 .annoTypeName(annoTypeName)
                 .serviceInfo(siInfo)
@@ -256,11 +256,11 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     ServiceInfoBasics toBasicServiceInfo(TypeName enclosingClassType) {
         ActivatorCreatorCodeGen codeGen =
-                DefaultActivatorCreator.createActivatorCreatorCodeGen(servicesToProcess()).orElse(null);
+                ActivatorCreatorDefault.createActivatorCreatorCodeGen(servicesToProcess()).orElse(null);
         if (codeGen == null) {
             return null;
         }
-        return DefaultActivatorCreator.toServiceInfo(enclosingClassType, codeGen);
+        return ActivatorCreatorDefault.toServiceInfo(enclosingClassType, codeGen);
     }
 
     List<TypedElementName> toArgs(Element typeToProcess) {

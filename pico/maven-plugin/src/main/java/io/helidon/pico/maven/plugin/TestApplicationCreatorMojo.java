@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
@@ -40,9 +40,9 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 import static io.helidon.pico.maven.plugin.MavenPluginUtils.picoServices;
-import static io.helidon.pico.tools.DefaultApplicationCreator.APPLICATION_NAME_SUFFIX;
-import static io.helidon.pico.tools.DefaultApplicationCreator.NAME_PREFIX;
-import static io.helidon.pico.tools.DefaultApplicationCreator.upperFirstChar;
+import static io.helidon.pico.tools.ApplicationCreatorDefault.APPLICATION_NAME_SUFFIX;
+import static io.helidon.pico.tools.ApplicationCreatorDefault.NAME_PREFIX;
+import static io.helidon.pico.tools.ApplicationCreatorDefault.upperFirstChar;
 import static io.helidon.pico.tools.ModuleUtils.toBasePath;
 import static io.helidon.pico.tools.ModuleUtils.toSuggestedModuleName;
 
@@ -152,7 +152,7 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
             // retrieves all the services in the registry
             List<ServiceProvider<?>> allServices = services
-                    .lookupAll(DefaultServiceInfoCriteria.builder().build(), false);
+                    .lookupAll(ServiceInfoCriteriaDefault.builder().build(), false);
             Set<TypeName> serviceTypeNames = toNames(allServices);
             getLog().debug("excluding service type names: " + serviceTypeNames);
             return serviceTypeNames;

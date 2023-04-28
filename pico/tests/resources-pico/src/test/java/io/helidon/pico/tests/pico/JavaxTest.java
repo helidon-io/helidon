@@ -17,7 +17,7 @@
 package io.helidon.pico.tests.pico;
 
 import io.helidon.config.Config;
-import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 
@@ -64,7 +64,7 @@ class JavaxTest {
         assertThat(sp.toString(),
                    equalTo("AnApplicationScopedService:INIT"));
         assertThat(sp.serviceInfo().qualifiers(),
-                   contains(DefaultQualifierAndValue.create(Default.class)));
+                   contains(QualifierAndValueDefault.create(Default.class)));
         assertThat(sp.serviceInfo().scopeTypeNames(),
                    containsInAnyOrder(Singleton.class.getName(), ApplicationScoped.class.getName()));
     }

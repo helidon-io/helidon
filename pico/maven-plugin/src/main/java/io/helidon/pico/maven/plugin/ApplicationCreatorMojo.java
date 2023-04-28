@@ -19,7 +19,7 @@ package io.helidon.pico.maven.plugin;
 import java.io.File;
 
 import io.helidon.pico.api.PicoServicesConfig;
-import io.helidon.pico.tools.DefaultApplicationCreator;
+import io.helidon.pico.tools.ApplicationCreatorDefault;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -61,7 +61,7 @@ public class ApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     @Override
     String getGeneratedClassName() {
-        return (className == null) ? DefaultApplicationCreator.APPLICATION_NAME : className;
+        return (className == null) ? ApplicationCreatorDefault.APPLICATION_NAME : className;
     }
 
     @Override

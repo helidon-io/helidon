@@ -21,11 +21,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.DefaultCustomAnnotationTemplateResponse;
+import io.helidon.pico.tools.CustomAnnotationTemplateResponseDefault;
 import io.helidon.pico.tools.GenericTemplateCreator;
 import io.helidon.pico.tools.GenericTemplateCreatorRequest;
 import io.helidon.pico.tools.Messager;
@@ -63,7 +63,7 @@ class DefaultGenericTemplateCreator implements GenericTemplateCreator {
     @Override
     public Optional<CustomAnnotationTemplateResponse> create(GenericTemplateCreatorRequest req) {
         Objects.requireNonNull(req);
-        if (!DefaultTypeName.isFQN(req.generatedTypeName())) {
+        if (!TypeNameDefault.isFQN(req.generatedTypeName())) {
             messager.debug("skipping custom template production for: " + req.generatedTypeName() + " = " + req);
             return Optional.empty();
         }
@@ -71,7 +71,7 @@ class DefaultGenericTemplateCreator implements GenericTemplateCreator {
         TemplateHelper templateHelper = TemplateHelper.create();
         Map<String, Object> substitutions = gatherSubstitutions(req, templateHelper);
         String javaBody = templateHelper.applySubstitutions(req.template(), substitutions, true);
-        return Optional.of(DefaultCustomAnnotationTemplateResponse.builder()
+        return Optional.of(CustomAnnotationTemplateResponseDefault.builder()
                                    .request(req.customAnnotationTemplateRequest())
                                    .addGeneratedSourceCode(req.generatedTypeName(), javaBody)
                                    .build());

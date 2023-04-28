@@ -19,11 +19,11 @@ package io.helidon.pico.tools;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.tools.spi.ApplicationCreator;
@@ -37,15 +37,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
 /**
- * Tests for {@link io.helidon.pico.tools.DefaultActivatorCreator}.
+ * Tests for {@link ActivatorCreatorDefault}.
  */
-class DefaultApplicationCreatorTest extends AbstractBaseCreator {
+class ApplicationCreatorDefaultTest extends AbstractBaseCreator {
 
     final ApplicationCreator applicationCreator = loadAndCreate(ApplicationCreator.class);
 
     @Test
     void sanity() {
-        assertThat(applicationCreator.getClass(), equalTo(DefaultApplicationCreator.class));
+        assertThat(applicationCreator.getClass(), equalTo(ApplicationCreatorDefault.class));
     }
 
     /**
@@ -54,17 +54,17 @@ class DefaultApplicationCreatorTest extends AbstractBaseCreator {
     @Test
     void codegenHelloWorldApplication() {
         ApplicationCreator creator = this.applicationCreator;
-        ServiceInfoCriteria allServices = DefaultServiceInfoCriteria.builder().build();
+        ServiceInfoCriteria allServices = ServiceInfoCriteriaDefault.builder().build();
 
         PicoServices picoServices = PicoServices.picoServices().orElseThrow();
         Services services = picoServices.services();
         List<ServiceProvider<?>> serviceProviders = services.lookupAll(allServices);
 
         List<TypeName> serviceTypeNames = serviceProviders.stream()
-                .map(sp -> DefaultTypeName.createFromTypeName(sp.serviceInfo().serviceTypeName()))
+                .map(sp -> TypeNameDefault.createFromTypeName(sp.serviceInfo().serviceTypeName()))
                 .collect(Collectors.toList());
 
-        CodeGenPaths codeGenPaths = DefaultCodeGenPaths.builder()
+        CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
                 .generatedSourcesPath("target/pico/generated-sources")
                 .outputPath("target/pico/generated-classes")
                 .build();
@@ -75,13 +75,13 @@ class DefaultApplicationCreatorTest extends AbstractBaseCreator {
         String classpath = System.getProperty("java.class.path");
         String separator = System.getProperty("path.separator");
         String[] ignoredClasspath = classpath.split(separator);
-        ApplicationCreatorRequest req = DefaultApplicationCreatorRequest.builder()
-                .codeGen(DefaultApplicationCreatorCodeGen.builder()
-                                        .className(DefaultApplicationCreator.toApplicationClassName("test"))
+        ApplicationCreatorRequest req = ApplicationCreatorRequestDefault.builder()
+                .codeGen(ApplicationCreatorCodeGenDefault.builder()
+                                        .className(ApplicationCreatorDefault.toApplicationClassName("test"))
                                         .classPrefixName("test")
                                         .build())
                 .codeGenPaths(codeGenPaths)
-                .configOptions(DefaultApplicationCreatorConfigOptions.builder()
+                .configOptions(ApplicationCreatorConfigOptionsDefault.builder()
                                        .permittedProviderTypes(ApplicationCreatorConfigOptions.PermittedProviderType.ALL)
                                        .build())
                 .filer(filer)

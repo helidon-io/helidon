@@ -62,7 +62,7 @@ class ConnectionConfigTest {
     void testProviderConfigBuilder() {
 
         Http2ConnectionSelector provider = (Http2ConnectionSelector) Http2ConnectionProvider.builder()
-                .http2Config(DefaultHttp2Config.builder()
+                .http2Config(Http2ConfigDefault.builder()
                                      .maxFrameSize(4096)
                                      .maxHeaderListSize(2048L)
                                      .build())
@@ -143,7 +143,7 @@ class ConnectionConfigTest {
         @Override
         public ServerConnectionSelector create(Function<String, Config> configs) {
             Config config = configs.apply("http_2");
-            http2Config = DefaultHttp2Config.toBuilder(config).build();
+            http2Config = Http2ConfigDefault.toBuilder(config).build();
             return mock(ServerConnectionSelector.class);
         }
 

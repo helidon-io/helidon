@@ -34,8 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.lang.model.element.TypeElement;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServicesConfig;
@@ -94,7 +94,7 @@ public class ModuleUtils {
             if (provides.isEmpty() || provides.get().withOrTo().isEmpty()) {
                 export = descriptor.firstUnqualifiedPackageExport().orElse(null);
             } else {
-                export = DefaultTypeName
+                export = TypeNameDefault
                         .createFromTypeName(first(provides.get().withOrTo(), false)).packageName();
             }
         }

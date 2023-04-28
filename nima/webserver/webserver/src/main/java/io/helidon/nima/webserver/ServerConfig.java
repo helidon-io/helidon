@@ -21,7 +21,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Server configuration bean.
- * There is a generated {@link io.helidon.nima.webserver.DefaultServerConfig} implementing this type, that can be used
+ * There is a generated {@link io.helidon.nima.webserver.ServerConfigDefault} implementing this type, that can be used
  * to create an instance manually through a builder, or using configuration.
  */
 @ConfigBean(value = "server", levelType = ConfigBean.LevelType.ROOT, drivesActivation = true)

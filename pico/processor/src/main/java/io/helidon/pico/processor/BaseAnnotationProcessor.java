@@ -51,26 +51,26 @@ import javax.tools.JavaFileObject;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.Contract;
-import io.helidon.pico.api.DefaultServiceInfo;
 import io.helidon.pico.api.ExternalContracts;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
+import io.helidon.pico.tools.ActivatorCreatorConfigOptionsDefault;
+import io.helidon.pico.tools.ActivatorCreatorDefault;
 import io.helidon.pico.tools.ActivatorCreatorProvider;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
 import io.helidon.pico.tools.CodeGenFiler;
-import io.helidon.pico.tools.DefaultActivatorCreator;
-import io.helidon.pico.tools.DefaultActivatorCreatorConfigOptions;
-import io.helidon.pico.tools.DefaultGeneralCreatorRequest;
 import io.helidon.pico.tools.GeneralCreatorRequest;
+import io.helidon.pico.tools.GeneralCreatorRequestDefault;
 import io.helidon.pico.tools.InterceptionPlan;
 import io.helidon.pico.tools.InterceptorCreatorProvider;
 import io.helidon.pico.tools.Messager;
@@ -169,7 +169,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             if (!roundEnv.processingOver()) {
                 for (String annoType : annoTypes()) {
                     // annotation may not be on the classpath, in such a case just ignore it
-                    TypeName annoName = DefaultTypeName.createFromTypeName(annoType);
+                    TypeName annoName = TypeNameDefault.createFromTypeName(annoType);
                     Optional<TypeElement> annoTypeElement = toTypeElement(annoName);
                     if (annoTypeElement.isPresent()) {
                         Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoTypeElement.get());
@@ -386,7 +386,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     }
 
     ServiceInfoBasics toInterceptedServiceInfoFor(TypeName serviceTypeName) {
-        return DefaultServiceInfo.builder()
+        return ServiceInfoDefault.builder()
                 .serviceTypeName(serviceTypeName.name())
                 .declaredWeight(Optional.ofNullable(services.weightedPriorities().get(serviceTypeName)))
                 .declaredRunLevel(Optional.ofNullable(services.runLevels().get(serviceTypeName)))
@@ -605,7 +605,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
         Map<TypeName, InterceptionPlan> interceptionPlanMap = services.interceptorPlans();
         if (!interceptionPlanMap.isEmpty()) {
-            GeneralCreatorRequest req = DefaultGeneralCreatorRequest.builder()
+            GeneralCreatorRequest req = GeneralCreatorRequestDefault.builder()
                     .filer(filer);
             creator.codegenInterceptors(req, interceptionPlanMap);
             services.clearInterceptorPlans();
@@ -615,16 +615,16 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
         }
 
-        ActivatorCreatorCodeGen codeGen = DefaultActivatorCreator.createActivatorCreatorCodeGen(services).orElse(null);
+        ActivatorCreatorCodeGen codeGen = ActivatorCreatorDefault.createActivatorCreatorCodeGen(services).orElse(null);
         if (codeGen == null) {
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
         }
 
-        DefaultActivatorCreatorConfigOptions configOptions = DefaultActivatorCreatorConfigOptions.builder()
+        ActivatorCreatorConfigOptionsDefault configOptions = ActivatorCreatorConfigOptionsDefault.builder()
                 .applicationPreCreated(Options.isOptionEnabled(Options.TAG_APPLICATION_PRE_CREATE))
                 .moduleCreated(isProcessingOver)
                 .build();
-        ActivatorCreatorRequest req = DefaultActivatorCreator
+        ActivatorCreatorRequest req = ActivatorCreatorDefault
                 .createActivatorCreatorRequest(services, codeGen, configOptions, filer, false);
 
         try {
@@ -708,7 +708,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             TypeName teContractName = createTypeNameFromElement(teContract).orElseThrow();
             result.add(teContractName);
             if (isProviderType(teContractName.name())) {
-                result.add(DefaultTypeName.createFromTypeName(TypeNames.JAKARTA_PROVIDER));
+                result.add(TypeNameDefault.createFromTypeName(TypeNames.JAKARTA_PROVIDER));
             }
             providerForSet.add(gTypeName);
         }
@@ -762,12 +762,12 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                                                                       teContract.getAnnotationMirrors()).orElse(null);
             if (externalContracts != null) {
                 Collection<AnnotationAndValue> annotations = createAnnotationAndValueSet(teContract);
-                Optional<? extends AnnotationAndValue> annotation = DefaultAnnotationAndValue
+                Optional<? extends AnnotationAndValue> annotation = AnnotationAndValueDefault
                         .findFirst(ExternalContracts.class.getName(), annotations);
                 List<String> values = (annotation.isPresent() && annotation.get().value().isPresent())
                         ? toList(annotation.get().value().get()) : List.of();
                 for (String externalContract : values) {
-                    result.add(DefaultTypeName.createFromTypeName(externalContract));
+                    result.add(TypeNameDefault.createFromTypeName(externalContract));
                 }
                 Map<String, String> map = extractValues(externalContracts, processingEnv.getElementUtils());
                 String moduleNames = map.get("moduleNames");
