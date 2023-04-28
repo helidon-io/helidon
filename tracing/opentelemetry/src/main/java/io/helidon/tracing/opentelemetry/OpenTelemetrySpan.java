@@ -17,6 +17,7 @@ package io.helidon.tracing.opentelemetry;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Scope;
@@ -96,32 +97,30 @@ class OpenTelemetrySpan implements Span {
     }
 
     @Override
-    public io.helidon.tracing.Span baggage(String key, String value) {
+    public Span baggage(String key, String value) {
         Objects.requireNonNull(key, "Baggage Key cannot be null");
         Objects.requireNonNull(value, "Baggage Value cannot be null");
-
-        // Check if OTEL Context is already available in Global Helidon Context.
-        // If not – use Current context.
-        Context context = Contexts.globalContext().get(Context.class)
-                .map(Context.class::cast)
-                .orElseGet(Context::current);
 
         Baggage.builder()
                 .put(key, value)
                 .build()
-                .storeInContext(context)
+                .storeInContext(getContext())
                 .makeCurrent();
         return (io.helidon.tracing.Span) delegate;
     }
 
     @Override
-    public String baggage(String key) {
-        // Check if OTEL Context is already available in Global Helidon Context.
-        // If not – use Current context.
-        Context context = Contexts.globalContext().get(Context.class)
+    public Optional<String> baggage(String key) {
+        Objects.requireNonNull(key, "Baggage Key cannot be null");
+        return Optional.ofNullable(Baggage.fromContext(getContext()).getEntryValue(key));
+    }
+
+    // Check if OTEL Context is already available in Global Helidon Context.
+    // If not – use Current context.
+    private static Context getContext() {
+        return Contexts.globalContext().get(Context.class)
                 .map(Context.class::cast)
                 .orElseGet(Context::current);
-        return Baggage.fromContext(context).getEntryValue(key);
     }
 
     private Attributes toAttributes(Map<String, ?> attributes) {

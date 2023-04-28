@@ -17,6 +17,8 @@ package io.helidon.tracing.opentracing;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
@@ -96,12 +98,18 @@ class OpenTracingSpan implements Span {
 
     @Override
     public Span baggage(String key, String value) {
-        return (OpenTracingSpan) delegate.setBaggageItem(key, value);
+        Objects.requireNonNull(key, "Baggage Key cannot be null");
+        Objects.requireNonNull(value, "Baggage Value cannot be null");
+
+        delegate.setBaggageItem(key, value);
+        return this;
     }
 
     @Override
-    public String baggage(String key) {
-        return delegate.getBaggageItem(key);
+    public Optional<String> baggage(String key) {
+        Objects.requireNonNull(key, "Baggage Key cannot be null");
+
+        return Optional.ofNullable(delegate.getBaggageItem(key));
     }
 
     @Override
