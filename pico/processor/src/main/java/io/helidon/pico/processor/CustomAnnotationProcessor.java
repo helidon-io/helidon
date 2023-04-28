@@ -150,7 +150,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
     void doInner(TypeName annoTypeName,
                  Set<? extends Element> typesToProcess,
-                 RoundEnvironment roundEnv) {
+                 RoundEnvironment ignoredRoundEnv) {
         if (typesToProcess.isEmpty()) {
             return;
         }

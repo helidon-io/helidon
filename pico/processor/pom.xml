@@ -41,7 +41,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-utils</artifactId>
+            <artifactId>helidon-builder-testing</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>

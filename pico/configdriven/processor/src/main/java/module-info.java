@@ -34,6 +34,7 @@ module io.helidon.pico.configdriven.processor {
     requires transitive io.helidon.builder.processor;
     requires transitive io.helidon.builder.processor.spi;
     requires transitive io.helidon.pico.processor;
+    requires transitive io.helidon.pico.tools;
 
     exports io.helidon.pico.configdriven.processor;
 

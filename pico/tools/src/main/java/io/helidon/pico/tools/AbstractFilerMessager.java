@@ -210,7 +210,7 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
         public FileObject getResource(JavaFileManager.Location location,
                                       CharSequence moduleAndPkg,
                                       CharSequence relativeName) throws IOException {
-            return getResource(location, moduleAndPkg, relativeName, true);
+            return getResource(location, moduleAndPkg, relativeName, false);
         }
 
         private FileObject getResource(JavaFileManager.Location location,

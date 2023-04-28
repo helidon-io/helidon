@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.utils;
+package io.helidon.builder.testing.utils;
 
 import java.util.Optional;
 

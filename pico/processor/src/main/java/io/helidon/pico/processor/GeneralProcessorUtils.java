@@ -20,16 +20,33 @@ import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.DefaultAnnotationAndValue;
+import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementName;
+import io.helidon.pico.api.DefaultQualifierAndValue;
+import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.RunLevel;
+import io.helidon.pico.tools.Options;
+import io.helidon.pico.tools.TypeNames;
 import io.helidon.pico.tools.TypeTools;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.inject.Qualifier;
+import jakarta.inject.Singleton;
 
 /**
  * Carries static methods that are agnostic to the active processing environment.
@@ -115,6 +132,201 @@ final class GeneralProcessorUtils {
             return Optional.empty();
         }
         return Optional.of(Paths.get(uri));
+    }
+
+    /**
+     * Attempts to resolve the {@link RunLevel} value assigned to the provided service.
+     *
+     * @param service the service
+     * @return the declared run level if available
+     */
+    static Optional<Integer> toRunLevel(TypeInfo service) {
+        AnnotationAndValue runLevelAnno =
+                DefaultAnnotationAndValue.findFirst(RunLevel.class, service.annotations()).orElse(null);
+        if (runLevelAnno != null) {
+            return Optional.of(Integer.valueOf(runLevelAnno.value().orElseThrow()));
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Attempts to resolve the {@link Weight} value assigned to the provided service.
+     *
+     * @param service the service
+     * @return the declared weight if available
+     */
+    static Optional<Double> toWeight(TypeInfo service) {
+        AnnotationAndValue weightAnno =
+                DefaultAnnotationAndValue.findFirst(Weight.class, service.annotations()).orElse(null);
+        if (weightAnno != null) {
+            return Optional.of(Double.valueOf(weightAnno.value().orElseThrow()));
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Attempts to resolve the {@link PostConstruct} method name assigned to the provided service.
+     *
+     * @param service the service
+     * @return the post construct method if available
+     */
+    static Optional<String> toPostConstructMethod(TypeInfo service) {
+        List<String> postConstructs = service.elementInfo().stream()
+                .filter(it -> {
+                    AnnotationAndValue anno = findFirst(PostConstruct.class, it.annotations()).orElse(null);
+                    return (anno != null);
+                })
+                .map(TypedElementName::elementName)
+                .toList();
+        if (postConstructs.size() == 1) {
+            return Optional.of(postConstructs.get(0));
+        } else if (postConstructs.size() > 1) {
+            throw new IllegalStateException("There can be at most one "
+                                                    + PostConstruct.class.getName()
+                                                    + " annotated method per type: " + service.typeName());
+        }
+
+        if (service.superTypeInfo().isPresent()) {
+            return toPostConstructMethod(service.superTypeInfo().get());
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Attempts to resolve the {@link PreDestroy} method name assigned to the provided service.
+     *
+     * @param service the service
+     * @return the pre destroy method if available
+     */
+    static Optional<String> toPreDestroyMethod(TypeInfo service) {
+        List<String> preDestroys = service.elementInfo().stream()
+                .filter(it -> {
+                    AnnotationAndValue anno = findFirst(PreDestroy.class, it.annotations()).orElse(null);
+                    return (anno != null);
+                })
+                .map(TypedElementName::elementName)
+                .toList();
+        if (preDestroys.size() == 1) {
+            return Optional.of(preDestroys.get(0));
+        } else if (preDestroys.size() > 1) {
+            throw new IllegalStateException("There can be at most one "
+                                                    + PreDestroy.class.getName()
+                                                    + " annotated method per type: " + service.typeName());
+        }
+
+        if (service.superTypeInfo().isPresent()) {
+            return toPreDestroyMethod(service.superTypeInfo().get());
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Attempts to resolve the scope names of the provided service.
+     *
+     * @param service the service
+     * @return the set of declared scope names
+     */
+    static Set<String> toScopeNames(TypeInfo service) {
+        Set<String> scopeAnnotations = new LinkedHashSet<>();
+
+        service.referencedTypeNamesToAnnotations()
+                .forEach((typeName, listOfAnnotations) -> {
+                    if (listOfAnnotations.stream()
+                            .map(it -> it.typeName().name())
+                            .anyMatch(it -> it.equals(TypeNames.JAKARTA_SCOPE))) {
+                        scopeAnnotations.add(typeName.name());
+                    }
+                });
+
+        if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
+            boolean hasApplicationScope = scopeAnnotations.stream()
+                    .anyMatch(it -> it.equals(TypeNames.JAKARTA_APPLICATION_SCOPED)
+                            || it.equals(TypeNames.JAVAX_APPLICATION_SCOPED));
+            if (hasApplicationScope) {
+                scopeAnnotations.add(Singleton.class.getName());
+            }
+        }
+
+        return scopeAnnotations;
+    }
+
+    /**
+     * Returns the type hierarchy of the provided service type info.
+     *
+     * @param service the service
+     * @return the type hierarchy
+     */
+    static List<TypeName> toServiceTypeHierarchy(TypeInfo service) {
+        List<TypeName> result = new ArrayList<>();
+        result.add(service.typeName());
+        service.superTypeInfo().ifPresent(it -> result.addAll(toServiceTypeHierarchy(it)));
+        return result;
+    }
+
+    /**
+     * Returns the qualifiers assigned to the provided service type info.
+     *
+     * @param service the service
+     * @return the qualifiers of the service
+     */
+    static Set<QualifierAndValue> toQualifiers(TypeInfo service) {
+        Set<QualifierAndValue> result = new LinkedHashSet<>();
+
+        for (AnnotationAndValue anno : service.annotations()) {
+            List<AnnotationAndValue> metaAnnotations = service.referencedTypeNamesToAnnotations().get(anno.typeName());
+            Optional<? extends AnnotationAndValue> qual = findFirst(Qualifier.class, metaAnnotations);
+            if (qual.isPresent()) {
+                result.add(DefaultQualifierAndValue.convert(anno));
+            }
+        }
+
+        // note: should qualifiers be inheritable? Right now we assume not to support the jsr-330 spec
+        //        service.superTypeInfo().ifPresent(it -> result.addAll(toQualifiers(it)));
+        //        service.interfaceTypeInfo().forEach(it -> result.addAll(toQualifiers(it)));
+
+        return result;
+    }
+
+    /**
+     * Returns the qualifiers assigned to the provided typed element belonging to the associated service.
+     *
+     * @param element the typed element (e.g., field, method, or constructor)
+     * @param service the service for which the typed element belongs
+     * @return the qualifiers associated with the provided element
+     */
+    static Set<QualifierAndValue> toQualifiers(TypedElementName element,
+                                               TypeInfo service) {
+        Set<QualifierAndValue> result = new LinkedHashSet<>();
+
+        for (AnnotationAndValue anno : element.annotations()) {
+            List<AnnotationAndValue> metaAnnotations = service.referencedTypeNamesToAnnotations().get(anno.typeName());
+            Optional<? extends AnnotationAndValue> qual = (metaAnnotations == null)
+                    ? Optional.empty() : findFirst(Qualifier.class, metaAnnotations);
+            if (qual.isPresent()) {
+                result.add(DefaultQualifierAndValue.convert(anno));
+            }
+        }
+
+        // note: should qualifiers be inheritable? Right now we assume not to support the jsr-330 spec
+
+        return result;
+    }
+
+    /**
+     * Returns true if the provided type name is a {@code Provider<>} type.
+     *
+     * @param typeName the type name to check
+     * @return true if the provided type is a provider type.
+     */
+    static boolean isProviderType(TypeName typeName) {
+        String name = typeName.name();
+        return (name.equals(TypeNames.JAKARTA_PROVIDER)
+                        || name.equals(TypeNames.JAVAX_PROVIDER)
+                        || name.equals(TypeNames.PICO_INJECTION_POINT_PROVIDER));
     }
 
     /**

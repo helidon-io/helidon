@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.utils;
+package io.helidon.builder.testing.utils;
 
 import io.helidon.builder.Builder;
 
 @Builder
-public interface Orange extends Fruit {
+public interface Peel {
+
+    boolean edible();
+
 }

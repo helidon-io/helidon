@@ -21,28 +21,30 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
-import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
+import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
+import io.helidon.builder.processor.tools.BuilderTypeTools;
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ServicesToProcess;
 
-import com.sun.source.util.TreePath;
-import com.sun.source.util.Trees;
-
-import static io.helidon.pico.processor.GeneralProcessorUtils.hasValue;
 import static io.helidon.pico.processor.GeneralProcessorUtils.toPath;
 import static io.helidon.pico.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
 import static io.helidon.pico.tools.ModuleUtils.inferSourceOrTest;
@@ -59,6 +61,7 @@ final class ActiveProcessorUtils implements Messager {
 
     private final System.Logger logger;
     private final ProcessingEnvironment processingEnv;
+    private final TypeInfoCreatorProvider typeInfoCreatorProvider;
     private RoundEnvironment roundEnv;
 
     ActiveProcessorUtils(AbstractProcessor processor,
@@ -67,6 +70,12 @@ final class ActiveProcessorUtils implements Messager {
         this.logger = System.getLogger(processor.getClass().getName());
         this.processingEnv = Objects.requireNonNull(processingEnv);
         this.roundEnv = roundEnv;
+        this.typeInfoCreatorProvider = HelidonServiceLoader.create(
+                        ServiceLoader.load(TypeInfoCreatorProvider.class, TypeInfoCreatorProvider.class.getClassLoader()))
+                .asList()
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No available " + TypeInfoCreatorProvider.class));
 
         Options.init(processingEnv);
         debug("*** Processing " + processor.getClass().getSimpleName() + " ***");
@@ -143,11 +152,11 @@ final class ActiveProcessorUtils implements Messager {
      * Determines if the given type element is defined in the module being processed. If so then the return value is set to
      * {@code true} and the moduleName is cleared out. If not then the return value is set to {@code false} and the
      * {@code moduleName} is set to the module name if it has a qualified module name, and not from an internal java module system
-     * type.
+     * type. Note that this method will only return {@code true} when the module info paths are being used in the project.
      *
      * @param type       the type element to analyze
      * @param moduleName the module name to populate if it is determinable
-     * @return true if the type is defined in this module, false otherwise
+     * @return true if the type is definitely defined in this module, false otherwise
      */
     boolean isTypeInThisModule(TypeElement type,
                                AtomicReference<String> moduleName) {
@@ -156,30 +165,7 @@ final class ActiveProcessorUtils implements Messager {
             return true;
         }
 
-        ModuleElement module = processingEnv.getElementUtils().getModuleOf(type);
-        if (!module.isUnnamed()) {
-            String name = module.getQualifiedName().toString();
-            if (hasValue(name)) {
-                moduleName.set(name);
-            }
-        }
-
-        // if there is no module-info in use we need to try to find the type is in our source path and if
-        // not found then just assume it is external
-        try {
-            Trees trees = Trees.instance(processingEnv);
-            TreePath path = trees.getPath(type);
-            if (path == null) {
-                return false;
-            }
-            JavaFileObject sourceFile = path.getCompilationUnit().getSourceFile();
-            return (sourceFile != null);
-        } catch (Throwable t) {
-            debug("unable to determine if contract is external: " + type + "; " + t.getMessage(), t);
-
-            // assumed external
-            return false;
-        }
+        return BuilderTypeTools.isTypeInThisModule(type, moduleName, processingEnv);
     }
 
     /**
@@ -230,6 +216,20 @@ final class ActiveProcessorUtils implements Messager {
         if (moduleInfoFile.get() != null) {
             servicesToProcess.lastKnownModuleInfoFilePath(moduleInfoFile.get().toPath());
         }
+    }
+
+    /**
+     * Converts the provided element and mirror into a {@link TypeInfo} structure.
+     *
+     * @param element          the element of the target service
+     * @param mirror           the type mirror of the target service
+     * @param isOneWeCareAbout a predicate filter that is used to determine the elements of particular interest (e.g., injectable)
+     * @return the type info for the target
+     */
+    Optional<TypeInfo> toTypeInfo(TypeElement element,
+                                  TypeMirror mirror,
+                                  Predicate<TypedElementName> isOneWeCareAbout) {
+        return typeInfoCreatorProvider.createTypeInfo(element, mirror, processingEnv, isOneWeCareAbout);
     }
 
     System.Logger.Level loggerLevel() {

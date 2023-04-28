@@ -26,8 +26,8 @@ import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
-import io.helidon.builder.utils.BuilderUtils;
-import io.helidon.builder.utils.Diff;
+import io.helidon.builder.testing.utils.BuilderUtils;
+import io.helidon.builder.testing.utils.Diff;
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorProvider;

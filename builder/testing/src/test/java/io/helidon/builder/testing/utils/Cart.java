@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.utils;
+package io.helidon.builder.testing.utils;
 
-import java.util.Optional;
+import java.util.List;
 
-public interface Fruit {
+import io.helidon.builder.Builder;
+import io.helidon.builder.Singular;
 
-    Optional<String> color();
+@Builder
+public interface Cart {
 
-    Peel peel();
+    @Singular
+    List<Fruit> fruits();
 
 }

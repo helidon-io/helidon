@@ -19,6 +19,7 @@ package io.helidon.pico.tools;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -91,6 +92,11 @@ public class CodeGenFiler {
                  Boolean enabled) {
         this.filer = Objects.requireNonNull(filer);
         this.enabled = enabled;
+        try {
+            targetOutputPath(filer.getResource(StandardLocation.CLASS_OUTPUT, "", "___"));
+        } catch (Exception e) {
+            // NOP - this was best effort
+        }
     }
 
     @Override
@@ -176,7 +182,7 @@ public class CodeGenFiler {
                     }
                 }
                 targetOutputPath(f);
-            } catch (FilerException | NoSuchFileException x) {
+            } catch (FilerException | NoSuchFileException | FileNotFoundException x) {
                 // don't show the exception in this case
                 messager.debug(getClass().getSimpleName() + ":" + x.getMessage());
             } catch (Exception x) {
@@ -262,7 +268,6 @@ public class CodeGenFiler {
             try (Writer os = f.openWriter()) {
                 os.write(body);
             }
-            targetOutputPath(f);
 
             if (FORCE_MODULE_INFO_PICO_INTO_SCRATCH_DIR && outPath.equals(PICO_MODULE_INFO_JAVA_NAME)
                     && targetOutputPath != null) {
