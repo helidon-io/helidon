@@ -35,8 +35,8 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.udp.UdpEndpoint;
+import io.helidon.nima.webserver.http.DirectHandlers;
 
 /**
  * Configuration of a server listener (server socket).
