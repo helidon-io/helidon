@@ -44,8 +44,8 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
     private static final String HTTP_URL = "http.url";
     private static final String CONFIG_STRING = "otel.span.client.";
 
-    // Extract the current OpenTelemetry Context. Required for a parent/child relationship to be correctly rebuilt in the
-    // next filter.
+    // Extract the current OpenTelemetry Context. Required for a parent/child relationship
+    // to be correctly rebuilt in the next filter.
     private static final TextMapSetter<ClientRequestContext> CONTEXT_HEADER_EXTRACTOR =
             (carrier, key, value) -> carrier.getHeaders().add(key, value);
 
@@ -68,6 +68,7 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
 
         Context parentContext = Context.current();
 
+        //Start new span for Client request.
         Span span = tracer.spanBuilder("HTTP " + clientRequestContext.getMethod())
                 .setParent(parentContext)
                 .setSpanKind(SpanKind.CLIENT)
@@ -95,6 +96,7 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
             LOGGER.log(System.Logger.Level.TRACE, "Closing Span in a Client Response");
         }
 
+        // End span for Client request.
         Context context = (Context) clientRequestContext.getProperty(CONFIG_STRING + "context");
         if (context == null) {
             return;

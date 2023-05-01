@@ -104,6 +104,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             annotatedPath = resourceInfo.getResourceMethod().getAnnotation(Path.class).value();
         }
 
+        //Start new span for container request.
         Span span = tracer.spanBuilder(annotatedPath)
                 .setParent(parentContext)
                 .setSpanKind(SpanKind.SERVER)
@@ -131,6 +132,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             LOGGER.log(System.Logger.Level.TRACE, "Closing Span in a Container Request");
         }
 
+        // Close span for container request.
         Context context = (Context) request.getProperty(SPAN_CONTEXT);
         if (context == null) {
             return;

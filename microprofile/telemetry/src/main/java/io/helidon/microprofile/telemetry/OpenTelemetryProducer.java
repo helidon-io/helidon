@@ -103,7 +103,8 @@ class OpenTelemetryProducer {
     }
 
     /**
-     * Get OpenTelemetry.
+     * Get OpenTelemetry. If the OTEL Agent is present, everything is configured and prepared.
+     * We just reuse objects from the Agent.
      *
      * @return OpenTelemetry
      */
@@ -111,11 +112,7 @@ class OpenTelemetryProducer {
     @Produces
     OpenTelemetry openTelemetry() {
 
-
         if (HelidonOpenTelemetry.AgentDetector.isAgentPresent(config)) {
-            // If we're using the agent, it will have set GlobalOpenTelemetry
-            // and we must use its instance
-            // all config is handled by the agent in this case
             return GlobalOpenTelemetry.get();
         }
 
@@ -167,12 +164,13 @@ class OpenTelemetryProducer {
             }
         }
 
+        // Metrics and logs exporters should be set to  "none"
         telemetryProperties.putIfAbsent(OTEL_METRICS_EXPORTER, "none");
         telemetryProperties.putIfAbsent(OTEL_LOGS_EXPORTER, "none");
         return telemetryProperties;
     }
 
-    // Check if Telemetry is disabled.
+    // Check if Telemetry is disabled by checking configuration or environmental variables.
     private boolean isTelemetryDisabled() {
         if (telemetryProperties.get(ENV_OTEL_SDK_DISABLED) != null) {
             return Boolean.parseBoolean(telemetryProperties.get(ENV_OTEL_SDK_DISABLED));

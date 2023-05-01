@@ -24,7 +24,7 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
 
     /**
      * Used to register {@code HelidonTelemetryContainerFilter} and {@code HelidonTelemetryClientFilter}
-     * filers.
+     * filters.
      *
      * @param ctx FeatureContext which is used to register the filters.
      */

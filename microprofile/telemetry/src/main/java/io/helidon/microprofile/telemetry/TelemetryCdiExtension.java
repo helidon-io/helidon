@@ -38,6 +38,7 @@ public class TelemetryCdiExtension implements Extension {
     void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(System.Logger.Level.TRACE, () -> "Before Telemetry bean discovery " + discovery);
 
+        // Register annotations, interceptors and producers.
         discovery.addAnnotatedType(HelidonWithSpan.class, HelidonWithSpan.class.getName());
         discovery.addAnnotatedType(WithSpanInterceptor.class, "WithSpanInterceptor");
         discovery.addAnnotatedType(OpenTelemetryProducer.class, "OpenTelemetryProducer");
@@ -53,6 +54,7 @@ public class TelemetryCdiExtension implements Extension {
 
         var configurator = pat.configureAnnotatedType();
 
+        // Add HelidonWithSpan annotation along to WithSpan.
         for (AnnotatedMethodConfigurator<?> method : configurator.methods()) {
             WithSpan withSpan = method.getAnnotated().getAnnotation(WithSpan.class);
             if (withSpan != null) {

@@ -74,6 +74,7 @@ class WithSpanInterceptor {
             spanName = className + "." + method.getName();
         }
 
+        // Start new Span
         Span span = tracer.spanBuilder(spanName)
                 .setSpanKind(annotation.kind())
                 .setParent(Context.current())

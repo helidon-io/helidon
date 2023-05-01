@@ -34,6 +34,7 @@ import jakarta.interceptor.InterceptorBinding;
 @Retention(RetentionPolicy.RUNTIME)
 @interface HelidonWithSpan {
 
+    // Literal to create HelidonWithSpan annotation.
     class Literal extends AnnotationLiteral<HelidonWithSpan> implements HelidonWithSpan {
         static final Literal INSTANCE = new Literal();
 
