@@ -35,13 +35,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.udp</groupId>
-            <artifactId>helidon-nima-udp</artifactId>
-            <version>${helidon.version}</version>       <!-- TODO -->
-        </dependency>
-        <dependency>
             <groupId>io.helidon.nima.webserver</groupId>
             <artifactId>helidon-nima-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.udp</groupId>
+            <artifactId>helidon-nima-udp</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

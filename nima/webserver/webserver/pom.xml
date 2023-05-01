@@ -141,7 +141,6 @@
         <dependency>
             <groupId>io.helidon.nima.udp</groupId>
             <artifactId>helidon-nima-udp</artifactId>
-            <version>${helidon.version}</version>       <!-- TODO -->
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
