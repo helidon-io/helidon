@@ -41,6 +41,7 @@
         <module>observe</module>
         <module>static-content</module>
         <module>pico</module>
+        <module>udp</module>
     </modules>
 
 </project>
