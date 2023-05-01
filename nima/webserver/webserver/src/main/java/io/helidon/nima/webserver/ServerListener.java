@@ -165,6 +165,10 @@ class ServerListener implements ListenerContext {
         return configuredAddress;
     }
 
+    String socketName() {
+        return socketName;
+    }
+
     void stop() {
         if (!running) {
             return;

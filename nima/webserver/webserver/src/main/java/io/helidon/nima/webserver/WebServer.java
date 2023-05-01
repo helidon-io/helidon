@@ -35,6 +35,7 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.MediaSupport;
+import io.helidon.nima.udp.UdpEndpoint;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
@@ -234,6 +235,7 @@ public interface WebServer {
             config.get("port").asInt().ifPresent(this::port);
             config.get("tls").as(Tls::create).ifPresent(this::tls);
             config.get("inherit-thread-locals").asBoolean().ifPresent(this::inheritThreadLocals);
+            config.get("udp").asBoolean().ifPresent(this::udp);
 
             // now let's configure the sockets
             config.get("sockets")
@@ -253,6 +255,7 @@ public interface WebServer {
                         listenerConfig.get("write-buffer-size").asInt().ifPresent(listener::writeBufferSize);
 
                         listenerConfig.get("tls").as(Tls::create).ifPresent(listener::tls);
+                        listenerConfig.get("udp").asBoolean().ifPresent(listener::udp);
 
                         // connection specific options
                         listener.connectionOptions(socketOptionsBuilder -> {
@@ -354,6 +357,30 @@ public interface WebServer {
         public Builder port(int port) {
             socket(DEFAULT_SOCKET_NAME).port(port);
             configBuilder.port(port);
+            return this;
+        }
+
+        /**
+         * Configure default socket as UDP.
+         *
+         * @param udp udp flag
+         * @return updated builder
+         */
+        public Builder udp(boolean udp) {
+            this.socket(DEFAULT_SOCKET_NAME)
+                    .udp(udp);
+            return this;
+        }
+
+        /**
+         * Configure UDP endpoint for default socket.
+         *
+         * @param udpEndpoint the endpoint
+         * @return updated builder
+         */
+        public Builder udpEndpoint(UdpEndpoint udpEndpoint) {
+            this.socket(DEFAULT_SOCKET_NAME)
+                    .udpEndpoint(udpEndpoint);
             return this;
         }
 

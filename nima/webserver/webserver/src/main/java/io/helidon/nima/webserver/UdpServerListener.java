@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -49,14 +50,13 @@ import io.helidon.nima.udp.UdpMessage;
 import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
 
-class UdpServerListener implements ConnectionListener {
+class UdpServerListener extends ServerListener {
     private static final System.Logger LOGGER = System.getLogger(UdpServerListener.class.getName());
 
     private static final int BUFFER_SIZE = 64 * 1024;
     private static final long EXECUTOR_SHUTDOWN_MILLIS = 500L;
     private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
-    private final String socketName;
     private final ExecutorService handlerExecutor;
     private final Thread serverThread;
     private final CompletableFuture<Void> closeFuture;
@@ -72,11 +72,12 @@ class UdpServerListener implements ConnectionListener {
     private volatile DatagramChannel channel;
 
     UdpServerListener(LoomServer loomServer,
-                   String socketName,
-                   ListenerConfiguration listenerConfig,
-                   MediaContext mediaContext) {
+                      String socketName,
+                      ListenerConfiguration listenerConfig,
+                      boolean inheritThreadLocals) {
+        super(Collections.emptyList(), socketName, listenerConfig, Router.empty(), inheritThreadLocals);
+
         this.server = loomServer;
-        this.socketName = socketName;
         this.endpoint = listenerConfig.udpEndpoint();
         this.readBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 
@@ -98,12 +99,12 @@ class UdpServerListener implements ConnectionListener {
             port = 0;
         }
         this.configuredAddress = new InetSocketAddress(listenerConfig.address(), port);
-        this.mediaContext = mediaContext;
+        this.mediaContext = listenerConfig.mediaContext();
     }
 
     @Override
     public String toString() {
-        return "UDP[" + socketName + " (" + configuredAddress + ")]";
+        return "UDP[" + socketName() + " (" + configuredAddress + ")]";
     }
 
     @Override
@@ -130,7 +131,7 @@ class UdpServerListener implements ConnectionListener {
                         serverChannelId,
                         configuredAddress.getAddress().getHostAddress(),
                         localPort,
-                        socketName));
+                        socketName()));
             }
         } catch (IOException e) {
             LOGGER.log(TRACE, "Failed to open socket channel", e);
@@ -314,7 +315,7 @@ class UdpServerListener implements ConnectionListener {
                 ByteBuffer buffer = writeBuffer();
                 writer.write(type, msg, new OutputStream() {
                     @Override
-                    public void write(int b){
+                    public void write(int b) {
                         buffer.put((byte) b);
                     }
                 }, EMPTY_HEADERS);

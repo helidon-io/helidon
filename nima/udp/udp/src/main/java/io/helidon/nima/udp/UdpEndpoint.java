@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.nima.udp;
 /**
  * A UDP endpoint that can receive messages.
  */
+@FunctionalInterface
 public interface UdpEndpoint {
 
     /**
@@ -34,6 +35,6 @@ public interface UdpEndpoint {
      * @param throwable the error
      */
     default void onError(Throwable throwable) {
-        throw new RuntimeException(throwable);
+        throw throwable instanceof RuntimeException rt ? rt : new RuntimeException(throwable);
     }
 }

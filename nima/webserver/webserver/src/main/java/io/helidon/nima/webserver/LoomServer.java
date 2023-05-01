@@ -127,12 +127,20 @@ class LoomServer implements WebServer {
                     .parentContext(context)
                     .build();
 
-            listeners.put(socketName,
-                          new ServerListener(connectionProviders,
-                                             socketName,
-                                             socketConfig,
-                                             router,
-                                             inheritThreadLocals));
+            if (socketConfig.udp()) {
+                listeners.put(socketName,
+                              new UdpServerListener(this,
+                                                    socketName,
+                                                    socketConfig,
+                                                    inheritThreadLocals));
+            } else {
+                listeners.put(socketName,
+                              new ServerListener(connectionProviders,
+                                                 socketName,
+                                                 socketConfig,
+                                                 router,
+                                                 inheritThreadLocals));
+            }
         }
 
         this.listeners = Map.copyOf(listeners);
