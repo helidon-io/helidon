@@ -558,6 +558,8 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
             return Optional.of(createFromTypeName(typeMirror.toString()));
         case NONE:
             return Optional.empty();
+        default:
+            // fall through
         }
 
         if (typeMirror instanceof ArrayType) {

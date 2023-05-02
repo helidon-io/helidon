@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.testing.utils;
+package io.helidon.builder.testing;
 
 import java.util.List;
 import java.util.Map;
@@ -22,7 +22,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.builder.testing.utils.DiffDefault.builder;
+import static io.helidon.builder.testing.DiffDefault.builder;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -79,9 +79,9 @@ class BuilderUtilsTest {
         List<Diff> diffs = BuilderUtils.diff(cart1, cart2);
         assertThat(diffs, contains(
                 builder().key("fruits[0].color").leftSide("red").rightSide("green").build(),
-                builder().key("fruits[2]").rightSide("io.helidon.builder.testing.utils.AppleDefault").build(),
+                builder().key("fruits[2]").rightSide(AppleDefault.class.getName()).build(),
                 builder().key("fruits[2].color").rightSide("yellow").build(),
-                builder().key("fruits[2].peel").rightSide("io.helidon.builder.testing.utils.PeelDefault").build(),
+                builder().key("fruits[2].peel").rightSide(PeelDefault.class.getName()).build(),
                 builder().key("fruits[2].peel.edible").rightSide("true").build()
                ));
     }

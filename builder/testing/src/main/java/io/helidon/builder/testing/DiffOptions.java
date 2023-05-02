@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.testing.utils;
+package io.helidon.builder.testing;
 
 import io.helidon.builder.Builder;
 
-@Builder
-public interface Apple extends Fruit {
+/**
+ * Used by {@link BuilderUtils#diff(Object, Object, DiffOptions)}.
+ */
+@Builder(interceptor = BuilderUtils.ExpandOptionsInterceptor.class)
+public interface DiffOptions extends ExpandOptions {
 
 }

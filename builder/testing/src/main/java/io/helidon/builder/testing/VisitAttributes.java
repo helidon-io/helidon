@@ -14,14 +14,25 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.testing.utils;
+package io.helidon.builder.testing;
 
-import io.helidon.builder.Builder;
+import io.helidon.builder.AttributeVisitor;
 
 /**
- * Used by {@link BuilderUtils#diff(Object, Object, DiffOptions)}.
+ * The functional interface that all {@link io.helidon.builder.Builder}-generated targets are expected to exhibit
+ * (but not implement).
+ *
+ * @param <T> the user defined type
  */
-@Builder(interceptor = BuilderUtils.ExpandOptionsInterceptor.class)
-public interface DiffOptions extends ExpandOptions {
+@FunctionalInterface
+public interface VisitAttributes<T> {
+
+    /**
+     * Visits the methods on the builder-generated target type.
+     *
+     * @param visitor        the visitor
+     * @param userDefinedCtx the user defined context
+     */
+    void visitAttributes(AttributeVisitor<T> visitor, T userDefinedCtx);
 
 }

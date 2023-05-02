@@ -15,13 +15,13 @@
  */
 
 /**
- * Helidon Builder Testing Utils.
+ * Helidon Builder Testing.
  */
-module io.helidon.builder.testing.utils {
+module io.helidon.builder.testing {
     requires static jakarta.annotation;
     requires static io.helidon.config.metadata;
     requires io.helidon.builder;
     requires io.helidon.common;
 
-    exports io.helidon.builder.testing.utils;
+    exports io.helidon.builder.testing;
 }

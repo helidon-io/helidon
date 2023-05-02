@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-/**
- * Helidon Builder Utils.
- */
-package io.helidon.builder.testing.utils;
+package io.helidon.builder.testing;
+
+import io.helidon.builder.Builder;
+
+@Builder
+public interface Orange extends Fruit {
+}

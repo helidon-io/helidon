@@ -22,9 +22,9 @@ import io.helidon.builder.test.testsubjects.Pickle;
 import io.helidon.builder.test.testsubjects.PickleBarrel;
 import io.helidon.builder.test.testsubjects.PickleBarrelDefault;
 import io.helidon.builder.test.testsubjects.PickleDefault;
-import io.helidon.builder.testing.utils.BuilderUtils;
-import io.helidon.builder.testing.utils.ExpandOptions;
-import io.helidon.builder.testing.utils.ExpandOptionsDefault;
+import io.helidon.builder.testing.BuilderUtils;
+import io.helidon.builder.testing.ExpandOptions;
+import io.helidon.builder.testing.ExpandOptionsDefault;
 
 import org.junit.jupiter.api.Test;
 

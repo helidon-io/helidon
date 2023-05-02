@@ -14,25 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.testing.utils;
+package io.helidon.builder.testing;
 
-import io.helidon.builder.AttributeVisitor;
+import java.util.Optional;
 
-/**
- * The functional interface that all {@link io.helidon.builder.Builder}-generated targets are expected to exhibit
- * (but not implement).
- *
- * @param <T> the user defined type
- */
-@FunctionalInterface
-public interface VisitAttributes<T> {
+public interface Fruit {
 
-    /**
-     * Visits the methods on the builder-generated target type.
-     *
-     * @param visitor        the visitor
-     * @param userDefinedCtx the user defined context
-     */
-    void visitAttributes(AttributeVisitor<T> visitor, T userDefinedCtx);
+    Optional<String> color();
+
+    Peel peel();
 
 }

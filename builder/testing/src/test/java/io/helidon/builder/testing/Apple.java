@@ -14,17 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.testing.utils;
-
-import java.util.List;
+package io.helidon.builder.testing;
 
 import io.helidon.builder.Builder;
-import io.helidon.builder.Singular;
 
 @Builder
-public interface Cart {
-
-    @Singular
-    List<Fruit> fruits();
+public interface Apple extends Fruit {
 
 }

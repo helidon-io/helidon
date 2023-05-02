@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.testing.utils;
-
-import java.util.Optional;
-
-public interface Fruit {
-
-    Optional<String> color();
-
-    Peel peel();
-
-}
+/**
+ * Helidon Builder Testing Support.
+ */
+package io.helidon.builder.testing;
