@@ -71,10 +71,10 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
             return super.process(annotations, roundEnv);
         } catch (Throwable t) {
-            utils().error(getClass().getSimpleName() + " error during processing; " + t
+            utils().error(getClass().getSimpleName() + " error while processing; " + t
                           + " @ " + rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
-            throw new ToolsException("Error detected while processing: " + t
+            throw new ToolsException("Error while processing: " + t
                                              + " @ " + rootStackTraceElementOf(t), t);
         } finally {
             if (roundEnv.processingOver()) {

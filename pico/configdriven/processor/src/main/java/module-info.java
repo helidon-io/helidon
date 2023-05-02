@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.pico.configdriven.processor.ConfiguredByProcessor;
-
 /**
  * Helidon Pico ConfiguredBy Processor module.
  */
@@ -39,6 +37,6 @@ module io.helidon.pico.configdriven.processor {
     exports io.helidon.pico.configdriven.processor;
 
     provides javax.annotation.processing.Processor with
-            ConfiguredByProcessor,
-            io.helidon.pico.configdriven.processor.PicoConfiguredByProcessor;
+            io.helidon.pico.configdriven.processor.ConfiguredByProcessor,
+            io.helidon.pico.configdriven.processor.PicoConfiguredByAnnotationProcessor;
 }

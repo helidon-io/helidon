@@ -147,6 +147,10 @@ final class GeneralProcessorUtils {
             return Optional.of(Integer.valueOf(runLevelAnno.value().orElseThrow()));
         }
 
+        if (service.superTypeInfo().isPresent()) {
+            return toRunLevel(service.superTypeInfo().get());
+        }
+
         return Optional.empty();
     }
 
@@ -161,6 +165,10 @@ final class GeneralProcessorUtils {
                 AnnotationAndValueDefault.findFirst(Weight.class, service.annotations()).orElse(null);
         if (weightAnno != null) {
             return Optional.of(Double.valueOf(weightAnno.value().orElseThrow()));
+        }
+
+        if (service.superTypeInfo().isPresent()) {
+            return toWeight(service.superTypeInfo().get());
         }
 
         return Optional.empty();

@@ -44,7 +44,7 @@ import io.helidon.pico.tools.spi.ActivatorCreator;
 /**
  * Provides wrapping of the {@link ActivatorCreator}}.
  */
-class ActivatorCreatorHandler implements ActivatorCreator {
+class CreatorHandler implements ActivatorCreator {
     // vvv : note that these will be removed in the future - it is here to compare the "old way" to the "new way"
     private static final Map<String, List<ActivatorCreatorRequest>> HISTORY_OF_CODE_GEN_ACTIVATORS = new LinkedHashMap<>();
     private static final Map<String, List<CodeGenInterceptorRequest>> HISTORY_OF_CODE_GEN_INTERCEPTORS = new LinkedHashMap<>();
@@ -57,9 +57,9 @@ class ActivatorCreatorHandler implements ActivatorCreator {
     private final CodeGenFiler filer;
     private final Messager messager;
 
-    ActivatorCreatorHandler(String name,
-                            ProcessingEnvironment processingEnv,
-                            Messager messager) {
+    CreatorHandler(String name,
+                   ProcessingEnvironment processingEnv,
+                   Messager messager) {
         this.name = Objects.requireNonNull(name);
         this.filer = CodeGenFiler.create(AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, messager));
         this.messager = Objects.requireNonNull(messager);

@@ -22,7 +22,6 @@ module io.helidon.pico.processor {
     requires static jakarta.annotation;
     requires static jdk.jfr;
 
-    requires jdk.compiler;
     requires java.compiler;
 
     requires io.helidon.common;

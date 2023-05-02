@@ -35,7 +35,7 @@ import io.helidon.pico.tools.ToolsException;
 /**
  * Default implementation for {@link GenericTemplateCreator}.
  */
-class DefaultGenericTemplateCreator implements GenericTemplateCreator {
+class GenericTemplateCreatorDefault implements GenericTemplateCreator {
     private final Class<?> generator;
     private final Messager messager;
 
@@ -44,8 +44,8 @@ class DefaultGenericTemplateCreator implements GenericTemplateCreator {
      *
      * @param generator the class type for the generator
      */
-    DefaultGenericTemplateCreator(Class<?> generator) {
-        this(generator, new MessagerToLogAdapter(System.getLogger(DefaultGenericTemplateCreator.class.getName())));
+    GenericTemplateCreatorDefault(Class<?> generator) {
+        this(generator, new MessagerToLogAdapter(System.getLogger(GenericTemplateCreatorDefault.class.getName())));
     }
 
     /**
@@ -54,7 +54,7 @@ class DefaultGenericTemplateCreator implements GenericTemplateCreator {
      * @param generator the class type for the generator
      * @param messager  the messager and error handler
      */
-    DefaultGenericTemplateCreator(Class<?> generator,
+    GenericTemplateCreatorDefault(Class<?> generator,
                                   Messager messager) {
         this.generator = Objects.requireNonNull(generator);
         this.messager = messager;

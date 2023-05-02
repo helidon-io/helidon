@@ -170,7 +170,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 CustomAnnotationTemplateResponseDefault.Builder res = CustomAnnotationTemplateResponseDefault.builder()
                         .request(req);
                 for (CustomAnnotationTemplateCreator producer : producers) {
-                    req.genericTemplateCreator(new DefaultGenericTemplateCreator(producer.getClass(), utils()));
+                    req.genericTemplateCreator(new GenericTemplateCreatorDefault(producer.getClass(), utils()));
                     CustomAnnotationTemplateResponse producerResponse = process(producer, req);
                     if (producerResponse != null) {
                         res = CustomAnnotationTemplateResponse.aggregate(req, res, producerResponse);
@@ -181,7 +181,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                     doFiler(response);
                 }
             } catch (Throwable t) {
-                throw new ToolsException("Error detected while processing: " + typesToProcess + t, t);
+                throw new ToolsException("Error while processing: " + typesToProcess + t, t);
             }
         }
     }
@@ -212,13 +212,13 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 res.generatedSourceCode().entrySet().forEach(entry -> {
                     TypeNameDefault.ensureIsFQN(entry.getKey());
                     if (!hasValue(entry.getValue())) {
-                        throw new ToolsException("expected to have valid code for: " + req + " for " + entry);
+                        throw new ToolsException("Expected to have valid code for: " + req + " for " + entry);
                     }
                 });
             }
             return res;
         } catch (Throwable t) {
-            throw new ToolsException("failed in producer: " + producer + "; " + t, t);
+            throw new ToolsException("Failed in producer: " + producer + "; " + t, t);
         }
     }
 

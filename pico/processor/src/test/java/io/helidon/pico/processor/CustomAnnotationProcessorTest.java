@@ -78,8 +78,8 @@ class CustomAnnotationProcessorTest {
                 .elementName("header")
                 .build();
         ServiceInfoBasics serviceInfo = ServiceInfoDefault.builder();
-        DefaultGenericTemplateCreator genericTemplateCreator =
-                new DefaultGenericTemplateCreator(ExtensibleGetTemplateProducer.class);
+        GenericTemplateCreatorDefault genericTemplateCreator =
+                new GenericTemplateCreatorDefault(ExtensibleGetTemplateProducer.class);
         CustomAnnotationTemplateRequest req = CustomAnnotationTemplateRequestDefault.builder()
                 .annoTypeName(create(ExtensibleGET.class))
                 .serviceInfo(serviceInfo)

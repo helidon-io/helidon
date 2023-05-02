@@ -52,7 +52,6 @@ import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.Contract;
 import io.helidon.pico.api.ExternalContracts;
 import io.helidon.pico.api.InjectionPointInfo;
@@ -81,6 +80,7 @@ import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeName
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValue;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.extractValues;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.findAnnotationMirror;
+import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
 import static io.helidon.pico.processor.GeneralProcessorUtils.hasValue;
 import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElementOf;
@@ -108,7 +108,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
     private final InterceptorCreator interceptorCreator;
     private final Map<Path, Path> deferredMoves = new LinkedHashMap<>();
     private ActiveProcessorUtils utils;
-    private ActivatorCreatorHandler creator;
+    private CreatorHandler creator;
 
     /**
      * Service loader based constructor.
@@ -129,7 +129,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
     @Override
     public void init(ProcessingEnvironment processingEnv) {
         this.utils = new ActiveProcessorUtils(this, processingEnv, null);
-        this.creator = new ActivatorCreatorHandler(getClass().getSimpleName(), processingEnv, utils);
+        this.creator = new CreatorHandler(getClass().getSimpleName(), processingEnv, utils);
         super.init(processingEnv);
     }
 
@@ -154,7 +154,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
             if (!roundEnv.processingOver()) {
                 for (String annoType : annoTypes()) {
                     // annotation may not be on the classpath, in such a case just ignore it
-                    TypeName annoName = TypeNameDefault.createFromTypeName(annoType);
+                    TypeName annoName = createFromTypeName(annoType);
                     Optional<TypeElement> annoTypeElement = toTypeElement(annoName);
                     if (annoTypeElement.isPresent()) {
                         Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoTypeElement.get());
@@ -172,15 +172,16 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
             }
 
             boolean claimedResult = doFiler(roundEnv);
-            ServicesToProcess.onEndProcessing(utils, annotations, roundEnv);
             return claimedResult;
         } catch (Throwable t) {
-            utils.error(getClass().getSimpleName() + " error during processing; " + t + " @ "
+            utils.error(getClass().getSimpleName() + " error while processing; " + t + " @ "
                           + rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
-            throw new ToolsException("Error during processing: " + t
+            throw new ToolsException("Error while processing: " + t
                                              + " @ " + rootStackTraceElementOf(t)
                                              + " in " + getClass().getSimpleName(), t);
+        } finally {
+            ServicesToProcess.onEndProcessing(utils, annotations, roundEnv);
         }
     }
 
@@ -237,7 +238,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
                 }
             }
         } catch (Throwable t) {
-            throw new ToolsException("Error detected while processing: " + typesToProcess
+            throw new ToolsException("Error while processing: " + typesToProcess
                                              + " for " + serviceTypeName + ": " + t, t);
         }
 
@@ -576,7 +577,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
             TypeName teContractName = createTypeNameFromElement(teContract).orElseThrow();
             result.add(teContractName);
             if (isProviderType(teContractName.name())) {
-                result.add(TypeNameDefault.createFromTypeName(TypeNames.JAKARTA_PROVIDER));
+                result.add(createFromTypeName(TypeNames.JAKARTA_PROVIDER));
             }
             if (!gTypeName.generic()) {
                 providerForSet.add(gTypeName);
@@ -637,7 +638,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
                 List<String> values = (annotation.isPresent() && annotation.get().value().isPresent())
                         ? toList(annotation.get().value().get()) : List.of();
                 for (String externalContract : values) {
-                    result.add(TypeNameDefault.createFromTypeName(externalContract));
+                    result.add(createFromTypeName(externalContract));
                 }
                 Map<String, String> map = extractValues(externalContracts, processingEnv.getElementUtils());
                 String moduleNames = map.get("moduleNames");
@@ -677,10 +678,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
 
     System.Logger logger() {
         return logger;
-    }
-
-    Level loggerLevel() {
-        return (Options.isOptionEnabled(Options.TAG_DEBUG)) ? Level.INFO : Level.DEBUG;
     }
 
     private boolean containsAnyAnnotation(Element element,
