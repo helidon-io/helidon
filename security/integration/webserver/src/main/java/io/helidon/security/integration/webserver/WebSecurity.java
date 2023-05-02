@@ -408,7 +408,6 @@ public final class WebSecurity implements Service {
         private SecurityHandler securityHandler = SecurityHandler.create();
         private Supplier<ExecutorService> executorService = ThreadPoolSupplier.builder()
                 .name("security-thread-pool")
-                .virtualThreads(true)
                 .build();
 
         private Builder() {
