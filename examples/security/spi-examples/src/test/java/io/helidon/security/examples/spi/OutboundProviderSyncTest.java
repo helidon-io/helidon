@@ -52,7 +52,7 @@ public class OutboundProviderSyncTest {
         when(request.env()).thenReturn(se);
 
         OutboundProviderSync ops = new OutboundProviderSync();
-        OutboundSecurityResponse response = ops.syncOutbound(request, SecurityEnvironment.create(), EndpointConfig.create());
+        OutboundSecurityResponse response = ops.outboundSecurity(request, SecurityEnvironment.create(), EndpointConfig.create());
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
     }
@@ -73,7 +73,7 @@ public class OutboundProviderSyncTest {
         when(request.env()).thenReturn(se);
 
         OutboundProviderSync ops = new OutboundProviderSync();
-        OutboundSecurityResponse response = ops.syncOutbound(request, SecurityEnvironment.create(), EndpointConfig.create());
+        OutboundSecurityResponse response = ops.outboundSecurity(request, SecurityEnvironment.create(), EndpointConfig.create());
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
         assertThat(response.requestHeaders().get("X-AUTH-USER"), is(List.of(username)));

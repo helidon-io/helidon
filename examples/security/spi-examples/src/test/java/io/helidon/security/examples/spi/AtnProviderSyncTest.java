@@ -65,7 +65,7 @@ public class AtnProviderSyncTest {
 
         AtnProviderSync provider = new AtnProviderSync();
 
-        AuthenticationResponse response = provider.syncAuthenticate(request);
+        AuthenticationResponse response = provider.authenticate(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
     }
@@ -181,7 +181,7 @@ public class AtnProviderSyncTest {
 
         AtnProviderSync provider = new AtnProviderSync();
 
-        AuthenticationResponse response = provider.syncAuthenticate(request);
+        AuthenticationResponse response = provider.authenticate(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
     }
@@ -219,7 +219,7 @@ public class AtnProviderSyncTest {
     private void testSuccess(ProviderRequest request) {
         AtnProviderSync provider = new AtnProviderSync();
 
-        AuthenticationResponse response = provider.syncAuthenticate(request);
+        AuthenticationResponse response = provider.authenticate(request);
         validateResponse(response);
     }
 }

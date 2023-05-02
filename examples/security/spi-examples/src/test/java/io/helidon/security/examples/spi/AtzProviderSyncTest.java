@@ -47,7 +47,7 @@ public class AtzProviderSyncTest {
 
         AtzProviderSync provider = new AtzProviderSync();
 
-        AuthorizationResponse response = provider.syncAuthorize(request);
+        AuthorizationResponse response = provider.authorize(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
     }
@@ -63,7 +63,7 @@ public class AtzProviderSyncTest {
 
         AtzProviderSync provider = new AtzProviderSync();
 
-        AuthorizationResponse response = provider.syncAuthorize(request);
+        AuthorizationResponse response = provider.authorize(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
     }
@@ -85,7 +85,7 @@ public class AtzProviderSyncTest {
 
         AtzProviderSync provider = new AtzProviderSync();
 
-        AuthorizationResponse response = provider.syncAuthorize(request);
+        AuthorizationResponse response = provider.authorize(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
     }
@@ -107,7 +107,7 @@ public class AtzProviderSyncTest {
 
         AtzProviderSync provider = new AtzProviderSync();
 
-        AuthorizationResponse response = provider.syncAuthorize(request);
+        AuthorizationResponse response = provider.authorize(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
     }
