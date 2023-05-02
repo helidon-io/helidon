@@ -91,7 +91,7 @@ import static java.util.Objects.requireNonNull;
  * An annotation processor that will find everything needing to be processed related to core Pico conde generation.
  */
 public class PicoAnnotationProcessor extends AbstractProcessor {
-    private static boolean DISABLE_BASE_PROCESSING;
+    private static boolean disableBaseProcessing;
 
     private static final Set<String> SUPPORTED_SERVICE_CLASS_TARGET_ANNOTATIONS = Set.of(
             TypeNames.JAKARTA_SINGLETON,
@@ -132,7 +132,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
      */
     protected PicoAnnotationProcessor(boolean disableBaseProcessing) {
         if (disableBaseProcessing) {
-            DISABLE_BASE_PROCESSING = true;
+            PicoAnnotationProcessor.disableBaseProcessing = true;
         }
     }
 
@@ -164,7 +164,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
                            RoundEnvironment roundEnv) {
         utils.roundEnv(roundEnv);
 
-        if (DISABLE_BASE_PROCESSING && getClass() == PicoAnnotationProcessor.class) {
+        if (disableBaseProcessing && getClass() == PicoAnnotationProcessor.class) {
             return false;
         }
 

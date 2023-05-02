@@ -37,5 +37,10 @@
         <Class name="io.helidon.pico.processor.GeneralProcessorUtils"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
+    <Match>
+        <!-- Need to turn off base processing when there is a PicoAnnotationProcessor derivative class implemented -->
+        <Class name="io.helidon.pico.processor.PicoAnnotationProcessor"/>
+        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/>
+    </Match>
 
 </FindBugsFilter>
