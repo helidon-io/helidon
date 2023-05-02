@@ -473,7 +473,7 @@ public final class OidcFeature implements HttpFeature {
                 headers.addCookie(tokenCookieHandler.createCookie(tokenValue).build());  //Add token cookie
 
                 if (idToken != null && oidcConfig.logoutEnabled()) {
-                    headers.addCookie(idTokenCookieHandler.createCookie(tokenValue).build());  //Add token id cookie
+                    headers.addCookie(idTokenCookieHandler.createCookie(idToken).build());  //Add token id cookie
                 }
                 res.send();
 
@@ -521,7 +521,7 @@ public final class OidcFeature implements HttpFeature {
     // if they try to provide wrong data
     private void sendErrorResponse(ServerResponse serverResponse) {
         serverResponse.status(Http.Status.UNAUTHORIZED_401);
-        serverResponse.send("Not a valid authorization code");
+        serverResponse.send("Not a valid authorization code2");
     }
 
     String increaseRedirectCounter(String state) {
