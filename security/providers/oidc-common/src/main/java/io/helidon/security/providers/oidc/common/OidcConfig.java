@@ -22,31 +22,22 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.http.Http;
 import io.helidon.common.http.SetCookie;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
-import io.helidon.nima.webclient.HttpClient;
-import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 import io.helidon.security.util.TokenHandler;
-
-import jakarta.json.JsonObject;
 
 /**
  * Configuration of OIDC usable from all resources that utilize OIDC specification, such as security provider, web server
