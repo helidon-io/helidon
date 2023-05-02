@@ -548,14 +548,15 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
             return Optional.of(create(type));
         }
 
-        if (TypeKind.VOID == kind) {
+        switch (kind) {
+        case VOID:
             return Optional.of(create(void.class));
-        } else if (TypeKind.TYPEVAR == kind) {
+        case TYPEVAR:
             // note that we converge on renaming generics to wildcard (?) here intentionally
             return Optional.of(createFromGenericDeclaration(/*typeMirror.toString()*/ "?"));
-        } else if (TypeKind.WILDCARD == kind) {
+        case WILDCARD:
             return Optional.of(createFromTypeName(typeMirror.toString()));
-        } else if (TypeKind.NONE == kind) {
+        case NONE:
             return Optional.empty();
         }
 
