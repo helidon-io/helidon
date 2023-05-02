@@ -184,8 +184,6 @@ class IntegrationTest {
                 .request()) {   <4>
 
             assertThat(response.status(), is(Http.Status.OK_200));  <5>
-            JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("message"), is("Hello World!"));
         }
     }
 }
@@ -219,8 +217,7 @@ class RoutingTest {
         try (Http1ClientResponse response = client.get("/greet")
                 .request()) {   <4>
 
-            assertThat(response.status(), is(Http.Status.OK_200));  <5>
-            JsonObject json = response.as(JsonObject.class);
+            JsonObject json = response.as(JsonObject.class);    <5>
             assertThat(json.getString("message"), is("Hello World!"));
         }
     }
@@ -228,14 +225,145 @@ class RoutingTest {
 ----
 <1> Inject `DirectClient` for the test;
 <2> SetUp routing for the test;
-<3> Regular `JUnit` test method;
+<3> A regular `JUnit` test method;
 <4> Call the `client` obtain server response;
 <5> Perform necessary assertions;
 
-This way, no real sockets will be crated.
+This way, no real sockets will be crated. All the communication will be done through `DirectClient`, which makes the webserver tests very effective.
 
 
 == Additional Information
+
+=== WebSocket Testing
+
+In case WebSocket testing is required, there is an additional module for this. It is necessary to include the following Maven dependency to Project's pom file:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.nima.testing.junit5</groupId>
+    <artifactId>helidon-nima-testing-junit5-websocket</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+
+=== WebSocket Testing Example
+
+ WebSocket Testing extension adds support for routing configuration and injection of WebSocket related artifacts, such as `WebSockets` as well `DirectWsClient` in Helidon Níma unit tests.
+
+[source,java]
+----
+class WsSocketTest {
+
+    private static final ServerSideListener WS_LISTENER = new ServerSideListener();
+
+    private final WsClient wsClient;    <1>
+
+    protected WsSocketTest(WsClient wsClient) {
+        this.wsClient = wsClient;
+    }
+
+    @SetUpRoute
+    static void routing(WsRouting.Builder ws) { <2>
+        ws.endpoint("/testWs", WS_LISTENER);
+    }
+
+    @Test
+    void testWsEndpoint() { <3>
+        WS_LISTENER.reset();
+
+        ClientSideListener clientListener = new ClientSideListener();
+        wsClient.connect("/testWs", clientListener);    <4>
+
+        assertThat(clientListener.message, is("ws"));   <5>
+    }
+}
+----
+<1> Declare `WsClient` and later inject it in constructor;
+<2> Using `@SetUpRoute` create WebSocket routing and assign a serverside listener;
+<3> Test the WebSocket endpoint using regular `@Test` annotation;
+<4> Create and assign clientside listener;
+<5> Check if the received message is correct;
+
+
+FIXME: not sure we need this, maybe as popup?
+
+WebSocket `ClientSideListener` is very simple and looks this way:
+[source,java]
+----
+private static class ClientSideListener implements WsListener {
+    private final CountDownLatch cdl = new CountDownLatch(1);
+    private String message;
+    private volatile Throwable throwable;
+
+    @Override
+    public void onOpen(WsSession session) { <1>
+        session.send("hello", true);
+    }
+
+    @Override
+    public void onMessage(WsSession session, String text, boolean last) {   <2>
+        this.message = text;
+        session.close(WsCloseCodes.NORMAL_CLOSE, "End");
+    }
+
+    @Override
+    public void onClose(WsSession session, int status, String reason) { <3>
+        cdl.countDown();
+    }
+
+    @Override
+    public void onError(WsSession session, Throwable t) {   <4>
+        this.throwable = t;
+        cdl.countDown();
+    }
+}
+----
+<1> Send "Hello", when connection is opened;
+<2> Save message when received and close the connection;
+<3> Close the connection;
+<4> React on an error;
+
+WebSocket `ClientSideListener` is also very straightforward:
+
+[source,java]
+----
+private static class ServerSideListener implements WsListener {
+    boolean opened;
+    boolean closed;
+    String message;
+
+    @Override
+    public void onMessage(WsSession session, String text, boolean last) {   <1>
+        message = text;
+        session.send("ws", true);
+    }
+
+    @Override
+    public void onClose(WsSession session, int status, String reason) {     <2>
+        closed = true;
+    }
+
+    @Override
+    public void onOpen(WsSession session) {     <3>
+        opened = true;
+    }
+
+    void reset() {          <4>
+        opened = false;
+        closed = false;
+        message = null;
+    }
+}
+----
+<1> Send "ws" on a received message;
+<2> Called when the connection is called;
+<3> Called nn connection opened;
+<4> Used to reset the state;
+
+
+=== Guides
 
 Testing Guide <insert link here>
 
