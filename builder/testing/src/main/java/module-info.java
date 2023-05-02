@@ -15,21 +15,13 @@
  */
 
 /**
- * The Builder Processor Tools module.
+ * Helidon Builder Testing.
  */
-module io.helidon.builder.processor.tools {
-    requires java.compiler;
-    requires jdk.compiler;
-    requires io.helidon.common.types;
+module io.helidon.builder.testing {
+    requires static jakarta.annotation;
+    requires static io.helidon.config.metadata;
     requires io.helidon.builder;
-    requires io.helidon.builder.processor.spi;
     requires io.helidon.common;
-    requires io.helidon.config.metadata;
 
-    exports io.helidon.builder.processor.tools;
-
-    provides io.helidon.builder.processor.spi.BuilderCreatorProvider
-            with io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider;
-    provides io.helidon.builder.processor.spi.TypeInfoCreatorProvider
-            with io.helidon.builder.processor.tools.BuilderTypeTools;
+    exports io.helidon.builder.testing;
 }

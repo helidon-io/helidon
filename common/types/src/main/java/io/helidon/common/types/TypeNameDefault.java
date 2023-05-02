@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Default implementation for {@link TypeName}.
@@ -119,6 +120,7 @@ public class TypeNameDefault implements TypeName {
         return builder()
                 .generic(true)
                 .className(Objects.requireNonNull(genericAliasTypeName))
+                .wildcard(genericAliasTypeName.startsWith("?"))
                 .build();
     }
 
@@ -244,6 +246,11 @@ public class TypeNameDefault implements TypeName {
     }
 
     @Override
+    public TypeName genericTypeName() {
+        return toBuilder().typeArguments(Set.of()).generic(false).array(false).build();
+    }
+
+    @Override
     public String name() {
         return calcName();
     }
@@ -275,7 +282,7 @@ public class TypeNameDefault implements TypeName {
      */
     protected String calcFQName() {
         String name = name();
-        boolean isObject = Object.class.getName().equals(name);
+        boolean isObject = Object.class.getName().equals(name) || "?".equals(name);
         StringBuilder nameBuilder = (isObject)
                 ? new StringBuilder(wildcard() ? "?" : name)
                 : new StringBuilder(wildcard() ? "? extends " + name : name);
@@ -433,7 +440,6 @@ public class TypeNameDefault implements TypeName {
          * @return the fluent builder
          */
         public Builder array(boolean val) {
-            Objects.requireNonNull(val);
             this.array = val;
             return this;
         }
@@ -445,7 +451,6 @@ public class TypeNameDefault implements TypeName {
          * @return the fluent builder
          */
         public Builder primitive(boolean val) {
-            Objects.requireNonNull(val);
             this.primitive = val;
             return this;
         }
@@ -457,7 +462,6 @@ public class TypeNameDefault implements TypeName {
          * @return the fluent builder
          */
         public Builder generic(boolean val) {
-            Objects.requireNonNull(val);
             this.generic = val;
             return this;
         }
@@ -487,7 +491,19 @@ public class TypeNameDefault implements TypeName {
             Objects.requireNonNull(val);
             this.typeArguments.clear();
             this.typeArguments.addAll(val);
-            return !val.isEmpty() ? generic(true) : this;
+            return this;
+        }
+
+        /**
+         * Add a singular type argument.
+         *
+         * @param val a singular type argument
+         * @return the fluent builder
+         */
+        public Builder addTypeArgument(TypeName val) {
+            Objects.requireNonNull(val);
+            this.typeArguments.add(val);
+            return this;
         }
     }
 

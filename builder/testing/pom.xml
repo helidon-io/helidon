@@ -21,25 +21,26 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.helidon.builder.tests</groupId>
-        <artifactId>helidon-builder-tests-project</artifactId>
+        <groupId>io.helidon.builder</groupId>
+        <artifactId>helidon-builder-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-builder-tests-test-builder</artifactId>
-    <name>Helidon Builder Tests</name>
+    <artifactId>helidon-builder-testing</artifactId>
+    <name>Helidon Builder Testing</name>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-processor</artifactId>
-            <scope>provided</scope> <!-- force reactor to build processor 1st -->
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder</artifactId>
+        </dependency>
+        <!-- to support the Generated annotation -->
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -47,21 +48,14 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <scope>test</scope> <!-- needed to showcase the use of the Annotated() annotation -->
-        </dependency>
-        <!-- to support the Generated annotation -->
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-processor</artifactId>
+            <optional>true</optional> <!-- force reactor ordering only -->
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <scope>provided</scope>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-junit5</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -73,21 +67,6 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.common.testing</groupId>
-            <artifactId>helidon-common-testing-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-testing</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -96,12 +75,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <compilerArgs>
-                        <arg>-XprintProcessorInfo</arg>
-                        <arg>-XprintRounds</arg>
-                        <arg>-verbose</arg>
-                    </compilerArgs>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.builder</groupId>

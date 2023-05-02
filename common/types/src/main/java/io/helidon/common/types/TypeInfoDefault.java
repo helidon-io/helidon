@@ -35,8 +35,10 @@ public class TypeInfoDefault implements TypeInfo {
     private final List<AnnotationAndValue> annotations;
     private final List<TypedElementName> elementInfo;
     private final List<TypedElementName> otherElementInfo;
+    private final Map<TypeName, String> referencedModuleNames;
     private final Map<TypeName, List<AnnotationAndValue>> referencedTypeNamesToAnnotations;
     private final TypeInfo superTypeInfo;
+    private final List<TypeInfo> interfaceTypeInfo;
     private final Set<String> modifierNames;
 
     /**
@@ -53,7 +55,9 @@ public class TypeInfoDefault implements TypeInfo {
         this.otherElementInfo = List.copyOf(b.otherElementInfo);
         this.superTypeInfo = b.superTypeInfo;
         this.modifierNames = Set.copyOf(b.modifierNames);
+        this.referencedModuleNames = Map.copyOf(b.referencedModuleNames);
         this.referencedTypeNamesToAnnotations = Map.copyOf(b.referencedTypeNamesToAnnotations);
+        this.interfaceTypeInfo = List.copyOf(b.interfaceTypeInfo);
     }
 
     /**
@@ -91,8 +95,18 @@ public class TypeInfoDefault implements TypeInfo {
     }
 
     @Override
+    public Map<TypeName, String> referencedModuleNames() {
+        return referencedModuleNames;
+    }
+
+    @Override
     public Map<TypeName, List<AnnotationAndValue>> referencedTypeNamesToAnnotations() {
         return referencedTypeNamesToAnnotations;
+    }
+
+    @Override
+    public List<TypeInfo> interfaceTypeInfo() {
+        return interfaceTypeInfo;
     }
 
     @Override
@@ -130,7 +144,9 @@ public class TypeInfoDefault implements TypeInfo {
         private final List<AnnotationAndValue> annotations = new ArrayList<>();
         private final List<TypedElementName> elementInfo = new ArrayList<>();
         private final List<TypedElementName> otherElementInfo = new ArrayList<>();
+        private final Map<TypeName, String> referencedModuleNames = new LinkedHashMap<>();
         private final Map<TypeName, List<AnnotationAndValue>> referencedTypeNamesToAnnotations = new LinkedHashMap<>();
+        private final List<TypeInfo> interfaceTypeInfo = new ArrayList<>();
         private final Set<String> modifierNames = new LinkedHashSet<>();
         private TypeName typeName;
         private String typeKind;
@@ -251,6 +267,33 @@ public class TypeInfoDefault implements TypeInfo {
         }
 
         /**
+         * Adds a single referencedModuleName val.
+         *
+         * @param key the key
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder addReferencedModuleName(TypeName key, String val) {
+            Objects.requireNonNull(key);
+            Objects.requireNonNull(val);
+            this.referencedModuleNames.put(key, val);
+            return identity();
+        }
+
+        /**
+         * Sets the referencedTypeNamesToAnnotations to val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder referencedModuleNames(Map<TypeName, String> val) {
+            Objects.requireNonNull(val);
+            this.referencedModuleNames.clear();
+            this.referencedModuleNames.putAll(val);
+            return identity();
+        }
+
+        /**
          * Sets the referencedTypeNamesToAnnotations to val.
          *
          * @param val the value
@@ -260,7 +303,7 @@ public class TypeInfoDefault implements TypeInfo {
             Objects.requireNonNull(val);
             this.referencedTypeNamesToAnnotations.clear();
             this.referencedTypeNamesToAnnotations.putAll(val);
-            return this;
+            return identity();
         }
 
         /**
@@ -290,6 +333,31 @@ public class TypeInfoDefault implements TypeInfo {
                 v.addAll(vals);
                 return v;
             });
+            return identity();
+        }
+
+        /**
+         * Sets the interfaceTypeInfo to val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder interfaceTypeInfo(List<TypeInfo> val) {
+            Objects.requireNonNull(val);
+            this.interfaceTypeInfo.clear();
+            this.interfaceTypeInfo.addAll(val);
+            return identity();
+        }
+
+        /**
+         * Adds a single interfaceTypeInfo val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder addInterfaceTypeInfo(TypeInfo val) {
+            Objects.requireNonNull(val);
+            this.interfaceTypeInfo.add(val);
             return identity();
         }
 

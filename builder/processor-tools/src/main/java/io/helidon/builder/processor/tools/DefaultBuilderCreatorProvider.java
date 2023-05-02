@@ -622,10 +622,10 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         int i = 0;
         for (String attrName : ctx.allAttributeNames()) {
             TypedElementName method = ctx.allTypeInfos().get(i);
-            String typeName = method.typeName().declaredName();
+            TypeName typeName = method.typeName();
             List<String> typeArgs = method.typeName().typeArguments().stream()
-                    .map(it -> normalize(it.declaredName()) + ".class")
-                    .collect(Collectors.toList());
+                    .map(this::normalize)
+                    .toList();
             String typeArgsStr = String.join(", ", typeArgs);
 
             builder.append(extraTabs).append("\t\tvisitor.visit(\"").append(attrName).append("\", () -> this.");
@@ -635,7 +635,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 builder.append(method.elementName()).append("(), ");
             }
             builder.append(TAG_META_PROPS).append(".get(\"").append(attrName).append("\"), userDefinedCtx, ");
-            builder.append(normalize(typeName)).append(".class");
+            builder.append(normalize(typeName));
             if (!typeArgsStr.isBlank()) {
                 builder.append(", ").append(typeArgsStr);
             }
@@ -844,7 +844,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      * @return the (singular) name of the element
      */
     protected static String nameOf(TypedElementName elem) {
-        return AnnotationAndValueDefault.findFirst(Singular.class.getName(), elem.annotations())
+        return AnnotationAndValueDefault.findFirst(Singular.class, elem.annotations())
                 .flatMap(AnnotationAndValue::value)
                 .filter(BuilderTypeTools::hasNonBlankValue)
                 .orElseGet(elem::elementName);
@@ -1774,13 +1774,14 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                          TypedElementName method,
                          AtomicBoolean needsCustomMapOf) {
         Optional<? extends AnnotationAndValue> configuredOptions = AnnotationAndValueDefault
-                .findFirst(ConfiguredOption.class.getName(), method.annotations());
+                .findFirst(ConfiguredOption.class, method.annotations());
 
         TypeName typeName = method.typeName();
         String typeDecl = "\"__type\", " + typeName.name() + ".class";
         if (!typeName.typeArguments().isEmpty()) {
             int pos = typeName.typeArguments().size() - 1;
-            typeDecl += ", \"__componentType\", " + normalize(typeName.typeArguments().get(pos).name()) + ".class";
+            TypeName arg = typeName.typeArguments().get(pos);
+            typeDecl += ", \"__componentType\", " + normalize(arg);
         }
 
         String key = (configuredOptions.isEmpty())
@@ -1823,8 +1824,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         return result.toString();
     }
 
-    private String normalize(String name) {
-        return name.equals("?") ? "Object" : name;
+    private String normalize(TypeName typeName) {
+        return (typeName.generic() ? "Object" : typeName.name()) + ".class";
     }
 
     private String quotedTupleOf(TypeName valType,

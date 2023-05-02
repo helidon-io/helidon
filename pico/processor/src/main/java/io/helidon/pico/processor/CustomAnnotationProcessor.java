@@ -159,8 +159,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 
         for (Element typeToProcess : typesToProcess) {
             try {
-                CustomAnnotationTemplateRequestDefault.Builder req =
-                        toRequestBuilder(annoTypeName, typeToProcess, roundEnv, true);
+                CustomAnnotationTemplateRequestDefault.Builder req = toRequestBuilder(annoTypeName, typeToProcess);
                 if (req == null) {
                     continue;
                 }
@@ -221,9 +220,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     }
 
     CustomAnnotationTemplateRequestDefault.Builder toRequestBuilder(TypeName annoTypeName,
-                                                                    Element typeToProcess,
-                                                                    RoundEnvironment ignoredRoundEnv,
-                                                                    boolean wantDefaultMethods) {
+                                                                    Element typeToProcess) {
         TypeElement enclosingClassType = toEnclosingClassTypeElement(typeToProcess);
         TypeName enclosingClassTypeName = createTypeNameFromElement(enclosingClassType).orElse(null);
         if (enclosingClassTypeName == null) {
@@ -238,16 +235,16 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 .asList()
                 .stream()
                 .findFirst()
-                .orElse(null);
+                .orElseThrow();
         TypeInfo enclosingClassTypeInfo = tools
-                .createTypeInfo(annoTypeName, enclosingClassTypeName, enclosingClassType, processingEnv, wantDefaultMethods)
+                .createTypeInfo(enclosingClassType, enclosingClassType.asType(), processingEnv, (typedMethod) -> true)
                 .orElseThrow();
         Elements elements = processingEnv.getElementUtils();
         return CustomAnnotationTemplateRequestDefault.builder()
                 .filerEnabled(true)
                 .annoTypeName(annoTypeName)
                 .serviceInfo(siInfo)
-                .targetElement(createTypedElementNameFromElement(typeToProcess, elements))
+                .targetElement(createTypedElementNameFromElement(typeToProcess, elements).orElseThrow())
                 .targetElementArgs(toArgs(typeToProcess))
                 .targetElementAccess(toAccess(typeToProcess))
                 .elementStatic(isStatic(typeToProcess))
@@ -272,7 +269,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         List<TypedElementName> result = new ArrayList<>();
         ExecutableElement executableElement = (ExecutableElement) typeToProcess;
         executableElement.getParameters().forEach(v -> result.add(
-                createTypedElementNameFromElement(v, elements)));
+                createTypedElementNameFromElement(v, elements).orElseThrow()));
         return result;
     }
 

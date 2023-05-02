@@ -16,10 +16,15 @@
 
 package io.helidon.builder.test;
 
+import java.util.Map;
+
 import io.helidon.builder.test.testsubjects.Pickle;
 import io.helidon.builder.test.testsubjects.PickleBarrel;
 import io.helidon.builder.test.testsubjects.PickleBarrelDefault;
 import io.helidon.builder.test.testsubjects.PickleDefault;
+import io.helidon.builder.testing.BuilderUtils;
+import io.helidon.builder.testing.ExpandOptions;
+import io.helidon.builder.testing.ExpandOptionsDefault;
 
 import org.junit.jupiter.api.Test;
 
@@ -50,4 +55,21 @@ class PickleBarrelTest {
         assertThat(pickleBarrel.toString(),
                equalTo("PickleBarrel(id=123, type=Optional[PLASTIC], pickles=[Pickle(type=DILL, size=Optional[MEDIUM])])"));
     }
+
+    @Test
+    void expand() {
+        Pickle pickle = PickleDefault.builder().size(Pickle.Size.MEDIUM).type(Pickle.Type.DILL).build();
+        PickleBarrel pickleBarrel = PickleBarrelDefault.builder().addPickle(pickle).id("123").build();
+
+        Map<String, String> expand = BuilderUtils.expand(pickleBarrel);
+        assertThat(expand.toString(),
+                   equalTo("{id=123, type=PLASTIC, pickles[0]=io.helidon.builder.test.testsubjects.PickleDefault, pickles[0]"
+                                   + ".type=DILL, pickles[0].size=MEDIUM}"));
+
+        ExpandOptions expandOptions = ExpandOptionsDefault.builder().includeTypeInformation(false).build();
+        expand = BuilderUtils.expand(pickleBarrel, expandOptions);
+        assertThat(expand.toString(),
+                   equalTo("{id=123, type=PLASTIC, pickles[0].type=DILL, pickles[0].size=MEDIUM}"));
+    }
+
 }

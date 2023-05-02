@@ -429,18 +429,6 @@ public final class TypeTools extends BuilderTypeTools {
     }
 
     /**
-     * Creates a set of annotations based using annotation processor.
-     *
-     * @param annoMirrors the annotation type mirrors
-     * @return the annotation value set
-     */
-    static Set<AnnotationAndValue> createAnnotationAndValueSet(List<? extends AnnotationMirror> annoMirrors) {
-        return annoMirrors.stream()
-                .map(TypeTools::createAnnotationAndValue)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    /**
      * Creates a set of annotations given the owning element.
      *
      * @param annotationInfoList the list of annotations
@@ -461,17 +449,6 @@ public final class TypeTools extends BuilderTypeTools {
     static AnnotationAndValue createAnnotationAndValue(AnnotationInfo annotationInfo) {
         TypeName annoTypeName = createTypeNameFromClassInfo(annotationInfo.getClassInfo());
         return AnnotationAndValueDefault.create(annoTypeName, extractValues(annotationInfo.getParameterValues()));
-    }
-
-    /**
-     * Creates an annotation and value from introspection.
-     *
-     * @param annotationMirror the introspected annotation
-     * @return the annotation and value
-     */
-    static AnnotationAndValue createAnnotationAndValue(AnnotationMirror annotationMirror) {
-        TypeName annoTypeName = createTypeNameFromMirror(annotationMirror.getAnnotationType()).orElseThrow();
-        return AnnotationAndValueDefault.create(annoTypeName, extractValues(annotationMirror.getElementValues()));
     }
 
     /**

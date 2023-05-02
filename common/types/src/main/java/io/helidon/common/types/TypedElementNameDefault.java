@@ -23,10 +23,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static io.helidon.common.types.TypeNameDefault.create;
 
 /**
  * Default implementation for {@link io.helidon.common.types.TypedElementName}.
  */
+@SuppressWarnings("unused")
 public class TypedElementNameDefault implements TypedElementName {
     private final TypeName typeName;
     private final List<TypeName> componentTypeNames;
@@ -36,6 +40,8 @@ public class TypedElementNameDefault implements TypedElementName {
     private final List<AnnotationAndValue> annotations;
     private final List<AnnotationAndValue> elementTypeAnnotations;
     private final Set<String> modifierNames;
+    private final TypeName enclosingTypeName;
+    private final List<TypedElementName> parameters;
 
     /**
      * Constructor taking the fluent builder.
@@ -52,6 +58,8 @@ public class TypedElementNameDefault implements TypedElementName {
         this.annotations = List.copyOf(b.annotations);
         this.elementTypeAnnotations = List.copyOf(b.elementTypeAnnotations);
         this.modifierNames = Set.copyOf(b.modifierNames);
+        this.enclosingTypeName = b.enclosingTypeName;
+        this.parameters = List.copyOf(b.parameters);
     }
 
     @Override
@@ -95,8 +103,18 @@ public class TypedElementNameDefault implements TypedElementName {
     }
 
     @Override
+    public Optional<TypeName> enclosingTypeName() {
+        return Optional.ofNullable(enclosingTypeName);
+    }
+
+    @Override
+    public List<TypedElementName> parameterArguments() {
+        return parameters;
+    }
+
+    @Override
     public int hashCode() {
-        return Objects.hash(typeName(), elementName(), elementTypeKind(), annotations());
+        return Objects.hash(typeName(), elementName(), elementTypeKind(), annotations(), enclosingTypeName());
     }
 
     @Override
@@ -109,12 +127,22 @@ public class TypedElementNameDefault implements TypedElementName {
         return Objects.equals(typeName(), other.typeName())
                 && Objects.equals(elementName(), other.elementName())
                 && Objects.equals(elementTypeKind(), other.elementTypeKind())
-                && Objects.equals(annotations(), other.annotations());
+                && Objects.equals(annotations(), other.annotations())
+                && Objects.equals(enclosingTypeName(), other.enclosingTypeName())
+                && Objects.equals(parameterArguments(), other.parameterArguments());
     }
 
     @Override
     public String toString() {
-        return toDeclaration();
+        StringBuilder builder = new StringBuilder();
+        if (!TypeInfo.KIND_PARAMETER.equals(elementTypeKind())) {
+            TypeName enclosingTypeName = enclosingTypeName().orElse(null);
+            if (enclosingTypeName != null) {
+                builder.append(enclosingTypeName).append("::");
+            }
+        }
+        builder.append(toDeclaration());
+        return builder.toString();
     }
 
     /**
@@ -123,9 +151,16 @@ public class TypedElementNameDefault implements TypedElementName {
      * @return provides the {typeName}{space}{elementName}
      */
     public String toDeclaration() {
-        return typeName() + " " + elementName();
+        StringBuilder builder = new StringBuilder();
+        builder.append(typeName()).append(" ").append(elementName());
+        String params = parameterArguments().stream()
+                .map(it -> it.typeName() + " " + it.elementName())
+                .collect(Collectors.joining(", "));
+        if (!params.isBlank()) {
+            builder.append("(").append(params).append(")");
+        }
+        return builder.toString();
     }
-
 
     /**
      * Creates a builder for {@link io.helidon.common.types.TypedElementName}.
@@ -145,11 +180,13 @@ public class TypedElementNameDefault implements TypedElementName {
         private final List<AnnotationAndValue> annotations = new ArrayList<>();
         private final List<AnnotationAndValue> elementTypeAnnotations = new ArrayList<>();
         private final Set<String> modifierNames = new LinkedHashSet<>();
+        private final List<TypedElementName> parameters = new ArrayList<>();
 
         private TypeName typeName;
         private String elementName;
         private String elementKind;
         private String defaultValue;
+        private TypeName enclosingTypeName;
 
         /**
          * Default Constructor.
@@ -176,7 +213,7 @@ public class TypedElementNameDefault implements TypedElementName {
          * @return the fluent builder
          */
         public Builder typeName(Class<?> type) {
-            return typeName(TypeNameDefault.create(type));
+            return typeName(create(type));
         }
 
         /**
@@ -288,6 +325,53 @@ public class TypedElementNameDefault implements TypedElementName {
         public Builder addModifierName(String val) {
             Objects.requireNonNull(val);
             modifierNames.add(val);
+            return this;
+        }
+
+        /**
+         * Set the enclosing type name.
+         *
+         * @param val   the type name value
+         * @return this fluent builder
+         */
+        public Builder enclosingTypeName(TypeName val) {
+            Objects.requireNonNull(val);
+            this.enclosingTypeName = val;
+            return this;
+        }
+
+        /**
+         * Set the enclosing type of the element.
+         *
+         * @param val  the type val
+         * @return the fluent builder
+         */
+        public Builder enclosingTypeName(Class<?> val) {
+            return enclosingTypeName(create(val));
+        }
+
+        /**
+         * Set the parameters for this element.
+         *
+         * @param val the parameter values
+         * @return this fluent builder
+         */
+        public Builder parameterArgumentss(List<TypedElementName> val) {
+            Objects.requireNonNull(val);
+            this.parameters.clear();
+            this.parameters.addAll(val);
+            return this;
+        }
+
+        /**
+         * Adds a singular parameter.
+         *
+         * @param val the parameter value
+         * @return the fluent builder
+         */
+        public Builder addParameterArgument(TypedElementName val) {
+            Objects.requireNonNull(val);
+            this.parameters.add(val);
             return this;
         }
 

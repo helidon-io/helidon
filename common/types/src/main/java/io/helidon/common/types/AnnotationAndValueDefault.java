@@ -134,6 +134,33 @@ public class AnnotationAndValueDefault implements AnnotationAndValue, Comparable
     }
 
     /**
+     * Attempts to find the annotation in the provided collection.
+     *
+     * @param annoTypeName  the annotation type name
+     * @param coll          the collection to search
+     * @return the result of the find
+     */
+    public static Optional<? extends AnnotationAndValue> findFirst(TypeName annoTypeName,
+                                                                   Collection<? extends AnnotationAndValue> coll) {
+        String name = annoTypeName.name();
+        return coll.stream()
+                .filter(it -> it.typeName().name().equals(name))
+                .findFirst();
+    }
+
+    /**
+     * Attempts to find the annotation in the provided collection.
+     *
+     * @param annoType    the annotation type
+     * @param coll        the collection to search
+     * @return the result of the find
+     */
+    public static Optional<? extends AnnotationAndValue> findFirst(Class<? extends Annotation> annoType,
+                                                                   Collection<? extends AnnotationAndValue> coll) {
+        return findFirst(annoType.getTypeName(), coll);
+    }
+
+    /**
      * Creates a builder for {@link AnnotationAndValue}.
      *
      * @return a fluent builder
