@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,17 +41,23 @@ class EncryptionService implements Service {
         String configName = req.path().param("config");
         String text = req.path().param("text");
 
-        security.encrypt(configName, text.getBytes(StandardCharsets.UTF_8))
-                .forSingle(res::send)
-                .exceptionally(res::send);
+        try {
+            String encrypted = security.encrypt(configName, text.getBytes(StandardCharsets.UTF_8));
+            res.send(encrypted);
+        } catch (Exception e) {
+            res.send(e);
+        }
     }
 
     private void decrypt(ServerRequest req, ServerResponse res) {
         String configName = req.path().param("config");
         String cipherText = req.path().param("cipherText");
 
-        security.decrypt(configName, cipherText)
-                .forSingle(res::send)
-                .exceptionally(res::send);
+        try {
+            byte[] decrypted = security.decrypt(configName, cipherText);
+            res.send(decrypted);
+        } catch (Exception e) {
+            res.send(e);
+        }
     }
 }
