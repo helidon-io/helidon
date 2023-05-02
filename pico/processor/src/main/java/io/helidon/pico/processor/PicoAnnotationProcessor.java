@@ -126,7 +126,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
     }
 
     /**
-     * Any overriding APT processor can optionally pass {@code false} in order to prevent duuplicate base processing.
+     * Any overriding APT processor can optionally pass {@code false} in order to prevent duplicate base processing.
      *
      * @param disableBaseProcessing set to true to disable base processing
      */
