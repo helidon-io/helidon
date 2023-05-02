@@ -29,7 +29,7 @@ import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.security.integration.webserver.WebSecurity;
-import io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider;
+import io.helidon.security.providers.idcs.mapper.IdcsRoleMapperRxProvider;
 import io.helidon.security.providers.oidc.OidcProvider;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.reactive.OidcSupport;
@@ -75,7 +75,7 @@ public final class IdcsBuilderMain {
 
         Security security = Security.builder()
                 .addProvider(OidcProvider.create(oidcConfig))
-                .addProvider(IdcsRoleMapperProvider.builder()
+                .addProvider(IdcsRoleMapperRxProvider.builder()
                                      .config(config)
                                      .oidcConfig(oidcConfig))
                 .build();
