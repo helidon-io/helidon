@@ -76,9 +76,11 @@ public final class HelidonOpenTelemetry {
         public static boolean isAgentPresent(Config config) {
 
             //Explicitly check if agent property is set
-            Optional<Boolean> agentPresent = config.get(OTEL_AGENT_PRESENT_PROPERTY).asBoolean().asOptional();
-            if (agentPresent.isPresent()){
-                return agentPresent.get();
+            if (config != null) {
+                Optional<Boolean> agentPresent = config.get(OTEL_AGENT_PRESENT_PROPERTY).asBoolean().asOptional();
+                if (agentPresent.isPresent()) {
+                    return agentPresent.get();
+                }
             }
 
             if (checkContext() || checkSystemProperties()){
