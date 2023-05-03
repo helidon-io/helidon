@@ -70,6 +70,10 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
         this.logger = logger;
     }
 
+    System.Logger logger() {
+        return logger;
+    }
+
     /**
      * Create an annotation based filer abstraction.
      *
@@ -204,6 +208,10 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
                             System.Logger logger) {
             super(logger);
             this.paths = paths;
+        }
+
+        CodeGenPaths codeGenPaths() {
+            return paths;
         }
 
         @Override

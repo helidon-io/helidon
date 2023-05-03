@@ -195,8 +195,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             if (!hasValue(fileType)) {
                 fileType = ".generated";
             }
-            codegen.codegenResourceFilerOut(toFilePath(typedElementName.typeName(), fileType),
-                                            resourceBody, Optional.empty());
+            codegen.codegenResourceFilerOut(toFilePath(typedElementName.typeName(), fileType), resourceBody);
         });
     }
 

@@ -16,14 +16,10 @@
 
 package io.helidon.pico.processor;
 
-import java.io.IOException;
 import java.lang.System.Logger.Level;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -103,10 +99,11 @@ import static javax.tools.Diagnostic.Kind;
  */
 // NOTE: Scheduled for destruction
 abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
+    private static final boolean ENABLED = true;
+
     private final System.Logger logger = System.getLogger(getClass().getName());
     private final ServicesToProcess services;
     private final InterceptorCreator interceptorCreator;
-    private final Map<Path, Path> deferredMoves = new LinkedHashMap<>();
     private ActiveProcessorUtils utils;
     private CreatorHandler creator;
 
@@ -148,6 +145,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
                            RoundEnvironment roundEnv) {
         utils.roundEnv(roundEnv);
 
+        if (!ENABLED) {
+            return false;
+        }
+
         try {
             ServicesToProcess.onBeginProcessing(utils, annotations, roundEnv);
 
@@ -171,8 +172,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
                 }
             }
 
-            boolean claimedResult = doFiler(roundEnv);
-            return claimedResult;
+            return doFiler(roundEnv);
         } catch (Throwable t) {
             utils.error(getClass().getSimpleName() + " error while processing; " + t + " @ "
                           + rootStackTraceElementOf(t), t);
@@ -502,7 +502,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
             if (!res.success()) {
                 throw new ToolsException("Error during codegen", res.error().orElse(null));
             }
-            deferredMoves.putAll(creator.filer().deferredMoves());
         } catch (Exception te) {
             Object hierarchy = codeGen.serviceTypeHierarchy();
             if (hierarchy == null) {
@@ -515,7 +514,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
             utils.error(revisedTe.getMessage(), revisedTe);
         } finally {
             if (isProcessingOver) {
-                handleDeferredMoves();
                 processingEnv.getMessager().printMessage(Kind.OTHER, getClass().getSimpleName()
                         + ": processing is over - resetting");
                 services.reset(false);
@@ -688,21 +686,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
                 .filter(it -> contraAnnotations.contains(it.typeName().name()))
                 .findFirst();
         return annotation.isPresent();
-    }
-
-    private void handleDeferredMoves() {
-        if (logger.isLoggable(Level.INFO) && !deferredMoves.isEmpty()) {
-            logger.log(Level.INFO, "handling deferred moves: " + deferredMoves);
-        }
-
-        try {
-            for (Map.Entry<Path, Path> e : deferredMoves.entrySet()) {
-                Files.move(e.getKey(), e.getValue());
-            }
-        } catch (IOException e) {
-            throw new ToolsException(e.getMessage(), e);
-        }
-        deferredMoves.clear();
     }
 
     ActiveProcessorUtils utils() {

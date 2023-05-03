@@ -32,10 +32,10 @@ import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.ModuleComponent;
+import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceInfoCriteria;
@@ -50,6 +50,8 @@ import io.helidon.pico.tools.spi.ApplicationCreator;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
+import static io.helidon.common.types.TypeNameDefault.create;
+import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 import static io.helidon.pico.runtime.ServiceUtils.isQualifiedInjectionTarget;
 
@@ -279,7 +281,7 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
             packageName = PicoServicesConfig.NAME;
         }
         String className = Objects.requireNonNull(codeGen.className().orElse(null));
-        return TypeNameDefault.create(packageName, className);
+        return create(packageName, className);
     }
 
     static String toModuleName(ApplicationCreatorRequest req) {
@@ -419,11 +421,16 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         }
     }
 
-    static TypeName moduleServiceTypeOf(PicoServices picoServices,
-                                        String moduleName) {
+    static Optional<TypeName> moduleServiceTypeOf(PicoServices picoServices,
+                                                  String moduleName) {
         Services services = picoServices.services();
-        ServiceProvider<?> serviceProvider = services.lookup(ModuleComponent.class, moduleName);
-        return TypeNameDefault.createFromTypeName(serviceProvider.serviceInfo().serviceTypeName());
+        ServiceProvider<?> serviceProvider;
+        try {
+            serviceProvider = services.lookup(ModuleComponent.class, moduleName);
+        } catch (PicoException e) {
+            return Optional.empty();
+        }
+        return Optional.of(createFromTypeName(serviceProvider.serviceInfo().serviceTypeName()));
     }
 
     void codegenModuleInfoDescriptor(CodeGenFiler filer,
@@ -439,27 +446,31 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
                 moduleName = descriptor.name();
             }
 
-            TypeName moduleTypeName = moduleServiceTypeOf(picoServices, moduleName);
-            String typePrefix = req.codeGen().classPrefixName();
-            ModuleInfoCreatorRequest moduleBuilderRequest = ModuleInfoCreatorRequestDefault.builder()
-                    .name(moduleName)
-                    .moduleTypeName(moduleTypeName)
-                    .applicationTypeName(applicationTypeName)
-                    .moduleInfoPath(picoModuleInfoPath.get().toAbsolutePath().toString())
-                    .classPrefixName(typePrefix)
-                    .applicationCreated(true)
-                    .moduleCreated(false)
-                    .build();
-            descriptor = createModuleInfo(moduleBuilderRequest);
-            filer.codegenModuleInfoFilerOut(descriptor, true);
-        } else {
-            Path realModuleInfoPath = filer.toSourceLocation(ModuleUtils.REAL_MODULE_INFO_JAVA_NAME).orElse(null);
-            if (realModuleInfoPath != null && !realModuleInfoPath.toFile().exists()) {
-                throw new ToolsException("Expected to find " + realModuleInfoPath
-                                                 + ". Did the " + PicoServicesConfig.NAME + " APT run?");
+            TypeName moduleTypeName = moduleServiceTypeOf(picoServices, moduleName).orElse(null);
+            if (moduleTypeName != null) {
+                String typePrefix = req.codeGen().classPrefixName();
+                ModuleInfoCreatorRequest moduleBuilderRequest = ModuleInfoCreatorRequestDefault.builder()
+                        .name(moduleName)
+                        .moduleTypeName(moduleTypeName)
+                        .applicationTypeName(applicationTypeName)
+                        .moduleInfoPath(picoModuleInfoPath.get().toAbsolutePath().toString())
+                        .classPrefixName(typePrefix)
+                        .applicationCreated(true)
+                        .moduleCreated(false)
+                        .build();
+                descriptor = createModuleInfo(moduleBuilderRequest);
+                filer.codegenModuleInfoFilerOut(descriptor, true);
+                return;
             }
         }
+
+        Path realModuleInfoPath = filer.toSourceLocation(ModuleUtils.REAL_MODULE_INFO_JAVA_NAME).orElse(null);
+        if (realModuleInfoPath != null && !realModuleInfoPath.toFile().exists()) {
+            throw new ToolsException("Expected to find " + realModuleInfoPath
+                                             + ". Did the " + PicoServicesConfig.NAME + " APT run?");
+        }
     }
+
     void codegenMetaInfServices(CodeGenFiler filer,
                                 CodeGenPaths paths,
                                 Map<String, List<String>> metaInfServices) {

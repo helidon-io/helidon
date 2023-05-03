@@ -59,11 +59,13 @@ class ApplicationCreatorDefaultTest extends AbstractBaseCreator {
         PicoServices picoServices = PicoServices.picoServices().orElseThrow();
         Services services = picoServices.services();
         List<ServiceProvider<?>> serviceProviders = services.lookupAll(allServices);
+        assertThat(serviceProviders.size(), is(0));
 
         List<TypeName> serviceTypeNames = serviceProviders.stream()
                 .map(sp -> TypeNameDefault.createFromTypeName(sp.serviceInfo().serviceTypeName()))
                 .collect(Collectors.toList());
 
+        // note: this test needs to align with target/pico/... for this to work/test properly
         CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
                 .generatedSourcesPath("target/pico/generated-sources")
                 .outputPath("target/pico/generated-classes")

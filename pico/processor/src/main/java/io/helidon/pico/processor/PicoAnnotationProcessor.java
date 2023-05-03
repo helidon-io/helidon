@@ -112,6 +112,7 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
             TypeNames.JAVAX_PRE_DESTROY,
             TypeNames.JAVAX_POST_CONSTRUCT);
 
+    private final Map<TypeName, TypeInfo> typeInfoToCreateActivatorsForInThisModule = new LinkedHashMap<>();
     private ActiveProcessorUtils utils;
     private CreatorHandler creator;
     private boolean autoAddInterfaces;
@@ -182,7 +183,6 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
             validate(elementsOfInterest);
 
             // cumulatively collect the types to process in the module
-            Map<TypeName, TypeInfo> typeInfoToCreateActivatorsForInThisModule = new LinkedHashMap<>();
             gatherTypeInfosToProcessInThisModule(typeInfoToCreateActivatorsForInThisModule, elementsOfInterest);
 
             // optionally intercept and validate the model
@@ -204,6 +204,9 @@ public class PicoAnnotationProcessor extends AbstractProcessor {
             throw exc;
         } finally {
             ServicesToProcess.onEndProcessing(utils, getSupportedAnnotationTypes(), roundEnv);
+            if (roundEnv.processingOver()) {
+                typeInfoToCreateActivatorsForInThisModule.clear();
+            }
             utils.roundEnv(null);
         }
     }

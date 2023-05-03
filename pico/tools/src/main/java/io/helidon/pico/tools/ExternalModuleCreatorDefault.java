@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.LazyValue;
@@ -138,8 +137,7 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
             if (packageInfo != null) {
                 for (ClassInfo classInfo : packageInfo.getClassInfo()) {
                     URI uri = classInfo.getClasspathElementURI();
-                    Optional<Path> filePath = ModuleUtils.toPath(uri);
-                    filePath.ifPresent(classpath::add);
+                    classpath.add(Path.of(uri));
                 }
             }
         }

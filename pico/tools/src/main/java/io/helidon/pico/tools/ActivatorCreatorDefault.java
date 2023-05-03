@@ -296,14 +296,14 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                                 Map<String, List<String>> metaInfServices) {
         boolean prev = true;
         if (req.analysisOnly()) {
-            prev = CodeGenFiler.filerEnabled(false);
+            prev = CodeGenFiler.filerWriterEnabled(false);
         }
 
         try {
             req.filer().codegenMetaInfServices(paths, metaInfServices);
         } finally {
             if (req.analysisOnly()) {
-                CodeGenFiler.filerEnabled(prev);
+                CodeGenFiler.filerWriterEnabled(prev);
             }
         }
     }
@@ -312,14 +312,14 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                                   ActivatorCodeGenDetail activatorDetail) {
         boolean prev = true;
         if (req.analysisOnly()) {
-            prev = CodeGenFiler.filerEnabled(false);
+            prev = CodeGenFiler.filerWriterEnabled(false);
         }
 
         try {
             req.filer().codegenActivatorFilerOut(activatorDetail);
         } finally {
             if (req.analysisOnly()) {
-                CodeGenFiler.filerEnabled(prev);
+                CodeGenFiler.filerWriterEnabled(prev);
             }
         }
     }
@@ -328,14 +328,14 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                                ModuleDetail moduleDetail) {
         boolean prev = true;
         if (req.analysisOnly()) {
-            prev = CodeGenFiler.filerEnabled(false);
+            prev = CodeGenFiler.filerWriterEnabled(false);
         }
 
         try {
             req.filer().codegenModuleFilerOut(moduleDetail);
         } finally {
             if (req.analysisOnly()) {
-                CodeGenFiler.filerEnabled(prev);
+                CodeGenFiler.filerWriterEnabled(prev);
             }
         }
     }
@@ -345,14 +345,14 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                                     String applicationBody) {
         boolean prev = true;
         if (req.analysisOnly()) {
-            prev = CodeGenFiler.filerEnabled(false);
+            prev = CodeGenFiler.filerWriterEnabled(false);
         }
 
         try {
             req.filer().codegenApplicationFilerOut(applicationTypeName, applicationBody);
         } finally {
             if (req.analysisOnly()) {
-                CodeGenFiler.filerEnabled(prev);
+                CodeGenFiler.filerWriterEnabled(prev);
             }
         }
     }
@@ -361,14 +361,14 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                                    ModuleInfoDescriptor descriptor) {
         boolean prev = true;
         if (req.analysisOnly()) {
-            prev = CodeGenFiler.filerEnabled(false);
+            prev = CodeGenFiler.filerWriterEnabled(false);
         }
 
         try {
             return req.filer().codegenModuleInfoFilerOut(descriptor, true).orElse(null);
         } finally {
             if (req.analysisOnly()) {
-                CodeGenFiler.filerEnabled(prev);
+                CodeGenFiler.filerWriterEnabled(prev);
             }
         }
     }
