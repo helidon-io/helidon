@@ -16,94 +16,58 @@
 
 package io.helidon.nima.webclient.http1;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.Bytes;
-import io.helidon.common.buffers.DataReader;
-import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.context.Context;
 import io.helidon.common.http.ClientRequestHeaders;
-import io.helidon.common.http.ClientResponseHeaders;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.common.http.Http.HeaderValues;
-import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriEncoding;
+import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
-import io.helidon.nima.http.media.EntityWriter;
-import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.UriHelper;
-
-import static java.lang.System.Logger.Level.DEBUG;
+import io.helidon.nima.webclient.WebClientServiceRequest;
+import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.spi.WebClientService;
 
 class ClientRequestImpl implements Http1ClientRequest {
-    private static final System.Logger LOGGER = System.getLogger(ClientRequestImpl.class.getName());
-    private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
-    private static final String HTTPS = "https";
-    private static final Map<KeepAliveKey, LinkedBlockingDeque<Http1ClientConnection>> CHANNEL_CACHE = new ConcurrentHashMap<>();
+    private static final AtomicLong COUNTER = new AtomicLong();
+
     private final UriQueryWriteable query;
     private final Map<String, String> pathParams = new HashMap<>();
-    private final Http1ClientImpl client;
     private final Http.Method method;
     private final UriHelper uri;
-    private final boolean defaultKeepAlive = true;
-    private final SocketOptions channelOptions;
-    private final BufferData writeBuffer = BufferData.growing(128);
-    private final int maxHeaderSize;
-    private final int maxStatusLineLength;
-    private final boolean sendExpect100Continue;
-    private final boolean validateHeaders;
-    private final MediaContext mediaContext;
-    private final int connectionQueueSize;
+    private final String requestId;
+    private final Http1ClientConfig clientConfig;
+
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private Tls tls;
     private String uriTemplate;
     private ClientConnection connection;
+    private UriFragment fragment;
 
-    ClientRequestImpl(Http1ClientImpl client,
+    ClientRequestImpl(Http1ClientConfig clientConfig,
                       Http.Method method,
                       UriHelper helper,
                       UriQueryWriteable query) {
-        this.client = client;
         this.method = method;
         this.uri = helper;
 
-        this.tls = client.tls();
-        this.channelOptions = client.socketOptions();
+        this.clientConfig = clientConfig;
+        this.tls = clientConfig.tls().orElse(null);
         this.query = query;
 
-        this.maxHeaderSize = client.maxHeaderSize();
-        this.maxStatusLineLength = client.maxStatusLineLength();
-        this.sendExpect100Continue = client.sendExpect100Continue();
-        this.validateHeaders = client.validateHeaders();
-        this.mediaContext = client.mediaContext();
-        this.connectionQueueSize = client.connectionQueueSize();
-    }
-
-    static void writeHeaders(Headers headers, BufferData bufferData) {
-        for (HeaderValue header : headers) {
-            header.writeHttp1Header(bufferData);
-        }
-        bufferData.write(Bytes.CR_BYTE);
-        bufferData.write(Bytes.LF_BYTE);
+        this.requestId = "http1-client-" + COUNTER.getAndIncrement();
     }
 
     @Override
@@ -155,6 +119,12 @@ class ClientRequestImpl implements Http1ClientRequest {
     }
 
     @Override
+    public Http1ClientRequest fragment(String fragment) {
+        this.fragment = UriFragment.createFromDecoded(fragment);
+        return this;
+    }
+
+    @Override
     public Http1ClientResponse request() {
         return submit(BufferData.EMPTY_BYTES);
     }
@@ -165,73 +135,32 @@ class ClientRequestImpl implements Http1ClientRequest {
             rejectHeadWithEntity();
         }
 
-        if (uriTemplate != null) {
-            String resolved = resolvePathParams(uriTemplate);
-            this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
-        }
-        ClientRequestHeaders headers = ClientRequestHeaders.create(explicitHeaders);
-        boolean keepAlive = handleKeepAlive(headers);
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        WebClientService.Chain callChain = new HttpCallEntityChain(clientConfig,
+                                                                   connection,
+                                                                   tls,
+                                                                   whenSent,
+                                                                   whenComplete,
+                                                                   entity);
 
-        ClientConnection connection = getConnection(keepAlive);
-        DataWriter writer = connection.writer();
-        DataReader reader = connection.reader();
-
-        writeBuffer.clear();
-        // I have a valid connection
-        prologue(writeBuffer);
-
-        headers.setIfAbsent(Header.create(Header.HOST, uri.authority()));
-
-        byte[] entityBytes;
-        if (entity == BufferData.EMPTY_BYTES) {
-            entityBytes = BufferData.EMPTY_BYTES;
-        } else {
-            entityBytes = entityBytes(entity, headers);
-        }
-
-        headers.set(Header.create(Header.CONTENT_LENGTH, entityBytes.length));
-
-        // todo validate request headers
-        writeHeaders(headers, writeBuffer);
-        if (entityBytes.length > 0) {
-            writeBuffer.write(entityBytes);
-        }
-        writer.write(writeBuffer);
-
-        return readResponse(headers, connection, reader);
+        return invokeServices(callChain, whenSent, whenComplete);
     }
 
     @Override
     public Http1ClientResponse outputStream(OutputStreamHandler streamHandler) {
         rejectHeadWithEntity();
 
-        WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);
-        boolean keepAlive = handleKeepAlive(headers);
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        WebClientService.Chain callChain = new HttpCallOutputStreamChain(clientConfig,
+                                                                         connection,
+                                                                         tls,
+                                                                         whenSent,
+                                                                         whenComplete,
+                                                                         streamHandler);
 
-        ClientConnection connection = getConnection(keepAlive);
-        DataWriter writer = connection.writer();
-        DataReader reader = connection.reader();
-
-        // I have a valid connection
-        writeBuffer.clear();
-        prologue(writeBuffer);
-
-        headers.setIfAbsent(Header.create(Header.HOST, uri.authority()));
-
-        ClientConnectionOutputStream cos = new ClientConnectionOutputStream(writer, reader, writeBuffer, headers,
-                                                                            maxStatusLineLength, sendExpect100Continue);
-
-        try {
-            streamHandler.handle(cos);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-
-        if (!cos.closed()) {
-            throw new IllegalStateException("Output stream was not closed in handler");
-        }
-
-        return readResponse(ClientRequestHeaders.create(headers), connection, reader);
+        return invokeServices(callChain, whenSent, whenComplete);
     }
 
     @Override
@@ -242,7 +171,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         }
         return URI.create(this.uri.scheme() + "://"
                                   + uri.authority()
-                                  + uri.pathWithQuery(query));
+                                  + uri.pathWithQueryAndFragment(query, fragment));
 
     }
 
@@ -252,12 +181,52 @@ class ClientRequestImpl implements Http1ClientRequest {
         return this;
     }
 
-    UriHelper uriHelper() {
-        return uri;
-    }
+    private ClientResponseImpl invokeServices(WebClientService.Chain callChain,
+                                              CompletableFuture<WebClientServiceRequest> whenSent,
+                                              CompletableFuture<WebClientServiceResponse> whenComplete) {
+        if (uriTemplate != null) {
+            String resolved = resolvePathParams(uriTemplate);
+            this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
+        }
 
-    private void prologue(BufferData nonEntityData) {
-        nonEntityData.writeAscii(method.text() + " " + uri.pathWithQuery(query) + " HTTP/1.1\r\n");
+        ClientRequestHeaders headers = ClientRequestHeaders.create(explicitHeaders);
+
+        Map<String, String> properties = new HashMap<>();
+
+        WebClientServiceRequest serviceRequest = new ServiceRequestImpl(uri,
+                                                                        method,
+                                                                        Http.Version.V1_1,
+                                                                        query,
+                                                                        UriFragment.empty(),
+                                                                        headers,
+                                                                        Context.create(),
+                                                                        requestId,
+                                                                        whenComplete,
+                                                                        whenSent,
+                                                                        properties);
+
+        WebClientService.Chain last = callChain;
+        List<WebClientService> services = clientConfig.services();
+        for (int i = (services.size() - 1); i >= 0; i--) {
+            WebClientService webClientService = services.get(i);
+            last = new ServiceChainImpl(last, webClientService);
+        }
+
+        WebClientServiceResponse serviceResponse = last.proceed(serviceRequest);
+
+        CompletableFuture<Void> complete = new CompletableFuture<>();
+        complete.thenAccept(ignored -> serviceResponse.whenComplete().complete(serviceResponse))
+                .exceptionally(throwable -> {
+                    serviceResponse.whenComplete().completeExceptionally(throwable);
+                    return null;
+                });
+
+        return new ClientResponseImpl(serviceResponse.status(),
+                                      serviceResponse.serviceRequest().headers(),
+                                      serviceResponse.headers(),
+                                      serviceResponse.connection(),
+                                      serviceResponse.reader(),
+                                      complete);
     }
 
     private String resolvePathParams(String path) {
@@ -277,265 +246,9 @@ class ClientRequestImpl implements Http1ClientRequest {
         return result;
     }
 
-    private Http1ClientResponse readResponse(ClientRequestHeaders usedHeaders, ClientConnection connection, DataReader reader) {
-        Http.Status responseStatus = Http1StatusParser.readStatus(reader, maxStatusLineLength);
-        ClientResponseHeaders responseHeaders = readHeaders(reader);
-
-        return new ClientResponseImpl(responseStatus, usedHeaders, responseHeaders, connection, reader);
-    }
-
-    private ClientResponseHeaders readHeaders(DataReader reader) {
-        WritableHeaders<?> writable = Http1HeadersParser.readHeaders(reader, maxHeaderSize, validateHeaders);
-
-        return ClientResponseHeaders.create(writable);
-    }
-
-    private boolean handleKeepAlive(WritableHeaders<?> headers) {
-        if (headers.contains(HeaderValues.CONNECTION_CLOSE)) {
-            return false;
-        }
-        if (defaultKeepAlive) {
-            headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
-            return true;
-        }
-        if (headers.contains(HeaderValues.CONNECTION_KEEP_ALIVE)) {
-            return true;
-        }
-        headers.set(HeaderValues.CONNECTION_CLOSE);
-        return false;
-    }
-
-    ClientConnection getConnection(boolean keepAlive) {
-        if (this.connection != null) {
-            return this.connection;
-        }
-
-        Http1ClientConnection connection;
-        Tls tls;
-        if (uri.scheme().equals(HTTPS)) {
-            tls = this.tls;
-        } else {
-            tls = null;
-        }
-
-        if (keepAlive) {
-            // todo add proxy to the key
-            KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(), uri.authority(), tls,
-                                                         channelOptions.connectTimeout(), channelOptions.readTimeout());
-            var connectionQueue = CHANNEL_CACHE.computeIfAbsent(keepAliveKey,
-                                                                it -> new LinkedBlockingDeque<>(connectionQueueSize));
-
-            while ((connection = connectionQueue.poll()) != null && !connection.isConnected()) {
-            }
-
-            if (connection == null) {
-                connection = new Http1ClientConnection(channelOptions,
-                                                       connectionQueue,
-                                                       new ConnectionKey(uri.scheme(),
-                                                                         uri.host(),
-                                                                         uri.port(),
-                                                                         tls,
-                                                                         client.dnsResolver(),
-                                                                         client.dnsAddressLookup())).connect();
-            } else {
-                if (LOGGER.isLoggable(DEBUG)) {
-                    LOGGER.log(DEBUG, String.format("[%s] client connection obtained %s",
-                                                    connection.channelId(),
-                                                    Thread.currentThread().getName()));
-                }
-            }
-        } else {
-            connection = new Http1ClientConnection(channelOptions, new ConnectionKey(uri.scheme(),
-                                                                                     uri.host(),
-                                                                                     uri.port(),
-                                                                                     tls,
-                                                                                     client.dnsResolver(),
-                                                                                     client.dnsAddressLookup())).connect();
-        }
-        return connection;
-    }
-
     private void rejectHeadWithEntity() {
         if (this.method.equals(Http.Method.HEAD)) {
             throw new IllegalArgumentException("Payload in method '" + Http.Method.HEAD + "' has no defined semantics");
-        }
-    }
-
-    private byte[] entityBytes(Object entity, ClientRequestHeaders headers) {
-        if (entity instanceof byte[]) {
-            return (byte[]) entity;
-        }
-        GenericType<Object> genericType = GenericType.create(entity);
-        EntityWriter<Object> writer = mediaContext.writer(genericType, headers);
-
-        // todo this should use output stream of client, but that would require delaying header write
-        // to first byte written
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        writer.write(genericType, entity, bos, headers);
-        return bos.toByteArray();
-    }
-
-    private record KeepAliveKey(String scheme, String authority, Tls tlsConfig, Duration connectTimeout, Duration readTimeout) {
-    }
-
-    private static class ClientConnectionOutputStream extends OutputStream {
-        private final DataWriter writer;
-        private final DataReader reader;
-        private boolean chunked;
-        private WritableHeaders<?> headers;
-        private BufferData firstPacket;
-        private BufferData prologue;
-        private int maxStatusLineLength;
-        private boolean sendExpect100Continue;
-        private long bytesWritten;
-        private long contentLength;
-        private boolean noData = true;
-        private boolean closed;
-
-        private ClientConnectionOutputStream(DataWriter writer, DataReader reader, BufferData prologue,
-                                             WritableHeaders<?> headers, int maxStatusLineLength, boolean sendExpect100Continue) {
-            this.writer = writer;
-            this.reader = reader;
-            this.headers = headers;
-            this.prologue = prologue;
-            this.maxStatusLineLength = maxStatusLineLength;
-            this.sendExpect100Continue = sendExpect100Continue;
-            this.contentLength = headers.contentLength().orElse(-1);
-            this.chunked = contentLength == -1 || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            // this method should not be called, as we are wrapped with a buffered stream
-            byte[] data = {(byte) b};
-            write(data, 0, 1);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            if (closed) {
-                throw new IOException("Output stream already closed");
-            }
-
-            BufferData data = BufferData.create(b, off, len);
-
-            if (!chunked) {
-                if (firstPacket == null) {
-                    firstPacket = data;
-                } else {
-                    chunked = true;
-                    sendFirstChunk();
-                }
-                noData = false;
-            }
-
-            if (chunked) {
-                if (noData) {
-                    noData = false;
-                    sendPrologueAndHeader();
-                }
-                writeChunked(data);
-            }
-        }
-
-        @Override
-        public void close() throws IOException {
-            if (closed) {
-                return;
-            }
-            this.closed = true;
-            if (chunked) {
-                if (firstPacket != null) {
-                    sendFirstChunk();
-                }
-                writer.write(BufferData.create(TERMINATING_CHUNK));
-            } else {
-                headers.remove(Http.Header.TRANSFER_ENCODING);
-                if (noData) {
-                    headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
-                    contentLength = 0;
-                }
-                if (noData || firstPacket != null) {
-                    sendPrologueAndHeader();
-                }
-                if (firstPacket != null) {
-                    writeContent(firstPacket);
-                }
-            }
-            super.close();
-        }
-
-        boolean closed() {
-            return closed;
-        }
-
-        private void writeChunked(BufferData buffer) {
-            int available = buffer.available();
-            byte[] hex = Integer.toHexString(available).getBytes(StandardCharsets.UTF_8);
-
-            BufferData toWrite = BufferData.create(available + hex.length + 4); // \r\n after size, another after chunk
-            toWrite.write(hex);
-            toWrite.write(Bytes.CR_BYTE);
-            toWrite.write(Bytes.LF_BYTE);
-            toWrite.write(buffer);
-            toWrite.write(Bytes.CR_BYTE);
-            toWrite.write(Bytes.LF_BYTE);
-
-            writer.writeNow(toWrite);
-        }
-
-        private void writeContent(BufferData buffer) throws IOException {
-            bytesWritten += buffer.available();
-            if (contentLength != -1 && bytesWritten > contentLength) {
-                throw new IOException("Content length was set to " + contentLength
-                                              + ", but you are writing additional " + (bytesWritten - contentLength) + " "
-                                              + "bytes");
-            }
-
-            writer.writeNow(buffer);
-        }
-
-        private void sendPrologueAndHeader() {
-            boolean expects100Continue = sendExpect100Continue && chunked && !noData;
-            if (expects100Continue) {
-                headers.add(HeaderValues.EXPECT_100);
-            }
-
-            if (chunked) {
-                // Add chunked encoding, if there is no other transfer-encoding headers
-                if (!headers.contains(Http.Header.TRANSFER_ENCODING)) {
-                    headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
-                } else {
-                    // Add chunked encoding, if it's not part of existing transfer-encoding headers
-                    if (!headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-                        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
-                    }
-                }
-                headers.remove(Header.CONTENT_LENGTH);
-            }
-
-            writer.writeNow(prologue);
-
-            // todo validate request headers
-            BufferData headerBuffer = BufferData.growing(128);
-            writeHeaders(headers, headerBuffer);
-            writer.writeNow(headerBuffer);
-
-            if (expects100Continue) {
-                Http.Status responseStatus = Http1StatusParser.readStatus(reader, maxStatusLineLength);
-                if (responseStatus != Http.Status.CONTINUE_100) {
-                    throw new IllegalStateException("Expected a status of '100 Continue' but received a '"
-                                                            + responseStatus + "' instead");
-                }
-                // Discard any remaining data from the response
-                reader.skip(reader.available());
-            }
-        }
-
-        private void sendFirstChunk() {
-            sendPrologueAndHeader();
-            writeChunked(firstPacket);
-            firstPacket = null;
         }
     }
 }

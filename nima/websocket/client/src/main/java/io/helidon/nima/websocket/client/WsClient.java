@@ -25,6 +25,8 @@ import java.util.Objects;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.nima.webclient.DefaultDnsResolverProvider;
+import io.helidon.nima.webclient.DnsAddressLookup;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.websocket.WsListener;
 
@@ -77,6 +79,9 @@ public interface WsClient extends WebClient {
         private final WritableHeaders<?> headers = WritableHeaders.create();
 
         private Builder() {
+            // until we use the same parent for HTTP/1 and websocket, we need to have these defined as defaults
+            super.dnsResolver(new DefaultDnsResolverProvider().createDnsResolver());
+            super.dnsAddressLookup(DnsAddressLookup.defaultLookup());
         }
 
         @Override

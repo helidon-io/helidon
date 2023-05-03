@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import io.helidon.common.media.type.MediaType;
 
@@ -226,5 +228,14 @@ public interface Headers extends Iterable<Http.HeaderValue> {
         forEach(it -> headers.put(it.name(), it.allValues()));
 
         return headers;
+    }
+
+    /**
+     * A sequential stream with these headers as the source.
+     *
+     * @return stream of header values
+     */
+    default Stream<Http.HeaderValue> stream() {
+        return StreamSupport.stream(spliterator(), false);
     }
 }

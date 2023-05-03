@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.Map;
 
 import io.helidon.common.uri.UriEncoding;
+import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 
@@ -89,7 +90,44 @@ public class UriHelper {
 
     @Override
     public String toString() {
-        return scheme + "://" + authority + "/" + path;
+        return scheme + "://" + authority + (path.startsWith("/") ? "" : "/") + path;
+    }
+
+    /**
+     * Scheme of this URI.
+     *
+     * @param scheme to use (such as {@code http})
+     */
+    public void scheme(String scheme) {
+        this.scheme = scheme;
+    }
+
+    /**
+     * Host of this URI.
+     *
+     * @param host to connect to
+     */
+    public void host(String host) {
+        this.host = host;
+    }
+
+    /**
+     * Port of this URI.
+     *
+     * @param port to connect to
+     */
+    public void port(int port) {
+        this.port = port;
+    }
+
+    /**
+     * Path of this URI.
+     *
+     * @param path path to use
+     * @param query writable query to extract query parameters to
+     */
+    public void path(String path, UriQueryWriteable query) {
+        this.path = extractQuery(path, query);
     }
 
     /**
@@ -184,23 +222,32 @@ public class UriHelper {
     }
 
     /**
-     * Encoded path with query.
+     * Encoded path with query and fragment.
      *
-     * @param query query to use
+     * @param query query to use (may be empty)
+     * @param fragment fragment to use (may be empty)
      * @return string containing encoded path with query
      */
-    public String pathWithQuery(UriQuery query) {
+    public String pathWithQueryAndFragment(UriQuery query, UriFragment fragment) {
+        String queryString = query.rawValue();
+
+        boolean hasQuery = !queryString.isEmpty();
+
         String path;
         if (this.path.equals("")) {
             path = "/";
         } else {
             path = UriEncoding.encodeUri(this.path);
         }
-        String queryString = query.rawValue();
-        if (queryString.isEmpty()) {
-            return path;
+
+        if (hasQuery) {
+            path = path + '?' + queryString;
         }
-        return path + '?' + queryString;
+        if (fragment.hasValue()) {
+            path = path + '#' + fragment.rawValue();
+        }
+
+        return path;
     }
 
     private static String extractQuery(String path, UriQueryWriteable query) {
