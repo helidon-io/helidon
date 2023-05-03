@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.tracing.opentelemetery;
+package io.helidon.tracing.opentelemetry;
 
 import java.util.Optional;
 

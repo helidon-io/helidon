@@ -169,6 +169,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     private byte[] certificate;
     private byte[] trustedCertificates;
     private String path;
+    private Config config;
 
     /**
      * Default constructor, does not modify any state.
@@ -253,6 +254,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
     @Override
     public JaegerTracerBuilder config(Config config) {
+        this.config = config;
         config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("service").asString().ifPresent(this::serviceName);
         config.get("protocol").asString().ifPresent(this::collectorProtocol);
@@ -418,6 +420,12 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     @Override
     public Tracer build() {
         Tracer result;
+
+        if (HelidonOpenTelemetry.AgentDetector.isAgentPresent(config)){
+            return HelidonOpenTelemetry.create(GlobalOpenTelemetry.get(),
+                    GlobalOpenTelemetry.getTracer(this.serviceName),
+                    tags);
+        }
 
         if (enabled) {
             if (serviceName == null) {
