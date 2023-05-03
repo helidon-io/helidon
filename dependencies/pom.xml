@@ -112,7 +112,6 @@
         <version.lib.microprofile-jwt>2.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>4.0</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-openapi-api>3.0</version.lib.microprofile-openapi-api>
-        <version.lib.microprofile-telemetry-tck>1.0</version.lib.microprofile-telemetry-tck>
         <version.lib.microprofile-reactive-messaging-api>3.0</version.lib.microprofile-reactive-messaging-api>
         <version.lib.microprofile-reactive-streams-operators-api>3.0</version.lib.microprofile-reactive-streams-operators-api>
         <version.lib.microprofile-reactive-streams-operators-core>3.0</version.lib.microprofile-reactive-streams-operators-core>
@@ -139,8 +138,6 @@
         <version.lib.opentelemetry.opentracing.shim>1.22.0-alpha</version.lib.opentelemetry.opentracing.shim>
         <version.lib.opentelemetry>1.22.0</version.lib.opentelemetry>
         <version.lib.opentelemetry-sdk-extension-autoconfigure>1.22.0-alpha</version.lib.opentelemetry-sdk-extension-autoconfigure>
-        <version.lib.opentelemetry.semconv>1.15.0-alpha</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry.opentracing.shim>1.15.0-alpha</version.lib.opentelemetry.opentracing.shim>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
