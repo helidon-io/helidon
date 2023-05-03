@@ -148,10 +148,6 @@ public class NarayanaClient implements CoordinatorClient {
                             logF("Unexpected client error during LRA cancel - LRAID: {0}, Status: {1}", lraId, status.code());
                             return Single.empty();
                         default:
-                            if (404 == status.code()) {
-                                LOGGER.warning("Cancel LRA - Coordinator can't find id - LRAID: " + lraId);
-                                return Single.empty();
-                            }
                             return connectionError("Unable to cancel lra " + lraId, status.code());
                     }
                 })
