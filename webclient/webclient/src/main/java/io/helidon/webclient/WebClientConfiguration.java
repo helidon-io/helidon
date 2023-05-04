@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -528,7 +528,7 @@ class WebClientConfiguration {
         }
 
         /**
-         * Sets specific context in which all of the requests will be running.
+         * Sets specific context in which all the requests will be running.
          *
          * @return updated builder instance
          */
@@ -542,7 +542,8 @@ class WebClientConfiguration {
          *
          * @return updated builder instance
          */
-        @ConfiguredOption(type = String.class)
+        @ConfiguredOption(type = String.class,
+                          description = "Base URI for each request")
         public B uri(URI uri) {
             this.uri = uri;
             return me;
@@ -634,8 +635,14 @@ class WebClientConfiguration {
             return me;
         }
 
+        /**
+         * Enable keep alive option on the connection.
+         *
+         * @param keepAlive keep alive value
+         * @return updated builder instance
+         */
         @ConfiguredOption("true")
-        B keepAlive(boolean keepAlive) {
+        public B keepAlive(boolean keepAlive) {
             this.keepAlive = keepAlive;
             return me;
         }

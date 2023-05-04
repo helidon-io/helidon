@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -49,8 +49,10 @@ This is a standalone configuration type, prefix from configuration root: `client
 |`connect-timeout-millis` |long |`60000` |Sets new connection timeout of the request.
 |`cookies.automatic-store-enabled` |boolean |{nbsp} |Whether to allow automatic cookie storing
 |`cookies.default-cookies` |Map |{nbsp} |Default cookies to be used in each request. Each list entry has to have "name" and "value" node
+|`dns-resolver-type` |DnsResolverType (DEFAULT, ROUND_ROBIN, NONE) |{nbsp} |Set which type of DNS resolver should be used.
 |`follow-redirects` |boolean |`false` |Whether to follow any response redirections or not.
 |`headers` |Map |{nbsp} |Default headers to be used in each request. Each list entry has to have "name" and "value" node
+|`keep-alive` |boolean |`true` |Enable keep alive option on the connection.
 |`max-redirects` |int |`5` |Sets max number of followed redirects.
 |`media-support` |xref:{rootdir}/config/io_helidon_media_common_MediaContext.adoc[MediaContext] |{nbsp} |
 |`proxy` |xref:{rootdir}/config/io_helidon_webclient_Proxy.adoc[Proxy] |{nbsp} |Sets new request proxy.
@@ -58,9 +60,7 @@ This is a standalone configuration type, prefix from configuration root: `client
 |`relative-uris` |boolean |`false` |Can be set to `true` to force the use of relative URIs in all requests,
  regardless of the presence or absence of proxies or no-proxy lists.
 |`tls` |xref:{rootdir}/config/io_helidon_webclient_WebClientTls.adoc[WebClientTls] |{nbsp} |New TLS configuration.
-|`uri` |string |{nbsp} |Base uri for each request.
-
- @return updated builder instance
+|`uri` |string |{nbsp} |Base URI for each request
 |`user-agent` |string |{nbsp} |Name of the user agent which should be used.
 
 |===
