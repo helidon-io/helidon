@@ -35,6 +35,10 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.ext.Provider;
 
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_METHOD;
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_SCHEME;
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
+
 /**
  * Filter to process Server request and Server response. Starts a new {@link io.opentelemetry.api.trace.Span} on request and
  * ends it on a Response.
@@ -106,8 +110,8 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         Span span = tracer.spanBuilder(annotatedPath)
                 .setParent(parentContext)
                 .setSpanKind(SpanKind.SERVER)
-                .setAttribute(HelidonTelemetryClientFilter.HTTP_METHOD, requestContext.getMethod())
-                .setAttribute(HelidonTelemetryClientFilter.HTTP_SCHEME, requestContext.getUriInfo().getRequestUri().getScheme())
+                .setAttribute(HTTP_METHOD, requestContext.getMethod())
+                .setAttribute(HTTP_SCHEME, requestContext.getUriInfo().getRequestUri().getScheme())
                 .setAttribute(HTTP_TARGET, resolveTarget(requestContext))
                 .startSpan();
 
@@ -137,7 +141,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
         try {
             Span span = (Span) request.getProperty(SPAN);
-            span.setAttribute(HelidonTelemetryClientFilter.HTTP_STATUS_CODE, response.getStatus());
+            span.setAttribute(HTTP_STATUS_CODE, response.getStatus());
             span.end();
 
             Scope scope = (Scope) request.getProperty(SPAN_SCOPE);

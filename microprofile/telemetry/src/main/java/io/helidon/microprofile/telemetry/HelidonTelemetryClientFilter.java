@@ -29,6 +29,10 @@ import jakarta.ws.rs.client.ClientResponseContext;
 import jakarta.ws.rs.client.ClientResponseFilter;
 import jakarta.ws.rs.ext.Provider;
 
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_METHOD;
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_SCHEME;
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
+
 
 /**
  * Filter to process Client request and Client response. Starts a new {@link io.opentelemetry.api.trace.Span} on request and
@@ -37,9 +41,6 @@ import jakarta.ws.rs.ext.Provider;
 @Provider
 class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientResponseFilter {
     private static final System.Logger LOGGER = System.getLogger(HelidonTelemetryContainerFilter.class.getName());
-    static final String HTTP_STATUS_CODE = "http.status_code";
-    static final String HTTP_METHOD = "http.method";
-    static final String HTTP_SCHEME = "http.scheme";
     private static final String HTTP_URL = "http.url";
     private static final String OTEL_CLIENT_SCOPE = "otel.span.client.scope";
     private static final String OTEL_CLIENT_SPAN = "otel.span.client.span";
