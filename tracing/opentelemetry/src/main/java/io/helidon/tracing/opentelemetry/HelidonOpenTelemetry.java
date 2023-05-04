@@ -25,7 +25,7 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 
-import static io.opentelemetry.context.Context.*;
+import static io.opentelemetry.context.Context.current;
 
 /**
  * Open Telemetry factory methods to create wrappers for Open Telemetry types.
