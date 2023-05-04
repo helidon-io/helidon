@@ -39,6 +39,8 @@ import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.RunLevel;
+import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.TypeNames;
 import io.helidon.pico.tools.TypeTools;
@@ -358,6 +360,15 @@ final class GeneralProcessorUtils {
     static Optional<? extends AnnotationAndValue> findFirst(Class<? extends Annotation> jakartaAnno,
                                                             Collection<? extends AnnotationAndValue> annotations) {
         return findFirst(jakartaAnno.getName(), annotations);
+    }
+
+    static ServiceInfoBasics toBasicServiceInfo(TypeInfo service) {
+        return ServiceInfoDefault.builder()
+                .serviceTypeName(service.typeName().name())
+                .declaredWeight(toWeight(service))
+                .declaredRunLevel(toRunLevel(service))
+                .scopeTypeNames(toScopeNames(service))
+                .build();
     }
 
     static Optional<? extends AnnotationAndValue> findFirst(String jakartaAnnoName,

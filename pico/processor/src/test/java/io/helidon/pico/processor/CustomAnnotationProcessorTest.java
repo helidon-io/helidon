@@ -55,7 +55,7 @@ class CustomAnnotationProcessorTest {
     @SuppressWarnings("unchecked")
     void annotationSupported() {
         CustomAnnotationProcessor processor = new CustomAnnotationProcessor();
-        assertThat(processor.annoTypes(),
+        assertThat(processor.getSupportedAnnotationTypes(),
                    containsInAnyOrder(ExtensibleGET.class.getName()));
     }
 
