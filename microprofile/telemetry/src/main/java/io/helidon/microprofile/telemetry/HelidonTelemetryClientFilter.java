@@ -42,7 +42,10 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
     private static final String HTTP_METHOD = "http.method";
     private static final String HTTP_SCHEME = "http.scheme";
     private static final String HTTP_URL = "http.url";
-    private static final String CONFIG_STRING = "otel.span.client.";
+
+    private static final String OTEL_CLIENT_SCOPE = "otel.span.client.scope";
+    private static final String OTEL_CLIENT_SPAN = "otel.span.client.span";
+    private static final String OTEL_CLIENT_CONTEXT = "otel.span.client.context";
 
     // Extract the current OpenTelemetry Context. Required for a parent/child relationship
     // to be correctly rebuilt in the next filter.
@@ -66,26 +69,23 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
             LOGGER.log(System.Logger.Level.TRACE, "Starting Span in a Client Request");
         }
 
-        Context parentContext = Context.current();
-
         //Start new span for Client request.
         Span span = tracer.spanBuilder("HTTP " + clientRequestContext.getMethod())
-                .setParent(parentContext)
+                .setParent(Context.current())
                 .setSpanKind(SpanKind.CLIENT)
-                .setAttribute(HTTP_STATUS_CODE, HTTP_OK)
                 .setAttribute(HTTP_METHOD, clientRequestContext.getMethod())
                 .setAttribute(HTTP_SCHEME, clientRequestContext.getUri().getScheme())
                 .setAttribute(HTTP_URL, clientRequestContext.getUri().toString())
                 .startSpan();
 
         Scope scope = span.makeCurrent();
-        clientRequestContext.setProperty(CONFIG_STRING + "scope", scope);
-        clientRequestContext.setProperty(CONFIG_STRING + "span", span);
-        clientRequestContext.setProperty(CONFIG_STRING + "context", Context.current());
+        clientRequestContext.setProperty(OTEL_CLIENT_SCOPE, scope);
+        clientRequestContext.setProperty(OTEL_CLIENT_SPAN, span);
+        clientRequestContext.setProperty(OTEL_CLIENT_CONTEXT, Context.current());
 
         // Propagate OpenTelemetry context to next filter
         openTelemetry.getPropagators().getTextMapPropagator().inject(Context.current(), clientRequestContext,
-                                                                     CONTEXT_HEADER_EXTRACTOR);
+                CONTEXT_HEADER_EXTRACTOR);
     }
 
 
@@ -97,19 +97,21 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
         }
 
         // End span for Client request.
-        Context context = (Context) clientRequestContext.getProperty(CONFIG_STRING + "context");
+        Context context = (Context) clientRequestContext.getProperty(OTEL_CLIENT_CONTEXT);
         if (context == null) {
             return;
         }
 
-        Span span = (Span) clientRequestContext.getProperty(CONFIG_STRING + "span");
+        Span span = (Span) clientRequestContext.getProperty(OTEL_CLIENT_SPAN);
         span.setAttribute(HTTP_STATUS_CODE, clientResponseContext.getStatus());
         span.end();
 
-        Scope scope = (Scope) clientRequestContext.getProperty(CONFIG_STRING + "scope");
+        Scope scope = (Scope) clientRequestContext.getProperty(OTEL_CLIENT_SCOPE);
         scope.close();
 
-        clientRequestContext.removeProperty(CONFIG_STRING + "context");
+        clientRequestContext.removeProperty(OTEL_CLIENT_SPAN);
+        clientRequestContext.removeProperty(OTEL_CLIENT_SCOPE);
+        clientRequestContext.removeProperty(OTEL_CLIENT_CONTEXT);
     }
 
 }

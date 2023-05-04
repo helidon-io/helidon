@@ -54,9 +54,9 @@ class OpenTelemetryProducer {
     private LazyValue<OpenTelemetry> openTelemetry;
     private Map<String, String> telemetryProperties;
 
-    private Config config;
+    private final Config config;
 
-    private org.eclipse.microprofile.config.Config mpConfig;
+    private final org.eclipse.microprofile.config.Config mpConfig;
 
     @Inject
     OpenTelemetryProducer(Config config, org.eclipse.microprofile.config.Config mpConfig) {

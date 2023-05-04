@@ -29,6 +29,7 @@ import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 
 
+
 /**
  * Intercept {@code HelidonWithSpan} annotated method and invoke tracer.
  */
@@ -66,9 +67,9 @@ class WithSpanInterceptor {
         String spanName = annotation.value();
 
         //Process span name. Should be class name, as well as inner classes.
-        if (spanName.isEmpty()){
+        if (spanName.isEmpty()) {
             String className = method.getDeclaringClass().getName();
-            if (className.contains("$")){
+            if (className.contains("$")) {
                 className = className.substring(className.lastIndexOf("$") + 1);
             }
             spanName = className + "." + method.getName();
@@ -80,11 +81,11 @@ class WithSpanInterceptor {
                 .setParent(Context.current())
                 .startSpan();
 
-        try (Scope scope = span.makeCurrent()){
+        try (Scope scope = span.makeCurrent()) {
             return context.proceed();
         } catch (Exception e) {
             span.recordException(e);
-            return context.proceed();
+            throw e;
         } finally {
             span.end();
         }

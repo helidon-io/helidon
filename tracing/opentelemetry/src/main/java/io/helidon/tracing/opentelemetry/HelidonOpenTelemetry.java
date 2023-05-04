@@ -25,6 +25,8 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 
+import static io.opentelemetry.context.Context.*;
+
 /**
  * Open Telemetry factory methods to create wrappers for Open Telemetry types.
  */
@@ -65,7 +67,11 @@ public final class HelidonOpenTelemetry {
      * If the value is not explicitly set, the detector does best effort to estimate indirect means if the agent is present.
      * This detector may stop working if OTEL changes the indirect indicators.
      */
-    public static class AgentDetector {
+    public static final class AgentDetector {
+
+        //Private constructor for a utility class.
+        private AgentDetector() {
+        }
 
         /**
          * Check if the OTEL Agent is present.
@@ -99,7 +105,7 @@ public final class HelidonOpenTelemetry {
         }
 
         private static boolean checkContext() {
-            return io.opentelemetry.context.Context.current().getClass().getName().contains("agent");
+            return current().getClass().getName().contains("agent");
         }
 
     }

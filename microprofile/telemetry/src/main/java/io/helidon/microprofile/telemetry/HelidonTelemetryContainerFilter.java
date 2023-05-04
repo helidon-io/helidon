@@ -54,8 +54,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
     // Extract OpenTelemetry Parent Context from Request headers.
     private static final TextMapGetter<ContainerRequestContext> CONTEXT_HEADER_INJECTOR;
-    private final Tracer tracer;
-    private final OpenTelemetry openTelemetry;
 
     static {
         CONTEXT_HEADER_INJECTOR =
@@ -72,6 +70,10 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                     }
                 };
     }
+
+    private final Tracer tracer;
+    private final OpenTelemetry openTelemetry;
+
 
     @jakarta.ws.rs.core.Context
     private ResourceInfo resourceInfo;
@@ -95,20 +97,20 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         Context extractedContext = openTelemetry.getPropagators().getTextMapPropagator()
                 .extract(Context.current(), requestContext, CONTEXT_HEADER_INJECTOR);
 
-        if (extractedContext != null){
+        if (extractedContext != null) {
             parentContext = extractedContext;
         }
 
         String annotatedPath = requestContext.getUriInfo().getPath();
-        if (resourceInfo.getResourceMethod().getAnnotation(Path.class) != null) {
-            annotatedPath = resourceInfo.getResourceMethod().getAnnotation(Path.class).value();
+        Path pathAnnotation = resourceInfo.getResourceMethod().getAnnotation(Path.class);
+        if (pathAnnotation != null) {
+            annotatedPath = pathAnnotation.value();
         }
 
         //Start new span for container request.
         Span span = tracer.spanBuilder(annotatedPath)
                 .setParent(parentContext)
                 .setSpanKind(SpanKind.SERVER)
-                .setAttribute(HTTP_STATUS_CODE, HTTP_OK)
                 .setAttribute(HTTP_METHOD, requestContext.getMethod())
                 .setAttribute(HTTP_SCHEME, requestContext.getUriInfo().getRequestUri().getScheme())
                 .setAttribute(HTTP_TARGET, resolveTarget(requestContext))
@@ -152,7 +154,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     }
 
     // Resolve target string.
-    private String resolveTarget(ContainerRequestContext requestContext){
+    private String resolveTarget(ContainerRequestContext requestContext) {
         String path = requestContext.getUriInfo().getRequestUri().getPath();
         String rawQuery = requestContext.getUriInfo().getRequestUri().getRawQuery();
         if (rawQuery != null && !rawQuery.isEmpty()) {
@@ -162,7 +164,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     }
 
     // Extract OpenTelemetry Baggage from Request Headers.
-    private void handleBaggage(ContainerRequestContext containerRequestContext, Context context){
+    private void handleBaggage(ContainerRequestContext containerRequestContext, Context context) {
         List<String> baggageProperties = containerRequestContext.getHeaders().get("baggage");
         if (baggageProperties != null) {
             for (String b : baggageProperties) {

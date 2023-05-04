@@ -40,8 +40,8 @@ public class TelemetryCdiExtension implements Extension {
 
         // Register annotations, interceptors and producers.
         discovery.addAnnotatedType(HelidonWithSpan.class, HelidonWithSpan.class.getName());
-        discovery.addAnnotatedType(WithSpanInterceptor.class, "WithSpanInterceptor");
-        discovery.addAnnotatedType(OpenTelemetryProducer.class, "OpenTelemetryProducer");
+        discovery.addAnnotatedType(WithSpanInterceptor.class, WithSpanInterceptor.class.getName());
+        discovery.addAnnotatedType(OpenTelemetryProducer.class, OpenTelemetryProducer.class.getName());
     }
 
     /**
@@ -49,7 +49,7 @@ public class TelemetryCdiExtension implements Extension {
      *
      * @param pat ProcessAnnotatedType
      */
-     void processAnnotations(@Observes @WithAnnotations(WithSpan.class) ProcessAnnotatedType<?> pat) {
+    void processAnnotations(@Observes @WithAnnotations(WithSpan.class) ProcessAnnotatedType<?> pat) {
         LOGGER.log(System.Logger.Level.TRACE, () -> "Process WithSpan annotation and add binding" + pat);
 
         var configurator = pat.configureAnnotatedType();
