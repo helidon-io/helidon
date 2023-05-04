@@ -429,7 +429,8 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         if (enabled) {
             if (serviceName == null) {
                 throw new IllegalArgumentException(
-                        "Configuration must at least contain the 'service' key ('tracing.service` in MP) with service name");
+                        "Configuration must at least contain the 'service' " +
+                                "key ('tracing.service` in MP) with service name");
             }
 
             JaegerGrpcSpanExporterBuilder spanExporterBuilder = JaegerGrpcSpanExporter.builder()
