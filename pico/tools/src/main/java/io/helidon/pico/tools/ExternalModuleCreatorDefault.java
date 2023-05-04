@@ -103,11 +103,11 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
             // process each found service type
             scan.get().getAllStandardClasses()
                     .stream()
-                    .filter((classInfo) -> packageNames.contains(classInfo.getPackageName()))
-                    .filter((classInfo) -> !classInfo.isInterface())
-                    .filter((classInfo) -> !classInfo.isExternalClass())
-                    .filter((classInfo) -> !isPrivate(classInfo.getModifiers()))
-                    .filter((classInfo) -> !classInfo.isInnerClass() || req.innerClassesProcessed())
+                    .filter(classInfo -> packageNames.contains(classInfo.getPackageName()))
+                    .filter(classInfo -> !classInfo.isInterface())
+                    .filter(classInfo -> !classInfo.isExternalClass())
+                    .filter(classInfo -> !isPrivate(classInfo.getModifiers()))
+                    .filter(classInfo -> !classInfo.isInnerClass() || req.innerClassesProcessed())
                     .forEach(this::processServiceType);
 
             ActivatorCreatorCodeGen activatorCreatorCodeGen = ActivatorCreatorDefault

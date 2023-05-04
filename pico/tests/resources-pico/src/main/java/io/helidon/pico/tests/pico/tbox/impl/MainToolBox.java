@@ -97,7 +97,7 @@ public class MainToolBox implements ToolBox {
     @PostConstruct
     void postConstruct() {
         postConstructCallCount++;
-        assert (preferredHammer == setPreferredHammer);
+        assert (preferredHammer == setPreferredHammer) : preferredHammer + " and " + setPreferredHammer;
     }
 
     @PreDestroy

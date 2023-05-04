@@ -16,6 +16,7 @@
 
 package io.helidon.pico.configdriven.processor;
 
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +68,7 @@ public class PicoConfiguredByAnnotationProcessor extends PicoAnnotationProcessor
     protected void processExtensions(ServicesToProcess services,
                                      TypeInfo service,
                                      Set<TypeName> serviceTypeNamesToCodeGenerate,
-                                     List<TypedElementName> allElementsOfInterest) {
+                                     Collection<TypedElementName> allElementsOfInterest) {
         Optional<? extends AnnotationAndValue> configuredByAnno = findFirst(ConfiguredBy.class, service.annotations());
         if (configuredByAnno.isEmpty()) {
             return;

@@ -165,7 +165,10 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
     }
 
     static ServiceInfoCriteria toServiceInfoCriteria(TypeName typeName) {
-        return ServiceInfoCriteriaDefault.builder().serviceTypeName(typeName.name()).build();
+        return ServiceInfoCriteriaDefault.builder()
+                .serviceTypeName(typeName.name())
+                .includeIntercepted(true)
+                .build();
     }
 
     static ServiceProvider<?> toServiceProvider(TypeName typeName,
@@ -207,13 +210,17 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         List<TypeName> serviceTypeNames = new ArrayList<>();
         List<String> serviceTypeBindings = new ArrayList<>();
         for (TypeName serviceTypeName : req.serviceTypeNames()) {
-            String injectionPlan = toServiceTypeInjectionPlan(picoServices, serviceTypeName,
-                                                              serviceTypeBindingTemplate, serviceTypeBindingEmptyTemplate);
-            if (injectionPlan == null) {
-                continue;
+            try {
+                String injectionPlan = toServiceTypeInjectionPlan(picoServices, serviceTypeName,
+                                                                  serviceTypeBindingTemplate, serviceTypeBindingEmptyTemplate);
+                if (injectionPlan == null) {
+                    continue;
+                }
+                serviceTypeNames.add(serviceTypeName);
+                serviceTypeBindings.add(injectionPlan);
+            } catch (Exception e) {
+                throw new ToolsException("Error during injection plan generation for: " + serviceTypeName, e);
             }
-            serviceTypeNames.add(serviceTypeName);
-            serviceTypeBindings.add(injectionPlan);
         }
 
         TypeName application = toApplicationTypeName(req);

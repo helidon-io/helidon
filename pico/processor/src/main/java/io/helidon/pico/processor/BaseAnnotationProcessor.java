@@ -99,7 +99,7 @@ import static javax.tools.Diagnostic.Kind;
  */
 // NOTE: Scheduled for destruction
 abstract class BaseAnnotationProcessor<B> extends AbstractProcessor {
-    private static final boolean ENABLED = true;
+    static final boolean ENABLED = false;
 
     private final System.Logger logger = System.getLogger(getClass().getName());
     private final ServicesToProcess services;

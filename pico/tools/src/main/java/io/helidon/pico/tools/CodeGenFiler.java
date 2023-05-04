@@ -92,7 +92,7 @@ public class CodeGenFiler {
         this.enabled = enabled;
         this.targetClassOutputPath = targetClassOutputPath(filer);
         this.scratchClassClassOutputPath = scratchClassOutputPath(targetClassOutputPath);
-        this.scratchBaseOutputPath = Objects.requireNonNull(scratchClassClassOutputPath.getParent());
+        this.scratchBaseOutputPath = scratchClassClassOutputPath.getParent();
     }
 
     @Override
@@ -200,15 +200,23 @@ public class CodeGenFiler {
         try {
             FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", "___");
             Path path = Path.of(f.toUri());
-            return Objects.requireNonNull(path.getParent());
+            if (path.getParent() == null) {
+                throw new IllegalStateException(path.toString());
+            }
+            return path.getParent();
         } catch (Exception e) {
             throw new ToolsException("Unable to determine output path", e);
         }
     }
 
     private static Path scratchClassOutputPath(Path targetOutputPath) {
-        String name = targetOutputPath.getFileName().toString();
-        return targetOutputPath.getParent().resolve(PicoServicesConfig.NAME).resolve(name);
+        Path fileName = targetOutputPath.getFileName();
+        Path parent = targetOutputPath.getParent();
+        if (fileName == null || parent == null) {
+            throw new IllegalStateException(targetOutputPath.toString());
+        }
+        String name = fileName.toString();
+        return parent.resolve(PicoServicesConfig.NAME).resolve(name);
     }
 
     private Filer scratchFiler() throws IOException {

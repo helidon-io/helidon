@@ -17,7 +17,6 @@
 package io.helidon.pico.api;
 
 import java.lang.annotation.Documented;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -25,12 +24,12 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.TYPE;
 
 /**
- * Indicates the desired startup sequence for a service class.
+ * Indicates the desired startup sequence for a service class. This is not used internally by Pico, but is available as a
+ * convenience to the caller in support for a specific startup sequence for service activations.
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target(TYPE)
-@Inherited
 public @interface RunLevel {
 
     /**

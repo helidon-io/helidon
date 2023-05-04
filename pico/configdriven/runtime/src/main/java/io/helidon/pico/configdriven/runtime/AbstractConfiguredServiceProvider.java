@@ -116,7 +116,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     static BindableConfigBeanRegistry resolveConfigBeanRegistry() {
         HelidonConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
         if (cbr == null) {
-            LOGGER.log(System.Logger.Level.INFO, "Config-Driven Services disabled (config bean registry not found");
+            LOGGER.log(System.Logger.Level.INFO, "Config-Driven Services disabled (config bean registry not found)");
             return null;
         }
 

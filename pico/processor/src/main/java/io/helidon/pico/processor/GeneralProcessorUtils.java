@@ -147,9 +147,10 @@ final class GeneralProcessorUtils {
             return Optional.of(Integer.valueOf(runLevelAnno.value().orElseThrow()));
         }
 
-        if (service.superTypeInfo().isPresent()) {
-            return toRunLevel(service.superTypeInfo().get());
-        }
+        // RunLevel is not inheritable - we will therefore not search up the hierarchy
+//        if (service.superTypeInfo().isPresent()) {
+//            return toRunLevel(service.superTypeInfo().get());
+//        }
 
         return Optional.empty();
     }
@@ -167,9 +168,10 @@ final class GeneralProcessorUtils {
             return Optional.of(Double.valueOf(weightAnno.value().orElseThrow()));
         }
 
-        if (service.superTypeInfo().isPresent()) {
-            return toWeight(service.superTypeInfo().get());
-        }
+        // Weight is not inheritable - we will therefore not search up the hierarchy
+//        if (service.superTypeInfo().isPresent()) {
+//            return toWeight(service.superTypeInfo().get());
+//        }
 
         return Optional.empty();
     }
@@ -251,11 +253,10 @@ final class GeneralProcessorUtils {
                 });
 
         if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
-            boolean hasApplicationScope = scopeAnnotations.stream()
-                    .anyMatch(it -> it.equals(TypeNames.JAKARTA_APPLICATION_SCOPED)
-                            || it.equals(TypeNames.JAVAX_APPLICATION_SCOPED));
+            boolean hasApplicationScope = findFirst(TypeNames.JAKARTA_APPLICATION_SCOPED, service.annotations()).isPresent();
             if (hasApplicationScope) {
                 scopeAnnotations.add(Singleton.class.getName());
+                scopeAnnotations.add(TypeNames.JAKARTA_APPLICATION_SCOPED);
             }
         }
 
@@ -356,12 +357,17 @@ final class GeneralProcessorUtils {
      */
     static Optional<? extends AnnotationAndValue> findFirst(Class<? extends Annotation> jakartaAnno,
                                                             Collection<? extends AnnotationAndValue> annotations) {
-        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault.findFirst(jakartaAnno, annotations);
+        return findFirst(jakartaAnno.getName(), annotations);
+    }
+
+    static Optional<? extends AnnotationAndValue> findFirst(String jakartaAnnoName,
+                                                            Collection<? extends AnnotationAndValue> annotations) {
+        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault.findFirst(jakartaAnnoName, annotations);
         if (anno.isPresent()) {
             return anno;
         }
 
-        return AnnotationAndValueDefault.findFirst(TypeTools.oppositeOf(jakartaAnno.getName()), annotations);
+        return AnnotationAndValueDefault.findFirst(TypeTools.oppositeOf(jakartaAnnoName), annotations);
     }
 
 }

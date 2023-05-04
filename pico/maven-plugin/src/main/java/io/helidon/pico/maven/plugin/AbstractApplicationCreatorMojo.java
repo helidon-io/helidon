@@ -270,7 +270,9 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
             // retrieves all the services in the registry
             List<ServiceProvider<?>> allServices = services
-                    .lookupAll(ServiceInfoCriteriaDefault.builder().build(), false);
+                    .lookupAll(ServiceInfoCriteriaDefault.builder()
+                                       .includeIntercepted(true)
+                                       .build(), false);
             if (allServices.isEmpty()) {
                 warn("no services to process");
                 return;

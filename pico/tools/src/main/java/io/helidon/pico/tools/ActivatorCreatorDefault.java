@@ -380,8 +380,8 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
 
         for (Map.Entry<TypeName, InterceptionPlan> e : request.interceptionPlans().entrySet()) {
             try {
-                Path filePath = codegenInterceptorFilerOut(request.generalCreatorRequest(), null, e.getValue());
-                res.addGeneratedFile(e.getKey(), filePath);
+                Optional<Path> filePath = codegenInterceptorFilerOut(request.generalCreatorRequest(), null, e.getValue());
+                filePath.ifPresent(it -> res.addGeneratedFile(e.getKey(), it));
             } catch (Throwable t) {
                 throw new ToolsException("Failed while processing: " + e.getKey(), t);
             }
@@ -390,9 +390,9 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         return res.build();
     }
 
-    private Path codegenInterceptorFilerOut(GeneralCreatorRequest req,
-                                            ActivatorCreatorResponseDefault.Builder builder,
-                                            InterceptionPlan interceptionPlan) {
+    private Optional<Path> codegenInterceptorFilerOut(GeneralCreatorRequest req,
+                                                      ActivatorCreatorResponseDefault.Builder builder,
+                                                      InterceptionPlan interceptionPlan) {
         validate(interceptionPlan);
         TypeName interceptorTypeName = InterceptorCreatorDefault.createInterceptorSourceTypeName(interceptionPlan);
         InterceptorCreatorDefault interceptorCreator = new InterceptorCreatorDefault();
@@ -400,7 +400,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         if (builder != null) {
             builder.addServiceTypeInterceptorPlan(interceptorTypeName, interceptionPlan);
         }
-        return req.filer().codegenJavaFilerOut(interceptorTypeName, body).orElseThrow();
+        return req.filer().codegenJavaFilerOut(interceptorTypeName, body);
     }
 
     private void validate(InterceptionPlan plan) {
@@ -834,10 +834,11 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                         .stream()
                         .filter(dep2 -> InjectionPointInfoDefault.CONSTRUCTOR.equals(dep2.elementName()))
                         .forEach(dep2 -> {
-                            if ((nameRef.get() == null)) {
+                            if (nameRef.get() == null) {
                                 nameRef.set(dep2.baseIdentity());
                             } else {
-                                assert (nameRef.get().equals(dep2.baseIdentity())) : "only 1 ctor can be injectable";
+                                assert (nameRef.get().equals(dep2.baseIdentity()))
+                                        : "only one Constructor can be injectable: " + dependencies.fromServiceTypeName();
                             }
                             args.add("c" + count.incrementAndGet());
                         })

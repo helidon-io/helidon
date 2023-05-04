@@ -17,6 +17,7 @@
 package io.helidon.pico.api;
 
 import java.lang.annotation.Annotation;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -129,10 +130,17 @@ public class QualifierAndValueDefault extends AnnotationAndValueDefault
             return (QualifierAndValue) annotationAndValue;
         }
 
-        return (QualifierAndValue) builder()
+        // qualifiers should not have any blank values
+        Map<String, String> values = annotationAndValue.values();
+        String val = values.get("value");
+        if ("".equals(val)) {
+            values = new LinkedHashMap<>(values);
+            values.remove("value");
+        }
+
+        return builder()
                 .typeName(annotationAndValue.typeName())
-                .values(annotationAndValue.values())
-                .update(it -> annotationAndValue.value().ifPresent(it::value))
+                .values(values)
                 .build();
     }
 
