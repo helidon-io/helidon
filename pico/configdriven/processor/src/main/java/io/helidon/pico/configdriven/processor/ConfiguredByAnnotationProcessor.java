@@ -44,8 +44,7 @@ import static io.helidon.pico.configdriven.processor.ConfiguredByProcessorUtils.
 /**
  * Extension to {@link PicoAnnotationProcessor} that will handled {@link io.helidon.pico.configdriven.api.ConfiguredBy} services.
  */
-// NOTE: This will be renamed to simply ConfiguredByProcessor once the LegacyConfiguredByProcessor is removed
-public class PicoConfiguredByAnnotationProcessor extends PicoAnnotationProcessor {
+public class ConfiguredByAnnotationProcessor extends PicoAnnotationProcessor {
 
     /**
      * Service loader based constructor.
@@ -53,7 +52,7 @@ public class PicoConfiguredByAnnotationProcessor extends PicoAnnotationProcessor
      * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
     @Deprecated
-    public PicoConfiguredByAnnotationProcessor() {
+    public ConfiguredByAnnotationProcessor() {
         super(true);
     }
 

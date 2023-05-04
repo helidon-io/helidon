@@ -39,10 +39,6 @@ module io.helidon.pico.processor {
     uses io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 
     provides javax.annotation.processing.Processor with
-            io.helidon.pico.processor.ContractAnnotationProcessor,
-            io.helidon.pico.processor.InjectAnnotationProcessor,
-            io.helidon.pico.processor.PostConstructPreDestroyAnnotationProcessor,
-            io.helidon.pico.processor.ServiceAnnotationProcessor,
             io.helidon.pico.processor.CustomAnnotationProcessor,
             io.helidon.pico.processor.UnsupportedConstructsProcessor,
             io.helidon.pico.processor.PicoAnnotationProcessor;
