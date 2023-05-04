@@ -1,0 +1,129 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Telemetry
+:description: Helidon MP Telemetry Support
+:feature-name: MicroProfile Telemetry
+:keywords: helidon, telemetry, microprofile, micro-profile
+:microprofile-bundle: true
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+- <<Reference, Reference>>
+
+== Overview
+
+
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.telemetry</groupId>
+    <artifactId>helidon-microprofile-telemetry</artifactId>
+</dependency>
+----
+
+== Usage
+
+OpenTelemetry comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
+
+There are two ways to work with Telemetry, using:
+
+- Automatic Instrumentation
+- Manual Instrumentation
+
+For Automatic Instrumentation, OpenTelemetry provides a JavaAgent. The Tracing API allows for the automatic participation in distributed tracing of Jakarta RESTful Web Services (both server and client) as well as MicroProfile REST Clients, without requiring any modifications to the code. This is achieved through automatic instrumentation.
+
+For Manual Instrumentation there is a set of annotations and access to OpenTelemetry API.
+
+`@WithSpan` - By adding this annotation to a method in any Jakarta CDI aware bean, a new Span will be created and any necessary connections to the current Trace context will be established. Additionally, the `SpanAttribute` annotation can be used to mark method parameters that should be included in the Trace.
+
+.Span sample
+[source, java]
+----
+@ApplicationScoped
+class HelidonBean {
+
+    @WithSpan   <1>
+    void doSomethingWithinSpan() {
+        // do something here
+    }
+
+    @WithSpan("name", kind = SpanKind.SERVER, @SpanAttribute(value = "arg") String arg) <2>
+    void complexSpan() {
+        // do something here
+    }
+}
+----
+<1> Simple `@WithSpan` annotation usage;
+<2> Additional attributes can be set to the annotation.
+
+
+You can also inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and use `SpanBuilder` to manually create, star, and stop Spans.
+
+.SpanBuilder usage
+[source, java]
+----
+@ApplicationScoped
+public class HelidonEndpoint {
+
+    @Inject
+    Tracer tracer;  <1>
+
+    @GET
+    @Path("/span")
+    public Response span() {
+        Span span = tracer.spanBuilder("new")   <2>
+                .setSpanKind(SpanKind.CLIENT)
+                .setAttribute("someAttribute", "someValue")
+                .startSpan();
+
+        span.end();
+
+        return Response.ok().build();
+    }
+}
+----
+<1> Inject `Tracer`;
+<2> Use `Tracer.spanBuilder` to create and start new `Span`;
+
+
+
+
+== Configuration
+
+
+== Examples
+
+
+== Additional Information
+
+
+== Reference
+
