@@ -121,7 +121,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
                         continue;
                     }
                     Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoElement.get());
-                    doInner(annoName, typesToProcess, roundEnv);
+                    doInner(annoName, typesToProcess);
                 }
             }
 
@@ -146,8 +146,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
     }
 
     void doInner(TypeName annoTypeName,
-                 Set<? extends Element> typesToProcess,
-                 RoundEnvironment ignoredRoundEnv) {
+                 Set<? extends Element> typesToProcess) {
         if (typesToProcess.isEmpty()) {
             return;
         }

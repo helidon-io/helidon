@@ -200,9 +200,10 @@ final class GeneralProcessorUtils {
                                                     + " annotated method per type: " + service.typeName());
         }
 
-        if (service.superTypeInfo().isPresent()) {
-            return toPostConstructMethod(service.superTypeInfo().get());
-        }
+        // PostConstruct is not inheritable - we will therefore not search up the hierarchy
+//        if (service.superTypeInfo().isPresent()) {
+//            return toPostConstructMethod(service.superTypeInfo().get());
+//        }
 
         return Optional.empty();
     }
@@ -229,9 +230,10 @@ final class GeneralProcessorUtils {
                                                     + " annotated method per type: " + service.typeName());
         }
 
-        if (service.superTypeInfo().isPresent()) {
-            return toPreDestroyMethod(service.superTypeInfo().get());
-        }
+        // PreDestroy is not inheritable - we will therefore not search up the hierarchy
+//        if (service.superTypeInfo().isPresent()) {
+//            return toPreDestroyMethod(service.superTypeInfo().get());
+//        }
 
         return Optional.empty();
     }
@@ -295,7 +297,7 @@ final class GeneralProcessorUtils {
             }
         }
 
-        // note: should qualifiers be inheritable? Right now we assume not to support the jsr-330 spec
+        // note: should qualifiers be inheritable? Right now we assume not to support the jsr-330 spec.
         //        service.superTypeInfo().ifPresent(it -> result.addAll(toQualifiers(it)));
         //        service.interfaceTypeInfo().forEach(it -> result.addAll(toQualifiers(it)));
 
@@ -322,7 +324,7 @@ final class GeneralProcessorUtils {
             }
         }
 
-        // note: should qualifiers be inheritable? Right now we assume not to support the jsr-330 spec
+        // note: should qualifiers be inheritable? Right now we assume not to support the jsr-330 spec (see note above).
 
         return result;
     }

@@ -61,6 +61,7 @@ import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.common.types.TypedElementNameDefault;
 
+// this is really ok!
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 
