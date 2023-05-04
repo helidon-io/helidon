@@ -17,6 +17,8 @@
 package io.helidon.nima.http2.webclient;
 
 import io.helidon.nima.http2.WindowSize;
+import io.helidon.nima.webclient.DefaultDnsResolverProvider;
+import io.helidon.nima.webclient.DnsAddressLookup;
 import io.helidon.nima.webclient.HttpClient;
 import io.helidon.nima.webclient.WebClient;
 
@@ -46,6 +48,9 @@ public interface Http2Client extends HttpClient<Http2ClientRequest, Http2ClientR
         private int prefetch = 33554432;
 
         private Http2ClientBuilder() {
+            // until we use the same parent for HTTP/1 and HTTP/2, we need to have these defined as defaults
+            super.dnsResolver(new DefaultDnsResolverProvider().createDnsResolver());
+            super.dnsAddressLookup(DnsAddressLookup.defaultLookup());
         }
 
         /**

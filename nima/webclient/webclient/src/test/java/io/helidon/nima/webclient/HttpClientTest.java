@@ -109,6 +109,11 @@ class HttpClientTest {
         }
 
         @Override
+        public FakeHttpClientRequest fragment(String fragment) {
+            return this;
+        }
+
+        @Override
         public FakeHttpClientRequest header(Http.HeaderValue header) {
             return null;
         }

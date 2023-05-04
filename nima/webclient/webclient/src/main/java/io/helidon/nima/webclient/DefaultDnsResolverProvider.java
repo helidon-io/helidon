@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,10 @@ import io.helidon.nima.webclient.spi.DnsResolverProvider;
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class DefaultDnsResolverProvider implements DnsResolverProvider {
-
     /**
-     * Create new instance of the {@link DefaultDnsResolverProvider}.
-     * This should be used only for purposes of SPI.
+     * Public constructor is required for service loader, do not use directly.
      */
+    @Deprecated
     public DefaultDnsResolverProvider() {
     }
 

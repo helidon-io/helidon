@@ -1497,6 +1497,9 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, LazyString value) {
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(value);
+
             return new HeaderValueLazy(name, false, false, value);
         }
 
@@ -1509,6 +1512,8 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, int value) {
+            Objects.requireNonNull(name);
+
             return new HeaderValueSingle(name, false, false, String.valueOf(value));
         }
 
@@ -1521,6 +1526,8 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, long value) {
+            Objects.requireNonNull(name);
+
             return new HeaderValueSingle(name, false, false, String.valueOf(value));
         }
 
@@ -1533,6 +1540,9 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, String value) {
+            Objects.requireNonNull(name, "HeaderName must not be null");
+            Objects.requireNonNull(value, "HeaderValue must not be null");
+
             return new HeaderValueSingle(name,
                                          false,
                                          false,

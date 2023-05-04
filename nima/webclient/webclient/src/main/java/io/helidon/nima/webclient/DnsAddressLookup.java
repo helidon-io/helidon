@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,15 @@ public enum DnsAddressLookup {
      * Both IPv4 and IPv6 addresses will be used, but if there are any IPv6, they take precedence.
      */
     IPV6_PREFERRED(new Ipv6Preferred());
+
+    /**
+     * Default address lookup for this VM.
+     *
+     * @return default lookup
+     */
+    public static DnsAddressLookup defaultLookup() {
+        return DefaultDnsAddressLookupFinder.defaultDnsAddressLookup();
+    }
 
     private static final InetAddressComparator COMPARATOR = new InetAddressComparator();
     private final Function<InetAddress[], InetAddress[]> function;
