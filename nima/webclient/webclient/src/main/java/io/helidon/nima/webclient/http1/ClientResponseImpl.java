@@ -202,7 +202,8 @@ class ClientResponseImpl implements Http1ClientResponse {
                                                responseHeaders,
                                                mediaContext);
         }
-        whenComplete.completeExceptionally(null);
+        // no entity, just complete right now
+        whenComplete.complete(null);
         return ReadableEntityBase.empty();
     }
 
