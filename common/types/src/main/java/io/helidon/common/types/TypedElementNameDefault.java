@@ -376,28 +376,6 @@ public class TypedElementNameDefault implements TypedElementName {
         }
 
         /**
-         * Set the enclosing type name.
-         *
-         * @param val   the type name value
-         * @return this fluent builder
-         */
-        public Builder enclosingTypeName(TypeName val) {
-            Objects.requireNonNull(val);
-            this.enclosingTypeName = val;
-            return this;
-        }
-
-        /**
-         * Set the enclosing type of the element.
-         *
-         * @param val  the type
-         * @return the fluent builder
-         */
-        public Builder enclosingTypeName(Class<?> val) {
-            return enclosingTypeName(TypeNameDefault.create(val));
-        }
-
-        /**
          * Build the instance.
          *
          * @return the built instance

@@ -780,7 +780,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                 .annotations(createAnnotationAndValueListFromElement(v, elements))
                 .elementTypeAnnotations(elementTypeAnnotations)
                 .modifierNames(modifierNames)
-                .parameterArgumentss(params);
+                .parameterArguments(params);
         createTypeNameFromElement(v.getEnclosingElement()).ifPresent(builder::enclosingTypeName);
         Optional.ofNullable(defaultValue).ifPresent(builder::defaultValue);
 
