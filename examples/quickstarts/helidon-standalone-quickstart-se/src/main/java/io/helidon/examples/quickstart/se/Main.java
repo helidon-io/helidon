@@ -16,13 +16,8 @@
 
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.health.checks.DeadlockHealthCheck;
-import io.helidon.health.checks.DiskSpaceHealthCheck;
-import io.helidon.health.checks.HeapMemoryHealthCheck;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.observe.health.HealthFeature;
-import io.helidon.nima.observe.health.HealthObserveProvider;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -54,22 +49,11 @@ public final class Main {
     }
 
     /**
-     * Updates HTTP Routing.
+     * Updates HTTP Routing and registers observe providers.
      */
     static void routing(HttpRouting.Builder routing) {
-        ObserveFeature observe = ObserveFeature.builder()
-                .useSystemServices(false)
-                .addProvider(HealthObserveProvider.create(HealthFeature.builder()
-                        .useSystemServices(false)
-                        .addCheck(HeapMemoryHealthCheck.create())
-                        .addCheck(DiskSpaceHealthCheck.create())
-                        .addCheck(DeadlockHealthCheck.create())
-                        .build()))
-                .build();
-
         GreetService greetService = new GreetService();
-
         routing.register("/greet", greetService)
-                .addFeature(observe);
+                .addFeature(ObserveFeature.create());
     }
 }
