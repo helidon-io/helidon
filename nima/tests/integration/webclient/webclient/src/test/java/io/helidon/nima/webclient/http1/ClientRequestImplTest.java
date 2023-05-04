@@ -58,12 +58,13 @@ class ClientRequestImplTest {
             Http.Header.create("X-Req-Expect100"), "true");
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
     private static final long NO_CONTENT_LENGTH = -1L;
-    private static String baseURI;
-    private static Http1Client injectedHttp1client;
+
+    private final String baseURI;
+    private final Http1Client injectedHttp1client;
 
     ClientRequestImplTest(WebServer webServer, Http1Client client) {
-        this.baseURI = "http://localhost:" + webServer.port();
-        this.injectedHttp1client = client;
+        baseURI = "http://localhost:" + webServer.port();
+        injectedHttp1client = client;
     }
 
     @SetUpRoute
@@ -208,7 +209,11 @@ class ClientRequestImplTest {
         for (int i = 0; i < 5; ++i) {
             Http1ClientRequest request = injectedHttp1client.put("/test");
             // connection will be dequeued if queue is not empty
-            connectionNow = ((ClientRequestImpl) request).getConnection(true);
+            ClientRequestImpl requestImpl = (ClientRequestImpl) request;
+            connectionNow = ConnectionCache.connection(requestImpl.clientConfig(),
+                                                       null,
+                                                       requestImpl.uri(),
+                                                       requestImpl.headers());
             request.connection(connectionNow);
             Http1ClientResponse response = request.request();
             // connection will be queued up
@@ -222,14 +227,18 @@ class ClientRequestImplTest {
 
     @Test
     void testConnectionQueueSizeLimit() {
-        int connectionQueueSize = ((Http1ClientImpl) injectedHttp1client).connectionQueueSize();
+        int connectionQueueSize = ((Http1ClientImpl) injectedHttp1client).clientConfig().connectionQueueSize();
 
         List<ClientConnection> connectionList = new ArrayList<ClientConnection>();
         List<Http1ClientResponse> responseList = new ArrayList<Http1ClientResponse>();
         // create connections beyond the queue size limit
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
             Http1ClientRequest request = injectedHttp1client.put("/test");
-            connectionList.add(((ClientRequestImpl) request).getConnection(true));
+            ClientRequestImpl requestImpl = (ClientRequestImpl) request;
+            connectionList.add(ConnectionCache.connection(requestImpl.clientConfig(),
+                                                       null,
+                                                       requestImpl.uri(),
+                                                       requestImpl.headers()));
             request.connection(connectionList.get(i));
             responseList.add(request.request());
         }
@@ -244,7 +253,11 @@ class ClientRequestImplTest {
         Http1ClientResponse response = null;
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
             Http1ClientRequest request = injectedHttp1client.put("/test");
-            connection = ((ClientRequestImpl) request).getConnection(true);
+            ClientRequestImpl requestImpl = (ClientRequestImpl) request;
+            connection = ConnectionCache.connection(requestImpl.clientConfig(),
+                                                          null,
+                                                          requestImpl.uri(),
+                                                          requestImpl.headers());
             request.connection(connection);
             response = request.request();
             if (i < connectionQueueSize) {
@@ -259,7 +272,11 @@ class ClientRequestImplTest {
         // The queue is currently empty so check if we can add the last created connection into it.
         response.close();
         Http1ClientRequest request = injectedHttp1client.put("/test");
-        ClientConnection connectionNow = ((ClientRequestImpl) request).getConnection(true);
+        ClientRequestImpl requestImpl = (ClientRequestImpl) request;
+        ClientConnection connectionNow = ConnectionCache.connection(requestImpl.clientConfig(),
+                                                null,
+                                                requestImpl.uri(),
+                                                requestImpl.headers());
         request.connection(connectionNow);
         Http1ClientResponse responseNow = request.request();
         // Verify that the connection was dequeued
@@ -339,7 +356,7 @@ class ClientRequestImplTest {
         }
     }
 
-    private static Http1ClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
+    private Http1ClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
         return injectedHttp1client.method(method).uri(uriPath);
     }
 

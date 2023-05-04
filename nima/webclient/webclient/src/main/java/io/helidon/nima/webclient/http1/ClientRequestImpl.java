@@ -19,6 +19,7 @@ package io.helidon.nima.webclient.http1;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
@@ -181,6 +182,18 @@ class ClientRequestImpl implements Http1ClientRequest {
         return this;
     }
 
+    Http1ClientConfig clientConfig() {
+        return clientConfig;
+    }
+
+    UriHelper uri() {
+        return uri;
+    }
+
+    ClientRequestHeaders headers() {
+        return ClientRequestHeaders.create(explicitHeaders);
+    }
+
     private ClientResponseImpl invokeServices(WebClientService.Chain callChain,
                                               CompletableFuture<WebClientServiceRequest> whenSent,
                                               CompletableFuture<WebClientServiceResponse> whenComplete) {
@@ -206,10 +219,11 @@ class ClientRequestImpl implements Http1ClientRequest {
                                                                         properties);
 
         WebClientService.Chain last = callChain;
+
         List<WebClientService> services = clientConfig.services();
-        for (int i = (services.size() - 1); i >= 0; i--) {
-            WebClientService webClientService = services.get(i);
-            last = new ServiceChainImpl(last, webClientService);
+        ListIterator<WebClientService> serviceIterator = services.listIterator(services.size());
+        while (serviceIterator.hasPrevious()) {
+            last = new ServiceChainImpl(last, serviceIterator.previous());
         }
 
         WebClientServiceResponse serviceResponse = last.proceed(serviceRequest);

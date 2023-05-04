@@ -52,7 +52,7 @@ public interface WebClientServiceResponse {
 
     /**
      * Client connection that was used to handle this request.
-     * This connection will be closed/release once the entity is fully read, depending on keep alive configuration.
+     * This connection will be closed/released once the entity is fully read, depending on keep alive configuration.
      *
      * @return connection
      */

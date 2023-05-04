@@ -24,6 +24,8 @@ import java.util.function.Function;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
+import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.webclient.UriHelper;
 import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
@@ -99,13 +101,12 @@ public class WebClientTracing implements WebClientService {
             span.tag(Tag.HTTP_STATUS.create(status.code()));
 
             Http.Status.Family family = status.family();
-            if (family == Http.Status.Family.CLIENT_ERROR || family == Http.Status.Family.SERVER_ERROR) {
-                span.addEvent("error", Map.of("message",
-                                              "Response HTTP status: " + status,
-                                              "error.kind",
-                                              (family == Http.Status.Family.CLIENT_ERROR)
-                                                      ? "ClientError"
-                                                      : "ServerError"));
+
+            if (status.code() >= 400) {
+                String errorKind = family == Http.Status.Family.CLIENT_ERROR ? "ClientError" : "ServerError";
+                span.addEvent("error", Map.of("message", "Response HTTP status: " + status,
+                                              "error.kind", errorKind));
+
             }
 
             span.end();
@@ -121,10 +122,7 @@ public class WebClientTracing implements WebClientService {
         UriHelper uri = request.uri();
         return method
                 + "-"
-                + uri.scheme() + "://"
-                + uri.host() + ":"
-                + uri.port()
-                + uri.path();
+                + uri.pathWithQueryAndFragment(UriQuery.empty(), UriFragment.empty());
     }
 
     private static class ClientHeaderConsumer implements HeaderConsumer {

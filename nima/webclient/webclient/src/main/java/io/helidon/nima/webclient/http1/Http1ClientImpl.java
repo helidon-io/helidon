@@ -70,7 +70,6 @@ class Http1ClientImpl extends LoomClient implements Http1Client {
                                 .builder(ServiceLoader.load(WebClientServiceProvider.class))
                                 .useSystemServiceLoader(clientConfig.servicesUseServiceLoader())
                                 .build()
-                                .asList()
                                 .stream()
                                 .map(it -> it.create(empty))
                                 .toList());
