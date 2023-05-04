@@ -345,7 +345,8 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                 getLog().error("failed to process", res.error().orElse(null));
             }
         } catch (Exception e) {
-            throw new ToolsException("An error occurred creating the " + PicoServicesConfig.NAME + " Application", e);
+            throw new ToolsException("An error occurred creating the " + PicoServicesConfig.NAME
+                                             + " Application in " + getClass().getName(), e);
         } finally {
             Thread.currentThread().setContextClassLoader(prev);
         }

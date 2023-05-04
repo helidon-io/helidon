@@ -456,14 +456,16 @@ public class CodeGenFiler {
                     && name.equals(PICO_MODULE_INFO_JAVA_NAME)) {
                 // hack: physically read it from its relocated location
                 File newPath = new File(scratchClassClassOutputPath.toFile(), name);
-                try {
-                    return Files.readString(newPath.toPath());
-                } catch (IOException e2) {
-                    throw new ToolsException(e2.getMessage(), e2);
+                if (newPath.exists()) {
+                    try {
+                        return Files.readString(newPath.toPath());
+                    } catch (IOException e2) {
+                        throw new ToolsException(e2.getMessage(), e2);
+                    }
                 }
             }
 
-            messager().debug("unable to load resource: " + name);
+            messager().debug("Unable to load resource: " + name);
             return null;
         }
     }
