@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,8 @@ module io.grpc {
 
     provides io.grpc.LoadBalancerProvider
             with io.grpc.internal.PickFirstLoadBalancerProvider,
-                 io.grpc.util.SecretRoundRobinLoadBalancerProvider.Provider;
+                 io.grpc.util.SecretRoundRobinLoadBalancerProvider.Provider,
+                 io.grpc.util.OutlierDetectionLoadBalancerProvider;
 
     provides io.grpc.NameResolverProvider
             with io.grpc.internal.DnsNameResolverProvider;

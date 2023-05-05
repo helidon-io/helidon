@@ -26,10 +26,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.builder.Builder;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
 
 import static io.helidon.builder.processor.tools.BeanUtils.isBooleanType;
@@ -121,7 +121,7 @@ public class BodyContext {
         this.genericBuilderAcceptAliasDecl = ("T".equals(typeInfo.typeName().className())) ? "TY" : "T";
         String interceptorType = searchForBuilderAnnotation("interceptor", builderTriggerAnnotation, typeInfo);
         this.interceptorTypeName = (interceptorType == null || Void.class.getName().equals(interceptorType))
-                ? null : DefaultTypeName.createFromTypeName(interceptorType);
+                ? null : TypeNameDefault.createFromTypeName(interceptorType);
         String interceptorCreateMethod =
                 searchForBuilderAnnotation("interceptorCreateMethod", builderTriggerAnnotation, typeInfo);
         this.interceptorCreateMethod = (interceptorCreateMethod == null || interceptorCreateMethod.isEmpty())
@@ -558,8 +558,8 @@ public class BodyContext {
         }
 
         if (!builderTriggerAnnotation.typeName().equals(BUILDER_ANNO_TYPE_NAME)) {
-            AnnotationAndValue builderAnnotation = DefaultAnnotationAndValue
-                    .findFirst(BUILDER_ANNO_TYPE_NAME.name(), typeInfo.annotations()).orElse(null);
+            AnnotationAndValue builderAnnotation = AnnotationAndValueDefault
+                    .findFirst(BUILDER_ANNO_TYPE_NAME, typeInfo.annotations()).orElse(null);
             if (builderAnnotation != null) {
                 val = builderAnnotation.value(key).orElse(null);
             }
@@ -575,8 +575,8 @@ public class BodyContext {
     private void gatherAllAttributeNames(TypeInfo typeInfo) {
         TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
         if (superTypeInfo != null) {
-            Optional<? extends AnnotationAndValue> superBuilderAnnotation = DefaultAnnotationAndValue
-                    .findFirst(builderTriggerAnnotation.typeName().name(), superTypeInfo.annotations());
+            Optional<? extends AnnotationAndValue> superBuilderAnnotation = AnnotationAndValueDefault
+                    .findFirst(builderTriggerAnnotation.typeName(), superTypeInfo.annotations());
             if (superBuilderAnnotation.isEmpty()) {
                 gatherAllAttributeNames(superTypeInfo);
             } else {
@@ -691,8 +691,8 @@ public class BodyContext {
                                              TypeInfo typeInfo) {
         TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
         if (superTypeInfo != null) {
-            Optional<? extends AnnotationAndValue> superBuilderAnnotation = DefaultAnnotationAndValue
-                    .findFirst(builderTriggerAnnotation.typeName().name(), superTypeInfo.annotations());
+            Optional<? extends AnnotationAndValue> superBuilderAnnotation = AnnotationAndValueDefault
+                    .findFirst(builderTriggerAnnotation.typeName(), superTypeInfo.annotations());
             if (superBuilderAnnotation.isEmpty()) {
                 return toParentTypeName(builderTriggerAnnotation, superTypeInfo);
             }

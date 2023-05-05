@@ -30,7 +30,7 @@ import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.http1.DefaultHttp1Config;
+import io.helidon.nima.webserver.http1.Http1ConfigDefault;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -59,7 +59,7 @@ class ConfiguredLimitsTest {
     @SetUpServer
     static void server(WebServer.Builder server) {
         ServerConnectionProvider http1 = Http1ConnectionProvider.builder()
-                .http1Config(DefaultHttp1Config.builder()
+                .http1Config(Http1ConfigDefault.builder()
                                      .maxHeadersSize(1024)
                                      .maxPrologueLength(512)
                                      .build())

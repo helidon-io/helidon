@@ -37,7 +37,7 @@ import jakarta.inject.Singleton;
 @Named("{{enclosingClassTypeName.name}}")
 @Weight({{weight}})
 @ExternalContracts(HttpFeature.class)
-public class {{className}} implements HttpFeature {
+class {{className}} implements HttpFeature {
     private final List<GeneratedHandler> myMethods;
     private final String path = "{{http.path}}";
 

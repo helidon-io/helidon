@@ -17,6 +17,7 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.webserver.http.spi.SinkProvider;
+import io.helidon.pico.api.ModuleComponent;
 
 /**
  * Loom based WebServer.
@@ -72,5 +73,5 @@ module io.helidon.nima.webserver {
     uses SinkProvider;
 
     provides io.helidon.nima.webserver.spi.ServerConnectionProvider with io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-    provides io.helidon.pico.api.Module with io.helidon.nima.webserver.Pico$$Module;
+    provides ModuleComponent with io.helidon.nima.webserver.Pico$$Module;
 }

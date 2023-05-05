@@ -115,7 +115,7 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
      * The agent/instance to be used for binding this service provider to the pico application that was code generated.
      *
      * @return the service provider that should be used for binding, or empty if this provider does not support binding
-     * @see Module
+     * @see ModuleComponent
      * @see ServiceBinder
      * @see ServiceProviderBindable
      */

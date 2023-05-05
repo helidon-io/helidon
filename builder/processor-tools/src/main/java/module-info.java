@@ -19,6 +19,7 @@
  */
 module io.helidon.builder.processor.tools {
     requires java.compiler;
+    requires jdk.compiler;
     requires io.helidon.common.types;
     requires io.helidon.builder;
     requires io.helidon.builder.processor.spi;

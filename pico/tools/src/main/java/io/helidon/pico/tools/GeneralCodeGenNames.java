@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.Builder;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.pico.api.ModuleComponent;
 
 /**
  * General code gen information.
@@ -37,7 +38,7 @@ public interface GeneralCodeGenNames {
 
     /**
      * The module name, defaulting to "unnamed" if not specified.
-     * This name is used primarily to serve as the codegen name for the {@link io.helidon.pico.api.Module} that is generated.
+     * This name is used primarily to serve as the codegen name for the {@link io.helidon.pico.api.ModuleComponent} that is generated.
      *
      * @return module name
      */
@@ -45,7 +46,7 @@ public interface GeneralCodeGenNames {
     Optional<String> moduleName();
 
     /**
-     * The package name to use for the generated {@link io.helidon.pico.api.Module}, {@link io.helidon.pico.api.Application}, etc.
+     * The package name to use for the generated {@link ModuleComponent}, {@link io.helidon.pico.api.Application}, etc.
      * If one is not provided, one will be determined internally.
      *
      * @return the suggested package name, otherwise passing null will delegate package naming to the implementation heuristic

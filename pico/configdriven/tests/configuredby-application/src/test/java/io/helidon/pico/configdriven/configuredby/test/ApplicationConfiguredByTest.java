@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
 import io.helidon.pico.api.Metrics;
 import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.configdriven.configuredby.application.test.ASimpleRunLevelService;
 
@@ -81,7 +81,7 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
         assertThat(ASimpleRunLevelService.getPreDestroyCount(),
                    is(0));
 
-        ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
                 .runLevel(RunLevel.STARTUP)
                 .build();
         List<ServiceProvider<?>> startups = services.lookupAll(criteria);

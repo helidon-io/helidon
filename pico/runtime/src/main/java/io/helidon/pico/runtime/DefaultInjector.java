@@ -19,11 +19,11 @@ package io.helidon.pico.runtime;
 import java.util.Objects;
 
 import io.helidon.pico.api.ActivationResult;
+import io.helidon.pico.api.ActivationResultDefault;
 import io.helidon.pico.api.Activator;
 import io.helidon.pico.api.DeActivationRequest;
+import io.helidon.pico.api.DeActivationRequestDefault;
 import io.helidon.pico.api.DeActivator;
-import io.helidon.pico.api.DefaultActivationResult;
-import io.helidon.pico.api.DefaultDeActivationRequest;
 import io.helidon.pico.api.Injector;
 import io.helidon.pico.api.InjectorOptions;
 import io.helidon.pico.api.PicoException;
@@ -42,7 +42,7 @@ class DefaultInjector implements Injector {
         Objects.requireNonNull(serviceOrServiceProvider);
         Objects.requireNonNull(opts);
 
-        DefaultActivationResult.Builder resultBuilder = DefaultActivationResult.builder();
+        ActivationResultDefault.Builder resultBuilder = ActivationResultDefault.builder();
 
         if (opts.strategy() != Strategy.ANY && opts.strategy() != Strategy.ACTIVATOR) {
             return handleError(resultBuilder, opts, "only " + Strategy.ACTIVATOR + " strategy is supported", null);
@@ -70,7 +70,7 @@ class DefaultInjector implements Injector {
         Objects.requireNonNull(serviceOrServiceProvider);
         Objects.requireNonNull(opts);
 
-        DefaultActivationResult.Builder resultBuilder = DefaultActivationResult.builder();
+        ActivationResultDefault.Builder resultBuilder = ActivationResultDefault.builder();
 
         if (opts.strategy() != Strategy.ANY && opts.strategy() != Strategy.ACTIVATOR) {
             return handleError(resultBuilder, opts, "only " + Strategy.ACTIVATOR + " strategy is supported", null);
@@ -88,13 +88,13 @@ class DefaultInjector implements Injector {
             return handleError(resultBuilder, opts, "the service provider does not have a deactivator", instance);
         }
 
-        DeActivationRequest request = DefaultDeActivationRequest.builder()
+        DeActivationRequest request = DeActivationRequestDefault.builder()
                 .throwIfError(opts.activationRequest().throwIfError())
                 .build();
         return deactivator.deactivate(request);
     }
 
-    private ActivationResult handleError(DefaultActivationResult.Builder resultBuilder,
+    private ActivationResult handleError(ActivationResultDefault.Builder resultBuilder,
                                          InjectorOptions opts,
                                          String message,
                                          ServiceProvider<?> serviceProvider) {

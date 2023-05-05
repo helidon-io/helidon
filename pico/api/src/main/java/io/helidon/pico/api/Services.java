@@ -130,6 +130,24 @@ public interface Services {
 
     /**
      * Retrieves the first match based upon the passed service info criteria.
+     *
+     * @param contract contract that must be implemented
+     * @param criteria the criteria to find
+     * @param expected indicates whether the provider should throw if a match is not found
+     * @return the best service provider matching the criteria, or {@code empty} if (@code expected = false) and no match found
+     * @throws io.helidon.pico.api.PicoException if expected=true and resolution fails to resolve a match
+     * @param <T> type of the service
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    default <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> contract, ServiceInfoCriteria criteria, boolean expected) {
+        return (Optional) lookupFirst(ServiceInfoCriteriaDefault.toBuilder(criteria)
+                                   .addContractImplemented(contract.getName())
+                                   .build(),
+                           expected);
+    }
+
+    /**
+     * Retrieves the first match based upon the passed service info criteria.
      * <p>
      * This is the same as calling the following:
      * <pre>
@@ -178,6 +196,21 @@ public interface Services {
      */
     default List<ServiceProvider<?>> lookupAll(ServiceInfoCriteria criteria) {
         return lookupAll(criteria, false);
+    }
+
+    /**
+     * Lookup all services that match the criteria and share a given contract type.
+     *
+     * @param type the type criteria to find
+     * @param criteria additional criteria
+     * @return list of service providers matching criteria
+     * @param <T> type of the service being managed
+     */
+    @SuppressWarnings("unchecked")
+    default <T> List<ServiceProvider<T>> lookupAll(Class<T> type, ServiceInfoCriteria criteria) {
+        return (List) lookupAll(ServiceInfoCriteriaDefault.toBuilder(criteria)
+                                        .addContractImplemented(type.getName())
+                                        .build());
     }
 
     /**

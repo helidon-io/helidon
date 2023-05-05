@@ -17,6 +17,7 @@
 package io.helidon.builder.processor.tools;
 
 import java.lang.annotation.Annotation;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,10 +43,10 @@ import io.helidon.builder.processor.spi.TypeAndBody;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -63,11 +64,12 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     static final boolean DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES = true;
     static final String DEFAULT_IMPL_PREFIX = Builder.DEFAULT_IMPL_PREFIX;
     static final String DEFAULT_ABSTRACT_IMPL_PREFIX = Builder.DEFAULT_ABSTRACT_IMPL_PREFIX;
+    static final String DEFAULT_ABSTRACT_IMPL_SUFFIX = Builder.DEFAULT_ABSTRACT_IMPL_SUFFIX;
     static final String DEFAULT_SUFFIX = Builder.DEFAULT_SUFFIX;
     static final String DEFAULT_LIST_TYPE = Builder.DEFAULT_LIST_TYPE.getName();
     static final String DEFAULT_MAP_TYPE = Builder.DEFAULT_MAP_TYPE.getName();
     static final String DEFAULT_SET_TYPE = Builder.DEFAULT_SET_TYPE.getName();
-    static final TypeName BUILDER_ANNO_TYPE_NAME = DefaultTypeName.create(Builder.class);
+    static final TypeName BUILDER_ANNO_TYPE_NAME = TypeNameDefault.create(Builder.class);
     static final boolean SUPPORT_STREAMS_ON_IMPL = false;
     static final boolean SUPPORT_STREAMS_ON_BUILDER = true;
 
@@ -160,8 +162,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                               AnnotationAndValue builderAnnotation) {
         String toPackageName = toPackageName(typeName.packageName(), builderAnnotation);
         String prefix = toAbstractImplTypePrefix(builderAnnotation);
-        String suffix = toImplTypeSuffix(builderAnnotation);
-        return DefaultTypeName.create(toPackageName, prefix + typeName.className() + suffix);
+        String suffix = toAbstractImplTypeSuffix(builderAnnotation);
+        return TypeNameDefault.create(toPackageName, prefix + typeName.className() + suffix);
     }
 
     /**
@@ -176,7 +178,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         String toPackageName = toPackageName(typeName.packageName(), builderAnnotation);
         String prefix = toImplTypePrefix(builderAnnotation);
         String suffix = toImplTypeSuffix(builderAnnotation);
-        return DefaultTypeName.create(toPackageName, prefix + typeName.className() + suffix);
+        return TypeNameDefault.create(toPackageName, prefix + typeName.className() + suffix);
     }
 
     /**
@@ -620,10 +622,10 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         int i = 0;
         for (String attrName : ctx.allAttributeNames()) {
             TypedElementName method = ctx.allTypeInfos().get(i);
-            String typeName = method.typeName().declaredName();
+            TypeName typeName = method.typeName();
             List<String> typeArgs = method.typeName().typeArguments().stream()
-                    .map(it -> normalize(it.declaredName()) + ".class")
-                    .collect(Collectors.toList());
+                    .map(this::normalize)
+                    .toList();
             String typeArgsStr = String.join(", ", typeArgs);
 
             builder.append(extraTabs).append("\t\tvisitor.visit(\"").append(attrName).append("\", () -> this.");
@@ -633,7 +635,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 builder.append(method.elementName()).append("(), ");
             }
             builder.append(TAG_META_PROPS).append(".get(\"").append(attrName).append("\"), userDefinedCtx, ");
-            builder.append(normalize(typeName)).append(".class");
+            builder.append(normalize(typeName));
             if (!typeArgsStr.isBlank()) {
                 builder.append(", ").append(typeArgsStr);
             }
@@ -842,7 +844,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      * @return the (singular) name of the element
      */
     protected static String nameOf(TypedElementName elem) {
-        return DefaultAnnotationAndValue.findFirst(Singular.class.getName(), elem.annotations())
+        return AnnotationAndValueDefault.findFirst(Singular.class, elem.annotations())
                 .flatMap(AnnotationAndValue::value)
                 .filter(BuilderTypeTools::hasNonBlankValue)
                 .orElseGet(elem::elementName);
@@ -1067,7 +1069,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             }
         }
 
-        TypeName searchFor = DefaultTypeName.create(annoType);
+        TypeName searchFor = TypeNameDefault.create(annoType);
         for (AnnotationAndValue anno : method.annotations()) {
             if (anno.typeName().equals(searchFor)) {
                 Optional<String> val = anno.value();
@@ -1135,6 +1137,13 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      */
     private String toAbstractImplTypePrefix(AnnotationAndValue builderAnnotation) {
         return builderAnnotation.value("abstractImplPrefix").orElse(DEFAULT_ABSTRACT_IMPL_PREFIX);
+    }
+
+    /**
+     * In support of {@link io.helidon.builder.Builder#abstractImplSuffix()}.
+     */
+    private String toAbstractImplTypeSuffix(AnnotationAndValue builderAnnotation) {
+        return builderAnnotation.value("abstractImplSuffix").orElse(DEFAULT_ABSTRACT_IMPL_SUFFIX);
     }
 
     /**
@@ -1676,6 +1685,11 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             }
         }
 
+        if (Duration.class.getName().equals(type.name())) {
+            builder.append("java.time.Duration.parse(\"").append(defaultVal).append("\")");
+            return;
+        }
+
         boolean isString = type.name().equals(String.class.getName()) && !type.array();
         boolean isCharArr = type.fqName().equals("char[]");
         if ((isString || isCharArr) && !defaultVal.startsWith("\"")) {
@@ -1759,14 +1773,15 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     private String mapOf(String attrName,
                          TypedElementName method,
                          AtomicBoolean needsCustomMapOf) {
-        Optional<? extends AnnotationAndValue> configuredOptions = DefaultAnnotationAndValue
-                .findFirst(ConfiguredOption.class.getName(), method.annotations());
+        Optional<? extends AnnotationAndValue> configuredOptions = AnnotationAndValueDefault
+                .findFirst(ConfiguredOption.class, method.annotations());
 
         TypeName typeName = method.typeName();
         String typeDecl = "\"__type\", " + typeName.name() + ".class";
         if (!typeName.typeArguments().isEmpty()) {
             int pos = typeName.typeArguments().size() - 1;
-            typeDecl += ", \"__componentType\", " + normalize(typeName.typeArguments().get(pos).name()) + ".class";
+            TypeName arg = typeName.typeArguments().get(pos);
+            typeDecl += ", \"__componentType\", " + normalize(arg);
         }
 
         String key = (configuredOptions.isEmpty())
@@ -1809,8 +1824,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         return result.toString();
     }
 
-    private String normalize(String name) {
-        return name.equals("?") ? "Object" : name;
+    private String normalize(TypeName typeName) {
+        return (typeName.generic() ? "Object" : typeName.name()) + ".class";
     }
 
     private String quotedTupleOf(TypeName valType,

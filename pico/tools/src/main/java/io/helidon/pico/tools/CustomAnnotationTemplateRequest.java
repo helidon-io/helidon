@@ -97,5 +97,4 @@ public interface CustomAnnotationTemplateRequest {
      * @return the generic template creator
      */
     GenericTemplateCreator genericTemplateCreator();
-
 }

@@ -44,8 +44,8 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 
 /**
  * Used to abstract processor based filer from direct filer (the latter used via maven plugin and other tooling).
@@ -247,7 +247,7 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
 
         Path toSourcePath(JavaFileManager.Location location,
                           String name) {
-            return toSourcePath(location, DefaultTypeName.createFromTypeName(name));
+            return toSourcePath(location, TypeNameDefault.createFromTypeName(name));
         }
 
         Path toSourcePath(JavaFileManager.Location location,

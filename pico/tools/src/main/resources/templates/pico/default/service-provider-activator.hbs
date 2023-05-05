@@ -19,8 +19,8 @@ package {{packagename}};
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 
-import io.helidon.pico.api.DefaultDependenciesInfo;
-import io.helidon.pico.api.DefaultServiceInfo;
+import io.helidon.pico.api.DependenciesInfoDefault;
+import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.PostConstructMethod;
 import io.helidon.pico.api.PreDestroyMethod;
@@ -50,8 +50,8 @@ import static io.helidon.pico.api.InjectionPointInfo.CONSTRUCTOR;
 @Generated({{{generatedanno}}})
 public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}}
             extends {{{parent}}} {
-    private static final DefaultServiceInfo serviceInfo =
-        DefaultServiceInfo.builder()
+    private static final ServiceInfoDefault serviceInfo =
+        ServiceInfoDefault.builder()
             .serviceTypeName({{packagename}}.{{classname}}.class.getName()){{#contracts}}
             .addContractsImplemented({{.}}.class.getName()){{/contracts}}{{#externalcontracts}}
             .addExternalContractsImplemented({{.}}.class.getName()){{/externalcontracts}}

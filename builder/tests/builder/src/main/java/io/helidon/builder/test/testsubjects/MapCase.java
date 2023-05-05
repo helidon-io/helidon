@@ -26,7 +26,7 @@ import io.helidon.builder.Singular;
 /**
  * Demonstrate singular properties of maps and builders.
  */
-@Builder(implPrefix = "Test")
+@Builder(implPrefix = "Test", implSuffix = "")
 public abstract class MapCase {
 
     /**

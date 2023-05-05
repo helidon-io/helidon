@@ -90,7 +90,7 @@ public interface Http2Config {
      * @return duration
      * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
      */
-    @ConfiguredOption("java.time.Duration.ofMillis(100L)")
+    @ConfiguredOption("PT0.1S")
     Duration flowControlTimeout();
 
     /**

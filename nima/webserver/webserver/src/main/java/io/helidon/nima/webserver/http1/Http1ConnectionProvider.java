@@ -88,7 +88,7 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
     public ServerConnectionSelector create(Function<String, Config> configs) {
         Http1Config config;
         if (http1Config == null) {
-            config = DefaultHttp1Config.toBuilder(configs.apply(CONFIG_NAME)).build();
+            config = Http1ConfigDefault.toBuilder(configs.apply(CONFIG_NAME)).build();
         } else {
             config = http1Config;
         }

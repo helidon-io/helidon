@@ -165,11 +165,37 @@ public interface TypeInfo {
     Map<TypeName, List<AnnotationAndValue>> referencedTypeNamesToAnnotations();
 
     /**
+     * Populated if the (external) module name containing the type is known.
+     *
+     * @return type names to its associated defining module name
+     */
+    Map<TypeName, String> referencedModuleNames();
+
+    /**
+     * Uses {@link #referencedModuleNames()} to determine if the module name is known for the given type.
+     *
+     * @param typeName the type name to lookup
+     * @return the module name if it is known
+     */
+    default Optional<String> moduleNameOf(TypeName typeName) {
+        String moduleName = referencedModuleNames().get(typeName);
+        moduleName = (moduleName != null && moduleName.isBlank()) ? null : moduleName;
+        return Optional.ofNullable(moduleName);
+    }
+
+    /**
      * The parent/super class for this type info.
      *
      * @return the super type
      */
     Optional<TypeInfo> superTypeInfo();
+
+    /**
+     * The interface classes for this type info.
+     *
+     * @return the interface type info
+     */
+    List<TypeInfo> interfaceTypeInfo();
 
     /**
      * Element modifiers.

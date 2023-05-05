@@ -17,23 +17,32 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.webclient.DefaultDnsResolverProvider;
-import io.helidon.nima.webclient.RoundRobinDnsResolverProvider;
 import io.helidon.nima.webclient.NoDnsResolverProvider;
-import io.helidon.nima.webclient.spi.DnsResolverProvider;
+import io.helidon.nima.webclient.RoundRobinDnsResolverProvider;
 import io.helidon.nima.webclient.http.spi.SourceHandlerProvider;
+import io.helidon.nima.webclient.spi.DnsResolverProvider;
 
 /**
  * WebClient API and HTTP/1.1 implementation.
  */
 @Feature(value = "Web Client",
-        description = "Web Client",
-        in = HelidonFlavor.NIMA,
-        invalidIn = HelidonFlavor.SE,
-        path = "Web Client"
+         description = "Web Client",
+         in = HelidonFlavor.NIMA,
+         invalidIn = HelidonFlavor.SE,
+         path = "Web Client"
 )
 module io.helidon.nima.webclient {
+    // @Feature
     requires static io.helidon.common.features.api;
+    // @ConfiguredOption etc
     requires static io.helidon.config.metadata;
+    // @ConfigBean
+    requires static io.helidon.builder.config;
+    // @Generated
+    requires static jakarta.annotation;
+
+    // @Builder - validator is a runtime dependency
+    requires io.helidon.builder;
 
     requires transitive io.helidon.common.uri;
     requires transitive io.helidon.nima.common.tls;
@@ -41,6 +50,7 @@ module io.helidon.nima.webclient {
     requires transitive io.helidon.common.http;
     requires transitive io.helidon.nima.http.encoding;
     requires transitive io.helidon.nima.http.media;
+    requires transitive io.helidon.common.context;
 
     exports io.helidon.nima.webclient;
     exports io.helidon.nima.webclient.spi;
@@ -55,5 +65,6 @@ module io.helidon.nima.webclient {
 
     uses DnsResolverProvider;
     uses SourceHandlerProvider;
+    uses io.helidon.nima.webclient.spi.WebClientServiceProvider;
     provides DnsResolverProvider with RoundRobinDnsResolverProvider, DefaultDnsResolverProvider, NoDnsResolverProvider;
 }

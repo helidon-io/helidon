@@ -35,8 +35,8 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
@@ -160,7 +160,7 @@ public interface ModuleInfoDescriptor {
             throw new IllegalArgumentException("can't merge with self");
         }
 
-        DefaultModuleInfoDescriptor.Builder newOne = DefaultModuleInfoDescriptor.toBuilder(this);
+        ModuleInfoDescriptorDefault.Builder newOne = ModuleInfoDescriptorDefault.toBuilder(this);
         for (ModuleInfoItem itemThere : another.items()) {
             Optional<ModuleInfoItem> itemHere = first(itemThere.target());
             if (itemHere.isPresent()) {
@@ -184,7 +184,7 @@ public interface ModuleInfoDescriptor {
      * @param itemSupplier  the item to add which presumably has the same target as above
      * @return true if added
      */
-    static boolean addIfAbsent(DefaultModuleInfoDescriptor.Builder builder,
+    static boolean addIfAbsent(ModuleInfoDescriptorDefault.Builder builder,
                                String target,
                                Supplier<ModuleInfoItem> itemSupplier) {
         Optional<ModuleInfoItem> existing = builder.first(target);
@@ -276,7 +276,7 @@ public interface ModuleInfoDescriptor {
      */
     static ModuleInfoDescriptor create(String moduleInfo,
                                        Ordering ordering) {
-        DefaultModuleInfoDescriptor.Builder descriptor = DefaultModuleInfoDescriptor.builder();
+        ModuleInfoDescriptorDefault.Builder descriptor = ModuleInfoDescriptorDefault.builder();
 
         String clean = moduleInfo;
         List<String> comments = null;
@@ -314,7 +314,7 @@ public interface ModuleInfoDescriptor {
                                                               (comments != null) ? comments : List.of()));
                     }
                 } else if (line.startsWith("exports ")) {
-                    DefaultModuleInfoItem.Builder exports = DefaultModuleInfoItem.builder()
+                    ModuleInfoItemDefault.Builder exports = ModuleInfoItemDefault.builder()
                             .exports(true)
                             .target(resolve(split[1], importAliases))
                             .precomments((comments != null) ? comments : List.of());
@@ -325,13 +325,13 @@ public interface ModuleInfoDescriptor {
                     }
                     descriptor.addItem(exports.build());
                 } else if (line.startsWith("uses ")) {
-                    DefaultModuleInfoItem.Builder uses = DefaultModuleInfoItem.builder()
+                    ModuleInfoItemDefault.Builder uses = ModuleInfoItemDefault.builder()
                             .uses(true)
                             .target(resolve(split[1], importAliases))
                             .precomments((comments != null) ? comments : List.of());
                     descriptor.addItem(uses.build());
                 } else if (line.startsWith("provides ")) {
-                    DefaultModuleInfoItem.Builder provides = DefaultModuleInfoItem.builder()
+                    ModuleInfoItemDefault.Builder provides = ModuleInfoItemDefault.builder()
                             .provides(true)
                             .target(resolve(split[1], importAliases))
                             .precomments((comments != null) ? comments : List.of());
@@ -430,7 +430,7 @@ public interface ModuleInfoDescriptor {
         if (!items.isEmpty()) {
             if (Ordering.SORTED == ordering()) {
                 ArrayList<ModuleInfoItem> newItems = new ArrayList<>();
-                items.forEach(i -> newItems.add(DefaultModuleInfoItem.toBuilder(i).ordering(Ordering.SORTED).build()));
+                items.forEach(i -> newItems.add(ModuleInfoItemDefault.toBuilder(i).ordering(Ordering.SORTED).build()));
                 items = newItems;
                 items.sort(Comparator.comparing(ModuleInfoItem::target));
             }
@@ -476,7 +476,7 @@ public interface ModuleInfoDescriptor {
      * @return the item created
      */
     static ModuleInfoItem usesExternalContract(String externalContract) {
-        return DefaultModuleInfoItem.builder().uses(true).target(externalContract).build();
+        return ModuleInfoItemDefault.builder().uses(true).target(externalContract).build();
     }
 
     /**
@@ -489,7 +489,7 @@ public interface ModuleInfoDescriptor {
      */
     static ModuleInfoItem providesContract(String contract,
                                            String with) {
-        return DefaultModuleInfoItem.builder().provides(true).target(contract).addWithOrTo(with).build();
+        return ModuleInfoItemDefault.builder().provides(true).target(contract).addWithOrTo(with).build();
     }
 
     /**
@@ -499,7 +499,7 @@ public interface ModuleInfoDescriptor {
      * @return the item created
      */
     static ModuleInfoItem requiresModuleName(String moduleName) {
-        return DefaultModuleInfoItem.builder().requires(true).target(moduleName).build();
+        return ModuleInfoItemDefault.builder().requires(true).target(moduleName).build();
     }
 
     /**
@@ -516,7 +516,7 @@ public interface ModuleInfoDescriptor {
                                              boolean isTransitive,
                                              boolean isStatic,
                                              List<String> comments) {
-        return DefaultModuleInfoItem.builder()
+        return ModuleInfoItemDefault.builder()
                 .requires(true)
                 .precomments(comments)
                 .transitiveUsed(isTransitive)
@@ -542,7 +542,7 @@ public interface ModuleInfoDescriptor {
      * @return the item created
      */
     static ModuleInfoItem exportsPackage(String pkg) {
-        return DefaultModuleInfoItem.builder().exports(true).target(pkg).build();
+        return ModuleInfoItemDefault.builder().exports(true).target(pkg).build();
     }
 
     /**
@@ -555,7 +555,7 @@ public interface ModuleInfoDescriptor {
      */
     static ModuleInfoItem exportsPackage(String contract,
                                          String to) {
-        return DefaultModuleInfoItem.builder().exports(true).target(contract).addWithOrTo(to).build();
+        return ModuleInfoItemDefault.builder().exports(true).target(contract).addWithOrTo(to).build();
     }
 
     private static String resolve(String name,
@@ -610,7 +610,7 @@ public interface ModuleInfoDescriptor {
         line = cleanLine(result.toString());
         if (line.startsWith("import ")) {
             String[] split = line.split("\\s+");
-            TypeName typeName = DefaultTypeName.createFromTypeName(split[split.length - 1]);
+            TypeName typeName = TypeNameDefault.createFromTypeName(split[split.length - 1]);
             importAliases.put(typeName.className(), typeName);
             line = cleanLine(reader, preComments, importAliases);
         }

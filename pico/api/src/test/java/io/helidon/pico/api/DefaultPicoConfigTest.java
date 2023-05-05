@@ -41,7 +41,7 @@ class DefaultPicoConfigTest {
      */
     @Test
     void withOutBootstrap() {
-        DefaultPicoServicesConfig cfg = DefaultPicoServicesConfig.builder().build();
+        PicoServicesConfig cfg = PicoServicesConfigDefault.builder().build();
         assertThat(cfg.serviceLookupCaching(), equalTo(Boolean.FALSE));
         assertThat(cfg.activationLogs(), equalTo(Boolean.FALSE));
         assertThat(cfg.activationDeadlockDetectionTimeoutMillis(), equalTo(10000L));
@@ -63,7 +63,7 @@ class DefaultPicoConfigTest {
 
     @Test
     void withBootstrapWithoutConfig() {
-        DefaultBootstrap bootstrap = DefaultBootstrap.builder().build();
+        Bootstrap bootstrap = BootstrapDefault.builder().build();
         PicoServicesHolder.bootstrap(bootstrap);
         assertThat(PicoServicesHolder.bootstrap(false), optionalPresent());
 
@@ -89,13 +89,13 @@ class DefaultPicoConfigTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-        DefaultBootstrap bootstrap = DefaultBootstrap.builder()
+        Bootstrap bootstrap = BootstrapDefault.builder()
                 .config(config)
                 .build();
         PicoServicesHolder.bootstrap(bootstrap);
         assertThat(PicoServicesHolder.bootstrap(false), optionalPresent());
 
-        DefaultPicoServicesConfig cfg = DefaultPicoServicesConfig.builder().build();
+        PicoServicesConfig cfg = PicoServicesConfigDefault.builder().build();
         assertThat(cfg.serviceLookupCaching(), equalTo(Boolean.TRUE));
         assertThat(cfg.activationLogs(), equalTo(Boolean.TRUE));
         assertThat(cfg.activationDeadlockDetectionTimeoutMillis(), equalTo(111L));

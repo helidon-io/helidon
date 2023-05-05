@@ -51,7 +51,7 @@ public final class TypeNames {
     /**
      * Pico {@value} type.
      */
-    public static final String PICO_MODULE = "io.helidon.pico.api.Module";
+    public static final String PICO_MODULE = "io.helidon.pico.api.ModuleComponent";
 
     /**
      * Pico {@value} annotation.

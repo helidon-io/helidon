@@ -39,7 +39,7 @@ import jakarta.inject.Singleton;
 @Named("{{enclosingClassTypeName.name}}")
 @Weight({{weight}})
 @ExternalContracts(GeneratedHandler.class)
-public class {{className}} implements GeneratedHandler {
+class {{className}} implements GeneratedHandler {
 {{#each http.headers}}private static final Http.HeaderName {{this.field}} = Http.Header.create("{{this.name}}");
 {{/each}}
     private static final Http.Method METHOD = Http.Method.create("{{http.method}}");

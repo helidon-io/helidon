@@ -21,7 +21,7 @@ import java.util.Objects;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.api.DefaultBootstrap;
+import io.helidon.pico.api.BootstrapDefault;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.runtime.testsubjects.HelloPico$$Application;
@@ -45,7 +45,7 @@ class DefaultPicoServicesTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-        PicoServices.globalBootstrap(DefaultBootstrap.builder().config(config).build());
+        PicoServices.globalBootstrap(BootstrapDefault.builder().config(config).build());
     }
 
     @AfterEach

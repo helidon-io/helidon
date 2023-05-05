@@ -58,28 +58,28 @@ public interface TypeName extends Comparable<TypeName> {
     /**
      * Functions the same as {@link Class#isPrimitive()}.
      *
-     * @return true if this type represents a primitive type.
+     * @return true if this type represents a primitive type
      */
     boolean primitive();
 
     /**
      * Functions the same as {@link Class#isArray()}.
      *
-     * @return true if this type represents a primitive array [].
+     * @return true if this type represents a primitive array []
      */
     boolean array();
 
     /**
      * Indicates whether this type is using generics.
      *
-     * @return used to represent a generic (e.g., "Optional&lt;CB&gt;").
+     * @return used to represent a generic (e.g., "Optional&lt;CB&gt;")
      */
     boolean generic();
 
     /**
      * Indicates whether this type is using wildcard generics.
      *
-     * @return used to represent a wildcard (e.g., "? extends SomeType").
+     * @return used to represent a wildcard (e.g., "? extends SomeType")
      */
     boolean wildcard();
 
@@ -122,14 +122,22 @@ public interface TypeName extends Comparable<TypeName> {
     /**
      * Returns the list of generic type parameters, or an empty list if no generics are in use.
      *
-     * @return the type arguments of this type, if this type supports generics/parameterized type.
+     * @return the type arguments of this type, if this type supports generics/parameterized type
      */
     List<TypeName> typeArguments();
 
     /**
+     * The base generic type name, stripped of any {@link #typeArguments()}. This is equivalent to the type name
+     * represented by {@link #name()}.
+     *
+     * @return based generic type name
+     */
+    TypeName genericTypeName();
+
+    /**
      * Typically used as part of code-gen, when ".class" is tacked onto the suffix of what this returns.
      *
-     * @return same as getName() unless the type is an array, and then will add "[]" to the return.
+     * @return same as getName() unless the type is an array, and then will add "[]" to the return
      */
     String declaredName();
 
@@ -145,7 +153,7 @@ public interface TypeName extends Comparable<TypeName> {
      * The base name that includes the package name concatenated with the class name. Similar to
      * {@link java.lang.reflect.Type#getTypeName()}.
      *
-     * @return the base type name given the set package and class name, but not including the generics/parameterized types.
+     * @return the base type name given the set package and class name, but not including the generics/parameterized types
      */
     String name();
 

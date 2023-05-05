@@ -35,12 +35,12 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.TypeElement;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.InjectionPointInfo;
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.api.Resettable;
@@ -450,7 +450,7 @@ public class ServicesToProcess implements Resettable {
      */
     public void addDependencies(DependenciesInfo dependencies) {
         TypeName serviceTypeName =
-                DefaultTypeName.createFromTypeName(dependencies.fromServiceTypeName().orElseThrow());
+                TypeNameDefault.createFromTypeName(dependencies.fromServiceTypeName().orElseThrow());
         addServiceTypeName(serviceTypeName);
         DependenciesInfo prevDependencies = servicesToDependencies.get(serviceTypeName);
         if (prevDependencies != null) {
@@ -860,7 +860,7 @@ public class ServicesToProcess implements Resettable {
     /**
      * If we made it here we know that Pico annotation processing was used. If there is a module-info in use and services where
      * defined during processing, then we should have a module created and optionally and application.  If so then we should
-     * validate the integrity of the user's module-info.java for the {@link io.helidon.pico.api.Module} and
+     * validate the integrity of the user's module-info.java for the {@link io.helidon.pico.api.ModuleComponent} and
      * {@link io.helidon.pico.api.Application} definitions - unless the user opted out of this check with the
      * {@link io.helidon.pico.tools.Options#TAG_IGNORE_MODULE_USAGE} option.
      * @throws IllegalStateException thrown if internal state inconsistencies are found
@@ -876,7 +876,7 @@ public class ServicesToProcess implements Resettable {
 
         boolean wasModuleDefined = !servicesTypeNames.isEmpty() || contracts().values().stream()
                 .flatMap(Collection::stream)
-                .anyMatch(it -> it.name().equals(Module.class.getName()));
+                .anyMatch(it -> it.name().equals(ModuleComponent.class.getName()));
         boolean wasApplicationDefined = contracts().values().stream()
                 .flatMap(Collection::stream)
                 .anyMatch(it -> it.name().equals(Application.class.getName()));
@@ -885,9 +885,10 @@ public class ServicesToProcess implements Resettable {
         String message = ". Use -A" + Options.TAG_IGNORE_MODULE_USAGE + "=true to ignore.";
 
         if (wasModuleDefined) {
-            Optional<ModuleInfoItem> moduleInfoItem = lastKnownModuleInfoDescriptor.first(Module.class.getName());
+            Optional<ModuleInfoItem> moduleInfoItem = lastKnownModuleInfoDescriptor.first(ModuleComponent.class.getName());
             if (moduleInfoItem.isEmpty() || !moduleInfoItem.get().provides()) {
-                IllegalStateException te = new IllegalStateException("Expected to have a 'provides " + Module.class.getName()
+                IllegalStateException te = new IllegalStateException("Expected to have a 'provides "
+                                                                             + ModuleComponent.class.getName()
                                                                + " with ... ' entry in " + lastKnownModuleInfoFilePath + message);
                 if (shouldWarnOnly) {
                     processor.warn(te.getMessage(), te);

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,12 +31,6 @@
     <exec src="/mp/common/common-mp.xml"/>
     <source src="/mp/custom/observability.xml"/>
     <output>
-        <files if="${security}">
-            <directory>files</directory>
-            <includes>
-                <include if="${security.atn} contains 'http-signature'">src/*/resources/keystore.p12</include>
-            </includes>
-        </files>
         <model>
             <value key="helidon-test">true</value>
             <value key="readme-description">Minimal Helidon MP project suitable to start from scratch.</value>
@@ -44,7 +38,7 @@
                 <value file="files/README.md"/>
             </list>
             <list key="native-sections" if="${docker}">
-                <value file="files/README.native.md"
+                <value file="files/README.native.md.mustache"
                        if="${docker.native-image} &amp;&amp; !(${db})"
                        template="mustache"/>
             </list>

@@ -22,7 +22,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.pico.api.Bootstrap;
-import io.helidon.pico.api.DefaultBootstrap;
+import io.helidon.pico.api.BootstrapDefault;
 import io.helidon.pico.api.PicoServices;
 
 /**
@@ -48,7 +48,7 @@ public final class PicoMain {
                     .disableSystemPropertiesSource()
                     .disableEnvironmentVariablesSource()
                     .build();
-            Bootstrap bootstrap = DefaultBootstrap.builder()
+            Bootstrap bootstrap = BootstrapDefault.builder()
                     .config(config)
                     .build();
             PicoServices.globalBootstrap(bootstrap);

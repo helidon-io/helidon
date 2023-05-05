@@ -51,17 +51,22 @@ public @interface Builder {
     /**
      * The default prefix appended to the generated class name.
      */
-    String DEFAULT_IMPL_PREFIX = "Default";
+    String DEFAULT_IMPL_PREFIX = "";
 
     /**
      * The default prefix appended to the generated abstract class name (the parent for the {@link #DEFAULT_IMPL_PREFIX}).
      */
-    String DEFAULT_ABSTRACT_IMPL_PREFIX = "Abstract";
+    String DEFAULT_ABSTRACT_IMPL_PREFIX = "";
+
+    /**
+     * The default suffix appended to the generated abstract class name.
+     */
+    String DEFAULT_ABSTRACT_IMPL_SUFFIX = "Base";
 
     /**
      * The default suffix appended to the generated class name(s).
      */
-    String DEFAULT_SUFFIX = "";
+    String DEFAULT_SUFFIX = "Default";
 
     /**
      * The default value for {@link #allowNulls()}.

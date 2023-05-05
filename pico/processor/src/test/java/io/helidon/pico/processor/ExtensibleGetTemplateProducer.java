@@ -19,13 +19,13 @@ package io.helidon.pico.processor;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.DefaultGenericTemplateCreatorRequest;
 import io.helidon.pico.tools.GenericTemplateCreatorRequest;
+import io.helidon.pico.tools.GenericTemplateCreatorRequestDefault;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
@@ -56,10 +56,10 @@ public class ExtensibleGetTemplateProducer implements CustomAnnotationTemplateCr
         String classname = enclosingTypeInfo.typeName().className() + "_"
                 + request.annoTypeName().className() + "_"
                 + request.targetElement().elementName();
-        TypeName generatedTypeName = DefaultTypeName.create(enclosingTypeInfo.typeName().packageName(), classname);
+        TypeName generatedTypeName = TypeNameDefault.create(enclosingTypeInfo.typeName().packageName(), classname);
         DefaultGenericTemplateCreator genericTemplateCreator = new DefaultGenericTemplateCreator(getClass());
         CharSequence template = genericTemplateCreator.supplyFromResources("nima", "extensible-get.hbs");
-        GenericTemplateCreatorRequest genericCreatorRequest = DefaultGenericTemplateCreatorRequest.builder()
+        GenericTemplateCreatorRequest genericCreatorRequest = GenericTemplateCreatorRequestDefault.builder()
                 .customAnnotationTemplateRequest(request)
                 .generatedTypeName(generatedTypeName)
                 .template(template)

@@ -16,7 +16,7 @@
 
 package io.helidon.pico.runtime.testsubjects;
 
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.ServiceBinder;
 
 import jakarta.inject.Singleton;
@@ -25,7 +25,7 @@ import jakarta.inject.Singleton;
  * For testing.
  */
 @Singleton
-public final class EmptyModule implements Module {
+public final class EmptyModule implements ModuleComponent {
 
     @Override
     public void configure(ServiceBinder binder) {

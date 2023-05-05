@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+import io.helidon.pico.tools.ActivatorCreatorDefault;
+import io.helidon.pico.tools.ApplicationCreatorDefault;
+import io.helidon.pico.tools.ExternalModuleCreatorDefault;
+import io.helidon.pico.tools.InterceptorCreatorDefault;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.spi.ApplicationCreator;
 import io.helidon.pico.tools.spi.ExternalModuleCreator;
@@ -48,11 +52,11 @@ module io.helidon.pico.tools {
     uses io.helidon.pico.tools.spi.InterceptorCreator;
 
     provides ActivatorCreator
-            with io.helidon.pico.tools.DefaultActivatorCreator;
+            with ActivatorCreatorDefault;
     provides ApplicationCreator
-            with io.helidon.pico.tools.DefaultApplicationCreator;
+            with ApplicationCreatorDefault;
     provides ExternalModuleCreator
-            with io.helidon.pico.tools.DefaultExternalModuleCreator;
+            with ExternalModuleCreatorDefault;
     provides InterceptorCreator
-            with io.helidon.pico.tools.DefaultInterceptorCreator;
+            with InterceptorCreatorDefault;
 }

@@ -18,8 +18,8 @@ package io.helidon.builder.config.test;
 
 import java.util.Objects;
 
-import io.helidon.builder.config.testsubjects.fakes.DefaultFakeServerConfig;
-import io.helidon.builder.config.testsubjects.fakes.DefaultFakeSocketConfig;
+import io.helidon.builder.config.testsubjects.fakes.FakeServerConfigDefault;
+import io.helidon.builder.config.testsubjects.fakes.FakeSocketConfigDefault;
 import io.helidon.builder.config.testsubjects.fakes.FakeSocketConfig;
 import io.helidon.builder.config.testsubjects.fakes.FakeWebServerTlsConfig;
 import io.helidon.common.config.Config;
@@ -44,7 +44,7 @@ class NestedConfigBeanTest extends AbstractConfigBeanTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-        DefaultFakeServerConfig serverConfig = DefaultFakeServerConfig
+        FakeServerConfigDefault serverConfig = FakeServerConfigDefault
                 .toBuilder(cfg.get(FAKE_SERVER_CONFIG)).build();
 
         assertThat(serverConfig.name(),
@@ -55,7 +55,7 @@ class NestedConfigBeanTest extends AbstractConfigBeanTest {
         // validate the map
         assertThat(serverConfig.sockets(),
                    hasEntry("1",
-                            DefaultFakeSocketConfig.builder()
+                            FakeSocketConfigDefault.builder()
                                     .name("first")
                                     .port(8081)
                                     .build()));
@@ -69,7 +69,7 @@ class NestedConfigBeanTest extends AbstractConfigBeanTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-        DefaultFakeServerConfig serverConfig = DefaultFakeServerConfig
+        FakeServerConfigDefault serverConfig = FakeServerConfigDefault
                 .toBuilder(cfg.get(NESTED + "." + FAKE_SERVER_CONFIG)).build();
 
         assertThat(serverConfig.name(),
@@ -95,7 +95,7 @@ class NestedConfigBeanTest extends AbstractConfigBeanTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-        DefaultFakeServerConfig serverConfig = DefaultFakeServerConfig
+        FakeServerConfigDefault serverConfig = FakeServerConfigDefault
                 .toBuilder(cfg.get(FAKE_SERVER_CONFIG)).build();
 
         assertThat(serverConfig.name(),
@@ -126,11 +126,11 @@ class NestedConfigBeanTest extends AbstractConfigBeanTest {
 
         // validate the list
         assertThat(serverConfig.socketList(),
-                   contains(DefaultFakeSocketConfig.builder()
+                   contains(FakeSocketConfigDefault.builder()
                                     .bindAddress("127.0.0.1")
                                     .port(8086)
                                     .build(),
-                            DefaultFakeSocketConfig.builder()
+                            FakeSocketConfigDefault.builder()
                                     .bindAddress("localhost")
                                     .port(8087)
                                     .tls(tls)
@@ -138,11 +138,11 @@ class NestedConfigBeanTest extends AbstractConfigBeanTest {
 
         // validate the set
         assertThat(serverConfig.socketSet(),
-                   containsInAnyOrder(DefaultFakeSocketConfig.builder()
+                   containsInAnyOrder(FakeSocketConfigDefault.builder()
                                               .bindAddress("127.0.0.1")
                                               .port(8086)
                                               .build(),
-                                      DefaultFakeSocketConfig.builder()
+                                      FakeSocketConfigDefault.builder()
                                               .bindAddress("localhost")
                                               .port(8087)
                                               .tls(tls)
@@ -157,7 +157,7 @@ class NestedConfigBeanTest extends AbstractConfigBeanTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-        DefaultFakeServerConfig serverConfig = DefaultFakeServerConfig
+        FakeServerConfigDefault serverConfig = FakeServerConfigDefault
                 .toBuilder(cfg.get(FAKE_SERVER_CONFIG)).build();
 
         // validate the map

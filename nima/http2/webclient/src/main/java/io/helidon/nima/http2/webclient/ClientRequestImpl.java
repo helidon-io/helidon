@@ -35,6 +35,7 @@ import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.SocketOptions;
+import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.Http2Headers;
@@ -64,6 +65,7 @@ class ClientRequestImpl implements Http2ClientRequest {
     private ClientConnection explicitConnection;
     private Duration flowControlTimeout = Duration.ofMillis(100);
     private Duration timeout = Duration.ofSeconds(10);
+    private UriFragment fragment = UriFragment.empty();
 
     ClientRequestImpl(Http2ClientImpl client,
                       ExecutorService executor,
@@ -224,6 +226,12 @@ class ClientRequestImpl implements Http2ClientRequest {
         return this;
     }
 
+    @Override
+    public Http2ClientRequest fragment(String fragment) {
+        this.fragment = UriFragment.create(fragment);
+        return this;
+    }
+
     UriHelper uriHelper() {
         return uri;
     }
@@ -250,7 +258,7 @@ class ClientRequestImpl implements Http2ClientRequest {
         http2Headers.method(this.method);
         http2Headers.authority(this.uri.authority());
         http2Headers.scheme(this.uri.scheme());
-        http2Headers.path(this.uri.pathWithQuery(query));
+        http2Headers.path(this.uri.pathWithQueryAndFragment(query, fragment));
 
         headers.remove(Header.HOST, LogHeaderConsumer.INSTANCE);
         headers.remove(Header.TRANSFER_ENCODING, LogHeaderConsumer.INSTANCE);

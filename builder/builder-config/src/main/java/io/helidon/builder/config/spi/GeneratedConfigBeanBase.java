@@ -16,6 +16,8 @@
 
 package io.helidon.builder.config.spi;
 
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.config.Config;
@@ -23,7 +25,7 @@ import io.helidon.common.config.Config;
 /**
  * Minimal implementation for the {@link GeneratedConfigBeanCommon}. This is the base for generated config beans.
  */
-public abstract class GeneratedConfigBeanBase implements GeneratedConfigBeanCommon {
+public abstract class GeneratedConfigBeanBase implements GeneratedConfigBean {
     private final Config config;
     private String instanceId;
 
@@ -46,17 +48,37 @@ public abstract class GeneratedConfigBeanBase implements GeneratedConfigBeanComm
         return Optional.ofNullable(config);
     }
 
+    @Override
+    public Optional<String> __name() {
+        if (__config().isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(__config().get().name());
+    }
+
     /**
-     * Returns the instance id assigned to this bean.
+     * The meta attributes for this generated config bean.
      *
-     * @return the instance id assigned to this bean
+     * @return meta attributes for this config bean
      */
+    public abstract Map<String, Map<String, Object>> __metaProps();
+
+    @Override
+    public MetaConfigBeanInfo __metaInfo() {
+        Map<String, Object> meta = __metaProps().get(ConfigBeanInfo.TAG_META);
+        MetaConfigBeanInfo metaInfo = (MetaConfigBeanInfo) meta.get(ConfigBeanInfo.class.getName());
+        return Objects.requireNonNull(metaInfo);
+    }
+
+    @Override
     public String __instanceId() {
         return instanceId;
     }
 
     /**
      * Assigns the instance id assigned to this bean.
+     * Note that the instance id is typically assigned the {@link Config#key()} in most circumstances.
      *
      * @param val the new instance id for this bean
      */

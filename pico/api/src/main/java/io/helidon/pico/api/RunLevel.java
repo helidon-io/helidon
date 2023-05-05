@@ -39,7 +39,7 @@ public @interface RunLevel {
      * <pre>
      * {@code
      * List<ServiceProvider<Object>> startupServices = services
-     *               .lookup(DefaultServiceInfoCriteria.builder().runLevel(RunLevel.STARTUP).build());
+     *               .lookup(ServiceInfoCriteriaDefault.builder().runLevel(RunLevel.STARTUP).build());
      *       startupServices.stream().forEach(ServiceProvider::get);
      * }
      * </pre>

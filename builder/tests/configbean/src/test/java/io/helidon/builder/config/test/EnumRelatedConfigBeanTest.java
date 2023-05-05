@@ -19,7 +19,7 @@ package io.helidon.builder.config.test;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.builder.config.testsubjects.DefaultEnumRelatedConfig;
+import io.helidon.builder.config.testsubjects.EnumRelatedConfigDefault;
 import io.helidon.builder.config.testsubjects.EnumRelatedConfig;
 import io.helidon.builder.config.testsubjects.fakes.FakeClientAuth;
 
@@ -35,7 +35,7 @@ class EnumRelatedConfigBeanTest {
 
     @Test
     void testIt() {
-        EnumRelatedConfig cfg = DefaultEnumRelatedConfig.builder()
+        EnumRelatedConfig cfg = EnumRelatedConfigDefault.builder()
                 .clientAuth(FakeClientAuth.OPTIONAL)
                 .list(List.of(EnumRelatedConfig.InlinedEnum.TEST))
                 .addSet(Set.of(EnumRelatedConfig.InlinedEnum.TEST))

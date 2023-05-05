@@ -117,6 +117,13 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
     B queryParam(String name, String... values);
 
     /**
+     * Set fragment of the URI.
+     * @param fragment fragment
+     * @return updated request
+     */
+    B fragment(String fragment);
+
+    /**
      * Request without an entity.
      *
      * @return response

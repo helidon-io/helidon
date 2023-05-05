@@ -22,19 +22,19 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.DefaultDependenciesInfo;
-import io.helidon.pico.api.DefaultDependencyInfo;
-import io.helidon.pico.api.DefaultInjectionPointInfo;
-import io.helidon.pico.api.DefaultQualifierAndValue;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.DependenciesInfoDefault;
 import io.helidon.pico.api.DependencyInfo;
+import io.helidon.pico.api.DependencyInfoDefault;
 import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.InjectionPointInfoDefault;
 import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 
 /**
  * This is the class the code-generator will target that will be used at runtime for a service provider to build up its
@@ -68,9 +68,9 @@ public class Dependencies {
         Objects.requireNonNull(parentDeps);
         Objects.requireNonNull(deps);
 
-        DefaultDependenciesInfo.Builder builder = (deps instanceof DefaultDependenciesInfo.Builder)
-                ? (DefaultDependenciesInfo.Builder) deps
-                : DefaultDependenciesInfo.toBuilder(deps);
+        DependenciesInfoDefault.Builder builder = (deps instanceof DependenciesInfoDefault.Builder)
+                ? (DependenciesInfoDefault.Builder) deps
+                : DependenciesInfoDefault.toBuilder(deps);
         parentDeps.serviceInfoDependencies().forEach(builder::addServiceInfoDependency);
         return forceBuild(builder);
     }
@@ -186,15 +186,15 @@ public class Dependencies {
     private static DependenciesInfo forceBuild(DependenciesInfo deps) {
         Objects.requireNonNull(deps);
 
-        if (deps instanceof DefaultDependenciesInfo.Builder) {
-            deps = ((DefaultDependenciesInfo.Builder) deps).build();
+        if (deps instanceof DependenciesInfoDefault.Builder) {
+            deps = ((DependenciesInfoDefault.Builder) deps).build();
         }
 
         return deps;
     }
 
     private static Supplier<String> toPackageName(String serviceTypeName) {
-        return () -> toPackageName(DefaultTypeName.createFromTypeName(serviceTypeName));
+        return () -> toPackageName(TypeNameDefault.createFromTypeName(serviceTypeName));
     }
 
     private static String toPackageName(TypeName typeName) {
@@ -206,11 +206,11 @@ public class Dependencies {
      * It is specialized in that it validates and decorates over the normal builder, and provides a more streamlined interface.
      */
     public static class BuilderContinuation {
-        private DefaultDependenciesInfo.Builder builder;
-        private DefaultInjectionPointInfo.Builder ipInfoBuilder;
+        private DependenciesInfoDefault.Builder builder;
+        private InjectionPointInfoDefault.Builder ipInfoBuilder;
 
         private BuilderContinuation(String serviceTypeName) {
-            this.builder = DefaultDependenciesInfo.builder()
+            this.builder = DependenciesInfoDefault.builder()
                     .fromServiceTypeName(serviceTypeName);
         }
 
@@ -310,7 +310,7 @@ public class Dependencies {
         public BuilderContinuation add(InjectionPointInfo ipInfo) {
             commitLastDependency();
 
-            ipInfoBuilder = DefaultInjectionPointInfo.toBuilder(ipInfo);
+            ipInfoBuilder = InjectionPointInfoDefault.toBuilder(ipInfo);
             return this;
         }
 
@@ -399,7 +399,7 @@ public class Dependencies {
          * @return the builder
          */
         public BuilderContinuation named(String val) {
-            ipInfoBuilder.addQualifier(DefaultQualifierAndValue.createNamed(val));
+            ipInfoBuilder.addQualifier(QualifierAndValueDefault.createNamed(val));
             return this;
         }
 
@@ -411,7 +411,7 @@ public class Dependencies {
          */
         // note: called from generated code
         public BuilderContinuation addQualifier(Class<? extends Annotation> val) {
-            ipInfoBuilder.addQualifier(DefaultQualifierAndValue.create(val));
+            ipInfoBuilder.addQualifier(QualifierAndValueDefault.create(val));
             return this;
         }
 
@@ -483,7 +483,7 @@ public class Dependencies {
             commitLastDependency();
 
             // thus begins a new builder continuation round
-            ipInfoBuilder = DefaultInjectionPointInfo.builder()
+            ipInfoBuilder = InjectionPointInfoDefault.builder()
                     .serviceTypeName(serviceTypeName)
                     .access(access)
                     .elementKind(kind)
@@ -509,7 +509,7 @@ public class Dependencies {
                     id = toId(ipInfoBuilder);
                     ipInfoBuilder.baseIdentity(toBaseIdentity(ipInfoBuilder));
                     ipInfoBuilder.id(id);
-                    ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+                    ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
                             .addContractImplemented(ipInfoBuilder.elementTypeName())
                             .qualifiers(ipInfoBuilder.qualifiers())
                             .build();
@@ -518,7 +518,7 @@ public class Dependencies {
                             .build();
                     ipInfoBuilder = null;
 
-                    DependencyInfo dep = DefaultDependencyInfo.builder()
+                    DependencyInfo dep = DependencyInfoDefault.builder()
                             .addInjectionPointDependency(ipInfo)
                             .dependencyTo(ipInfo.dependencyToServiceInfo())
                             .build();

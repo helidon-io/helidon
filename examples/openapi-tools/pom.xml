@@ -32,7 +32,8 @@
     <name>Helidon OpenApi Tools Examples</name>
 
     <modules>
-        <module>quickstart-mp</module>
-        <module>quickstart-se</module>
+        <!-- Temporarily removed until we regenerate the examples after updating the generators. -->
+<!--        <module>quickstart-mp</module>-->
+<!--        <module>quickstart-se</module>-->
     </modules>
 </project>

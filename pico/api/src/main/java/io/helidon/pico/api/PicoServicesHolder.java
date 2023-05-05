@@ -59,7 +59,7 @@ public abstract class PicoServicesHolder {
             if (INSTANCE.get().picoServices == null) {
                 System.getLogger(PicoServices.class.getName())
                         .log(System.Logger.Level.WARNING,
-                             DefaultPicoServicesConfig.NAME + " runtime services not detected on the classpath");
+                             PicoServicesConfig.NAME + " runtime services not detected on the classpath");
             }
         }
         return Optional.ofNullable(INSTANCE.get().picoServices);

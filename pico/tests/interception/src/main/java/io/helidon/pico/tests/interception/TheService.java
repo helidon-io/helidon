@@ -20,8 +20,14 @@ import jakarta.inject.Singleton;
 
 @Singleton
 class TheService {
+    private boolean throwException;
+
     @Modify
     TheService() {
+    }
+
+    void throwException(boolean throwException) {
+        this.throwException = throwException;
     }
 
     // args:
@@ -33,16 +39,32 @@ class TheService {
     @Repeat
     @Return
     String intercepted(String message, boolean modify, boolean repeat, boolean doReturn) {
+        if (throwException) {
+            throwException = false;
+            throw new RuntimeException("forced");
+        }
+
         return message;
     }
 
     @Repeat
     @Return
     String interceptedSubset(String message, boolean modify, boolean repeat, boolean doReturn) {
+        if (throwException) {
+            throwException = false;
+            throw new RuntimeException("forced");
+        }
+
         return message;
     }
 
     String notIntercepted(String message, boolean modify, boolean repeat, boolean doReturn) {
+        if (throwException) {
+            throwException = false;
+            throw new RuntimeException("forced");
+        }
+
         return message;
     }
+
 }

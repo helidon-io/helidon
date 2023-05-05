@@ -23,16 +23,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.api.DefaultServiceInfo;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
+import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.testing.ReflectionBasedSingletonServiceProvider;
@@ -46,12 +46,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.pico.api.DefaultQualifierAndValue.create;
-import static io.helidon.pico.api.DefaultQualifierAndValue.createNamed;
 import static io.helidon.pico.api.PicoServicesConfig.KEY_PERMITS_DYNAMIC;
 import static io.helidon.pico.api.PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS;
 import static io.helidon.pico.api.PicoServicesConfig.KEY_USES_COMPILE_TIME_MODULES;
 import static io.helidon.pico.api.PicoServicesConfig.NAME;
+import static io.helidon.pico.api.QualifierAndValueDefault.create;
+import static io.helidon.pico.api.QualifierAndValueDefault.createNamed;
 import static io.helidon.pico.testing.PicoTestingSupport.basicTestableConfig;
 import static io.helidon.pico.testing.PicoTestingSupport.bind;
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
@@ -90,7 +90,7 @@ class InterceptorRuntimeTest {
 
     @Test
     void createNoArgBasedInterceptorSource() throws Exception {
-        TypeName interceptorTypeName = DefaultTypeName.create(XImpl$$Pico$$Interceptor.class);
+        TypeName interceptorTypeName = TypeNameDefault.create(XImpl$$Pico$$Interceptor.class);
         String path = toFilePath(interceptorTypeName);
         File file = new File("./target/generated-sources/annotations", path);
         assertThat(file.exists(), is(true));
@@ -102,7 +102,7 @@ class InterceptorRuntimeTest {
     @Disabled // will be handled in https://github.com/helidon-io/helidon/issues/6542
     @Test
     void createInterfaceBasedInterceptorSource() throws Exception {
-        TypeName interceptorTypeName = DefaultTypeName.create(YImpl$$Pico$$Interceptor.class);
+        TypeName interceptorTypeName = TypeNameDefault.create(YImpl$$Pico$$Interceptor.class);
         String path = toFilePath(interceptorTypeName);
         File file = new File("./target/generated-sources/annotations", path);
         assertThat(file.exists(), is(true));
@@ -113,7 +113,7 @@ class InterceptorRuntimeTest {
 
     @Test
     void runtimeWithNoInterception() throws Exception {
-        ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(Closeable.class.getName())
                 .includeIntercepted(true)
                 .build();
@@ -123,7 +123,7 @@ class InterceptorRuntimeTest {
                    contains("XImpl$$Pico$$Interceptor:INIT", "YImpl$$Pico$$Interceptor:INIT",
                             "XImpl:INIT", "YImpl:INIT"));
 
-        criteria = DefaultServiceInfoCriteria.builder()
+        criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(Closeable.class.getName())
                 .includeIntercepted(false)
                 .build();
@@ -155,16 +155,18 @@ class InterceptorRuntimeTest {
         assertThat(x.methodZ(),
                    equalTo("methodZ"));
         PicoException pe = assertThrows(PicoException.class, x::close);
-        assertThat(pe.getMessage(),
-                   equalTo("forced: service provider: XImpl:ACTIVE"));
+        assertThat("the error handling should be the same if there are interceptors or not",
+                   pe.getMessage(),
+                   equalTo("Error in interceptor chain processing: service provider: XImpl:ACTIVE"));
         RuntimeException re = assertThrows(RuntimeException.class, x::throwRuntimeException);
-        assertThat(re.getMessage(),
-                   equalTo("forced"));
+        assertThat("the error handling should be the same if there are interceptors or not",
+                   re.getMessage(),
+                   equalTo("Error in interceptor chain processing: service provider: XImpl:ACTIVE"));
 
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
         ServiceProvider<?> yimplProvider = services
                 .lookupFirst(
-                        DefaultServiceInfoCriteria.builder()
+                        ServiceInfoCriteriaDefault.builder()
                                 .addContractImplemented(Closeable.class.getName())
                                 .qualifiers(Set.of(create(Named.class, "ClassY")))
                                 .build());
@@ -192,7 +194,7 @@ class InterceptorRuntimeTest {
         setUp(config);
         bind(picoServices, ReflectionBasedSingletonServiceProvider
                               .create(TestNamedInterceptor.class,
-                                      DefaultServiceInfo.builder()
+                                      ServiceInfoDefault.builder()
                                               .serviceTypeName(TestNamedInterceptor.class.getName())
                                               .addQualifier(createNamed(TestNamed.class.getName()))
                                               .addQualifier(createNamed(InterceptorBasedAnno.class.getName()))
@@ -238,7 +240,7 @@ class InterceptorRuntimeTest {
                    equalTo("forced: service provider: XImpl:ACTIVE"));
         RuntimeException re = assertThrows(RuntimeException.class, xIntercepted::throwRuntimeException);
         assertThat(re.getMessage(),
-                   equalTo("forced"));
+                   equalTo("forced: service provider: XImpl:ACTIVE"));
 
         assertThat(TestNamedInterceptor.ctorCount.get(),
                    equalTo(1));
@@ -246,7 +248,7 @@ class InterceptorRuntimeTest {
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
         ServiceProvider<?> yimplProvider = services
                 .lookupFirst(
-                        DefaultServiceInfoCriteria.builder()
+                        ServiceInfoCriteriaDefault.builder()
                                 .addContractImplemented(Closeable.class.getName())
                                 .qualifiers(Set.of(create(Named.class, "ClassY")))
                                 .build());

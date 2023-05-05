@@ -23,9 +23,9 @@ import java.util.function.Function;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
-import io.helidon.pico.api.DefaultInvocationContext;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
+import io.helidon.pico.api.InvocationContextDefault;
 import io.helidon.pico.api.InvocationException;
 import io.helidon.pico.api.ServiceProvider;
 
@@ -61,7 +61,7 @@ public abstract class InterceptedMethod<I, V> implements Function<Object[], V> {
                                 TypedElementName methodInfo,
                                 TypedElementName[] methodArgInfo) {
         this.impl = Objects.requireNonNull(interceptedImpl);
-        this.ctx =  DefaultInvocationContext.builder()
+        this.ctx =  InvocationContextDefault.builder()
                 .serviceProvider(serviceProvider)
                 .serviceTypeName(serviceTypeName)
                 .classAnnotations(serviceLevelAnnotations)
@@ -88,7 +88,7 @@ public abstract class InterceptedMethod<I, V> implements Function<Object[], V> {
                                 Collection<Provider<Interceptor>> interceptors,
                                 TypedElementName methodInfo) {
         this.impl = Objects.requireNonNull(interceptedImpl);
-        this.ctx =  DefaultInvocationContext.builder()
+        this.ctx =  InvocationContextDefault.builder()
                 .serviceProvider(serviceProvider)
                 .serviceTypeName(serviceTypeName)
                 .classAnnotations(serviceLevelAnnotations)
@@ -128,10 +128,13 @@ public abstract class InterceptedMethod<I, V> implements Function<Object[], V> {
     public V apply(Object... args) {
         try {
             return invoke(args);
-        } catch (RuntimeException e) {
-            throw e;
         } catch (Throwable t) {
-            throw new InvocationException(t.getMessage(), t, ctx.serviceProvider());
+            boolean targetWasCalledSuccessfully = false;
+            if (t instanceof InvocationException) {
+                targetWasCalledSuccessfully = ((InvocationException) t).targetWasCalled();
+            }
+
+            throw new InvocationException(t.getMessage(), t, ctx.serviceProvider(), targetWasCalledSuccessfully);
         }
     }
 

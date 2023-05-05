@@ -32,22 +32,22 @@ import java.util.stream.Collectors;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.CallingContext;
 import io.helidon.pico.api.CallingContextFactory;
-import io.helidon.pico.api.DefaultMetrics;
-import io.helidon.pico.api.DefaultQualifierAndValue;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
 import io.helidon.pico.api.InjectionException;
 import io.helidon.pico.api.Intercepted;
 import io.helidon.pico.api.Metrics;
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.MetricsDefault;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.api.ServiceBinder;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.ServiceProviderBindable;
 import io.helidon.pico.api.ServiceProviderProvider;
@@ -171,7 +171,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     }
 
     static InjectionException resolutionBasedInjectionError(String serviceTypeName) {
-        return resolutionBasedInjectionError(DefaultServiceInfoCriteria.builder().serviceTypeName(serviceTypeName).build());
+        return resolutionBasedInjectionError(ServiceInfoCriteriaDefault.builder().serviceTypeName(serviceTypeName).build());
     }
 
     /**
@@ -219,7 +219,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
                                                         boolean expected) {
-        DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(type.getName())
                 .build();
         return (Optional) lookupFirst(criteria, expected);
@@ -230,9 +230,9 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     public <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
                                                         String name,
                                                         boolean expected) {
-        DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(type.getName())
-                .addQualifier(DefaultQualifierAndValue.createNamed(name))
+                .addQualifier(QualifierAndValueDefault.createNamed(name))
                 .build();
         return (Optional) lookupFirst(criteria, expected);
     }
@@ -248,7 +248,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
     public <T> List<ServiceProvider<T>> lookupAll(Class<T> type) {
-        DefaultServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
+        ServiceInfoCriteria serviceInfo = ServiceInfoCriteriaDefault.builder()
                 .addContractImplemented(type.getName())
                 .build();
         return (List) lookup(serviceInfo, false, Integer.MAX_VALUE);
@@ -290,7 +290,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         if (interceptedQualifier.isPresent()) {
             // assumption: expected that the root service provider is registered prior to any interceptors
             String interceptedServiceTypeName = Objects.requireNonNull(interceptedQualifier.get().value().orElseThrow());
-            ServiceProvider<?> interceptedSp = lookupFirst(DefaultServiceInfoCriteria.builder()
+            ServiceProvider<?> interceptedSp = lookupFirst(ServiceInfoCriteriaDefault.builder()
                                                                    .serviceTypeName(interceptedServiceTypeName)
                                                                    .build(), true).orElse(null);
             if (interceptedSp instanceof ServiceProviderBindable) {
@@ -340,7 +340,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     }
 
     Metrics metrics() {
-        return DefaultMetrics.builder()
+        return MetricsDefault.builder()
                 .serviceCount(size())
                 .lookupCount(lookupCount.get())
                 .cacheLookupCount(cacheLookupCount.get())
@@ -460,7 +460,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     }
 
     void bind(PicoServices picoServices,
-              Module module,
+              ModuleComponent module,
               boolean initializing) {
         String moduleName = module.named().orElse(module.getClass().getName());
         boolean isLoggable = DefaultPicoServices.LOGGER.isLoggable(System.Logger.Level.TRACE);
@@ -475,7 +475,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         }
     }
 
-    private ServiceProvider<?> createServiceProvider(Module module,
+    private ServiceProvider<?> createServiceProvider(ModuleComponent module,
                                                      String moduleName,
                                                      PicoServices picoServices) {
         return new PicoModuleServiceProvider(module, moduleName, picoServices);

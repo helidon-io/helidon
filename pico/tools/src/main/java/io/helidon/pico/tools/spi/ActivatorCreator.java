@@ -37,7 +37,7 @@ import io.helidon.pico.tools.InterceptorCreatorResponse;
  * Activators are only generated if your service is marked as a {@code jakarta.inject.Singleton} scoped service.
  * <p>
  * All activators for your jar module are then aggregated and registered into a pico code-generated
- * {@link io.helidon.pico.api.Module} class.
+ * {@link io.helidon.pico.api.ModuleComponent} class.
  *
  * @see io.helidon.pico.tools.ActivatorCreatorProvider
  */
@@ -46,7 +46,7 @@ public interface ActivatorCreator {
 
     /**
      * Used during annotation processing in compile time to automatically generate {@link io.helidon.pico.api.Activator}'s
-     * and optionally an aggregating {@link io.helidon.pico.api.Module} for those activators.
+     * and optionally an aggregating {@link io.helidon.pico.api.ModuleComponent} for those activators.
      *
      * @param request the request for what to generate
      * @return the response result for the create operation

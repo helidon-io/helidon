@@ -18,7 +18,6 @@ package io.helidon.pico.configdriven.runtime;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,12 +33,12 @@ import java.util.function.Supplier;
 import io.helidon.builder.AttributeVisitor;
 import io.helidon.builder.config.ConfigBean;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
-import io.helidon.builder.config.spi.ConfigProvider;
+import io.helidon.builder.config.spi.GeneratedConfigBean;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigException;
-import io.helidon.config.ConfigValue;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServiceProviderException;
 import io.helidon.pico.api.PicoServices;
@@ -49,7 +48,6 @@ import io.helidon.pico.runtime.ServiceProviderComparator;
 
 import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.hasValue;
 import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.safeDowncastOf;
-import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.toNumeric;
 import static io.helidon.pico.configdriven.runtime.ConfigDrivenUtils.validatedConfigKey;
 
 /**
@@ -68,10 +66,10 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
     private static final boolean FORCE_VALIDATE_USING_CONFIG_ATTRIBUTES = true;
 
     private final AtomicBoolean initializing = new AtomicBoolean();
-    private final Map<ConfiguredServiceProvider<?, ?>, ConfigBeanInfo> configuredServiceProviderMetaConfigBeanMap =
-            new ConcurrentHashMap<>();
-    private final Map<String, List<ConfiguredServiceProvider<?, ?>>> configuredServiceProvidersByConfigKey =
-            new ConcurrentHashMap<>();
+    private final Map<ConfiguredServiceProvider<?, GeneratedConfigBean>, ConfigBeanInfo>
+            configuredServiceProviderMetaConfigBeanMap = new ConcurrentHashMap<>();
+    private final Map<String, List<ConfiguredServiceProvider<?, GeneratedConfigBean>>>
+            configuredServiceProvidersByConfigKey = new ConcurrentHashMap<>();
     private CountDownLatch initialized = new CountDownLatch(1);
 
     DefaultPicoConfigBeanRegistry() {
@@ -152,7 +150,8 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
                     + " with " + configuredByQualifier.value());
         }
 
-        Object prev = configuredServiceProviderMetaConfigBeanMap.put(configuredServiceProvider, metaConfigBeanInfo);
+        Object prev = configuredServiceProviderMetaConfigBeanMap
+                .put((ConfiguredServiceProvider<?, GeneratedConfigBean>) configuredServiceProvider, metaConfigBeanInfo);
         assert (prev == null) : "duplicate service provider initialization occurred";
 
         String configKey = validatedConfigKey(metaConfigBeanInfo);
@@ -161,12 +160,12 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
             if (cspList == null) {
                 cspList = new ArrayList<>();
             }
-            Optional<ConfiguredServiceProvider<?, ?>> prevCsp = cspList.stream()
+            Optional<ConfiguredServiceProvider<?, GeneratedConfigBean>> prevCsp = cspList.stream()
                     .filter(it -> cspType.equals(it.configBeanType()))
                     .findAny();
             assert (prevCsp.isEmpty()) : "duplicate service provider initialization occurred";
 
-            boolean added = cspList.add(configuredServiceProvider);
+            boolean added = cspList.add((ConfiguredServiceProvider<?, GeneratedConfigBean>) configuredServiceProvider);
             assert (added);
 
             return cspList;
@@ -185,8 +184,8 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
             Config config = PicoServices.realizedGlobalBootStrap().config().orElse(null);
             if (config == null) {
                 LOGGER.log(System.Logger.Level.WARNING,
-                           "unable to initialize - no config to read - be sure to provide or initialize "
-                                   + ConfigProvider.class.getName() + " prior to service activation.");
+                           "Unable to initialize - there is no config to read - be sure to initialize "
+                                   + Bootstrap.class.getName() + " config prior to service activation.");
                 reset(true);
                 return;
             }
@@ -268,7 +267,7 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
     @Override
     public Map<String, ?> configBeanMapByConfigKey(String key,
                                                    String fullConfigKey) {
-        List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
+        List<ConfiguredServiceProvider<?, GeneratedConfigBean>> cspsUsingSameKey =
                 configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
         if (cspsUsingSameKey == null) {
             return Map.of();
@@ -294,8 +293,8 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <CB> Map<String, Collection<CB>> allConfigBeans() {
-        Map<String, Collection<CB>> result = new TreeMap<>(AbstractConfiguredServiceProvider.configBeanComparator());
+    public <GCB extends GeneratedConfigBean> Map<String, Collection<GCB>> allConfigBeans() {
+        Map<String, Collection<GCB>> result = new TreeMap<>(AbstractConfiguredServiceProvider.configBeanComparator());
 
         configuredServiceProvidersByConfigKey.forEach((key, value) -> value.stream()
                 .filter(csp -> csp instanceof AbstractConfiguredServiceProvider)
@@ -307,7 +306,7 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
                             if (v == null) {
                                 v = new ArrayList<>();
                             }
-                            v.add((CB) value1);
+                            v.add((GCB) value1);
                             return v;
                         });
                     });
@@ -320,82 +319,55 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
         return (0 == initialized.getCount());
     }
 
-    <T, CB> void loadConfigBeans(io.helidon.config.Config config,
-                                 ConfiguredServiceProvider<T, CB> configuredServiceProvider,
-                                 ConfigBeanInfo metaConfigBeanInfo,
-                                 Map<String, Map<String, Object>> metaAttributes) {
+    <T, GCB extends GeneratedConfigBean> void loadConfigBeans(io.helidon.config.Config config,
+                                                              ConfiguredServiceProvider<T, GCB> configuredServiceProvider,
+                                                              ConfigBeanInfo metaConfigBeanInfo,
+                                                              Map<String, Map<String, Object>> metaAttributes) {
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             LOGGER.log(System.Logger.Level.DEBUG, "Loading config bean(s) for "
                     + configuredServiceProvider.serviceType() + " with config: "
                     + config.key().toString());
         }
 
-        ConfigValue<List<io.helidon.config.Config>> nodeList = config.asNodeList();
-        Object baseConfigBean = maybeLoadBaseConfigBean(config, nodeList, configuredServiceProvider);
-        Map<String, CB> mapOfInstanceBasedConfig = maybeLoadConfigBeans(nodeList, configuredServiceProvider);
-
-        // validate what we've loaded, to ensure it complies to the meta config info policy
-        if (!metaConfigBeanInfo.repeatable() && !mapOfInstanceBasedConfig.isEmpty()) {
-            throw new ConfigException("Expected to only have a single base, non-repeatable configuration for "
-                                              + configuredServiceProvider.serviceType() + " with config: "
-                                              + config.key().toString());
-        }
-
-        if (baseConfigBean != null) {
+        if (metaConfigBeanInfo.repeatable()) {
+            // this config bean may be more than once - if list, use children, otherwise use child nodes
+            registerChildConfigBeans(config, configuredServiceProvider, metaAttributes);
+        } else {
+            // not a repeatable one, use this node directly, if list, this is a problem
+            if (config.isList()) {
+                throw new ConfigException("Expected to only have a single base, non-repeatable configuration for "
+                                                  + configuredServiceProvider.serviceType() + " with config: "
+                                                  + config.key().toString()
+                                                  + ", you can set repeatable=\"true\" when expecting a list.");
+            }
+            GCB baseConfigBean = toConfigBean(config, configuredServiceProvider);
             registerConfigBean(baseConfigBean, null, config, configuredServiceProvider, metaAttributes);
         }
-        mapOfInstanceBasedConfig
-                .forEach((instanceId, configBean) ->
-                                 registerConfigBean(configBean,
-                                                    config.key().toString() + "." + instanceId,
-                                                    config.get(instanceId),
-                                                    configuredServiceProvider,
-                                                    metaAttributes));
     }
 
-    /**
-     * The base config bean must be a root config, and is only available if there is a non-numeric
-     * key in our node list (e.g., "x.y" not "x.1.y").
-     */
-    <T, CB> CB maybeLoadBaseConfigBean(io.helidon.config.Config config,
-                                       ConfigValue<List<io.helidon.config.Config>> nodeList,
-                                       ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
-        boolean hasAnyNonNumericNodes = nodeList.get().stream()
-                .anyMatch(cfg -> toNumeric(cfg.name()).isEmpty());
-        if (!hasAnyNonNumericNodes) {
-            return null;
-        }
-
-        return toConfigBean(config, configuredServiceProvider);
-    }
-
-    /**
-     * These are any {config}.N instances, not the base w/o the N.
-     */
-    <T, CB> Map<String, CB> maybeLoadConfigBeans(ConfigValue<List<io.helidon.config.Config>> nodeList,
-                                                 ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
-        Map<String, CB> result = new LinkedHashMap<>();
-
-        nodeList.get().stream()
-                .filter(cfg -> toNumeric(cfg.name()).isPresent())
-                .map(ConfigDrivenUtils::safeDowncastOf)
-                .forEach(cfg -> {
-                    String key = cfg.name();
-                    CB configBean = toConfigBean(cfg, configuredServiceProvider);
-                    Object prev = result.put(key, configBean);
-                    assert (prev == null) : prev + " and " + configBean;
+    <T, CB extends GeneratedConfigBean> void registerChildConfigBeans(io.helidon.config.Config config,
+                                          ConfiguredServiceProvider<T, CB> configuredServiceProvider,
+                                          Map<String, Map<String, Object>> metaAttributes) {
+        config.asNodeList()
+                .ifPresent(list -> {
+                    list.forEach(beanCfg -> {
+                        // use explicit name, otherwise index or name of the config node (for lists, the name is 0 bases index)
+                        String name = beanCfg.get("name").asString().orElseGet(beanCfg::name);
+                        CB configBean = toConfigBean(beanCfg, configuredServiceProvider);
+                        registerConfigBean(configBean, name, beanCfg, configuredServiceProvider, metaAttributes);
+                    });
                 });
-
-        return result;
     }
 
-    <T, CB> CB toConfigBean(io.helidon.config.Config config,
-                            ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
-        CB configBean = Objects.requireNonNull(configuredServiceProvider.toConfigBean(config),
+
+    <T, GCB extends GeneratedConfigBean> GCB toConfigBean(io.helidon.config.Config config,
+                                                          ConfiguredServiceProvider<T, ?> configuredServiceProvider) {
+        GCB configBean = (GCB) Objects.requireNonNull(configuredServiceProvider.toConfigBean(config),
                                                "unable to create default config bean for " + configuredServiceProvider);
         if (configuredServiceProvider instanceof AbstractConfiguredServiceProvider) {
-            AbstractConfiguredServiceProvider<T, CB> csp = (AbstractConfiguredServiceProvider<T, CB>) configuredServiceProvider;
+            AbstractConfiguredServiceProvider<T, GCB> csp = (AbstractConfiguredServiceProvider<T, GCB>) configuredServiceProvider;
             csp.configBeanInstanceId(configBean, config.key().toString());
+            assert (config.name().equals(configBean.__name().orElseThrow())) : csp;
         }
 
         return configBean;
@@ -411,11 +383,11 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
      * @param metaAttributes the meta-attributes that captures the policy in a map like structure by attribute name
      * @throws PicoServiceProviderException if the provided config bean is not validated according to policy
      */
-    void validate(Object configBean,
-                  String key,
-                  Config config,
-                  AbstractConfiguredServiceProvider<Object, Object> csp,
-                  Map<String, Map<String, Object>> metaAttributes) {
+    <GCB extends GeneratedConfigBean> void validate(GCB configBean,
+                                                    String key,
+                                                    Config config,
+                                                    AbstractConfiguredServiceProvider<Object, GCB> csp,
+                                                    Map<String, Map<String, Object>> metaAttributes) {
         Set<String> problems = new LinkedHashSet<>();
         String instanceId = csp.toConfigBeanInstanceId(configBean);
         assert (hasValue(key));
@@ -474,19 +446,19 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
     }
 
     @SuppressWarnings("unchecked")
-    <CB> void registerConfigBean(Object configBean,
-                                 String instanceId,
-                                 Config config,
-                                 ConfiguredServiceProvider<?, CB> configuredServiceProvider,
-                                 Map<String, Map<String, Object>> metaAttributes) {
+    <GCB extends GeneratedConfigBean> void registerConfigBean(GCB configBean,
+                                                              String instanceId,
+                                                              Config config,
+                                                              ConfiguredServiceProvider<?, GCB> configuredServiceProvider,
+                                                              Map<String, Map<String, Object>> metaAttributes) {
         assert (configuredServiceProvider instanceof AbstractConfiguredServiceProvider);
-        AbstractConfiguredServiceProvider<Object, Object> csp =
-                (AbstractConfiguredServiceProvider<Object, Object>) configuredServiceProvider;
+        AbstractConfiguredServiceProvider<Object, GCB> csp =
+                (AbstractConfiguredServiceProvider<Object, GCB>) configuredServiceProvider;
 
         if (instanceId != null) {
             csp.configBeanInstanceId(configBean, instanceId);
         } else {
-            instanceId = configuredServiceProvider.toConfigBeanInstanceId((CB) configBean);
+            instanceId = configuredServiceProvider.toConfigBeanInstanceId((GCB) configBean);
         }
 
         if (DEFAULT_INSTANCE_ID.equals(instanceId)) {
@@ -513,7 +485,7 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
 
     private Set<?> configBeansByConfigKey(String key,
                                           Optional<String> optFullConfigKey) {
-        List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
+        List<ConfiguredServiceProvider<?, GeneratedConfigBean>> cspsUsingSameKey =
                 configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
         if (cspsUsingSameKey == null) {
             return Set.of();
@@ -561,9 +533,10 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
         LOGGER.log(System.Logger.Level.DEBUG, "finishing walking config tree");
     }
 
-    private void processRootLevelConfigBean(io.helidon.config.Config cfg,
-                                            ConfiguredServiceProvider<?, ?> configuredServiceProvider,
-                                            MetaConfigBeanInfo metaConfigBeanInfo) {
+    private void processRootLevelConfigBean(
+            io.helidon.config.Config cfg,
+            ConfiguredServiceProvider<?, GeneratedConfigBean> configuredServiceProvider,
+            MetaConfigBeanInfo metaConfigBeanInfo) {
         if (metaConfigBeanInfo.levelType() != ConfigBean.LevelType.ROOT) {
             return;
         }
@@ -574,14 +547,14 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
         if (config.exists()) {
             loadConfigBeans(config, configuredServiceProvider, metaConfigBeanInfo, metaAttributes);
         } else if (metaConfigBeanInfo.wantDefaultConfigBean()) {
-            Object cfgBean = Objects.requireNonNull(configuredServiceProvider.toConfigBean(cfg),
+            GeneratedConfigBean cfgBean = Objects.requireNonNull(configuredServiceProvider.toConfigBean(cfg),
                                                     "unable to create default config bean for " + configuredServiceProvider);
             registerConfigBean(cfgBean, DEFAULT_INSTANCE_ID, config, configuredServiceProvider, metaAttributes);
         }
     }
 
     private void processNestedLevelConfigBean(io.helidon.config.Config config,
-                                              ConfiguredServiceProvider<?, ?> configuredServiceProvider,
+                                              ConfiguredServiceProvider<?, GeneratedConfigBean> configuredServiceProvider,
                                               ConfigBeanInfo metaConfigBeanInfo) {
         if (metaConfigBeanInfo.levelType() != ConfigBean.LevelType.NESTED) {
             return;
@@ -597,7 +570,7 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
             // we start nested, since we've already processed the root level config beans previously
             if (depth > 0) {
                 String key = config.name();
-                List<ConfiguredServiceProvider<?, ?>> csps = configuredServiceProvidersByConfigKey.get(key);
+                List<ConfiguredServiceProvider<?, GeneratedConfigBean>> csps = configuredServiceProvidersByConfigKey.get(key);
                 if (csps != null && !csps.isEmpty()) {
                     csps.forEach(configuredServiceProvider -> {
                         ConfigBeanInfo metaConfigBeanInfo =

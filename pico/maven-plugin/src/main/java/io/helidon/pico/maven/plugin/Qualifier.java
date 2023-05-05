@@ -19,8 +19,8 @@ package io.helidon.pico.maven.plugin;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.QualifierAndValue;
 
 /**
@@ -54,7 +54,7 @@ public class Qualifier implements QualifierAndValue {
 
     @Override
     public TypeName typeName() {
-        return DefaultTypeName.createFromTypeName(qualifierTypeName);
+        return TypeNameDefault.createFromTypeName(qualifierTypeName);
     }
 
     @Override

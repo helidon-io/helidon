@@ -25,7 +25,7 @@ package io.helidon.pico.api;
  * <p>
  * Note: instances of this type are not eligible for injection.
  *
- * @see Module
+ * @see ModuleComponent
  */
 @Contract
 public interface Application extends OptionallyNamed {

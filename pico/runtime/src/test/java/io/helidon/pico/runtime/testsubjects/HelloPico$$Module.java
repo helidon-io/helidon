@@ -18,7 +18,7 @@ package io.helidon.pico.runtime.testsubjects;
 
 import java.util.Optional;
 
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.ServiceBinder;
 
 import jakarta.annotation.Generated;
@@ -28,7 +28,7 @@ import jakarta.inject.Singleton;
 @Generated(value = "example", comments = "API Version: n")
 @Singleton
 @Named(HelloPico$$Module.NAME)
-public final class HelloPico$$Module implements Module {
+public final class HelloPico$$Module implements ModuleComponent {
 
     public static final String NAME = "example";
 

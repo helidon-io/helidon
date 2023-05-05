@@ -133,12 +133,12 @@ library: Library(books=[MobyDickInBlue$$picoActivator@50134894:io.helidon.pico.e
 3. Pico generates a suggested <i>module-info.java</i> based upon analysis of your injection/dependency model (see ./target/pico/classes/module-info.java.pico). Hk2 does not have this feature.
 
 ```
-// @Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+// @Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
 module io.helidon.examples.pico.book {
     exports io.helidon.examples.pico.book;
-    // pico module - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+    // pico module - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     provides io.helidon.pico.Module with io.helidon.examples.pico.book.Pico$$Module;
-    // pico services - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
+    // pico services - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     requires transitive io.helidon.pico;
 }
 ```

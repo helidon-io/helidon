@@ -28,9 +28,9 @@ public interface HelidonConfigBeanRegistry {
     /**
      * Returns all config beans indexed by its config key.
      *
-     * @param <CB> the config bean type
+     * @param <GCB> the generated config bean type
      * @return all config beans
      */
-    <CB> Map<String, Collection<CB>> allConfigBeans();
+    <GCB extends GeneratedConfigBean> Map<String, Collection<GCB>> allConfigBeans();
 
 }

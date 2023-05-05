@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,18 @@
 package io.helidon.nima.webclient;
 
 import java.net.URI;
-import java.util.List;
-import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.spi.DnsResolver;
-import io.helidon.nima.webclient.spi.DnsResolverProvider;
 
 /**
  * Base class for HTTP implementations of {@link io.helidon.nima.webclient.WebClient}.
  */
 public class LoomClient implements WebClient {
-
-    private static final List<DnsResolverProvider> DNS_RESOLVER_PROVIDERS = HelidonServiceLoader
-            .builder(ServiceLoader.load(DnsResolverProvider.class)).build().asList();
     private static final LazyValue<Tls> EMPTY_TLS = LazyValue.create(() -> Tls.builder().build());
     private static final SocketOptions EMPTY_OPTIONS = SocketOptions.builder().build();
     private static final LazyValue<ExecutorService> EXECUTOR = LazyValue.create(() -> {
@@ -58,17 +51,8 @@ public class LoomClient implements WebClient {
         this.uri = builder.baseUri();
         this.tls = builder.tls() == null ? EMPTY_TLS.get() : builder.tls();
         this.channelOptions = builder.channelOptions() == null ? EMPTY_OPTIONS : builder.channelOptions();
-        if (builder.dnsResolver() == null) {
-            this.dnsResolver = DNS_RESOLVER_PROVIDERS.stream()
-                    .findFirst()
-                    .orElse(new DefaultDnsResolverProvider())
-                    .createDnsResolver();
-        } else {
-            this.dnsResolver = builder.dnsResolver();
-        }
-        this.dnsAddressLookup = builder.dnsAddressLookup() == null
-                ? DefaultDnsAddressLookupFinder.defaultDnsAddressLookup()
-                : builder.dnsAddressLookup();
+        this.dnsResolver = builder.dnsResolver();
+        this.dnsAddressLookup = builder.dnsAddressLookup();
     }
 
     /**

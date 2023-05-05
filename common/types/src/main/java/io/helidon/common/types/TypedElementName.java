@@ -21,7 +21,8 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Provides a way to describe method, field, or annotation attribute.
+ * Provides a way to describe a {@link TypeInfo#KIND_FIELD}, {@link TypeInfo#KIND_METHOD}, or {@link TypeInfo#KIND_PARAMETER}
+ * of a method.
  */
 public interface TypedElementName {
     /**
@@ -83,5 +84,21 @@ public interface TypedElementName {
      * @see io.helidon.common.types.TypeInfo
      */
     Set<String> modifierNames();
+
+    /**
+     * The enclosing type name for this typed element. Applicable when this instance represents a {@link TypeInfo#KIND_FIELD} or
+     * {@link TypeInfo#KIND_METHOD}.
+     *
+     * @return the enclosing type element
+     */
+    Optional<TypeName> enclosingTypeName();
+
+    /**
+     * Parameter arguments applicable if this type element represents a {@link TypeInfo#KIND_METHOD}. Each instance of this list
+     * will be the individual {@link TypeInfo#KIND_PARAMETER}'s for the method.
+     *
+     * @return the list of parameters belonging to this method if applicable
+     */
+    List<TypedElementName> parameterArguments();
 
 }

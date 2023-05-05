@@ -131,12 +131,12 @@ public abstract class AbstractCreator {
      * @param generatedAnno  the generator sticker value
      * @return the modified descriptor, fluent style
      */
-    DefaultModuleInfoDescriptor.Builder addPicoProviderRequirementsTo(DefaultModuleInfoDescriptor.Builder moduleInfo,
+    ModuleInfoDescriptorDefault.Builder addPicoProviderRequirementsTo(ModuleInfoDescriptorDefault.Builder moduleInfo,
                                                                       String generatedAnno) {
         Objects.requireNonNull(generatedAnno);
         // requirements on the pico services framework itself
         String preComment = "    // " + PicoServicesConfig.NAME + " services - Generated(" + generatedAnno + ")";
-        ModuleInfoDescriptor.addIfAbsent(moduleInfo, PICO_FRAMEWORK_MODULE, DefaultModuleInfoItem.builder()
+        ModuleInfoDescriptor.addIfAbsent(moduleInfo, PICO_FRAMEWORK_MODULE, ModuleInfoItemDefault.builder()
                 .requires(true)
                 .target(PICO_FRAMEWORK_MODULE)
                 .transitiveUsed(true)
@@ -157,9 +157,9 @@ public abstract class AbstractCreator {
         Map<TypeName, Set<TypeName>> contracts = req.contracts();
         Map<TypeName, Set<TypeName>> externalContracts = req.externalContracts();
 
-        DefaultModuleInfoDescriptor.Builder descriptorBuilder;
+        ModuleInfoDescriptorDefault.Builder descriptorBuilder;
         if (moduleInfoPath != null) {
-            descriptorBuilder = DefaultModuleInfoDescriptor
+            descriptorBuilder = ModuleInfoDescriptorDefault
                     .toBuilder(ModuleInfoDescriptor.create(Paths.get(moduleInfoPath)));
             if (hasValue(moduleName) && ModuleUtils.isUnnamedModuleName(descriptorBuilder.name())) {
                 descriptorBuilder.name(moduleName);
@@ -168,14 +168,14 @@ public abstract class AbstractCreator {
                     : "bad module name: " + moduleName + " targeting " + descriptorBuilder.name();
             moduleName = descriptorBuilder.name();
         } else {
-            descriptorBuilder = DefaultModuleInfoDescriptor.builder().name(moduleName);
+            descriptorBuilder = ModuleInfoDescriptorDefault.builder().name(moduleName);
             descriptorBuilder.headerComment("// @Generated(" + generatedAnno + ")");
         }
 
         boolean isTestModule = ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX.equals(classPrefixName);
         if (isTestModule) {
             String baseModuleName = ModuleUtils.normalizedBaseModuleName(moduleName);
-            ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, baseModuleName, DefaultModuleInfoItem.builder()
+            ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, baseModuleName, ModuleInfoItemDefault.builder()
                     .requires(true)
                     .target(baseModuleName)
                     .transitiveUsed(true));
@@ -184,12 +184,12 @@ public abstract class AbstractCreator {
         if (isModuleCreated && (moduleTypeName != null)) {
             if (!isTestModule) {
                 ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, moduleTypeName.packageName(),
-                                                 DefaultModuleInfoItem.builder()
+                                                 ModuleInfoItemDefault.builder()
                                                          .exports(true)
                                                          .target(moduleTypeName.packageName()));
             }
             ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, TypeNames.PICO_MODULE,
-                                             DefaultModuleInfoItem.builder()
+                                             ModuleInfoItemDefault.builder()
                                                      .provides(true)
                                                      .target(TypeNames.PICO_MODULE)
                                                      .addWithOrTo(moduleTypeName.name())
@@ -201,12 +201,12 @@ public abstract class AbstractCreator {
         if (isApplicationCreated && applicationTypeName != null) {
             if (!isTestModule) {
                 ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, applicationTypeName.packageName(),
-                                                 DefaultModuleInfoItem.builder()
+                                                 ModuleInfoItemDefault.builder()
                                                          .exports(true)
                                                          .target(applicationTypeName.packageName()));
             }
             ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, TypeNames.PICO_APPLICATION,
-                                             DefaultModuleInfoItem.builder()
+                                             ModuleInfoItemDefault.builder()
                                                      .provides(true)
                                                      .target(TypeNames.PICO_APPLICATION)
                                                      .addWithOrTo(applicationTypeName.name())
@@ -223,7 +223,7 @@ public abstract class AbstractCreator {
                     continue;
                 }
 
-                DefaultModuleInfoItem.Builder itemBuilder = DefaultModuleInfoItem.builder()
+                ModuleInfoItemDefault.Builder itemBuilder = ModuleInfoItemDefault.builder()
                         .requires(true)
                         .target(externalModuleName);
                 if (hasValue(preComment)) {
@@ -244,7 +244,7 @@ public abstract class AbstractCreator {
                 continue;
             }
 
-            DefaultModuleInfoItem.Builder itemBuilder = DefaultModuleInfoItem.builder()
+            ModuleInfoItemDefault.Builder itemBuilder = ModuleInfoItemDefault.builder()
                     .uses(true)
                     .target(cn.name());
             if (hasValue(preComment)) {
@@ -267,7 +267,7 @@ public abstract class AbstractCreator {
                             continue;
                         }
 
-                        DefaultModuleInfoItem.Builder itemBuilder = DefaultModuleInfoItem.builder()
+                        ModuleInfoItemDefault.Builder itemBuilder = ModuleInfoItemDefault.builder()
                                 .exports(true)
                                 .target(packageName);
                         if (hasValue(preComment)) {
@@ -303,7 +303,7 @@ public abstract class AbstractCreator {
         if (moduleInfoFilePath == null) {
             moduleInfoFilePath = servicesToProcess.lastKnownModuleInfoFilePath();
         }
-        return DefaultCodeGenPaths.builder()
+        return CodeGenPathsDefault.builder()
                 .moduleInfoPath(Optional.ofNullable((moduleInfoFilePath != null) ? moduleInfoFilePath.toString() : null))
                 .build();
     }

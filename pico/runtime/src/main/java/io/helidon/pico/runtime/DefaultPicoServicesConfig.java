@@ -29,8 +29,8 @@ class DefaultPicoServicesConfig {
     private DefaultPicoServicesConfig() {
     }
 
-    static io.helidon.pico.api.DefaultPicoServicesConfig.Builder createDefaultConfigBuilder() {
-        return io.helidon.pico.api.DefaultPicoServicesConfig.builder()
+    static io.helidon.pico.api.PicoServicesConfigDefault.Builder createDefaultConfigBuilder() {
+        return io.helidon.pico.api.PicoServicesConfigDefault.builder()
                 .providerName(PROVIDER)
                 .providerVersion(Versions.CURRENT_PICO_VERSION);
     }

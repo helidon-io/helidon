@@ -33,7 +33,7 @@ import io.helidon.builder.config.ConfigBean;
 import io.helidon.builder.config.spi.ConfigBeanBuilderValidator;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.config.spi.ConfigResolver;
-import io.helidon.builder.config.spi.DefaultConfigResolverRequest;
+import io.helidon.builder.config.spi.ConfigResolverRequestDefault;
 import io.helidon.builder.config.spi.GeneratedConfigBean;
 import io.helidon.builder.config.spi.GeneratedConfigBeanBase;
 import io.helidon.builder.config.spi.GeneratedConfigBeanBuilder;
@@ -46,10 +46,10 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.DefaultAnnotationAndValue;
-import io.helidon.common.types.DefaultTypeName;
+import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -153,12 +153,12 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
 
     @Override
     protected Optional<TypeName> baseExtendsTypeName(BodyContext ctx) {
-        return Optional.of(DefaultTypeName.create(GeneratedConfigBeanBase.class));
+        return Optional.of(TypeNameDefault.create(GeneratedConfigBeanBase.class));
     }
 
     @Override
     protected Optional<TypeName> baseExtendsBuilderTypeName(BodyContext ctx) {
-        return Optional.of(DefaultTypeName.create(GeneratedConfigBeanBuilderBase.class));
+        return Optional.of(TypeNameDefault.create(GeneratedConfigBeanBuilderBase.class));
     }
 
     @Override
@@ -208,12 +208,12 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                                    String tag,
                                    AtomicBoolean needsCustomMapOf) {
         builder.append("\t\t").append(tag);
-        builder.append(".put(\"__meta\", Map.of(").append(ConfigBeanInfo.class.getName());
+        builder.append(".put(" + ConfigBeanInfo.class.getName() + ".TAG_META, Map.of(").append(ConfigBeanInfo.class.getName());
         builder.append(".class.getName(),\n\t\t\t\t").append(MetaConfigBeanInfo.class.getName()).append(".builder()\n");
         appendConfigBeanInfoAttributes(builder,
                                        ctx.typeInfo(),
-                                       DefaultAnnotationAndValue
-                                               .findFirst(ConfigBean.class.getTypeName(),
+                                       AnnotationAndValueDefault
+                                               .findFirst(ConfigBean.class,
                                                           ctx.typeInfo().annotations()).orElseThrow());
         builder.append("\t\t\t\t\t\t.build()));\n");
         super.appendMetaProps(builder, ctx, tag, needsCustomMapOf);
@@ -325,12 +325,12 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                 }
 
                 builder.append("\t\t\tctx.resolver().").append(ofClause);
-                builder.append("(ctx, __metaAttributes(), ").append(DefaultConfigResolverRequest.class.getPackage().getName());
-                builder.append(".DefaultConfigResolver");
+                builder.append("(ctx, __metaAttributes(), ").append(ConfigResolverRequestDefault.class.getPackage().getName());
+                builder.append(".ConfigResolver");
                 if (isMap) {
                     builder.append("Map");
                 }
-                builder.append("Request.builder()\n\t\t\t\t\t");
+                builder.append("RequestDefault.builder()\n\t\t\t\t\t");
                 builder.append(".configKey(\"").append(configKey);
                 builder.append("\").attributeName(\"").append(attrName).append("\")");
                 builder.append(".valueType(").append(outerTypeName).append(".class)");
@@ -374,11 +374,11 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                                                    String prefix,
                                                    TypeInfo typeInfo) {
         typeInfo.referencedTypeNamesToAnnotations().forEach((k, v) -> {
-            AnnotationAndValue builderAnnotation = DefaultAnnotationAndValue
-                    .findFirst(io.helidon.builder.Builder.class.getName(), v).orElse(null);
+            AnnotationAndValue builderAnnotation = AnnotationAndValueDefault
+                    .findFirst(io.helidon.builder.Builder.class, v).orElse(null);
             if (builderAnnotation == null) {
-                builderAnnotation = DefaultAnnotationAndValue
-                        .findFirst(ConfigBean.class.getName(), v).orElse(null);
+                builderAnnotation = AnnotationAndValueDefault
+                        .findFirst(ConfigBean.class, v).orElse(null);
             }
 
             if (builderAnnotation != null) {
@@ -452,8 +452,8 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                                TypedElementName method,
                                AnnotationAndValue ignoredBuilderAnnotation) {
         String configKey = null;
-        Optional<? extends AnnotationAndValue> configuredOptions = DefaultAnnotationAndValue
-                .findFirst(ConfiguredOption.class.getName(), method.annotations());
+        Optional<? extends AnnotationAndValue> configuredOptions = AnnotationAndValueDefault
+                .findFirst(ConfiguredOption.class, method.annotations());
         if (configuredOptions.isPresent()) {
             configKey = configuredOptions.get().value("key").orElse(null);
         }
@@ -465,7 +465,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
 
     private static void assertNoAnnotation(String annoTypeName,
                                     TypeInfo typeInfo) {
-        Optional<? extends AnnotationAndValue> anno = DefaultAnnotationAndValue
+        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault
                 .findFirst(annoTypeName, typeInfo.annotations());
         if (anno.isPresent()) {
             throw new IllegalStateException(annoTypeName + " cannot be used in conjunction with "
@@ -474,9 +474,9 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
         }
 
         for (TypedElementName elem : typeInfo.elementInfo()) {
-            anno = DefaultAnnotationAndValue.findFirst(annoTypeName, elem.annotations());
+            anno = AnnotationAndValueDefault.findFirst(annoTypeName, elem.annotations());
             if (anno.isEmpty()) {
-                anno = DefaultAnnotationAndValue.findFirst(annoTypeName, elem.elementTypeAnnotations());
+                anno = AnnotationAndValueDefault.findFirst(annoTypeName, elem.elementTypeAnnotations());
             }
             if (anno.isPresent()) {
                 throw new IllegalStateException(annoTypeName + " cannot be used in conjunction with "

@@ -59,7 +59,7 @@ public interface GenericTemplateCreatorRequest {
      * <li> properties.put("enclosingClassTypeName", req.getEnclosingClassType().getName());
      * <li> properties.put("enclosingClassAnnotations", req.getEnclosingClassAnnotations());
      * <li> properties.put("basicServiceInfo", req.getBasicServiceInfo());
-     * <li> properties.put("weight", DefaultServiceInfo.weightOf(req.getBasicServiceInfo());
+     * <li> properties.put("weight", ServiceInfoDefault.weightOf(req.getBasicServiceInfo());
      * <li> properties.put("enclosingClassTypeName.packageName", req.getEnclosingClassType().getPackageName());
      * <li> properties.put("enclosingClassTypeName.className", req.getEnclosingClassType().getClassName());
      * <li> properties.put("elementKind", req.getElementKind());

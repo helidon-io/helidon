@@ -33,10 +33,10 @@ class ModuleInfoDescriptorTest {
 
     @Test
     void programmatic() {
-        DefaultModuleInfoDescriptor.Builder builder = DefaultModuleInfoDescriptor.builder();
+        ModuleInfoDescriptorDefault.Builder builder = ModuleInfoDescriptorDefault.builder();
         assertThat(builder.build().contents(),
                    equalTo("// @Generated(value = \"io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor\", comments = \"version=1\")\n"
+                                   + ".ModuleInfoDescriptorDefault\", comments = \"version=1\")\n"
                                    + "module unnamed {\n"
                                    + "}"));
         builder.name("my.module");
@@ -47,7 +47,7 @@ class ModuleInfoDescriptorTest {
                                    + " * comments here.\n"
                                    + " */\n"
                                    +"// @Generated(value = \"io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor\", comments = \"version=1\")\n"
+                                   + ".ModuleInfoDescriptorDefault\", comments = \"version=1\")\n"
                                    + "module my.module {\n"
                                    + "    requires transitive their.module;\n"
                                    + "}"));
@@ -58,7 +58,7 @@ class ModuleInfoDescriptorTest {
                                    + " * comments here.\n"
                                    + " */\n"
                                    +"// @Generated(value = \"io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor\", comments = \"version=1\")\n"
+                                   + ".ModuleInfoDescriptorDefault\", comments = \"version=1\")\n"
                                    + "module my.module {\n"
                                    + "    requires transitive their.module;\n"
                                    + "    uses " + ExternalContracts.class.getName() + ";\n"
@@ -70,7 +70,7 @@ class ModuleInfoDescriptorTest {
                                    + " * comments here.\n"
                                    + " */\n"
                                    +"// @Generated(value = \"io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor\", comments = \"version=1\")\n"
+                                   + ".ModuleInfoDescriptorDefault\", comments = \"version=1\")\n"
                                    + "module my.module {\n"
                                    + "    requires transitive their.module;\n"
                                    + "    uses " + ExternalContracts.class.getName() + ";\n"
@@ -80,7 +80,7 @@ class ModuleInfoDescriptorTest {
 
     @Test
     void firstUnqualifiedExport() {
-        ModuleInfoDescriptor descriptor = DefaultModuleInfoDescriptor.builder()
+        ModuleInfoDescriptor descriptor = ModuleInfoDescriptorDefault.builder()
                 .name("test")
                 .addItem(ModuleInfoDescriptor.providesContract("cn2", "impl2"))
                 .addItem(ModuleInfoDescriptor.providesContract("cn1", "impl1"))
@@ -89,7 +89,7 @@ class ModuleInfoDescriptorTest {
                 .build();
         assertThat(descriptor.contents(),
                    equalTo("// @Generated(value = \"io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor\", comments = \"version=1\")\n"
+                                   + ".ModuleInfoDescriptorDefault\", comments = \"version=1\")\n"
                                    + "module test {\n"
                                    + "    provides cn2 with impl2;\n"
                                    + "    provides cn1 with impl1;\n"
@@ -105,13 +105,13 @@ class ModuleInfoDescriptorTest {
 
     @Test
     void sortedWithComments() {
-        ModuleInfoDescriptor descriptor = DefaultModuleInfoDescriptor.builder()
+        ModuleInfoDescriptor descriptor = ModuleInfoDescriptorDefault.builder()
                 .ordering(ModuleInfoDescriptor.Ordering.SORTED)
                 .name("test")
                 .addItem(ModuleInfoDescriptor.providesContract("cn2", "impl2"))
                 .addItem(ModuleInfoDescriptor.providesContract("cn1", "impl1"))
                 .addItem(ModuleInfoDescriptor.exportsPackage("export2"))
-                .addItem(DefaultModuleInfoItem.builder()
+                .addItem(ModuleInfoItemDefault.builder()
                                  .exports(true)
                                  .target("export1")
                                  .addWithOrTo("private.module.name")
@@ -121,7 +121,7 @@ class ModuleInfoDescriptorTest {
                 .build();
         assertThat(descriptor.contents(),
                    equalTo("// @Generated(value = \"io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor\", comments = \"version=1\")\n"
+                                   + ".ModuleInfoDescriptorDefault\", comments = \"version=1\")\n"
                                    + "module test {\n"
                                    + "    provides cn1 with impl1;\n"
                                    + "    provides cn2 with impl2;\n"
@@ -154,7 +154,7 @@ class ModuleInfoDescriptorTest {
                                    + "    exports io.helidon.pico.spi.impl;\n"
                                    + "    provides io.helidon.pico.api.PicoServices with io.helidon.pico.spi.impl"
                                         + ".DefaultPicoServices;\n"
-                                   + "    uses io.helidon.pico.api.Module;\n"
+                                   + "    uses io.helidon.pico.api.ModuleComponent;\n"
                                    + "    uses io.helidon.pico.api.Application;\n"
                                    + "}"));
 
@@ -194,19 +194,19 @@ class ModuleInfoDescriptorTest {
                                    + "    exports io.helidon.pico.spi.impl;\n"
                                    + "    provides io.helidon.pico.api.PicoServices with io.helidon.pico.spi.impl"
                                    + ".DefaultPicoServices;\n"
-                                   + "    uses io.helidon.pico.api.Module;\n"
+                                   + "    uses io.helidon.pico.api.ModuleComponent;\n"
                                    + "    uses io.helidon.pico.api.Application;\n"
                                    + "}"));
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> descriptor.mergeCreate(descriptor));
         assertThat(e.getMessage(), equalTo("can't merge with self"));
 
-        ModuleInfoDescriptor mergeCreated = descriptor.mergeCreate(DefaultModuleInfoDescriptor.toBuilder(descriptor));
+        ModuleInfoDescriptor mergeCreated = descriptor.mergeCreate(ModuleInfoDescriptorDefault.toBuilder(descriptor));
         assertThat(descriptor.contents(), equalTo(mergeCreated.contents()));
 
-        ModuleInfoDescriptor descriptor1 = DefaultModuleInfoDescriptor.builder()
+        ModuleInfoDescriptor descriptor1 = ModuleInfoDescriptorDefault.builder()
                 .addItem(ModuleInfoDescriptor.exportsPackage("one"))
                 .build();
-        ModuleInfoDescriptor descriptor2 = DefaultModuleInfoDescriptor.builder()
+        ModuleInfoDescriptor descriptor2 = ModuleInfoDescriptorDefault.builder()
                 .addItem(ModuleInfoDescriptor.exportsPackage("two"))
                 .build();
         mergeCreated = descriptor1.mergeCreate(descriptor2);
@@ -219,15 +219,15 @@ class ModuleInfoDescriptorTest {
 
     @Test
     void addIfAbsent() {
-        DefaultModuleInfoDescriptor.Builder builder = DefaultModuleInfoDescriptor.builder();
+        ModuleInfoDescriptorDefault.Builder builder = ModuleInfoDescriptorDefault.builder();
         ModuleInfoDescriptor.addIfAbsent(builder, "external",
-                                         () -> DefaultModuleInfoItem.builder()
+                                         () -> ModuleInfoItemDefault.builder()
                                                  .uses(true)
                                                  .target("external")
                                                  .addPrecomment("    // 1")
                                                  .build());
         ModuleInfoDescriptor.addIfAbsent(builder, "external",
-                                                   () -> DefaultModuleInfoItem.builder()
+                                                   () -> ModuleInfoItemDefault.builder()
                                                            .uses(true)
                                                            .target("external")
                                                            .addPrecomment("    // 2")

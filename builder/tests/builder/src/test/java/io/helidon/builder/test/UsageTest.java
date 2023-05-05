@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package io.helidon.builder.test;
 
 import io.helidon.builder.test.testsubjects.A;
+import io.helidon.builder.test.testsubjects.ADefault;
 import io.helidon.builder.test.testsubjects.B;
+import io.helidon.builder.test.testsubjects.BDefault;
 import io.helidon.builder.test.testsubjects.C;
-import io.helidon.builder.test.testsubjects.DefaultA;
-import io.helidon.builder.test.testsubjects.DefaultB;
-import io.helidon.builder.test.testsubjects.DefaultC;
-import io.helidon.builder.test.testsubjects.DefaultT;
+import io.helidon.builder.test.testsubjects.CDefault;
 import io.helidon.builder.test.testsubjects.T;
+import io.helidon.builder.test.testsubjects.TDefault;
 
 import org.junit.jupiter.api.Test;
 
@@ -35,13 +35,13 @@ class UsageTest {
 
     @Test
     void testIt() {
-        A a = DefaultA.builder()
+        A a = ADefault.builder()
                 .a("hello")
                 .build();
         assertThat(a, notNullValue());
         assertThat(a.a(), is("hello"));
 
-        B b = DefaultB.builder()
+        B b = BDefault.builder()
                 .a("hello")
                 .b("helloB")
                 .build();
@@ -49,7 +49,7 @@ class UsageTest {
         assertThat(b.a(), is("hello"));
         assertThat(b.b(), is("helloB"));
 
-        C c = DefaultC.builder()
+        C c = CDefault.builder()
                 .a("hello")
                 .c("helloC")
                 .b("helloB")
@@ -59,7 +59,7 @@ class UsageTest {
         assertThat(c.b(), is("helloB"));
         assertThat(c.c(), is("helloC"));
 
-        T t = DefaultT.builder()
+        T t = TDefault.builder()
                 .a("hello")
                 .t("helloT")
                 .b("helloB")

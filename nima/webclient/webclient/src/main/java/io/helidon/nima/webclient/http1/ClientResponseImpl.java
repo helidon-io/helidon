@@ -19,6 +19,7 @@ package io.helidon.nima.webclient.http1;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.GenericType;
@@ -63,6 +64,7 @@ class ClientResponseImpl implements Http1ClientResponse {
     private final ContentEncodingContext encodingSupport = ContentEncodingContext.create();
     private final MediaContext mediaContext = MediaContext.create();
     private final String channelId;
+    private final CompletableFuture<Void> whenComplete;
     private final boolean hasTrailers;
     private final List<String> trailerNames;
 
@@ -75,13 +77,15 @@ class ClientResponseImpl implements Http1ClientResponse {
                        ClientRequestHeaders requestHeaders,
                        ClientResponseHeaders responseHeaders,
                        ClientConnection connection,
-                       DataReader reader) {
+                       DataReader reader,
+                       CompletableFuture<Void> whenComplete) {
         this.responseStatus = responseStatus;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
         this.connection = connection;
         this.reader = reader;
         this.channelId = connection.channelId();
+        this.whenComplete = whenComplete;
 
         if (responseHeaders.contains(Header.CONTENT_LENGTH)) {
             this.entityLength = Long.parseLong(responseHeaders.get(Header.CONTENT_LENGTH).value());
@@ -109,7 +113,7 @@ class ClientResponseImpl implements Http1ClientResponse {
 
     @Override
     public ReadableEntity entity() {
-        return entity(requestHeaders, responseHeaders);
+        return entity(requestHeaders, responseHeaders, whenComplete);
     }
 
     @Override
@@ -143,7 +147,8 @@ class ClientResponseImpl implements Http1ClientResponse {
     }
 
     private ReadableEntity entity(ClientRequestHeaders requestHeaders,
-                                  ClientResponseHeaders responseHeaders) {
+                                  ClientResponseHeaders responseHeaders,
+                                  CompletableFuture<Void> whenComplete) {
         ContentDecoder decoder;
 
         if (encodingSupport.contentDecodingEnabled()) {
@@ -174,7 +179,10 @@ class ClientResponseImpl implements Http1ClientResponse {
                 }
                 return ClientResponseEntity.create(decoder,
                                                    this::readEntity,
-                                                   this::close,
+                                                   () -> {
+                                                       whenComplete.complete(null);
+                                                       close();
+                                                   },
                                                    requestHeaders,
                                                    responseHeaders,
                                                    mediaContext);
@@ -186,11 +194,16 @@ class ClientResponseImpl implements Http1ClientResponse {
             entityLength = -1;
             return ClientResponseEntity.create(decoder,
                                                this::readEntityChunked,
-                                               this::close,
+                                               () -> {
+                                                   whenComplete.complete(null);
+                                                   close();
+                                               },
                                                requestHeaders,
                                                responseHeaders,
                                                mediaContext);
         }
+        // no entity, just complete right now
+        whenComplete.complete(null);
         return ReadableEntityBase.empty();
     }
 

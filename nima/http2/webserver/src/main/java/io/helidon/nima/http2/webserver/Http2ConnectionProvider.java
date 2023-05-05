@@ -72,7 +72,7 @@ public class Http2ConnectionProvider implements ServerConnectionProvider {
     public ServerConnectionSelector create(Function<String, Config> configs) {
         Http2Config config;
         if (http2Config == null) {
-            config = DefaultHttp2Config.toBuilder(configs.apply(CONFIG_NAME)).build();
+            config = Http2ConfigDefault.toBuilder(configs.apply(CONFIG_NAME)).build();
         } else {
             config = http2Config;
         }

@@ -133,9 +133,9 @@ public abstract class CallingContext {
     }
 
 
-    static class BuilderInterceptor implements io.helidon.builder.BuilderInterceptor<DefaultCallingContext.Builder> {
+    static class BuilderInterceptor implements io.helidon.builder.BuilderInterceptor<CallingContextDefault.Builder> {
         @Override
-        public DefaultCallingContext.Builder intercept(DefaultCallingContext.Builder target) {
+        public CallingContextDefault.Builder intercept(CallingContextDefault.Builder target) {
             if (target.threadName() == null) {
                 target.threadName(Thread.currentThread().getName());
             }

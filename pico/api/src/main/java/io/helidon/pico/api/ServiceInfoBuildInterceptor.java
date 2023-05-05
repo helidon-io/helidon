@@ -21,10 +21,10 @@ import io.helidon.builder.BuilderInterceptor;
 /**
  * Ensures that all external contracts are also treated as normal contracts, etc.
  */
-class ServiceInfoBuildInterceptor implements BuilderInterceptor<DefaultServiceInfo.Builder> {
+class ServiceInfoBuildInterceptor implements BuilderInterceptor<ServiceInfoDefault.Builder> {
 
     @Override
-    public DefaultServiceInfo.Builder intercept(DefaultServiceInfo.Builder target) {
+    public ServiceInfoDefault.Builder intercept(ServiceInfoDefault.Builder target) {
         target.addContractsImplemented(target.externalContractsImplemented());
         return target;
     }

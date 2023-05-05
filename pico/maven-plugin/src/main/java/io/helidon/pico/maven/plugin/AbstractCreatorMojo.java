@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.types.DefaultTypeName;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.Module;
+import io.helidon.common.types.TypeNameDefault;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.tools.AbstractCreator;
@@ -264,7 +264,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
      * @param persistIt   pass true to write it to scratch, so that we can use it in the future for this module
      * @return the package name (which also typically doubles as the application name)
      */
-    protected String determinePackageName(Optional<ServiceProvider<Module>> optModuleSp,
+    protected String determinePackageName(Optional<ServiceProvider<ModuleComponent>> optModuleSp,
                                           Collection<TypeName> typeNames,
                                           ModuleInfoDescriptor descriptor,
                                           boolean persistIt) {
@@ -276,9 +276,9 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
                 return packageName;
             }
 
-            ServiceProvider<Module> moduleSp = optModuleSp.orElse(null);
+            ServiceProvider<ModuleComponent> moduleSp = optModuleSp.orElse(null);
             if (moduleSp != null) {
-                packageName = DefaultTypeName.createFromTypeName(moduleSp.serviceInfo().serviceTypeName()).packageName();
+                packageName = TypeNameDefault.createFromTypeName(moduleSp.serviceInfo().serviceTypeName()).packageName();
             } else {
                 packageName = toSuggestedGeneratedPackageName(descriptor, typeNames, PicoServicesConfig.NAME);
             }

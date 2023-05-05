@@ -24,11 +24,11 @@ import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
 import io.helidon.pico.api.ActivationResult;
-import io.helidon.pico.api.DefaultServiceInfoCriteria;
-import io.helidon.pico.api.Module;
+import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.RunLevel;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.testing.PicoTestingSupport;
@@ -174,7 +174,7 @@ class ToolBoxTest {
 
     @Test
     void modules() {
-        List<ServiceProvider<Module>> allModules = services.lookupAll(Module.class);
+        List<ServiceProvider<ModuleComponent>> allModules = services.lookupAll(ModuleComponent.class);
         List<String> desc = allModules.stream().map(ServiceProvider::description).collect(Collectors.toList());
         // note that order matters here
         assertThat("ensure that Annotation Processors are enabled in the tools module meta-inf/services",
@@ -240,7 +240,7 @@ class ToolBoxTest {
                    picoServices.metrics().orElseThrow().lookupCount().orElseThrow(),
                    equalTo(2));
         List<ServiceProvider<?>> runLevelServices = services
-                .lookupAll(DefaultServiceInfoCriteria.builder().runLevel(RunLevel.STARTUP).build(), true);
+                .lookupAll(ServiceInfoCriteriaDefault.builder().runLevel(RunLevel.STARTUP).build(), true);
         List<String> desc = runLevelServices.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat(desc,
                    contains("TestingSingleton:INIT"));
@@ -260,7 +260,7 @@ class ToolBoxTest {
     @Test
     void noServiceActivationRequiresLookupWhenApplicationIsPresent() {
         List<ServiceProvider<?>> allServices = services
-                .lookupAll(DefaultServiceInfoCriteria.builder().build(), true);
+                .lookupAll(ServiceInfoCriteriaDefault.builder().build(), true);
         allServices.stream()
                 .filter(sp -> !(sp instanceof Provider))
                 .forEach(sp -> {
@@ -329,7 +329,7 @@ class ToolBoxTest {
     @Test
     void knownProviders() {
         List<ServiceProvider<?>> providers = services.lookupAll(
-                DefaultServiceInfoCriteria.builder().addContractImplemented(Provider.class.getName()).build());
+                ServiceInfoCriteriaDefault.builder().addContractImplemented(Provider.class.getName()).build());
         List<String> desc = providers.stream().map(ServiceProvider::description).collect(Collectors.toList());
         // note that order matters here (weight ranked)
         assertThat(desc,

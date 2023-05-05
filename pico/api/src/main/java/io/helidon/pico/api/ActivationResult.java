@@ -141,7 +141,7 @@ public interface ActivationResult {
      */
     static ActivationResult createSuccess(ServiceProvider<?> serviceProvider) {
         Phase phase = serviceProvider.currentActivationPhase();
-        return DefaultActivationResult.builder()
+        return ActivationResultDefault.builder()
                 .serviceProvider(serviceProvider)
                 .startingActivationPhase(phase)
                 .finishingActivationPhase(phase)

@@ -175,12 +175,12 @@ public interface ServiceInfo extends ServiceInfoBasics {
      * @param val the instance to copy
      * @return the fluent builder
      */
-    static DefaultServiceInfo.Builder toBuilder(ServiceInfoBasics val) {
+    static ServiceInfoDefault.Builder toBuilder(ServiceInfoBasics val) {
         if (val instanceof ServiceInfo) {
-            return DefaultServiceInfo.toBuilder((ServiceInfo) val);
+            return ServiceInfoDefault.toBuilder((ServiceInfo) val);
         }
 
-        DefaultServiceInfo.Builder result = DefaultServiceInfo.builder();
+        ServiceInfoDefault.Builder result = ServiceInfoDefault.builder();
         result.serviceTypeName(val.serviceTypeName());
         result.scopeTypeNames(val.scopeTypeNames());
         result.qualifiers(val.qualifiers());

@@ -29,14 +29,14 @@ import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorConfigOptions;
+import io.helidon.pico.tools.ActivatorCreatorConfigOptionsDefault;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CodeGenPaths;
-import io.helidon.pico.tools.DefaultActivatorCreatorConfigOptions;
-import io.helidon.pico.tools.DefaultCodeGenPaths;
-import io.helidon.pico.tools.DefaultExternalModuleCreatorRequest;
+import io.helidon.pico.tools.CodeGenPathsDefault;
 import io.helidon.pico.tools.ExternalModuleCreatorRequest;
+import io.helidon.pico.tools.ExternalModuleCreatorRequestDefault;
 import io.helidon.pico.tools.ExternalModuleCreatorResponse;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.spi.ExternalModuleCreator;
@@ -51,7 +51,7 @@ import static io.helidon.pico.maven.plugin.MavenPluginUtils.activatorCreator;
 import static io.helidon.pico.maven.plugin.MavenPluginUtils.externalModuleCreator;
 
 /**
- * Responsible for creating pico {@link io.helidon.pico.api.Activator}'s and a {@link io.helidon.pico.api.Module}
+ * Responsible for creating pico {@link io.helidon.pico.api.Activator}'s and a {@link io.helidon.pico.api.ModuleComponent}
  * wrapping a set of packages from an external third-party jar.
  */
 @Mojo(name = "external-module-create", defaultPhase = LifecyclePhase.GENERATE_SOURCES, threadSafe = true,
@@ -168,19 +168,19 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
 
             ExternalModuleCreator externalModuleCreator = externalModuleCreator();
 
-            ActivatorCreatorConfigOptions configOptions = DefaultActivatorCreatorConfigOptions.builder()
+            ActivatorCreatorConfigOptions configOptions = ActivatorCreatorConfigOptionsDefault.builder()
                     .supportsJsr330InStrictMode(isSupportsJsr330InStrictMode())
                     .build();
             String generatedSourceDir = getGeneratedSourceDirectory().getPath();
 
-            CodeGenPaths codeGenPaths = DefaultCodeGenPaths.builder()
+            CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
                     .generatedSourcesPath(generatedSourceDir)
                     .outputPath(getOutputDirectory().getPath())
                     .metaInfServicesPath(new File(getOutputDirectory(), "META-INF/services").getPath())
                     .build();
             AbstractFilerMessager directFiler = AbstractFilerMessager.createDirectFiler(codeGenPaths, getLogger());
             CodeGenFiler codeGenFiler = CodeGenFiler.create(directFiler);
-            ExternalModuleCreatorRequest request = DefaultExternalModuleCreatorRequest.builder()
+            ExternalModuleCreatorRequest request = ExternalModuleCreatorRequestDefault.builder()
                     .packageNamesToScan(getPackageNames())
                     .serviceTypeToQualifiersMap(getServiceTypeToQualifiers())
                     .throwIfError(isFailOnWarning())

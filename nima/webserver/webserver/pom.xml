@@ -22,6 +22,7 @@
         <groupId>io.helidon.nima.webserver</groupId>
         <artifactId>helidon-nima-webserver-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>helidon-nima-webserver</artifactId>

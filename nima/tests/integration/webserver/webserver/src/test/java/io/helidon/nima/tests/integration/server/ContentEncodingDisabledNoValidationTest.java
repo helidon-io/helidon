@@ -23,7 +23,7 @@ import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http1.DefaultHttp1Config;
+import io.helidon.nima.webserver.http1.Http1ConfigDefault;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -51,7 +51,7 @@ public class ContentEncodingDisabledNoValidationTest extends ContentEncodingDisa
     static void server(WebServer.Builder server) {
         ServerConnectionProvider http1 = Http1ConnectionProvider.builder()
                 // Headers validation is disabled
-                .http1Config(DefaultHttp1Config.builder().validateHeaders(false).build())
+                .http1Config(Http1ConfigDefault.builder().validateHeaders(false).build())
                 .build();
         server.addConnectionProvider(http1)
                 // Content encoding needs to be completely disabled
