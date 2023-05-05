@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@
  * Application demonstrates combination of the static content with a simple REST API. It counts accesses and display it
  * on the WEB page.
  * <p>
- * Start with {@link io.helidon.reactive.webserver.examples.staticcontent.Main} class.
+ * Start with {@link io.helidon.webserver.examples.staticcontent.Main} class.
  *
- * @see io.helidon.reactive.webserver.examples.staticcontent.Main
+ * @see io.helidon.webserver.examples.staticcontent.Main
  */
-package io.helidon.reactive.webserver.examples.staticcontent;
+package io.helidon.webserver.examples.staticcontent;
