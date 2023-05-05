@@ -72,7 +72,7 @@
         <version.lib.interceptor-api>1.2.5</version.lib.interceptor-api>
         <!-- This is the BOM version for Jackson Databind 2.13.4.2 -->
         <version.lib.jackson>2.13.4.20221013</version.lib.jackson>
-        <version.lib.jaegertracing>1.6.0</version.lib.jaegertracing>
+        <version.lib.jaegertracing>1.8.1</version.lib.jaegertracing>
         <version.lib.jandex>2.3.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
