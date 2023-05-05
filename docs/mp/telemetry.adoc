@@ -64,6 +64,15 @@ For Manual Instrumentation there is a set of annotations and access to OpenTelem
 
 `@WithSpan` - By adding this annotation to a method in any Jakarta CDI aware bean, a new Span will be created and any necessary connections to the current Trace context will be established. Additionally, the `SpanAttribute` annotation can be used to mark method parameters that should be included in the Trace.
 
+Helidon provides full access to OpenTelemetry Tracing API:
+
+* `io.opentelemetry.api.OpenTelemetry`
+* `io.opentelemetry.api.trace.Tracer`
+* `io.opentelemetry.api.trace.Span`
+* `io.opentelemetry.api.baggage.Baggage`
+
+Accessing and using these objects can be done as follows. For span:
+
 .Span sample
 [source, java]
 ----
@@ -84,13 +93,12 @@ class HelidonBean {
 <1> Simple `@WithSpan` annotation usage;
 <2> Additional attributes can be set to the annotation.
 
-
 You can also inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and use `SpanBuilder` to manually create, star, and stop Spans.
 
 .SpanBuilder usage
 [source, java]
 ----
-@ApplicationScoped
+@Path("/")
 public class HelidonEndpoint {
 
     @Inject
@@ -113,11 +121,80 @@ public class HelidonEndpoint {
 <1> Inject `Tracer`;
 <2> Use `Tracer.spanBuilder` to create and start new `Span`;
 
+To obtain the current span, it can be injected with CDI. The current span can also be obtained using the static method `Span.current()`.
 
+.Inject the current span
+[source, java]
+----
+@Path("/")
+public class HelidonEndpoint {
+    @Inject
+    Span span;  <1>
+
+    @GET
+    @Path("/current")
+    public Response currentSpan() {
+        return Response.ok(span.getAttribute("someAttribute")).build(); <2>
+    }
+
+
+    @GET
+    @Path("/current/static")
+    public Response currentSpanStatic() {
+        return Response.ok(Span.current().getAttribute("someAttribute")).build(); <3>
+    }
+}
+----
+<1> Inject the current span;
+<2> Use the injected span;
+<3> Use `Span.current()` to access the current span;
+
+The same functionality is available for the `Baggage` API:
+
+.Inject the current baggage
+[source, java]
+----
+@Path("/")
+public class HelidonEndpoint {
+    @Inject
+    Baggage baggage;  <1>
+
+    @GET
+    @Path("/current")
+    public Response currentBaggage() {
+        return Response.ok(baggage.get("baggageKey")).build(); <2>
+    }
+
+
+    @GET
+    @Path("/current/static")
+    public Response currentBaggageStatic() {
+        return Response.ok(Baggage.current().get("baggageKey")).build(); <3>
+    }
+}
+----
+<1> Inject the current baggage;
+<2> Use the injected baggage;
+<3> Use `Baggage.current()` to access the current baggage;
 
 
 == Configuration
 
+IMPORTANT: MicroProfile Telemetry is not activated by default. To activate this feature, you need to specify the configuration `otel.sdk.disabled=false` in one of the MicroProfile Config or other config sources.
+
+To configure OpenTelemetry, MicroProfile Config must be used, and the configuration properties outlined in the following sections must be followed:
+
+- OpenTelemetry SDK Autoconfigure (excluding properties related to Metrics and Logging)
+- Manual Instrumentation
+
+
+=== OpenTelemetry Java Agent
+
+The OpenTelemetry Java Agent may influence the work of MicroProfile Telemetry, on how the objects are created and configured. Helidon will do "best effort" detect the use of the agent. But, if there is a decision to run the Helidon app with the agent, a configuration property should be set:
+
+`otel.agent.present=true`
+
+This way, Helidon will explicitly get all the configuration and objects from the Agent, thus allowing correct Span hierarchy settings.
 
 == Examples
 
@@ -127,3 +204,5 @@ public class HelidonEndpoint {
 
 == Reference
 
+* link:https://download.eclipse.org/microprofile/microprofile-telemetry-1.0/tracing/microprofile-telemetry-tracing-spec-1.0.pdf[MicroProfile Telemetry Specification]
+* link:https://opentelemetry.io/docs/[OpenTelemetry Documentation]
