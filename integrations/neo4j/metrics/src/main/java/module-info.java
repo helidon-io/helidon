@@ -29,7 +29,6 @@ module io.helidon.integrations.neo4j.metrics {
 
     requires static jakarta.cdi;
     requires static jakarta.inject;
-    requires static jakarta.interceptor.api;
     requires static jakarta.annotation;
 
     exports io.helidon.integrations.neo4j.metrics;
