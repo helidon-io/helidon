@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.tracing.jaeger;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.opentracing.Scope;
 import io.opentracing.ScopeManager;
@@ -30,7 +31,8 @@ import io.opentracing.Span;
  */
 class JaegerScopeManager implements ScopeManager {
 
-    private static final ConcurrentMap<Long, ThreadScope> SCOPES = new ConcurrentHashMap<>();
+    private static final ReentrantLock LOCK = new ReentrantLock();
+    static final ConcurrentMap<Long, ThreadScope> SCOPES = new ConcurrentHashMap<>();
 
     @Override
     public Scope activate(Span span) {
@@ -43,31 +45,58 @@ class JaegerScopeManager implements ScopeManager {
         return scope == null ? null : scope.span();
     }
 
-    void clearScopes() {
-        SCOPES.clear();
-    }
-
     static class ThreadScope implements Scope {
         private final Span span;
-        private final ThreadScope previousScope;
+        private final ThreadScope parentScope;
+        private ThreadScope childScope;
         private final long creatingThreadId;
         private boolean closed;
 
         ThreadScope(Span span) {
             this.span = span;
             this.creatingThreadId = Thread.currentThread().getId();
-            this.previousScope = SCOPES.put(this.creatingThreadId, this);
+            this.parentScope = SCOPES.put(this.creatingThreadId, this);
+            if (this.parentScope != null) {
+                this.parentScope.childScope = this;
+            }
         }
 
+        /**
+         * Closes this scope and all of its children scopes by setting the
+         * private flag {@code closed}. Updates {@code SCOPES} map accordingly.
+         */
         @Override
         public void close() {
-            if (!closed) {
-                if (previousScope == null) {
-                    SCOPES.remove(this.creatingThreadId, this);
-                } else {
-                    SCOPES.put(this.creatingThreadId, previousScope);
+            LOCK.lock();
+            try {
+                if (!closed) {
+                    ThreadScope scope = SCOPES.get(creatingThreadId);
+
+                    // handle out-of-order closings
+                    while (scope != null && scope != this) {
+                        scope = scope.parentScope;
+                    }
+
+                    if (scope != null) {
+                        scope.closed = true;
+
+                        // close all children scopes
+                        ThreadScope child = scope.childScope;
+                        while (child != null) {
+                            child.closed = true;
+                            child = child.childScope;
+                        }
+
+                        // update SCOPES setting parent as current
+                        if (scope.parentScope == null) {
+                            SCOPES.remove(creatingThreadId);
+                        } else {
+                            SCOPES.put(creatingThreadId, scope.parentScope);
+                        }
+                    }
                 }
-                closed = true;
+            } finally {
+                LOCK.unlock();
             }
         }
 
