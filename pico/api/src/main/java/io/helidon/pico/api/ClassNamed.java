@@ -16,28 +16,27 @@
 
 package io.helidon.pico.api;
 
-import io.helidon.common.types.AnnotationAndValueDefault;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 import jakarta.inject.Named;
-import org.junit.jupiter.api.Test;
+import jakarta.inject.Qualifier;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+/**
+ * This annotation is effectively the same as {@link jakarta.inject.Named} where the {@link Named#value()} is a {@link Class}
+ * name instead of a {@link String}.
+ */
+@Qualifier
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ClassNamed {
 
-class DefaultQualifierAndValueTest {
-
-    @Test
-    void buildAndCompare() {
-        QualifierAndValueDefault qav1 = QualifierAndValueDefault.builder()
-                .type(Named.class)
-                .value("x.y")
-                .build();
-        AnnotationAndValueDefault qav2 = QualifierAndValueDefault.builder()
-                .type(Named.class)
-                .value("x.y")
-                .build();
-        assertThat(qav1.compareTo(qav2),
-                   is(0));
-    }
+    /**
+     * The class used will function as the name.
+     *
+     * @return the class
+     */
+    Class<?> value();
 
 }

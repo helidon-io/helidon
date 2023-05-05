@@ -26,6 +26,8 @@ import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
 
+import jakarta.inject.Named;
+
 /**
  * Describes a {@link jakarta.inject.Qualifier} type annotation associated with a service being provided or dependant upon.
  * In Pico these are generally determined at compile time to avoid any use of reflection at runtime.
@@ -55,6 +57,43 @@ public class QualifierAndValueDefault extends AnnotationAndValueDefault
     }
 
     /**
+     * Creates a {@link jakarta.inject.Named} qualifier.
+     *
+     * @param name the name
+     * @return named qualifier
+     */
+    public static QualifierAndValueDefault createNamed(Named name) {
+        Objects.requireNonNull(name);
+        QualifierAndValueDefault.Builder builder = builder().typeName(CommonQualifiers.NAMED);
+        if (!name.value().isEmpty()) {
+            builder.value(name.value());
+        }
+        return builder.build();
+    }
+
+    /**
+     * Creates a {@link jakarta.inject.Named} qualifier.
+     *
+     * @param name the name
+     * @return named qualifier
+     */
+    public static QualifierAndValueDefault createNamed(ClassNamed name) {
+        Objects.requireNonNull(name);
+        return builder().typeName(CommonQualifiers.NAMED).value(name.value().getName()).build();
+    }
+
+    /**
+     * Creates a {@link jakarta.inject.Named} qualifier.
+     *
+     * @param name the name of the class will be used
+     * @return named qualifier
+     */
+    public static QualifierAndValueDefault createClassNamed(Class<?> name) {
+        Objects.requireNonNull(name);
+        return builder().typeName(CommonQualifiers.NAMED).value(name.getName()).build();
+    }
+
+    /**
      * Creates a qualifier from an annotation.
      *
      * @param qualifierType the qualifier type
@@ -62,7 +101,8 @@ public class QualifierAndValueDefault extends AnnotationAndValueDefault
      */
     public static QualifierAndValueDefault create(Class<? extends Annotation> qualifierType) {
         Objects.requireNonNull(qualifierType);
-        return builder().typeName(TypeNameDefault.create(qualifierType)).build();
+        TypeName qualifierTypeName = maybeNamed(qualifierType.getName());
+        return builder().typeName(qualifierTypeName).build();
     }
 
     /**
@@ -74,7 +114,8 @@ public class QualifierAndValueDefault extends AnnotationAndValueDefault
      */
     public static QualifierAndValueDefault create(Class<? extends Annotation> qualifierType, String val) {
         Objects.requireNonNull(qualifierType);
-        return builder().typeName(TypeNameDefault.create(qualifierType)).value(val).build();
+        TypeName qualifierTypeName = maybeNamed(qualifierType.getName());
+        return builder().typeName(qualifierTypeName).value(val).build();
     }
 
     /**
@@ -85,8 +126,9 @@ public class QualifierAndValueDefault extends AnnotationAndValueDefault
      * @return qualifier
      */
     public static QualifierAndValueDefault create(String qualifierTypeName, String val) {
+        TypeName qualifierType = maybeNamed(qualifierTypeName);
         return builder()
-                .typeName(TypeNameDefault.createFromTypeName(qualifierTypeName))
+                .typeName(qualifierType)
                 .value(val)
                 .build();
     }
@@ -99,8 +141,9 @@ public class QualifierAndValueDefault extends AnnotationAndValueDefault
      * @return qualifier
      */
     public static QualifierAndValueDefault create(TypeName qualifierType, String val) {
+        TypeName qualifierTypeName = maybeNamed(qualifierType);
         return builder()
-                .typeName(qualifierType)
+                .typeName(qualifierTypeName)
                 .value(val)
                 .build();
     }
@@ -113,10 +156,25 @@ public class QualifierAndValueDefault extends AnnotationAndValueDefault
      * @return qualifier
      */
     public static QualifierAndValueDefault create(TypeName qualifierType, Map<String, String> vals) {
+        TypeName qualifierTypeName = maybeNamed(qualifierType);
         return builder()
-                .typeName(qualifierType)
+                .typeName(qualifierTypeName)
                 .values(vals)
                 .build();
+    }
+
+    static TypeName maybeNamed(String qualifierTypeName) {
+        if (qualifierTypeName.equals(ClassNamed.class.getName())) {
+            return CommonQualifiers.NAMED;
+        }
+        return TypeNameDefault.createFromTypeName(qualifierTypeName);
+    }
+
+    static TypeName maybeNamed(TypeName qualifierTypeName) {
+        if (qualifierTypeName.name().equals(ClassNamed.class.getName())) {
+            return CommonQualifiers.NAMED;
+        }
+        return qualifierTypeName;
     }
 
     /**
@@ -139,7 +197,7 @@ public class QualifierAndValueDefault extends AnnotationAndValueDefault
         }
 
         return builder()
-                .typeName(annotationAndValue.typeName())
+                .typeName(maybeNamed(annotationAndValue.typeName()))
                 .values(values)
                 .build();
     }

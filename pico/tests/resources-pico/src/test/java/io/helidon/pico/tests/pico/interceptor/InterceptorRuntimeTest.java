@@ -36,6 +36,7 @@ import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.testing.ReflectionBasedSingletonServiceProvider;
+import io.helidon.pico.tests.pico.ClassNamedY;
 import io.helidon.pico.tests.plain.interceptor.IB;
 import io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno;
 import io.helidon.pico.tests.plain.interceptor.TestNamedInterceptor;
@@ -168,7 +169,7 @@ class InterceptorRuntimeTest {
                 .lookupFirst(
                         ServiceInfoCriteriaDefault.builder()
                                 .addContractImplemented(Closeable.class.getName())
-                                .qualifiers(Set.of(create(Named.class, "ClassY")))
+                                .qualifiers(Set.of(create(Named.class, ClassNamedY.class.getName())))
                                 .build());
         assertThat(toDescription(yimplProvider),
                    equalTo("YImpl$$Pico$$Interceptor:INIT"));
@@ -250,7 +251,7 @@ class InterceptorRuntimeTest {
                 .lookupFirst(
                         ServiceInfoCriteriaDefault.builder()
                                 .addContractImplemented(Closeable.class.getName())
-                                .qualifiers(Set.of(create(Named.class, "ClassY")))
+                                .qualifiers(Set.of(create(Named.class, ClassNamedY.class.getName())))
                                 .build());
         assertThat(toDescription(yimplProvider),
                    equalTo("YImpl$$Pico$$Interceptor:INIT"));

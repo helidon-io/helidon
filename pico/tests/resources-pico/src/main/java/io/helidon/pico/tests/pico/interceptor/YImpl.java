@@ -20,7 +20,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Optional;
 
+import io.helidon.pico.api.ClassNamed;
 import io.helidon.pico.api.ExternalContracts;
+import io.helidon.pico.tests.pico.ClassNamedY;
 import io.helidon.pico.tests.plain.interceptor.IA;
 import io.helidon.pico.tests.plain.interceptor.IB;
 import io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno;
@@ -36,7 +38,7 @@ import jakarta.inject.Singleton;
  * Also note that interception was triggered by the presence of the {@link InterceptorBasedAnno} trigger.
  */
 @Singleton
-@Named("ClassY")
+@ClassNamed(ClassNamedY.class)
 @ExternalContracts(value = Closeable.class, moduleNames = {"test1", "test2"})
 @SuppressWarnings("unused")
 public class YImpl implements IB, Closeable {

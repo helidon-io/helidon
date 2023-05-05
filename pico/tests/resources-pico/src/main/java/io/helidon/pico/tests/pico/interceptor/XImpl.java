@@ -20,7 +20,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Optional;
 
+import io.helidon.pico.api.ClassNamed;
 import io.helidon.pico.api.ExternalContracts;
+import io.helidon.pico.tests.pico.ClassNamedX;
 import io.helidon.pico.tests.plain.interceptor.IA;
 import io.helidon.pico.tests.plain.interceptor.IB;
 import io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno;
@@ -36,7 +38,7 @@ import jakarta.inject.Singleton;
  * Also note that interception was triggered by the presence of the {@link TestNamed} and {@link InterceptorBasedAnno} triggers.
  */
 @Singleton
-@Named("ClassX")
+@ClassNamed(ClassNamedX.class)
 @TestNamed("TestNamed-ClassX")
 @ExternalContracts(value = Closeable.class, moduleNames = {"test1", "test2"})
 @SuppressWarnings("unused")
