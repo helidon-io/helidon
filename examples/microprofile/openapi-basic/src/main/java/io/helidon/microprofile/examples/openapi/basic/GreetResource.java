@@ -132,7 +132,7 @@ public class GreetResource {
                     examples = @ExampleObject(
                         name = "greeting",
                         summary = "Example greeting message to update",
-                        value = "{\"greeting\": \"New greeting message\"")))
+                        value = "{\"greeting\": \"New greeting message\"}")))
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateGreeting(JsonObject jsonObject) {
