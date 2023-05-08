@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -114,11 +114,11 @@ Helidon MP QuickStart, enhanced with OpenAPI support.
     description = "Conveys the new greeting prefix to use in building greetings",
     content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GreetingMessage.class),
+                schema = @Schema(implementation = GreetingUpdateMessage.class),
                 examples = @ExampleObject(
                     name = "greeting",
                     summary = "Example greeting message to update",
-                    value = "New greeting message")))
+                    value = "{\"greeting\": \"New greeting message\"}")))
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public Response updateGreeting(JsonObject jsonObject) {
