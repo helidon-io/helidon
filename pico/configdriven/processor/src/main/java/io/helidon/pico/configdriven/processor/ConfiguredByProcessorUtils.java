@@ -35,6 +35,17 @@ final class ConfiguredByProcessorUtils {
     private ConfiguredByProcessorUtils() {
     }
 
+    /**
+     * Returns the additive code generated methods (source form) to add over what the base
+     * {@link io.helidon.pico.processor.PicoAnnotationProcessor} provides - thereby making this a "config driven service".
+     *
+     * @param activatorImplTypeName the activator implementation type name
+     * @param configBeanType        the config bean type
+     * @param hasParent             flag indicating whether the implementation has another config-driven parent activator
+     * @param configuredByAttributes meta attributes for the configuredBy annotation
+     * @return the list of extra source code to generate
+     * @see ConfiguredByAnnotationProcessor
+     */
     static List<String> createExtraCodeGen(TypeName activatorImplTypeName,
                                            TypeName configBeanType,
                                            boolean hasParent,

@@ -363,7 +363,7 @@ public class CodeGenFiler {
         }
 
         if (FILER_WRITE_ONCE_PER_TYPE && !FILER_TYPES_FILED.add(typeName)) {
-            messager.log(typeName + ": already processed");
+            messager.debug(typeName + ": already processed");
             return Optional.empty();
         }
 

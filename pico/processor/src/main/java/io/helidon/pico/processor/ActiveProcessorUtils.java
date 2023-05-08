@@ -36,7 +36,6 @@ import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
-import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypedElementName;
@@ -65,11 +64,9 @@ final class ActiveProcessorUtils implements Messager {
     private RoundEnvironment roundEnv;
 
     ActiveProcessorUtils(AbstractProcessor processor,
-                         ProcessingEnvironment processingEnv,
-                         RoundEnvironment roundEnv) {
+                         ProcessingEnvironment processingEnv) {
         this.logger = System.getLogger(processor.getClass().getName());
         this.processingEnv = Objects.requireNonNull(processingEnv);
-        this.roundEnv = roundEnv;
         this.typeInfoCreatorProvider = HelidonServiceLoader.create(
                         ServiceLoader.load(TypeInfoCreatorProvider.class, TypeInfoCreatorProvider.class.getClassLoader()))
                 .asList()
@@ -85,87 +82,49 @@ final class ActiveProcessorUtils implements Messager {
     public void debug(String message,
                       Throwable t) {
         if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
-            if (logger.isLoggable(loggerLevel())) {
-                logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message, t);
-            }
-        }
-
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.OTHER, message);
+            out(System.Logger.Level.DEBUG, Diagnostic.Kind.OTHER, message, t);
         }
     }
 
     @Override
     public void debug(String message) {
         if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
-            if (logger.isLoggable(loggerLevel())) {
-                logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message);
-            }
-        }
-
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.OTHER, message);
+            out(System.Logger.Level.DEBUG, Diagnostic.Kind.OTHER, message, null);
         }
     }
 
     @Override
     public void log(String message) {
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, message);
+        if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
+            out(System.Logger.Level.INFO, Diagnostic.Kind.NOTE, message, null);
         }
     }
 
     @Override
     public void warn(String message,
                      Throwable t) {
-        if (Options.isOptionEnabled(Options.TAG_DEBUG) && t != null) {
-            logger.log(System.Logger.Level.WARNING, getClass().getSimpleName() + ": Warning: " + message, t);
-            t.printStackTrace();
-        }
-
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, message);
-        }
+        out(System.Logger.Level.WARNING, Diagnostic.Kind.WARNING, message, t);
     }
 
     @Override
     public void warn(String message) {
-        if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
-            logger.log(System.Logger.Level.WARNING, getClass().getSimpleName() + ": Warning: " + message);
-        }
-
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, message);
-        }
+        out(System.Logger.Level.WARNING, Diagnostic.Kind.WARNING, message, null);
     }
 
     @Override
     public void error(String message,
                       Throwable t) {
-        logger.log(System.Logger.Level.ERROR, getClass().getSimpleName() + ": Error: " + message, t);
-        if (processingEnv != null && processingEnv.getMessager() != null) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message);
-        }
+        out(System.Logger.Level.ERROR, Diagnostic.Kind.ERROR, message, null);
     }
 
-    /**
-     * Determines if the given type element is defined in the module being processed. If so then the return value is set to
-     * {@code true} and the moduleName is cleared out. If not then the return value is set to {@code false} and the
-     * {@code moduleName} is set to the module name if it has a qualified module name, and not from an internal java module system
-     * type. Note that this method will only return {@code true} when the module info paths are being used in the project.
-     *
-     * @param type       the type element to analyze
-     * @param moduleName the module name to populate if it is determinable
-     * @return true if the type is definitely defined in this module, false otherwise
-     */
-    boolean isTypeInThisModule(TypeElement type,
-                               AtomicReference<String> moduleName) {
-        moduleName.set(null);
-        if (roundEnv != null && roundEnv.getRootElements().contains(type)) {
-            return true;
+    void out(System.Logger.Level level, Diagnostic.Kind kind, String message, Throwable t) {
+        if (logger.isLoggable(level)) {
+            logger.log(level, getClass().getSimpleName() + ": " + message, t);
         }
 
-        return BuilderTypeTools.isTypeInThisModule(type, moduleName, processingEnv);
+        if (processingEnv != null && processingEnv.getMessager() != null) {
+            processingEnv.getMessager().printMessage(kind, message);
+        }
     }
 
     /**

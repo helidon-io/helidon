@@ -17,7 +17,7 @@
 package io.helidon.pico.configdriven.processor;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,22 +27,20 @@ import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
-import io.helidon.pico.configdriven.api.ConfiguredBy;
-import io.helidon.pico.configdriven.runtime.AbstractConfiguredServiceProvider;
 import io.helidon.pico.processor.PicoAnnotationProcessor;
 import io.helidon.pico.tools.ActivatorCreatorProvider;
 import io.helidon.pico.tools.ServicesToProcess;
 
-import static io.helidon.common.types.AnnotationAndValueDefault.findFirst;
-import static io.helidon.common.types.TypeNameDefault.create;
 import static io.helidon.common.types.TypeNameDefault.createFromGenericDeclaration;
 import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static io.helidon.common.types.TypeNameDefault.toBuilder;
 import static io.helidon.pico.configdriven.processor.ConfiguredByProcessorUtils.createExtraActivatorClassComments;
 import static io.helidon.pico.configdriven.processor.ConfiguredByProcessorUtils.createExtraCodeGen;
+import static io.helidon.pico.tools.TypeNames.PICO_ABSTRACT_CONFIGURED_SERVICE_PROVIDER;
+import static io.helidon.pico.tools.TypeNames.PICO_CONFIGURED_BY;
 
 /**
- * Extension to {@link PicoAnnotationProcessor} that will handled {@link io.helidon.pico.configdriven.api.ConfiguredBy} services.
+ * Extension to {@link PicoAnnotationProcessor} that will handle {@code io.helidon.pico.configdriven.api.ConfiguredBy} services.
  */
 public class ConfiguredByAnnotationProcessor extends PicoAnnotationProcessor {
 
@@ -58,8 +56,8 @@ public class ConfiguredByAnnotationProcessor extends PicoAnnotationProcessor {
 
     @Override
     protected Set<String> supportedServiceClassTargetAnnotations() {
-        Set<String> supported = new LinkedHashSet<>(super.supportedServiceClassTargetAnnotations());
-        supported.add(ConfiguredBy.class.getName());
+        Set<String> supported = new HashSet<>(super.supportedServiceClassTargetAnnotations());
+        supported.add(PICO_CONFIGURED_BY);
         return supported;
     }
 
@@ -68,7 +66,7 @@ public class ConfiguredByAnnotationProcessor extends PicoAnnotationProcessor {
                                      TypeInfo service,
                                      Set<TypeName> serviceTypeNamesToCodeGenerate,
                                      Collection<TypedElementName> allElementsOfInterest) {
-        Optional<? extends AnnotationAndValue> configuredByAnno = findFirst(ConfiguredBy.class, service.annotations());
+        Optional<? extends AnnotationAndValue> configuredByAnno = findFirst(PICO_CONFIGURED_BY, service.annotations());
         if (configuredByAnno.isEmpty()) {
             return;
         }
@@ -83,7 +81,7 @@ public class ConfiguredByAnnotationProcessor extends PicoAnnotationProcessor {
         TypeName genericCB = createFromGenericDeclaration("CB");
         TypeName genericExtendsCB = createFromGenericDeclaration("CB extends " + configBeanType.name());
 
-        if (hasParent && findFirst(ConfiguredBy.class, parent.annotations()).isEmpty()) {
+        if (hasParent && findFirst(PICO_CONFIGURED_BY, parent.annotations()).isEmpty()) {
             // we treat this as a regular configured service, since its parent is NOT a configured service
             hasParent = false;
             parentServiceTypeName = null;
@@ -98,7 +96,7 @@ public class ConfiguredByAnnotationProcessor extends PicoAnnotationProcessor {
                     .build();
         } else {
             List<TypeName> typeArgs = List.of(serviceTypeName, genericCB);
-            parentServiceTypeName = create(AbstractConfiguredServiceProvider.class).toBuilder()
+            parentServiceTypeName = createFromTypeName(PICO_ABSTRACT_CONFIGURED_SERVICE_PROVIDER).toBuilder()
                     .typeArguments(typeArgs)
                     .build();
         }

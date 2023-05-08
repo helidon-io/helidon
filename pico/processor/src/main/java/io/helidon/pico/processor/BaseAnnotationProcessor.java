@@ -51,7 +51,7 @@ abstract class BaseAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public void init(ProcessingEnvironment processingEnv) {
-        this.utils = new ActiveProcessorUtils(this, processingEnv, null);
+        this.utils = new ActiveProcessorUtils(this, processingEnv);
         super.init(processingEnv);
     }
 

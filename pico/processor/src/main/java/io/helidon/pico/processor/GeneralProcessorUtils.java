@@ -364,6 +364,20 @@ final class GeneralProcessorUtils {
         return findFirst(jakartaAnno.getName(), annotations);
     }
 
+    static Optional<? extends AnnotationAndValue> findFirst(String jakartaAnnoName,
+                                                            Collection<? extends AnnotationAndValue> annotations) {
+        if (annotations == null) {
+            return Optional.empty();
+        }
+
+        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault.findFirst(jakartaAnnoName, annotations);
+        if (anno.isPresent()) {
+            return anno;
+        }
+
+        return AnnotationAndValueDefault.findFirst(TypeTools.oppositeOf(jakartaAnnoName), annotations);
+    }
+
     static ServiceInfoBasics toBasicServiceInfo(TypeInfo service) {
         return ServiceInfoDefault.builder()
                 .serviceTypeName(service.typeName().name())
@@ -371,16 +385,6 @@ final class GeneralProcessorUtils {
                 .declaredRunLevel(toRunLevel(service))
                 .scopeTypeNames(toScopeNames(service))
                 .build();
-    }
-
-    static Optional<? extends AnnotationAndValue> findFirst(String jakartaAnnoName,
-                                                            Collection<? extends AnnotationAndValue> annotations) {
-        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault.findFirst(jakartaAnnoName, annotations);
-        if (anno.isPresent()) {
-            return anno;
-        }
-
-        return AnnotationAndValueDefault.findFirst(TypeTools.oppositeOf(jakartaAnnoName), annotations);
     }
 
 }

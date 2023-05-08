@@ -26,8 +26,6 @@ module io.helidon.pico.configdriven.processor {
     requires io.helidon.builder.processor.tools;
     requires io.helidon.common.types;
     requires io.helidon.pico.api;
-    requires io.helidon.pico.configdriven.api;
-    requires io.helidon.pico.configdriven.runtime;
     requires transitive io.helidon.builder.config;
     requires transitive io.helidon.builder.processor;
     requires transitive io.helidon.builder.processor.spi;

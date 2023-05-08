@@ -57,6 +57,7 @@ import static io.helidon.pico.tools.TypeTools.isStatic;
 import static io.helidon.pico.tools.TypeTools.methodsAnnotatedWith;
 import static io.helidon.pico.tools.TypeTools.providesContractType;
 import static io.helidon.pico.tools.TypeTools.toAccess;
+import static java.util.function.Predicate.not;
 
 /**
  * The default implementation of {@link io.helidon.pico.tools.spi.ExternalModuleCreator}.
@@ -104,8 +105,8 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
             scan.get().getAllStandardClasses()
                     .stream()
                     .filter(classInfo -> packageNames.contains(classInfo.getPackageName()))
-                    .filter(classInfo -> !classInfo.isInterface())
-                    .filter(classInfo -> !classInfo.isExternalClass())
+                    .filter(not(ClassInfo::isInterface))
+                    .filter(not(ClassInfo::isExternalClass))
                     .filter(classInfo -> !isPrivate(classInfo.getModifiers()))
                     .filter(classInfo -> !classInfo.isInnerClass() || req.innerClassesProcessed())
                     .forEach(this::processServiceType);

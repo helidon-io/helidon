@@ -71,7 +71,6 @@ import jakarta.inject.Inject;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
 import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
-import static io.helidon.pico.processor.GeneralProcessorUtils.findFirst;
 import static io.helidon.pico.processor.GeneralProcessorUtils.isProviderType;
 import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElementOf;
 import static io.helidon.pico.processor.GeneralProcessorUtils.toBasicServiceInfo;
@@ -277,17 +276,17 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                             "There can be max of one injectable constructor per class",
                             1,
                             (it) -> it.elementTypeKind().equals(TypeInfo.KIND_CONSTRUCTOR)
-                                    && findFirst(Inject.class, it.annotations()).isPresent());
+                                    && GeneralProcessorUtils.findFirst(Inject.class, it.annotations()).isPresent());
         validatePerClass(elementsOfInterest,
                             "There can be max of one PostConstruct method per class",
                             1,
                             (it) -> it.elementTypeKind().equals(TypeInfo.KIND_METHOD)
-                                    && findFirst(PostConstruct.class, it.annotations()).isPresent());
+                                    && GeneralProcessorUtils.findFirst(PostConstruct.class, it.annotations()).isPresent());
         validatePerClass(elementsOfInterest,
                             "There can be max of one PreDestroy method per class",
                             1,
                             (it) -> it.elementTypeKind().equals(TypeInfo.KIND_METHOD)
-                                    && findFirst(PreDestroy.class, it.annotations()).isPresent());
+                                    && GeneralProcessorUtils.findFirst(PreDestroy.class, it.annotations()).isPresent());
         validatePerClass(elementsOfInterest,
                          PicoServicesConfig.NAME + " does not currently support static or private elements",
                          0,
@@ -425,6 +424,18 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                                      Set<TypeName> serviceTypeNamesToCodeGenerate,
                                      Collection<TypedElementName> allElementsOfInterest) {
         // NOP; expected that derived classes will implement this
+    }
+
+    /**
+     * Finds the first jakarta or javax annotation matching the given jakarta annotation class name.
+     *
+     * @param jakartaAnnoName the jakarta annotation class name
+     * @param annotations     all of the annotations to search through
+     * @return the annotation, or empty if not found
+     */
+    protected Optional<? extends AnnotationAndValue> findFirst(String jakartaAnnoName,
+                                                               Collection<? extends AnnotationAndValue> annotations) {
+        return GeneralProcessorUtils.findFirst(jakartaAnnoName, annotations);
     }
 
     private ServicesToProcess toServicesToProcess(Set<TypeInfo> typesToCodeGenerate,
@@ -579,7 +590,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                                        TypeInfo service,
                                        Collection<TypedElementName> allElementsOfInterest) {
         List<TypedElementName> injectableElementsForThisService = allElementsOfInterest.stream()
-                .filter(it -> findFirst(Inject.class, it.annotations()).isPresent())
+                .filter(it -> GeneralProcessorUtils.findFirst(Inject.class, it.annotations()).isPresent())
                 .filter(it -> service.typeName().equals(it.enclosingTypeName().orElseThrow()))
                 .toList();
         injectableElementsForThisService

@@ -98,7 +98,6 @@
                 <configuration>
                     <compilerArgs>
                         <arg>-Apico.debug=${pico.debug}</arg>
-<!--                        <arg>-Apico.autoAddNonContractInterfaces=true</arg>-->
                         <arg>-Apico.application.pre.create=true</arg>
                         <arg>-Apico.mapApplicationToSingletonScope=true</arg>
                     </compilerArgs>
@@ -143,9 +142,6 @@
                         <arg>-Apico.debug=${pico.debug}</arg>
                         <arg>-Apico.autoAddNonContractInterfaces=true</arg>
                         <arg>-Apico.application.pre.create=true</arg>
-<!--                        <arg>-XprintProcessorInfo</arg>-->
-<!--                        <arg>-XprintRounds</arg>-->
-<!--                        <arg>-verbose</arg>-->
                     </compilerArgs>
                     <permittedProviderTypes>NAMED</permittedProviderTypes>
                     <permittedProviderTypeNames>
