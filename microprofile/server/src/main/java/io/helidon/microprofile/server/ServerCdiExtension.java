@@ -49,6 +49,7 @@ import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.staticcontent.StaticContentService;
+
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.BeforeDestroyed;
