@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,7 +184,14 @@ class JaxRsService implements HttpService {
     }
 
     private void handle(ServerRequest req, ServerResponse res) {
-        Contexts.runInContext(req.context(), () -> doHandle(req.context(), req, res));
+        Context context = req.context();
+
+        // make these available in context for ServerCdiExtension
+        context.supply(ServerRequest.class, () -> req);
+        context.supply(ServerResponse.class, () -> res);
+
+        // call doHandle in active context
+        Contexts.runInContext(context, () -> doHandle(context, req, res));
     }
 
     private void doHandle(Context ctx, ServerRequest req, ServerResponse res) {

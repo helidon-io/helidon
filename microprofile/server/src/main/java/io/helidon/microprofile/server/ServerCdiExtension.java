@@ -17,13 +17,17 @@
 package io.helidon.microprofile.server;
 
 import java.lang.System.Logger.Level;
+import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,24 +45,32 @@ import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.context.ContextFeature;
+import io.helidon.nima.webserver.http.HttpRequest;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.staticcontent.StaticContentService;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.ProcessProducerField;
 import jakarta.enterprise.inject.spi.ProcessProducerMethod;
+import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.ext.ParamConverterProvider;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -581,5 +593,95 @@ public class ServerCdiExtension implements Extension {
         }
 
         return serverNamedRoutingBuilder(routingName);
+    }
+
+    // -- CDI bean producers for ServerRequest and ServerResponse -----------------------
+
+    private void afterBeanDiscovery(@Observes AfterBeanDiscovery event) {
+        event.addBean(new ServerRequestProducer());
+        event.addBean(new ServerResponseProducer());
+    }
+
+    /**
+     * Base class for server producers sharing common methods.
+     */
+    static class ServerProducer {
+
+        @SuppressWarnings("all")
+        public static class DefaultAnnotationLiteral extends AnnotationLiteral<Default> implements Default {
+            private static final long serialVersionUID = 1L;
+        }
+
+        public Set<Annotation> getQualifiers() {
+            return Collections.singleton(new DefaultAnnotationLiteral());
+        }
+
+        public Class<? extends Annotation> getScope() {
+            return RequestScoped.class;
+        }
+
+        public Set<Class<? extends Annotation>> getStereotypes() {
+            return Collections.emptySet();
+        }
+
+        public Set<InjectionPoint> getInjectionPoints() {
+            return Collections.emptySet();
+        }
+
+        public boolean isAlternative() {
+            return false;
+        }
+
+        public String getName() {
+            return null;
+        }
+    }
+
+    /**
+     * Producer bean that returns {@code ServerRequest} from active context.
+     */
+    static class ServerRequestProducer extends ServerProducer implements Bean<ServerRequest> {
+
+        @Override
+        public Class<?> getBeanClass() {
+            return ServerRequest.class;
+        }
+
+        @Override
+        public Set<Type> getTypes() {
+            return new HashSet<>(Arrays.asList(ServerRequest.class, HttpRequest.class, Object.class));
+        }
+
+        @Override
+        public ServerRequest create(CreationalContext<ServerRequest> creationalContext) {
+            return Contexts.context().orElseThrow().get(ServerRequest.class).orElseThrow();
+        }
+
+        public void destroy(ServerRequest request, CreationalContext<ServerRequest> creationalContext) {
+        }
+    }
+
+    /**
+     * Producer bean that returns {@code ServerResponse} from active context.
+     */
+    static class ServerResponseProducer extends ServerProducer implements Bean<ServerResponse> {
+
+        @Override
+        public Class<?> getBeanClass() {
+            return ServerResponse.class;
+        }
+
+        @Override
+        public Set<Type> getTypes() {
+            return new HashSet<>(Arrays.asList(ServerResponse.class, Object.class));
+        }
+
+        @Override
+        public ServerResponse create(CreationalContext<ServerResponse> creationalContext) {
+            return Contexts.context().orElseThrow().get(ServerResponse.class).orElseThrow();
+        }
+
+        public void destroy(ServerResponse request, CreationalContext<ServerResponse> creationalContext) {
+        }
     }
 }
