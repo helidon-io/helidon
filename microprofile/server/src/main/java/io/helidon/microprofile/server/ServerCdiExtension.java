@@ -24,10 +24,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +49,6 @@ import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.staticcontent.StaticContentService;
-
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.BeforeDestroyed;
@@ -70,7 +67,6 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.ProcessProducerField;
 import jakarta.enterprise.inject.spi.ProcessProducerMethod;
-import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.ext.ParamConverterProvider;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -607,13 +603,8 @@ public class ServerCdiExtension implements Extension {
      */
     static class ServerProducer {
 
-        @SuppressWarnings("all")
-        public static class DefaultAnnotationLiteral extends AnnotationLiteral<Default> implements Default {
-            private static final long serialVersionUID = 1L;
-        }
-
         public Set<Annotation> getQualifiers() {
-            return Collections.singleton(new DefaultAnnotationLiteral());
+            return Collections.singleton(new Default.Literal());
         }
 
         public Class<? extends Annotation> getScope() {
@@ -649,7 +640,7 @@ public class ServerCdiExtension implements Extension {
 
         @Override
         public Set<Type> getTypes() {
-            return new HashSet<>(Arrays.asList(ServerRequest.class, HttpRequest.class, Object.class));
+            return Set.of(ServerRequest.class, HttpRequest.class, Object.class);
         }
 
         @Override
@@ -673,7 +664,7 @@ public class ServerCdiExtension implements Extension {
 
         @Override
         public Set<Type> getTypes() {
-            return new HashSet<>(Arrays.asList(ServerResponse.class, Object.class));
+            return Set.of(ServerResponse.class, Object.class);
         }
 
         @Override
