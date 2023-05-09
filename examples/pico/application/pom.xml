@@ -27,11 +27,11 @@
         <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.pico</groupId>
-    <artifactId>helidon-examples-pico-providers</artifactId>
-    <name>Helidon Pico Examples Providers</name>
+    <artifactId>helidon-examples-pico-application</artifactId>
+    <name>Helidon Pico Examples Application</name>
 
     <description>
-        Example usages of Pico Providers.
+        Example usages of a Pico Application.
     </description>
 
     <properties>
@@ -41,7 +41,12 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.examples.pico</groupId>
-            <artifactId>helidon-examples-pico-basics</artifactId>
+            <artifactId>helidon-examples-pico-providers</artifactId>
+            <version>${helidon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.examples.pico</groupId>
+            <artifactId>helidon-examples-pico-configdriven</artifactId>
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
@@ -59,26 +64,43 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <groupId>io.helidon.pico</groupId>
+                <artifactId>helidon-pico-maven-plugin</artifactId>
+                <version>${helidon.version}</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>application-create</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>testCompile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-application-create</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                    <compilerArgs>
-                        <arg>-Apico.autoAddNonContractInterfaces=true</arg> <!-- this setting can be used to avoid the need for @Contract -->
-                        <arg>-Apico.debug=false</arg>
-                    </compilerArgs>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.pico</groupId>
-                            <artifactId>helidon-pico-processor</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
+                    <permittedProviderTypes>NAMED</permittedProviderTypes>
+                    <permittedProviderTypeNames>
+                        <permittedProviderTypeName>io.helidon.pico.tests.pico.provider.MyServices$MyConcreteClassContractPerRequestIPProvider</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.pico.tests.pico.provider.MyServices$MyConcreteClassContractPerRequestProvider</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.pico.tests.pico.ASerialProviderImpl</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.pico.tests.pico.tbox.impl.BladeProvider</permittedProviderTypeName>
+                    </permittedProviderTypeNames>
                 </configuration>
             </plugin>
             <plugin>

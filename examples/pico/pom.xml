@@ -33,8 +33,8 @@
     <modules>
         <module>basics</module>
         <module>providers</module>
-<!--        <module>configdriven</module>-->
-<!--        <module>application</module>-->
+        <module>configdriven</module>
+        <module>application</module>
     </modules>
 
 </project>

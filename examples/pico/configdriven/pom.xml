@@ -27,15 +27,15 @@
         <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.pico</groupId>
-    <artifactId>helidon-examples-pico-providers</artifactId>
-    <name>Helidon Pico Examples Providers</name>
+    <artifactId>helidon-examples-pico-configdriven</artifactId>
+    <name>Helidon Pico Examples Config-Driven</name>
 
     <description>
-        Example usages of Pico Providers.
+        Examples of Config-driven services in Pico.
     </description>
 
     <properties>
-        <mainClass>io.helidon.examples.pico.providers.Main</mainClass>
+        <mainClass>io.helidon.examples.pico.configdriven.Main</mainClass>
     </properties>
 
     <dependencies>
@@ -45,19 +45,17 @@
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.pico.configdriven</groupId>
+            <artifactId>helidon-pico-configdriven-runtime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+        </dependency>
+        <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -68,14 +66,17 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                    <compilerArgs>
-                        <arg>-Apico.autoAddNonContractInterfaces=true</arg> <!-- this setting can be used to avoid the need for @Contract -->
-                        <arg>-Apico.debug=false</arg>
-                    </compilerArgs>
                     <annotationProcessorPaths>
+                        <!-- this is now using the configdriven processor instead -->
                         <path>
-                            <groupId>io.helidon.pico</groupId>
-                            <artifactId>helidon-pico-processor</artifactId>
+                            <groupId>io.helidon.pico.configdriven</groupId>
+                            <artifactId>helidon-pico-configdriven-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <!-- this is also using the ConfigBean builder processor -->
+                        <path>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-config-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>

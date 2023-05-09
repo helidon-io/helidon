@@ -14,34 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.pico.providers;
+package io.helidon.examples.pico.configdriven;
 
-import java.util.Objects;
+import io.helidon.builder.config.ConfigBean;
 
-/**
- * See {@link Blade}
- */
-class SizedBlade implements Blade {
+@ConfigBean(repeatable = true)
+public interface DrillConfig {
 
-    private final Size size;
-
-    public enum Size {
-        SMALL,
-        LARGE
-    }
-
-    public SizedBlade(Size size) {
-        this.size = Objects.requireNonNull(size);
-    }
-
-    @Override
-    public String name() {
-        return size + " Blade";
-    }
-
-    @Override
-    public String toString() {
-        return name();
-    }
+    String name();
 
 }

@@ -14,34 +14,35 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.pico.providers;
+package io.helidon.examples.pico.configdriven;
 
 import java.util.Objects;
 
-/**
- * See {@link Blade}
- */
-class SizedBlade implements Blade {
+import io.helidon.examples.pico.basics.Tool;
+import io.helidon.pico.configdriven.api.ConfiguredBy;
 
-    private final Size size;
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
 
-    public enum Size {
-        SMALL,
-        LARGE
-    }
+@ConfiguredBy(DrillConfig.class)
+class Drill implements Tool {
 
-    public SizedBlade(Size size) {
-        this.size = Objects.requireNonNull(size);
+    private final DrillConfig cfg;
+
+    @Inject
+    Drill(DrillConfig cfg) {
+        this.cfg = Objects.requireNonNull(cfg);
     }
 
     @Override
     public String name() {
-        return size + " Blade";
+        return cfg.name();
     }
 
-    @Override
-    public String toString() {
-        return name();
+    @PostConstruct
+    @SuppressWarnings("unused")
+    void init() {
+        System.out.println(name() + "; initialized");
     }
 
 }

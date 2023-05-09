@@ -14,34 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.pico.providers;
-
-import java.util.Objects;
-
 /**
- * See {@link Blade}
+ * Examples of providers in Pico.
  */
-class SizedBlade implements Blade {
-
-    private final Size size;
-
-    public enum Size {
-        SMALL,
-        LARGE
-    }
-
-    public SizedBlade(Size size) {
-        this.size = Objects.requireNonNull(size);
-    }
-
-    @Override
-    public String name() {
-        return size + " Blade";
-    }
-
-    @Override
-    public String toString() {
-        return name();
-    }
-
-}
+package io.helidon.examples.pico.providers;

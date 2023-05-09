@@ -83,16 +83,17 @@ public class ToolBox {
     void init() {
         System.out.println("Preferred Big Tool: " + preferredBigTool);
         System.out.println("Optional Little Hammer: " + optionalLittleHammer);
-        System.out.println("-----");
-        System.out.println("ToolBox Contents:");
+
         printToolBoxContents();
-        System.out.println("-----");
     }
 
-    void printToolBoxContents() {
+    public void printToolBoxContents() {
+        System.out.println("-----");
+        System.out.println("ToolBox Contents:");
         for (Provider<Tool> tool : allToolProviders) {
             System.out.println(tool);
         }
+        System.out.println("-----");
     }
 
 }
