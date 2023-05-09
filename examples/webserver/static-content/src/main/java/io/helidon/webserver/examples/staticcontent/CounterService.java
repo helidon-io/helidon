@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package io.helidon.reactive.webserver.examples.staticcontent;
+package io.helidon.webserver.examples.staticcontent;
 
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -32,21 +32,21 @@ import jakarta.json.JsonObject;
 /**
  * Counts access to the WEB service.
  */
-public class CounterService implements Service {
+public class CounterService implements HttpService {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private final LongAdder allAccessCounter = new LongAdder();
     private final AtomicInteger apiAccessCounter = new AtomicInteger();
 
     @Override
-    public void update(Routing.Rules routingRules) {
-        routingRules.any(this::handleAny)
-                    .get("/api/counter", this::handleGet);
+    public void routing(HttpRules rules) {
+        rules.any(this::handleAny)
+                .get("/api/counter", this::handleGet);
     }
 
     private void handleAny(ServerRequest request, ServerResponse response) {
         allAccessCounter.increment();
-        request.next();
+        response.next();
     }
 
     private void handleGet(ServerRequest request, ServerResponse response) {

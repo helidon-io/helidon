@@ -1,6 +1,6 @@
 # Static Content Example
 
-This application demonstrates use of the StaticContentSupport to serve static files
+This application demonstrates use of the StaticContentService to serve static files
  together with a simple REST service.
 
 ## Build and run
