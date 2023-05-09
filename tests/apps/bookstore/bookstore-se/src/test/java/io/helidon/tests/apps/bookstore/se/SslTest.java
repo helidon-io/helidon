@@ -16,7 +16,7 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

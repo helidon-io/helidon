@@ -16,8 +16,8 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import io.helidon.reactive.webserver.WebServer;
 
+import io.helidon.nima.webserver.WebServer;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
