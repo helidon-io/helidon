@@ -38,13 +38,13 @@ public class MainToolBox implements ToolBox {
     private final List<Provider<Tool>> allTools;
     private final List<Provider<Hammer>> allHammers;
     private final Provider<Hammer> bigHammer;
+    private final Screwdriver screwdriver;
+
+    private Provider<Hammer> setPreferredHammer;
 
     @Inject
     @Preferred
     Provider<Hammer> preferredHammer;
-    private Provider<Hammer> setPreferredHammer;
-
-    private final Screwdriver screwdriver;
 
     public int postConstructCallCount;
     public int preDestroyCallCount;
@@ -69,7 +69,7 @@ public class MainToolBox implements ToolBox {
 
     @Inject
     void setPreferredHammer(@Preferred Provider<Hammer> hammer) {
-        setPreferredHammer = hammer;
+        this.setPreferredHammer = hammer;
     }
 
     @Override

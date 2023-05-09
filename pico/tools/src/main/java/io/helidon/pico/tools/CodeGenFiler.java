@@ -63,7 +63,7 @@ public class CodeGenFiler {
     private static final boolean FORCE_MODULE_INFO_PICO_INTO_SCRATCH_DIR = true;
     private static final boolean FILER_WRITE_ONCE_PER_TYPE = true;
     private static final Set<TypeName> FILER_TYPES_FILED = new LinkedHashSet<>();
-    private static boolean filerWriteEnabled = true;
+    private static volatile boolean filerWriteEnabled = true;
 
     private final AbstractFilerMessager filer;
     private final Boolean enabled;
