@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package io.helidon.nima.graphql.server;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.reactive.media.jsonb.JsonbSupport;
-import io.helidon.reactive.webclient.WebClient;
+import io.helidon.common.http.Http;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 import graphql.schema.GraphQLSchema;
 import graphql.schema.StaticDataFetcher;
@@ -30,50 +29,45 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ServerTest
 class GraphQlServiceTest {
+
+    private final Http1Client client;
+
+    GraphQlServiceTest(Http1Client client) {
+        this.client = client;
+    }
+
+    @SetUpRoute
+    static void routing(HttpRouting.Builder builder) {
+        builder.register(GraphQlService.create(buildSchema()));
+    }
 
     @SuppressWarnings("unchecked")
     @Test
     void testHelloWorld() {
-        WebServer server = WebServer.builder()
-                .host("localhost")
-                .routing(r -> r.register(GraphQlService.create(buildSchema())))
-                .build()
-                .start();
+        try (Http1ClientResponse response = client.post("/graphql")
+                .submit("{\"query\": \"{hello}\"}")) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            JsonObject json = response.as(JsonObject.class);
+            assertThat("POST errors: " + json.get("errors"), json, notNullValue());
+            assertThat("POST", json.get("data").asJsonObject().getJsonString("hello").getString(), is("world"));
+        }
 
-        try {
-            WebClient webClient = WebClient.builder()
-                    .addMediaSupport(JsonbSupport.create())
-                    .build();
-
-            LinkedHashMap<String, Object> response = webClient
-                    .post()
-                    .uri("http://localhost:" + server.port() + "/graphql")
-                    .submit("{\"query\": \"{hello}\"}", LinkedHashMap.class)
-                    .await(10, TimeUnit.SECONDS);
-
-            Map<String, Object> data = (Map<String, Object>) response.get("data");
-            assertThat("POST errors: " + response.get("errors"), data, notNullValue());
-            assertThat("POST", data.get("hello"), is("world"));
-
-            response = webClient
-                    .get()
-                    .uri("http://localhost:" + server.port() + "/graphql")
-                    .queryParam("query", "{hello}")
-                    .request(LinkedHashMap.class)
-                    .await(10, TimeUnit.SECONDS);
-
-            data = (Map<String, Object>) response.get("data");
-            assertThat("GET errors: " + response.get("errors"), data, notNullValue());
-            assertThat("GET", data.get("hello"), is("world"));
-        } finally {
-            server.stop();
+        try (Http1ClientResponse response = client.get("/graphql")
+                .queryParam("query", "{hello}")
+                .request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            JsonObject json = response.as(JsonObject.class);
+            assertThat("GET errors: " + json.get("errors"), json, notNullValue());
+            assertThat("GET", json.get("data").asJsonObject().getJsonString("hello").getString(), is("world"));
         }
     }
 
