@@ -29,7 +29,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.runtime.AbstractServiceProvider;
-import io.helidon.pico.runtime.DefaultServiceBinder;
+import io.helidon.pico.runtime.ServiceBinderDefault;
 
 import static io.helidon.pico.tools.CommonUtils.hasValue;
 import static io.helidon.pico.tools.TypeTools.needToDeclareModuleUsage;
@@ -111,7 +111,7 @@ public abstract class AbstractCreator {
         if (sp instanceof AbstractServiceProvider && ((AbstractServiceProvider<?>) sp).isCustom()) {
             return null;
         }
-        return DefaultServiceBinder.toRootProvider(sp).activator().orElseThrow().getClass().getName() + ".INSTANCE";
+        return ServiceBinderDefault.toRootProvider(sp).activator().orElseThrow().getClass().getName() + ".INSTANCE";
     }
 
     /**

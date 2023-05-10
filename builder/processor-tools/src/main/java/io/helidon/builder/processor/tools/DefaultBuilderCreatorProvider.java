@@ -38,7 +38,7 @@ import io.helidon.builder.BuilderInterceptor;
 import io.helidon.builder.RequiredAttributeVisitor;
 import io.helidon.builder.Singular;
 import io.helidon.builder.processor.spi.BuilderCreatorProvider;
-import io.helidon.builder.processor.spi.DefaultTypeAndBody;
+import io.helidon.builder.processor.spi.TypeAndBodyDefault;
 import io.helidon.builder.processor.spi.TypeAndBody;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -95,11 +95,11 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             preValidate(implTypeName, typeInfo, builderAnnotation);
 
             List<TypeAndBody> builds = new ArrayList<>();
-            builds.add(DefaultTypeAndBody.builder()
+            builds.add(TypeAndBodyDefault.builder()
                                .typeName(abstractImplTypeName)
                                .body(toBody(createBodyContext(false, abstractImplTypeName, typeInfo, builderAnnotation)))
                                .build());
-            builds.add(DefaultTypeAndBody.builder()
+            builds.add(TypeAndBodyDefault.builder()
                                .typeName(implTypeName)
                                .body(toBody(createBodyContext(true, implTypeName, typeInfo, builderAnnotation)))
                                .build());

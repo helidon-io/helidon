@@ -34,7 +34,7 @@ class DefaultInjectionPlanBinder implements ServiceInjectionPlanBinder, ServiceI
     public Binder bindTo(ServiceProvider<?> untrustedSp) {
         // don't trust what we get, but instead lookup the service provider that we carry in our services registry
         ServiceProvider<?> serviceProvider = services.serviceProviderFor(untrustedSp.serviceInfo().serviceTypeName());
-        Optional<ServiceProviderBindable<?>> bindable = DefaultServiceBinder.toBindableProvider(serviceProvider);
+        Optional<ServiceProviderBindable<?>> bindable = ServiceBinderDefault.toBindableProvider(serviceProvider);
         Optional<Binder> binder = (bindable.isPresent()) ? bindable.get().injectionPlanBinder() : Optional.empty();
         if (binder.isEmpty()) {
             // basically this means this service will not support compile-time injection

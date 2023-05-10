@@ -21,7 +21,7 @@ import io.helidon.common.types.TypeName;
 /**
  * The default implementation of {@link TypeAndBody}.
  */
-public class DefaultTypeAndBody implements TypeAndBody {
+public class TypeAndBodyDefault implements TypeAndBody {
     private final TypeName typeName;
     private final String body;
 
@@ -31,7 +31,7 @@ public class DefaultTypeAndBody implements TypeAndBody {
      * @param b the builder
      * @see #builder()
      */
-    protected DefaultTypeAndBody(Builder b) {
+    protected TypeAndBodyDefault(Builder b) {
         this.typeName = b.typeName;
         this.body = b.body;
     }
@@ -114,8 +114,8 @@ public class DefaultTypeAndBody implements TypeAndBody {
          *
          * @return the built instance
          */
-        public DefaultTypeAndBody build() {
-            return new DefaultTypeAndBody(this);
+        public TypeAndBodyDefault build() {
+            return new TypeAndBodyDefault(this);
         }
     }
 
