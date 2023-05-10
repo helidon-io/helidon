@@ -20,10 +20,10 @@ import java.util.Collection;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.apps.bookstore.common.Book;
 import io.helidon.tests.apps.bookstore.common.BookMapper;
 import io.helidon.tests.apps.bookstore.common.BookStore;
@@ -33,7 +33,7 @@ import jakarta.json.JsonObject;
 /**
  * Implements book service.
  */
-public class BookService implements Service {
+public class BookService implements HttpService {
 
     private static final BookStore BOOK_STORE = new BookStore();
     private static final String ISBN_PARAM = "isbn";
@@ -50,7 +50,7 @@ public class BookService implements Service {
      * @param rules the routing rules.
      */
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/", this::getBooks)
                 .post("/", this::postBook)
                 .get("/{" + ISBN_PARAM + "}", this::getBook)
@@ -78,13 +78,13 @@ public class BookService implements Service {
     private void postBook(ServerRequest request, ServerResponse response) {
         switch (jsonLibrary) {
             case JSONP:
-                request.content().as(JsonObject.class)
-                        .thenAccept(jo -> addBook(BookMapper.decodeJsonp(jo), response));
+                JsonObject jo = request.content().as(JsonObject.class);
+                addBook(BookMapper.decodeJsonp(jo), response);
                 break;
             case JSONB:
             case JACKSON:
-                request.content().as(Book.class)
-                        .thenAccept(book -> addBook(book, response));
+                Book book = request.content().as(Book.class);
+                addBook(book, response);
                 break;
             default:
                 throw new RuntimeException("Unknown JSON library " + jsonLibrary);
@@ -101,7 +101,7 @@ public class BookService implements Service {
     }
 
     private void getBook(ServerRequest request, ServerResponse response) {
-        String isbn = request.path().param(ISBN_PARAM);
+        String isbn = request.path().pathParameters().value(ISBN_PARAM);
         Book book = BOOK_STORE.find(isbn);
 
         if (book == null) {
@@ -125,13 +125,13 @@ public class BookService implements Service {
     private void putBook(ServerRequest request, ServerResponse response) {
         switch (jsonLibrary) {
             case JSONP:
-                request.content().as(JsonObject.class)
-                        .thenAccept(jo -> updateBook(BookMapper.decodeJsonp(jo), response));
+                JsonObject jo = request.content().as(JsonObject.class);
+                updateBook(BookMapper.decodeJsonp(jo), response);
                 break;
             case JSONB:
             case JACKSON:
-                request.content().as(Book.class)
-                        .thenAccept(book -> updateBook(book, response));
+                Book book = request.content().as(Book.class);
+                updateBook(book, response);
                 break;
             default:
                 throw new RuntimeException("Unknown JSON library " + jsonLibrary);
@@ -148,7 +148,7 @@ public class BookService implements Service {
     }
 
     private void deleteBook(ServerRequest request, ServerResponse response) {
-        String isbn = request.path().param(ISBN_PARAM);
+        String isbn = request.path().pathParameters().value(ISBN_PARAM);
         if (BOOK_STORE.contains(isbn)) {
             BOOK_STORE.remove(isbn);
             response.send();
