@@ -27,12 +27,14 @@ import io.helidon.pico.api.ActivationResult;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.testing.PicoTestingSupport;
 import io.helidon.pico.tests.pico.ASerialProviderImpl;
+import io.helidon.pico.tests.pico.ClassNamedY;
 import io.helidon.pico.tests.pico.TestingSingleton;
 import io.helidon.pico.tests.pico.provider.FakeConfig;
 import io.helidon.pico.tests.pico.provider.FakeServer;
@@ -336,6 +338,26 @@ class ToolBoxTest {
                          "MyServices$MyConcreteClassContractPerRequestIPProvider:INIT",
                          "MyServices$MyConcreteClassContractPerRequestProvider:INIT",
                          "BladeProvider:INIT"));
+    }
+
+    @Test
+    void classNamed() {
+        List<ServiceProvider<?>> providers = services.lookupAll(
+                ServiceInfoCriteriaDefault.builder()
+                        .addQualifier(QualifierAndValueDefault.createClassNamed(ClassNamedY.class))
+                        .build());
+        List<String> desc = providers.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        assertThat(desc,
+                   contains("YImpl$$Pico$$Interceptor:INIT",
+                            "BladeProvider:INIT"));
+
+        providers = services.lookupAll(
+                ServiceInfoCriteriaDefault.builder()
+                        .addQualifier(QualifierAndValueDefault.createNamed(ClassNamedY.class.getName()))
+                        .build());
+        List<String> desc2 = providers.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        assertThat(desc2,
+                   equalTo(desc));
     }
 
 }

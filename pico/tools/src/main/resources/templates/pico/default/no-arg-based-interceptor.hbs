@@ -27,6 +27,7 @@ import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementNameDefault;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementName;
+import io.helidon.pico.api.ClassNamed;
 import io.helidon.pico.api.InvocationContextDefault;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationException;
@@ -70,7 +71,7 @@ public class {{className}} extends {{parent}} {
     @Inject
     @SuppressWarnings("unchecked")
     {{this.className}}({{#annotationtriggertypenames}}
-                @Named("{{{.}}}") List<Provider<Interceptor>> {{id}},{{/annotationtriggertypenames}}
+                @ClassNamed({{{.}}}.class) List<Provider<Interceptor>> {{id}},{{/annotationtriggertypenames}}
                 Provider<{{parent}}> provider) {
         this.__provider = Objects.requireNonNull(provider);
         this.__sp = (provider instanceof ServiceProvider) ? (ServiceProvider<{{parent}}>) __provider : null;
