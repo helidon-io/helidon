@@ -54,7 +54,6 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
     public MapConfigSource.Builder createRootPlusOneSocketTestingConfigSource() {
         return ConfigSources.create(
                 Map.of(
-                        FAKE_SERVER_CONFIG + ".name", "root",
                         FAKE_SERVER_CONFIG + ".port", "8080",
                         FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".0.name", "first",
                         FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".0.port", "8081"

@@ -513,7 +513,7 @@ public class CodeGenFiler {
             }
         }
 
-        messager().warn(CodeGenFiler.class.getSimpleName() + ": unable to determine source location for: " + name);
+        messager().log(CodeGenFiler.class.getSimpleName() + ": unable to determine source location for: " + name);
         return Optional.empty();
     }
 

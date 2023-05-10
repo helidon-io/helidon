@@ -55,7 +55,7 @@ import static io.helidon.pico.tools.ModuleUtils.toSuggestedModuleName;
 public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     /**
-     * The classname to use for the Pico {@link io.helidon.pico.Application} test class.
+     * The classname to use for the Pico {@link io.helidon.pico.api.Application} test class.
      * If not found the classname will be inferred.
      */
     @Parameter(property = PicoServicesConfig.FQN + ".application.class.name", readonly = true

@@ -22,7 +22,7 @@ module io.helidon.pico.api {
     requires io.helidon.common.types;
     requires io.helidon.common;
     requires io.helidon.common.config;
-    requires static io.helidon.builder;
+    requires transitive io.helidon.builder;
     requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
 

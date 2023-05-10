@@ -123,7 +123,8 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
 
     @Override
     public boolean reset(boolean deep) {
-        System.Logger.Level level = isInitialized() ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
+        System.Logger.Level level = (isInitialized() && PicoServices.isDebugEnabled())
+        ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
         LOGGER.log(level, "Resetting");
         configuredServiceProviderMetaConfigBeanMap.clear();
         configuredServiceProvidersByConfigKey.clear();
@@ -351,26 +352,30 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
         config.asNodeList()
                 .ifPresent(list -> {
                     list.forEach(beanCfg -> {
-                        // use explicit name, otherwise index or name of the config node (for lists, the name is 0 bases index)
-                        String name = beanCfg.get("name").asString().orElseGet(beanCfg::name);
                         CB configBean = toConfigBean(beanCfg, configuredServiceProvider);
-                        registerConfigBean(configBean, name, beanCfg, configuredServiceProvider, metaAttributes);
+                        String instanceId = toInstanceId(beanCfg);
+                        registerConfigBean(configBean, instanceId, beanCfg, configuredServiceProvider, metaAttributes);
                     });
                 });
     }
 
-
-    <T, GCB extends GeneratedConfigBean> GCB toConfigBean(io.helidon.config.Config config,
-                                                          ConfiguredServiceProvider<T, ?> configuredServiceProvider) {
+    static <T, GCB extends GeneratedConfigBean> GCB toConfigBean(io.helidon.config.Config config,
+                                                                 ConfiguredServiceProvider<T, ?> configuredServiceProvider) {
         GCB configBean = (GCB) Objects.requireNonNull(configuredServiceProvider.toConfigBean(config),
-                                               "unable to create default config bean for " + configuredServiceProvider);
+                                               "Unable to create default config bean for " + configuredServiceProvider);
         if (configuredServiceProvider instanceof AbstractConfiguredServiceProvider) {
-            AbstractConfiguredServiceProvider<T, GCB> csp = (AbstractConfiguredServiceProvider<T, GCB>) configuredServiceProvider;
-            csp.configBeanInstanceId(configBean, config.key().toString());
-            assert (config.name().equals(configBean.__name().orElseThrow())) : csp;
+            setConfigBeanInstanceId(config, configBean, (AbstractConfiguredServiceProvider<T, GCB>) configuredServiceProvider);
         }
 
         return configBean;
+    }
+
+    @SuppressWarnings("rawtypes")
+    static void setConfigBeanInstanceId(io.helidon.config.Config config,
+                                        GeneratedConfigBean configBean,
+                                        AbstractConfiguredServiceProvider csp) {
+        String instanceId = toInstanceId(config);
+        csp.configBeanInstanceId(configBean, instanceId);
     }
 
     /**
@@ -391,8 +396,6 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
         Set<String> problems = new LinkedHashSet<>();
         String instanceId = csp.toConfigBeanInstanceId(configBean);
         assert (hasValue(key));
-        assert (config == null || DEFAULT_INSTANCE_ID.equals(key) || (config.key().toString().equals(key)))
-                : key + " and " + config.key().toString();
 
         AttributeVisitor<Object> visitor = new AttributeVisitor<>() {
             @Override
@@ -458,7 +461,7 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
         if (instanceId != null) {
             csp.configBeanInstanceId(configBean, instanceId);
         } else {
-            instanceId = configuredServiceProvider.toConfigBeanInstanceId((GCB) configBean);
+            instanceId = configuredServiceProvider.toConfigBeanInstanceId(configBean);
         }
 
         if (DEFAULT_INSTANCE_ID.equals(instanceId)) {
@@ -584,6 +587,12 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
                 visitAndInitialize(config.asNodeList().get(), depth + 1);
             }
         });
+    }
+
+    static String toInstanceId(io.helidon.config.Config config) {
+        // use explicit name, otherwise index or fq id of the config node (for lists, the name is 0 bases index)
+        String id = config.get("name").asString().orElseGet(() -> config.key().toString());
+        return hasValue(id) ? id : DEFAULT_INSTANCE_ID;
     }
 
 }

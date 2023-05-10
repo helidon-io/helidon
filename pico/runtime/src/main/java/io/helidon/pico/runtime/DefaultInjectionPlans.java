@@ -32,6 +32,7 @@ import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.DependencyInfo;
 import io.helidon.pico.api.InjectionException;
 import io.helidon.pico.api.InjectionPointInfo;
+import io.helidon.pico.api.InjectionPointProvider;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.PicoServiceProviderException;
 import io.helidon.pico.api.PicoServices;
@@ -136,15 +137,17 @@ class DefaultInjectionPlans {
         }
 
         List<ServiceProvider<?>> tmpServiceProviders = services.lookupAll(depTo, false);
-        if (tmpServiceProviders == null || tmpServiceProviders.isEmpty()) {
+        if (tmpServiceProviders.isEmpty()) {
             if (VoidServiceProvider.INSTANCE.serviceInfo().matches(depTo)) {
                 tmpServiceProviders = VoidServiceProvider.LIST_INSTANCE;
+            } else {
+                tmpServiceProviders = injectionPointProvidersFor(services, depTo);
             }
         }
 
         // filter down the selections to not include self
         List<ServiceProvider<?>> serviceProviders =
-                (tmpServiceProviders != null && !tmpServiceProviders.isEmpty())
+                (!tmpServiceProviders.isEmpty())
                         ? tmpServiceProviders.stream()
                                 .filter(sp -> !isSelf(self, sp))
                                 .collect(Collectors.toList())
@@ -178,6 +181,35 @@ class DefaultInjectionPlans {
                         assert (prev == null) : ipInfo;
                     }
                 });
+    }
+
+    /**
+     * Special case where we have qualifiers on the criteria, but we should still allow any
+     * {@link io.helidon.pico.api.InjectionPointProvider} match regardless, since it will be the ultimate determining agent
+     * to use the dependency info - not the services registry default logic.
+     *
+     * @param services the services registry
+     * @param depTo    the dependency with the qualifiers
+     * @return a list of {@link io.helidon.pico.api.InjectionPointProvider}s that can handle the contracts requested
+     */
+    static List<ServiceProvider<?>> injectionPointProvidersFor(Services services,
+                                                               ServiceInfoCriteria depTo) {
+        if (depTo.qualifiers().isEmpty()) {
+            return List.of();
+        }
+
+        if (depTo.contractsImplemented().isEmpty()) {
+            return List.of();
+        }
+
+        ServiceInfoCriteria modifiedDepTo = ServiceInfoCriteriaDefault.toBuilder(depTo)
+                .qualifiers(List.of())
+                .build();
+
+        List<ServiceProvider<?>> providers = services.lookupAll(modifiedDepTo);
+        return providers.stream()
+                .filter(it -> it.serviceInfo().contractsImplemented().contains(InjectionPointProvider.class.getName()))
+                .toList();
     }
 
     /**
@@ -216,7 +248,7 @@ class DefaultInjectionPlans {
      *
      * @param self              the reference to the service provider associated with this plan
      * @param ipInfo            the injection point
-     * @param serviceProviders  the service providers that qualify
+     * @param serviceProviders  the service providers that qualify in preferred weighted order
      * @param logger            the logger to use for any logging
      * @return the resolution (and activation) of the qualified service provider(s) in the form acceptable to the injection point
      */
