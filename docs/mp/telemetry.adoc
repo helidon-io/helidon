@@ -198,6 +198,108 @@ This way, Helidon will explicitly get all the configuration and objects from the
 
 == Examples
 
+This guide showcases how to incorporate MicroProfile Telemetry into Helidon and provides illustrations of how to view traces. Jaeger is employed in all the examples, and the Jaeger UI is used to view the traces.
+
+=== Setup Jaeger
+
+For the examples Jaeger will be used for gathering of the tracing information.
+
+.Run Jeager in a docker container.
+[source, bash]
+----
+docker run -d --name jaeger \
+  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
+  -e COLLECTOR_OTLP_ENABLED=true \
+  -p 6831:6831/udp \
+  -p 6832:6832/udp \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  -p 14250:14250 \
+  -p 14268:14268 \
+  -p 14269:14269 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one:1.41
+----
+
+=== Enable MicroProfile Telemetry in Helidon Application
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.telemetry</groupId>
+    <artifactId>helidon-microprofile-telemetry</artifactId>
+</dependency>
+----
+
+Add these lines to `META-INF/microprofile-config.properties`:
+
+.MicroProfile Telemetry properties
+[source,properties]
+----
+otel.sdk.disabled=false     <1>
+otel.traces.exporter=jaeger <2>
+----
+<1> Enable MicroProfile Telemetry
+<2> Set exporter to Jaeger
+
+[source,properties]
+---
+tracing.service=helidon-greeting
+---
+
+=== Tracing at Method Level
+
+[source, java]
+----
+@Path("/greet")
+public class GreetResource {
+    /**
+     * Return a worldly greeting message.
+     *
+     * @return {@link String}
+     */
+    @GET
+    @WithSpan("default")
+    public String getDefaultMessage() {
+        return "Hello World";
+    }
+}
+----
+
+[source,java]
+----
+@GET
+@Path("custom")
+@Produces(MediaType.APPLICATION_JSON)
+@WithSpan
+public JsonObject useCustomSpan(){
+    Span span = tracer.spanBuilder("custom")
+            .setSpanKind(SpanKind.INTERNAL)
+            .setAttribute("attribute", "value")
+            .startSpan();
+    span.end();
+
+    return JSON.createObjectBuilder()
+            .add("Custom Span", span.toString())
+            .build();
+}
+----
+
+[source,java]
+----
+@Uri("http://localhost:8081/secondary")
+private WebTarget target;
+
+@GET
+@Path("/outbound")
+@WithSpan("outbound")
+public String outbound() {
+    return target.request().accept(MediaType.TEXT_PLAIN).get(String.class);
+}
+----
+
 
 == Additional Information
 
