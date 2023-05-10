@@ -591,7 +591,7 @@ class DefaultPicoConfigBeanRegistry implements BindableConfigBeanRegistry {
 
     static String toInstanceId(io.helidon.config.Config config) {
         // use explicit name, otherwise index or fq id of the config node (for lists, the name is 0 bases index)
-        String id = config.get("name").asString().orElseGet(() -> config.key().toString());
+        String id = config.get("name").asString().orElseGet(config::name);
         return hasValue(id) ? id : DEFAULT_INSTANCE_ID;
     }
 
