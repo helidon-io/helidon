@@ -63,7 +63,6 @@
         <module>metrics</module>
         <module>jbatch</module>
         <module>nima</module>
-        <module>pico</module>
     </modules>
 
     <build>

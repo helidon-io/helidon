@@ -83,7 +83,6 @@
             This is needed for the Generated annotation in grpc sources -->
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
-            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
