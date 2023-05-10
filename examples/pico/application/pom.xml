@@ -94,12 +94,12 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <packageName>io.helidon.examples.pico.application</packageName>
+                    <!-- choice of NAMED, NONE, ALL - see PermittedProviderType -->
                     <permittedProviderTypes>NAMED</permittedProviderTypes>
                     <permittedProviderTypeNames>
-                        <permittedProviderTypeName>io.helidon.pico.tests.pico.provider.MyServices$MyConcreteClassContractPerRequestIPProvider</permittedProviderTypeName>
-                        <permittedProviderTypeName>io.helidon.pico.tests.pico.provider.MyServices$MyConcreteClassContractPerRequestProvider</permittedProviderTypeName>
-                        <permittedProviderTypeName>io.helidon.pico.tests.pico.ASerialProviderImpl</permittedProviderTypeName>
-                        <permittedProviderTypeName>io.helidon.pico.tests.pico.tbox.impl.BladeProvider</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.examples.pico.providers.BladeProvider</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.examples.pico.providers.NailProvider</permittedProviderTypeName>
                     </permittedProviderTypeNames>
                 </configuration>
             </plugin>
