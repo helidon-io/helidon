@@ -204,7 +204,7 @@ This guide showcases how to incorporate MicroProfile Telemetry into Helidon and 
 
 For the examples Jaeger will be used for gathering of the tracing information.
 
-.Run Jeager in a docker container.
+.Run Jaeger in a docker container.
 [source, bash]
 ----
 docker run -d --name jaeger \
@@ -240,9 +240,11 @@ Add these lines to `META-INF/microprofile-config.properties`:
 ----
 otel.sdk.disabled=false     <1>
 otel.traces.exporter=jaeger <2>
+otel.exporter.name=greeting-service <3>
 ----
 <1> Enable MicroProfile Telemetry
 <2> Set exporter to Jaeger
+<3> Name of our service
 
 [source,properties]
 ---
@@ -251,54 +253,114 @@ tracing.service=helidon-greeting
 
 === Tracing at Method Level
 
+Let us create simple services and use `@WithSpan` and `Tracer` to create span and let MicroProfile Opentelemetry handle them
+
 [source, java]
 ----
 @Path("/greet")
 public class GreetResource {
-    /**
-     * Return a worldly greeting message.
-     *
-     * @return {@link String}
-     */
+
     @GET
-    @WithSpan("default")
+    @WithSpan("default")                <1>
     public String getDefaultMessage() {
         return "Hello World";
     }
 }
 ----
+<1> Use of `@WithSpan` with name "default".
 
+Now let's call the Greeting endpoint:
+
+[source,bash]
+----
+curl localhost:8080/greet
+Hello World
+----
+
+After that if we proceed to Jaeger UI at link:http://localhost:16686/[] the expected output is:
+
+image::telemetry/telemetry-greeting-jaeger.png[Greeting service tracing output]
+
+.Custom method
 [source,java]
 ----
+@Inject
+private Tracer tracer;  <1>
+
 @GET
 @Path("custom")
 @Produces(MediaType.APPLICATION_JSON)
-@WithSpan
+@WithSpan                                           <2>
 public JsonObject useCustomSpan(){
-    Span span = tracer.spanBuilder("custom")
+    Span span = tracer.spanBuilder("custom")        <3>
             .setSpanKind(SpanKind.INTERNAL)
             .setAttribute("attribute", "value")
             .startSpan();
-    span.end();
+    span.end();                                     <4>
 
     return JSON.createObjectBuilder()
             .add("Custom Span", span.toString())
             .build();
 }
 ----
+<1> Inject Opentelemetry `Tracer`
+<2> Create Span around the method `useCustomSpan()`
+<3> Create a custom `INTERNAL` span and start it
+<4> End the custom span
 
+Let us call the custom endpoint:
+
+[source,bash]
+----
+curl localhost:8080/greeting/custom
+----
+
+After that if we proceed to Jaeger UI at link:http://localhost:16686/[] the expected output is:
+
+image::telemetry/telemetry-custom-jaeger.png[Custom span usage]
+
+.Outbound method
 [source,java]
 ----
 @Uri("http://localhost:8081/secondary")
-private WebTarget target;
+private WebTarget target;       <1>
 
 @GET
 @Path("/outbound")
-@WithSpan("outbound")
+@WithSpan("outbound")   <2>
 public String outbound() {
-    return target.request().accept(MediaType.TEXT_PLAIN).get(String.class);
+    return target.request().accept(MediaType.TEXT_PLAIN).get(String.class); <3>
 }
 ----
+<1> Inject `WebTarget` pointing to Secondary service
+<2> Wrap method using `WithSpan`
+<3> Call the secondary service;
+
+The secondary service is very simple, it has only one method.
+
+.Secondary service
+[source, java]
+----
+@GET
+@WithSpan   <1>
+public String getSecondaryMessage() {
+    return "Secondary"; <2>
+}
+----
+<1> Wrap method in a span
+<2> Return a string
+
+Let us call the _Outbound_ endpoint:
+
+[source,bash]
+----
+curl localhost:8080/greet/outbound
+Secondary
+----
+
+The `greeting-service` should call `secondary-service`. Each service will create Spans with corresponding names. If we proceed to Jaeger UI at link:http://localhost:16686/[] the expected output is:
+
+image::telemetry/telemetry-outbound-jaeger.png[Secondary service outbound call]
 
 
 == Additional Information
