@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.LazyValue;
@@ -58,6 +57,7 @@ import static io.helidon.pico.tools.TypeTools.isStatic;
 import static io.helidon.pico.tools.TypeTools.methodsAnnotatedWith;
 import static io.helidon.pico.tools.TypeTools.providesContractType;
 import static io.helidon.pico.tools.TypeTools.toAccess;
+import static java.util.function.Predicate.not;
 
 /**
  * The default implementation of {@link io.helidon.pico.tools.spi.ExternalModuleCreator}.
@@ -104,11 +104,11 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
             // process each found service type
             scan.get().getAllStandardClasses()
                     .stream()
-                    .filter((classInfo) -> packageNames.contains(classInfo.getPackageName()))
-                    .filter((classInfo) -> !classInfo.isInterface())
-                    .filter((classInfo) -> !classInfo.isExternalClass())
-                    .filter((classInfo) -> !isPrivate(classInfo.getModifiers()))
-                    .filter((classInfo) -> !classInfo.isInnerClass() || req.innerClassesProcessed())
+                    .filter(classInfo -> packageNames.contains(classInfo.getPackageName()))
+                    .filter(not(ClassInfo::isInterface))
+                    .filter(not(ClassInfo::isExternalClass))
+                    .filter(classInfo -> !isPrivate(classInfo.getModifiers()))
+                    .filter(classInfo -> !classInfo.isInnerClass() || req.innerClassesProcessed())
                     .forEach(this::processServiceType);
 
             ActivatorCreatorCodeGen activatorCreatorCodeGen = ActivatorCreatorDefault
@@ -138,8 +138,7 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
             if (packageInfo != null) {
                 for (ClassInfo classInfo : packageInfo.getClassInfo()) {
                     URI uri = classInfo.getClasspathElementURI();
-                    Optional<Path> filePath = ModuleUtils.toPath(uri);
-                    filePath.ifPresent(classpath::add);
+                    classpath.add(Path.of(uri));
                 }
             }
         }

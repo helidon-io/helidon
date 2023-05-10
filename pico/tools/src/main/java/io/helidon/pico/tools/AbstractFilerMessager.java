@@ -70,6 +70,10 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
         this.logger = logger;
     }
 
+    System.Logger logger() {
+        return logger;
+    }
+
     /**
      * Create an annotation based filer abstraction.
      *
@@ -206,11 +210,15 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
             this.paths = paths;
         }
 
+        CodeGenPaths codeGenPaths() {
+            return paths;
+        }
+
         @Override
         public FileObject getResource(JavaFileManager.Location location,
                                       CharSequence moduleAndPkg,
                                       CharSequence relativeName) throws IOException {
-            return getResource(location, moduleAndPkg, relativeName, true);
+            return getResource(location, moduleAndPkg, relativeName, false);
         }
 
         private FileObject getResource(JavaFileManager.Location location,

@@ -270,7 +270,9 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
             // retrieves all the services in the registry
             List<ServiceProvider<?>> allServices = services
-                    .lookupAll(ServiceInfoCriteriaDefault.builder().build(), false);
+                    .lookupAll(ServiceInfoCriteriaDefault.builder()
+                                       .includeIntercepted(true)
+                                       .build(), false);
             if (allServices.isEmpty()) {
                 warn("no services to process");
                 return;
@@ -343,7 +345,8 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                 getLog().error("failed to process", res.error().orElse(null));
             }
         } catch (Exception e) {
-            throw new ToolsException("An error occurred creating the " + PicoServicesConfig.NAME + " Application", e);
+            throw new ToolsException("An error occurred creating the " + PicoServicesConfig.NAME
+                                             + " Application in " + getClass().getName(), e);
         } finally {
             Thread.currentThread().setContextClassLoader(prev);
         }

@@ -55,7 +55,7 @@ class CustomAnnotationProcessorTest {
     @SuppressWarnings("unchecked")
     void annotationSupported() {
         CustomAnnotationProcessor processor = new CustomAnnotationProcessor();
-        assertThat(processor.annoTypes(),
+        assertThat(processor.getSupportedAnnotationTypes(),
                    containsInAnyOrder(ExtensibleGET.class.getName()));
     }
 
@@ -78,8 +78,8 @@ class CustomAnnotationProcessorTest {
                 .elementName("header")
                 .build();
         ServiceInfoBasics serviceInfo = ServiceInfoDefault.builder();
-        DefaultGenericTemplateCreator genericTemplateCreator =
-                new DefaultGenericTemplateCreator(ExtensibleGetTemplateProducer.class);
+        GenericTemplateCreatorDefault genericTemplateCreator =
+                new GenericTemplateCreatorDefault(ExtensibleGetTemplateProducer.class);
         CustomAnnotationTemplateRequest req = CustomAnnotationTemplateRequestDefault.builder()
                 .annoTypeName(create(ExtensibleGET.class))
                 .serviceInfo(serviceInfo)

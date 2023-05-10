@@ -136,7 +136,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                                      LazyValue<ScanResult> scan) {
         boolean isApplicationPreCreated = req.configOptions().isApplicationPreCreated();
         boolean isModuleCreated = req.configOptions().isModuleCreated();
-        CodeGenPaths codeGenPaths = req.codeGenPaths();
+        CodeGenPaths codeGenPaths = req.codeGenPaths().orElse(null);
         Map<TypeName, Boolean> serviceTypeToIsAbstractType = req.codeGen().serviceTypeIsAbstractTypes();
         List<TypeName> activatorTypeNames = new ArrayList<>();
         List<TypeName> activatorTypeNamesPutInModule = new ArrayList<>();
@@ -222,7 +222,10 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         Map<TypeName, Set<TypeName>> serviceTypeContracts = codeGen.serviceTypeContracts();
         Map<TypeName, Set<TypeName>> externalContracts = codeGen.serviceTypeExternalContracts();
 
-        Optional<String> moduleInfoPath = req.codeGenPaths().moduleInfoPath();
+        Optional<String> moduleInfoPath = Optional.empty();
+        if (req.codeGenPaths().isPresent()) {
+            moduleInfoPath = req.codeGenPaths().get().moduleInfoPath();
+        }
         ModuleInfoCreatorRequest moduleCreatorRequest = ModuleInfoCreatorRequestDefault.builder()
                 .name(moduleName)
                 .moduleTypeName(moduleTypeName)
@@ -293,14 +296,14 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                                 Map<String, List<String>> metaInfServices) {
         boolean prev = true;
         if (req.analysisOnly()) {
-            prev = CodeGenFiler.filerEnabled(false);
+            prev = CodeGenFiler.filerWriterEnabled(false);
         }
 
         try {
             req.filer().codegenMetaInfServices(paths, metaInfServices);
         } finally {
             if (req.analysisOnly()) {
-                CodeGenFiler.filerEnabled(prev);
+                CodeGenFiler.filerWriterEnabled(prev);
             }
         }
     }
@@ -309,14 +312,14 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                                   ActivatorCodeGenDetail activatorDetail) {
         boolean prev = true;
         if (req.analysisOnly()) {
-            prev = CodeGenFiler.filerEnabled(false);
+            prev = CodeGenFiler.filerWriterEnabled(false);
         }
 
         try {
             req.filer().codegenActivatorFilerOut(activatorDetail);
         } finally {
             if (req.analysisOnly()) {
-                CodeGenFiler.filerEnabled(prev);
+                CodeGenFiler.filerWriterEnabled(prev);
             }
         }
     }
@@ -325,14 +328,14 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                                ModuleDetail moduleDetail) {
         boolean prev = true;
         if (req.analysisOnly()) {
-            prev = CodeGenFiler.filerEnabled(false);
+            prev = CodeGenFiler.filerWriterEnabled(false);
         }
 
         try {
             req.filer().codegenModuleFilerOut(moduleDetail);
         } finally {
             if (req.analysisOnly()) {
-                CodeGenFiler.filerEnabled(prev);
+                CodeGenFiler.filerWriterEnabled(prev);
             }
         }
     }
@@ -342,14 +345,14 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                                     String applicationBody) {
         boolean prev = true;
         if (req.analysisOnly()) {
-            prev = CodeGenFiler.filerEnabled(false);
+            prev = CodeGenFiler.filerWriterEnabled(false);
         }
 
         try {
             req.filer().codegenApplicationFilerOut(applicationTypeName, applicationBody);
         } finally {
             if (req.analysisOnly()) {
-                CodeGenFiler.filerEnabled(prev);
+                CodeGenFiler.filerWriterEnabled(prev);
             }
         }
     }
@@ -358,28 +361,27 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                                    ModuleInfoDescriptor descriptor) {
         boolean prev = true;
         if (req.analysisOnly()) {
-            prev = CodeGenFiler.filerEnabled(false);
+            prev = CodeGenFiler.filerWriterEnabled(false);
         }
 
         try {
             return req.filer().codegenModuleInfoFilerOut(descriptor, true).orElse(null);
         } finally {
             if (req.analysisOnly()) {
-                CodeGenFiler.filerEnabled(prev);
+                CodeGenFiler.filerWriterEnabled(prev);
             }
         }
     }
 
     @Override
-    public InterceptorCreatorResponse codegenInterceptors(GeneralCreatorRequest req,
-                                                          Map<TypeName, InterceptionPlan> interceptionPlans) {
+    public InterceptorCreatorResponse codegenInterceptors(CodeGenInterceptorRequest request) {
         InterceptorCreatorResponseDefault.Builder res = InterceptorCreatorResponseDefault.builder();
-        res.interceptionPlans(interceptionPlans);
+        res.interceptionPlans(request.interceptionPlans());
 
-        for (Map.Entry<TypeName, InterceptionPlan> e : interceptionPlans.entrySet()) {
+        for (Map.Entry<TypeName, InterceptionPlan> e : request.interceptionPlans().entrySet()) {
             try {
-                Path filePath = codegenInterceptorFilerOut(req, null, e.getValue());
-                res.addGeneratedFile(e.getKey(), filePath);
+                Optional<Path> filePath = codegenInterceptorFilerOut(request.generalCreatorRequest(), null, e.getValue());
+                filePath.ifPresent(it -> res.addGeneratedFile(e.getKey(), it));
             } catch (Throwable t) {
                 throw new ToolsException("Failed while processing: " + e.getKey(), t);
             }
@@ -388,9 +390,9 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         return res.build();
     }
 
-    private Path codegenInterceptorFilerOut(GeneralCreatorRequest req,
-                                            ActivatorCreatorResponseDefault.Builder builder,
-                                            InterceptionPlan interceptionPlan) {
+    private Optional<Path> codegenInterceptorFilerOut(GeneralCreatorRequest req,
+                                                      ActivatorCreatorResponseDefault.Builder builder,
+                                                      InterceptionPlan interceptionPlan) {
         validate(interceptionPlan);
         TypeName interceptorTypeName = InterceptorCreatorDefault.createInterceptorSourceTypeName(interceptionPlan);
         InterceptorCreatorDefault interceptorCreator = new InterceptorCreatorDefault();
@@ -398,7 +400,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         if (builder != null) {
             builder.addServiceTypeInterceptorPlan(interceptorTypeName, interceptionPlan);
         }
-        return req.filer().codegenJavaFilerOut(interceptorTypeName, body).orElseThrow();
+        return req.filer().codegenJavaFilerOut(interceptorTypeName, body);
     }
 
     private void validate(InterceptionPlan plan) {
@@ -832,10 +834,11 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                         .stream()
                         .filter(dep2 -> InjectionPointInfoDefault.CONSTRUCTOR.equals(dep2.elementName()))
                         .forEach(dep2 -> {
-                            if ((nameRef.get() == null)) {
+                            if (nameRef.get() == null) {
                                 nameRef.set(dep2.baseIdentity());
                             } else {
-                                assert (nameRef.get().equals(dep2.baseIdentity())) : "only 1 ctor can be injectable";
+                                assert (nameRef.get().equals(dep2.baseIdentity()))
+                                        : "only one Constructor can be injectable: " + dependencies.fromServiceTypeName();
                             }
                             args.add("c" + count.incrementAndGet());
                         })
@@ -852,7 +855,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         AtomicInteger count = new AtomicInteger();
         AtomicReference<String> nameRef = new AtomicReference<>();
         List<String> args = new ArrayList<>();
-        List<DependencyInfo> allCtorArgs = dependencies.allDependenciesFor(InjectionPointInfoDefault.CONSTRUCTOR);
+        List<DependencyInfo> allCtorArgs = dependencies.allDependenciesFor(InjectionPointInfo.CONSTRUCTOR);
         allCtorArgs.forEach(dep1 -> dep1.injectionPointDependencies()
                         .forEach(dep2 -> {
                             if (nameRef.get() == null) {

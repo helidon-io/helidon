@@ -41,10 +41,10 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
 
     /**
-     * In application mode, we should not have any lookups recorded.
+     * In application mode, we should not have many lookups recorded.
      */
     @Test
-    void verifyNoLookups() {
+    void verifyMinimalLookups() {
         resetWith(io.helidon.config.Config.builder(createBasicTestingConfigSource(), createRootDefault8080TestingConfigSource())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -52,18 +52,31 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
 
         Metrics metrics = picoServices.metrics().orElseThrow();
         Set<ServiceInfoCriteria> criteriaSearchLog = picoServices.lookups().orElseThrow();
-        Set<String> contractSearchLog = criteriaSearchLog.stream().flatMap(it -> it.contractsImplemented().stream())
+        Set<String> contractSearchLog = criteriaSearchLog.stream()
+                .flatMap(it -> it.contractsImplemented().stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<String> servicesSearchLog = criteriaSearchLog.stream()
+                .flatMap(it -> it.serviceTypeName().stream())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<String> searchLog = new LinkedHashSet<>(contractSearchLog);
+        searchLog.addAll(servicesSearchLog);
 
-        assertThat(contractSearchLog,
+        // we expect three classes of lookups here:
+        // 1) Any and all config beans (like FakeServerConfig).
+        // 2) Any *Optional* unknown services (like the FakeTracer).
+        // 3) Any intercepted service (like ZImpl).
+        assertThat(searchLog,
                    containsInAnyOrder(
                            // config beans are always looked up
                            "io.helidon.builder.config.testsubjects.fakes.FakeServerConfig",
                            // tracer doesn't really exist, so it is looked up out of best-effort (as an optional injection dep)
-                           "io.helidon.builder.config.testsubjects.fakes.FakeTracer"));
+                           "io.helidon.builder.config.testsubjects.fakes.FakeTracer",
+                           // ZImpl is intercepted
+                           "io.helidon.pico.configdriven.interceptor.test.ZImpl"
+                           ));
         assertThat("lookup log: " + criteriaSearchLog,
                    metrics.lookupCount().orElseThrow(),
-                   is(2));
+                   is(3));
     }
 
     @Test

@@ -31,18 +31,20 @@ import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
+@SuppressWarnings("unused")
 @Singleton
 public class MainToolBox implements ToolBox {
 
     private final List<Provider<Tool>> allTools;
     private final List<Provider<Hammer>> allHammers;
     private final Provider<Hammer> bigHammer;
+    private final Screwdriver screwdriver;
+
+    private Provider<Hammer> setPreferredHammer;
 
     @Inject
     @Preferred
     Provider<Hammer> preferredHammer;
-
-    private final Screwdriver screwdriver;
 
     public int postConstructCallCount;
     public int preDestroyCallCount;
@@ -63,6 +65,11 @@ public class MainToolBox implements ToolBox {
     void setScrewdriver(Screwdriver screwdriver) {
         assert(this.screwdriver == screwdriver);
         setterCallCount++;
+    }
+
+    @Inject
+    void setPreferredHammer(@Preferred Provider<Hammer> hammer) {
+        this.setPreferredHammer = hammer;
     }
 
     @Override
@@ -90,6 +97,7 @@ public class MainToolBox implements ToolBox {
     @PostConstruct
     void postConstruct() {
         postConstructCallCount++;
+        assert (preferredHammer == setPreferredHammer) : preferredHammer + " and " + setPreferredHammer;
     }
 
     @PreDestroy

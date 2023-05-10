@@ -1,4 +1,4 @@
-// @Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
+// @Generated(value = "io.helidon.pico.tools.ModuleInfoDescriptorDefault", comments = "version=1")
 module io.helidon.pico.tests.pico/test {
     exports io.helidon.pico.tests.pico;
     // pico module - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
@@ -8,6 +8,7 @@ module io.helidon.pico.tests.pico/test {
     // pico external contract usage - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     uses io.helidon.pico.api.Resettable;
     uses io.helidon.pico.tests.pico.stacking.Intercepted;
+    uses io.helidon.pico.tests.pico.stacking.InterceptedImpl;
     // pico services - Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
     requires transitive io.helidon.pico.runtime;
 }

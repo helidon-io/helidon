@@ -64,7 +64,7 @@ public class ModuleUtils {
      * This application package name is what we fall back to for the application name and the module name if not otherwise
      * specified directly.
      */
-    public static final String APPLICATION_PACKAGE_FILE_NAME = PicoServicesConfig.NAME + "-app-package-name.txt";
+    public static final String APPLICATION_PACKAGE_FILE_NAME = "app-package-name.txt";
 
     static final String SERVICE_PROVIDER_MODULE_INFO_HBS = "module-info.hbs";
     static final String SRC_MAIN_JAVA_DIR = "/src/main/java";
@@ -322,19 +322,6 @@ public class ModuleUtils {
         }
         Path path = Path.of(sourcePath.substring(0, pos));
         return Objects.requireNonNull(path);
-    }
-
-    /**
-     * Will return non-empty File if the uri represents a local file on the fs.
-     *
-     * @param uri the uri of the artifact
-     * @return the file instance, or empty if not local
-     */
-    static Optional<Path> toPath(URI uri) {
-        if (uri.getHost() != null) {
-            return Optional.empty();
-        }
-        return Optional.of(Paths.get(uri));
     }
 
     /**

@@ -35,7 +35,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
-import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -43,8 +42,6 @@ import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.tools.AbstractFilerMessager;
-import io.helidon.pico.tools.ActivatorCreatorCodeGen;
-import io.helidon.pico.tools.ActivatorCreatorDefault;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequestDefault;
@@ -53,6 +50,9 @@ import io.helidon.pico.tools.CustomAnnotationTemplateResponseDefault;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
+import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
+import static io.helidon.pico.processor.GeneralProcessorUtils.hasValue;
+import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElementOf;
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
 import static io.helidon.pico.tools.TypeTools.createTypedElementNameFromElement;
 import static io.helidon.pico.tools.TypeTools.isStatic;
@@ -62,7 +62,7 @@ import static io.helidon.pico.tools.TypeTools.toFilePath;
 /**
  * Processor for all {@link io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator}'s.
  */
-public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
+public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
     private static final Map<TypeName, Set<CustomAnnotationTemplateCreator>> PRODUCERS_BY_ANNOTATION = new ConcurrentHashMap<>();
     private static final Set<String> ALL_ANNO_TYPES_HANDLED = new CopyOnWriteArraySet<>();
     private static final List<CustomAnnotationTemplateCreator> PRODUCERS = initialize();
@@ -114,29 +114,29 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                            RoundEnvironment roundEnv) {
         try {
             if (!roundEnv.processingOver()) {
-                for (String annoType : annoTypes()) {
+                for (String annoType : getSupportedAnnotationTypes()) {
                     TypeName annoName = TypeNameDefault.createFromTypeName(annoType);
                     Optional<TypeElement> annoElement = toTypeElement(annoName);
                     if (annoElement.isEmpty()) {
                         continue;
                     }
                     Set<? extends Element> typesToProcess = roundEnv.getElementsAnnotatedWith(annoElement.get());
-                    doInner(annoName, typesToProcess, roundEnv);
+                    doInner(annoName, typesToProcess);
                 }
             }
 
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
         } catch (Throwable t) {
-            error(getClass().getSimpleName() + " error during processing; " + t + " @ "
-                          + ProcessorUtils.rootStackTraceElementOf(t), t);
+            utils().error(getClass().getSimpleName() + " error during processing; " + t + " @ "
+                          + rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
             throw new ToolsException("Error while processing: " + t + " @ "
-                                             + ProcessorUtils.rootStackTraceElementOf(t), t);
+                                             + rootStackTraceElementOf(t), t);
         }
     }
 
     @Override
-    protected Set<String> annoTypes() {
+    public Set<String> getSupportedAnnotationTypes() {
         return Set.copyOf(ALL_ANNO_TYPES_HANDLED);
     }
 
@@ -146,8 +146,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     }
 
     void doInner(TypeName annoTypeName,
-                 Set<? extends Element> typesToProcess,
-                 RoundEnvironment roundEnv) {
+                 Set<? extends Element> typesToProcess) {
         if (typesToProcess.isEmpty()) {
             return;
         }
@@ -167,7 +166,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 CustomAnnotationTemplateResponseDefault.Builder res = CustomAnnotationTemplateResponseDefault.builder()
                         .request(req);
                 for (CustomAnnotationTemplateCreator producer : producers) {
-                    req.genericTemplateCreator(new DefaultGenericTemplateCreator(producer.getClass(), this));
+                    req.genericTemplateCreator(new GenericTemplateCreatorDefault(producer.getClass(), utils()));
                     CustomAnnotationTemplateResponse producerResponse = process(producer, req);
                     if (producerResponse != null) {
                         res = CustomAnnotationTemplateResponse.aggregate(req, res, producerResponse);
@@ -178,13 +177,13 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                     doFiler(response);
                 }
             } catch (Throwable t) {
-                throw new ToolsException("Error detected while processing: " + typesToProcess + t, t);
+                throw new ToolsException("Error while processing: " + typesToProcess + t, t);
             }
         }
     }
 
     void doFiler(CustomAnnotationTemplateResponse response) {
-        AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, this);
+        AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, utils());
         CodeGenFiler codegen = CodeGenFiler.create(filer);
         response.generatedSourceCode().forEach(codegen::codegenJavaFilerOut);
         response.generatedResources().forEach((typedElementName, resourceBody) -> {
@@ -192,8 +191,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             if (!hasValue(fileType)) {
                 fileType = ".generated";
             }
-            codegen.codegenResourceFilerOut(toFilePath(typedElementName.typeName(), fileType),
-                                            resourceBody, Optional.empty());
+            codegen.codegenResourceFilerOut(toFilePath(typedElementName.typeName(), fileType), resourceBody);
         });
     }
 
@@ -209,13 +207,13 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 res.generatedSourceCode().entrySet().forEach(entry -> {
                     TypeNameDefault.ensureIsFQN(entry.getKey());
                     if (!hasValue(entry.getValue())) {
-                        throw new ToolsException("expected to have valid code for: " + req + " for " + entry);
+                        throw new ToolsException("Expected to have valid code for: " + req + " for " + entry);
                     }
                 });
             }
             return res;
         } catch (Throwable t) {
-            throw new ToolsException("failed in producer: " + producer + "; " + t, t);
+            throw new ToolsException("Failed in producer: " + producer + "; " + t, t);
         }
     }
 
@@ -226,38 +224,27 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         if (enclosingClassTypeName == null) {
             return null;
         }
-        ServiceInfoBasics siInfo = toBasicServiceInfo(enclosingClassTypeName);
+
+        TypeInfo enclosingClassTypeInfo = utils()
+                .toTypeInfo(enclosingClassType, enclosingClassType.asType(), (typedElement) -> true)
+                .orElseThrow();
+        ServiceInfoBasics siInfo = GeneralProcessorUtils.toBasicServiceInfo(enclosingClassTypeInfo);
         if (siInfo == null) {
             return null;
         }
-        TypeInfoCreatorProvider tools = HelidonServiceLoader.create(
-                        ServiceLoader.load(TypeInfoCreatorProvider.class, TypeInfoCreatorProvider.class.getClassLoader()))
-                .asList()
-                .stream()
-                .findFirst()
-                .orElseThrow();
-        TypeInfo enclosingClassTypeInfo = tools
-                .createTypeInfo(enclosingClassType, enclosingClassType.asType(), processingEnv, (typedMethod) -> true)
-                .orElseThrow();
+
         Elements elements = processingEnv.getElementUtils();
         return CustomAnnotationTemplateRequestDefault.builder()
                 .filerEnabled(true)
                 .annoTypeName(annoTypeName)
                 .serviceInfo(siInfo)
                 .targetElement(createTypedElementNameFromElement(typeToProcess, elements).orElseThrow())
+                .enclosingTypeInfo(enclosingClassTypeInfo)
+                // the following are duplicates that should be removed - get them from the enclosingTypeInfo instead
+                // see https://github.com/helidon-io/helidon/issues/6773
                 .targetElementArgs(toArgs(typeToProcess))
                 .targetElementAccess(toAccess(typeToProcess))
-                .elementStatic(isStatic(typeToProcess))
-                .enclosingTypeInfo(enclosingClassTypeInfo);
-    }
-
-    ServiceInfoBasics toBasicServiceInfo(TypeName enclosingClassType) {
-        ActivatorCreatorCodeGen codeGen =
-                ActivatorCreatorDefault.createActivatorCreatorCodeGen(servicesToProcess()).orElse(null);
-        if (codeGen == null) {
-            return null;
-        }
-        return ActivatorCreatorDefault.toServiceInfo(enclosingClassType, codeGen);
+                .elementStatic(isStatic(typeToProcess));
     }
 
     List<TypedElementName> toArgs(Element typeToProcess) {
@@ -273,7 +260,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         return result;
     }
 
-    TypeElement toEnclosingClassTypeElement(Element typeToProcess) {
+    private static TypeElement toEnclosingClassTypeElement(Element typeToProcess) {
         while (typeToProcess != null && !(typeToProcess instanceof TypeElement)) {
             typeToProcess = typeToProcess.getEnclosingElement();
         }

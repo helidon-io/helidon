@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.element.TypeElement;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
@@ -59,6 +58,7 @@ public class ServicesToProcess implements Resettable {
     private static final ServicesToProcess SERVICES = new ServicesToProcess();
 
     private static final AtomicInteger RUNNING_PROCESSORS = new AtomicInteger();
+    private static final List<Runnable> RUNNABLES_TO_CALL_WHEN_DONE = new ArrayList<>();
 
     private final Set<TypeName> servicesTypeNames = new LinkedHashSet<>();
     private final Set<String> requiredModules = new TreeSet<>();
@@ -102,6 +102,16 @@ public class ServicesToProcess implements Resettable {
     }
 
     private ServicesToProcess() {
+    }
+
+    /**
+     * Creates a new instance, apart from the current global singleton instance exposed from {@link #servicesInstance()}.
+     *
+     * @return the new instance
+     * @see #servicesInstance()
+     */
+    public static ServicesToProcess create() {
+        return new ServicesToProcess();
     }
 
     @Override
@@ -223,12 +233,12 @@ public class ServicesToProcess implements Resettable {
      */
     public void addAccessLevel(TypeName serviceTypeName,
                                InjectionPointInfo.Access access) {
+        Objects.requireNonNull(serviceTypeName);
+        Objects.requireNonNull(access);
         addServiceTypeName(serviceTypeName);
-        if (access != null) {
-            Object prev = servicesToAccess.put(serviceTypeName, access);
-            if (prev != null && !access.equals(prev)) {
-                throw new IllegalStateException("Can only support one access level for " + serviceTypeName);
-            }
+        Object prev = servicesToAccess.put(serviceTypeName, access);
+        if (prev != null && !access.equals(prev)) {
+            throw new IllegalStateException("Can only support one access level for " + serviceTypeName);
         }
     }
 
@@ -825,7 +835,7 @@ public class ServicesToProcess implements Resettable {
      * @param roundEnv the round env
      */
     public static void onBeginProcessing(Messager processor,
-                                         Set<? extends TypeElement> annotations,
+                                         Set<?> annotations,
                                          RoundEnvironment roundEnv) {
         boolean reallyStarted = !annotations.isEmpty();
         if (reallyStarted && !roundEnv.processingOver()) {
@@ -836,6 +846,15 @@ public class ServicesToProcess implements Resettable {
     }
 
     /**
+     * Called to add a runnable to call when done with all annotation processing.
+     *
+     * @param runnable the runnable to call
+     */
+    public static void addOnDoneRunnable(Runnable runnable) {
+        RUNNABLES_TO_CALL_WHEN_DONE.add(runnable);
+    }
+
+    /**
      * Called to signal the end of an annotation processing phase.
      *
      * @param processor the processor running
@@ -843,7 +862,7 @@ public class ServicesToProcess implements Resettable {
      * @param roundEnv the round env
      */
     public static void onEndProcessing(Messager processor,
-                                       Set<? extends TypeElement> annotations,
+                                       Set<?> annotations,
                                        RoundEnvironment roundEnv) {
         boolean done = annotations.isEmpty();
         if (done && roundEnv.processingOver()) {
@@ -854,6 +873,11 @@ public class ServicesToProcess implements Resettable {
         if (done && RUNNING_PROCESSORS.get() == 0) {
             // perform module analysis to ensure the proper definitions are specified for modules and applications
             ServicesToProcess.servicesInstance().performModuleUsageValidation(processor);
+        }
+
+        if (done) {
+            RUNNABLES_TO_CALL_WHEN_DONE.forEach(Runnable::run);
+            RUNNABLES_TO_CALL_WHEN_DONE.clear();
         }
     }
 

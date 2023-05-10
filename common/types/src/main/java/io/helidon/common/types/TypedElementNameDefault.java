@@ -356,7 +356,7 @@ public class TypedElementNameDefault implements TypedElementName {
          * @param val the parameter values
          * @return this fluent builder
          */
-        public Builder parameterArgumentss(List<TypedElementName> val) {
+        public Builder parameterArguments(List<TypedElementName> val) {
             Objects.requireNonNull(val);
             this.parameters.clear();
             this.parameters.addAll(val);

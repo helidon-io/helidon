@@ -59,6 +59,17 @@ public final class TypeNames {
     public static final String PICO_CONFIGURED_BY = "io.helidon.pico.configdriven.api.ConfiguredBy";
 
     /**
+     * Pico class name {@value} for {@code InjectionPointProvider}.
+     */
+    public static final String PICO_INJECTION_POINT_PROVIDER = "io.helidon.pico.api.InjectionPointProvider";
+
+    /**
+     * Pico class name {@value} for {@code AbstractConfiguredServiceProvider}.
+     */
+    public static final String PICO_ABSTRACT_CONFIGURED_SERVICE_PROVIDER =
+            "io.helidon.pico.configdriven.runtime.AbstractConfiguredServiceProvider";
+
+    /**
      * Jakarta {@value} annotation.
      */
     public static final String JAKARTA_APPLICATION_SCOPED = "jakarta.enterprise.context.ApplicationScoped";

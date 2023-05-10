@@ -22,7 +22,7 @@ import io.helidon.pico.api.InjectionPointInfo;
 /**
  * Code generation utilities.
  */
-class CodeGenUtils {
+final class CodeGenUtils {
 
     private CodeGenUtils() {
     }

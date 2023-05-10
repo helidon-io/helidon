@@ -315,7 +315,8 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
         try {
             Set<AnnotationAndValue> annotations =
                     createAnnotationAndValueSet(elementUtils.getTypeElement(genericTypeName.name()));
-            Map<TypeName, List<AnnotationAndValue>> referencedAnnotations = toMetaAnnotations(annotations, processingEnv);
+            Map<TypeName, List<AnnotationAndValue>> referencedAnnotations =
+                    new LinkedHashMap<>(toMetaAnnotations(annotations, processingEnv));
             List<TypedElementName> elementsWeCareAbout = new ArrayList<>();
             List<TypedElementName> otherElements = new ArrayList<>();
             element.getEnclosedElements().stream()
@@ -328,6 +329,9 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                         } else {
                             otherElements.add(it);
                         }
+                        merge(referencedAnnotations, toMetaAnnotations(it.annotations(), processingEnv));
+                        it.parameterArguments().forEach(arg -> merge(referencedAnnotations,
+                                                                     toMetaAnnotations(arg.annotations(), processingEnv)));
                     });
             TypeInfoDefault.Builder builder = TypeInfoDefault.builder()
                     .typeName(fqTypeName)
@@ -410,6 +414,11 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to process: " + element, e);
         }
+    }
+
+    private static void merge(Map<TypeName, List<AnnotationAndValue>> result,
+                              Map<TypeName, List<AnnotationAndValue>> metaAnnotations) {
+        metaAnnotations.forEach((key1, value) -> result.computeIfAbsent(key1, (key) -> new ArrayList<>()).addAll(value));
     }
 
     /**
@@ -720,44 +729,49 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     public static Optional<TypedElementName> createTypedElementNameFromElement(Element v,
                                                                                Elements elements) {
         TypeName type = createTypeNameFromElement(v).orElse(null);
-        List<TypeName> componentTypeNames = null;
+        TypeMirror typeMirror = null;
         String defaultValue = null;
-        List<AnnotationAndValue> elementTypeAnnotations = List.of();
-        Set<String> modifierNames = Set.of();
         List<TypedElementName> params = List.of();
+        List<TypeName> componentTypeNames = List.of();
+        List<AnnotationAndValue> elementTypeAnnotations = List.of();
+        Set<String> modifierNames = v.getModifiers().stream()
+                .map(Modifier::toString)
+                .collect(Collectors.toSet());
+
         if (v instanceof ExecutableElement) {
             ExecutableElement ee = (ExecutableElement) v;
-            TypeMirror returnType = ee.getReturnType();
-            if (type == null) {
-                type = createTypeNameFromMirror(returnType).orElse(createFromGenericDeclaration(returnType.toString()));
-            }
-            if (returnType instanceof DeclaredType) {
-                List<? extends TypeMirror> args = ((DeclaredType) returnType).getTypeArguments();
-                componentTypeNames = args.stream()
-                        .map(BuilderTypeTools::createTypeNameFromMirror)
-                        .filter(Optional::isPresent)
-                        .map(Optional::orElseThrow)
-                        .collect(Collectors.toList());
-                elementTypeAnnotations =
-                        createAnnotationAndValueListFromElement(((DeclaredType) returnType).asElement(), elements);
-            }
+            typeMirror = Objects.requireNonNull(ee.getReturnType());
+            params = ee.getParameters().stream()
+                    .map(it -> createTypedElementNameFromElement(it, elements).orElseThrow())
+                    .collect(Collectors.toList());
             AnnotationValue annotationValue = ee.getDefaultValue();
-            defaultValue = annotationValue == null
-                    ? null
+            defaultValue = (annotationValue == null) ? null
                     : annotationValue.accept(new ToStringAnnotationValueVisitor()
                                                      .mapBooleanToNull(true)
                                                      .mapVoidToNull(true)
                                                      .mapBlankArrayToNull(true)
                                                      .mapEmptyStringToNull(true)
                                                      .mapToSourceDeclaration(true), null);
-            modifierNames = ee.getModifiers().stream()
-                    .map(Modifier::toString)
-                    .collect(Collectors.toSet());
-            params = ee.getParameters().stream()
-                    .map(it -> createTypedElementNameFromElement(it, elements).orElseThrow())
-                    .collect(Collectors.toList());
+        } else if (v instanceof VariableElement) {
+            VariableElement ve = (VariableElement) v;
+            typeMirror = Objects.requireNonNull(ve.asType());
         }
-        componentTypeNames = (componentTypeNames == null) ? List.of() : componentTypeNames;
+
+        if (typeMirror != null) {
+            if (type == null) {
+                type = createTypeNameFromMirror(typeMirror).orElse(createFromGenericDeclaration(typeMirror.toString()));
+            }
+            if (typeMirror instanceof DeclaredType) {
+                List<? extends TypeMirror> args = ((DeclaredType) typeMirror).getTypeArguments();
+                componentTypeNames = args.stream()
+                        .map(BuilderTypeTools::createTypeNameFromMirror)
+                        .filter(Optional::isPresent)
+                        .map(Optional::orElseThrow)
+                        .collect(Collectors.toList());
+                elementTypeAnnotations =
+                        createAnnotationAndValueListFromElement(((DeclaredType) typeMirror).asElement(), elements);
+            }
+        }
 
         TypedElementNameDefault.Builder builder = TypedElementNameDefault.builder()
                 .typeName(type)
@@ -767,7 +781,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                 .annotations(createAnnotationAndValueListFromElement(v, elements))
                 .elementTypeAnnotations(elementTypeAnnotations)
                 .modifierNames(modifierNames)
-                .parameterArgumentss(params);
+                .parameterArguments(params);
         createTypeNameFromElement(v.getEnclosingElement()).ifPresent(builder::enclosingTypeName);
         Optional.ofNullable(defaultValue).ifPresent(builder::defaultValue);
 

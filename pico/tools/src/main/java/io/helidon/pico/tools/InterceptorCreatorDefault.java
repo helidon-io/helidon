@@ -123,14 +123,6 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         return (allowListedAnnoTypeNames != null) ? allowListedAnnoTypeNames : Collections.emptySet();
     }
 
-    @Override
-    public Optional<InterceptionPlan> createInterceptorPlan(ServiceInfoBasics interceptedService,
-                                                            ProcessingEnvironment processEnv,
-                                                            Set<String> annotationTypeTriggers) {
-        return createInterceptorProcessor(interceptedService, this, Optional.of(processEnv))
-                .createInterceptorPlan(annotationTypeTriggers);
-    }
-
     /**
      * Abstract base for handling the resolution of annotation types by name.
      */
