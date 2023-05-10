@@ -55,6 +55,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.CreationException;
 import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.Bean;
@@ -378,13 +379,14 @@ public class ServerCdiExtension implements Extension {
                 .qualifiers(Set.of(Default.Literal.INSTANCE, Any.Literal.INSTANCE))
                 .addTransitiveTypeClosure(ServerRequest.class)
                 .scope(RequestScoped.class)
-                .createWith(cc -> Contexts.context().orElseThrow().get(ServerRequest.class).orElseThrow());
+                .createWith(cc -> Contexts.context().flatMap(c -> c.get(ServerRequest.class))
+                        .orElseThrow(() -> new CreationException("Unable to retrieve ServerRequest from context")));
         event.addBean()
                 .qualifiers(Set.of(Default.Literal.INSTANCE, Any.Literal.INSTANCE))
                 .addTransitiveTypeClosure(ServerResponse.class)
                 .scope(RequestScoped.class)
-                .createWith(cc -> Contexts.context().orElseThrow().get(ServerResponse.class).orElseThrow());
-    }
+                .createWith(cc -> Contexts.context().flatMap(c -> c.get(ServerResponse.class))
+                        .orElseThrow(() -> new CreationException("Unable to retrieve ServerResponse from context")));    }
 
     private void registerJaxRsApplications(BeanManager beanManager) {
         JaxRsCdiExtension jaxRs = beanManager.getExtension(JaxRsCdiExtension.class);
