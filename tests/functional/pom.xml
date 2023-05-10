@@ -42,6 +42,7 @@
         <module>mp-compression</module>
         <module>request-scope</module>
         <module>request-scope-cdi</module>
+        <module>request-scope-injection</module>
         <module>jax-rs-multiple-apps</module>
         <module>param-converter-provider</module>
         <module>config-profiles</module>
