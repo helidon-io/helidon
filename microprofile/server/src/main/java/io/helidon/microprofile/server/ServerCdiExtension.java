@@ -386,7 +386,8 @@ public class ServerCdiExtension implements Extension {
                 .addTransitiveTypeClosure(ServerResponse.class)
                 .scope(RequestScoped.class)
                 .createWith(cc -> Contexts.context().flatMap(c -> c.get(ServerResponse.class))
-                        .orElseThrow(() -> new CreationException("Unable to retrieve ServerResponse from context")));    }
+                        .orElseThrow(() -> new CreationException("Unable to retrieve ServerResponse from context")));
+    }
 
     private void registerJaxRsApplications(BeanManager beanManager) {
         JaxRsCdiExtension jaxRs = beanManager.getExtension(JaxRsCdiExtension.class);
