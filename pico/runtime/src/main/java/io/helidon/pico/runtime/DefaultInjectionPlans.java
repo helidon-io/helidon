@@ -308,7 +308,7 @@ class DefaultInjectionPlans {
                 // "standard" case
                 ServiceProvider<?> serviceProvider = serviceProviders.get(0);
                 Optional<ServiceProviderBindable<?>> serviceProviderBindable =
-                        DefaultServiceBinder.toBindableProvider(DefaultServiceBinder.toRootProvider(serviceProvider));
+                        ServiceBinderDefault.toBindableProvider(ServiceBinderDefault.toRootProvider(serviceProvider));
                 if (serviceProviderBindable.isPresent()
                         && serviceProviderBindable.get() != serviceProvider
                         && serviceProviderBindable.get() instanceof ServiceProviderProvider) {

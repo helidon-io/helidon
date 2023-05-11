@@ -43,8 +43,8 @@ import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.runtime.AbstractServiceProvider;
-import io.helidon.pico.runtime.DefaultServiceBinder;
 import io.helidon.pico.runtime.PicoInjectionPlan;
+import io.helidon.pico.runtime.ServiceBinderDefault;
 import io.helidon.pico.tools.spi.ApplicationCreator;
 
 import jakarta.inject.Provider;
@@ -322,7 +322,7 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
     @SuppressWarnings("unchecked")
     List<String> toInjectionPlanBindings(ServiceProvider<?> sp) {
         AbstractServiceProvider<?> asp = AbstractServiceProvider
-                .toAbstractServiceProvider(DefaultServiceBinder.toRootProvider(sp), true).orElseThrow();
+                .toAbstractServiceProvider(ServiceBinderDefault.toRootProvider(sp), true).orElseThrow();
         DependenciesInfo deps = asp.dependencies();
         if (deps.allDependencies().isEmpty()) {
             return List.of();

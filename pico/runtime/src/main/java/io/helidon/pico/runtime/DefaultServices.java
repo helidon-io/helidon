@@ -437,7 +437,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
                                       String moduleName,
                                       boolean trusted) {
         assert (picoServices.services() == services);
-        return DefaultServiceBinder.create(picoServices, moduleName, trusted);
+        return ServiceBinderDefault.create(picoServices, moduleName, trusted);
     }
 
     void bind(PicoServices picoServices,

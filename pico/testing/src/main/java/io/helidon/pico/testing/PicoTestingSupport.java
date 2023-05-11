@@ -33,7 +33,7 @@ import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.PicoServicesHolder;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.api.ServiceProvider;
-import io.helidon.pico.runtime.DefaultServiceBinder;
+import io.helidon.pico.runtime.ServiceBinderDefault;
 
 /**
  * Supporting helper utilities unit-testing Pico services.
@@ -60,7 +60,7 @@ public class PicoTestingSupport {
      */
     public static void bind(PicoServices picoServices,
                             ServiceProvider<?> serviceProvider) {
-        DefaultServiceBinder binder = DefaultServiceBinder.create(picoServices, PicoTestingSupport.class.getSimpleName(), true);
+        ServiceBinderDefault binder = ServiceBinderDefault.create(picoServices, PicoTestingSupport.class.getSimpleName(), true);
         binder.bind(serviceProvider);
     }
 

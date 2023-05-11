@@ -43,7 +43,7 @@ import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.ServiceProviderProvider;
 import io.helidon.pico.api.Services;
-import io.helidon.pico.runtime.DefaultServiceBinder;
+import io.helidon.pico.runtime.ServiceBinderDefault;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ApplicationCreatorCodeGen;
@@ -373,7 +373,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     Set<TypeName> toNames(List<ServiceProvider<?>> services) {
         Map<TypeName, ServiceProvider<?>> result = new LinkedHashMap<>();
         services.forEach(sp -> {
-            sp = DefaultServiceBinder.toRootProvider(sp);
+            sp = ServiceBinderDefault.toRootProvider(sp);
             String serviceType = sp.serviceInfo().serviceTypeName();
             TypeName name = TypeNameDefault.createFromTypeName(serviceType);
             ServiceProvider<?> prev = result.put(name, sp);

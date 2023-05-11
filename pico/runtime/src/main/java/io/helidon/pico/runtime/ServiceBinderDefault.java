@@ -29,13 +29,13 @@ import io.helidon.pico.api.Services;
 /**
  * The default implementation for {@link ServiceBinder}.
  */
-public class DefaultServiceBinder implements ServiceBinder {
+public class ServiceBinderDefault implements ServiceBinder {
     private final PicoServices picoServices;
     private final ServiceBinder serviceRegistry;
     private final String moduleName;
     private final boolean trusted;
 
-    private DefaultServiceBinder(PicoServices picoServices,
+    private ServiceBinderDefault(PicoServices picoServices,
                                  String moduleName,
                                  boolean trusted) {
         this.picoServices = picoServices;
@@ -52,12 +52,12 @@ public class DefaultServiceBinder implements ServiceBinder {
      * @param trusted are we in trusted mode (typically only set during early initialization sequence)
      * @return the newly created service binder
      */
-    public static DefaultServiceBinder create(PicoServices picoServices,
+    public static ServiceBinderDefault create(PicoServices picoServices,
                                               String moduleName,
                                               boolean trusted) {
         Objects.requireNonNull(picoServices);
         Objects.requireNonNull(moduleName);
-        return new DefaultServiceBinder(picoServices, moduleName, trusted);
+        return new ServiceBinderDefault(picoServices, moduleName, trusted);
     }
 
     @Override

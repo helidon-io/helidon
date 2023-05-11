@@ -43,17 +43,6 @@ class QualifierAndValueDefaultTest {
                    is(0));
     }
 
-    @Test
-    public void buildAndCompareClassNamed() {
-        QualifierAndValueDefault qav1 = QualifierAndValueDefault.createNamed(new FakeNamed());
-        QualifierAndValueDefault qav2 = QualifierAndValueDefault.createNamed(new FakeClassNamed());
-
-        assertThat(qav1.compareTo(qav2),
-                   is(0));
-        assertThat(qav2.compareTo(qav1),
-                   is(0));
-    }
-
     @Named("io.helidon.pico.api.DefaultQualifierAndValueTest")
     @ClassNamed(QualifierAndValueDefaultTest.class)
     @Test
@@ -69,6 +58,18 @@ class QualifierAndValueDefaultTest {
         assertThat("runtime retention expected for " + ClassNamed.class,
                    getClass().getMethod("createClassNamed").getAnnotation(ClassNamed.class),
                    notNullValue());
+
+    }
+
+    @Test
+    public void buildAndCompareClassNamed() {
+        QualifierAndValueDefault qav1 = QualifierAndValueDefault.createNamed(new FakeNamed());
+        QualifierAndValueDefault qav2 = QualifierAndValueDefault.createNamed(new FakeClassNamed());
+
+        assertThat(qav1.compareTo(qav2),
+                   is(0));
+        assertThat(qav2.compareTo(qav1),
+                   is(0));
     }
 
     class FakeNamed implements Named {
