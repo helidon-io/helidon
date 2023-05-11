@@ -39,7 +39,6 @@ import io.opentelemetry.api.OpenTelemetry;
 @Weight(Weighted.DEFAULT_WEIGHT - 50)
 public class OpenTelemetryTracerProvider implements TracerProvider {
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryTracerProvider.class.getName());
-    private static final String OTEL_AGENT_PRESENT_PROPERTY = "otel.agent.present";
     private static final AtomicReference<Tracer> CONFIGURED_TRACER = new AtomicReference<>();
     private static final AtomicBoolean GLOBAL_SET = new AtomicBoolean();
     private static final LazyValue<Tracer> GLOBAL_TRACER;
