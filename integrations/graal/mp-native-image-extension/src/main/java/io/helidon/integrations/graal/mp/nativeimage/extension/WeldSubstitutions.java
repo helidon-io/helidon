@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package io.helidon.integrations.graal.mp.nativeimage.extension;
 
 import java.lang.reflect.Type;
-import java.security.ProtectionDomain;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -27,7 +26,6 @@ import com.oracle.svm.core.annotate.InjectAccessors;
 import com.oracle.svm.core.annotate.RecomputeFieldValue;
 import com.oracle.svm.core.annotate.Substitute;
 import com.oracle.svm.core.annotate.TargetClass;
-import org.jboss.classfilewriter.ClassFile;
 import org.jboss.weld.event.ObserverNotifier;
 import org.jboss.weld.executor.DaemonThreadFactory;
 import org.jboss.weld.util.reflection.ParameterizedTypeImpl;
@@ -92,14 +90,6 @@ public class WeldSubstitutions {
          */
         public static void set(Object object, Executor executor) {
 
-        }
-    }
-
-    @TargetClass(className = "org.jboss.weld.util.bytecode.ClassFileUtils")
-    static final class ClassFileUtils {
-        @Substitute
-        public static Class<?> toClass(ClassFile ct, ClassLoader loader, ProtectionDomain domain) {
-            throw new IllegalStateException("Cannot load " + ct.getName());
         }
     }
 }

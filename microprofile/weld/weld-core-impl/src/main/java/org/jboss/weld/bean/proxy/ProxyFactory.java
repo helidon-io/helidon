@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +50,6 @@ import org.jboss.classfilewriter.code.CodeAttribute;
 import org.jboss.classfilewriter.util.Boxing;
 import org.jboss.classfilewriter.util.DescriptorUtils;
 import org.jboss.weld.Container;
-import org.jboss.weld.bean.AbstractProducerBean;
-import org.jboss.weld.bean.builtin.AbstractBuiltInBean;
 import org.jboss.weld.config.WeldConfiguration;
 import org.jboss.weld.exceptions.DefinitionException;
 import org.jboss.weld.exceptions.WeldException;
@@ -63,8 +60,6 @@ import org.jboss.weld.proxy.WeldConstruct;
 import org.jboss.weld.security.GetDeclaredConstructorsAction;
 import org.jboss.weld.security.GetDeclaredMethodsAction;
 import org.jboss.weld.security.GetProtectionDomainAction;
-import org.jboss.weld.serialization.spi.BeanIdentifier;
-import org.jboss.weld.serialization.spi.ContextualStore;
 import org.jboss.weld.serialization.spi.ProxyServices;
 import org.jboss.weld.util.Proxies;
 import org.jboss.weld.util.Proxies.TypeInfo;
@@ -128,11 +123,25 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
 
     // Default proxy class name suffix
     public static final String PROXY_SUFFIX = "$Proxy$";
-    // choose different package from what we have in tests to distinguish it clearly
-    public static final String WELD_PROXY_PREFIX = "org.jboss.weld.generated.proxies";
-    public static final String DEFAULT_PROXY_PACKAGE = WELD_PROXY_PREFIX + ".default";
+    public static final String DEFAULT_PROXY_PACKAGE = "org.jboss.weld.proxies";
+
+    private final Class<?> beanType;
+    private final Set<Class<?>> additionalInterfaces = new LinkedHashSet<Class<?>>();
+    private final ClassLoader classLoader;
+    private final String baseProxyName;
+    private final Bean<?> bean;
+    private final Class<?> proxiedBeanType;
+    private final String contextId;
+    private final ProxyServices proxyServices;
+
+    private final WeldConfiguration configuration;
+
     public static final String CONSTRUCTED_FLAG_NAME = "constructed";
+
+    private final ProxyInstantiator proxyInstantiator;
+
     protected static final BytecodeMethodResolver DEFAULT_METHOD_RESOLVER = new DefaultBytecodeMethodResolver();
+
     protected static final String LJAVA_LANG_REFLECT_METHOD = "Ljava/lang/reflect/Method;";
     protected static final String LJAVA_LANG_BYTE = "Ljava/lang/Byte;";
     protected static final String LJAVA_LANG_CLASS = "Ljava/lang/Class;";
@@ -140,13 +149,14 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
     protected static final String LBEAN_IDENTIFIER = "Lorg/jboss/weld/serialization/spi/BeanIdentifier;";
     protected static final String LJAVA_LANG_STRING = "Ljava/lang/String;";
     protected static final String LJAVA_LANG_THREAD_LOCAL = "Ljava/lang/ThreadLocal;";
+
     protected static final String INIT_METHOD_NAME = "<init>";
     protected static final String INVOKE_METHOD_NAME = "invoke";
     protected static final String METHOD_HANDLER_FIELD_NAME = "methodHandler";
     static final String JAVA = "java";
-    static final String JAKARTA = "jakarta";
-    static final String NO_PACKAGE = "the class package is null or empty";
+    static final String NULL = "the class package is null";
     static final String SIGNED = "the class is signed";
+
     private static final Set<ProxiedMethodFilter> METHOD_FILTERS;
 
     /*
@@ -167,16 +177,6 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         }
         METHOD_FILTERS = ImmutableSet.copyOf(filters);
     }
-
-    private final Class<?> beanType;
-    private final Set<Class<?>> additionalInterfaces = new LinkedHashSet<Class<?>>();
-    private final String baseProxyName;
-    private final Bean<?> bean;
-    private final Class<?> proxiedBeanType;
-    private final String contextId;
-    private final ProxyServices proxyServices;
-    private final WeldConfiguration configuration;
-    private final ProxyInstantiator proxyInstantiator;
 
     /**
      * created a new proxy factory from a bean instance. The proxy name is
@@ -212,7 +212,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         Class<?> superClass = typeInfo.getSuperClass();
         superClass = superClass == null ? Object.class : superClass;
         if (forceSuperClass || (superClass.equals(Object.class) && additionalInterfaces.isEmpty())) {
-            // No interface beans, must use the bean impl as superclass
+            // No interface beans must use the bean impl as superclass
             superClass = proxiedBeanType;
         }
         this.beanType = superClass;
@@ -220,6 +220,20 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         addDefaultAdditionalInterfaces();
         baseProxyName = proxyName;
         proxyServices = Container.instance(contextId).services().get(ProxyServices.class);
+        if (!proxyServices.supportsClassDefining()) {
+            if (bean != null) {
+                /*
+                 * this may happen when creating an InjectionTarget for a decorator using BeanManager#createInjectionTarget()
+                 * which does not allow the bean to be specified
+                 */
+                this.classLoader = resolveClassLoaderForBeanProxy(contextId, bean.getBeanClass(), typeInfo, proxyServices);
+            } else {
+                this.classLoader = resolveClassLoaderForBeanProxy(contextId, proxiedBeanType, typeInfo, proxyServices);
+            }
+        } else {
+            // integrator defines new proxies and looks them up, we don't need CL information
+            this.classLoader = null;
+        }
         // hierarchy order
         if (additionalInterfaces.size() > 1) {
             LinkedHashSet<Class<?>> sorted = Proxies.sortInterfacesHierarchy(additionalInterfaces);
@@ -248,7 +262,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
             }
         } else {
             String reason = getDefaultPackageReason(proxiedBeanType);
-            if (reason != null && reason.equals(NO_PACKAGE)) {
+            if (reason != null && reason.equals(NULL)) {
                 proxyPackage = DEFAULT_PROXY_PACKAGE;
                 BeanLogger.LOG.generatingProxyToDefaultPackage(proxiedBeanType, DEFAULT_PROXY_PACKAGE, reason);
             } else {
@@ -290,6 +304,17 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         }
 
         return proxyPackage + '.' + getEnclosingPrefix(proxiedBeanType) + className;
+    }
+
+    public void addInterfacesFromTypeClosure(Set<? extends Type> typeClosure, Class<?> proxiedBeanType) {
+        for (Type type : typeClosure) {
+            Class<?> c = Reflections.getRawType(type);
+            // Ignore no-interface views, they are dealt with proxiedBeanType
+            // (pending redesign)
+            if (c.isInterface()) {
+                addInterface(c);
+            }
+        }
     }
 
     /*
@@ -350,11 +375,6 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         return simpleName(className, type.getSimpleName());
     }
 
-    private static String getEnclosingPrefix(Class<?> clazz) {
-        Class<?> encl = clazz.getEnclosingClass();
-        return encl == null ? "" : getEnclosingPrefix(encl) + encl.getSimpleName() + '$';
-    }
-
     /*
      * Helidon addition
      */
@@ -400,38 +420,9 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         return name.toString();
     }
 
-    /**
-     * Convenience method to set the underlying bean instance for a proxy.
-     *
-     * @param proxy        the proxy instance
-     * @param beanInstance the instance of the bean
-     */
-    public static <T> void setBeanInstance(String contextId, T proxy, BeanInstance beanInstance, Bean<?> bean) {
-        if (proxy instanceof ProxyObject) {
-            ProxyObject proxyView = (ProxyObject) proxy;
-            proxyView.weld_setHandler(new ProxyMethodHandler(contextId, beanInstance, bean));
-        }
-    }
-
-    private static String getDefaultPackageReason(Class<?> clazz) {
-        if (clazz.getPackage() == null || clazz.getPackage().getName().isEmpty()) {
-            return NO_PACKAGE;
-        }
-        if (clazz.getSigners() != null) {
-            return SIGNED;
-        }
-        return null;
-    }
-
-    public void addInterfacesFromTypeClosure(Set<? extends Type> typeClosure, Class<?> proxiedBeanType) {
-        for (Type type : typeClosure) {
-            Class<?> c = Reflections.getRawType(type);
-            // Ignore no-interface views, they are dealt with proxiedBeanType
-            // (pending redesign)
-            if (c.isInterface()) {
-                addInterface(c);
-            }
-        }
+    private static String getEnclosingPrefix(Class<?> clazz) {
+        Class<?> encl = clazz.getEnclosingClass();
+        return encl == null ? "" : getEnclosingPrefix(encl) + encl.getSimpleName() + '$';
     }
 
     /**
@@ -490,27 +481,31 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
             proxyClassName = proxyClassName + suffix;
         }
         if (proxyClassName.startsWith(JAVA)) {
-            proxyClassName = proxyClassName.replaceFirst(JAVA, WELD_PROXY_PREFIX);
-        } else if (proxyClassName.startsWith(JAKARTA)) {
-            proxyClassName = proxyClassName.replaceFirst(JAKARTA, WELD_PROXY_PREFIX);
+            proxyClassName = proxyClassName.replaceFirst(JAVA, "org.jboss.weld");
         }
         Class<T> proxyClass = null;
         Class<?> originalClass = bean != null ? bean.getBeanClass() : proxiedBeanType;
         BeanLogger.LOG.generatingProxyClass(proxyClassName);
         try {
             // First check to see if we already have this proxy class
-            proxyClass = cast(proxyServices.loadClass(originalClass, proxyClassName));
+//            System.out.println("******** Load from classloader: " + originalClass.getName() + ", " + proxyClassName + ", classloader: " + classLoader);
+            proxyClass = cast(classLoader == null? proxyServices.loadClass(originalClass, proxyClassName) : classLoader.loadClass(proxyClassName));
+//            System.out.println("******** Loaded from classloader: " + originalClass.getName() + ", " + proxyClassName);
         } catch (ClassNotFoundException e) {
             // Create the proxy class for this instance
             try {
+//                System.out.println("******** Create: " + originalClass.getName() + ", " + proxyClassName);
                 proxyClass = createProxyClass(originalClass, proxyClassName);
+//                System.out.println("******** Created: " + originalClass.getName() + ", " + proxyClassName);
             } catch (Throwable e1) {
                 //attempt to load the class again, just in case another thread
                 //defined it between the check and the create method
                 try {
-                    proxyClass = cast(proxyServices.loadClass(originalClass, proxyClassName));
+                    proxyClass = cast(classLoader == null? proxyServices.loadClass(originalClass, proxyClassName) : classLoader.loadClass(proxyClassName));
+//                    System.out.println("******** Loaded again: " + originalClass.getName() + ", " + proxyClassName);
                 } catch (ClassNotFoundException e2) {
                     BeanLogger.LOG.catchingDebug(e1);
+//                    System.out.println("******** Failed to load: " + originalClass.getName() + ", " + proxyClassName);
                     throw BeanLogger.LOG.unableToLoadProxyClass(bean, proxiedBeanType, e1);
                 }
             }
@@ -525,6 +520,19 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
      */
     protected String getBaseProxyName() {
         return baseProxyName;
+    }
+
+    /**
+     * Convenience method to set the underlying bean instance for a proxy.
+     *
+     * @param proxy        the proxy instance
+     * @param beanInstance the instance of the bean
+     */
+    public static <T> void setBeanInstance(String contextId, T proxy, BeanInstance beanInstance, Bean<?> bean) {
+        if (proxy instanceof ProxyObject) {
+            ProxyObject proxyView = (ProxyObject) proxy;
+            proxyView.weld_setHandler(new ProxyMethodHandler(contextId, beanInstance, bean));
+        }
     }
 
     /**
@@ -604,7 +612,13 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
 
     private ClassFile newClassFile(String name, int accessFlags, String superclass, String... interfaces) {
         try {
-            return new ClassFile(name, accessFlags, superclass, interfaces);
+            if (classLoader == null) {
+                // initiate without the CL information as CL is null
+                return new ClassFile(name, accessFlags, superclass, interfaces);
+            } else {
+                // initiate with the CL information
+                return new ClassFile(name, accessFlags, superclass, classLoader, interfaces);
+            }
         } catch (Exception e) {
             throw BeanLogger.LOG.unableToCreateClassFile(name, e.getCause());
         }
@@ -896,13 +910,13 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         }
         // now we have all our arguments on the stack
         // lets invoke the method
-        b.invokeinterface(MethodHandler.class.getName(), INVOKE_METHOD_NAME, LJAVA_LANG_OBJECT, new String[]{LJAVA_LANG_OBJECT,
-                LJAVA_LANG_REFLECT_METHOD, LJAVA_LANG_REFLECT_METHOD, "[" + LJAVA_LANG_OBJECT});
+        b.invokeinterface(MethodHandler.class.getName(), INVOKE_METHOD_NAME, LJAVA_LANG_OBJECT, new String[] { LJAVA_LANG_OBJECT,
+                LJAVA_LANG_REFLECT_METHOD, LJAVA_LANG_REFLECT_METHOD, "[" + LJAVA_LANG_OBJECT });
         if (addReturnInstruction) {
             // now we need to return the appropriate type
             if (method.getReturnType().equals(BytecodeUtils.VOID_CLASS_DESCRIPTOR)) {
                 b.returnInstruction();
-            } else if (isPrimitive(method.getReturnType())) {
+            } else if(isPrimitive(method.getReturnType())) {
                 Boxing.unbox(b, method.getReturnType());
                 b.returnInstruction();
             } else {
@@ -963,6 +977,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         b.returnInstruction();
     }
 
+
     /**
      * Adds two constructors to the class that call each other in order to bypass
      * the JVM class file verifier.
@@ -1007,6 +1022,21 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         return proxiedBeanType;
     }
 
+    /**
+     * Figures out the correct class loader to use for a proxy for a given bean
+     */
+    public static ClassLoader resolveClassLoaderForBeanProxy(String contextId, Class<?> proxiedType, TypeInfo typeInfo, ProxyServices proxyServices) {
+        Class<?> superClass = typeInfo.getSuperClass();
+        if (superClass.getName().startsWith(JAVA)) {
+            ClassLoader cl = proxyServices.getClassLoader(proxiedType);
+            if (cl == null) {
+                cl = Thread.currentThread().getContextClassLoader();
+            }
+            return cl;
+        }
+        return Container.instance(contextId).services().get(ProxyServices.class).getClassLoader(superClass);
+    }
+
     protected void getMethodHandlerField(ClassFile file, CodeAttribute b) {
         b.getfield(file.getName(), METHOD_HANDLER_FIELD_NAME, DescriptorUtils.makeDescriptor(getMethodHandlerType()));
     }
@@ -1029,6 +1059,16 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         return !isUsingProxyInstantiator() || proxyInstantiator.isUsingConstructor();
     }
 
+    private static String getDefaultPackageReason(Class<?> clazz) {
+        if (clazz.getPackage() == null) {
+            return NULL;
+        }
+        if (clazz.getSigners() != null) {
+            return SIGNED;
+        }
+        return null;
+    }
+
     /**
      * Delegates proxy creation via {@link ProxyServices} to the integrator or to our own implementation.
      */
@@ -1046,38 +1086,6 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * When creating a proxy class name we can sometimes determine it's package as well.
-     */
-    private static class ProxyNameHolder {
-        private String packageName;
-        private String className;
-
-        private ProxyNameHolder(String packageName, String className, Bean<?> bean) {
-            this.packageName = packageName;
-            if (className == null) {
-                throw BeanLogger.LOG.tryingToCreateProxyNameHolderWithoutClassName(bean.getBeanClass());
-            }
-            this.className = className;
-        }
-
-        /**
-         * Class name, never null
-         * @return class name, never null
-         */
-        public String getClassName() {
-            return className;
-        }
-
-        /**
-         * Package name, can be null
-         * @return package name or null
-         */
-        public String getPackageName() {
-            return packageName;
         }
     }
 }
