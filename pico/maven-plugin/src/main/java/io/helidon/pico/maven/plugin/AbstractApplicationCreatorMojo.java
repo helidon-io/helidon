@@ -40,7 +40,7 @@ import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceInfoCriteriaDefault;
-    import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.ServiceProviderProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.runtime.DefaultServiceBinder;
