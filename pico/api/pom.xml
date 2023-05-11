@@ -60,7 +60,6 @@
         <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>

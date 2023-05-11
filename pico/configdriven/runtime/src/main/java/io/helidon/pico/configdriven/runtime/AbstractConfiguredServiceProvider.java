@@ -116,13 +116,13 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     static BindableConfigBeanRegistry resolveConfigBeanRegistry() {
         HelidonConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
         if (cbr == null) {
-            LOGGER.log(System.Logger.Level.INFO, "Config-Driven Services disabled (config bean registry not found)");
+            LOGGER.log(System.Logger.Level.INFO, "Config-Driven Services is disabled (config bean registry not found)");
             return null;
         }
 
         if (!(cbr instanceof BindableConfigBeanRegistry)) {
             Optional<CallingContext> callingContext = CallingContextFactory.create(false);
-            String desc = "Config-Driven Services disabled (unsupported implementation): " + cbr;
+            String desc = "Config-Driven Services is disabled (unsupported implementation): " + cbr;
             String msg = (callingContext.isEmpty()) ? toErrorMessage(desc) : toErrorMessage(callingContext.get(), desc);
             throw new PicoException(msg);
         }

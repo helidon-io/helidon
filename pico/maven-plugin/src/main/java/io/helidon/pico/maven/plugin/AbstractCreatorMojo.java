@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
@@ -35,6 +34,7 @@ import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.ModuleUtils;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.TemplateHelper;
+import io.helidon.pico.tools.ToolsException;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
@@ -65,6 +65,8 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
      * Tag controlling whether we fail on warnings.
      */
     static final String TAG_FAIL_ON_WARNING = PicoServicesConfig.NAME + ".failOnWarning";
+
+    static final String TAG_PACKAGE_NAME = PicoServicesConfig.NAME + ".package.name";
 
     /**
      * The file name written to ./target/pico/ to track the last package name generated for this application.
@@ -135,7 +137,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     /**
      * The package name to apply. If not found the package name will be inferred.
      */
-    @Parameter(property = PicoServicesConfig.NAME + ".package.name", readonly = true)
+    @Parameter(property = TAG_PACKAGE_NAME, readonly = true)
     private String packageName;
 
     /**
@@ -284,7 +286,10 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
             }
         }
 
-        Objects.requireNonNull(packageName, "unable to determine package name");
+        if (packageName == null) {
+            throw new ToolsException("Unable to determine the package name. The package name can be set using "
+                                             + TAG_PACKAGE_NAME);
+        }
 
         if (persistIt) {
             // record it to scratch file for later consumption (during test build for example)

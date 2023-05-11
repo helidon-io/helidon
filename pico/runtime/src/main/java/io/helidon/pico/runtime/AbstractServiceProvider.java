@@ -617,14 +617,16 @@ public abstract class AbstractServiceProvider<T>
             didAcquire = activationSemaphore.tryAcquire(1, TimeUnit.MILLISECONDS);
 
             if (service != null) {
-                logger().log(System.Logger.Level.INFO, "resetting " + this);
+                System.Logger.Level level = (PicoServices.isDebugEnabled())
+                        ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
+                logger().log(level, "Resetting " + this);
                 if (deep && service instanceof Resettable) {
                     try {
                         if (((Resettable) service).reset(deep)) {
                             result = true;
                         }
                     } catch (Throwable t) {
-                        logger().log(System.Logger.Level.WARNING, "unable to reset: " + this, t); // eat it
+                        logger().log(System.Logger.Level.WARNING, "Unable to reset: " + this, t); // eat it
                     }
                 }
             }

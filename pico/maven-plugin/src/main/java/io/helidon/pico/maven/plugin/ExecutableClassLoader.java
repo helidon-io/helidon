@@ -49,7 +49,7 @@ import io.helidon.pico.tools.ToolsException;
                 urls.add(dependency.toUri().toURL());
             }
         } catch (MalformedURLException e) {
-            throw new ToolsException("unable to build classpath", e);
+            throw new ToolsException("Unable to build the classpath", e);
         }
 
         if (parent == null) {

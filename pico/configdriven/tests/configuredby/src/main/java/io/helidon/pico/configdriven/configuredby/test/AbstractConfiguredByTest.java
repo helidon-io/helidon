@@ -88,7 +88,7 @@ public abstract class AbstractConfiguredByTest {
     public MapConfigSource.Builder createRootDefault8080TestingConfigSource() {
         return ConfigSources.create(
                 Map.of(
-                        FAKE_SERVER_CONFIG + ".name", "root",
+                        FAKE_SERVER_CONFIG + ".name", "fake-server",
                         FAKE_SERVER_CONFIG + ".port", "8080",
                         FAKE_SERVER_CONFIG + ".worker-count", "1"
                 ), "config-root-default-8080");

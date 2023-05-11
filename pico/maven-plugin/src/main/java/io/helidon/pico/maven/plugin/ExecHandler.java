@@ -86,7 +86,7 @@ class ExecHandler implements Closeable {
                 }
                 result.set(fn.apply(req));
             } catch (Throwable t) {
-                throw new ToolsException("error in apply", t);
+                throw new ToolsException("An error occurred in apply", t);
             } finally {
                 latch.countDown();
             }
