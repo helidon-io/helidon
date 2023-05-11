@@ -8,4 +8,5 @@ Suggested path to follow:
 1. [basics](./basics)
 2. [providers](./providers)
 3. [configdriven](./configdriven)
-4. [application](./application)
+4. [interceptors](./interceptors)
+5. [application](./application)

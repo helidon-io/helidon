@@ -34,6 +34,7 @@
         <module>basics</module>
         <module>providers</module>
         <module>configdriven</module>
+        <module>interceptors</module>
         <module>application</module>
     </modules>
 
