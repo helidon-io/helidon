@@ -42,4 +42,5 @@ class CheckInjectionTest {
         WebTarget target = baseTarget.path("/check");
         assertThat(target.request().get().getStatus(), is(200));
     }
+    
 }
