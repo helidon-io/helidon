@@ -184,8 +184,12 @@ IMPORTANT: MicroProfile Telemetry is not activated by default. To activate this 
 
 To configure OpenTelemetry, MicroProfile Config must be used, and the configuration properties outlined in the following sections must be followed:
 
-- OpenTelemetry SDK Autoconfigure (excluding properties related to Metrics and Logging)
-- Manual Instrumentation
+- link:https://github.com/open-telemetry/opentelemetry-java/tree/v1.19.0/sdk-extensions/autoconfigure[OpenTelemetry SDK Autoconfigure] (excluding properties related to Metrics and Logging)
+- link:Manual Instrumentation[https://opentelemetry.io/docs/instrumentation/java/manual/]
+
+Please consult with the links above for all configurations properties usage.
+
+The property should be declared in `microprofile-config.properties` file in order to be processed correctly.
 
 
 === OpenTelemetry Java Agent
@@ -223,6 +227,8 @@ docker run -d --name jaeger \
   jaegertracing/all-in-one:1.41
 ----
 
+All the tracing information gathered from the examples runs is accessible from the browser in the Jaeger UI under link:http://localhost:16686/[]
+
 === Enable MicroProfile Telemetry in Helidon Application
 
 [source,xml]
@@ -246,10 +252,9 @@ otel.exporter.name=greeting-service <3>
 <2> Set exporter to Jaeger
 <3> Name of our service
 
-[source,properties]
----
-tracing.service=helidon-greeting
----
+Here we enable MicroProfile Telemetry, set tracer to "jaeger" and give a name, which will be used to identify our service in the tracer.
+
+NOTE: for our example we use Jaeger managing the tracing data. If you prefer to use Zipkin, please `otel.traces.exporter` to "zipkin". To fid more information on how to use Zipkin, please proceed to link:https://zipkin.io/[]
 
 === Tracing at Method Level
 
@@ -319,6 +324,8 @@ After that if we proceed to Jaeger UI at link:http://localhost:16686/[] the expe
 
 image::telemetry/telemetry-custom-jaeger.png[Custom span usage]
 
+Now let us use multiple services calls. In the example below our main service will call the `secondary` services. Each method in each service will be annotated with `@WithSpan` annotation.
+
 .Outbound method
 [source,java]
 ----
@@ -336,7 +343,7 @@ public String outbound() {
 <2> Wrap method using `WithSpan`
 <3> Call the secondary service;
 
-The secondary service is very simple, it has only one method.
+The secondary service is very simple, it has only one method, which is also annotated with `@WithSpan`.
 
 .Secondary service
 [source, java]
@@ -358,10 +365,13 @@ curl localhost:8080/greet/outbound
 Secondary
 ----
 
-The `greeting-service` should call `secondary-service`. Each service will create Spans with corresponding names. If we proceed to Jaeger UI at link:http://localhost:16686/[] the expected output is:
+The `greeting-service` call `secondary-service`. Each service will create Spans with corresponding names, and a service class hierarchy will be created.
+
+If we proceed to Jaeger UI at link:http://localhost:16686/[] the expected output is:
 
 image::telemetry/telemetry-outbound-jaeger.png[Secondary service outbound call]
 
+Full example is available in Examples <PUT URL HERE>
 
 == Additional Information
 
