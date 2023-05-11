@@ -24,15 +24,11 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-<<<<<<<< HEAD:tests/functional/request-scope-injection/src/test/java/io/helidon/tests/functional/context/injection/CheckInjectionTest.java
 /**
  * Unit test for {@link CheckInjectionResource}.
  */
 @HelidonTest
 class CheckInjectionTest {
-========
-class QualifierAndValueDefaultTest {
->>>>>>>> 23e63fe9f2 (resolves renaming):pico/api/src/test/java/io/helidon/pico/api/QualifierAndValueDefaultTest.java
 
     private final WebTarget baseTarget;
 
