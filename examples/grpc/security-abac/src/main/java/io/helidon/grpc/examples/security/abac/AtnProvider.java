@@ -44,12 +44,11 @@ import io.helidon.security.Role;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
 import io.helidon.security.spi.AuthenticationProvider;
-import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Example authentication provider that reads annotation to create a subject.
  */
-public class AtnProvider implements AuthenticationProvider, SecurityProvider {
+public class AtnProvider implements AuthenticationProvider {
 
     /**
      * The configuration key for this provider.

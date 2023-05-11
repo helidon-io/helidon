@@ -319,6 +319,22 @@ public final class WebSecurity implements Service {
         return SecurityHandler.create();
     }
 
+    /**
+     * Create a new web security instance using the default handler as base defaults for all handlers used.
+     * If handlers are loaded from config, than this is the least significant value.
+     *
+     * @param defaultHandler if a security handler is configured for a route, it will take its defaults from this handler
+     * @return new instance of web security with the handler default
+     */
+    public WebSecurity securityDefaults(SecurityHandler defaultHandler) {
+        Objects.requireNonNull(defaultHandler, "Default security handler must not be null");
+        return builder()
+                .config(config)
+                .security(security)
+                .securityHandler(defaultHandler)
+                .build();
+    }
+
     @Override
     public void update(Routing.Rules routing) {
         if (!security.enabled()) {

@@ -121,8 +121,7 @@ public class SecureServer {
     private static WebServer createWebServer(Config config, Security security) {
 
         Routing routing = Routing.builder()
-                                 .register(WebSecurity.builder()
-                                                   .security(security)
+                                 .register(WebSecurity.create(security)
                                                    .defaultSecurityHandler(WebSecurity.authenticate())
                                                    .build())
                                  .register(new RestService())

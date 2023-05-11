@@ -178,7 +178,8 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                     JsonObject jsonObject = response.as(JsonObject.class);
                     return processServerResponse(jsonObject, subjectName);
                 } catch (Exception e) {
-                    LOGGER.log(Level.WARNING, "Cannot read groups for user \"" + subjectName + "\". "
+                    LOGGER.log(Level.WARNING,
+                               "Cannot read groups for user \"" + subjectName + "\". "
                                        + "Error message: Failed to read JSON from response",
                                e);
                 }
@@ -192,7 +193,8 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                                     + "\"Authenticator Client\" added on the client configuration page" : "")
                             + ", error entity: " + message);
                 } catch (Exception e) {
-                    LOGGER.log(Level.WARNING, "Cannot read groups for user \"" + subjectName + "\". "
+                    LOGGER.log(Level.WARNING,
+                               "Cannot read groups for user \"" + subjectName + "\". "
                                        + "Error message: Failed to process error entity",
                                e);
                 }

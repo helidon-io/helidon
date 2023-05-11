@@ -63,7 +63,7 @@ import io.helidon.security.util.TokenHandler;
  * Verification and signatures of tokens is done through JWK standard - two separate
  * JWK files are expected (one for verification, one for signatures).
  */
-public final class JwtProvider implements AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
+public final class JwtProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(JwtProvider.class.getName());
 
     /**

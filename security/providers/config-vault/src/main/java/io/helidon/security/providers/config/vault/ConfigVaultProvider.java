@@ -78,8 +78,7 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
 
     @Override
     public Supplier<Optional<String>> secret(Config config) {
-        Supplier<Optional<String>> supplier = config.get("value").asString().optionalSupplier();
-        return supplier::get;
+        return config.get("value").asString().optionalSupplier();
     }
 
     @Override
