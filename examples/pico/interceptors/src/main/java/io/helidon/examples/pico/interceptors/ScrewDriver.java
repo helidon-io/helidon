@@ -19,7 +19,7 @@ package io.helidon.examples.pico.interceptors;
 import jakarta.inject.Singleton;
 
 @Singleton
-public class ScrewDriver implements TurningTool {
+class ScrewDriver implements TurningTool {
 
     @Override
     public String name() {

@@ -21,8 +21,7 @@ import org.junit.jupiter.api.Test;
 class ProvidersTest {
 
     /**
-     * Through testing, I will now additionally have an {@link AllenWrench} in my {@link io.helidon.examples.pico.basics.ToolBox}
-     * also.
+     * Through testing, this will additionally have an {@link AllenWrench} in the {@link io.helidon.examples.pico.basics.ToolBox}.
      */
     @Test
     void main() {

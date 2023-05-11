@@ -5,7 +5,7 @@ This example shows the basics of using Helidon Pico's Config-Driven Services. Th
 
 * setting up the bootstrap [configuration](./src/main/resources/application.yaml).
 * [ConfigBean](src/main/java/io/helidon/examples/pico/configdriven/DrillConfig.java).
-* [ConfiguredBy](src/main/java/io/helidon/examples/pico/configdriven/DrillConfig.java) Services.
+* [ConfiguredBy](src/main/java/io/helidon/examples/pico/configdriven/Drill.java) Services.
 * annotation processing and source code generation (see [pom.xml](pom.xml) and [generated-sources](./target/generated-sources/annotations/io/helidon/examples/pico/configdriven)).
 
 ## Build and run
