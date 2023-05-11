@@ -41,9 +41,21 @@
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
         </dependency>
-        <dependency>
+        <dependency>  <!-- REMOVE -->
             <groupId>io.helidon.reactive.webclient</groupId>
             <artifactId>helidon-reactive-webclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.webclient</groupId>
+            <artifactId>helidon-nima-webclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.fault-tolerance</groupId>
+            <artifactId>helidon-nima-fault-tolerance</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

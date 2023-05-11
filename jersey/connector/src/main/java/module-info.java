@@ -28,7 +28,9 @@ module io.helidon.jersey.connector {
     requires jersey.common;
     requires io.helidon.common.reactive;
     requires io.helidon.reactive.webclient;
+    requires io.helidon.nima.webclient;
     requires io.netty.codec.http;
+    requires io.helidon.nima.faulttolerance;
 
     exports io.helidon.jersey.connector;
     provides org.glassfish.jersey.client.spi.ConnectorProvider with HelidonConnectorProvider;
