@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -78,6 +79,11 @@ public class GreetResource {
      * @return {@link JsonObject}
      */
     @GET
+    @Operation(summary = "Returns a generic greeting",
+            description = "Greets the user generically")
+    @APIResponse(description = "Simple JSON containing the greeting",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = GreetingMessage.class)))
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getDefaultMessage() {
         return createResponse("World");
@@ -91,6 +97,10 @@ public class GreetResource {
      */
     @Path("/{name}")
     @GET
+    @Operation(summary = "Returns a personalized greeting")
+    @APIResponse(description = "Simple JSON containing the greeting",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = GreetingMessage.class)))
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getMessage(@PathParam("name") String name) {
         return createResponse(name);
@@ -135,5 +145,31 @@ public class GreetResource {
         return JSON.createObjectBuilder()
                 .add("message", msg)
                 .build();
+    }
+
+    /**
+     * POJO defining the greeting message content.
+     */
+    public static class GreetingMessage {
+
+        private String message;
+
+        /**
+         * Gets the message value.
+         *
+         * @return message value
+         */
+        public String getMessage() {
+            return message;
+        }
+
+        /**
+         * Sets the message value.
+         *
+         * @param message message value to set
+         */
+        public void setMessage(String message) {
+            this.message = message;
+        }
     }
 }
