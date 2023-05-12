@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,9 @@ import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.AddExtensions;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
+import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;
@@ -82,16 +83,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class MessagingHealthTest {
 
     private static final String ERROR_MESSAGE = "BOOM!";
-
-    private WebClient client;
+    private Http1Client client;
 
     @BeforeEach
     void setUp() {
         ServerCdiExtension server = CDI.current().select(ServerCdiExtension.class).get();
         client = WebClient.builder()
-                .baseUri("http://localhost:" + server.port())
-                .addReader(JsonpSupport.reader())
-                .build();
+                 .baseUri("http://localhost:" + server.port())
+                 .build();
     }
 
     @Test
@@ -154,18 +153,14 @@ public class MessagingHealthTest {
     }
 
     private JsonObject getHealthCheck(String checkName) {
-        return client.get()
-                .path("/health")
-                .submit()
-                .await(5, TimeUnit.SECONDS)
-                .content()
-                .as(JsonObject.class)
-                .await(500, TimeUnit.MILLISECONDS)
-                .getValue("/checks")
-                .asJsonArray().stream()
-                .map(JsonValue::asJsonObject)
-                .filter(check -> check.getString("name").equals(checkName))
-                .findFirst()
-                .orElseThrow(() -> new AssertionFailedError("Health check 'messaging' is missing!"));
+        try (Http1ClientResponse response = client.get("/health").request()) {
+            JsonObject jsonObject = response.as(JsonObject.class);
+            return jsonObject.getValue("/checks")
+                             .asJsonArray().stream()
+                             .map(JsonValue::asJsonObject)
+                             .filter(check -> check.getString("name").equals(checkName))
+                             .findFirst()
+                             .orElseThrow(() -> new AssertionFailedError("Health check 'messaging' is missing!"));
+        }
     }
 }
