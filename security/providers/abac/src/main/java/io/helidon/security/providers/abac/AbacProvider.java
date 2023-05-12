@@ -57,7 +57,7 @@ import jakarta.annotation.security.RolesAllowed;
  * @see #builder()
  * @see #create(Config)
  */
-public final class AbacProvider implements AuthorizationProvider, SecurityProvider {
+public final class AbacProvider implements AuthorizationProvider {
 
     private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
     private final Set<Class<? extends Annotation>> supportedAnnotations;

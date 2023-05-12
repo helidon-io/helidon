@@ -32,12 +32,11 @@ import io.helidon.security.Subject;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
-import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Sample provider.
  */
-class MyProvider implements AuthenticationProvider, AuthorizationProvider, OutboundSecurityProvider, SecurityProvider {
+class MyProvider implements AuthenticationProvider, AuthorizationProvider, OutboundSecurityProvider {
 
     @Override
     public AuthenticationResponse authenticate(ProviderRequest providerRequest) {

@@ -50,7 +50,7 @@ import io.helidon.security.spi.SecurityProvider;
  * Http authentication security provider.
  * Provides support for username and password authentication, with support for roles list.
  */
-public final class HttpDigestAuthProvider implements AuthenticationProvider, SecurityProvider {
+public final class HttpDigestAuthProvider implements AuthenticationProvider {
     static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
     static final String HEADER_AUTHENTICATION = "authorization";
     static final String DIGEST_PREFIX = "digest ";

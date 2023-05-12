@@ -55,7 +55,7 @@ import io.helidon.security.util.TokenHandler;
  * Http authentication security provider.
  * Provides support for username and password authentication, with support for roles list.
  */
-public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
+public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSecurityProvider {
     /**
      * Configure this for outbound requests to override user to use.
      */

@@ -100,7 +100,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Provider that provides JWT authentication.
  */
-public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
+public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurityProvider {
 
     /**
      * Configure this for outbound requests to override user to use.

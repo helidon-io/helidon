@@ -29,13 +29,12 @@ import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
-import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Simple authorization provider, denying access to "deny" path.
  */
 public class BindingTestProvider
-        implements AuthorizationProvider, AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
+        implements AuthorizationProvider, AuthenticationProvider, OutboundSecurityProvider {
     @Override
     public AuthorizationResponse authorize(ProviderRequest providerRequest) {
         String path = providerRequest

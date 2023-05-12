@@ -41,12 +41,11 @@ import io.helidon.security.SecurityLevel;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
 import io.helidon.security.spi.AuthenticationProvider;
-import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Example authentication provider that reads annotation to create a subject.
  */
-public class AtnProvider implements AuthenticationProvider, SecurityProvider {
+public class AtnProvider implements AuthenticationProvider {
     @Override
     public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         List<SecurityLevel> securityLevels = providerRequest.endpointConfig().securityLevels();

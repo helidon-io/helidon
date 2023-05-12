@@ -43,7 +43,7 @@ import io.helidon.security.util.TokenHandler;
  * Security provider that extracts a username (or service name) from a header.
  * This provider also supports propagation of identity through a header.
  */
-public class HeaderAtnProvider implements AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
+public class HeaderAtnProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private final boolean optional;
     private final boolean authenticate;
     private final boolean propagate;

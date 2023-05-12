@@ -19,14 +19,13 @@ package io.helidon.security.examples.spi;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.spi.AuthorizationProvider;
-import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Authorization provider example. The most simplistic approach.
  *
  * @see AtnProviderSync on how to use custom objects, config and annotations in a provider
  */
-public class AtzProviderSync implements AuthorizationProvider, SecurityProvider {
+public class AtzProviderSync implements AuthorizationProvider {
     @Override
     public AuthorizationResponse authorize(ProviderRequest providerRequest) {
         // just check the path contains the string "public", otherwise allow only if user is logged in

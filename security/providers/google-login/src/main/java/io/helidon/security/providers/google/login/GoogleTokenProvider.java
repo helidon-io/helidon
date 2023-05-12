@@ -72,7 +72,7 @@ import com.google.api.client.json.gson.GsonFactory;
  *
  * See google-login example.
  */
-public final class GoogleTokenProvider implements AuthenticationProvider, OutboundSecurityProvider, SecurityProvider {
+public final class GoogleTokenProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(GoogleTokenProvider.class.getName());
     private static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
 

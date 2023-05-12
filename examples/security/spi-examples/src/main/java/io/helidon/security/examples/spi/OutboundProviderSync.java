@@ -26,12 +26,11 @@ import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.Subject;
 import io.helidon.security.spi.OutboundSecurityProvider;
-import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Example of a simplistic outbound security provider.
  */
-public class OutboundProviderSync implements OutboundSecurityProvider, SecurityProvider {
+public class OutboundProviderSync implements OutboundSecurityProvider {
     @Override
     public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
                                                     SecurityEnvironment outboundEnv,

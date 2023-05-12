@@ -26,7 +26,7 @@ import io.helidon.security.ProviderRequest;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.SecurityProvider;
 
-public class RestrictedProvider implements AuthenticationProvider, SecurityProvider {
+public class RestrictedProvider implements AuthenticationProvider {
 
     /**
      * Register an entry in {@link io.helidon.common.context.Context} and fail authentication.
