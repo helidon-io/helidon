@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -779,12 +779,12 @@ public class Http2Headers {
             for (StaticHeader predefinedHeader : StaticHeader.values()) {
                 BY_INDEX.put(predefinedHeader.index(), predefinedHeader);
                 maxIndex = Math.max(maxIndex, predefinedHeader.index);
+                // Indexed headers may be referenced either with or without value, so we need to store them in both tables
                 if (predefinedHeader.hasValue()) {
                     BY_NAME_VALUE.computeIfAbsent(predefinedHeader.headerName().lowerCase(), it -> new HashMap<>())
                             .put(predefinedHeader.value(), predefinedHeader);
-                } else {
-                    BY_NAME_NO_VALUE.put(predefinedHeader.headerName().lowerCase(), predefinedHeader);
                 }
+                BY_NAME_NO_VALUE.putIfAbsent(predefinedHeader.headerName().lowerCase(), predefinedHeader);
             }
 
             MAX_INDEX = maxIndex;

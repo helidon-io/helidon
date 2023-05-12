@@ -22,22 +22,23 @@ import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonStructure;
-
-import org.junit.jupiter.api.Test;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.config.Config;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
-import static org.hamcrest.CoreMatchers.*;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonStructure;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -91,6 +92,7 @@ public class WebServerConfigTest {
         Config config = Config.create();
         Config server = config.get("server2");
         WebServer.Builder wsBuilder = WebServer.builder().config(server);
+        wsBuilder.build(); // triggers processing of media context
         MediaContext mediaContext = wsBuilder.mediaContext();
         assertThat(mediaContext, is(notNullValue()));
         WritableHeaders<?> writableHeaders = WritableHeaders.create();
@@ -119,6 +121,7 @@ public class WebServerConfigTest {
     void testMediaSupportFileConfigNoJson() throws IOException {
         Config config = Config.create();
         WebServer.Builder wsBuilder = WebServer.builder().config(config.get("server"));
+        wsBuilder.build(); // trigger processing of media context
         MediaContext mediaContext = wsBuilder.mediaContext();
         assertThat(mediaContext, is(notNullValue()));
         WritableHeaders<?> writableHeaders = WritableHeaders.create();
@@ -146,7 +149,7 @@ public class WebServerConfigTest {
                 .config(config.get("server"))
                 .mediaContext(MediaContext.builder()
                         .discoverServices(false)
-                        .addMediaSupportProvider(new JsonpMediaSupportProvider())
+                        .addMediaSupport(JsonpSupport.create(Config.empty()))
                         .build());
         MediaContext mediaContext = wsBuilder.mediaContext();
         assertThat(mediaContext, is(notNullValue()));

@@ -16,6 +16,7 @@
 
 package io.helidon.nima.webserver.http1;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -74,7 +75,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
     private boolean streamingEntity;
     private boolean isSent;
-    private BlockingOutputStream outputStream;
+    private ClosingBufferedOutputStream outputStream;
     private long entitySize;
     private String streamResult = "";
 
@@ -103,7 +104,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             buffer.write(OK_200);
         } else {
             buffer.write(HTTP_BYTES);
-            buffer.write((status.code() + " " + status.reasonPhrase()).getBytes(StandardCharsets.US_ASCII));
+            if (status.reasonPhrase().isEmpty()) {
+                buffer.write((status.codeText()).getBytes(StandardCharsets.US_ASCII));
+            } else {
+                buffer.write((status.code() + " " + status.reasonPhrase()).getBytes(StandardCharsets.US_ASCII));
+            }
             buffer.write('\r');
             buffer.write('\n');
         }
@@ -162,7 +167,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
         streamingEntity = true;
 
-        this.outputStream = new BlockingOutputStream(headers,
+        BlockingOutputStream bos = new BlockingOutputStream(headers,
                                                      trailers,
                                                      this::status,
                                                      () -> streamResult,
@@ -177,6 +182,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                                      request,
                                                      keepAlive);
 
+        int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
+        outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
         return contentEncode(outputStream);
     }
 
@@ -321,6 +328,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private boolean isChunked;
         private boolean firstByte = true;
         private long responseBytesTotal;
+        private boolean closing = false;
 
         private BlockingOutputStream(ServerResponseHeaders headers,
                                      WritableHeaders<?> trailers,
@@ -362,16 +370,37 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             write(BufferData.create(b, off, len));
         }
 
+        /**
+         * Last call to flush before closing should be ignored to properly
+         * support content length optimization.
+         *
+         * @throws IOException an I/O exception
+         */
         @Override
         public void flush() throws IOException {
+            if (closing) {
+                return;     // ignore final flush
+            }
             if (firstByte && firstBuffer != null) {
                 write(BufferData.empty());
             }
         }
 
+        /**
+         * This is a noop, even when user closes the output stream, we wait for the
+         * call to {@link this#commit()}.
+         */
         @Override
         public void close() {
-            // this is a noop, even when user closes the output stream, we wait for commit
+            // no-op
+        }
+
+        /**
+         * Informs output stream that closing phase has started. Special handling
+         * for {@link this#flush()}.
+         */
+        public void closing() {
+            closing = true;
         }
 
         void commit() {
@@ -427,19 +456,29 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             if (closed) {
                 throw new IOException("Stream already closed");
             }
+
             if (!isChunked) {
                 if (firstByte) {
                     firstByte = false;
+                    sendListener.headers(ctx, headers);
+                    // write headers and payload part in one buffer to avoid TCP/ACK delay problems
                     BufferData growing = BufferData.growing(256 + buffer.available());
                     nonEntityBytes(headers, status.get(), growing, keepAlive);
+                    // check not exceeding content-length
+                    bytesWritten += buffer.available();
+                    checkContentLength(buffer);
+                    sendListener.data(ctx, buffer);
+                    // write single buffer headers and payload part
+                    growing.write(buffer);
                     responseBytesTotal += growing.available();
                     dataWriter.write(growing);
+                } else {
+                    // if not chunked, always write
+                    writeContent(buffer);
                 }
-
-                // if not chunked, always write
-                writeContent(buffer);
                 return;
             }
+
             // try chunked data optimization
             if (firstByte && firstBuffer == null) {
                 // if somebody re-uses the byte buffer sent to us, we must copy it
@@ -531,17 +570,57 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             dataWriter.write(toWrite);
         }
 
-        private void writeContent(BufferData buffer) throws IOException {
-            bytesWritten += buffer.available();
+        private void checkContentLength(BufferData buffer) throws IOException {
             if (bytesWritten > contentLength && contentLength != -1) {
                 throw new IOException("Content length was set to " + contentLength
-                                              + ", but you are writing additional " + (bytesWritten - contentLength) + " "
-                                              + "bytes");
+                        + ", but you are writing additional " + (bytesWritten - contentLength) + " "
+                        + "bytes");
             }
+        }
 
+        private void writeContent(BufferData buffer) throws IOException {
+            bytesWritten += buffer.available();
+            checkContentLength(buffer);
             sendListener.data(ctx, buffer);
             responseBytesTotal += buffer.available();
             dataWriter.write(buffer);
+        }
+    }
+
+    /**
+     * A buffered output stream that wraps a {@link BlockingOutputStream} and informs
+     * it before it is finally flushed and closed.
+     */
+    static class ClosingBufferedOutputStream extends BufferedOutputStream {
+
+        private final BlockingOutputStream delegate;
+
+        ClosingBufferedOutputStream(BlockingOutputStream out, int size) {
+            super(out, size);
+            this.delegate = out;
+        }
+
+        @Override
+        public void close() {
+            delegate.closing();     // inform of imminent call to close for last flush
+            try {
+                super.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        long totalBytesWritten() {
+            return delegate.totalBytesWritten();
+        }
+
+        void commit() {
+            try {
+                flush();
+                delegate.commit();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 }

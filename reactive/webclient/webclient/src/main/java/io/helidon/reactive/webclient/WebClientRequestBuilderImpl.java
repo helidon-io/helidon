@@ -65,6 +65,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.DefaultHttpRequest;
@@ -74,6 +75,8 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.resolver.dns.DnsServerAddressStreamProviders;
+import io.netty.resolver.dns.RoundRobinDnsAddressResolverGroup;
 import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
 
@@ -139,6 +142,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private boolean keepAlive;
     private Long requestId;
     private boolean allowChunkedEncoding;
+    private DnsResolverType dnsResolverType;
 
     private WebClientRequestBuilderImpl(NioEventLoopGroup eventGroup,
                                         WebClientConfiguration configuration,
@@ -169,6 +173,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.connectTimeout = configuration.connectTimeout();
         this.proxy = configuration.proxy().orElse(Proxy.noProxy());
         this.keepAlive = configuration.keepAlive();
+        this.dnsResolverType = configuration.dnsResolverType();
     }
 
     static WebClientRequestBuilder create(NioEventLoopGroup eventGroup,
@@ -583,6 +588,11 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     .handler(new NettyClientInitializer(requestConfiguration))
                     .option(ChannelOption.SO_KEEPALIVE, keepAlive)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeout.toMillis());
+
+            if (dnsResolverType == DnsResolverType.ROUND_ROBIN) {
+                bootstrap.resolver(new RoundRobinDnsAddressResolverGroup(NioDatagramChannel.class,
+                                                                         DnsServerAddressStreamProviders.platformDefault()));
+            }
 
             ChannelFuture channelFuture = keepAlive
                     ? obtainChannelFuture(requestConfiguration, bootstrap)

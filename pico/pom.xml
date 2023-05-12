@@ -36,45 +36,20 @@
     <packaging>pom</packaging>
 
     <properties>
-        <!-- all pico modules should be backward compatible with 11 -->
-        <version.java>11</version.java>
-
-        <!-- pico supports legacy javax.inject and javax.annotations in tooling -->
-        <javax.injection.version>1</javax.injection.version>
+        <!-- pico supports a universal debug flag -->
+        <pico.debug>true</pico.debug>
     </properties>
 
     <!-- this will show the progression of what has come over, and what is left to come over -->
     <modules>
-        <module>types</module>
-        <module>builder-config</module>
-        <module>pico</module>
+        <module>api</module>
+        <module>configdriven</module>
         <module>tools</module>
-<!--        <module>config</module>-->
-<!--        <module>tck</module>-->
-<!--        <module>processor</module>-->
-<!--        <module>maven-plugin</module>-->
-<!--        <module>test-support</module>-->
-<!--        <module>test-utils</module>-->
-<!--        <module>test-resources</module>-->
-<!--        <module>test-extended-resources</module>-->
-<!--        <module>test-pico</module>-->
-<!--        <module>test-tck-jsr330</module>-->
-<!--        <module>examples</module>-->
+        <module>processor</module>
+        <module>maven-plugin</module>
+        <module>testing</module>
+        <module>runtime</module>
+        <module>tests</module>
     </modules>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <configuration>
-                        <!-- This module is Java 11, we must remove enable-preview from parent project -->
-                        <additionalOptions combine.self="override"/>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
 
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,17 @@ public interface Http2StreamWriter {
     /**
      * Write a frame.
      *
-     * @param frame       frame to write
-     * @param flowControl flow control
+     * @param frame frame to write
      */
-    void write(Http2FrameData frame, FlowControl flowControl);
+    void write(Http2FrameData frame);
+
+    /**
+     * Write a frame with flow control.
+     *
+     * @param frame       data frame
+     * @param flowControl outbound flow control
+     */
+    void writeData(Http2FrameData frame, FlowControl.Outbound flowControl);
 
     /**
      * Write headers with no (or streaming) entity.
@@ -37,7 +44,7 @@ public interface Http2StreamWriter {
      * @param flowControl flow control
      * @return number of bytes written
      */
-    int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags, FlowControl flowControl);
+    int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags, FlowControl.Outbound flowControl);
 
     /**
      * Write headers and entity.
@@ -53,5 +60,5 @@ public interface Http2StreamWriter {
                      int streamId,
                      Http2Flag.HeaderFlags flags,
                      Http2FrameData dataFrame,
-                     FlowControl flowControl);
+                     FlowControl.Outbound flowControl);
 }

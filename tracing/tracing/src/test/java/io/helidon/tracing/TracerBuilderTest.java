@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ class TracerBuilderTest {
         private int port;
         private String host;
         private String path;
-        private Config config;
+        private io.helidon.common.config.Config config;
         private boolean enabled;
         private boolean global;
         private Tracer tracer;
@@ -170,7 +170,7 @@ class TracerBuilderTest {
         }
 
         @Override
-        public MyTracerBuilder config(Config config) {
+        public MyTracerBuilder config(io.helidon.common.config.Config config) {
             this.config = config;
             return this;
         }

@@ -35,7 +35,7 @@
     <description>Java libraries for writing microservices</description>
 
     <properties>
-        <version.java>19</version.java>
+        <version.java>20</version.java>
 
         <doclint>all</doclint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -78,13 +78,14 @@
         <version.lib.surefire.testng>3.0.0-M5</version.lib.surefire.testng>
         <version.lib.testng>7.5</version.lib.testng>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
-        <version.lib.bedrock>5.0.11</version.lib.bedrock>
+        <version.lib.bedrock>7.0.1</version.lib.bedrock>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <version.lib.weld-junit>3.0.0.Final</version.lib.weld-junit>
         <version.lib.jmh>1.23</version.lib.jmh>
+        <version.lib.vertx-core>4.3.8</version.lib.vertx-core>
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
         <version.lib.commons-lang3>3.10</version.lib.commons-lang3>
-        <version.lib.classgraph>4.8.87</version.lib.classgraph>
+        <version.lib.classgraph>4.8.154</version.lib.classgraph>
         <!--
         !Version statement! - end
         -->
@@ -117,9 +118,9 @@
         <version.plugin.scm-publish-plugin>3.0.0</version.plugin.scm-publish-plugin>
         <version.plugin.shade>3.0.0</version.plugin.shade>
         <version.plugin.source>3.0.1</version.plugin.source>
-        <version.plugin.spotbugs>4.7.1.1</version.plugin.spotbugs>
-        <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>8.1.1</version.plugin.dependency-check>
+        <version.plugin.spotbugs>4.7.3.2</version.plugin.spotbugs>
+        <version.plugin.findsecbugs>1.12.0</version.plugin.findsecbugs>
+        <version.plugin.dependency-check>8.2.1</version.plugin.dependency-check>
         <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -988,6 +989,11 @@
                 <version>${version.lib.reactivestreams}</version>
             </dependency>
             <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-core</artifactId>
+                <version>${version.lib.vertx-core}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-provider-api</artifactId>
                 <version>${version.lib.maven-wagon}</version>
@@ -1189,6 +1195,12 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${version.lib.commons-io}</version>
+            </dependency>
+            <!-- Pico TCK tests -->
+            <dependency>
+                <groupId>jakarta.inject</groupId>
+                <artifactId>jakarta.inject-tck</artifactId>
+                <version>${version.lib.jakarta.inject}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

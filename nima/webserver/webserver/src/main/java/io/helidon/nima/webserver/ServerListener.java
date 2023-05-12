@@ -237,14 +237,13 @@ class ServerListener implements ListenerContext {
                                            connectedPort,
                                            socketName));
 
-            if (listenerConfig.writeQueueLength() <= 1) {
-                LOGGER.log(System.Logger.Level.INFO, "[" + serverChannelId + "] direct writes");
-            } else {
-                LOGGER.log(System.Logger.Level.INFO,
-                           "[" + serverChannelId + "] async writes, queue length: " + listenerConfig.writeQueueLength());
-            }
-
             if (LOGGER.isLoggable(TRACE)) {
+                if (listenerConfig.writeQueueLength() <= 1) {
+                    LOGGER.log(System.Logger.Level.TRACE, "[" + serverChannelId + "] direct writes");
+                } else {
+                    LOGGER.log(System.Logger.Level.TRACE,
+                               "[" + serverChannelId + "] async writes, queue length: " + listenerConfig.writeQueueLength());
+                }
                 if (listenerConfig.hasTls()) {
                     debugTls(serverChannelId, listenerConfig.tls());
                 }

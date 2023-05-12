@@ -37,6 +37,7 @@
 
     <modules>
         <module>webclient</module>
+        <module>tracing</module>
     </modules>
 
 </project>

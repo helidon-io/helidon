@@ -40,7 +40,7 @@ enum HeaderEnum implements Http.HeaderName {
     EXPECT("Expect"),
     FORWARDED("Forwarded"),
     FROM("From"),
-    HOST("Host"),
+    HOST(Http.Header.HOST_STRING),
     IF_MATCH("If-Match"),
     IF_MODIFIED_SINCE("If-Modified-Since"),
     IF_NONE_MATCH("If-None-Match"),

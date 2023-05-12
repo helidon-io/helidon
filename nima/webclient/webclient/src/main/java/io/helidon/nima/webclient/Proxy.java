@@ -19,7 +19,6 @@ package io.helidon.nima.webclient;
 import java.lang.System.Logger.Level;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
-import java.net.Socket;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;

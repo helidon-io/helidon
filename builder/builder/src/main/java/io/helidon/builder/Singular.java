@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public @interface Singular {
      * will used the default method name, dropping any "s" that might be present at the end of the method name (e.g., pickles ->
      * pickle).
      *
-     * @return The singular name to add.
+     * @return The singular name to add
      */
     String value() default "";
 

@@ -46,10 +46,12 @@ public final class Main {
      * Updates HTTP Routing.
      */
     static void routing(HttpRouting.Builder routing) {
-        {{#Main-routing}}{{.}}
+        {{#Main-routing}}
+        {{.}}
         {{/Main-routing}}
 
-        routing{{#Main-routing-builder}}{{.}}{{#last}}; {{/last}}
+        routing{{#Main-routing-builder}}
+               {{.}}{{#last}}; {{/last}}
                {{/Main-routing-builder}}
     }
 }

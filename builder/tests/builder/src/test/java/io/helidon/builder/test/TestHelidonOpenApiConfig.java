@@ -18,7 +18,7 @@ package io.helidon.builder.test;
 
 import java.util.List;
 
-import io.helidon.builder.test.testsubjects.DefaultHelidonOpenApiConfig;
+import io.helidon.builder.test.testsubjects.HelidonOpenApiConfigDefault;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +33,7 @@ class TestHelidonOpenApiConfig {
 
     @Test
     void testIt() {
-        DefaultHelidonOpenApiConfig config = DefaultHelidonOpenApiConfig.builder()
+        HelidonOpenApiConfigDefault config = HelidonOpenApiConfigDefault.builder()
                 .filter("xyz")
                 .addServer("aServer")
                 .addServers(List.of("anotherServer"))
@@ -47,7 +47,7 @@ class TestHelidonOpenApiConfig {
         assertThat(config.toString(),
                    notNullValue());
 
-        DefaultHelidonOpenApiConfig config2 = DefaultHelidonOpenApiConfig.toBuilder(config).build();
+        HelidonOpenApiConfigDefault config2 = HelidonOpenApiConfigDefault.toBuilder(config).build();
         assertThat(config2,
                    equalTo(config));
         assertThat(config2,

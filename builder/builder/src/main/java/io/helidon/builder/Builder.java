@@ -43,25 +43,30 @@ import java.util.Set;
  */
 @SuppressWarnings("rawtypes")
 @Target(ElementType.TYPE)
-// note: runtime retention needed for cases when derived builders are inherited across modules
-@Retention(RetentionPolicy.RUNTIME)
+// note: class retention needed for cases when derived builders are inherited across modules
+@Retention(RetentionPolicy.CLASS)
 @BuilderTrigger
 public @interface Builder {
 
     /**
      * The default prefix appended to the generated class name.
      */
-    String DEFAULT_IMPL_PREFIX = "Default";
+    String DEFAULT_IMPL_PREFIX = "";
 
     /**
      * The default prefix appended to the generated abstract class name (the parent for the {@link #DEFAULT_IMPL_PREFIX}).
      */
-    String DEFAULT_ABSTRACT_IMPL_PREFIX = "Abstract";
+    String DEFAULT_ABSTRACT_IMPL_PREFIX = "";
+
+    /**
+     * The default suffix appended to the generated abstract class name.
+     */
+    String DEFAULT_ABSTRACT_IMPL_SUFFIX = "Base";
 
     /**
      * The default suffix appended to the generated class name(s).
      */
-    String DEFAULT_SUFFIX = "";
+    String DEFAULT_SUFFIX = "Default";
 
     /**
      * The default value for {@link #allowNulls()}.
@@ -69,9 +74,14 @@ public @interface Builder {
     boolean DEFAULT_ALLOW_NULLS = false;
 
     /**
+     * The default value for {@link #allowPublicOptionals()}.
+     */
+    boolean DEFAULT_ALLOW_PUBLIC_OPTIONALS = false;
+
+    /**
      * The default value for {@link #includeGeneratedAnnotation()}.
      */
-    boolean DEFAULT_INCLUDE_GENERATED_ANNOTATION = false;
+    boolean DEFAULT_INCLUDE_GENERATED_ANNOTATION = true;
 
     /**
      * The default value for {@link #defineDefaultMethods()}.
@@ -190,6 +200,15 @@ public @interface Builder {
      * @return true to allow for the possibility of nullable non-Optional values to be present
      */
     boolean allowNulls() default DEFAULT_ALLOW_NULLS;
+
+    /**
+     * Should any use of {@link java.util.Optional} builder methods be made public. By default this value is {@code false} resulting
+     * in these methods taking {@code Optional} to be made package private. Setting this value to {@code true} will result in these
+     * same methods to be made public instead.
+     *
+     * @return true to make {@code Optional} method public and false to make these methods package private
+     */
+    boolean allowPublicOptionals() default DEFAULT_ALLOW_PUBLIC_OPTIONALS;
 
     /**
      * Should the code generated types included the {@code Generated} annotation. Including this annotation will require an

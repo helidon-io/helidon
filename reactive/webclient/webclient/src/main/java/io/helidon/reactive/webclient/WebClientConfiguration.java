@@ -85,6 +85,7 @@ class WebClientConfiguration {
     private final URI uri;
     private final boolean validateHeaders;
     private final boolean relativeUris;
+    private final DnsResolverType dnsResolverType;
 
     /**
      * Creates a new instance of client configuration.
@@ -115,6 +116,7 @@ class WebClientConfiguration {
         this.keepAlive = builder.keepAlive;
         this.validateHeaders = builder.validateHeaders;
         this.relativeUris = builder.relativeUris;
+        this.dnsResolverType = builder.dnsResolverType;
     }
 
     /**
@@ -287,6 +289,10 @@ class WebClientConfiguration {
         return relativeUris;
     }
 
+    DnsResolverType dnsResolverType() {
+        return dnsResolverType;
+    }
+
     /**
      * A fluent API builder for {@link WebClientConfiguration}.
      */
@@ -318,6 +324,7 @@ class WebClientConfiguration {
         private MessageBodyWriterContext writerContext;
         private boolean validateHeaders;
         private boolean relativeUris;
+        private DnsResolverType dnsResolverType;
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
@@ -543,6 +550,18 @@ class WebClientConfiguration {
         }
 
         /**
+         * Set which type of DNS resolver should be used.
+         *
+         * @param dnsResolverType dns resolver type to be used
+         * @return updated builder instance
+         */
+        @ConfiguredOption
+        public B dnsResolverType(DnsResolverType dnsResolverType) {
+            this.dnsResolverType = dnsResolverType;
+            return me;
+        }
+
+        /**
          * Whether to validate header names.
          * Defaults to {@code true}.
          *
@@ -701,6 +720,9 @@ class WebClientConfiguration {
                     .ifPresent(this::proxy);
             config.get("media-support").as(MediaContext::create).ifPresent(this::mediaContext);
             config.get("relative-uris").asBoolean().ifPresent(this::relativeUris);
+            config.get("dns-resolver-type").asString()
+                    .map(s -> DnsResolverType.valueOf(s.toUpperCase()))
+                    .ifPresent(this::dnsResolverType);
             return me;
         }
 
@@ -728,6 +750,7 @@ class WebClientConfiguration {
             context(configuration.context);
             keepAlive(configuration.keepAlive);
             validateHeaders(configuration.validateHeaders);
+            dnsResolverType(configuration.dnsResolverType);
             configuration.cookieManager.defaultCookies().forEach(this::defaultCookie);
             config = configuration.config;
 

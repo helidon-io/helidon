@@ -225,6 +225,7 @@ endif::[]
 :security-provider-abac-base-url: {javadoc-base-url}/io.helidon.security.providers.abac
 :security-provider-google-login-base-url: {javadoc-base-url}/io.helidon.security.providers.google.login
 :security-provider-jwt-base-url: {javadoc-base-url}/io.helidon.security.providers.jwt
+:nima-faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.nima.faulttolerance
 
 // 3rd party versioned URLs
 :jaeger-doc-base-url: https://www.jaegertracing.io/docs/{version-lib-jaeger}

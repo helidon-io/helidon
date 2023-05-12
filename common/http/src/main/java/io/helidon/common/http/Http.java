@@ -1094,6 +1094,12 @@ public final class Http {
          */
         public static final HeaderName HOST = HeaderEnum.HOST;
         /**
+         * The {@value} header.
+         *
+         * @see #HOST
+         */
+        public static final String HOST_STRING = "Host";
+        /**
          * The {@code If-Match} header name.
          * Only perform the action if the client supplied entity matches the same entity on the server. This is mainly
          * for methods like PUT to only update a resource if it has not been modified since the user last updated it.
@@ -1491,6 +1497,9 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, LazyString value) {
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(value);
+
             return new HeaderValueLazy(name, false, false, value);
         }
 
@@ -1503,6 +1512,8 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, int value) {
+            Objects.requireNonNull(name);
+
             return new HeaderValueSingle(name, false, false, String.valueOf(value));
         }
 
@@ -1515,6 +1526,8 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, long value) {
+            Objects.requireNonNull(name);
+
             return new HeaderValueSingle(name, false, false, String.valueOf(value));
         }
 
@@ -1527,6 +1540,9 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, String value) {
+            Objects.requireNonNull(name, "HeaderName must not be null");
+            Objects.requireNonNull(value, "HeaderValue must not be null");
+
             return new HeaderValueSingle(name,
                                          false,
                                          false,

@@ -42,6 +42,7 @@
         <module>tck-rest-client</module>
         <module>tck-reactive-operators</module>
         <module>tck-lra</module>
+        <module>tck-telemetry</module>
     </modules>
 
     <properties>

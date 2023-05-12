@@ -34,7 +34,7 @@ class WebSocketEndpoint implements WsListener {
     }
 
     @Override
-    public void receive(WsSession session, String message, boolean last) {
+    public void onMessage(WsSession session, String message, boolean last) {
         LOGGER.log(Level.INFO, "WS Receiving " + message);
         if (message.contains("SEND")) {
             session.send(message, false);

@@ -29,7 +29,8 @@ module io.helidon.openapi {
     requires static io.helidon.common.features.api;
 
     requires io.helidon.common;
-    requires io.helidon.config;
+    requires io.helidon.common.config;
+    requires io.helidon.common.media.type;
 
     requires org.jboss.jandex;
 
@@ -41,6 +42,7 @@ module io.helidon.openapi {
     requires transitive microprofile.openapi.api;
 
     requires static io.helidon.config.metadata;
+    requires java.logging; // temporary to adjust SnakeYAML logger level
 
     exports io.helidon.openapi;
     exports io.helidon.openapi.internal to io.helidon.microprofile.openapi, io.helidon.reactive.openapi, io.helidon.nima.openapi;

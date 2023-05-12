@@ -37,19 +37,17 @@
             <artifactId>helidon-nima-http2</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.pico.builder.config</groupId>
-            <artifactId>helidon-pico-builder-config</artifactId>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-config</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
-            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-metadata</artifactId>
-            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -87,8 +85,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.pico.builder.config</groupId>
-                            <artifactId>helidon-pico-builder-config-processor</artifactId>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-config-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -102,4 +100,3 @@
         </plugins>
     </build>
 </project>
-

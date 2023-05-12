@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.pico.types.TypeName;
-import io.helidon.pico.types.TypedElementName;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementName;
 
 final class GenerateMethod {
     static final String SINGULAR_PREFIX = "add";
@@ -67,6 +67,10 @@ final class GenerateMethod {
         builder.append("\tpublic static Map<String, Map<String, Object>> __metaAttributes() {\n"
                                + "\t\treturn ").append(BodyContext.TAG_META_PROPS).append(";\n"
                                + "\t}\n\n");
+
+        GenerateJavadoc.internalMetaAttributes(builder);
+        builder.append("\tpublic Map<String, Map<String, Object>> __metaProps() {\n"
+                               + "\t\treturn __metaAttributes();\n\t}\n\n");
     }
 
     static void nonOptionalSetter(StringBuilder builder,
@@ -169,7 +173,7 @@ final class GenerateMethod {
                 } else if (mapValueType.isMap()) {
                     builder.append(ctx.mapType());
                 } else {
-                    throw new IllegalStateException("unhandled singular type: " + mapValueType);
+                    throw new IllegalStateException("Unhandled singular type: " + mapValueType);
                 }
                 builder.append("<>();\n");
                 builder.append("\t\t\t\t}\n");
@@ -179,7 +183,7 @@ final class GenerateMethod {
                     } else if (mapValueType.isMap()) {
                         builder.append("\t\t\t\t((java.util.Map) v).put(k, val);\n");
                     } else {
-                        throw new IllegalStateException("unhandled singular type: " + mapValueType);
+                        throw new IllegalStateException("Unhandled singular type: " + mapValueType);
                     }
                 } else {
                     if (mapValueType.isSet() || mapValueType.isList()) {

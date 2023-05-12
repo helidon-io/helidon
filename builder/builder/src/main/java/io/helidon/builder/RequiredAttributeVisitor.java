@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@ package io.helidon.builder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Supplier;
+
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * An implementation of {@link AttributeVisitor} that will validate each attribute to enforce not-null in accordance with
@@ -67,7 +68,7 @@ public class RequiredAttributeVisitor implements AttributeVisitor<Object> {
                       Class<?> type,
                       Class<?>... typeArgument) {
         String requiredStr = (String) meta.get("required");
-        boolean requiredPresent = Objects.nonNull(requiredStr);
+        boolean requiredPresent = (requiredStr != null);
         boolean required = Boolean.parseBoolean(requiredStr);
         if (!required && requiredPresent) {
             return;
@@ -78,7 +79,7 @@ public class RequiredAttributeVisitor implements AttributeVisitor<Object> {
         }
 
         Object val = valueSupplier.get();
-        if (Objects.nonNull(val)) {
+        if (val != null && !val.equals(ConfiguredOption.UNCONFIGURED)) {
             return;
         }
 

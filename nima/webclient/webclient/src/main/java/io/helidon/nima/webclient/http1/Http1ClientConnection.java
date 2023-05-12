@@ -40,7 +40,6 @@ import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.webclient.ClientConnection;
-import io.helidon.nima.webclient.ConnectionKey;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -280,7 +279,7 @@ class Http1ClientConnection implements ClientConnection {
         return String.join(", ", certs);
     }
 
-    private static enum EstablishConnection {
+    private enum EstablishConnection {
         PLAIN {
             @Override
             protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
@@ -304,7 +303,8 @@ class Http1ClientConnection implements ClientConnection {
         PROXY_PLAIN {
             @Override
             protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
-                connection.socket.connect(connection.connectionKey.proxy().address(), (int) connection.options.connectTimeout().toMillis());
+                connection.socket.connect(connection.connectionKey.proxy().address(),
+                        (int) connection.options.connectTimeout().toMillis());
                 int responseCode = connection.proxyTunneling(remoteAddress);
                 if (responseCode != 200) {
                     throw new IllegalStateException("Proxy sent wrong HTTP response code: " + responseCode);
@@ -315,7 +315,8 @@ class Http1ClientConnection implements ClientConnection {
         PROXY_HTTPS {
             @Override
             protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
-                connection.socket.connect(connection.connectionKey.proxy().address(), (int) connection.options.connectTimeout().toMillis());
+                connection.socket.connect(connection.connectionKey.proxy().address(),
+                        (int) connection.options.connectTimeout().toMillis());
                 int responseCode = connection.proxyTunneling(remoteAddress);
                 if (responseCode != 200) {
                     throw new IllegalStateException("Proxy sent wrong HTTP response code: " + responseCode);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package io.helidon.builder.test;
 
 import io.helidon.builder.test.testsubjects.AbstractWithCustomMethods;
-import io.helidon.builder.test.testsubjects.DefaultAbstractWithCustomMethods;
+import io.helidon.builder.test.testsubjects.AbstractWithCustomMethodsDefault;
 import io.helidon.builder.test.testsubjects.GeneralInterceptor;
 
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ class AbstractWithCustomMethodsTest {
      */
     @Test
     void testIt() {
-        AbstractWithCustomMethods val = DefaultAbstractWithCustomMethods.builder()
+        AbstractWithCustomMethods val = AbstractWithCustomMethodsDefault.builder()
                 .name("test")
                 .isStatic(true)
                 .isClass(false)

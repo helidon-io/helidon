@@ -19,7 +19,7 @@
  */
 module io.helidon.tracing.tracerresolver {
     requires io.helidon.common;
-    requires io.helidon.config;
+    requires io.helidon.common.config;
     requires io.helidon.tracing;
     requires io.helidon.tracing.opentracing;
 

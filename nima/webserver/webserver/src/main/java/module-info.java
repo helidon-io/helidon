@@ -17,9 +17,7 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.webserver.http.spi.SinkProvider;
-import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.pico.api.ModuleComponent;
 
 /**
  * Loom based WebServer.
@@ -39,7 +37,9 @@ module io.helidon.nima.webserver {
     requires transitive io.helidon.common.security;
     requires io.helidon.logging.common;
     requires io.helidon.builder;
-    requires io.helidon.pico.builder.config;
+    requires io.helidon.builder.config;
+    requires io.helidon.common.features.api;
+    requires io.helidon.common.features;
     requires io.helidon.common.task;
 
     requires java.management;
@@ -49,8 +49,13 @@ module io.helidon.nima.webserver {
     requires jakarta.annotation;
     requires io.helidon.common.uri;
 
-    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+    requires static io.helidon.pico.configdriven.runtime;
+    requires static jakarta.inject;
+
+    // needed to compile pico generated classes
+    requires io.helidon.pico.api;
+    requires static io.helidon.pico.runtime;
 
     // provides multiple packages due to intentional cyclic dependency
     // we want to support HTTP/1.1 by default (we could fully separate it, but the API would be harder to use
@@ -63,9 +68,10 @@ module io.helidon.nima.webserver {
     exports io.helidon.nima.webserver.http1;
     exports io.helidon.nima.webserver.http1.spi;
 
-    uses Http1UpgradeProvider;
-    uses ServerConnectionProvider;
+    uses io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
+    uses io.helidon.nima.webserver.spi.ServerConnectionProvider;
     uses SinkProvider;
 
-    provides ServerConnectionProvider with Http1ConnectionProvider;
+    provides io.helidon.nima.webserver.spi.ServerConnectionProvider with io.helidon.nima.webserver.http1.Http1ConnectionProvider;
+    provides ModuleComponent with io.helidon.nima.webserver.Pico$$Module;
 }

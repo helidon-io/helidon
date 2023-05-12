@@ -16,6 +16,7 @@
 
 package io.helidon.nima.http2.webserver;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.function.Function;
 
@@ -52,7 +53,7 @@ class ConnectionConfigTest {
         WebServer.builder().addConnectionProvider(provider).build();
         assertThat(provider.isConfig(), is(true));
         Http2Config http2Config = provider.config();
-        assertThat(http2Config.maxFrameSize(), is(8192L));
+        assertThat(http2Config.maxFrameSize(), is(8192));
         assertThat(http2Config.maxHeaderListSize(), is(4096L));
     }
 
@@ -61,8 +62,8 @@ class ConnectionConfigTest {
     void testProviderConfigBuilder() {
 
         Http2ConnectionSelector provider = (Http2ConnectionSelector) Http2ConnectionProvider.builder()
-                .http2Config(DefaultHttp2Config.builder()
-                                     .maxFrameSize(4096L)
+                .http2Config(Http2ConfigDefault.builder()
+                                     .maxFrameSize(4096)
                                      .maxHeaderListSize(2048L)
                                      .build())
                 .build()
@@ -70,7 +71,7 @@ class ConnectionConfigTest {
 
         Http2Connection conn = (Http2Connection) provider.connection(mockContext());
         // Verify values to be updated from configuration file
-        assertThat(conn.config().maxFrameSize(), is(4096L));
+        assertThat(conn.config().maxFrameSize(), is(4096));
         assertThat(conn.config().maxHeaderListSize(), is(2048L));
         // Verify Http2Settings values to be updated from configuration file
         assertThat(conn.serverSettings().value(Http2Setting.MAX_FRAME_SIZE), is(4096L));
@@ -99,6 +100,37 @@ class ConnectionConfigTest {
         assertThat(http2Config.validatePath(), is(false));
     }
 
+    // Verify that HTTP/2 maximum connection-level window size is properly configured from configuration file
+    @Test
+    void testInitialWindowSize() {
+        // This will pick up application.yaml from the classpath as default configuration file
+        TestProvider provider = new TestProvider();
+        WebServer.builder().addConnectionProvider(provider).build();
+        assertThat(provider.isConfig(), is(true));
+        Http2Config http2Config = provider.config();
+        assertThat(http2Config.initialWindowSize(), is(8192));
+    }
+
+    @Test
+    void maxFrameSize() {
+        // This will pick up application.yaml from the classpath as default configuration file
+        TestProvider provider = new TestProvider();
+        WebServer.builder().addConnectionProvider(provider).build();
+        assertThat(provider.isConfig(), is(true));
+        Http2Config http2Config = provider.config();
+        assertThat(http2Config.maxFrameSize(), is(8192));
+    }
+
+    @Test
+    void flowControlTimeout() {
+        // This will pick up application.yaml from the classpath as default configuration file
+        TestProvider provider = new TestProvider();
+        WebServer.builder().addConnectionProvider(provider).build();
+        assertThat(provider.isConfig(), is(true));
+        Http2Config http2Config = provider.config();
+        assertThat(http2Config.flowControlTimeout(), is(Duration.ofMillis(700)));
+    }
+
     private static class TestProvider implements ServerConnectionProvider {
 
         private Http2Config http2Config = null;
@@ -111,7 +143,7 @@ class ConnectionConfigTest {
         @Override
         public ServerConnectionSelector create(Function<String, Config> configs) {
             Config config = configs.apply("http_2");
-            http2Config = DefaultHttp2Config.toBuilder(config).build();
+            http2Config = Http2ConfigDefault.toBuilder(config).build();
             return mock(ServerConnectionSelector.class);
         }
 

@@ -16,28 +16,38 @@
 
 package io.helidon.nima.webclient.http1;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ServiceLoader;
+import java.util.Set;
+
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.Config;
 import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriQueryWriteable;
-import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.LoomClient;
 import io.helidon.nima.webclient.UriHelper;
+import io.helidon.nima.webclient.spi.WebClientService;
+import io.helidon.nima.webclient.spi.WebClientServiceProvider;
 
 class Http1ClientImpl extends LoomClient implements Http1Client {
-    private final int maxHeaderSize;
-    private final int maxStatusLineLength;
-    private final boolean sendExpect100Continue;
-    private final boolean validateHeaders;
-    private final MediaContext mediaContext;
-    private final int connectionQueueSize;
+    private static final Tls EMPTY_TLS = Tls.builder().build();
+    private final Http1ClientConfig clientConfig;
 
-    Http1ClientImpl(Http1ClientBuilder builder) {
-        super(builder);
-        this.maxHeaderSize = builder.maxHeaderSize();
-        this.maxStatusLineLength = builder.maxStatusLineLength();
-        this.sendExpect100Continue = builder.sendExpect100Continue();
-        this.validateHeaders = builder.validateHeaders();
-        this.mediaContext = builder.mediaContext();
-        this.connectionQueueSize = builder.connectionQueueSize();
+    Http1ClientImpl(Http1ClientConfig clientConfig) {
+        super(Http1Client.builder()
+                      .update(it -> clientConfig.baseUri().ifPresent(it::baseUri))
+                      .update(it -> clientConfig.tls().ifPresent(it::tls))
+                      .channelOptions(clientConfig.socketOptions())
+                      .dnsResolver(clientConfig.dnsResolver())
+                      .dnsAddressLookup(clientConfig.dnsAddressLookup()));
+
+        this.clientConfig = Http1ClientConfigDefault.toBuilder(clientConfig)
+                .services(Set.of()) // reset services to empty list
+                .update(it -> services(clientConfig).forEach(it::addService)) // add all configured services
+                .update(it -> it.tls(it.tls().orElse(EMPTY_TLS)))
+                .build();
     }
 
     @Override
@@ -45,30 +55,25 @@ class Http1ClientImpl extends LoomClient implements Http1Client {
         UriQueryWriteable query = UriQueryWriteable.create();
         UriHelper helper = (uri() == null) ? UriHelper.create() : UriHelper.create(uri(), query);
 
-        return new ClientRequestImpl(this, method, helper, query);
+        return new ClientRequestImpl(clientConfig, method, helper, query);
     }
 
-    int maxHeaderSize() {
-        return this.maxHeaderSize;
+    Http1ClientConfig clientConfig() {
+        return clientConfig;
     }
 
-    int maxStatusLineLength() {
-        return this.maxStatusLineLength;
-    }
+    private static List<WebClientService> services(Http1ClientConfig clientConfig) {
+        Config empty = Config.empty();
+        List<WebClientService> services = new ArrayList<>(clientConfig.services());
 
-    boolean sendExpect100Continue() {
-        return this.sendExpect100Continue;
-    }
+        services.addAll(HelidonServiceLoader
+                                .builder(ServiceLoader.load(WebClientServiceProvider.class))
+                                .useSystemServiceLoader(clientConfig.servicesUseServiceLoader())
+                                .build()
+                                .stream()
+                                .map(it -> it.create(empty))
+                                .toList());
 
-    boolean validateHeaders() {
-        return this.validateHeaders;
-    }
-
-    MediaContext mediaContext() {
-        return this.mediaContext;
-    }
-
-    int connectionQueueSize() {
-        return this.connectionQueueSize;
+        return services;
     }
 }

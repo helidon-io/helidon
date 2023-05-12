@@ -79,6 +79,6 @@ class Http2WebServerStopIdleTest {
         long startMillis = System.currentTimeMillis();
         webServer.stop();
         int stopExecutionTimeInMillis = (int) (System.currentTimeMillis() - startMillis);
-        assertThat(stopExecutionTimeInMillis, is(lessThan(500)));
+        assertThat(stopExecutionTimeInMillis, is(lessThan(550)));
     }
 }

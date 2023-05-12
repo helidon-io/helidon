@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,11 +128,11 @@ public class GreetResource {
         description = "Conveys the new greeting prefix to use in building greetings",
         content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = GreetingMessage.class),
+                    schema = @Schema(implementation = GreetingUpdateMessage.class),
                     examples = @ExampleObject(
                         name = "greeting",
                         summary = "Example greeting message to update",
-                        value = "New greeting message")))
+                        value = "{\"greeting\": \"New greeting message\"}")))
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateGreeting(JsonObject jsonObject) {
@@ -183,4 +183,31 @@ public class GreetResource {
             this.message = message;
         }
     }
+
+    /**
+     * POJO defining the greeting to use in future messages.
+     */
+    public static class GreetingUpdateMessage {
+
+        private String greeting;
+
+        /**
+         * Gets the greeting value.
+         *
+         * @return greeting value
+         */
+        public String getGreeting() {
+            return greeting;
+        }
+
+        /**
+         * Sets the greeting value.
+         *
+         * @param greeting greeting value to set
+         */
+        public void setGreeting(String greeting) {
+            this.greeting = greeting;
+        }
+    }
+
 }

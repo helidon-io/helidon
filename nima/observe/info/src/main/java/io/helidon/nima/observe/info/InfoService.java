@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.Map;
 import io.helidon.common.http.NotFoundException;
 import io.helidon.config.Config;
 import io.helidon.nima.http.media.EntityWriter;
-import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -34,7 +34,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
 class InfoService implements HttpService {
-    private static final EntityWriter<JsonObject> WRITER = JsonpMediaSupportProvider.serverResponseWriter();
+    private static final EntityWriter<JsonObject> WRITER = JsonpSupport.serverResponseWriter();
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
     private final Map<String, Object> info;
@@ -76,7 +76,7 @@ class InfoService implements HttpService {
     }
 
     private void write(ServerRequest req, ServerResponse res, JsonObject json) {
-        WRITER.write(JsonpMediaSupportProvider.JSON_OBJECT_TYPE,
+        WRITER.write(JsonpSupport.JSON_OBJECT_TYPE,
                      json,
                      res.outputStream(),
                      req.headers(),

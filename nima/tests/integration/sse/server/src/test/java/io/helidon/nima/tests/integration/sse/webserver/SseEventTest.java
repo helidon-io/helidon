@@ -19,6 +19,7 @@ package io.helidon.nima.tests.integration.sse.webserver;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.sse.SseEvent;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -29,6 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class SseEventTest extends SseBaseTest {
 
     MediaContext mediaContext = MediaContext.create();
+    MediaContext emptyMediaContext = MediaContext.builder()
+            .discoverServices(false)
+            .build();
 
     @Test
     void testNonString() {
@@ -51,7 +55,7 @@ class SseEventTest extends SseBaseTest {
     void testNoReader() {
         SseEvent event = SseEvent.builder()
                 .data("{\"hello\":\"world\"}")
-                .mediaContext(mediaContext)
+                .mediaContext(emptyMediaContext)
                 .build();
         assertThrows(IllegalArgumentException.class, () -> event.data(Object.class));
     }
@@ -70,7 +74,7 @@ class SseEventTest extends SseBaseTest {
     void testNoMediaTypeArg() {
         SseEvent event = SseEvent.builder()
                 .data("{\"hello\":\"world\"}")
-                .mediaContext(mediaContext)
+                .mediaContext(emptyMediaContext)
                 .build();
         assertThrows(IllegalArgumentException.class, () -> event.data(HelloWorld.class));
     }

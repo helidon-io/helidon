@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     private final Lock streamLock = new ReentrantLock(true);
     private final SocketContext ctx;
     private final Http2FrameListener listener;
-    private final Http2Headers.DynamicTable responseDynamicTable;
+    private final Http2Headers.DynamicTable outboundDynamicTable;
     private final Http2HuffmanEncoder responseHuffman;
     private final BufferData headerBuffer = BufferData.growing(512);
 
@@ -52,20 +52,24 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         this.writer = writer;
 
         // initial size is based on our settings, then updated with client settings
-        this.responseDynamicTable = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+        this.outboundDynamicTable = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
         this.responseHuffman = new Http2HuffmanEncoder();
     }
 
     @Override
-    public void write(Http2FrameData frame, FlowControl flowControl) {
-        withStreamLock(() -> {
-            noLockWrite(flowControl, frame);
-            return null;
-        });
+    public void write(Http2FrameData frame) {
+           lockedWrite(frame);
     }
 
     @Override
-    public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags, FlowControl flowControl) {
+    public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+        for (Http2FrameData f : frame.split(flowControl.maxFrameSize())) {
+            splitAndWrite(f, flowControl);
+        }
+    }
+
+    @Override
+    public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags, FlowControl.Outbound flowControl) {
         // this is executing in the thread of the stream
         // we must enforce parallelism of exactly 1, to make sure the dynamic table is updated
         // and then immediately written
@@ -73,7 +77,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         return withStreamLock(() -> {
             int written = 0;
             headerBuffer.clear();
-            headers.write(responseDynamicTable, responseHuffman, headerBuffer);
+            headers.write(outboundDynamicTable, responseHuffman, headerBuffer);
             Http2FrameHeader frameHeader = Http2FrameHeader.create(headerBuffer.available(),
                                                                    Http2FrameTypes.HEADERS,
                                                                    flags,
@@ -81,7 +85,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             written += frameHeader.length();
             written += Http2FrameHeader.LENGTH;
 
-            noLockWrite(flowControl, new Http2FrameData(frameHeader, headerBuffer));
+            noLockWrite(new Http2FrameData(frameHeader, headerBuffer));
 
             return written;
         });
@@ -92,7 +96,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                             int streamId,
                             Http2Flag.HeaderFlags flags,
                             Http2FrameData dataFrame,
-                            FlowControl flowControl) {
+                            FlowControl.Outbound flowControl) {
         // this is executing in the thread of the stream
         // we must enforce parallelism of exactly 1, to make sure the dynamic table is updated
         // and then immediately written
@@ -101,7 +105,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             int bytesWritten = 0;
 
             headerBuffer.clear();
-            headers.write(responseDynamicTable, responseHuffman, headerBuffer);
+            headers.write(outboundDynamicTable, responseHuffman, headerBuffer);
             bytesWritten += headerBuffer.available();
 
             Http2FrameHeader frameHeader = Http2FrameHeader.create(headerBuffer.available(),
@@ -110,8 +114,8 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                                                                    streamId);
             bytesWritten += Http2FrameHeader.LENGTH;
 
-            noLockWrite(flowControl, new Http2FrameData(frameHeader, headerBuffer));
-            noLockWrite(flowControl, dataFrame);
+            noLockWrite(new Http2FrameData(frameHeader, headerBuffer));
+            writeData(dataFrame, flowControl);
             bytesWritten += Http2FrameHeader.LENGTH;
             bytesWritten += dataFrame.header().length();
 
@@ -127,7 +131,14 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
      */
     public void updateHeaderTableSize(long newSize) throws InterruptedException {
         withStreamLock(() -> {
-            responseDynamicTable.protocolMaxTableSize(newSize);
+            outboundDynamicTable.protocolMaxTableSize(newSize);
+            return null;
+        });
+    }
+
+    private void lockedWrite(Http2FrameData frame) {
+        withStreamLock(() -> {
+            noLockWrite(frame);
             return null;
         });
     }
@@ -145,40 +156,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
-    private void noLockWrite(FlowControl flowControl, Http2FrameData frame) {
-        if (frame.header().type() == Http2FrameTypes.DATA.type()) {
-            splitAndWrite(frame, flowControl);
-        } else {
-            writeFrameInternal(frame);
-        }
-    }
-
-    private void splitAndWrite(Http2FrameData frame, FlowControl flowControl) {
-        Http2FrameData[] splitFrames = flowControl.split(frame);
-        if (splitFrames.length == 1) {
-            // windows are wide enough
-            writeFrameInternal(frame);
-            flowControl.decrementWindowSize(frame.header().length());
-        } else if (splitFrames.length == 0) {
-            // block until window update
-            if (!flowControl.blockTillUpdate()) {
-                // no timeout
-                splitAndWrite(frame, flowControl);
-            }
-        } else if (splitFrames.length == 2) {
-            // write send-able part and block until window update with the rest
-            writeFrameInternal(splitFrames[0]);
-            flowControl.decrementWindowSize(frame.header().length());
-            if (!flowControl.blockTillUpdate()) {
-                // no timeout
-                splitAndWrite(splitFrames[1], flowControl);
-            } else {
-                //TODO discarded frames after timeout
-            }
-        }
-    }
-
-    private void writeFrameInternal(Http2FrameData frame) {
+    private void noLockWrite(Http2FrameData frame) {
         Http2FrameHeader frameHeader = frame.header();
         listener.frameHeader(ctx, frameHeader);
 
@@ -191,6 +169,28 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             BufferData data = frame.data().copy();
             listener.frame(ctx, data);
             writer.write(BufferData.create(headerData, data));
+        }
+    }
+
+    private void splitAndWrite(Http2FrameData frame, FlowControl.Outbound flowControl) {
+        Http2FrameData currFrame = frame;
+        while (true) {
+            Http2FrameData[] splitFrames = flowControl.cut(currFrame);
+            if (splitFrames.length == 1) {
+                // windows are wide enough
+                lockedWrite(currFrame);
+                flowControl.decrementWindowSize(currFrame.header().length());
+                break;
+            } else if (splitFrames.length == 0) {
+                // block until window update
+                flowControl.blockTillUpdate();
+            } else if (splitFrames.length == 2) {
+                // write send-able part and block until window update with the rest
+                lockedWrite(splitFrames[0]);
+                flowControl.decrementWindowSize(currFrame.header().length());
+                flowControl.blockTillUpdate();
+                currFrame = splitFrames[1];
+            }
         }
     }
 

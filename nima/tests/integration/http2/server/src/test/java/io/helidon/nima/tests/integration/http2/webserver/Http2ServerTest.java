@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Method.GET;
@@ -178,11 +177,5 @@ class Http2ServerTest {
         assertThat(response.statusCode(), is(200));
         assertThat(response.body(), is("paramValue"));
         System.clearProperty("jdk.internal.httpclient.disableHostnameVerification");
-    }
-
-    @Test
-    @Disabled("No way to test using JDK HTTP Client, Should be part of HTTP/2 client tests")
-    void testPriorKnowledge() {
-
     }
 }

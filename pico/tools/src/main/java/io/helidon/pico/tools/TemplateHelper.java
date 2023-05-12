@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,56 +18,54 @@ package io.helidon.pico.tools;
 
 import java.io.IOException;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigValue;
-import io.helidon.pico.Bootstrap;
-import io.helidon.pico.PicoServicesConfig;
+import io.helidon.builder.processor.tools.BuilderTypeTools;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.PicoServicesConfig;
 
 import com.github.jknack.handlebars.Handlebars;
 import com.github.jknack.handlebars.TagType;
 import com.github.jknack.handlebars.Template;
 
+import static io.helidon.pico.tools.CommonUtils.loadStringFromResource;
+
 /**
  * Helper tools for dealing with Pico-related Handlebar templates.
  */
-class TemplateHelper {
+public class TemplateHelper {
     /**
      * The tag that us used to represent the template name to use.
      */
-    static final String TAG_TEMPLATE_NAME = PicoServicesConfig.FQN + ".template.name";
+    public static final String TAG_TEMPLATE_NAME = PicoServicesConfig.FQN + ".template.name";
 
     /**
      * The default template name to use.
      */
-    static final String DEFAULT_TEMPLATE_NAME = "default";
+    public static final String DEFAULT_TEMPLATE_NAME = "default";
 
     private static final System.Logger LOGGER = System.getLogger(TemplateHelper.class.getName());
 
-    private final Bootstrap bootstrap;
-    private final String providerName;
     private final String versionId;
 
-    private TemplateHelper(Bootstrap bootstrap) {
-        this.bootstrap = bootstrap;
-        this.providerName = toString(bootstrap, PicoServicesConfig.KEY_PROVIDER);
-        this.versionId = toString(bootstrap, PicoServicesConfig.KEY_VERSION);
+    private TemplateHelper(PicoServicesConfig cfg) {
+        Objects.requireNonNull(cfg.providerName(), "provider name is required");
+        this.versionId = Objects.requireNonNull(cfg.providerVersion(), "provider version is required");
     }
 
     /**
-     * Creates a template helper utility using the provided {@link io.helidon.pico.Bootstrap} configuration.
+     * Creates a template helper utility using the global bootstrap configuration.
      *
-     * @param bootstrap the bootstrap configuration
      * @return the template helper initialized with the bootstrap configuration
      */
-    static TemplateHelper create(Bootstrap bootstrap) {
-        return new TemplateHelper(bootstrap);
+    public static TemplateHelper create() {
+        PicoServicesConfig cfg = PicoServices.picoServices()
+                .orElseThrow(() -> new ToolsException(PicoServicesConfig.NAME + " services not found")).config();
+        return new TemplateHelper(cfg);
     }
 
     /**
@@ -76,13 +74,8 @@ class TemplateHelper {
      * @param generatorClassTypeName the generator class type name
      * @return the generated sticker
      */
-    public String defaultGeneratedStickerFor(String generatorClassTypeName) {
-        return "{" + String.join(", ",
-                                 List.of(
-                                         "provider=" + providerName,
-                                         "generator=" + generatorClassTypeName,
-                                         "ver=" + versionId))
-                + "}";
+    public String generatedStickerFor(String generatorClassTypeName) {
+        return BuilderTypeTools.generatedStickerFor(generatorClassTypeName, versionId);
     }
 
     /**
@@ -94,12 +87,12 @@ class TemplateHelper {
      *
      * @return the new string, fully resolved with substitutions
      */
-    public String applySubstitutions(String target,
+    public String applySubstitutions(CharSequence target,
                                      Map<String, Object> props,
                                      boolean logErr) {
         Set<String> missingArgs = new LinkedHashSet<>();
         try {
-            return applySubstitutions(target, props, logErr, true, missingArgs, null, null);
+            return applySubstitutions(target.toString(), props, logErr, true, missingArgs, null, null);
         } catch (IOException e) {
             throw new ToolsException("unable to apply substitutions", e);
         }
@@ -135,9 +128,8 @@ class TemplateHelper {
      * @return the template file, without substitutions applied
      */
     String safeLoadTemplate(String templateName,
-                                    String name) {
-        return Objects.requireNonNull(loadTemplate(templateName, name),
-                                      "failed to load: "  + toFQN(templateName, name));
+                            String name) {
+        return Objects.requireNonNull(loadTemplate(templateName, name), "failed to load: " + toFQN(templateName, name));
     }
 
     /**
@@ -147,8 +139,9 @@ class TemplateHelper {
      * @param name          the template name to use
      * @return the template, or null if not found
      */
-    private String loadTemplate(String templateName, String name) {
-        return CommonUtils.loadStringFromResource(toFQN(templateName, name));
+    public String loadTemplate(String templateName,
+                               String name) {
+        return loadStringFromResource(toFQN(templateName, name));
     }
 
     private static String toFQN(String templateName,
@@ -218,16 +211,6 @@ class TemplateHelper {
         }
 
         return target;
-    }
-
-    private static String toString(Bootstrap bootstrap, String key) {
-        Optional<Config> cfg = bootstrap.config();
-        if (cfg.isEmpty()) {
-            return null;
-        }
-
-        ConfigValue<String> val = cfg.get().get(key).asString();
-        return val.orElse(null);
     }
 
 }

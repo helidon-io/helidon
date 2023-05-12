@@ -104,7 +104,7 @@ abstract class WsSocketAbstractTestingTest {
         }
 
         @Override
-        public void receive(WsSession session, String text, boolean last) {
+        public void onMessage(WsSession session, String text, boolean last) {
             this.message = text;
             session.close(WsCloseCodes.NORMAL_CLOSE, "End");
         }
@@ -140,7 +140,7 @@ abstract class WsSocketAbstractTestingTest {
         String message;
 
         @Override
-        public void receive(WsSession session, String text, boolean last) {
+        public void onMessage(WsSession session, String text, boolean last) {
             message = text;
             session.send("ws", true);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,140 +16,25 @@
 
 package io.helidon.nima.http.media.spi;
 
-import java.util.function.Supplier;
-
-import io.helidon.common.GenericType;
-import io.helidon.common.http.Headers;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.http.media.EntityReader;
-import io.helidon.nima.http.media.EntityWriter;
-import io.helidon.nima.http.media.MediaContext;
+import io.helidon.common.config.Config;
+import io.helidon.nima.http.media.MediaSupport;
 
 /**
  * {@link java.util.ServiceLoader} service provider for media supports.
  */
 public interface MediaSupportProvider {
     /**
-     * Once all providers are discovered and context is established, the {@link io.helidon.nima.http.media.MediaContext} calls
-     * this
-     * method on all providers to allow sub-resolution of readers and writers.
+     * Configuration key of this media support provider.
      *
-     * @param context media context context
+     * @return config key to be used when getting config node to use with {@link #create(io.helidon.common.config.Config)}
      */
-    default void init(MediaContext context) {
-    }
+    String configKey();
 
     /**
-     * Reader for an entity.
+     * Create media support based on the provided configuration.
      *
-     * @param type    type of entity
-     * @param headers headers belonging to this entity (such as server request headers), expected to have content type
-     * @param <T>     type
-     * @return reader response, whether this type is supported or not
+     * @param config configuration of the media support
+     * @return a new media support to provide readers and writers
      */
-    default <T> ReaderResponse<T> reader(GenericType<T> type, Headers headers) {
-        return ReaderResponse.unsupported();
-    }
-
-    /**
-     * Server response writer.
-     *
-     * @param type            type of entity
-     * @param requestHeaders  request headers
-     * @param responseHeaders response headers
-     * @param <T>             type
-     * @return writer response, whether this type is supported or not
-     */
-    default <T> WriterResponse<T> writer(GenericType<T> type,
-                                         Headers requestHeaders,
-                                         WritableHeaders<?> responseHeaders) {
-        return WriterResponse.unsupported();
-    }
-
-    /**
-     * Client response reader.
-     *
-     * @param type            type of entity
-     * @param requestHeaders  request headers
-     * @param responseHeaders response headers
-     * @param <T>             type
-     * @return reader response, whether this type is supported or not
-     */
-    default <T> ReaderResponse<T> reader(GenericType<T> type,
-                                         Headers requestHeaders,
-                                         Headers responseHeaders) {
-        return ReaderResponse.unsupported();
-    }
-
-    /**
-     * Client request writer.
-     *
-     * @param type           type of entity
-     * @param requestHeaders request headers
-     * @param <T>            type
-     * @return writer response, whether this type is supported or not
-     */
-    default <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        return WriterResponse.unsupported();
-    }
-
-    /**
-     * How does this provider support the entity type.
-     */
-    enum SupportLevel {
-        /**
-         * Requested type is not supported.
-         */
-        NOT_SUPPORTED,
-        /**
-         * Requested type is compatible, but there may be a better match elsewhere (such as any POJO from JSON binding).
-         */
-        COMPATIBLE,
-        /**
-         * Requested type is supported and exactly matched (such as {@code JsonObject} from JSON processing).
-         */
-        SUPPORTED
-    }
-
-    /**
-     * Reader response.
-     *
-     * @param support  how is the response supported
-     * @param supplier entity reader supplier, may be null if {@link SupportLevel#NOT_SUPPORTED}
-     * @param <T>      type of entity
-     */
-    record ReaderResponse<T>(SupportLevel support, Supplier<EntityReader<T>> supplier) {
-        private static final ReaderResponse NOT_SUPPORTED = new ReaderResponse(SupportLevel.NOT_SUPPORTED, null);
-
-        /**
-         * Unsupported reader response.
-         *
-         * @param <T> type of entity
-         * @return unsupported response (constant)
-         */
-        public static <T> ReaderResponse<T> unsupported() {
-            return NOT_SUPPORTED;
-        }
-    }
-
-    /**
-     * Writer response.
-     *
-     * @param support  how is the response supported
-     * @param supplier entity writer supplier, may be null if {@link SupportLevel#NOT_SUPPORTED}
-     * @param <T>      type of entity
-     */
-    record WriterResponse<T>(SupportLevel support, Supplier<EntityWriter<T>> supplier) {
-        private static final WriterResponse NOT_SUPPORTED = new WriterResponse(SupportLevel.NOT_SUPPORTED, null);
-
-        /**
-         * Unsupported writer response.
-         *
-         * @param <T> type of entity
-         * @return unsupported response (constant)
-         */
-        public static <T> WriterResponse<T> unsupported() {
-            return NOT_SUPPORTED;
-        }
-    }
+    MediaSupport create(Config config);
 }

@@ -64,14 +64,6 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
     B tls(Tls tls);
 
     /**
-     * Proxy configuration for this specific request.
-     *
-     * @param proxy proxy configuration
-     * @return updated request
-     */
-    B proxy(Proxy proxy);
-
-    /**
      * Configure URI.
      *
      * @param uri uri to resolve against base URI, or to use if absolute
@@ -123,6 +115,13 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
      * @return updated request
      */
     B queryParam(String name, String... values);
+
+    /**
+     * Set fragment of the URI.
+     * @param fragment fragment
+     * @return updated request
+     */
+    B fragment(String fragment);
 
     /**
      * Request without an entity.

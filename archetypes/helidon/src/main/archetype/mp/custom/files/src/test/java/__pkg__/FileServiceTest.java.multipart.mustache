@@ -9,6 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+{{#FileServiceTest-helidon-imports}}
+import {{.}};
+{{/FileServiceTest-helidon-imports}}
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddBean;
@@ -46,6 +49,9 @@ import static org.hamcrest.Matchers.notNullValue;
 @AddExtension(ServerCdiExtension.class)
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(CdiComponentProvider.class)
+{{#FileServiceTest-annotations}}
+{{.}}
+{{/FileServiceTest-annotations}}
 @AddBean(FileService.class)
 @AddBean(FileStorage.class)
 @AddBean(MultiPartFeatureProvider.class)
