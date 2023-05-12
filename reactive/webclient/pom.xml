@@ -34,7 +34,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>jaxrs</module>
         <module>webclient</module>
         <module>metrics</module>
         <module>security</module>
