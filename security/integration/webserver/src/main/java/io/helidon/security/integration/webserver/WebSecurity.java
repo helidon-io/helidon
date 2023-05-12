@@ -331,7 +331,7 @@ public final class WebSecurity implements Service {
         return builder()
                 .config(config)
                 .security(security)
-                .securityHandler(defaultHandler)
+                .defaultSecurityHandler(defaultHandler)
                 .build();
     }
 
