@@ -265,11 +265,6 @@
                 <version>${version.lib.opentelemetry}</version>
             </dependency>
             <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-exporter-otlp</artifactId>
-                <version>${version.lib.opentelemetry}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.opentelemetry.instrumentation</groupId>
                 <artifactId>opentelemetry-instrumentation-api</artifactId>
                 <version>${version.lib.opentelemetry}</version>
