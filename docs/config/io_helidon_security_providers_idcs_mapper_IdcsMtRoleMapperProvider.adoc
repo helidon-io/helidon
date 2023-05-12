@@ -17,9 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperRxProvider
-:keywords: helidon, config, io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperRxProvider
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperRxProvider
+:description: Configuration of io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider
+:keywords: helidon, config, io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider
 include::{rootdir}/includes/attributes.adoc[]
 
 = IdcsMtRoleMapperRxProvider (security.providers.idcs.mapper) Configuration
@@ -29,7 +29,7 @@ include::{rootdir}/includes/attributes.adoc[]
 Multitenant IDCS role mapping provider
 
 
-Type: link:{javadoc-base-url}/io.helidon.security.providers.idcs.mapper/io/helidon/security/providers/idcs/mapper/IdcsMtRoleMapperRxProvider.html[io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperRxProvider]
+Type: link:{javadoc-base-url}/io.helidon.security.providers.idcs.mapper/io/helidon/security/providers/idcs/mapper/IdcsMtRoleMapperRxProvider.html[io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider]
 
 
 [source,text]

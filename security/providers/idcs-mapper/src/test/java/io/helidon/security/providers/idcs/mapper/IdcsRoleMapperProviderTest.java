@@ -20,7 +20,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.Principal;
@@ -41,12 +40,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableWithSize.iterableWithSize;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class IdcsRoleMapperRxProviderTest {
+class IdcsRoleMapperProviderTest {
     private static TestProvider provider;
 
     @BeforeAll
     static void prepareProvider() {
-        IdcsRoleMapperRxProvider.Builder<?> builder = IdcsRoleMapperRxProvider.builder();
+        IdcsRoleMapperProvider.Builder<?> builder = IdcsRoleMapperProvider.builder();
         builder.oidcConfig(OidcConfig.builder()
                                    .oidcMetadataWellKnown(false)
                                    .clientId("client-id")
@@ -116,7 +115,7 @@ class IdcsRoleMapperRxProviderTest {
         return null;
     }
 
-    private static final class TestProvider extends IdcsRoleMapperRxProvider {
+    private static final class TestProvider extends IdcsRoleMapperProvider {
         private static final AtomicInteger COUNTER = new AtomicInteger();
         private TestProvider(Builder<?> builder) {
             super(builder);

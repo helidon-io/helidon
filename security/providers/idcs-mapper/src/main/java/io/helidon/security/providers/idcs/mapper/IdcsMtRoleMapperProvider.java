@@ -17,8 +17,8 @@ package io.helidon.security.providers.idcs.mapper;
 
 import java.lang.System.Logger.Level;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -54,20 +54,20 @@ import jakarta.json.JsonObjectBuilder;
  * {@link io.helidon.security.spi.SubjectMappingProvider} to obtain roles from IDCS server for a user.
  * Supports multi tenancy in IDCS.
  */
-public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
+public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     /**
      * Name of the header containing the IDCS tenant. This is the default used, can be overridden
-     * in builder by {@link IdcsMtRoleMapperRxProvider.Builder#idcsTenantTokenHandler(io.helidon.security.util.TokenHandler)}
+     * in builder by {@link IdcsMtRoleMapperProvider.Builder#idcsTenantTokenHandler(io.helidon.security.util.TokenHandler)}
      */
     protected static final String IDCS_TENANT_HEADER = "X-USER-IDENTITY-SERVICE-GUID";
     /**
      * Name of the header containing the IDCS app. This is the default used, can be overriden
-     * in builder by {@link IdcsMtRoleMapperRxProvider.Builder#idcsAppNameTokenHandler(io.helidon.security.util.TokenHandler)}
+     * in builder by {@link IdcsMtRoleMapperProvider.Builder#idcsAppNameTokenHandler(io.helidon.security.util.TokenHandler)}
      */
     protected static final String IDCS_APP_HEADER = "X-RESOURCE-SERVICE-INSTANCE-IDENTITY-APPNAME";
 
     private static final System.Logger LOGGER = System
-            .getLogger(IdcsMtRoleMapperRxProvider.class.getName());
+            .getLogger(IdcsMtRoleMapperProvider.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private final TokenHandler idcsTenantTokenHandler;
@@ -78,11 +78,11 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
 
     /**
      * Configure instance from any descendant of
-     * {@link IdcsMtRoleMapperRxProvider.Builder}.
+     * {@link IdcsMtRoleMapperProvider.Builder}.
      *
      * @param builder containing the required configuration
      */
-    protected IdcsMtRoleMapperRxProvider(Builder<?> builder) {
+    protected IdcsMtRoleMapperProvider(Builder<?> builder) {
         super(builder);
 
         this.idcsTenantTokenHandler = builder.idcsTenantTokenHandler;
@@ -155,7 +155,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
                                                                          idcsMtContext.appId(),
                                                                          subject,
                                                                          grants.get());
-            List<Grant> allGrants = new LinkedList<>(grants.get());
+            List<Grant> allGrants = new ArrayList<>(grants.get());
             allGrants.addAll(additionalGrants);
             return buildSubject(subject, allGrants);
         }
@@ -163,7 +163,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
         // this may trigger multiple times in parallel - rather than creating a map of future for each user
         // we leave this be (as the map of futures may be unlimited)
 
-        List<Grant> result = new LinkedList<>(computeGrants(idcsMtContext.tenantId(), idcsMtContext.appId(), subject));
+        List<Grant> result = new ArrayList<>(computeGrants(idcsMtContext.tenantId(), idcsMtContext.appId(), subject));
         List<Grant> fromCache = cache.computeValue(cacheKey, () -> Optional.of(List.copyOf(result))).orElseGet(List::of);
         List<? extends Grant> additionalGrants = addAdditionalGrants(idcsMtContext.tenantId(),
                                                                      idcsMtContext.appId(),
@@ -189,8 +189,8 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
      * Extract IDCS multitenancy context form the the request.
      *
      * <p>By default, the context is extracted from the headers using token handlers for
-     * {@link IdcsMtRoleMapperRxProvider.Builder#idcsTenantTokenHandler(io.helidon.security.util.TokenHandler) tenant} and
-     * {@link IdcsMtRoleMapperRxProvider.Builder#idcsAppNameTokenHandler(io.helidon.security.util.TokenHandler) app}.
+     * {@link IdcsMtRoleMapperProvider.Builder#idcsTenantTokenHandler(io.helidon.security.util.TokenHandler) tenant} and
+     * {@link IdcsMtRoleMapperProvider.Builder#idcsAppNameTokenHandler(io.helidon.security.util.TokenHandler) app}.
      * @param subject Subject that is being mapped
      * @param request ProviderRequest context that is being mapped.
      * @return Optional with the context, empty if the context is not present in the request.
@@ -280,7 +280,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
     }
 
     /**
-     * Get the {@link IdcsMtRoleMapperRxProvider.MultitenancyEndpoints} used
+     * Get the {@link IdcsMtRoleMapperProvider.MultitenancyEndpoints} used
      * to get assertion and token endpoints of a multitenant IDCS.
      *
      * @return endpoints to use by this implementation
@@ -318,7 +318,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
     }
 
     /**
-     * Fluent API builder for {@link IdcsMtRoleMapperRxProvider}.
+     * Fluent API builder for {@link IdcsMtRoleMapperProvider}.
      *
      * @param <B> type of a descendant of this builder
      */
@@ -326,8 +326,8 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
                 description = "Multitenant IDCS role mapping provider",
                 provides = {SecurityProvider.class, SubjectMappingProvider.class})
     public static class Builder<B extends Builder<B>>
-            extends IdcsRoleMapperRxProviderBase.Builder<Builder<B>>
-            implements io.helidon.common.Builder<Builder<B>, IdcsMtRoleMapperRxProvider> {
+            extends IdcsRoleMapperProviderBase.Builder<Builder<B>>
+            implements io.helidon.common.Builder<Builder<B>, IdcsMtRoleMapperProvider> {
         private TokenHandler idcsAppNameTokenHandler = TokenHandler.forHeader(IDCS_APP_HEADER);
         private TokenHandler idcsTenantTokenHandler = TokenHandler.forHeader(IDCS_TENANT_HEADER);
         private MultitenancyEndpoints multitentantEndpoints;
@@ -343,11 +343,11 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
         }
 
         @Override
-        public IdcsMtRoleMapperRxProvider build() {
+        public IdcsMtRoleMapperProvider build() {
             if (null == cache) {
                 cache = EvictableCache.create();
             }
-            return new IdcsMtRoleMapperRxProvider(this);
+            return new IdcsMtRoleMapperProvider(this);
         }
 
         @Override
@@ -363,7 +363,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
 
         /**
          * Configure token handler for IDCS Application name.
-         * By default the header {@value IdcsMtRoleMapperRxProvider#IDCS_APP_HEADER} is used.
+         * By default the header {@value IdcsMtRoleMapperProvider#IDCS_APP_HEADER} is used.
          *
          * @param idcsAppNameTokenHandler new token handler to extract IDCS application name
          * @return updated builder instance
@@ -376,7 +376,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
 
         /**
          * Configure token handler for IDCS Tenant ID.
-         * By default the header {@value IdcsMtRoleMapperRxProvider#IDCS_TENANT_HEADER} is used.
+         * By default the header {@value IdcsMtRoleMapperProvider#IDCS_TENANT_HEADER} is used.
          *
          * @param idcsTenantTokenHandler new token handler to extract IDCS tenant ID
          * @return updated builder instance
@@ -413,7 +413,7 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
 
     /**
      * Default implementation of the
-     * {@link IdcsMtRoleMapperRxProvider.MultitenancyEndpoints}.
+     * {@link IdcsMtRoleMapperProvider.MultitenancyEndpoints}.
      * Caches the endpoints per tenant.
      */
     protected static class DefaultMultitenancyEndpoints implements MultitenancyEndpoints {

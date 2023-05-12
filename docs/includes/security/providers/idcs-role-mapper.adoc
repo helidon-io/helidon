@@ -38,11 +38,11 @@ A role mapper to retrieve roles from Oracle IDCS.
 
 ==== Single-tenant IDCS Role Mapper
 
-include::{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsRoleMapperRxProvider.adoc[leveloffset=+2,tag=config]
+include::{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsRoleMapperProvider.adoc[leveloffset=+2,tag=config]
 
 ==== Multi-tenant IDCS Role Mapper
 
-include::{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsMtRoleMapperRxProvider.adoc[leveloffset=+2,tag=config]
+include::{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsMtRoleMapperProvider.adoc[leveloffset=+2,tag=config]
 
 ==== Example code
 

@@ -19,9 +19,9 @@ import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -57,17 +57,17 @@ import jakarta.json.JsonObject;
 /**
  * Common functionality for IDCS role mapping using {@link io.helidon.nima.webclient.http1.Http1Client}.
  */
-public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProvider {
+public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvider {
     /**
      * User subject type used when requesting roles from IDCS.
      * An attempt is made to obtain it from JWT claim {@code sub_type}. If not defined,
-     * default is used as configured in {@link IdcsRoleMapperRxProviderBase.Builder}.
+     * default is used as configured in {@link IdcsRoleMapperProviderBase.Builder}.
      */
     public static final String IDCS_SUBJECT_TYPE_USER = "user";
     /**
      * Client subject type used when requesting roles from IDCS.
      * An attempt is made to obtain it from JWT claim {@code sub_type}. If not defined,
-     * default is used as configured in {@link IdcsRoleMapperRxProviderBase.Builder}.
+     * default is used as configured in {@link IdcsRoleMapperProviderBase.Builder}.
      */
     public static final String IDCS_SUBJECT_TYPE_CLIENT = "client";
     /**
@@ -87,7 +87,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
      * We cannot use the constant declared in {@code ClientTracingFilter}, as it is not a required dependency.
      */
     protected static final String PARENT_CONTEXT_CLIENT_PROPERTY = "io.helidon.tracing.span-context";
-    private static final System.Logger LOGGER = System.getLogger(IdcsRoleMapperRxProviderBase.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(IdcsRoleMapperProviderBase.class.getName());
 
     private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
     private final OidcConfig oidcConfig;
@@ -98,7 +98,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
      *
      * @param builder builder with oidcConfig and other needed fields.
      */
-    protected IdcsRoleMapperRxProviderBase(Builder<?> builder) {
+    protected IdcsRoleMapperProviderBase(Builder<?> builder) {
         this.oidcConfig = builder.oidcConfig;
         this.oidcConfig.tokenEndpointUri(); //Remove once IDCS is rewritten to be lazily loaded
         this.defaultIdcsSubjectType = builder.defaultIdcsSubjectType;
@@ -235,7 +235,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
             return List.of();
         }
 
-        List<Role> result = new LinkedList<>();
+        List<Role> result = new ArrayList<>();
         for (String type : Arrays.asList(ROLE_GROUP, ROLE_APPROLE)) {
             JsonArray types = jsonObject.getJsonArray(type);
             if (null != types) {
@@ -261,7 +261,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
     }
 
     /**
-     * Fluent API builder for {@link IdcsRoleMapperRxProviderBase}.
+     * Fluent API builder for {@link IdcsRoleMapperProviderBase}.
      * @param <B> Type of the extending builder
      */
     @Configured

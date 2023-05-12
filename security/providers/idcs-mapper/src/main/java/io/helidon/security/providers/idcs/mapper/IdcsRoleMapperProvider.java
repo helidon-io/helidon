@@ -16,8 +16,8 @@
 package io.helidon.security.providers.idcs.mapper;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,7 +49,7 @@ import jakarta.json.JsonObjectBuilder;
  * {@link io.helidon.security.spi.SubjectMappingProvider} to obtain roles from IDCS server for a user.
  * Supports multi tenancy in IDCS.
  */
-public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase implements SubjectMappingProvider {
+public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implements SubjectMappingProvider {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private final EvictableCache<String, List<Grant>> roleCache;
@@ -60,11 +60,11 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
     private final AppTokenRx appToken;
 
     /**
-     * Constructor that accepts any {@link IdcsRoleMapperRxProvider.Builder} descendant.
+     * Constructor that accepts any {@link IdcsRoleMapperProvider.Builder} descendant.
      *
      * @param builder used to configure this instance
      */
-    protected IdcsRoleMapperRxProvider(Builder<?> builder) {
+    protected IdcsRoleMapperProvider(Builder<?> builder) {
         super(builder);
 
         this.roleCache = builder.roleCache;
@@ -110,14 +110,14 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
 
         Optional<List<Grant>> grants = roleCache.computeValue(username, Optional::empty);
         if (grants.isPresent()) {
-            List<Grant> allGrants = new LinkedList<>(grants.get());
+            List<Grant> allGrants = new ArrayList<>(grants.get());
             allGrants.addAll(addAdditionalGrants(subject, grants.get()));
             return buildSubject(subject, allGrants);
         }
         // we do not have a cached value, we must request it from remote server
         // this may trigger multiple times in parallel - rather than creating a map of future for each user
         // we leave this be (as the map of futures may be unlimited)
-        List<Grant> result = new LinkedList<>(computeGrants(subject));
+        List<Grant> result = new ArrayList<>(computeGrants(subject));
         List<Grant> fromCache = roleCache.computeValue(username, () -> Optional.of(List.copyOf(result)))
                 .orElseGet(List::of);
         result.addAll(addAdditionalGrants(subject, fromCache));
@@ -204,15 +204,15 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
     }
 
     /**
-     * Fluent API builder for {@link IdcsRoleMapperRxProvider}.
+     * Fluent API builder for {@link IdcsRoleMapperProvider}.
      *
      * @param <B> type of builder extending this builder
      */
     @Configured(prefix = IdcsRoleMapperProviderService.PROVIDER_CONFIG_KEY,
                 description = "IDCS role mapping provider",
                 provides = {SecurityProvider.class, SubjectMappingProvider.class})
-    public static class Builder<B extends Builder<B>> extends IdcsRoleMapperRxProviderBase.Builder<Builder<B>>
-            implements io.helidon.common.Builder<Builder<B>, IdcsRoleMapperRxProvider> {
+    public static class Builder<B extends Builder<B>> extends IdcsRoleMapperProviderBase.Builder<Builder<B>>
+            implements io.helidon.common.Builder<Builder<B>, IdcsRoleMapperProvider> {
         private EvictableCache<String, List<Grant>> roleCache;
 
         @SuppressWarnings("unchecked")
@@ -225,11 +225,11 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
         }
 
         @Override
-        public IdcsRoleMapperRxProvider build() {
+        public IdcsRoleMapperProvider build() {
             if (null == roleCache) {
                 roleCache = EvictableCache.create();
             }
-            return new IdcsRoleMapperRxProvider(this);
+            return new IdcsRoleMapperProvider(this);
         }
 
         /**

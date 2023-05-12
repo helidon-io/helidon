@@ -792,7 +792,7 @@ public final class SecurityHandler implements Handler {
                 abortRequest(res, response, Http.Status.FORBIDDEN_403.code(), Map.of());
                 return AtxResult.STOP;
             default:
-                throw  new SecurityException("Invalid SecurityStatus returned: " + response.status());
+                throw new SecurityException("Invalid SecurityStatus returned: " + response.status());
             }
 
             atzTracing.finish();
