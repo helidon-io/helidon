@@ -53,6 +53,16 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 OpenTelemetry comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
 
+MicroProfile Telemetry 1.0 allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using variety of exporter.
+
+In a distributed tracing system, *traces* are used to capture a series of requests and are composed of multiple *spans* that represent individual operations within those requests. Each *span* includes a name, timestamps, and metadata that provide insights into the corresponding operation.
+
+*Context* is included in each span to identify the specific request that it belongs to. This context information is crucial for tracking requests across various components in a distributed system, enabling developers to trace a single request as it traverses through multiple services.
+
+Finally, *exporters* are responsible for transmitting the collected trace data to a backend service for monitoring and visualization. This enables developers to gain a comprehensive understanding of the system's behavior and detect any issues or bottlenecks that may arise.
+
+image::telemetry/telemetry-general.png[General understanding of OpenTelemetry Tracing]
+
 There are two ways to work with Telemetry, using:
 
 - Automatic Instrumentation
@@ -185,7 +195,7 @@ IMPORTANT: MicroProfile Telemetry is not activated by default. To activate this 
 To configure OpenTelemetry, MicroProfile Config must be used, and the configuration properties outlined in the following sections must be followed:
 
 - link:https://github.com/open-telemetry/opentelemetry-java/tree/v1.19.0/sdk-extensions/autoconfigure[OpenTelemetry SDK Autoconfigure] (excluding properties related to Metrics and Logging)
-- link:Manual Instrumentation[https://opentelemetry.io/docs/instrumentation/java/manual/]
+- link:https://opentelemetry.io/docs/instrumentation/java/manual/[Manual Instrumentation]
 
 Please consult with the links above for all configurations properties usage.
 
@@ -254,7 +264,8 @@ otel.exporter.name=greeting-service <3>
 
 Here we enable MicroProfile Telemetry, set tracer to "jaeger" and give a name, which will be used to identify our service in the tracer.
 
-NOTE: for our example we use Jaeger managing the tracing data. If you prefer to use Zipkin, please `otel.traces.exporter` to "zipkin". To fid more information on how to use Zipkin, please proceed to link:https://zipkin.io/[]
+NOTE: for our example we use Jaeger managing the tracing data. If you prefer to use Zipkin, please set `otel.traces.exporter` property to "zipkin". To find more information on how to use Zipkin, please proceed to link:https://zipkin.io/[]
+
 
 === Tracing at Method Level
 
