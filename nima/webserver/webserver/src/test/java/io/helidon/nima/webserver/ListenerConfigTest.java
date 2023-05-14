@@ -30,8 +30,9 @@ public class ListenerConfigTest {
         Config config = Config.create();
         WebServer.Builder webServerBuilder = WebServer.builder().config(config.get("server"));
         ListenerConfiguration.Builder listenerBuilder1 = webServerBuilder.socket(DEFAULT_SOCKET_NAME);
-        assertThat(listenerBuilder1.build().writeQueueLength(), is(0));         // default
-        assertThat(listenerBuilder1.build().writeBufferSize(), is(512));        // default
+        assertThat(listenerBuilder1.build().writeQueueLength(), is(0));                 // default
+        assertThat(listenerBuilder1.build().writeBufferSize(), is(512));                // default
+        assertThat(listenerBuilder1.build().gracePeriod().toMillis(), is(500L));        // default
         ListenerConfiguration.Builder listenerBuilder2 = webServerBuilder.socket("other");
         assertThat(listenerBuilder2.build().writeQueueLength(), is(64));
         assertThat(listenerBuilder2.build().writeBufferSize(), is(1024));

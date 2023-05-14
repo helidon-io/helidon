@@ -23,6 +23,7 @@ import java.net.ServerSocket;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -50,6 +51,7 @@ public final class ListenerConfiguration {
     private final int writeQueueLength;
     private final long maxPayloadSize;
     private final int writeBufferSize;
+    private final Duration gracePeriod;
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final DirectHandlers directHandlers;
@@ -66,6 +68,7 @@ public final class ListenerConfiguration {
         this.writeQueueLength = builder.writeQueueLength;
         this.maxPayloadSize = builder.maxPayloadSize;
         this.writeBufferSize = builder.writeBufferSize;
+        this.gracePeriod = builder.gracePeriod;
         this.contentEncodingContext = builder.contentEncodingContext;
         this.mediaContext = builder.mediaContext;
         this.directHandlers = builder.directHandlers.build();
@@ -157,6 +160,16 @@ public final class ListenerConfiguration {
     }
 
     /**
+     * Grace period to allow running tasks to complete before listener's shutdown.
+     * Default is {@code 500} milliseconds.
+     *
+     * @return grace period
+     */
+    public Duration gracePeriod() {
+        return gracePeriod;
+    }
+
+    /**
      * Configured direct handlers.
      *
      * @return direct handlers
@@ -236,6 +249,7 @@ public final class ListenerConfiguration {
         private int writeQueueLength = 0;
         private long maxPayloadSize = -1;
         private int writeBufferSize = 512;
+        private Duration gracePeriod = Duration.ofMillis(500L);
         private ContentEncodingContext contentEncodingContext;
         private MediaContext mediaContext;
         private Context context;
@@ -379,6 +393,18 @@ public final class ListenerConfiguration {
          */
         public Builder writeBufferSize(int writeBufferSize) {
             this.writeBufferSize = writeBufferSize;
+            return this;
+        }
+
+        /**
+         * Grace period to allow running tasks to complete before listener's shutdown.
+         * Default is {@code 500} milliseconds.
+         *
+         * @param duration grace period
+         * @return updated builder
+         */
+        public Builder gracePeriod(Duration duration) {
+            this.gracePeriod = duration;
             return this;
         }
 
