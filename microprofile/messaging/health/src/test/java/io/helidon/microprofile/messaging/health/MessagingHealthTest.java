@@ -30,15 +30,16 @@ import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.AddExtensions;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
@@ -79,18 +80,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
         @AddExtension(JaxRsCdiExtension.class),
         @AddExtension(HealthCdiExtension.class),
         @AddExtension(MessagingCdiExtension.class),
+        @AddExtension(CdiComponentProvider.class)
 })
 public class MessagingHealthTest {
 
     private static final String ERROR_MESSAGE = "BOOM!";
-    private Http1Client client;
+    private int port;
 
     @BeforeEach
     void setUp() {
         ServerCdiExtension server = CDI.current().select(ServerCdiExtension.class).get();
-        client = WebClient.builder()
-                 .baseUri("http://localhost:" + server.port())
-                 .build();
+        port = server.port();
     }
 
     @Test
@@ -153,8 +153,9 @@ public class MessagingHealthTest {
     }
 
     private JsonObject getHealthCheck(String checkName) {
-        try (Http1ClientResponse response = client.get("/health").request()) {
-            JsonObject jsonObject = response.as(JsonObject.class);
+        try (Client client = ClientBuilder.newClient()) {
+            Response response = client.target("http://localhost:" + port).path("/health").request().get();
+            JsonObject jsonObject = response.readEntity(JsonObject.class);
             return jsonObject.getValue("/checks")
                              .asJsonArray().stream()
                              .map(JsonValue::asJsonObject)
