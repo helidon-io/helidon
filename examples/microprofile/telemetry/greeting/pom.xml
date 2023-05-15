@@ -37,6 +37,10 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-jaeger</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.telemetry</groupId>
             <artifactId>helidon-microprofile-telemetry</artifactId>
         </dependency>
