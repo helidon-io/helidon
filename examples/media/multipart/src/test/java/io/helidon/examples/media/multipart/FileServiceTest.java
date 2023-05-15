@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,23 +19,21 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.List;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.media.multipart.FileFormParams;
-import io.helidon.reactive.media.multipart.MultiPartSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.http.media.multipart.WriteableMultiPart;
+import io.helidon.nima.http.media.multipart.WriteablePart;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -51,44 +49,29 @@ import static org.hamcrest.Matchers.notNullValue;
  * Tests {@link FileService}.
  */
 @TestMethodOrder(OrderAnnotation.class)
+@ServerTest
 public class FileServiceTest {
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private final Http1Client client;
 
-    private static WebServer webServer;
-    private static WebClient webClient;
-
-    @BeforeAll
-    public static void startTheServer() {
-        webServer = Main.startServer(0)
-                .await(TIMEOUT);
-
-        webClient = WebClient.builder()
-                             .baseUri("http://localhost:" + webServer.port() + "/api")
-                             .addMediaSupport(MultiPartSupport.create())
-                             .addMediaSupport(JsonpSupport.create())
-                             .build();
+    FileServiceTest(Http1Client client) {
+        this.client = client;
     }
 
-    @AfterAll
-    public static void stopServer() {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .await(TIMEOUT);
-        }
+    @SetUpRoute
+    static void routing(HttpRouting.Builder builder) {
+        Main.routing(builder);
     }
 
     @Test
     @Order(1)
     public void testUpload() throws IOException {
         Path file = Files.writeString(Files.createTempFile(null, null), "bar\n");
-        WebClientResponse response = webClient
-                .post()
-                .contentType(MediaTypes.MULTIPART_FORM_DATA)
-                .submit(FileFormParams.builder()
-                                      .addFile("file[]", "foo.txt", file)
-                                      .build())
-                .await(TIMEOUT);
-        assertThat(response.status().code(), is(301));
+        try (Http1ClientResponse response = client.post("/api")
+                                                  .submit(WriteableMultiPart.builder()
+                                                                            .addPart(writeablePart("file[]", "foo.txt", file))
+                                                                            .build())) {
+            assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+        }
     }
 
     @Test
@@ -96,46 +79,46 @@ public class FileServiceTest {
     public void testStreamUpload() throws IOException {
         Path file = Files.writeString(Files.createTempFile(null, null), "stream bar\n");
         Path file2 = Files.writeString(Files.createTempFile(null, null), "stream foo\n");
-        WebClientResponse response = webClient
-                .post()
-                .queryParam("stream", "true")
-                .contentType(MediaTypes.MULTIPART_FORM_DATA)
-                .submit(FileFormParams.builder()
-                                      .addFile("file[]", "streamed-foo.txt", file)
-                                      .addFile("otherPart", "streamed-foo2.txt", file2)
-                                      .build())
-                .await(TIMEOUT);
-        assertThat(response.status().code(), is(301));
+        try (Http1ClientResponse response = client.post("/api")
+                                                  .queryParam("stream", "true")
+                                                  .submit(WriteableMultiPart
+                                                          .builder()
+                                                          .addPart(writeablePart("file[]", "streamed-foo.txt", file))
+                                                          .addPart(writeablePart("otherPart", "streamed-foo2.txt", file2))
+                                                          .build())) {
+            assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+        }
     }
 
     @Test
     @Order(3)
     public void testList() {
-        WebClientResponse response = webClient
-                .get()
-                .contentType(MediaTypes.APPLICATION_JSON)
-                .request()
-                .await(TIMEOUT);
-        assertThat(response.status().code(), Matchers.is(200));
-        JsonObject json = response.content().as(JsonObject.class).await(TIMEOUT);
-        assertThat(json, Matchers.is(notNullValue()));
-        List<String> files = json.getJsonArray("files").getValuesAs(v -> ((JsonString) v).getString());
-        assertThat(files, hasItem("foo.txt"));
+        try (Http1ClientResponse response = client.get("/api").request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            JsonObject json = response.as(JsonObject.class);
+            assertThat(json, Matchers.is(notNullValue()));
+            List<String> files = json.getJsonArray("files").getValuesAs(v -> ((JsonString) v).getString());
+            assertThat(files, hasItem("foo.txt"));
+        }
     }
 
     @Test
     @Order(4)
     public void testDownload() {
-        WebClientResponse response = webClient
-                .get()
-                .path("foo.txt")
-                .accept(MediaTypes.APPLICATION_OCTET_STREAM)
-                .request()
-                .await(TIMEOUT);
-        assertThat(response.status().code(), is(200));
-        assertThat(response.headers().first(Http.Header.CONTENT_DISPOSITION).orElse(null),
-                containsString("filename=\"foo.txt\""));
-        byte[] bytes = response.content().as(byte[].class).await(TIMEOUT);
-        assertThat(new String(bytes, StandardCharsets.UTF_8), Matchers.is("bar\n"));
+        try (Http1ClientResponse response = client.get("/api").path("foo.txt").request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.headers().first(Http.Header.CONTENT_DISPOSITION).orElse(null),
+                    containsString("filename=\"foo.txt\""));
+            byte[] bytes = response.as(byte[].class);
+            assertThat(new String(bytes, StandardCharsets.UTF_8), Matchers.is("bar\n"));
+        }
+    }
+
+    private WriteablePart writeablePart(String partName, String fileName, Path filePath) throws IOException {
+        return WriteablePart.builder(partName)
+                            .fileName(fileName)
+                            .content(Files.readAllBytes(filePath))
+                            .contentType(MediaTypes.MULTIPART_FORM_DATA)
+                            .build();
     }
 }
