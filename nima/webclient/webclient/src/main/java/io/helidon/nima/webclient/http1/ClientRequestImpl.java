@@ -36,6 +36,7 @@ import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.ClientConnection;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.UriHelper;
 import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
@@ -56,6 +57,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private String uriTemplate;
     private ClientConnection connection;
     private UriFragment fragment;
+    private Proxy proxy;
 
     ClientRequestImpl(Http1ClientConfig clientConfig,
                       Http.Method method,
@@ -141,6 +143,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         WebClientService.Chain callChain = new HttpCallEntityChain(clientConfig,
                                                                    connection,
                                                                    tls,
+                                                                   proxy,
                                                                    whenSent,
                                                                    whenComplete,
                                                                    entity);
@@ -157,6 +160,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         WebClientService.Chain callChain = new HttpCallOutputStreamChain(clientConfig,
                                                                          connection,
                                                                          tls,
+                                                                         proxy,
                                                                          whenSent,
                                                                          whenComplete,
                                                                          streamHandler);
@@ -264,5 +268,11 @@ class ClientRequestImpl implements Http1ClientRequest {
         if (this.method.equals(Http.Method.HEAD)) {
             throw new IllegalArgumentException("Payload in method '" + Http.Method.HEAD + "' has no defined semantics");
         }
+    }
+
+    @Override
+    public Http1ClientRequest proxy(Proxy proxy) {
+        this.proxy = proxy;
+        return this;
     }
 }

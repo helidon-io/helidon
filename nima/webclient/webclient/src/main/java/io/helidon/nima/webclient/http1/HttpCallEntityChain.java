@@ -30,6 +30,7 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
 import io.helidon.nima.webclient.WebClientServiceResponseDefault;
@@ -45,10 +46,11 @@ class HttpCallEntityChain extends HttpCallChainBase {
     HttpCallEntityChain(Http1ClientConfig clientConfig,
                         ClientConnection connection,
                         Tls tls,
+                        Proxy proxy,
                         CompletableFuture<WebClientServiceRequest> whenSent,
                         CompletableFuture<WebClientServiceResponse> whenComplete,
                         Object entity) {
-        super(clientConfig, connection, tls);
+        super(clientConfig, connection, tls, proxy);
         this.mediaContext = clientConfig.mediaContext();
         this.maxStatusLineLength = clientConfig.maxStatusLineLength();
         this.whenSent = whenSent;

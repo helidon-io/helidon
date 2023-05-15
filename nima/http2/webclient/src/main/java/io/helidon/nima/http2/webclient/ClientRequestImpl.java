@@ -41,6 +41,7 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ClientRequest;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.UriHelper;
 
 class ClientRequestImpl implements Http2ClientRequest {
@@ -59,6 +60,7 @@ class ClientRequestImpl implements Http2ClientRequest {
 
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private Tls tls;
+    private Proxy proxy;
     private int priority;
     private boolean priorKnowledge;
     private int requestPrefetch = 0;
@@ -317,5 +319,11 @@ class ClientRequestImpl implements Http2ClientRequest {
                            "HTTP/2 request contains wrong header, removing: " + httpHeader);
             }
         }
+    }
+
+    @Override
+    public Http2ClientRequest proxy(Proxy proxy) {
+        this.proxy = proxy;
+        return this;
     }
 }

@@ -35,6 +35,7 @@ import javax.net.ssl.SSLSocket;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.http.Http.Status;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
@@ -139,23 +140,8 @@ class Http1ClientConnection implements ClientConnection {
         }
         socket.getOutputStream().write(httpConnect.toString().getBytes());
         socket.getOutputStream().flush();
-        int read;
-        byte[] buffer = new byte[1024];
-        StringBuilder response = new StringBuilder();
-        String firstLine = null;
-        int responseCode = -1;
-        while ((read = socket.getInputStream().read(buffer)) != -1) {
-            String resp = new String(buffer, 0, read);
-            if (firstLine == null) {
-                firstLine = resp.split("\r\n")[0];
-                responseCode = Integer.parseInt(firstLine.split(" ")[1]);
-            }
-            response.append(resp);
-            if (resp.endsWith("\r\n\r\n")) {
-                break;
-            }
-        }
-        return responseCode;
+        Status responseStatus = Http1StatusParser.readStatus(reader, 256);
+        return responseStatus.code();
     }
 
     Http1ClientConnection connect() {
@@ -306,7 +292,7 @@ class Http1ClientConnection implements ClientConnection {
                 connection.socket.connect(connection.connectionKey.proxy().address(),
                         (int) connection.options.connectTimeout().toMillis());
                 int responseCode = connection.proxyTunneling(remoteAddress);
-                if (responseCode != 200) {
+                if (responseCode != Status.OK_200.code()) {
                     throw new IllegalStateException("Proxy sent wrong HTTP response code: " + responseCode);
                 }
                 connection.helidonSocket = PlainSocket.client(connection.socket, connection.channelId);
@@ -318,7 +304,7 @@ class Http1ClientConnection implements ClientConnection {
                 connection.socket.connect(connection.connectionKey.proxy().address(),
                         (int) connection.options.connectTimeout().toMillis());
                 int responseCode = connection.proxyTunneling(remoteAddress);
-                if (responseCode != 200) {
+                if (responseCode != Status.OK_200.code()) {
                     throw new IllegalStateException("Proxy sent wrong HTTP response code: " + responseCode);
                 }
                 SSLSocket sslSocket = connection.connectionKey.tls().createSocket("http/1.1", connection.socket, remoteAddress);

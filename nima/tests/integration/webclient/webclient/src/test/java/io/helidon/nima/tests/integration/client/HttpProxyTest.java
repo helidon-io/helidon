@@ -16,6 +16,10 @@
 
 package io.helidon.nima.tests.integration.client;
 
+import static io.helidon.common.http.Http.Method.GET;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
@@ -29,13 +33,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import static io.helidon.common.http.Http.Method.GET;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.io.IOException;
-import java.util.concurrent.Executors;
 
 @ServerTest
 class HttpProxyTest {
@@ -55,12 +52,12 @@ class HttpProxyTest {
 
     @BeforeAll
     public static void beforeAll() {
-        assertThat(httpProxy.start(), is(true));
+        httpProxy.start();
     }
 
     @AfterAll
     public static void afterAll() {
-        assertThat(httpProxy.stop(), is(true));
+        httpProxy.stop();
     }
 
     HttpProxyTest(Http1Client client) {

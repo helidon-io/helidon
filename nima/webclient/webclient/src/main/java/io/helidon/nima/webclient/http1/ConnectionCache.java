@@ -44,14 +44,15 @@ class ConnectionCache {
 
     static ClientConnection connection(Http1ClientConfig clientConfig,
                                        Tls tls,
+                                       Proxy proxy,
                                        UriHelper uri,
                                        ClientRequestHeaders headers) {
         boolean keepAlive = handleKeepAlive(clientConfig.defaultKeepAlive(), headers);
         Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : null;
         if (keepAlive) {
-            return keepAliveConnection(clientConfig, effectiveTls, uri);
+            return keepAliveConnection(clientConfig, effectiveTls, uri, proxy);
         } else {
-            return oneOffConnection(clientConfig, effectiveTls, uri);
+            return oneOffConnection(clientConfig, effectiveTls, uri, proxy);
         }
     }
 
@@ -72,8 +73,8 @@ class ConnectionCache {
 
     private static ClientConnection keepAliveConnection(Http1ClientConfig clientConfig,
                                                         Tls tls,
-                                                        UriHelper uri) {
-        Proxy proxy = clientConfig.proxy().orElse(null);
+                                                        UriHelper uri,
+                                                        Proxy proxy) {
         KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(),
                                                      uri.authority(),
                                                      tls,
@@ -110,8 +111,8 @@ class ConnectionCache {
 
     private static ClientConnection oneOffConnection(Http1ClientConfig clientConfig,
                                                      Tls tls,
-                                                     UriHelper uri) {
-        Proxy proxy = clientConfig.proxy().orElse(null);
+                                                     UriHelper uri,
+                                                     Proxy proxy) {
         return new Http1ClientConnection(clientConfig.socketOptions(), new ConnectionKey(uri.scheme(),
                                                                                          uri.host(),
                                                                                          uri.port(),

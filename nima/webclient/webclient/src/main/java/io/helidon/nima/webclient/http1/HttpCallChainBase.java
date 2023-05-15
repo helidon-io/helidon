@@ -28,6 +28,7 @@ import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.ClientConnection;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.UriHelper;
 import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
@@ -38,13 +39,16 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
     private final Http1ClientConfig clientConfig;
     private final ClientConnection connection;
     private final Tls tls;
+    private final Proxy proxy;
 
     HttpCallChainBase(Http1ClientConfig clientConfig,
                       ClientConnection connection,
-                      Tls tls) {
+                      Tls tls,
+                      Proxy proxy) {
         this.clientConfig = clientConfig;
         this.connection = connection;
         this.tls = tls;
+        this.proxy = proxy;
     }
 
     static void writeHeaders(Headers headers, BufferData bufferData) {
@@ -96,6 +100,7 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
     private ClientConnection obtainConnection(WebClientServiceRequest request) {
         return ConnectionCache.connection(clientConfig,
                                           tls,
+                                          proxy,
                                           request.uri(),
                                           request.headers());
     }

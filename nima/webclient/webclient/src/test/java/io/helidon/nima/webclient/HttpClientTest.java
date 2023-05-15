@@ -157,5 +157,10 @@ class HttpClientTest {
         public FakeHttpClientRequest connection(ClientConnection connection) {
             return null;
         }
+
+        @Override
+        public FakeHttpClientRequest proxy(Proxy proxy) {
+            return null;
+        }
     }
 }

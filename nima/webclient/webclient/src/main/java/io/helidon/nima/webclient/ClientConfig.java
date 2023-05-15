@@ -66,12 +66,4 @@ public interface ClientConfig {
      */
     DnsAddressLookup dnsAddressLookup();
 
-    /**
-     * Proxy configuration for this specific request.
-     *
-     * @return updated request
-     */
-    @ConfiguredOption
-    Optional<Proxy> proxy();
-
 }
