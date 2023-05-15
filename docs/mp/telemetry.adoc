@@ -241,13 +241,21 @@ All the tracing information gathered from the examples runs is accessible from t
 
 === Enable MicroProfile Telemetry in Helidon Application
 
+Together with Helidon Telemetry dependency, an OpenTelemetry Exporter dependency should be added to project's pom.xml file.
+
 [source,xml]
 ----
 <dependency>
     <groupId>io.helidon.microprofile.telemetry</groupId>
-    <artifactId>helidon-microprofile-telemetry</artifactId>
+    <artifactId>helidon-microprofile-telemetry</artifactId> <1>
+</dependency>
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-jaeger</artifactId>  <2>
 </dependency>
 ----
+<1> Helidon Telemetry dependency
+<2> OpenTelemetry Jaeger exporter
 
 Add these lines to `META-INF/microprofile-config.properties`:
 
@@ -264,7 +272,16 @@ otel.exporter.name=greeting-service <3>
 
 Here we enable MicroProfile Telemetry, set tracer to "jaeger" and give a name, which will be used to identify our service in the tracer.
 
-NOTE: for our example we use Jaeger managing the tracing data. If you prefer to use Zipkin, please set `otel.traces.exporter` property to "zipkin". To find more information on how to use Zipkin, please proceed to link:https://zipkin.io/[]
+[NOTE]
+====
+for our example we use Jaeger managing the tracing data. If you prefer to use Zipkin, please set `otel.traces.exporter` property to "zipkin". To find more information on how to use Zipkin, please proceed to link:https://zipkin.io/[]. Also a corresponding Maven dependency for the exporter should be added:
+----
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-zipkin</artifactId>
+</dependency>
+----
+====
 
 
 === Tracing at Method Level
