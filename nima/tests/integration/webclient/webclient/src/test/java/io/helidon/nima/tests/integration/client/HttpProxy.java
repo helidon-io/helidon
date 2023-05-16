@@ -17,17 +17,16 @@
 package io.helidon.nima.tests.integration.client;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,7 +40,9 @@ class HttpProxy {
     private final int port;
     private final String user;
     private final String password;
-    
+    // Starts with -1 because there is one first test connection to verify the HttpProxy is available
+    private final AtomicInteger counter = new AtomicInteger(-1);
+
     HttpProxy(int port, String user, String password) {
         this.port = port;
         this.user = user;
@@ -52,7 +53,6 @@ class HttpProxy {
         this(port, null, null);
     }
 
-
     boolean start() {
         executor.submit(() -> {
             LOGGER.info("Listening connections in port: " + port);
@@ -60,6 +60,7 @@ class HttpProxy {
                 while (!stop) {
                     Socket origin = server.accept();
                     LOGGER.info(() -> "Open: " + origin);
+                    counter.incrementAndGet();
                     origin.setSoTimeout(TIMEOUT);
                     Socket remote = new Socket();
                     remote.setSoTimeout(TIMEOUT);
@@ -82,7 +83,11 @@ class HttpProxy {
                 responding = true;
             } catch (IOException e) {}
         }
-        return true;
+        return responding;
+    }
+
+    int counter() {
+        return counter.get();
     }
 
     boolean stop() {
@@ -103,7 +108,6 @@ class HttpProxy {
         private static final Logger LOGGER = Logger.getLogger(MiddleCommunicator.class.getName());
         private static final int BUFFER_SIZE = 1024 * 1024;
         private static final String HOST = "HOST: ";
-        private static final byte NEW_LINE = (byte) '\n';
         private final ExecutorService executor;
         private final Socket readerSocket;
         private final Socket writerSocket;
@@ -160,7 +164,7 @@ class HttpProxy {
                                 if (originInfo.respondOrigin()) {
                                     if (authenticate(originInfo)) {
                                         // Respond origin
-                                        String response = "HTTP/1.0 200 Connection established\r\n\r\n";
+                                        String response = "HTTP/1.1 200 Connection established\r\n\r\n";
                                         writerSocket.connect(new InetSocketAddress(originInfo.host, originInfo.port));
                                         LOGGER.info(() -> "Open: " + writerSocket);
                                         readerSocket.getOutputStream()
@@ -195,7 +199,7 @@ class HttpProxy {
                 }
             }
         }
-        
+
         private boolean authenticate(OriginInfo originInfo) {
             if (HttpProxy.this.user == null) {
                 return true;
@@ -221,7 +225,7 @@ class HttpProxy {
             }
             return request;
         }
-        
+
         // Make it easy to understand stacktraces
         private class OriginToRemoteReader extends Reader {
             @Override
@@ -236,7 +240,7 @@ class HttpProxy {
                 super.run();
             }
         }
-        
+
         private static class OriginInfo {
             private static final String CONNECT = "CONNECT";
             private static final String AUTHORIZATION = "AUTHORIZATION:";

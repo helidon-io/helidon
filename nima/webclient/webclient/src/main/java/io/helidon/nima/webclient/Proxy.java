@@ -140,10 +140,16 @@ public class Proxy {
                 .build();
     }
 
-    Function<URI, Boolean> noProxyPredicate() {
-        return noProxy;
+    /**
+     * Verifies whether the current host is inside noHosts.
+     * 
+     * @param uri the uri
+     * @return true if it is in no hosts, otherwise false
+     */
+    public boolean isNoHosts(URI uri) {
+        return noProxy.apply(uri);
     }
-
+    
     /**
      * Get proxy type. For testing purposes.
      *
@@ -579,6 +585,6 @@ public class Proxy {
          * HTTP proxy.
          */
         HTTP;
-        // TODO Add SOCKS
+        // TODO Add SOCKS?
     }
 }

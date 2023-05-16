@@ -37,7 +37,6 @@ import io.helidon.nima.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @ServerTest
@@ -45,12 +44,9 @@ class HttpsProxyTest {
 
     private static final String PROXY_HOST = "localhost";
     private static final int PROXY_PORT = 18081;
-    private static final String USER = "test";
-    private static final String PASSWORD = "password";
-    private static final HttpProxy httpProxy = new HttpProxy(PROXY_PORT, USER, PASSWORD);
+    private static final HttpProxy httpProxy = new HttpProxy(PROXY_PORT);
 
     private final Http1Client client;
-    private final WebServer server;
 
     @SetUpServer
     static void server(WebServer.Builder builder) {
@@ -85,7 +81,6 @@ class HttpsProxyTest {
     }
 
     HttpsProxyTest(WebServer server) {
-        this.server = server;
         int port = server.port();
 
         Tls tls = Tls.builder()
@@ -110,24 +105,14 @@ class HttpsProxyTest {
 
     @Test
     void testNoProxyType() {
-        Proxy proxy = Proxy.builder().username(USER)
-                .password(PASSWORD.toCharArray()).host(PROXY_HOST).port(PROXY_PORT).build();
+        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(PROXY_PORT).build();
         successVerify(proxy);
     }
 
     @Test
     void testSimpleProxy() {
-        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).username(USER)
-                .password(PASSWORD.toCharArray()).host(PROXY_HOST).port(PROXY_PORT).build();
+        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST).port(PROXY_PORT).build();
         successVerify(proxy);
-    }
-
-    @Test
-    @Disabled
-    void testUnauthorized() {
-        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).username(USER)
-                .password("password!".toCharArray()).host(PROXY_HOST).port(PROXY_PORT).build();
-        error(proxy, Http.Status.UNAUTHORIZED_401);
     }
 
     private void successVerify(Proxy proxy) {
@@ -135,12 +120,6 @@ class HttpsProxyTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
-        }
-    }
-
-    private void error(Proxy proxy, Http.Status status) {
-        try (Http1ClientResponse response = client.get("/get").proxy(proxy).request()) {
-            assertThat(response.status(), is(status));
         }
     }
 

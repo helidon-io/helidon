@@ -16,14 +16,19 @@
 
 package io.helidon.nima.webclient.http1;
 
+import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.INFO;
+import static java.lang.System.Logger.Level.TRACE;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.URI;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.HexFormat;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -33,18 +38,18 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.Http.Status;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
+import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.webclient.ClientConnection;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.spi.DnsResolver;
-
-import static java.lang.System.Logger.Level.DEBUG;
-import static java.lang.System.Logger.Level.TRACE;
 
 class Http1ClientConnection implements ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientConnection.class.getName());
@@ -117,33 +122,32 @@ class Http1ClientConnection implements ClientConnection {
         }
     }
 
-    private int proxyTunneling(InetSocketAddress remoteAddress) throws IOException {
+    private int connectToProxy(InetSocketAddress remoteAddress) throws IOException {
+        HelidonSocket tempSocket = PlainSocket.client(socket, createChannelId(socket));
         StringBuilder httpConnect = new StringBuilder();
         httpConnect.append("CONNECT ").append(remoteAddress.getHostName())
-        .append(":").append(remoteAddress.getPort()).append(" HTTP/1.1").append("\r\n");
-        httpConnect.append("Host: ").append(remoteAddress.getHostName())
-        .append(":").append(remoteAddress.getPort()).append("\r\n");
-//        httpConnect.append("Proxy-Connection: Keep-Alive").append("\r\n");
-        httpConnect.append("Accept: */*").append("\r\n");
-        if (connectionKey.proxy().username().isPresent()
-                && connectionKey.proxy().password().isPresent()) {
-            byte[] bytes = new StringBuilder().append(connectionKey.proxy().username().get())
-                    .append(":").append(connectionKey.proxy().password().get()).toString().getBytes();
-            String base64 = Base64.getEncoder().encodeToString(bytes);
-            httpConnect.append("Authorization: Basic ").append(base64).append("\r\n");
-        }
-        httpConnect.append("\r\n");
+        .append(":").append(remoteAddress.getPort()).append(" HTTP/1.1\r\n")
+        .append("Host: ").append(remoteAddress.getHostName()).append(":").append(remoteAddress.getPort())
+        .append("\r\n")
+        .append("Accept: */*\r\n\r\n");
+        // TODO Authentication
         if (LOGGER.isLoggable(DEBUG)) {
             LOGGER.log(DEBUG, String.format("Proxy client connected %s %s",
                                             connectionKey.proxy().address(),
                                             Thread.currentThread().getName()));
         }
-        socket.getOutputStream().write(httpConnect.toString().getBytes());
-        socket.getOutputStream().flush();
+        DataWriter writer = SocketWriter.create(null, tempSocket, -1);
+        BufferData data = BufferData.create(httpConnect.toString().getBytes());
+        writer.writeNow(data);
+        DataReader reader = new DataReader(tempSocket);
         Status responseStatus = Http1StatusParser.readStatus(reader, 256);
         return responseStatus.code();
     }
 
+    private String createChannelId(Socket socket) {
+        return "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
+    }
+    
     Http1ClientConnection connect() {
         try {
             socket = new Socket();
@@ -151,7 +155,7 @@ class Http1ClientConnection implements ClientConnection {
             options.configureSocket(socket);
             InetSocketAddress remoteAddress = inetSocketAddress();
             EstablishConnection.configure(this, remoteAddress);
-            channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
+            channelId = createChannelId(socket);
         } catch (IOException e) {
             throw new UncheckedIOException("Could not connect to " + connectionKey.host() + ":" + connectionKey.port(), e);
         }
@@ -291,7 +295,7 @@ class Http1ClientConnection implements ClientConnection {
             protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
                 connection.socket.connect(connection.connectionKey.proxy().address(),
                         (int) connection.options.connectTimeout().toMillis());
-                int responseCode = connection.proxyTunneling(remoteAddress);
+                int responseCode = connection.connectToProxy(remoteAddress);
                 if (responseCode != Status.OK_200.code()) {
                     throw new IllegalStateException("Proxy sent wrong HTTP response code: " + responseCode);
                 }
@@ -303,7 +307,7 @@ class Http1ClientConnection implements ClientConnection {
             protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
                 connection.socket.connect(connection.connectionKey.proxy().address(),
                         (int) connection.options.connectTimeout().toMillis());
-                int responseCode = connection.proxyTunneling(remoteAddress);
+                int responseCode = connection.connectToProxy(remoteAddress);
                 if (responseCode != Status.OK_200.code()) {
                     throw new IllegalStateException("Proxy sent wrong HTTP response code: " + responseCode);
                 }
@@ -321,10 +325,12 @@ class Http1ClientConnection implements ClientConnection {
 
         static void configure(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
             EstablishConnection connector = null;
-            if (connection.connectionKey.proxy() != null) {
-                connector = connection.connectionKey.tls() != null ? PROXY_HTTPS : PROXY_PLAIN;
+            ConnectionKey key = connection.connectionKey;
+            Proxy proxy = key.proxy();
+            if (proxy != null && !proxy.isNoHosts(URI.create("http://" + remoteAddress.getHostName() + ":" + remoteAddress.getPort()))) {
+                connector = key.tls() != null ? PROXY_HTTPS : PROXY_PLAIN;
             } else {
-                connector = connection.connectionKey.tls() != null ? HTTPS : PLAIN;
+                connector = key.tls() != null ? HTTPS : PLAIN;
             }
             connector.connect(connection, remoteAddress);
         }

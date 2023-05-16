@@ -29,9 +29,8 @@ import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.HttpRouting;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @ServerTest
@@ -39,9 +38,7 @@ class HttpProxyTest {
 
     private static final String PROXY_HOST = "localhost";
     private static final int PROXY_PORT = 18081;
-    private static final String USER = "test";
-    private static final String PASSWORD = "password";
-    private static final HttpProxy httpProxy = new HttpProxy(PROXY_PORT, USER, PASSWORD);
+    private HttpProxy httpProxy;
 
     private final Http1Client client;
     
@@ -50,13 +47,14 @@ class HttpProxyTest {
         router.route(GET, "/get", Routes::get);
     }
 
-    @BeforeAll
-    public static void beforeAll() {
+    @BeforeEach
+    public void before() {
+        httpProxy = new HttpProxy(PROXY_PORT);
         httpProxy.start();
     }
 
-    @AfterAll
-    public static void afterAll() {
+    @AfterEach
+    public void after() {
         httpProxy.stop();
     }
 
@@ -71,28 +69,30 @@ class HttpProxyTest {
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
         }
+        assertThat(httpProxy.counter(), is(0));
+    }
+
+    @Test
+    void testNoHosts() {
+        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(PROXY_PORT).addNoProxy(PROXY_HOST).build();
+        try (Http1ClientResponse response = client.get("/get").proxy(proxy).request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            String entity = response.entity().as(String.class);
+            assertThat(entity, is("Hello"));
+        }
+        assertThat(httpProxy.counter(), is(0));
     }
 
     @Test
     void testNoProxyType() {
-        Proxy proxy = Proxy.builder().username(USER)
-                .password(PASSWORD.toCharArray()).host(PROXY_HOST).port(PROXY_PORT).build();
+        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(PROXY_PORT).build();
         successVerify(proxy);
     }
 
     @Test
     void testSimpleProxy() {
-        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).username(USER)
-                .password(PASSWORD.toCharArray()).host(PROXY_HOST).port(PROXY_PORT).build();
+        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST).port(PROXY_PORT).build();
         successVerify(proxy);
-    }
-
-    @Test
-    @Disabled
-    void testUnauthorized() {
-        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).username(USER)
-                .password("password!".toCharArray()).host(PROXY_HOST).port(PROXY_PORT).build();
-        error(proxy, Http.Status.UNAUTHORIZED_401);
     }
 
     private void successVerify(Proxy proxy) {
@@ -101,12 +101,7 @@ class HttpProxyTest {
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
         }
-    }
-
-    private void error(Proxy proxy, Http.Status status) {
-        try (Http1ClientResponse response = client.get("/get").proxy(proxy).request()) {
-            assertThat(response.status(), is(status));
-        }
+        assertThat(httpProxy.counter(), is(1));
     }
 
     private static class Routes {
