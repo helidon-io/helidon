@@ -40,6 +40,16 @@ public interface ServerResponse {
     ServerResponse status(Http.Status status);
 
     /**
+     * Status of the response.
+     *
+     * @param status HTTP status as integer
+     * @return this instance
+     */
+    default ServerResponse status(int status) {
+        return status(Http.Status.create(status));
+    }
+
+    /**
      * Configured HTTP status, if not configured, returns {@link Http.Status#OK_200}.
      *
      * @return status
