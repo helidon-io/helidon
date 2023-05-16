@@ -112,11 +112,6 @@
             <!-- WebClient -->
             <dependency>
                 <groupId>io.helidon.reactive.webclient</groupId>
-                <artifactId>helidon-reactive-webclient-jaxrs</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webclient</groupId>
                 <artifactId>helidon-reactive-webclient</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
