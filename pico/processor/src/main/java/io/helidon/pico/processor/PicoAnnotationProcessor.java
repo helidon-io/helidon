@@ -290,8 +290,8 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         validatePerClass(elementsOfInterest,
                          PicoServicesConfig.NAME + " does not currently support static or private elements",
                          0,
-                         (it) -> toModifierNames(it.modifierNames()).contains(TypeInfo.MODIFIER_PRIVATE)
-                                 || toModifierNames(it.modifierNames()).contains(TypeInfo.MODIFIER_STATIC));
+                         (it) -> toModifierNames(it.modifierNames()).stream().anyMatch(TypeInfo.MODIFIER_PRIVATE::equalsIgnoreCase)
+                                 || toModifierNames(it.modifierNames()).stream().anyMatch(TypeInfo.MODIFIER_STATIC::equalsIgnoreCase));
     }
 
     private void validatePerClass(Collection<TypedElementName> elementsOfInterest,
@@ -369,7 +369,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         services.addAccessLevel(serviceTypeName,
                                 toAccess(modifierNames));
         services.addIsAbstract(serviceTypeName,
-                               modifierNames.contains(TypeInfo.MODIFIER_ABSTRACT));
+                               modifierNames.stream().anyMatch(TypeInfo.MODIFIER_ABSTRACT::equalsIgnoreCase));
         services.addServiceTypeHierarchy(serviceTypeName,
                                          toServiceTypeHierarchy(service));
         services.addQualifiers(serviceTypeName,

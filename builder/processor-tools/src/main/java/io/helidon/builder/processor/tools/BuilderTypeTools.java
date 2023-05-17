@@ -111,9 +111,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
 
         Collection<TypedElementName> elementInfo = toElementInfo(element, processingEnv, true, wantDefaultMethods);
         Collection<TypedElementName> otherElementInfo = toElementInfo(element, processingEnv, false, wantDefaultMethods);
-        Set<String> modifierNames = toModifierNames(element.getModifiers()).stream()
-                .map(String::toUpperCase)
-                .collect(Collectors.toSet());
+        Set<String> modifierNames = toModifierNames(element.getModifiers());
         return Optional.of(TypeInfoDefault.builder()
                                    .typeName(typeName)
                                    .typeKind(String.valueOf(element.getKind()))

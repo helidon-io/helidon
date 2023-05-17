@@ -128,7 +128,7 @@ public class BodyContext {
                 ? null : interceptorCreateMethod;
         this.publicOrPackagePrivateDecl = (typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)
                                                    || typeInfo.modifierNames().isEmpty()
-                                                   || typeInfo.modifierNames().contains(TypeInfo.MODIFIER_PUBLIC))
+                                                   || typeInfo.modifierNames().stream().anyMatch(TypeInfo.MODIFIER_PUBLIC::equalsIgnoreCase))
                                                         ? "public " : "";
     }
 

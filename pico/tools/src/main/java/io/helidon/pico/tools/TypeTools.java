@@ -1472,11 +1472,11 @@ public final class TypeTools extends BuilderTypeTools {
      * @return the access
      */
     public static ElementInfo.Access toAccess(Set<String> modifiers) {
-        if (modifiers.contains(TypeInfo.MODIFIER_PROTECTED)) {
+        if (modifiers.stream().anyMatch(TypeInfo.MODIFIER_PROTECTED::equalsIgnoreCase)) {
             return ElementInfo.Access.PROTECTED;
-        } else if (modifiers.contains(TypeInfo.MODIFIER_PRIVATE)) {
+        } else if (modifiers.stream().anyMatch(TypeInfo.MODIFIER_PRIVATE::equalsIgnoreCase)) {
             return ElementInfo.Access.PRIVATE;
-        } else if (modifiers.contains(TypeInfo.MODIFIER_PUBLIC)) {
+        } else if (modifiers.stream().anyMatch(TypeInfo.MODIFIER_PUBLIC::equalsIgnoreCase)) {
             return ElementInfo.Access.PUBLIC;
         }
         return ElementInfo.Access.PACKAGE_PRIVATE;

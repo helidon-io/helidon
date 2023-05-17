@@ -138,7 +138,7 @@ public class BeanUtils {
      * @return true if it appears to be a reserved word
      */
     public static boolean isReservedWord(String word) {
-        return RESERVED.get().contains(word.toUpperCase());
+        return RESERVED.get().stream().anyMatch(word::equalsIgnoreCase);
     }
 
     /**
