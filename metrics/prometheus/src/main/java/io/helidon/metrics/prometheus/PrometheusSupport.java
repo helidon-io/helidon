@@ -63,7 +63,7 @@ public final class PrometheusSupport extends HelidonFeatureSupport {
         this.path = builder.path;
     }
 
-    public void configureRoutes(HttpRules rules) {
+    private void configureRoutes(HttpRules rules) {
         rules.get(path, this::process);
     }
 
