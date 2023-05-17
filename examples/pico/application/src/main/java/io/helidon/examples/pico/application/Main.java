@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.pico.interceptors;
+package io.helidon.examples.pico.application;
 
+import io.helidon.pico.api.Metrics;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.ServiceProvider;
-import io.helidon.pico.api.Services;
 
 /**
- * Interceptors example. Uses the same {@code main()} as {@link io.helidon.examples.pico.basics.Main}.
+ * Application example. Uses the same {@code main()} as {@link io.helidon.examples.pico.basics.Main}.
  */
 public class Main extends io.helidon.examples.pico.basics.Main {
 
@@ -33,17 +32,8 @@ public class Main extends io.helidon.examples.pico.basics.Main {
     public static void main(String... args) {
         io.helidon.examples.pico.basics.Main.main(args);
 
-        Services services = PicoServices.realizedServices();
-
-        // use the intercepted screwdriver - note that hashCode(), equals(), and toString() are not intercepted
-        ServiceProvider<ScrewDriver> screwDriver = services.lookupFirst(ScrewDriver.class);
-        System.out.println(screwDriver.get() + " (1st turn): ");
-        screwDriver.get().turn("left");
-
-        // use the intercepted screwdriver turning tool - note that hashCode(), equals(), and toString() are not intercepted
-        ServiceProvider<TurningTool> turningTool = services.lookupFirst(TurningTool.class);
-        System.out.println(turningTool.get() + " (2nd turn): ");
-        turningTool.get().turn("left");
+        Metrics metrics = PicoServices.picoServices().orElseThrow().metrics().get();
+        System.out.println("Service lookup count: " + metrics.lookupCount().get());
     }
 
 }

@@ -18,7 +18,6 @@ package io.helidon.examples.pico.application;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.examples.pico.basics.Main;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.testing.PicoTestingSupport;
