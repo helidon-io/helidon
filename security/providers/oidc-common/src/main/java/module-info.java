@@ -30,7 +30,6 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.security.providers.common;
     requires io.helidon.security.jwt;
     requires io.helidon.security.providers.httpauth;
-    requires io.helidon.reactive.webclient.jaxrs;
     requires io.helidon.reactive.webclient.security;
     requires io.helidon.reactive.webclient.tracing;
     requires io.helidon.reactive.media.jsonp;

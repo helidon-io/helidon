@@ -63,12 +63,12 @@
             <artifactId>helidon-reactive-webclient-tracing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient-jaxrs</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.reactive.media</groupId>
             <artifactId>helidon-reactive-media-jsonp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-client</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.jersey</groupId>
