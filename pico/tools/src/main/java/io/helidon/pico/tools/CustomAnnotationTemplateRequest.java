@@ -21,7 +21,7 @@ import java.util.List;
 import io.helidon.builder.Builder;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
@@ -45,7 +45,7 @@ public interface CustomAnnotationTemplateRequest {
      *
      * @return the target element being processed
      */
-    TypedElementName targetElement();
+    TypedElementInfo targetElement();
 
     /**
      * The access modifier of the element.
@@ -60,7 +60,7 @@ public interface CustomAnnotationTemplateRequest {
      *
      * @return the list of typed arguments for this method or constructor
      */
-    List<TypedElementName> targetElementArgs();
+    List<TypedElementInfo> targetElementArgs();
 
     /**
      * Returns true if the element is declared to be static.

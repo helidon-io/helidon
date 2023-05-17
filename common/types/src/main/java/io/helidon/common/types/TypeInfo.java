@@ -16,6 +16,8 @@
 
 package io.helidon.common.types;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -146,7 +148,7 @@ public interface TypeInfo {
      *
      * @return the elements that make up the type that are relevant for processing
      */
-    List<TypedElementName> elementInfo();
+    List<TypedElementInfo> interestingElementInfo();
 
     /**
      * The elements that make up this type that are considered "other", or being skipped because they are irrelevant to
@@ -154,7 +156,28 @@ public interface TypeInfo {
      *
      * @return the elements that still make up the type, but are otherwise deemed irrelevant for processing
      */
-    List<TypedElementName> otherElementInfo();
+    List<TypedElementInfo> otherElementInfo();
+
+    /**
+     * Combines {@link #interestingElementInfo()} and {@link #otherElementInfo()} to form all typed element info belonging to this
+     * instance.
+     *
+     * @return all element info
+     */
+    default List<TypedElementInfo> allElementInfo() {
+        List<TypedElementInfo> interestingElementInfo = interestingElementInfo();
+        List<TypedElementInfo> otherElementInfo = otherElementInfo();
+
+        if (interestingElementInfo.isEmpty()) {
+            return otherElementInfo;
+        } else if (otherElementInfo.isEmpty()) {
+            return interestingElementInfo;
+        }
+
+        LinkedHashSet<TypedElementInfo> all = new LinkedHashSet<>(interestingElementInfo);
+        all.addAll(otherElementInfo);
+        return new ArrayList<>(all);
+    }
 
     /**
      * Any Map, List, Set, or method that has {@link TypeName#typeArguments()} will be analyzed and any type arguments will have

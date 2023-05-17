@@ -29,8 +29,8 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeInfoDefault;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
-import io.helidon.common.types.TypedElementName;
-import io.helidon.common.types.TypedElementNameDefault;
+import io.helidon.common.types.TypedElementInfo;
+import io.helidon.common.types.TypedElementInfoDefault;
 
 import org.junit.jupiter.api.Test;
 
@@ -111,11 +111,11 @@ class ConfigBeanBuilderCreatorTest {
 
     @Test
     void preValidateConfigBeansMustNotHaveDuplicateSingularNames() {
-        TypedElementName method1 = TypedElementNameDefault.builder()
+        TypedElementInfo method1 = TypedElementInfoDefault.builder()
                 .elementName("socket")
                 .typeName(String.class)
                 .build();
-        TypedElementName method2 = TypedElementNameDefault.builder()
+        TypedElementInfo method2 = TypedElementInfoDefault.builder()
                 .elementName("socketSet")
                 .typeName(String.class)
                 .addAnnotation(AnnotationAndValueDefault.create(Singular.class, "socket"))
@@ -124,7 +124,7 @@ class ConfigBeanBuilderCreatorTest {
         TypeInfo typeInfo = TypeInfoDefault.builder()
                 .typeKind(TypeInfo.KIND_INTERFACE)
                 .typeName(TypeNameDefault.create(getClass()))
-                .elementInfo(Set.of(method1, method2))
+                .interestingElementInfo(Set.of(method1, method2))
                 .build();
         AnnotationAndValueDefault configBeanAnno = AnnotationAndValueDefault.builder()
                 .typeName(TypeNameDefault.create(ConfigBean.class))
@@ -141,7 +141,7 @@ class ConfigBeanBuilderCreatorTest {
 
     @Test
     void preValidateConfigBeansMustHaveMapTypesWithNestedConfigBeans() {
-        TypedElementName method1 = TypedElementNameDefault.builder()
+        TypedElementInfo method1 = TypedElementInfoDefault.builder()
                 .elementName("socket")
                 .typeName(TypeNameDefault.builder()
                                   .type(Map.class)
@@ -154,7 +154,7 @@ class ConfigBeanBuilderCreatorTest {
         TypeInfo typeInfo = TypeInfoDefault.builder()
                 .typeKind(TypeInfo.KIND_INTERFACE)
                 .typeName(TypeNameDefault.create(getClass()))
-                .elementInfo(Set.of(method1))
+                .interestingElementInfo(Set.of(method1))
                 .build();
         AnnotationAndValueDefault configBeanAnno = AnnotationAndValueDefault.builder()
                 .typeName(TypeNameDefault.create(ConfigBean.class))
@@ -172,7 +172,7 @@ class ConfigBeanBuilderCreatorTest {
         creator.preValidate(implTypeName, typeInfo, configBeanAnno);
 
         // now we will validate the exceptions when ConfigBeans are attempted to be embedded
-        TypedElementName method2 = TypedElementNameDefault.builder()
+        TypedElementInfo method2 = TypedElementInfoDefault.builder()
                 .elementName("unsupported1")
                 .typeName(TypeNameDefault.builder()
                                   .type(Map.class)
@@ -182,7 +182,7 @@ class ConfigBeanBuilderCreatorTest {
                                           TypeNameDefault.create(getClass())))
                                   .build())
                 .build();
-        TypedElementName method3 = TypedElementNameDefault.builder()
+        TypedElementInfo method3 = TypedElementInfoDefault.builder()
                 .elementName("unsupported2")
                 .typeName(TypeNameDefault.builder()
                                   .type(Map.class)
@@ -195,7 +195,7 @@ class ConfigBeanBuilderCreatorTest {
         TypeInfo typeInfo2 = TypeInfoDefault.builder()
                 .typeKind(TypeInfo.KIND_INTERFACE)
                 .typeName(TypeNameDefault.create(getClass()))
-                .elementInfo(List.of(method2, method3))
+                .interestingElementInfo(List.of(method2, method3))
                 .referencedTypeNamesToAnnotations(Map.of(TypeNameDefault.create(getClass()),
                                                          List.of(AnnotationAndValueDefault.create(Builder.class))))
                 .build();

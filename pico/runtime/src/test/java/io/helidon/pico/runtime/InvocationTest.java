@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import io.helidon.common.types.TypedElementNameDefault;
+import io.helidon.common.types.TypedElementInfoDefault;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
 import io.helidon.pico.api.InvocationContextDefault;
@@ -42,7 +42,7 @@ class InvocationTest {
     TestInterceptor first = new TestInterceptor("first");
     TestInterceptor second = new TestInterceptor("second");
     InvocationContext dummyCtx = InvocationContextDefault.builder()
-            .elementInfo(TypedElementNameDefault.builder().elementName("test").typeName(InvocationTest.class).build())
+            .elementInfo(TypedElementInfoDefault.builder().elementName("test").typeName(InvocationTest.class).build())
             .interceptors(List.of(first.provider, second.provider));
     ArrayList<Object[]> calls = new ArrayList<>();
 
@@ -63,7 +63,7 @@ class InvocationTest {
     @Test
     void normalCaseWithNoInterceptors() {
         InvocationContext dummyCtx = InvocationContextDefault.builder()
-                .elementInfo(TypedElementNameDefault.builder().elementName("test").typeName(InvocationTest.class).build())
+                .elementInfo(TypedElementInfoDefault.builder().elementName("test").typeName(InvocationTest.class).build())
                 .interceptors(List.of());
 
         Object[] args = new Object[] {};

@@ -33,8 +33,8 @@ public class TypeInfoDefault implements TypeInfo {
     private final TypeName typeName;
     private final String typeKind;
     private final List<AnnotationAndValue> annotations;
-    private final List<TypedElementName> elementInfo;
-    private final List<TypedElementName> otherElementInfo;
+    private final List<TypedElementInfo> elementInfo;
+    private final List<TypedElementInfo> otherElementInfo;
     private final Map<TypeName, String> referencedModuleNames;
     private final Map<TypeName, List<AnnotationAndValue>> referencedTypeNamesToAnnotations;
     private final TypeInfo superTypeInfo;
@@ -85,12 +85,12 @@ public class TypeInfoDefault implements TypeInfo {
     }
 
     @Override
-    public List<TypedElementName> elementInfo() {
+    public List<TypedElementInfo> interestingElementInfo() {
         return elementInfo;
     }
 
     @Override
-    public List<TypedElementName> otherElementInfo() {
+    public List<TypedElementInfo> otherElementInfo() {
         return otherElementInfo;
     }
 
@@ -131,7 +131,7 @@ public class TypeInfoDefault implements TypeInfo {
      */
     protected String toStringInner() {
         return "typeName=" + typeName()
-                + ", elementInfo=" + elementInfo()
+                + ", elementInfo=" + allElementInfo()
                 + ", annotations=" + annotations()
                 + ", superTypeInfo=" + superTypeInfo()
                 + ", modifierNames=" + modifierNames();
@@ -142,15 +142,14 @@ public class TypeInfoDefault implements TypeInfo {
      */
     public static class Builder implements io.helidon.common.Builder<Builder, TypeInfoDefault> {
         private final List<AnnotationAndValue> annotations = new ArrayList<>();
-        private final List<TypedElementName> elementInfo = new ArrayList<>();
-        private final List<TypedElementName> otherElementInfo = new ArrayList<>();
+        private final List<TypedElementInfo> elementInfo = new ArrayList<>();
+        private final List<TypedElementInfo> otherElementInfo = new ArrayList<>();
         private final Map<TypeName, String> referencedModuleNames = new LinkedHashMap<>();
         private final Map<TypeName, List<AnnotationAndValue>> referencedTypeNamesToAnnotations = new LinkedHashMap<>();
         private final List<TypeInfo> interfaceTypeInfo = new ArrayList<>();
         private final Set<String> modifierNames = new LinkedHashSet<>();
         private TypeName typeName;
         private String typeKind;
-
         private TypeInfo superTypeInfo;
 
         /**
@@ -217,12 +216,12 @@ public class TypeInfoDefault implements TypeInfo {
         }
 
         /**
-         * Sets the elementInfo to val.
+         * Sets the interestingElementInfo to val.
          *
          * @param val the value
          * @return this fluent builder
          */
-        public Builder elementInfo(Collection<TypedElementName> val) {
+        public Builder interestingElementInfo(Collection<TypedElementInfo> val) {
             Objects.requireNonNull(val);
             this.elementInfo.clear();
             this.elementInfo.addAll(val);
@@ -230,12 +229,12 @@ public class TypeInfoDefault implements TypeInfo {
         }
 
         /**
-         * Adds a single elementInfo val.
+         * Adds a single interestingElementInfo val.
          *
          * @param val the value
          * @return this fluent builder
          */
-        public Builder addElementInfo(TypedElementName val) {
+        public Builder addInterestingElementInfo(TypedElementInfo val) {
             Objects.requireNonNull(val);
             elementInfo.add(val);
             return identity();
@@ -247,7 +246,7 @@ public class TypeInfoDefault implements TypeInfo {
          * @param val the value
          * @return this fluent builder
          */
-        public Builder otherElementInfo(Collection<TypedElementName> val) {
+        public Builder otherElementInfo(Collection<TypedElementInfo> val) {
             Objects.requireNonNull(val);
             this.otherElementInfo.clear();
             this.otherElementInfo.addAll(val);
@@ -260,7 +259,7 @@ public class TypeInfoDefault implements TypeInfo {
          * @param val the value
          * @return this fluent builder
          */
-        public Builder addOtherElementInfo(TypedElementName val) {
+        public Builder addOtherElementInfo(TypedElementInfo val) {
             Objects.requireNonNull(val);
             otherElementInfo.add(val);
             return identity();

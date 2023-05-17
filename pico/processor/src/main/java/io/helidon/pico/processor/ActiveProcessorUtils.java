@@ -38,7 +38,7 @@ import javax.tools.StandardLocation;
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeInfo;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.Options;
@@ -187,7 +187,7 @@ final class ActiveProcessorUtils implements Messager {
      */
     Optional<TypeInfo> toTypeInfo(TypeElement element,
                                   TypeMirror mirror,
-                                  Predicate<TypedElementName> isOneWeCareAbout) {
+                                  Predicate<TypedElementInfo> isOneWeCareAbout) {
         return typeInfoCreatorProvider.createTypeInfo(element, mirror, processingEnv, isOneWeCareAbout);
     }
 

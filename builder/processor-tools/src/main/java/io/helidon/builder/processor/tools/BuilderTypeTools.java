@@ -58,8 +58,8 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeInfoDefault;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
-import io.helidon.common.types.TypedElementName;
-import io.helidon.common.types.TypedElementNameDefault;
+import io.helidon.common.types.TypedElementInfo;
+import io.helidon.common.types.TypedElementInfoDefault;
 
 // this is really ok!
 import com.sun.source.util.TreePath;
@@ -109,15 +109,15 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
             throw new IllegalStateException(msg);
         }
 
-        Collection<TypedElementName> elementInfo = toElementInfo(element, processingEnv, true, wantDefaultMethods);
-        Collection<TypedElementName> otherElementInfo = toElementInfo(element, processingEnv, false, wantDefaultMethods);
+        Collection<TypedElementInfo> elementInfo = toElementInfo(element, processingEnv, true, wantDefaultMethods);
+        Collection<TypedElementInfo> otherElementInfo = toElementInfo(element, processingEnv, false, wantDefaultMethods);
         Set<String> modifierNames = toModifierNames(element.getModifiers());
         return Optional.of(TypeInfoDefault.builder()
                                    .typeName(typeName)
                                    .typeKind(String.valueOf(element.getKind()))
                                    .annotations(
                                            createAnnotationAndValueListFromElement(element, processingEnv.getElementUtils()))
-                                   .elementInfo(elementInfo)
+                                   .interestingElementInfo(elementInfo)
                                    .otherElementInfo(otherElementInfo)
                                    .referencedTypeNamesToAnnotations(
                                            toReferencedTypeNamesAndAnnotations(
@@ -132,7 +132,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     public Optional<TypeInfo> createTypeInfo(TypeElement element,
                                              TypeMirror mirror,
                                              ProcessingEnvironment processingEnv,
-                                             Predicate<TypedElementName> isOneWeCareAbout) {
+                                             Predicate<TypedElementInfo> isOneWeCareAbout) {
         return toTypeInfo(element, mirror, processingEnv, isOneWeCareAbout);
     }
 
@@ -176,12 +176,12 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     @SuppressWarnings("unchecked")
     private Map<TypeName, List<AnnotationAndValue>> toReferencedTypeNamesAndAnnotations(ProcessingEnvironment processingEnv,
                                                                                         TypeName typeName,
-                                                                                        Collection<TypedElementName>... refs) {
+                                                                                        Collection<TypedElementInfo>... refs) {
         Map<TypeName, List<AnnotationAndValue>> result = new LinkedHashMap<>();
-        for (Collection<TypedElementName> ref : refs) {
-            for (TypedElementName typedElementName : ref) {
-                collectReferencedTypeNames(result, processingEnv, typeName, List.of(typedElementName.typeName()));
-                collectReferencedTypeNames(result, processingEnv, typeName, typedElementName.typeName().typeArguments());
+        for (Collection<TypedElementInfo> ref : refs) {
+            for (TypedElementInfo typedElementInfo : ref) {
+                collectReferencedTypeNames(result, processingEnv, typeName, List.of(typedElementInfo.typeName()));
+                collectReferencedTypeNames(result, processingEnv, typeName, typedElementInfo.typeName().typeArguments());
             }
         }
         return result;
@@ -206,7 +206,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     }
 
     /**
-     * Translation the arguments to a collection of {@link io.helidon.common.types.TypedElementName}'s.
+     * Translation the arguments to a collection of {@link TypedElementInfo}'s.
      *
      * @param element               the typed element (i.e., class)
      * @param processingEnv         the processing env
@@ -214,7 +214,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param wantDefaultMethods    true to process {@code default} methods
      * @return the collection of typed elements
      */
-    private Collection<TypedElementName> toElementInfo(TypeElement element,
+    private Collection<TypedElementInfo> toElementInfo(TypeElement element,
                                                        ProcessingEnvironment processingEnv,
                                                        boolean wantWhatWeCanAccept,
                                                        boolean wantDefaultMethods) {
@@ -222,7 +222,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                 .filter(it -> it.getKind() == ElementKind.METHOD)
                 .map(ExecutableElement.class::cast)
                 .filter(it -> (wantWhatWeCanAccept == canAccept(it, wantDefaultMethods)))
-                .map(it -> createTypedElementNameFromElement(it, processingEnv.getElementUtils()))
+                .map(it -> createTypedElementInfoFromElement(it, processingEnv.getElementUtils()))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
@@ -286,14 +286,14 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param mirror            the type mirror for the element being processed
      * @param processingEnv     the processing environment
      * @param isOneWeCareAbout  the predicate filter to determine whether the element is of interest, and therefore should be
-     *                          included in {@link TypeInfo#elementInfo()}. Otherwise, if the predicate indicates it is not of
+     *                          included in {@link TypeInfo#interestingElementInfo()}. Otherwise, if the predicate indicates it is not of
      *                          interest then the method will be placed under {@link TypeInfo#otherElementInfo()} instead
      * @return the type info associated with the arguments being processed, or empty if not able to process the type
      */
     static Optional<TypeInfo> toTypeInfo(TypeElement element,
                                          TypeMirror mirror,
                                          ProcessingEnvironment processingEnv,
-                                         Predicate<TypedElementName> isOneWeCareAbout) {
+                                         Predicate<TypedElementInfo> isOneWeCareAbout) {
         TypeName fqTypeName = createTypeNameFromMirror(mirror).orElseThrow();
         if (fqTypeName.name().equals(Object.class.getName())) {
             return Optional.empty();
@@ -315,10 +315,10 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                     createAnnotationAndValueSet(elementUtils.getTypeElement(genericTypeName.name()));
             Map<TypeName, List<AnnotationAndValue>> referencedAnnotations =
                     new LinkedHashMap<>(toMetaAnnotations(annotations, processingEnv));
-            List<TypedElementName> elementsWeCareAbout = new ArrayList<>();
-            List<TypedElementName> otherElements = new ArrayList<>();
+            List<TypedElementInfo> elementsWeCareAbout = new ArrayList<>();
+            List<TypedElementInfo> otherElements = new ArrayList<>();
             element.getEnclosedElements().stream()
-                    .map(it -> createTypedElementNameFromElement(it, elementUtils))
+                    .map(it -> createTypedElementInfoFromElement(it, elementUtils))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .forEach(it -> {
@@ -337,7 +337,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                     .annotations(annotations)
                     .referencedTypeNamesToAnnotations(referencedAnnotations)
                     .modifierNames(toModifierNames(element.getModifiers()))
-                    .elementInfo(elementsWeCareAbout)
+                    .interestingElementInfo(elementsWeCareAbout)
                     .otherElementInfo(otherElements);
 
             // add all of the element's and parameters to the references annotation set
@@ -354,7 +354,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                         .filter(t -> !t.generic())
                         .forEach(allInterestingTypeNames::add);
                 it.parameterArguments().stream()
-                        .map(TypedElementName::typeName)
+                        .map(TypedElementInfo::typeName)
                         .map(TypeName::genericTypeName)
                         .filter(t -> !isBuiltInJavaType(t))
                         .filter(t -> !t.generic())
@@ -704,19 +704,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     }
 
     /**
-     * Extracts the singular {@code value()} value. Return value will always be non-null.
-     *
-     * @param am       the annotation mirror
-     * @param elements the elements
-     * @return the extracted values
-     */
-    public static String extractValue(AnnotationMirror am,
-                                      Elements elements) {
-        return Objects.requireNonNull(extractValues(elements.getElementValuesWithDefaults(am)).get("value"));
-    }
-
-    /**
-     * Creates an instance of a {@link io.helidon.common.types.TypedElementName} given its type and variable element from
+     * Creates an instance of a {@link TypedElementInfo} given its type and variable element from
      * annotation processing. If the passed in element is not a {@link TypeInfo#KIND_FIELD}, {@link TypeInfo#KIND_METHOD},
      * {@link TypeInfo#KIND_CONSTRUCTOR}, or {@link TypeInfo#KIND_PARAMETER} then this method may return empty.
      *
@@ -724,13 +712,12 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param elements the elements
      * @return the created instance
      */
-    public static Optional<TypedElementName> createTypedElementNameFromElement(Element v,
+    public static Optional<TypedElementInfo> createTypedElementInfoFromElement(Element v,
                                                                                Elements elements) {
         TypeName type = createTypeNameFromElement(v).orElse(null);
         TypeMirror typeMirror = null;
         String defaultValue = null;
-        List<TypedElementName> params = List.of();
-        List<TypeName> componentTypeNames = List.of();
+        List<TypedElementInfo> params = List.of();
         List<AnnotationAndValue> elementTypeAnnotations = List.of();
         Set<String> modifierNames = v.getModifiers().stream()
                 .map(Modifier::toString)
@@ -740,7 +727,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
             ExecutableElement ee = (ExecutableElement) v;
             typeMirror = Objects.requireNonNull(ee.getReturnType());
             params = ee.getParameters().stream()
-                    .map(it -> createTypedElementNameFromElement(it, elements).orElseThrow())
+                    .map(it -> createTypedElementInfoFromElement(it, elements).orElseThrow())
                     .collect(Collectors.toList());
             AnnotationValue annotationValue = ee.getDefaultValue();
             defaultValue = (annotationValue == null) ? null
@@ -760,20 +747,13 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                 type = createTypeNameFromMirror(typeMirror).orElse(createFromGenericDeclaration(typeMirror.toString()));
             }
             if (typeMirror instanceof DeclaredType) {
-                List<? extends TypeMirror> args = ((DeclaredType) typeMirror).getTypeArguments();
-                componentTypeNames = args.stream()
-                        .map(BuilderTypeTools::createTypeNameFromMirror)
-                        .filter(Optional::isPresent)
-                        .map(Optional::orElseThrow)
-                        .collect(Collectors.toList());
                 elementTypeAnnotations =
                         createAnnotationAndValueListFromElement(((DeclaredType) typeMirror).asElement(), elements);
             }
         }
 
-        TypedElementNameDefault.Builder builder = TypedElementNameDefault.builder()
+        TypedElementInfoDefault.Builder builder = TypedElementInfoDefault.builder()
                 .typeName(type)
-                .componentTypeNames(componentTypeNames)
                 .elementName(v.getSimpleName().toString())
                 .elementKind(v.getKind().name())
                 .annotations(createAnnotationAndValueListFromElement(v, elements))
