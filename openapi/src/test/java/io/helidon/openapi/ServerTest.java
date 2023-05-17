@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.nima.openapi;
+package io.helidon.openapi;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -29,16 +30,17 @@ import io.helidon.nima.webserver.WebServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Starts a server with the default OpenAPI endpoint to test a static OpenAPI
  * document file in various ways.
  */
-class ServerTest {
+public class ServerTest {
 
     private static WebServer greetingWebServer;
     private static WebServer timeWebServer;
@@ -47,20 +49,20 @@ class ServerTest {
     private static final String TIME_PATH = "/openapi-time";
 
     private static final Config OPENAPI_CONFIG_DISABLED_CORS = Config.create(
-            ConfigSources.classpath("serverNoCORS.properties").build()).get(OpenApiService.Builder.CONFIG_KEY);
+            ConfigSources.classpath("serverNoCORS.properties").build()).get(OpenApiFeature.Builder.CONFIG_KEY);
 
     private static final Config OPENAPI_CONFIG_RESTRICTED_CORS = Config.create(
-            ConfigSources.classpath("serverCORSRestricted.yaml").build()).get(OpenApiService.Builder.CONFIG_KEY);
+            ConfigSources.classpath("serverCORSRestricted.yaml").build()).get(OpenApiFeature.Builder.CONFIG_KEY);
 
-    static final OpenApiService.Builder GREETING_OPENAPI_SUPPORT_BUILDER
-            = OpenApiService.builder()
-                    .staticFile("src/test/resources/openapi-greeting.yml")
+    static final OpenApiFeature.Builder<?, ?> GREETING_OPENAPI_SUPPORT_BUILDER
+            = StaticFileOnlyOpenApiFeatureImpl.builder()
+                    .staticFile("openapi-greeting.yml")
                     .webContext(GREETING_PATH)
                     .config(OPENAPI_CONFIG_DISABLED_CORS);
 
-    static final OpenApiService.Builder TIME_OPENAPI_SUPPORT_BUILDER
-            = OpenApiService.builder()
-                    .staticFile("src/test/resources/openapi-time-server.yml")
+    static final OpenApiFeature.Builder<?, ?> TIME_OPENAPI_SUPPORT_BUILDER
+            = StaticFileOnlyOpenApiFeatureImpl.builder()
+                    .staticFile("openapi-time-server.yml")
                     .webContext(TIME_PATH)
                     .config(OPENAPI_CONFIG_RESTRICTED_CORS);
 
@@ -68,13 +70,13 @@ class ServerTest {
     }
 
     @BeforeAll
-    static void startup() {
+    public static void startup() {
         greetingWebServer = TestUtil.startServer(GREETING_OPENAPI_SUPPORT_BUILDER);
         timeWebServer = TestUtil.startServer(TIME_OPENAPI_SUPPORT_BUILDER);
     }
 
     @AfterAll
-    static void shutdown() {
+    public static void shutdown() {
         TestUtil.shutdownServer(greetingWebServer);
         TestUtil.shutdownServer(timeWebServer);
     }
@@ -89,7 +91,7 @@ class ServerTest {
      */
     @SuppressWarnings("unchecked")
     @Test
-    void testGreetingAsYAML() throws Exception {
+    public void testGreetingAsYAML() throws Exception {
         HttpURLConnection cnx = TestUtil.getURLConnection(
                 greetingWebServer.port(),
                 "GET",
@@ -100,20 +102,20 @@ class ServerTest {
         ArrayList<Map<String, Object>> servers = TestUtil.as(
                 ArrayList.class, openAPIDocument.get("servers"));
         Map<String, Object> server = servers.get(0);
-        assertEquals("http://localhost:8000", server.get("url"), "unexpected URL");
-        assertEquals("Local test server", server.get("description"), "unexpected description");
+        assertThat("unexpected URL", server.get("url"), is("http://localhost:8000"));
+        assertThat("unexpected description", server.get("description"), is("Local test server"));
 
         Map<String, Object> paths = TestUtil.as(Map.class, openAPIDocument.get("paths"));
         Map<String, Object> setGreetingPath = TestUtil.as(Map.class, paths.get("/greet/greeting"));
         Map<String, Object> put = TestUtil.as(Map.class, setGreetingPath.get("put"));
-        assertEquals("Sets the greeting prefix", put.get("summary"));
+        assertThat(put.get("summary"), is("Sets the greeting prefix"));
         Map<String, Object> requestBody = TestUtil.as(Map.class, put.get("requestBody"));
-        assertTrue(Boolean.class.cast(requestBody.get("required")));
+        assertThat(Boolean.class.cast(requestBody.get("required")), is(true));
         Map<String, Object> content = TestUtil.as(Map.class, requestBody.get("content"));
         Map<String, Object> applicationJson = TestUtil.as(Map.class, content.get("application/json"));
         Map<String, Object> schema = TestUtil.as(Map.class, applicationJson.get("schema"));
 
-        assertEquals("object", schema.get("type"));
+        assertThat(schema.get("type"), is("object"));
     }
 
     /**
@@ -125,19 +127,19 @@ class ServerTest {
      * response
      */
     @Test
-    void testGreetingAsConfig() throws Exception {
+    public void testGreetingAsConfig() throws Exception {
         HttpURLConnection cnx = TestUtil.getURLConnection(
                 greetingWebServer.port(),
                 "GET",
                 GREETING_PATH,
                 MediaTypes.APPLICATION_OPENAPI_YAML);
         Config c = TestUtil.configFromResponse(cnx);
-        assertEquals("Sets the greeting prefix",
-                                TestUtil.fromConfig(c, "paths./greet/greeting.put.summary"));
-        assertEquals("string",
-                                TestUtil.fromConfig(c,
+        assertThat(TestUtil.fromConfig(c, "paths./greet/greeting.put.summary"),
+                is("Sets the greeting prefix"));
+        assertThat(TestUtil.fromConfig(c,
                         "paths./greet/greeting.put.requestBody.content."
-                            + "application/json.schema.properties.greeting.type"));
+                            + "application/json.schema.properties.greeting.type"),
+                is("string"));
     }
 
     /**
@@ -147,12 +149,17 @@ class ServerTest {
      * @throws Exception in case of errors sending the request or receiving the
      * response
      */
-    @Test
-    void checkExplicitResponseMediaTypeViaHeaders() throws Exception {
-        connectAndConsumePayload(MediaTypes.APPLICATION_OPENAPI_YAML);
-        connectAndConsumePayload(MediaTypes.APPLICATION_YAML);
-        connectAndConsumePayload(MediaTypes.APPLICATION_OPENAPI_JSON);
-        connectAndConsumePayload(MediaTypes.APPLICATION_JSON);
+    @ParameterizedTest
+    @MethodSource()
+    public void checkExplicitResponseMediaTypeViaHeaders(MediaType testMediaType) throws Exception {
+        connectAndConsumePayload(testMediaType);
+    }
+
+    static Stream<MediaType> checkExplicitResponseMediaTypeViaHeaders() {
+        return Stream.of(MediaTypes.APPLICATION_OPENAPI_YAML,
+                         MediaTypes.APPLICATION_YAML,
+                         MediaTypes.APPLICATION_OPENAPI_JSON,
+                         MediaTypes.APPLICATION_JSON);
     }
 
     @Test
@@ -168,24 +175,13 @@ class ServerTest {
                                           MediaTypes.APPLICATION_OPENAPI_YAML);
     }
 
-    /**
-     * Makes sure that the response is correct if the request specified no
-     * explicit Accept.
-     *
-     * @throws Exception error sending the request or receiving the response
-     */
     @Test
-    void checkDefaultResponseMediaType() throws Exception {
-        connectAndConsumePayload(null);
-    }
-
-    @Test
-    void testTimeAsConfig() throws Exception {
+    public void testTimeAsConfig() throws Exception {
         commonTestTimeAsConfig(null);
     }
 
     @Test
-    void testTimeUnrestrictedCors() throws Exception {
+    public void testTimeUnrestrictedCors() throws Exception {
         commonTestTimeAsConfig(cnx -> {
 
             cnx.setRequestProperty("Origin", "http://foo.bar");
@@ -204,16 +200,16 @@ class ServerTest {
             headerSetter.accept(cnx);
         }
         Config c = TestUtil.configFromResponse(cnx);
-        assertEquals("Returns the current time",
-                                TestUtil.fromConfig(c, "paths./timecheck.get.summary"));
-        assertEquals("string",
-                                TestUtil.fromConfig(c,
+        assertThat(TestUtil.fromConfig(c, "paths./timecheck.get.summary"),
+                is("Returns the current time"));
+        assertThat(TestUtil.fromConfig(c,
                         "paths./timecheck.get.responses.200.content."
-                                + "application/json.schema.properties.message.type"));
+                                + "application/json.schema.properties.message.type"),
+                is("string"));
     }
 
     @Test
-    void ensureNoCrosstalkAmongPorts() throws Exception {
+    public void ensureNoCrosstalkAmongPorts() throws Exception {
         HttpURLConnection timeCnx = TestUtil.getURLConnection(
                 timeWebServer.port(),
                 "GET",
@@ -226,10 +222,10 @@ class ServerTest {
                 MediaTypes.APPLICATION_OPENAPI_YAML);
         Config greetingConfig = TestUtil.configFromResponse(greetingCnx);
         Config timeConfig = TestUtil.configFromResponse(timeCnx);
-        assertFalse(timeConfig.get("paths./greet/greeting.put.summary").exists(),
-                               "Incorrectly found greeting-related item in time OpenAPI document");
-        assertFalse(greetingConfig.get("paths./timecheck.get.summary").exists(),
-                               "Incorrectly found time-related item in greeting OpenAPI document");
+        assertThat("Incorrectly found greeting-related item in time OpenAPI document",
+                timeConfig.get("paths./greet/greeting.put.summary").exists(), is(false));
+        assertThat("Incorrectly found time-related item in greeting OpenAPI document",
+                greetingConfig.get("paths./timecheck.get.summary").exists(), is(false));
     }
 
     private static void connectAndConsumePayload(MediaType mt) throws Exception {

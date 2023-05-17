@@ -33,7 +33,6 @@ import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.RoutingBuilders;
-import io.helidon.nima.openapi.OpenApiService;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -68,7 +67,7 @@ public class OpenApiCdiExtension implements Extension {
 
     private org.eclipse.microprofile.config.Config mpConfig;
     private Config config;
-    private MPOpenAPISupport openApiSupport;
+    private MpOpenApiFeature openApiSupport;
 
     /**
      * Creates a new instance of the index builder.

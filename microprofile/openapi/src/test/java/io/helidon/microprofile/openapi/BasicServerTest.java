@@ -20,7 +20,6 @@ import java.util.Map;
 import io.helidon.common.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.nima.openapi.OpenApiService;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;

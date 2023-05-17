@@ -30,7 +30,6 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
-import io.helidon.nima.openapi.OpenApiService;
 
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiConfigImpl;
@@ -51,7 +50,7 @@ import org.jboss.jandex.IndexView;
  * Fluent builder for OpenAPISupport in Helidon MP.
  */
 @Configured(prefix = MPOpenAPIBuilder.MP_OPENAPI_CONFIG_PREFIX)
-public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpenAPIBuilder, MPOpenAPISupport> {
+public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpenAPIBuilder, MpOpenApiFeature> {
 
     // This is the prefix users will use in the config file.
     static final String MP_OPENAPI_CONFIG_PREFIX = "mp." + OpenApiService.Builder.CONFIG_KEY;
@@ -82,8 +81,8 @@ public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpe
     }
 
     @Override
-    public MPOpenAPISupport build() {
-        MPOpenAPISupport result = new MPOpenAPISupport(this);
+    public MpOpenApiFeature build() {
+        MpOpenApiFeature result = new MpOpenApiFeature(this);
         validate();
         return result;
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.openapi;
+package io.helidon.microprofile.openapi;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +29,7 @@ import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.yaml.snakeyaml.TypeDescription;
 
 /**
- * Wraps generated parser and uses {@link io.helidon.openapi.ExpandedTypeDescription} as its type.
+ * Wraps generated parser and uses {@link ExpandedTypeDescription} as its type.
  */
 public class ParserHelper {
 

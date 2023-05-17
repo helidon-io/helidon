@@ -17,9 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.microprofile.openapi.MPOpenAPISupport
-:keywords: helidon, config, io.helidon.microprofile.openapi.MPOpenAPISupport
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.microprofile.openapi.MPOpenAPISupport
+:description: Configuration of io.helidon.microprofile.openapi.MpOpenApiFeature
+:keywords: helidon, config, io.helidon.microprofile.openapi.MpOpenApiFeature
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.microprofile.openapi.MpOpenApiFeature
 include::{rootdir}/includes/attributes.adoc[]
 
 = MPOpenAPISupport (microprofile.openapi) Configuration
@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.microprofile.openapi/io/helidon/microprofile/openapi/MPOpenAPISupport.html[io.helidon.microprofile.openapi.MPOpenAPISupport]
+Type: link:{javadoc-base-url}/io.helidon.microprofile.openapi/io/helidon/microprofile/openapi/MPOpenAPISupport.html[io.helidon.microprofile.openapi.MpOpenApiFeature]
 
 
 [source,text]

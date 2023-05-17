@@ -14,36 +14,27 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
-import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.openapi.OpenApiUiNoOpFactory;
 
 /**
- * Helidon SE OpenAPI Support.
+ * Helidon common OpenAPI behavior.
  */
-@Feature(value = "OpenAPI",
-        description = "Open API support",
-        in = HelidonFlavor.SE,
-        path = "OpenAPI"
-)
 module io.helidon.openapi {
     requires static io.helidon.common.features.api;
 
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.common.media.type;
+    requires io.helidon.nima.servicecommon;
 
-    requires org.jboss.jandex;
 
-    requires smallrye.open.api.core;
     requires jakarta.json;
-    requires java.desktop; // for java.beans package
-    requires org.yaml.snakeyaml;
-
-    requires transitive microprofile.openapi.api;
 
     requires static io.helidon.config.metadata;
-    requires java.logging; // temporary to adjust SnakeYAML logger level
 
     exports io.helidon.openapi;
-    exports io.helidon.openapi.internal to io.helidon.microprofile.openapi, io.helidon.reactive.openapi, io.helidon.nima.openapi;
+
+    uses io.helidon.openapi.OpenApiUiFactory;
+
+    provides io.helidon.openapi.OpenApiUiFactory with OpenApiUiNoOpFactory;
 }

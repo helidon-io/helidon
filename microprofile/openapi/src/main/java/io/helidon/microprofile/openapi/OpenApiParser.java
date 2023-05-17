@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.openapi;
+package io.helidon.microprofile.openapi;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,9 +30,9 @@ import org.yaml.snakeyaml.constructor.Constructor;
 /**
  * Abstraction for SnakeYAML parsing of JSON and YAML.
  */
-public final class OpenAPIParser {
+public final class OpenApiParser {
 
-    private OpenAPIParser() {
+    private OpenApiParser() {
     }
 
     /**

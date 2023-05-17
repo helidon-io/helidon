@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.nima.openapi;
+package io.helidon.microprofile.openapi;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -52,11 +52,6 @@ import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.openapi.ExpandedTypeDescription;
-import io.helidon.openapi.OpenAPIMediaType;
-import io.helidon.openapi.OpenAPIParser;
-import io.helidon.openapi.ParserHelper;
-import io.helidon.openapi.Serializer;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
 
 import io.smallrye.openapi.api.OpenApiConfig;
@@ -513,7 +508,7 @@ public class OpenApiService implements HttpService {
     }
 
     /**
-     * Base builder for OpenAPI service builders, extended by {@link io.helidon.nima.openapi.OpenApiService.Builder}
+     * Base builder for OpenAPI service builders, extended by {@link OpenApiService.Builder}
      * and MicroProfile implementation.
      *
      * @param <B> type of the builder (subclass)
@@ -553,7 +548,7 @@ public class OpenApiService implements HttpService {
             config.get("static-file")
                     .asString()
                     .ifPresent(this::staticFile);
-            config.get(CORS_CONFIG_KEY)
+            config.get(CorsEnabledServiceHelper.CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
             return identity();
@@ -605,7 +600,7 @@ public class OpenApiService implements HttpService {
          * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CORS_CONFIG_KEY)
+        @ConfiguredOption(key = CorsEnabledServiceHelper.CORS_CONFIG_KEY)
         public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
             this.crossOriginConfig = crossOriginConfig;

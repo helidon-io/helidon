@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.openapi;
+package io.helidon.microprofile.openapi;
 
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
@@ -271,7 +271,7 @@ public class ExpandedTypeDescription extends TypeDescription {
      * This type description customizes the handling of {@code additionalProperties} to account for all that.
      * </p>
      *
-     * @see io.helidon.openapi.Serializer (specifically doRepresentJavaBeanProperty) for output handling for
+     * @see Serializer (specifically doRepresentJavaBeanProperty) for output handling for
      *         additionalProperties
      */
     static final class SchemaTypeDescription extends ExpandedTypeDescription {

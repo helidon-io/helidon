@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,15 +23,9 @@
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
     <Match>
-        <!-- Path comes from config or code -->
-        <Class name="io.helidon.nima.openapi.OpenApiService$AbstractBuilder"/>
-        <Method name="getExplicitStaticFile"/>
-        <Bug pattern="PATH_TRAVERSAL_IN"/>
-    </Match>
-    <Match>
-        <!-- Path comes from config or code -->
-        <Class name="io.helidon.nima.openapi.OpenApiService$AbstractBuilder"/>
-        <Method name="getDefaultStaticFile"/>
+        <!-- Path comes from config or code and is static OpenAPI text, not executable -->
+        <Class name="io.helidon.openapi.OpenApiFeature$Builder"/>
+        <Method name="staticFileContentFromPath"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
 
