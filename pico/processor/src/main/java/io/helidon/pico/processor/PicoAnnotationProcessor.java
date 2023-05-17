@@ -89,8 +89,6 @@ import static java.util.Objects.requireNonNull;
  * An annotation processor that will find everything needing to be processed related to core Pico conde generation.
  */
 public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
-    private static boolean disableBaseProcessing;
-
     private static final Set<String> SUPPORTED_SERVICE_CLASS_TARGET_ANNOTATIONS = Set.of(
             TypeNames.JAKARTA_SINGLETON,
             TypeNames.JAVAX_SINGLETON,
@@ -98,10 +96,8 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             TypeNames.JAVAX_APPLICATION_SCOPED,
             TypeNames.PICO_EXTERNAL_CONTRACTS,
             TypeNames.PICO_INTERCEPTED);
-
     private static final Set<String> SUPPORTED_CONTRACT_CLASS_TARGET_ANNOTATIONS = Set.of(
             TypeNames.PICO_CONTRACT);
-
     private static final Set<String> SUPPORTED_ELEMENT_TARGET_ANNOTATIONS = Set.of(
             TypeNames.JAKARTA_INJECT,
             TypeNames.JAVAX_INJECT,
@@ -109,7 +105,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             TypeNames.JAKARTA_POST_CONSTRUCT,
             TypeNames.JAVAX_PRE_DESTROY,
             TypeNames.JAVAX_POST_CONSTRUCT);
-
+    private static boolean disableBaseProcessing;
     private final Set<TypedElementName> allElementsOfInterestInThisModule = new LinkedHashSet<>();
     private final Map<TypeName, TypeInfo> typeInfoToCreateActivatorsForInThisModule = new LinkedHashMap<>();
     private CreatorHandler creator;
@@ -149,10 +145,10 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         super.init(processingEnv);
         this.autoAddInterfaces = Options.isOptionEnabled(Options.TAG_AUTO_ADD_NON_CONTRACT_INTERFACES);
         this.creator = new CreatorHandler(getClass().getSimpleName(), processingEnv, utils());
-//        if (BaseAnnotationProcessor.ENABLED) {
-//            // we are is simulation mode when the base one is operating...
-//            this.creator.activateSimulationMode();
-//        }
+        //        if (BaseAnnotationProcessor.ENABLED) {
+        //            // we are is simulation mode when the base one is operating...
+        //            this.creator.activateSimulationMode();
+        //        }
     }
 
     @Override
@@ -165,7 +161,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         }
 
         ServicesToProcess.onBeginProcessing(utils(), getSupportedAnnotationTypes(), roundEnv);
-//        ServicesToProcess.addOnDoneRunnable(CreatorHandler.reporting());
+        //        ServicesToProcess.addOnDoneRunnable(CreatorHandler.reporting());
 
         try {
             // build the model
@@ -273,39 +269,27 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
      */
     protected void validate(Collection<TypedElementName> elementsOfInterest) {
         validatePerClass(elementsOfInterest,
-                            "There can be max of one injectable constructor per class",
-                            1,
-                            (it) -> it.elementTypeKind().equals(TypeInfo.KIND_CONSTRUCTOR)
-                                    && GeneralProcessorUtils.findFirst(Inject.class, it.annotations()).isPresent());
+                         "There can be max of one injectable constructor per class",
+                         1,
+                         (it) -> it.elementTypeKind().equals(TypeInfo.KIND_CONSTRUCTOR)
+                                 && GeneralProcessorUtils.findFirst(Inject.class, it.annotations()).isPresent());
         validatePerClass(elementsOfInterest,
-                            "There can be max of one PostConstruct method per class",
-                            1,
-                            (it) -> it.elementTypeKind().equals(TypeInfo.KIND_METHOD)
-                                    && GeneralProcessorUtils.findFirst(PostConstruct.class, it.annotations()).isPresent());
+                         "There can be max of one PostConstruct method per class",
+                         1,
+                         (it) -> it.elementTypeKind().equals(TypeInfo.KIND_METHOD)
+                                 && GeneralProcessorUtils.findFirst(PostConstruct.class, it.annotations()).isPresent());
         validatePerClass(elementsOfInterest,
-                            "There can be max of one PreDestroy method per class",
-                            1,
-                            (it) -> it.elementTypeKind().equals(TypeInfo.KIND_METHOD)
-                                    && GeneralProcessorUtils.findFirst(PreDestroy.class, it.annotations()).isPresent());
+                         "There can be max of one PreDestroy method per class",
+                         1,
+                         (it) -> it.elementTypeKind().equals(TypeInfo.KIND_METHOD)
+                                 && GeneralProcessorUtils.findFirst(PreDestroy.class, it.annotations()).isPresent());
         validatePerClass(elementsOfInterest,
                          PicoServicesConfig.NAME + " does not currently support static or private elements",
                          0,
-                         (it) -> toModifierNames(it.modifierNames()).stream().anyMatch(TypeInfo.MODIFIER_PRIVATE::equalsIgnoreCase)
-                                 || toModifierNames(it.modifierNames()).stream().anyMatch(TypeInfo.MODIFIER_STATIC::equalsIgnoreCase));
-    }
-
-    private void validatePerClass(Collection<TypedElementName> elementsOfInterest,
-                                  String msg,
-                                  int maxAllowed,
-                                  Predicate<TypedElementName> matcher) {
-        Map<TypeName, List<TypedElementName>> allTypeNamesToMatchingElements = new LinkedHashMap<>();
-        elementsOfInterest.stream()
-                .filter(matcher)
-                .forEach(it -> allTypeNamesToMatchingElements
-                        .computeIfAbsent(it.enclosingTypeName().orElseThrow(), (n) -> new ArrayList<>()).add(it));
-        allTypeNamesToMatchingElements.values().stream()
-                .filter(list -> list.size() > maxAllowed)
-                .forEach(it -> utils().error(msg + " for " + it.get(0).enclosingTypeName(), null));
+                         (it) -> toModifierNames(it.modifierNames()).stream()
+                                 .anyMatch(TypeInfo.MODIFIER_PRIVATE::equalsIgnoreCase)
+                                 || toModifierNames(it.modifierNames()).stream()
+                                 .anyMatch(TypeInfo.MODIFIER_STATIC::equalsIgnoreCase));
     }
 
     /**
@@ -378,6 +362,119 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
     }
 
     /**
+     * Process any extensions (e.g., config-driven) requiring extra processing or any modifications to {@link ServicesToProcess}.
+     *
+     * @param services                          the services to process builder
+     * @param service                           the service type info to process right now
+     * @param serviceTypeNamesToCodeGenerate    the entire set of types that are planned to be code-generated
+     * @param allElementsOfInterest             all of the elements of interest that pico "knows" about
+     */
+    @SuppressWarnings("unused")
+    protected void processExtensions(ServicesToProcess services,
+                                     TypeInfo service,
+                                     Set<TypeName> serviceTypeNamesToCodeGenerate,
+                                     Collection<TypedElementName> allElementsOfInterest) {
+        // NOP; expected that derived classes will implement this
+    }
+
+    /**
+     * Finds the first jakarta or javax annotation matching the given jakarta annotation class name.
+     *
+     * @param jakartaAnnoName the jakarta annotation class name
+     * @param annotations     all of the annotations to search through
+     * @return the annotation, or empty if not found
+     */
+    protected Optional<? extends AnnotationAndValue> findFirst(String jakartaAnnoName,
+                                                               Collection<? extends AnnotationAndValue> annotations) {
+        return GeneralProcessorUtils.findFirst(jakartaAnnoName, annotations);
+    }
+
+    /**
+     * Processes all of the injection points for the provided typed element, accumulating the result in the provided builder
+     * continuation instance.
+     *
+     * @param builder  the builder continuation instance
+     * @param typedElement the typed element to convert
+     * @param service the type info of the backing service
+     */
+    private static void gatherInjectionPoints(Dependencies.BuilderContinuation builder,
+                                              TypedElementName typedElement,
+                                              TypeInfo service,
+                                              Set<String> modifierNames) {
+        String elemName = typedElement.elementName();
+        ElementInfo.Access access = toAccess(modifierNames);
+        ElementInfo.ElementKind elemKind = ElementInfo.ElementKind.valueOf(typedElement.elementTypeKind());
+        boolean isField = (elemKind == ElementInfo.ElementKind.FIELD);
+        if (isField) {
+            TypeName typeName = typedElement.typeName();
+            boolean isOptional = typeName.isOptional();
+            typeName = (isOptional) ? typeName.typeArguments().get(0) : typeName;
+            boolean isList = typeName.isList();
+            typeName = (isList) ? typeName.typeArguments().get(0) : typeName;
+            boolean isProviderType = isProviderType(typeName);
+            typeName = (isProviderType) ? typeName.typeArguments().get(0) : typeName;
+            Set<QualifierAndValue> qualifiers = toQualifiers(typedElement, service);
+
+            builder.add(service.typeName().name(),
+                        elemName,
+                        typeName.name(),
+                        elemKind,
+                        0,
+                        access)
+                    .qualifiers(qualifiers)
+                    .listWrapped(isList)
+                    .providerWrapped(isProviderType)
+                    .optionalWrapped(isOptional);
+        } else {
+            int elemArgs = typedElement.parameterArguments().size();
+            AtomicInteger elemOffset = new AtomicInteger();
+            typedElement.parameterArguments().forEach(it -> {
+                TypeName typeName = it.typeName();
+                boolean isOptional = typeName.isOptional();
+                typeName = (isOptional) ? typeName.typeArguments().get(0) : typeName;
+                boolean isList = typeName.isList();
+                typeName = (isList) ? typeName.typeArguments().get(0) : typeName;
+                boolean isProviderType = isProviderType(typeName);
+                typeName = (isProviderType) ? typeName.typeArguments().get(0) : typeName;
+
+                int pos = elemOffset.incrementAndGet();
+                Set<QualifierAndValue> qualifiers = toQualifiers(it, service);
+
+                builder.add(service.typeName().name(),
+                            elemName,
+                            typeName.name(),
+                            elemKind,
+                            elemArgs,
+                            access)
+                        .qualifiers(qualifiers)
+                        .elemOffset(pos)
+                        .listWrapped(isList)
+                        .providerWrapped(isProviderType)
+                        .optionalWrapped(isOptional);
+            });
+        }
+    }
+
+    // will be resolved in https://github.com/helidon-io/helidon/issues/6764
+    private static Set<String> toModifierNames(Set<String> names) {
+        return names.stream().map(String::toUpperCase).collect(Collectors.toSet());
+    }
+
+    private void validatePerClass(Collection<TypedElementName> elementsOfInterest,
+                                  String msg,
+                                  int maxAllowed,
+                                  Predicate<TypedElementName> matcher) {
+        Map<TypeName, List<TypedElementName>> allTypeNamesToMatchingElements = new LinkedHashMap<>();
+        elementsOfInterest.stream()
+                .filter(matcher)
+                .forEach(it -> allTypeNamesToMatchingElements
+                        .computeIfAbsent(it.enclosingTypeName().orElseThrow(), (n) -> new ArrayList<>()).add(it));
+        allTypeNamesToMatchingElements.values().stream()
+                .filter(list -> list.size() > maxAllowed)
+                .forEach(it -> utils().error(msg + " for " + it.get(0).enclosingTypeName(), null));
+    }
+
+    /**
      * Process any interception plans.
      *
      * @param services                          the services to process builder
@@ -408,34 +505,6 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             utils().log("unable to produce an interception plan for: " + serviceTypeName);
         }
         services.addInterceptorPlanFor(serviceTypeName, plan);
-    }
-
-    /**
-     * Process any extensions (e.g., config-driven) requiring extra processing or any modifications to {@link ServicesToProcess}.
-     *
-     * @param services                          the services to process builder
-     * @param service                           the service type info to process right now
-     * @param serviceTypeNamesToCodeGenerate    the entire set of types that are planned to be code-generated
-     * @param allElementsOfInterest             all of the elements of interest that pico "knows" about
-     */
-    @SuppressWarnings("unused")
-    protected void processExtensions(ServicesToProcess services,
-                                     TypeInfo service,
-                                     Set<TypeName> serviceTypeNamesToCodeGenerate,
-                                     Collection<TypedElementName> allElementsOfInterest) {
-        // NOP; expected that derived classes will implement this
-    }
-
-    /**
-     * Finds the first jakarta or javax annotation matching the given jakarta annotation class name.
-     *
-     * @param jakartaAnnoName the jakarta annotation class name
-     * @param annotations     all of the annotations to search through
-     * @return the annotation, or empty if not found
-     */
-    protected Optional<? extends AnnotationAndValue> findFirst(String jakartaAnnoName,
-                                                               Collection<? extends AnnotationAndValue> annotations) {
-        return GeneralProcessorUtils.findFirst(jakartaAnnoName, annotations);
     }
 
     private ServicesToProcess toServicesToProcess(Set<TypeInfo> typesToCodeGenerate,
@@ -476,10 +545,10 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         services.addExternalRequiredModules(serviceTypeName, externalModuleNames);
 
         utils().debug(serviceTypeName
-                            + ": contracts=" + contracts
-                            + ", providers=" + providerForSet
-                            + ", externalContracts=" + externalContracts
-                            + ", externalModuleNames=" + externalModuleNames);
+                              + ": contracts=" + contracts
+                              + ", providers=" + providerForSet
+                              + ", externalContracts=" + externalContracts
+                              + ", externalModuleNames=" + externalModuleNames);
     }
 
     private void gatherContracts(Set<TypeName> contracts,
@@ -596,74 +665,8 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         injectableElementsForThisService
                 .forEach(elem -> gatherInjectionPoints(builder, elem, service, toModifierNames(elem.modifierNames())));
 
-//        // We expect activators at every level for abstract bases - we will therefore NOT recursive up the hierarchy
-//        service.superTypeInfo().ifPresent(it -> gatherInjectionPoints(builder, it, allElementsOfInterest, false));
-    }
-
-    /**
-     * Processes all of the injection points for the provided typed element, accumulating the result in the provided builder
-     * continuation instance.
-     *
-     * @param builder  the builder continuation instance
-     * @param typedElement the typed element to convert
-     * @param service the type info of the backing service
-     */
-    private static void gatherInjectionPoints(Dependencies.BuilderContinuation builder,
-                                              TypedElementName typedElement,
-                                              TypeInfo service,
-                                              Set<String> modifierNames) {
-        String elemName = typedElement.elementName();
-        ElementInfo.Access access = toAccess(modifierNames);
-        ElementInfo.ElementKind elemKind = ElementInfo.ElementKind.valueOf(typedElement.elementTypeKind());
-        boolean isField = (elemKind == ElementInfo.ElementKind.FIELD);
-        if (isField) {
-            TypeName typeName = typedElement.typeName();
-            boolean isOptional = typeName.isOptional();
-            typeName = (isOptional) ? typeName.typeArguments().get(0) : typeName;
-            boolean isList = typeName.isList();
-            typeName = (isList) ? typeName.typeArguments().get(0) : typeName;
-            boolean isProviderType = isProviderType(typeName);
-            typeName = (isProviderType) ? typeName.typeArguments().get(0) : typeName;
-            Set<QualifierAndValue> qualifiers = toQualifiers(typedElement, service);
-
-            builder.add(service.typeName().name(),
-                        elemName,
-                        typeName.name(),
-                        elemKind,
-                        0,
-                        access)
-                    .qualifiers(qualifiers)
-                    .listWrapped(isList)
-                    .providerWrapped(isProviderType)
-                    .optionalWrapped(isOptional);
-        } else {
-            int elemArgs = typedElement.parameterArguments().size();
-            AtomicInteger elemOffset = new AtomicInteger();
-            typedElement.parameterArguments().forEach(it -> {
-                TypeName typeName = it.typeName();
-                boolean isOptional = typeName.isOptional();
-                typeName = (isOptional) ? typeName.typeArguments().get(0) : typeName;
-                boolean isList = typeName.isList();
-                typeName = (isList) ? typeName.typeArguments().get(0) : typeName;
-                boolean isProviderType = isProviderType(typeName);
-                typeName = (isProviderType) ? typeName.typeArguments().get(0) : typeName;
-
-                int pos = elemOffset.incrementAndGet();
-                Set<QualifierAndValue> qualifiers = toQualifiers(it, service);
-
-                builder.add(service.typeName().name(),
-                            elemName,
-                            typeName.name(),
-                            elemKind,
-                            elemArgs,
-                            access)
-                        .qualifiers(qualifiers)
-                        .elemOffset(pos)
-                        .listWrapped(isList)
-                        .providerWrapped(isProviderType)
-                        .optionalWrapped(isOptional);
-            });
-        }
+        //        // We expect activators at every level for abstract bases - we will therefore NOT recursive up the hierarchy
+        //        service.superTypeInfo().ifPresent(it -> gatherInjectionPoints(builder, it, allElementsOfInterest, false));
     }
 
     private Set<TypedElementName> gatherElementsOfInterestInThisModule() {
@@ -721,11 +724,6 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                            utils().toTypeInfo(element, element.asType(), elementsOfInterest::contains).orElseThrow());
             }
         });
-    }
-
-    // will be resolved in https://github.com/helidon-io/helidon/issues/6764
-    private static Set<String> toModifierNames(Set<String> names) {
-        return names.stream().map(String::toUpperCase).collect(Collectors.toSet());
     }
 
 }
