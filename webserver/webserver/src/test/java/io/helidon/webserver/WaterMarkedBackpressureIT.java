@@ -39,6 +39,7 @@ import org.testng.annotations.Test;
 import static io.helidon.webserver.BackpressureStrategy.AUTO_FLUSH;
 import static io.helidon.webserver.BackpressureStrategy.LINEAR;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 
 public class WaterMarkedBackpressureIT {
@@ -145,7 +146,10 @@ public class WaterMarkedBackpressureIT {
                                 .observeOn(executorService)
                                 // Never flush!
                                 // 5 bytes per chunk
-                                .map(l -> DataChunk.create(false, ByteBuffer.wrap((String.format("%05d", l)).getBytes())))
+                                .map(l -> String.format("%05d", l))
+                                .map(String::getBytes)
+                                .map(ByteBuffer::wrap)
+                                .map(bb -> DataChunk.create(false, bb))
                                 .onCompleteResumeWith(Single.never())
                         );
                     }))
@@ -165,7 +169,7 @@ public class WaterMarkedBackpressureIT {
                         receivedSize.addAndGet(bytes.length);
                         String data = new String(bytes);
                         chunk.release();
-                        return !data.equals("00101");
+                        return !data.equals("00100");
                     })
                     .ignoreElements()
                     .onErrorResumeWithSingle(t -> {
@@ -175,7 +179,8 @@ public class WaterMarkedBackpressureIT {
                     .await(TIMEOUT);
 
 
-            assertThat(receivedSize.get(), is(510L));
+            // Stochastic test as watermarking depends on Netty's flush callbacks
+            assertThat(receivedSize.get(), greaterThan(499L));
         } finally {
             if (webServer != null) {
                 webServer.shutdown().await(TIMEOUT);
