@@ -15,22 +15,33 @@
  */
 package io.helidon.common.http;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Implementation of {@link DataChunk} based on {@code java.nio.ByteBuffer}.
  */
 final class ByteBufferDataChunk implements DataChunk {
 
+    private static final VarHandle IS_RELEASED;
+
+    static {
+        try {
+            IS_RELEASED = MethodHandles.lookup().findVarHandle(ByteBufferDataChunk.class, "isReleased", boolean.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private final ByteBuffer[] byteBuffers;
     private final boolean flush;
     private final boolean readOnly;
     private final Runnable releaseCallback;
-    private final AtomicBoolean isReleased = new AtomicBoolean();
+    private volatile boolean isReleased;
     private CompletableFuture<DataChunk> writeFuture;
 
     /**
@@ -48,6 +59,7 @@ final class ByteBufferDataChunk implements DataChunk {
 
     /**
      * Create a new data chunk.
+     *
      * @param flush           a signal that this chunk should be written and flushed from any cache if possible
      * @param readOnly        indicates underlying buffers are not reused
      * @param releaseCallback a callback which is called when this chunk is completely processed and instance is free for reuse
@@ -72,7 +84,7 @@ final class ByteBufferDataChunk implements DataChunk {
 
     @Override
     public boolean isReleased() {
-        return isReleased.get();
+        return isReleased;
     }
 
     @Override
@@ -82,7 +94,7 @@ final class ByteBufferDataChunk implements DataChunk {
 
     @Override
     public void release() {
-        if (isReleased.compareAndSet(false, true)) {
+        if (IS_RELEASED.compareAndSet(this, false, true)) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }

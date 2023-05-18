@@ -16,12 +16,13 @@
 
 package io.helidon.webserver;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.http.DataChunk;
 
@@ -33,11 +34,20 @@ import io.netty.buffer.ByteBuf;
  */
 public class ByteBufDataChunk implements DataChunk {
 
+    private static final VarHandle IS_RELEASED;
+
+    static {
+        try {
+            IS_RELEASED = MethodHandles.lookup().findVarHandle(ByteBufDataChunk.class, "isReleased", boolean.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
     private final ByteBuf[] byteBufs;
     private final boolean flush;
     private final boolean readOnly;
     private final Runnable releaseCallback;
-    private final AtomicBoolean isReleased = new AtomicBoolean();
+    private volatile boolean isReleased;
     private CompletableFuture<DataChunk> writeFuture;
 
     /**
@@ -104,7 +114,7 @@ public class ByteBufDataChunk implements DataChunk {
 
     @Override
     public boolean isReleased() {
-        return isReleased.get();
+        return isReleased;
     }
 
     @Override
@@ -119,7 +129,7 @@ public class ByteBufDataChunk implements DataChunk {
 
     @Override
     public void release() {
-        if (isReleased.compareAndSet(false, true)) {
+        if (IS_RELEASED.compareAndSet(this, false, true)) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }
