@@ -59,7 +59,7 @@ public class MultiPartDecoderTest {
         final CountDownLatch latch = new CountDownLatch(2);
         final CompletableFuture<Void> testDone = new CompletableFuture<>();
 
-        Consumer<BodyPart> consumer = (part) -> {
+        Consumer<ReadableBodyPart> consumer = (part) -> {
             latch.countDown();
             assertThat(part.headers().values("Content-Id"),
                     hasItems("part1"));
@@ -102,7 +102,7 @@ public class MultiPartDecoderTest {
                 + "--" + boundary + "--").getBytes();
 
         final CountDownLatch latch = new CountDownLatch(4);
-        Consumer<BodyPart> consumer = (part) -> {
+        Consumer<ReadableBodyPart> consumer = (part) -> {
             latch.countDown();
             if (latch.getCount() == 3) {
                 assertThat(part.headers().values("Content-Id"), hasItems("part1"));
@@ -144,7 +144,7 @@ public class MultiPartDecoderTest {
                 + "--" + boundary + "--").getBytes();
 
         final CountDownLatch latch = new CountDownLatch(2);
-        Consumer<BodyPart> consumer = (part) -> {
+        Consumer<ReadableBodyPart> consumer = (part) -> {
             latch.countDown();
             assertThat(part.headers().values("Content-Id"), hasItems("part1"));
             DataChunkSubscriber subscriber = new DataChunkSubscriber();
@@ -180,7 +180,7 @@ public class MultiPartDecoderTest {
                 + "--" + boundary + "--").getBytes();
 
         final CountDownLatch latch = new CountDownLatch(2);
-        Consumer<BodyPart> consumer = (part) -> {
+        Consumer<ReadableBodyPart> consumer = (part) -> {
             latch.countDown();
             assertThat(part.headers().values("Content-Id"), hasItems("part1"));
             DataChunkSubscriber subscriber = new DataChunkSubscriber();
@@ -220,7 +220,7 @@ public class MultiPartDecoderTest {
                 + "--" + boundary + "--").getBytes();
 
         final CountDownLatch latch = new CountDownLatch(2);
-        Consumer<BodyPart> consumer = (part) -> {
+        Consumer<ReadableBodyPart> consumer = (part) -> {
             latch.countDown();
             assertThat(part.headers().values("Content-Id"), hasItems("part1"));
             assertThat(part.headers().values("Content-Type"), hasItems("text/plain"));
@@ -257,7 +257,7 @@ public class MultiPartDecoderTest {
                 + "--" + boundary + "--").getBytes();
 
         final CountDownLatch latch = new CountDownLatch(4);
-        Consumer<BodyPart> consumer = (part) -> {
+        Consumer<ReadableBodyPart> consumer = (part) -> {
             latch.countDown();
             if (latch.getCount()== 3) {
                 assertThat(part.headers().values("Content-Id"), hasItems("part1"));
@@ -302,7 +302,7 @@ public class MultiPartDecoderTest {
                 + "--" + boundary + "--").getBytes();
 
         final CountDownLatch latch = new CountDownLatch(2);
-        Consumer<BodyPart> consumer = (part) -> {
+        Consumer<ReadableBodyPart> consumer = (part) -> {
             latch.countDown();
             if (latch.getCount()== 1) {
                 assertThat(part.headers().values("Content-Id"), hasItems("part1"));
@@ -376,7 +376,7 @@ public class MultiPartDecoderTest {
                 + "--" + boundary + "--").getBytes();
 
         final CountDownLatch latch = new CountDownLatch(3);
-        Consumer<BodyPart> consumer = (part) -> {
+        Consumer<ReadableBodyPart> consumer = (part) -> {
             latch.countDown();
             if (latch.getCount() == 2) {
                 assertThat(part.headers().values("Content-Id"), hasItems("part1"));
@@ -453,7 +453,7 @@ public class MultiPartDecoderTest {
                 + "body 1\n"
                 + "--" + boundary + "--").getBytes();
 
-        // setup the decoder in an initialized state (upstream and downstream)
+        // set up the decoder in an initialized state (upstream and downstream)
         MultiPartDecoder decoder = decoder(boundary);
         List<ReadableBodyPart> parts = new ArrayList<>();
         Multi.create(decoder).subscribe(parts::add);
@@ -471,6 +471,26 @@ public class MultiPartDecoderTest {
         }
     }
 
+    @Test
+    public void testLastEmptyChunk() {
+        String boundary = "boundary";
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + "Content-Id: part1\n"
+                + "\n"
+                + "body 1\n"
+                + "--" + boundary + "--").getBytes();
+
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(
+                SUBSCRIBER_TYPE.INFINITE, ReadableBodyPart::drain);
+        partsPublisher(boundary, List.of(chunk1, new byte[0])).subscribe(testSubscriber);
+        try {
+            boolean b = testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            assertThat(b, is(equalTo(true)));
+        } catch(CompletionException error) {
+            assertThat(error, is(nullValue()));
+        }
+    }
+
     /**
      * Types of test subscribers.
      */
@@ -483,15 +503,15 @@ public class MultiPartDecoderTest {
     /**
      * A part test subscriber.
      */
-    static class BodyPartSubscriber implements Subscriber<BodyPart>{
+    static class BodyPartSubscriber implements Subscriber<ReadableBodyPart>{
 
         private final SUBSCRIBER_TYPE subscriberType;
-        private final Consumer<BodyPart> consumer;
+        private final Consumer<ReadableBodyPart> consumer;
         private Subscription subscription;
         public CompletableFuture<Boolean> complete = new CompletableFuture<>();
         public CompletableFuture<Void> cancelled = new CompletableFuture<>();
 
-        BodyPartSubscriber(SUBSCRIBER_TYPE subscriberType, Consumer<BodyPart> consumer) {
+        BodyPartSubscriber(SUBSCRIBER_TYPE subscriberType, Consumer<ReadableBodyPart> consumer) {
             this.subscriberType = subscriberType;
             this.consumer = consumer;
         }
@@ -507,7 +527,7 @@ public class MultiPartDecoderTest {
         }
 
         @Override
-        public void onNext(BodyPart item) {
+        public void onNext(ReadableBodyPart item) {
             if (consumer == null){
                 return;
             }
@@ -547,7 +567,7 @@ public class MultiPartDecoderTest {
      * @param data data for the chunk
      * @return publisher of body parts
      */
-    static Publisher<? extends BodyPart> partsPublisher(String boundary, byte[] data) {
+    static Publisher<? extends ReadableBodyPart> partsPublisher(String boundary, byte[] data) {
         return partsPublisher(boundary, List.of(data));
     }
 
@@ -557,7 +577,7 @@ public class MultiPartDecoderTest {
      * @param data data for the chunks
      * @return publisher of body parts
      */
-    static Publisher<? extends BodyPart> partsPublisher(String boundary, List<byte[]> data) {
+    static Publisher<? extends ReadableBodyPart> partsPublisher(String boundary, List<byte[]> data) {
         MultiPartDecoder decoder = decoder(boundary);
         chunksPublisher(data).subscribe(decoder);
         return decoder;
