@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.helidon.config.Config;
 import io.helidon.examples.integrations.neo4j.se.domain.MovieRepository;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.integrations.neo4j.Neo4j;
-import io.helidon.integrations.neo4j.health.Neo4jHealthCheck;
+import io.helidon.integrations.neo4j.health.Neo4jHelidonHealthCheck;
 import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.health.HealthSupport;
@@ -108,7 +108,7 @@ public final class Main {
                 .build()
                 .initialize();
 
-        Neo4jHealthCheck healthCheck = Neo4jHealthCheck.create(neo4j.driver());
+        Neo4jHelidonHealthCheck healthCheck = Neo4jHelidonHealthCheck.create(neo4j.driver());
 
         Driver neo4jDriver = neo4j.driver();
 
@@ -116,7 +116,7 @@ public final class Main {
 
         HealthSupport health = HealthSupport.builder()
                 .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
-                .addReadiness(healthCheck)
+                .add(healthCheck)
                 .build();
 
         return Routing.builder()

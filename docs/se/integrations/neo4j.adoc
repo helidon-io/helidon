@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -233,7 +233,7 @@ private static Routing createRouting(Config config) {
 ----
 <1> Use of `Neo4j` support object to initialise and configure the driver.
 <2> Use of `Neo4jMetricsSupport` to add _Neo4j_ metrics to `/metrics` output.
-<3> Use of `Neo4jHealthCheck` to add _Neo4j_ health support.
+<3> Use of `Neo4jHealthCheck` or `Neo4jHelidonHealthCheck` to add _Neo4j_ health support.
 <4> Initialize `MovieService` with _Neo4j_ driver.
 <5> Register the services in _Routing_.
 

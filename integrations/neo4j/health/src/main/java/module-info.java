@@ -36,6 +36,7 @@ module io.helidon.integrations.neo4j.health {
     requires static jakarta.cdi;
     requires static jakarta.inject;
     requires static io.helidon.microprofile.health;
+    requires io.helidon.health;
 
     exports io.helidon.integrations.neo4j.health;
 
