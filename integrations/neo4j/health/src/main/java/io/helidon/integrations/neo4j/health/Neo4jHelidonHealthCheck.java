@@ -33,7 +33,7 @@ import org.neo4j.driver.Session;
 @BuiltInHealthCheck
 public class Neo4jHelidonHealthCheck implements HealthCheck {
 
-    private static final String name = "Neo4j connection health check";
+    private static final String NAME = "Neo4j connection health check";
     private final Driver driver;
     /**
      * The Cypher statement used to verify Neo4j is up.
@@ -62,7 +62,7 @@ public class Neo4jHelidonHealthCheck implements HealthCheck {
 
     @Override
     public String name() {
-        return name;
+        return NAME;
     }
 
     @Override
