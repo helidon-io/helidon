@@ -15,6 +15,8 @@
  */
 package io.helidon.tests.integration.gh6845;
 
+import java.util.Arrays;
+
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Single;
@@ -25,8 +27,6 @@ import io.helidon.media.multipart.WriteableBodyPartHeaders;
 import io.helidon.media.multipart.WriteableMultiPart;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
-
-import java.util.Arrays;
 
 import static io.helidon.common.http.MediaType.TEXT_PLAIN;
 
@@ -92,8 +92,8 @@ public final class Main {
     private static Routing createRouting() {
         return Routing.builder()
                       .get("/", (req, res) -> {
-                          byte[] contents = new byte[21 << 20 - 1];
-                          Arrays.fill(contents, (byte) 0x20);
+                          byte[] contents = new byte[21 * 1024 * 1024]; // 21 MiB
+                          Arrays.fill(contents, (byte) 0x20); // fill with spaces
                           res.send(WriteableMultiPart
                                   .builder()
                                   .bodyPart(WriteableBodyPart
