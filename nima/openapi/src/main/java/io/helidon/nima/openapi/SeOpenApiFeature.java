@@ -22,18 +22,47 @@ import io.helidon.openapi.OpenApiFeature;
  */
 public class SeOpenApiFeature extends OpenApiFeature {
 
+    private static final System.Logger LOGGER = System.getLogger(SeOpenApiFeature.class.getName());
+
+    /**
+     * Create a new builder for the feature.
+     *
+     * @return the new builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
     /**
      * Creates a new instance.
      *
-     * @param logger logger for messages
-     * @param builder builder for the SE OpenAPI featureope
+     * @param builder builder for the SE OpenAPI feature
      */
-    protected SeOpenApiFeature(System.Logger logger, Builder<?, ?> builder) {
-        super(logger, builder);
+    protected SeOpenApiFeature(Builder builder) {
+        super(LOGGER, builder);
     }
 
     @Override
     protected String openApiContent(io.helidon.openapi.OpenApiFeature.OpenAPIMediaType openApiMediaType) {
+        // TODO temporarily supports only static files
+        if (staticContent().isPresent()) {
+            return staticContent().get().content();
+        }
         return null;
+    }
+
+    public static class Builder extends OpenApiFeature.Builder<Builder, SeOpenApiFeature> {
+
+        private static final System.Logger LOGGER = System.getLogger(Builder.class.getName());
+
+        @Override
+        public SeOpenApiFeature build() {
+            return new SeOpenApiFeature(this);
+        }
+
+        @Override
+        protected System.Logger logger() {
+            return LOGGER;
+        }
     }
 }

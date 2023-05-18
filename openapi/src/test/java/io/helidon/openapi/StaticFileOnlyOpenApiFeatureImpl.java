@@ -97,7 +97,7 @@ public class StaticFileOnlyOpenApiFeatureImpl extends OpenApiFeature {
         }
 
         @Override
-        System.Logger logger() {
+        protected System.Logger logger() {
             return LOGGER;
         }
     }

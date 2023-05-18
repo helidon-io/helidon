@@ -23,8 +23,15 @@ import java.util.Objects;
  *     There can be up to one of these for each {@link io.helidon.openapi.OpenApiFeature.OpenAPIMediaType} (YAML and JSON).
  * </p>
  */
-class OpenApiStaticFile {
+public class OpenApiStaticFile {
 
+    /**
+     * Creates a new static file instance using the given OpenAPI media type and content.
+     *
+     * @param openApiMediaType OpenAPI media type
+     * @param content text content
+     * @return static file instance
+     */
     static OpenApiStaticFile create(OpenApiFeature.OpenAPIMediaType openApiMediaType, String content) {
         return new Builder().openApiMediaType(openApiMediaType).content(content).build();
     }
@@ -37,11 +44,21 @@ class OpenApiStaticFile {
         this.openApiMediaType = builder.openApiMediaType;
     }
 
-    OpenApiFeature.OpenAPIMediaType openApiMediaType() {
+    /**
+     * Returns the OpenAPI media type of the static content.
+     *
+     * @return the OpenAPI media type of the static content
+     */
+    public OpenApiFeature.OpenAPIMediaType openApiMediaType() {
         return openApiMediaType;
     }
 
-    String content() {
+    /**
+     * Returns the text content of the static file.
+     *
+     * @return text static content
+     */
+    public String content() {
         return content;
     }
 

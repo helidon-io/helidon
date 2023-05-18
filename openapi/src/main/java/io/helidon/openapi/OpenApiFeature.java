@@ -414,7 +414,12 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
             super(DEFAULT_CONTEXT);
         }
 
-        abstract System.Logger logger();
+        /**
+         * Returns the logger for the OpenAPI feature instance.
+         *
+         * @return logger
+         */
+        protected abstract System.Logger logger();
 
         /**
          * Apply configuration settings to the builder.
