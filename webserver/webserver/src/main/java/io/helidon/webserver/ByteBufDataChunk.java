@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.http.DataChunk;
 
@@ -36,7 +37,7 @@ public class ByteBufDataChunk implements DataChunk {
     private final boolean flush;
     private final boolean readOnly;
     private final Runnable releaseCallback;
-    private boolean isReleased = false;
+    private final AtomicBoolean isReleased = new AtomicBoolean();
     private CompletableFuture<DataChunk> writeFuture;
 
     /**
@@ -103,7 +104,7 @@ public class ByteBufDataChunk implements DataChunk {
 
     @Override
     public boolean isReleased() {
-        return isReleased;
+        return isReleased.get();
     }
 
     @Override
@@ -118,11 +119,10 @@ public class ByteBufDataChunk implements DataChunk {
 
     @Override
     public void release() {
-        if (!isReleased) {
+        if (isReleased.compareAndSet(false, true)) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }
-            isReleased = true;
         }
     }
 
