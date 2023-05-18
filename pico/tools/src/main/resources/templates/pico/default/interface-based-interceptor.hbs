@@ -24,9 +24,9 @@ import java.util.function.Function;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeNameDefault;
-import io.helidon.common.types.TypedElementNameDefault;
+import io.helidon.common.types.TypedElementInfoDefault;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.api.ClassNamed;
 import io.helidon.pico.api.InvocationContextDefault;
 import io.helidon.pico.api.Interceptor;
@@ -56,7 +56,7 @@ public class {{className}} /* extends {{parent}} */ implements {{interfaces}} {
     private static final List<AnnotationAndValue> __serviceLevelAnnotations = List.of({{#servicelevelannotations}}
             {{{.}}}{{#unless @last}},{{/unless}}{{/servicelevelannotations}});
 {{#interceptedmethoddecls}}
-    private static final TypedElementName __{{id}} = TypedElementNameDefault.builder()
+    private static final TypedElementInfo __{{id}} = TypedElementInfoDefault.builder()
             {{{.}}}
             .build();{{/interceptedmethoddecls}}
 

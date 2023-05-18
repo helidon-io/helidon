@@ -28,12 +28,11 @@ import java.util.stream.Collectors;
 import static io.helidon.common.types.TypeNameDefault.create;
 
 /**
- * Default implementation for {@link io.helidon.common.types.TypedElementName}.
+ * Default implementation for {@link TypedElementInfo}.
  */
 @SuppressWarnings("unused")
-public class TypedElementNameDefault implements TypedElementName {
+public class TypedElementInfoDefault implements TypedElementInfo {
     private final TypeName typeName;
-    private final List<TypeName> componentTypeNames;
     private final String elementName;
     private final String elementKind;
     private final String defaultValue;
@@ -41,7 +40,7 @@ public class TypedElementNameDefault implements TypedElementName {
     private final List<AnnotationAndValue> elementTypeAnnotations;
     private final Set<String> modifierNames;
     private final TypeName enclosingTypeName;
-    private final List<TypedElementName> parameters;
+    private final List<TypedElementInfo> parameters;
 
     /**
      * Constructor taking the fluent builder.
@@ -49,9 +48,8 @@ public class TypedElementNameDefault implements TypedElementName {
      * @param b the builder
      * @see #builder()
      */
-    protected TypedElementNameDefault(Builder b) {
+    protected TypedElementInfoDefault(Builder b) {
         this.typeName = b.typeName;
-        this.componentTypeNames = List.copyOf(b.componentTypeNames);
         this.elementName = b.elementName;
         this.elementKind = b.elementKind;
         this.defaultValue = b.defaultValue;
@@ -93,11 +91,6 @@ public class TypedElementNameDefault implements TypedElementName {
     }
 
     @Override
-    public List<TypeName> componentTypeNames() {
-        return componentTypeNames;
-    }
-
-    @Override
     public Set<String> modifierNames() {
         return modifierNames;
     }
@@ -108,7 +101,7 @@ public class TypedElementNameDefault implements TypedElementName {
     }
 
     @Override
-    public List<TypedElementName> parameterArguments() {
+    public List<TypedElementInfo> parameterArguments() {
         return parameters;
     }
 
@@ -119,11 +112,11 @@ public class TypedElementNameDefault implements TypedElementName {
 
     @Override
     public boolean equals(Object another) {
-        if (!(another instanceof TypedElementName)) {
+        if (!(another instanceof TypedElementInfo)) {
             return false;
         }
 
-        TypedElementName other = (TypedElementName) another;
+        TypedElementInfo other = (TypedElementInfo) another;
         return Objects.equals(typeName(), other.typeName())
                 && Objects.equals(elementName(), other.elementName())
                 && Objects.equals(elementTypeKind(), other.elementTypeKind())
@@ -163,7 +156,7 @@ public class TypedElementNameDefault implements TypedElementName {
     }
 
     /**
-     * Creates a builder for {@link io.helidon.common.types.TypedElementName}.
+     * Creates a builder for {@link TypedElementInfo}.
      *
      * @return a fluent builder
      */
@@ -176,11 +169,10 @@ public class TypedElementNameDefault implements TypedElementName {
      * The fluent builder.
      */
     public static class Builder {
-        private final List<TypeName> componentTypeNames = new ArrayList<>();
         private final List<AnnotationAndValue> annotations = new ArrayList<>();
         private final List<AnnotationAndValue> elementTypeAnnotations = new ArrayList<>();
         private final Set<String> modifierNames = new LinkedHashSet<>();
-        private final List<TypedElementName> parameters = new ArrayList<>();
+        private final List<TypedElementInfo> parameters = new ArrayList<>();
 
         private TypeName typeName;
         private String elementName;
@@ -214,19 +206,6 @@ public class TypedElementNameDefault implements TypedElementName {
          */
         public Builder typeName(Class<?> type) {
             return typeName(create(type));
-        }
-
-        /**
-         * Set the component type names.
-         *
-         * @param val   the component type values
-         * @return this fluent builder
-         */
-        public Builder componentTypeNames(List<TypeName> val) {
-            Objects.requireNonNull(val);
-            this.componentTypeNames.clear();
-            this.componentTypeNames.addAll(val);
-            return this;
         }
 
         /**
@@ -356,7 +335,7 @@ public class TypedElementNameDefault implements TypedElementName {
          * @param val the parameter values
          * @return this fluent builder
          */
-        public Builder parameterArguments(List<TypedElementName> val) {
+        public Builder parameterArguments(List<TypedElementInfo> val) {
             Objects.requireNonNull(val);
             this.parameters.clear();
             this.parameters.addAll(val);
@@ -369,7 +348,7 @@ public class TypedElementNameDefault implements TypedElementName {
          * @param val the parameter value
          * @return the fluent builder
          */
-        public Builder addParameterArgument(TypedElementName val) {
+        public Builder addParameterArgument(TypedElementInfo val) {
             Objects.requireNonNull(val);
             this.parameters.add(val);
             return this;
@@ -380,9 +359,9 @@ public class TypedElementNameDefault implements TypedElementName {
          *
          * @return the built instance
          */
-        public TypedElementNameDefault build() {
+        public TypedElementInfoDefault build() {
             Objects.requireNonNull(typeName);
-            return new TypedElementNameDefault(this);
+            return new TypedElementInfoDefault(this);
         }
     }
 

@@ -24,7 +24,7 @@ import java.util.Set;
  * Provides a way to describe a {@link TypeInfo#KIND_FIELD}, {@link TypeInfo#KIND_METHOD}, or {@link TypeInfo#KIND_PARAMETER}
  * of a method.
  */
-public interface TypedElementName {
+public interface TypedElementInfo {
     /**
      * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
      * the method.
@@ -71,13 +71,6 @@ public interface TypedElementName {
     List<AnnotationAndValue> elementTypeAnnotations();
 
     /**
-     * Returns the component type names describing the element.
-     *
-     * @return the component type names of the element
-     */
-    List<TypeName> componentTypeNames();
-
-    /**
      * Element modifiers.
      *
      * @return element modifiers
@@ -99,6 +92,6 @@ public interface TypedElementName {
      *
      * @return the list of parameters belonging to this method if applicable
      */
-    List<TypedElementName> parameterArguments();
+    List<TypedElementInfo> parameterArguments();
 
 }

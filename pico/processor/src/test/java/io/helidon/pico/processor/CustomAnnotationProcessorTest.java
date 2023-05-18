@@ -25,8 +25,8 @@ import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeInfoDefault;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
-import io.helidon.common.types.TypedElementNameDefault;
+import io.helidon.common.types.TypedElementInfo;
+import io.helidon.common.types.TypedElementInfoDefault;
 import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.api.ServiceInfoDefault;
@@ -68,12 +68,12 @@ class CustomAnnotationProcessorTest {
                 .typeName(create(BasicEndpoint.class))
                 .annotations(annotations)
                 .build();
-        TypedElementName target = TypedElementNameDefault.builder()
+        TypedElementInfo target = TypedElementInfoDefault.builder()
                 .typeName(create(String.class))
                 .elementKind(ElementKind.METHOD.name())
                 .elementName("itWorks")
                 .build();
-        TypedElementName arg1 = TypedElementNameDefault.builder()
+        TypedElementInfo arg1 = TypedElementInfoDefault.builder()
                 .typeName(create(String.class))
                 .elementName("header")
                 .build();

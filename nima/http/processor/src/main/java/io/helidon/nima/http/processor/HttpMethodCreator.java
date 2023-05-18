@@ -29,7 +29,7 @@ import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.GenericTemplateCreator;
@@ -100,7 +100,7 @@ public class HttpMethodCreator implements CustomAnnotationTemplateCreator {
     }
 
     private Map<String, Object> addProperties(CustomAnnotationTemplateRequest request) {
-        TypedElementName targetElement = request.targetElement();
+        TypedElementInfo targetElement = request.targetElement();
         Map<String, Object> response = new HashMap<>();
 
         HttpDef http = new HttpDef();
@@ -121,10 +121,10 @@ public class HttpMethodCreator implements CustomAnnotationTemplateCreator {
 
         // http.params (full string)
         List<HeaderDef> headerList = new LinkedList<>();
-        List<TypedElementName> elementArgs = request.targetElementArgs();
+        List<TypedElementInfo> elementArgs = request.targetElementArgs();
         LinkedList<String> parameters = new LinkedList<>();
         int headerCount = 1;
-        for (TypedElementName elementArg : elementArgs) {
+        for (TypedElementInfo elementArg : elementArgs) {
             String type = elementArg.typeName().name();
 
             switch (type) {
@@ -171,7 +171,7 @@ public class HttpMethodCreator implements CustomAnnotationTemplateCreator {
                                   LinkedList<String> parameters,
                                   List<HeaderDef> headerList,
                                   String type,
-                                  TypedElementName elementArg) {
+                                  TypedElementInfo elementArg) {
         // depending on annotations
         List<AnnotationAndValue> annotations = elementArg.annotations();
         if (annotations.size() == 0) {

@@ -1057,7 +1057,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
 
         String elementArgInfo = "";
         if (hasArgs) {
-            elementArgInfo = ",\n\t\t\t\tnew TypedElementName[] {" + typedElementArgs + "}";
+            elementArgInfo = ",\n\t\t\t\tnew TypedElementInfo[] {" + typedElementArgs + "}";
         }
         return new InterceptedMethodCodeGen(name, methodDecl, true, hasReturn, supplierType, elementArgInfo, args,
                                             objArrayArgs, untypedElementArgs,

@@ -25,7 +25,7 @@ import javax.lang.model.type.TypeMirror;
 
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 
 /**
  * Java {@link java.util.ServiceLoader} provider interface used to discover type info creators.
@@ -58,13 +58,13 @@ public interface TypeInfoCreatorProvider {
      * @param mirror            the type mirror for the element being processed
      * @param processingEnv     the processing environment
      * @param elementOfInterest the predicate filter to determine whether the element is of interest, and therefore should be
-     *                          included in {@link TypeInfo#elementInfo()}. Otherwise, if the predicate indicates it is not of
+     *                          included in {@link TypeInfo#interestingElementInfo()}. Otherwise, if the predicate indicates it is not of
      *                          interest then the method will be placed under {@link TypeInfo#otherElementInfo()} instead
      * @return the type info associated with the arguments being processed, or empty if not able to process the type
      */
     Optional<TypeInfo> createTypeInfo(TypeElement element,
                                       TypeMirror mirror,
                                       ProcessingEnvironment processingEnv,
-                                      Predicate<TypedElementName> elementOfInterest);
+                                      Predicate<TypedElementInfo> elementOfInterest);
 
 }
