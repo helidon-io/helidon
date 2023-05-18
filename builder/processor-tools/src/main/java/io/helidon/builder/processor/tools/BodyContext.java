@@ -126,10 +126,11 @@ public class BodyContext {
                 searchForBuilderAnnotation("interceptorCreateMethod", builderTriggerAnnotation, typeInfo);
         this.interceptorCreateMethod = (interceptorCreateMethod == null || interceptorCreateMethod.isEmpty())
                 ? null : interceptorCreateMethod;
-        this.publicOrPackagePrivateDecl = (typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)
-                                                   || typeInfo.modifierNames().isEmpty()
-                                                   || typeInfo.modifierNames().contains(TypeInfo.MODIFIER_PUBLIC))
-                                                        ? "public " : "";
+        this.publicOrPackagePrivateDecl = (
+                typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)
+                        || typeInfo.modifierNames().isEmpty()
+                        || typeInfo.modifierNames().stream().anyMatch(TypeInfo.MODIFIER_PUBLIC::equalsIgnoreCase))
+                ? "public " : "";
     }
 
     @Override

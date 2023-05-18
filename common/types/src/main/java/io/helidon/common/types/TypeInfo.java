@@ -28,35 +28,35 @@ public interface TypeInfo {
     /**
      * The {@code public} modifier.
      */
-    String MODIFIER_PUBLIC = "PUBLIC";
+    String MODIFIER_PUBLIC = "public";
     /**
      * The {@code protected} modifier.
      */
-    String MODIFIER_PROTECTED = "PROTECTED";
+    String MODIFIER_PROTECTED = "protected";
     /**
      * The {@code private} modifier.
      */
-    String MODIFIER_PRIVATE = "PRIVATE";
+    String MODIFIER_PRIVATE = "private";
     /**
      * The {@code abstract} modifier.
      */
-    String MODIFIER_ABSTRACT = "ABSTRACT";
+    String MODIFIER_ABSTRACT = "abstract";
     /**
      * The {@code default} modifier.
      */
-    String MODIFIER_DEFAULT = "DEFAULT";
+    String MODIFIER_DEFAULT = "default";
     /**
      * The {@code static} modifier.
      */
-    String MODIFIER_STATIC = "STATIC";
+    String MODIFIER_STATIC = "static";
     /**
      * The {@code sealed} modifier.
      */
-    String MODIFIER_SEALED = "SEALED";
+    String MODIFIER_SEALED = "sealed";
     /**
      * The {@code final} modifier.
      */
-    String MODIFIER_FINAL = "FINAL";
+    String MODIFIER_FINAL = "final";
 
 
     /**

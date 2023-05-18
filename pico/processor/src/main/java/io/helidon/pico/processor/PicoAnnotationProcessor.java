@@ -272,26 +272,30 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
      * @param elementsOfInterest the elements that are eligible for some form of Pico processing
      */
     protected void validate(Collection<TypedElementName> elementsOfInterest) {
-        validatePerClass(elementsOfInterest,
-                            "There can be max of one injectable constructor per class",
-                            1,
-                            (it) -> it.elementTypeKind().equals(TypeInfo.KIND_CONSTRUCTOR)
-                                    && GeneralProcessorUtils.findFirst(Inject.class, it.annotations()).isPresent());
-        validatePerClass(elementsOfInterest,
-                            "There can be max of one PostConstruct method per class",
-                            1,
-                            (it) -> it.elementTypeKind().equals(TypeInfo.KIND_METHOD)
-                                    && GeneralProcessorUtils.findFirst(PostConstruct.class, it.annotations()).isPresent());
-        validatePerClass(elementsOfInterest,
-                            "There can be max of one PreDestroy method per class",
-                            1,
-                            (it) -> it.elementTypeKind().equals(TypeInfo.KIND_METHOD)
-                                    && GeneralProcessorUtils.findFirst(PreDestroy.class, it.annotations()).isPresent());
-        validatePerClass(elementsOfInterest,
-                         PicoServicesConfig.NAME + " does not currently support static or private elements",
-                         0,
-                         (it) -> toModifierNames(it.modifierNames()).contains(TypeInfo.MODIFIER_PRIVATE)
-                                 || toModifierNames(it.modifierNames()).contains(TypeInfo.MODIFIER_STATIC));
+        validatePerClass(
+                elementsOfInterest,
+                "There can be max of one injectable constructor per class",
+                1,
+                (it) -> it.elementTypeKind().equals(TypeInfo.KIND_CONSTRUCTOR)
+                        && GeneralProcessorUtils.findFirst(Inject.class, it.annotations()).isPresent());
+        validatePerClass(
+                elementsOfInterest,
+                "There can be max of one PostConstruct method per class",
+                1,
+                (it) -> it.elementTypeKind().equals(TypeInfo.KIND_METHOD)
+                        && GeneralProcessorUtils.findFirst(PostConstruct.class, it.annotations()).isPresent());
+        validatePerClass(
+                elementsOfInterest,
+                "There can be max of one PreDestroy method per class",
+                1,
+                (it) -> it.elementTypeKind().equals(TypeInfo.KIND_METHOD)
+                        && GeneralProcessorUtils.findFirst(PreDestroy.class, it.annotations()).isPresent());
+        validatePerClass(
+                elementsOfInterest,
+                PicoServicesConfig.NAME + " does not currently support static or private elements",
+                0,
+                (it) -> toModifierNames(it.modifierNames()).stream().anyMatch(TypeInfo.MODIFIER_PRIVATE::equalsIgnoreCase)
+                        || toModifierNames(it.modifierNames()).stream().anyMatch(TypeInfo.MODIFIER_STATIC::equalsIgnoreCase));
     }
 
     private void validatePerClass(Collection<TypedElementName> elementsOfInterest,
@@ -369,7 +373,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         services.addAccessLevel(serviceTypeName,
                                 toAccess(modifierNames));
         services.addIsAbstract(serviceTypeName,
-                               modifierNames.contains(TypeInfo.MODIFIER_ABSTRACT));
+                               modifierNames.stream().anyMatch(TypeInfo.MODIFIER_ABSTRACT::equalsIgnoreCase));
         services.addServiceTypeHierarchy(serviceTypeName,
                                          toServiceTypeHierarchy(service));
         services.addQualifiers(serviceTypeName,
