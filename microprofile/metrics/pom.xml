@@ -119,6 +119,7 @@
                                 <exclude>**/TestMetricsOnOwnSocket.java</exclude>
                                 <exclude>**/TestDisabledMetrics.java</exclude>
                                 <exclude>**/TestConfigProcessing.java</exclude>
+                                <exclude>**/MetricLookupTest.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -133,6 +134,7 @@
                                 <include>**/HelloWorldAsyncResponseTest.java</include>
                                 <include>**/TestExtendedKPIMetrics.java</include>
                                 <include>**/TestMetricsOnOwnSocket.java</include>
+                                <include>**/MetricLookupTest.java</include>
                             </includes>
                         </configuration>
                     </execution>
@@ -149,6 +151,7 @@
                             <excludes>
                                 <exclude>**/HelloWorldTest.java</exclude>
                                 <exclude>**/HelloWorldAsyncResponseWithRestRequestTest.java</exclude>
+                                <exclude>**/MetricLookupTest.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -161,6 +164,9 @@
                             <includes>
                                 <include>**/TestConfigProcessing.java</include>
                             </includes>
+                            <excludes>
+                                <exclude>**/MetricLookupTest.java</exclude>
+                            </excludes>
                             <environmentVariables>
                                 <TAGS>topLevel</TAGS>
                             </environmentVariables>
