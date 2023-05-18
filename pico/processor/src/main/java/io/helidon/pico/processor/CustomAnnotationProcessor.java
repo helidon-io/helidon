@@ -77,9 +77,8 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
     }
 
     static List<CustomAnnotationTemplateCreator> initialize() {
-        // note: it is important to use this class' CL since maven will not give us the "right" one.
-        List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(ServiceLoader.load(
-                CustomAnnotationTemplateCreator.class, CustomAnnotationTemplateCreator.class.getClassLoader())).asList();
+        ServiceLoader<CustomAnnotationTemplateCreator> loader = loader();
+        List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(loader).asList();
         creators.forEach(creator -> {
             try {
                 Set<String> annoTypes = creator.annoTypes();
@@ -101,6 +100,10 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
             }
         });
         return creators;
+    }
+
+    static ServiceLoader<CustomAnnotationTemplateCreator> loader() {
+        return ServiceLoader.load(CustomAnnotationTemplateCreator.class);
     }
 
     @Override

@@ -94,7 +94,7 @@
                     <compilerArgs>
                         <arg>-Apico.autoAddNonContractInterfaces=true</arg>
                         <arg>-Apico.allowListedInterceptorAnnotations=io.helidon.pico.tests.pico.interceptor.TestNamed</arg>
-                        <arg>-Apico.application.pre.create=true</arg>
+                        <arg>-Apico.application.pre.create=false</arg> <!-- keeping this set to false will allow the IDE to run tests directly -->
                         <arg>-Apico.mapApplicationToSingletonScope=true</arg>
                         <arg>-Apico.debug=${pico.debug}</arg>
 <!--                        <arg>-XprintProcessorInfo</arg>-->
@@ -145,7 +145,7 @@
                     <compilerArgs>
                         <arg>-Apico.debug=${pico.debug}</arg>
                         <arg>-Apico.autoAddNonContractInterfaces=true</arg>
-                        <arg>-Apico.application.pre.create=true</arg>
+                        <arg>-Apico.application.pre.create=false</arg>
 <!--                        <arg>-XprintProcessorInfo</arg>-->
 <!--                        <arg>-XprintRounds</arg>-->
 <!--                        <arg>-verbose</arg>-->

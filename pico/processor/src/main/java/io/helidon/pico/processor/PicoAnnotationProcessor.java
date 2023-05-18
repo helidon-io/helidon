@@ -68,6 +68,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 
+import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
 import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
@@ -504,14 +505,11 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             if (fqProviderTypeName != null) {
                 if (!genericTypeName.generic()) {
                     providerForSet.add(genericTypeName);
-
-                    Optional<String> moduleName = filterModuleName(typeInfo.moduleNameOf(genericTypeName));
-                    moduleName.ifPresent(externalModuleNamesRequired::add);
-                    if (moduleName.isPresent()) {
-                        externalContracts.add(genericTypeName);
-                    } else {
-                        contracts.add(genericTypeName);
-                    }
+                    extractModuleAndContract(contracts,
+                                             externalContracts,
+                                             externalModuleNamesRequired,
+                                             typeInfo,
+                                             genericTypeName);
                 }
 
                 // if we are dealing with a Provider<> then we should add those too as module dependencies
@@ -529,13 +527,11 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                         || !isTypeAnInterface
                         || AnnotationAndValueDefault.findFirst(Contract.class, typeInfo.annotations()).isPresent();
                 if (isTypeAContract) {
-                    Optional<String> moduleName = filterModuleName(typeInfo.moduleNameOf(genericTypeName));
-                    moduleName.ifPresent(externalModuleNamesRequired::add);
-                    if (moduleName.isPresent()) {
-                        externalContracts.add(genericTypeName);
-                    } else {
-                        contracts.add(genericTypeName);
-                    }
+                    extractModuleAndContract(contracts,
+                                             externalContracts,
+                                             externalModuleNamesRequired,
+                                             typeInfo,
+                                             genericTypeName);
                 }
             }
         }
@@ -572,6 +568,20 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                                                                    externalModuleNamesRequired,
                                                                    it,
                                                                    true));
+    }
+
+    private void extractModuleAndContract(Set<TypeName> contracts,
+                                          Set<TypeName> externalContracts,
+                                          Set<String> externalModuleNamesRequired,
+                                          TypeInfo typeInfo,
+                                          TypeName genericTypeName) {
+        Optional<String> moduleName = filterModuleName(typeInfo.moduleNameOf(genericTypeName));
+        moduleName.ifPresent(externalModuleNamesRequired::add);
+        if (moduleName.isPresent() || isBuiltInJavaType(genericTypeName)) {
+            externalContracts.add(genericTypeName);
+        } else {
+            contracts.add(genericTypeName);
+        }
     }
 
     private Optional<String> filterModuleName(Optional<String> moduleName) {
