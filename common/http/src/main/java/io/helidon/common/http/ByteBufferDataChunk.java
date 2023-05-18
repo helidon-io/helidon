@@ -33,7 +33,7 @@ final class ByteBufferDataChunk implements DataChunk {
         try {
             IS_RELEASED = MethodHandles.lookup().findVarHandle(ByteBufferDataChunk.class, "isReleased", boolean.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw (Error) new ExceptionInInitializerError(e.getMessage()).initCause(e);
         }
     }
 

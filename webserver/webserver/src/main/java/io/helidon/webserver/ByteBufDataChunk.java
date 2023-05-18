@@ -40,7 +40,7 @@ public class ByteBufDataChunk implements DataChunk {
         try {
             IS_RELEASED = MethodHandles.lookup().findVarHandle(ByteBufDataChunk.class, "isReleased", boolean.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw (Error) new ExceptionInInitializerError(e.getMessage()).initCause(e);
         }
     }
     private final ByteBuf[] byteBufs;
