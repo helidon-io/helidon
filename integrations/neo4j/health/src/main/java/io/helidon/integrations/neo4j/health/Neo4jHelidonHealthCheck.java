@@ -25,12 +25,15 @@ import org.eclipse.microprofile.health.Readiness;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 
+/**
+ * Health support module for Neo4j (implements {@link io.helidon.health.HealthCheck}).
+ */
 @Readiness
 @ApplicationScoped
 @BuiltInHealthCheck
 public class Neo4jHelidonHealthCheck implements HealthCheck {
 
-    private final String name = "Neo4j connection health check";
+    private static final String name = "Neo4j connection health check";
     private final Driver driver;
     /**
      * The Cypher statement used to verify Neo4j is up.
