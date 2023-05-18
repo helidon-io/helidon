@@ -17,6 +17,7 @@
 package io.helidon.nima.tests.integration.client;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
@@ -27,12 +28,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 class HttpProxy {
 
-    private static final Logger LOGGER = Logger.getLogger(HttpProxy.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HttpProxy.class.getName());
     // 1 minute
     private static final int TIMEOUT = 60000;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -55,11 +54,11 @@ class HttpProxy {
 
     boolean start() {
         executor.submit(() -> {
-            LOGGER.info("Listening connections in port: " + port);
+            LOGGER.log(Level.INFO, "Listening connections in port: " + port);
             try (ServerSocket server = new ServerSocket(port)) {
                 while (!stop) {
                     Socket origin = server.accept();
-                    LOGGER.info(() -> "Open: " + origin);
+                    LOGGER.log(Level.DEBUG, "Open: " + origin);
                     counter.incrementAndGet();
                     origin.setSoTimeout(TIMEOUT);
                     Socket remote = new Socket();
@@ -68,10 +67,10 @@ class HttpProxy {
                     MiddleCommunicator originToRemote = new MiddleCommunicator(executor, origin, remote, remoteToOrigin);
                     originToRemote.start();
                 }
-                LOGGER.info("Shutting down HTTP Proxy server");
+                LOGGER.log(Level.INFO, "Shutting down HTTP Proxy server");
                 executor.shutdownNow();
             } catch (IOException e) {
-                LOGGER.log(Level.SEVERE, "Error in HTTP Proxy", e);
+                LOGGER.log(Level.ERROR, "Error in HTTP Proxy", e);
                 stop();
             }
         });
@@ -105,7 +104,7 @@ class HttpProxy {
 
     private class MiddleCommunicator {
 
-        private static final Logger LOGGER = Logger.getLogger(MiddleCommunicator.class.getName());
+        private static final System.Logger LOGGER = System.getLogger(MiddleCommunicator.class.getName());
         private static final int BUFFER_SIZE = 1024 * 1024;
         private static final String HOST = "HOST: ";
         private final ExecutorService executor;
@@ -133,12 +132,12 @@ class HttpProxy {
                 try {
                     socket.close();
                     if (exception == null) {
-                        LOGGER.info("Close: " + socket);
+                        LOGGER.log(Level.DEBUG, "Close: " + socket);
                     } else {
-                        LOGGER.info("Close: " + socket + ". Reason: " + exception);
+                        LOGGER.log(Level.DEBUG, "Close: " + socket + ". Reason: " + exception);
                     }
                 } catch (IOException e) {
-                    LOGGER.log(Level.SEVERE, "Cannot close " + socket + ": " + e.getMessage());
+                    LOGGER.log(Level.ERROR, "Cannot close " + socket + ": " + e.getMessage());
                 }
             }
         }
@@ -155,27 +154,27 @@ class HttpProxy {
                     OriginInfo originInfo = null;
                     while ((read = readerSocket.getInputStream().read(buffer)) != -1) {
                         final int readB = read;
-                        LOGGER.info(() -> readerSocket + " read " + readB + " bytes");
-                        LOGGER.info(() -> new String(buffer, 0, readB));
+                        LOGGER.log(Level.DEBUG, readerSocket + " read " + readB + " bytes");
+                        LOGGER.log(Level.DEBUG, new String(buffer, 0, readB));
                         if (originToRemote) {
                             if (originInfo == null) {
                                 originInfo = getOriginInfo(buffer, read);
-                                LOGGER.info("Incoming request: " + originInfo);
+                                LOGGER.log(Level.DEBUG, "Incoming request: " + originInfo);
                                 if (originInfo.respondOrigin()) {
                                     if (authenticate(originInfo)) {
                                         // Respond origin
                                         String response = "HTTP/1.1 200 Connection established\r\n\r\n";
                                         writerSocket.connect(new InetSocketAddress(originInfo.host, originInfo.port));
-                                        LOGGER.info(() -> "Open: " + writerSocket);
+                                        LOGGER.log(Level.DEBUG, "Open: " + writerSocket);
                                         readerSocket.getOutputStream()
                                                 .write(response.getBytes());
                                         // Start listening from origin
                                         callback.start();
                                         readerSocket.getOutputStream().flush();
                                     } else {
-                                        LOGGER.warning("Invalid " + originInfo.user + ":" + originInfo.password);
+                                        LOGGER.log(Level.WARNING, "Invalid " + originInfo.user + ":" + originInfo.password);
                                         originInfo = null;
-                                        String response = "HTTP/1.0 401 Unauthorized\r\n\r\n";
+                                        String response = "HTTP/1.1 401 Unauthorized\r\n\r\n";
                                         readerSocket.getOutputStream().write(response.getBytes());
                                         readerSocket.getOutputStream().flush();
                                         readerSocket.close();

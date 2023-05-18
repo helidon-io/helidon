@@ -16,17 +16,13 @@
 
 package io.helidon.nima.webclient.http1;
 
-import static java.lang.System.Logger.Level.DEBUG;
-import static java.lang.System.Logger.Level.INFO;
-import static java.lang.System.Logger.Level.TRACE;
-
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.HexFormat;
@@ -38,7 +34,6 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.Http.Status;
@@ -50,6 +45,9 @@ import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.spi.DnsResolver;
+
+import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.TRACE;
 
 class Http1ClientConnection implements ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientConnection.class.getName());
@@ -137,7 +135,7 @@ class Http1ClientConnection implements ClientConnection {
                                             Thread.currentThread().getName()));
         }
         DataWriter writer = SocketWriter.create(null, tempSocket, -1);
-        BufferData data = BufferData.create(httpConnect.toString().getBytes());
+        BufferData data = BufferData.create(httpConnect.toString().getBytes(StandardCharsets.UTF_8));
         writer.writeNow(data);
         DataReader reader = new DataReader(tempSocket);
         Status responseStatus = Http1StatusParser.readStatus(reader, 256);
@@ -147,7 +145,7 @@ class Http1ClientConnection implements ClientConnection {
     private String createChannelId(Socket socket) {
         return "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
     }
-    
+
     Http1ClientConnection connect() {
         try {
             socket = new Socket();
@@ -327,7 +325,7 @@ class Http1ClientConnection implements ClientConnection {
             EstablishConnection connector = null;
             ConnectionKey key = connection.connectionKey;
             Proxy proxy = key.proxy();
-            if (proxy != null && !proxy.isNoHosts(URI.create("http://" + remoteAddress.getHostName() + ":" + remoteAddress.getPort()))) {
+            if (proxy != null  && !proxy.isNoHosts(URI.create("http://" + remoteAddress.getHostName() + ":" + remoteAddress.getPort()))) {
                 connector = key.tls() != null ? PROXY_HTTPS : PROXY_PLAIN;
             } else {
                 connector = key.tls() != null ? HTTPS : PLAIN;
