@@ -37,7 +37,7 @@ module io.helidon.microprofile.openapi {
 
     requires microprofile.config.api;
     requires io.helidon.microprofile.server;
-    requires io.helidon.nima.servicecommon;
+    requires io.helidon.openapi;
     requires org.jboss.jandex;
 
     requires org.yaml.snakeyaml;
@@ -48,6 +48,7 @@ module io.helidon.microprofile.openapi {
     requires java.logging;
 
     requires static io.helidon.config.metadata;
+    requires io.helidon.microprofile.servicecommon;
 
     exports io.helidon.microprofile.openapi;
 

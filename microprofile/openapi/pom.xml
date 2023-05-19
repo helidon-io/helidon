@@ -58,6 +58,10 @@
             <artifactId>helidon-nima-service-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.service-common</groupId>
+            <artifactId>helidon-microprofile-service-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.smallrye</groupId>
             <artifactId>smallrye-open-api-core</artifactId>
             <exclusions>

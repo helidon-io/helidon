@@ -49,8 +49,8 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.openapi.ExpandedTypeDescription;
-import io.helidon.openapi.OpenApiMediaType;
 import io.helidon.openapi.OpenAPIParser;
+import io.helidon.openapi.OpenApiFeature;
 import io.helidon.openapi.ParserHelper;
 import io.helidon.openapi.Serializer;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
@@ -216,14 +216,14 @@ public class OpenAPISupport implements Service {
      *                             from its underlying data
      */
     String prepareDocument(MediaType resultMediaType) {
-        OpenApiMediaType matchingOpenAPIMediaType
-                = OpenApiMediaType.byMediaType(resultMediaType)
+        OpenApiFeature.OpenAPIMediaType matchingOpenAPIMediaType
+                = OpenApiFeature.OpenAPIMediaType.byMediaType(resultMediaType)
                 .orElseGet(() -> {
                     LOGGER.log(Level.TRACE,
                                () -> String.format(
                                        "Requested media type %s not supported; using default",
                                        resultMediaType.text()));
-                    return OpenApiMediaType.DEFAULT_TYPE;
+                    return OpenApiFeature.OpenAPIMediaType.DEFAULT_TYPE;
                 });
 
         Format resultFormat = matchingOpenAPIMediaType.format();
@@ -465,7 +465,7 @@ public class OpenAPISupport implements Service {
         }
 
         Optional<MediaType> requestedMediaType = req.headers()
-                .bestAccepted(OpenApiMediaType.preferredOrdering());
+                .bestAccepted(OpenApiFeature.OpenAPIMediaType.preferredOrdering());
 
         MediaType resultMediaType = requestedMediaType
                 .orElseGet(() -> {
@@ -800,11 +800,11 @@ public class OpenAPISupport implements Service {
         private OpenApiStaticFile getExplicitStaticFile() {
             Path path = Paths.get(staticFilePath);
             String specifiedFileType = typeFromPath(path);
-            OpenApiMediaType specifiedMediaType = OpenApiMediaType.byFileType(specifiedFileType)
+            OpenApiFeature.OpenAPIMediaType specifiedMediaType = OpenApiFeature.OpenAPIMediaType.byFileType(specifiedFileType)
                     .orElseThrow(() -> new IllegalArgumentException("OpenAPI file path "
                                                            + path.toAbsolutePath()
                                                            + " is not one of recognized types: "
-                                                           + OpenApiMediaType.recognizedFileTypes()));
+                                                           + OpenApiFeature.OpenAPIMediaType.recognizedFileTypes()));
 
             try {
                 InputStream is = new BufferedInputStream(Files.newInputStream(path));
@@ -822,7 +822,7 @@ public class OpenAPISupport implements Service {
 
         private OpenApiStaticFile getDefaultStaticFile() {
             List<String> candidatePaths = LOGGER.isLoggable(Level.TRACE) ? new ArrayList<>() : null;
-            for (OpenApiMediaType candidate : OpenApiMediaType.values()) {
+            for (OpenApiFeature.OpenAPIMediaType candidate : OpenApiFeature.OpenAPIMediaType.values()) {
                 for (String type : candidate.matchingTypes()) {
                     String candidatePath = DEFAULT_STATIC_FILE_PATH_PREFIX + type;
                     InputStream is = null;

@@ -26,8 +26,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.openapi.OpenApiFeature;
+
 import io.smallrye.openapi.api.models.OpenAPIImpl;
-import io.smallrye.openapi.runtime.io.Format;
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.Reference;
@@ -76,15 +77,15 @@ public class Serializer {
      * @param types types
      * @param implsToTypes implementations to types
      * @param openAPI Open API document to serialize
-     * @param fmt format to use
+     * @param openAPIMediaType OpenAPI media type to use
      * @param writer writer to serialize to
      */
     public static void serialize(Map<Class<?>, ExpandedTypeDescription> types,
                                  Map<Class<?>, ExpandedTypeDescription> implsToTypes,
                                  OpenAPI openAPI,
-                                 Format fmt,
+                                 OpenApiFeature.OpenAPIMediaType openAPIMediaType,
                                  Writer writer) {
-        if (fmt == Format.JSON) {
+        if (openAPIMediaType.equals(OpenApiFeature.OpenAPIMediaType.JSON)) {
             serialize(types, implsToTypes, openAPI, writer, JSON_DUMPER_OPTIONS, DumperOptions.ScalarStyle.DOUBLE_QUOTED);
         } else {
             serialize(types, implsToTypes, openAPI, writer, YAML_DUMPER_OPTIONS, DumperOptions.ScalarStyle.PLAIN);

@@ -18,6 +18,7 @@ package io.helidon.microprofile.openapi;
 import java.io.IOException;
 
 import io.helidon.microprofile.openapi.other.TestApp2;
+import io.helidon.openapi.OpenApiFeature;
 
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
@@ -36,7 +37,9 @@ public class TestMultiJandex {
          * The pom builds two differently-named test Jandex files, as an approximation
          * to handling multiple same-named index files in the class path.
          */
-        OpenApiCdiExtension builder = new OpenApiCdiExtension("META-INF/jandex.idx", "META-INF/other.idx");
+        OpenApiCdiExtension ext = new OpenApiCdiExtension("META-INF/jandex.idx", "META-INF/other.idx");
+        MpOpenApiFeature.Builder builder = MpOpenApiFeature.builder();
+        builder.build();
         IndexView indexView = builder.indexView();
 
         DotName testAppName = DotName.createSimple(TestApp.class.getName());

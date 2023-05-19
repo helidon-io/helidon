@@ -66,7 +66,7 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
     /**
      * Default web context for the endpoint.
      */
-    static final String DEFAULT_CONTEXT = "/openapi";
+    public static final String DEFAULT_CONTEXT = "/openapi";
 
     /**
      * URL query parameter for specifying the requested format when retrieving the OpenAPI document.
@@ -401,7 +401,7 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
         /**
          * Config key for the OpenAPI section.
          */
-        static final String CONFIG_KEY = "openapi";
+        public static final String CONFIG_KEY = "openapi";
 
         private OpenApiStaticFile staticFile;
 
@@ -475,7 +475,7 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
          * @return the OpenAPI static file instance for the static file if such
          * a file exists, null otherwise
          */
-        protected OpenApiStaticFile staticFile() {
+        public OpenApiStaticFile staticFile() {
             return staticFile == null
                     ? getDefaultStaticFile()
                     : staticFile;

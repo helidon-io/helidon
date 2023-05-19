@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Map;
 import io.helidon.common.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.openapi.OpenApiFeature;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
@@ -47,8 +48,8 @@ public class BasicServerTest {
 
     private static Map<String, Object> retrieveYaml(WebTarget webTarget) {
         try (Response response = webTarget
-                .path(OpenApiService.DEFAULT_WEB_CONTEXT)
-                .request(OpenApiService.DEFAULT_RESPONSE_MEDIA_TYPE.text())
+                .path(OpenApiFeature.DEFAULT_CONTEXT)
+                .request(OpenApiFeature.DEFAULT_RESPONSE_MEDIA_TYPE.text())
                 .get()) {
             assertThat("Fetch of OpenAPI document from server status", response.getStatus(),
                     is(equalTo(Http.Status.OK_200.code())));
