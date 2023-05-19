@@ -60,8 +60,6 @@ There are two main annotations that you can use to test the Níma server.
 
 The additional annotation `@Socket` can be used to qualify the injection of parameters into test constructors or methods, such as to obtain a client configured for the named socket.
 
-FIXME: Reused from internal docs:
-
 The following table lists the supported types of parameters for the `@SetUpRoute` annotated methods. Such methods MUST be static
 and may have any name. The `@SetUpRoute` annotation has `value` with socket name (to customize the setup for a different socket).
 
@@ -308,9 +306,8 @@ class WsSocketTest {
 <4> Create and assign the clientside listener.
 <5> Check if the received message is correct.
 
-
-FIXME: not sure we need this, maybe as popup?
-
+[NOTE]
+====
 The WebSocket `ClientSideListener` is a helper class that implements `WsListener`. `ClientSideListener` is very simple and looks as follows:
 
 .`ClientSideListener` helper class.
@@ -386,12 +383,10 @@ private static class ServerSideListener implements WsListener {
 <2> Called when the connection is called.
 <3> Called on connection is opened.
 <4> Used to reset the state.
+====
 
 The testing class should be annotated with `@RoutingTest` only if routing tests are required without real port opening. Instead of `WsClient`, use `DirectWsClient`.
 
-=== Guides
-
-Testing Guide <insert link here>
 
 == Reference
 
