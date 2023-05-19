@@ -84,7 +84,7 @@ final class ByteBufferDataChunk implements DataChunk {
 
     @Override
     public boolean isReleased() {
-        return isReleased!= 0;
+        return isReleased != 0;
     }
 
     @Override
