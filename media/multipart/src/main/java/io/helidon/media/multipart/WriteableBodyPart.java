@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,12 @@
  */
 package io.helidon.media.multipart;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
+import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
@@ -128,8 +131,32 @@ public final class WriteableBodyPart implements BodyPart {
         }
 
         /**
-         * Name which will be used in {@link ContentDisposition}.
+         * Set the headers for this part.
          *
+         * @param supplier headers supplier
+         * @return this builder instance
+         */
+        public Builder headers(Supplier<WriteableBodyPartHeaders> supplier) {
+            this.headers = supplier.get();
+            return this;
+        }
+
+        /**
+         * Set the headers for this part.
+         *
+         * @param headers headers map
+         * @return this builder instance
+         */
+        public Builder headers(Map<String, List<String>> headers) {
+            this.headers = WriteableBodyPartHeaders.builder()
+                                                  .headers(headers)
+                                                  .build();
+            return this;
+        }
+
+        /**
+         * Name which will be used in {@link ContentDisposition}.
+         * <br/>
          * This value will be ignored if an actual instance of {@link WriteableBodyPartHeaders} is set.
          *
          * @param name content disposition name parameter
@@ -142,7 +169,7 @@ public final class WriteableBodyPart implements BodyPart {
 
         /**
          * Filename which will be used in {@link ContentDisposition}.
-         *
+         * <br/>
          * This value will be ignored if an actual instance of {@link WriteableBodyPartHeaders} is set.
          *
          * @param fileName content disposition filename parameter

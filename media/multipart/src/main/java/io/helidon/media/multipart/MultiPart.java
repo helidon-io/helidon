@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,12 +101,8 @@ public interface MultiPart<T extends BodyPart> {
             if (name == null) {
                 continue;
             }
-            List<T> result = results.get(name);
-            if (result == null) {
-                result = new ArrayList<>();
-                results.put(name, result);
-            }
-            result.add(part);
+            results.computeIfAbsent(name, n -> new ArrayList<>())
+                   .add(part);
         }
         return results;
     }
