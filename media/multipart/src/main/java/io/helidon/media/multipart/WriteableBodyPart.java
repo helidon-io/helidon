@@ -156,7 +156,7 @@ public final class WriteableBodyPart implements BodyPart {
 
         /**
          * Name which will be used in {@link ContentDisposition}.
-         * <br/>
+         * <br>
          * This value will be ignored if an actual instance of {@link WriteableBodyPartHeaders} is set.
          *
          * @param name content disposition name parameter
@@ -169,7 +169,7 @@ public final class WriteableBodyPart implements BodyPart {
 
         /**
          * Filename which will be used in {@link ContentDisposition}.
-         * <br/>
+         * <br>
          * This value will be ignored if an actual instance of {@link WriteableBodyPartHeaders} is set.
          *
          * @param fileName content disposition filename parameter
