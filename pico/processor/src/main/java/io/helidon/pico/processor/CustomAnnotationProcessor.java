@@ -77,7 +77,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
     }
 
     static List<CustomAnnotationTemplateCreator> initialize() {
-        ServiceLoader<CustomAnnotationTemplateCreator> loader = loader();
+        ServiceLoader<CustomAnnotationTemplateCreator> loader = ServiceLoader.load(CustomAnnotationTemplateCreator.class);
         List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(loader).asList();
         creators.forEach(creator -> {
             try {
@@ -100,10 +100,6 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
             }
         });
         return creators;
-    }
-
-    static ServiceLoader<CustomAnnotationTemplateCreator> loader() {
-        return ServiceLoader.load(CustomAnnotationTemplateCreator.class);
     }
 
     @Override

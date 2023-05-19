@@ -31,6 +31,7 @@ import jakarta.inject.Singleton;
 @Weight(Weighted.DEFAULT_WEIGHT + 100)
 @Singleton
 public class ASerialProviderImpl implements Provider<Serializable> {
+
     static {
         System.getLogger(ASerialProviderImpl.class.getName()).log(System.Logger.Level.DEBUG, "in static init");
     }

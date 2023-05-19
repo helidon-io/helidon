@@ -33,11 +33,4 @@ module io.helidon.pico.tests.pico {
     exports io.helidon.pico.tests.pico.tbox;
 
     provides io.helidon.pico.api.ModuleComponent with io.helidon.pico.tests.pico.Pico$$Module;
-
-    // difficult decision here:
-    // 1. we would like to provide the Application to enable its lookup, so therefore
-    // 2. we need the pico-processor to "pre create" it (see pom.xml -Apico.application.pre.create=true), but
-    // 3. we really need pico-maven-plugin to build the final version of the Application.java, results in
-    // 4. not being able to use IDE to directly run unit tests. Ugh.
-//    provides io.helidon.pico.api.Application with io.helidon.pico.tests.pico.Pico$$Application;
 }

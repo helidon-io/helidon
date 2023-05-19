@@ -33,23 +33,30 @@ import javax.lang.model.element.TypeElement;
 import io.helidon.pico.tools.ToolsException;
 
 /**
- * This class adds persistent tracking state to allow seamless full and/or incremental processing to be tracked.
+ * This class adds persistent tracking (typically under ./target/XXX) to allow seamless full and/or incremental processing of
+ * types to be tracked over repeated compilation cycles over time. It is expected to be integrated into a host annotation
+ * processor implementation.
  * <p>
- * For example, when incremental processing occurs the elements passed to process in all rounds will just be a subset of
- * all of the annotated services. The {@link PicoAnnotationProcessor}, however, will see this reduced subset and create
- * a {@link io.helidon.pico.api.ModuleComponent} only representative of that subset of classes (a mistake).
+ * For example, when incremental processing occurs, the elements passed to process in all rounds will just be a subset of
+ * all of the annotated services since the compiler (from the IDE) only recompiles the files that have been changed. This is
+ * typically different from how maven invokes compilation (doing a full compile where all types will be seen in the round). The
+ * {@link PicoAnnotationProcessor}, for example, would see this reduced subset of types in the round and would otherwise have
+ * created a {@link io.helidon.pico.api.ModuleComponent} only representative of the reduced subset of classes. This would be
+ * incorrect and lead to an invalid module component source file to have been generated.
  * <p>
- * We use this processing state tracker to persist the list of generated activators much in the same way that
- * {@code META-INF/services} are tracked. A target scratch directory (i.e., target/pico) is used instead of the jar's target
- * classes directory for obvious reasons that we do not want to package this file, just use it for scratch keeping.
+ * We use this tracker to persist the list of generated activators much in the same way that
+ * {@code META-INF/services} are tracked. A target scratch directory (i.e., target/pico in this case) is used instead - in order
+ * to keep it out of the build jar.
  * <p>
  * Usage:
  * <ol>
- *     <li>From the anno processor during its initialization use {@link #initializeFrom}</li>
- *     <li>As the processor processes any type that requires code generation, call {@link #processing(String)}</li>
- *     <li>Use {@link #removedTypeNames()} or {@link #remainingTypeNames()} as needed</li>
- *     <li>Finish by calling {@link #close()} to force persistence state to be (re)written out to disk</li>
+ *     <li>{@link #initializeFrom} - during the anno processor initialization phase</li>
+ *     <li>{@link #processing(String)} - during each processed type that the annotation processor visits in the round</li>
+ *     <li>{@link #removedTypeNames()} or {@link #remainingTypeNames()} as needed - to see the changes over time</li>
+ *     <li>{@link #close()} - during final lifecycle of the APT in order to persist state to be (re)written out to disk</li>
  * </ol>
+ *
+ * @see PicoAnnotationProcessor
  */
 class ProcessingTracker implements AutoCloseable {
     static final String DEFAULT_SCRATCH_FILE_NAME = "activators.lst";
