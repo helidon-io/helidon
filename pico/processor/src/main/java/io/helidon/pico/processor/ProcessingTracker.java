@@ -112,7 +112,11 @@ class ProcessingTracker implements AutoCloseable {
 
     @Override
     public void close() throws IOException {
-        path.getParent().toFile().mkdirs();
+        Path parent = path.getParent();
+        if (parent == null) {
+            throw new ToolsException("bad path: " + path);
+        }
+        Files.createDirectories(parent);
         Files.write(path, remainingTypeNames(), StandardCharsets.UTF_8);
     }
 

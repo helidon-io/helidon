@@ -16,6 +16,8 @@
 
 package io.helidon.pico.processor;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -40,6 +42,7 @@ import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.api.Activator;
 import io.helidon.pico.api.Contract;
@@ -51,9 +54,11 @@ import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.runtime.Dependencies;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
+import io.helidon.pico.tools.ActivatorCreatorCodeGenDefault;
 import io.helidon.pico.tools.ActivatorCreatorConfigOptionsDefault;
 import io.helidon.pico.tools.ActivatorCreatorDefault;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
+import io.helidon.pico.tools.ActivatorCreatorRequestDefault;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
 import io.helidon.pico.tools.InterceptionPlan;
 import io.helidon.pico.tools.InterceptorCreatorProvider;
@@ -82,6 +87,10 @@ import static io.helidon.pico.processor.GeneralProcessorUtils.toRunLevel;
 import static io.helidon.pico.processor.GeneralProcessorUtils.toScopeNames;
 import static io.helidon.pico.processor.GeneralProcessorUtils.toServiceTypeHierarchy;
 import static io.helidon.pico.processor.GeneralProcessorUtils.toWeight;
+import static io.helidon.pico.processor.ProcessingTracker.DEFAULT_SCRATCH_FILE_NAME;
+import static io.helidon.pico.processor.ProcessingTracker.initializeFrom;
+import static io.helidon.pico.tools.CodeGenFiler.scratchClassOutputPath;
+import static io.helidon.pico.tools.CodeGenFiler.targetClassOutputPath;
 import static io.helidon.pico.tools.TypeTools.createTypedElementInfoFromElement;
 import static io.helidon.pico.tools.TypeTools.toAccess;
 import static java.util.Objects.requireNonNull;
@@ -113,6 +122,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
 
     private final Set<TypedElementInfo> allElementsOfInterestInThisModule = new LinkedHashSet<>();
     private final Map<TypeName, TypeInfo> typeInfoToCreateActivatorsForInThisModule = new LinkedHashMap<>();
+    private ProcessingTracker tracker;
     private CreatorHandler creator;
     private boolean autoAddInterfaces;
 
@@ -150,10 +160,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         super.init(processingEnv);
         this.autoAddInterfaces = Options.isOptionEnabled(Options.TAG_AUTO_ADD_NON_CONTRACT_INTERFACES);
         this.creator = new CreatorHandler(getClass().getSimpleName(), processingEnv, utils());
-//        if (BaseAnnotationProcessor.ENABLED) {
-//            // we are is simulation mode when the base one is operating...
-//            this.creator.activateSimulationMode();
-//        }
+        this.tracker = initializeFrom(trackerStatePath(), processingEnv);
     }
 
     @Override
@@ -166,7 +173,6 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         }
 
         ServicesToProcess.onBeginProcessing(utils(), getSupportedAnnotationTypes(), roundEnv);
-//        ServicesToProcess.addOnDoneRunnable(CreatorHandler.reporting());
 
         try {
             // build the model
@@ -244,6 +250,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
      * Code generate these {@link io.helidon.pico.api.Activator}'s ad {@link io.helidon.pico.api.ModuleComponent}'s.
      *
      * @param services the services to code generate
+     * @throws ToolsException if there is problem code generating sources or resources
      */
     protected void doFiler(ServicesToProcess services) {
         ActivatorCreatorCodeGen codeGen = ActivatorCreatorDefault.createActivatorCreatorCodeGen(services).orElse(null);
@@ -258,8 +265,28 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                 .build();
         ActivatorCreatorRequest req = ActivatorCreatorDefault
                 .createActivatorCreatorRequest(services, codeGen, configOptions, creator.filer(), false);
+        Set<TypeName> allActivatorTypeNames = tracker.remainingTypeNames().stream()
+                .map(TypeNameDefault::createFromTypeName)
+                .collect(Collectors.toSet());
+        if (!allActivatorTypeNames.isEmpty()) {
+            req = ActivatorCreatorRequestDefault.toBuilder(req)
+                    .codeGen(ActivatorCreatorCodeGenDefault.toBuilder(req.codeGen())
+                                     .allModuleActivatorTypeNames(allActivatorTypeNames)
+                                     .build())
+                    .build();
+        }
         ActivatorCreatorResponse res = creator.createModuleActivators(req);
-        if (!res.success()) {
+        if (res.success()) {
+            res.activatorTypeNamesPutInComponentModule()
+                    .forEach(it -> tracker.processing(it.name()));
+            if (processingOver) {
+                try {
+                    tracker.close();
+                } catch (IOException e) {
+                    throw new ToolsException(e.getMessage(), e);
+                }
+            }
+        } else {
             ToolsException exc = new ToolsException("Error during codegen", res.error().orElse(null));
             utils().error(exc.getMessage(), exc);
             // should not get here since the error above should halt further processing
@@ -735,6 +762,10 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                            utils().toTypeInfo(element, element.asType(), elementsOfInterest::contains).orElseThrow());
             }
         });
+    }
+
+    private Path trackerStatePath() {
+        return scratchClassOutputPath(targetClassOutputPath(processingEnv.getFiler())).resolve(DEFAULT_SCRATCH_FILE_NAME);
     }
 
 }
