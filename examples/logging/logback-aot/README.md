@@ -18,11 +18,11 @@ Within 30 seconds the configuration should be reloaded, and next request will ha
 
 Expected output should be similar to the following (for both hotspot and native):
 ```text
-15:40:44.240 INFO  [main] i.h.examples.logging.slf4j.Main - Starting up startup
-15:40:44.241 INFO  [main] i.h.examples.logging.slf4j.Main - Using JUL logger startup
-15:40:44.245 INFO  [pool-1-thread-1] i.h.examples.logging.slf4j.Main - Running on another thread propagated
-15:40:44.395 INFO  [features-thread] io.helidon.common.features.HelidonFeatures - Helidon SE 2.2.0 features: [Config, WebServer]
-15:40:44.538 INFO  [nioEventLoopGroup-2-1] io.helidon.reactive.webserver.NettyWebServer - Channel '@default' started: [id: 0x8e516487, L:/0:0:0:0:0:0:0:0:8080]
+15:40:44.240 [INFO ] [io.helidon.examples.logging.logback.aot.Main.logging:128] Starting up startup
+15:40:44.241 [INFO ] [o.slf4j.jdk.platform.logging.SLF4JPlatformLogger.performLog:151] Using System logger startup
+15:40:44.245 [INFO ] [io.helidon.examples.logging.logback.aot.Main.log:146] Running on another thread propagated
+15:40:44.395 [INFO ] [o.slf4j.jdk.platform.logging.SLF4JPlatformLogger.performLog:151] Helidon NIMA 4.0.0-SNAPSHOT features: [Config, Encoding, Media, WebServer] 
+15:40:44.538 [INFO ] [o.slf4j.jdk.platform.logging.SLF4JPlatformLogger.performLog:151] Started all channels in 15 milliseconds. 647 milliseconds since JVM startup. Java 20.0.1+9-29 propagated
 ```
 
 The output is also logged into `helidon.log`.
@@ -36,7 +36,7 @@ mvn clean package
 
 Run from command line:
 ```shell script
-java -jar target/helidon-examples-logging-sfl4j.jar
+java -jar target/helidon-examples-logging-slf4j-aot.jar
 ```
 
 Execute endpoint:
