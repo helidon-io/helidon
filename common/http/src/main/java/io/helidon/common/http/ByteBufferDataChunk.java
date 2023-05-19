@@ -31,7 +31,7 @@ final class ByteBufferDataChunk implements DataChunk {
 
     static {
         try {
-            IS_RELEASED = MethodHandles.lookup().findVarHandle(ByteBufferDataChunk.class, "isReleased", boolean.class);
+            IS_RELEASED = MethodHandles.lookup().findVarHandle(ByteBufferDataChunk.class, "isReleased", int.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw (Error) new ExceptionInInitializerError(e.getMessage()).initCause(e);
         }
@@ -41,7 +41,7 @@ final class ByteBufferDataChunk implements DataChunk {
     private final boolean flush;
     private final boolean readOnly;
     private final Runnable releaseCallback;
-    private volatile boolean isReleased;
+    private volatile int isReleased;
     private CompletableFuture<DataChunk> writeFuture;
 
     /**
@@ -84,7 +84,7 @@ final class ByteBufferDataChunk implements DataChunk {
 
     @Override
     public boolean isReleased() {
-        return isReleased;
+        return isReleased!= 0;
     }
 
     @Override
@@ -94,7 +94,7 @@ final class ByteBufferDataChunk implements DataChunk {
 
     @Override
     public void release() {
-        if (IS_RELEASED.compareAndSet(this, false, true)) {
+        if (IS_RELEASED.compareAndSet(this, 0, 1)) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }
