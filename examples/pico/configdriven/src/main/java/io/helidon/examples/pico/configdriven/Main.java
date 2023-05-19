@@ -16,17 +16,17 @@
 
 package io.helidon.examples.pico.configdriven;
 
-import java.util.List;
-
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.examples.pico.basics.ToolBox;
 import io.helidon.pico.api.BootstrapDefault;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 
-public class Main extends io.helidon.examples.pico.basics.Main {
+/**
+ * Config-driven example.
+ */
+public class Main {
 
     /**
      * Executes the example.
@@ -45,16 +45,11 @@ public class Main extends io.helidon.examples.pico.basics.Main {
                 .build();
         PicoServices.globalBootstrap(bootstrap);
 
-        // the rest is handled normally as before
-        io.helidon.examples.pico.basics.Main.main(args);
-
-        // activate all of the drills
+        // this drives config-driven service activations (see the contents of the toolbox being output)
         Services services = PicoServices.realizedServices();
-        List<ServiceProvider<Drill>> allDrillProviders = services.lookupAll(Drill.class);
-        allDrillProviders.forEach(it -> System.out.println(it.get()));
 
-        System.out.println("Ending");
-        services.lookupFirst(ToolBox.class).get().printToolBoxContents();
+        // this will trigger the PostConstruct method to display the contents of the toolbox
+        services.lookupFirst(ToolBox.class).get();
     }
 
 }

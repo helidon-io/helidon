@@ -21,9 +21,9 @@ import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 
 /**
- * Interceptors example. Uses the same {@code main()} as {@link io.helidon.examples.pico.basics.Main}.
+ * Interceptors example.
  */
-public class Main extends io.helidon.examples.pico.basics.Main {
+public class Main {
 
     /**
      * Executes the example.
@@ -31,8 +31,6 @@ public class Main extends io.helidon.examples.pico.basics.Main {
      * @param args arguments
      */
     public static void main(String... args) {
-        io.helidon.examples.pico.basics.Main.main(args);
-
         Services services = PicoServices.realizedServices();
 
         // use the intercepted screwdriver - note that hashCode(), equals(), and toString() are not intercepted

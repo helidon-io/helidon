@@ -50,16 +50,13 @@ public class Main {
 
         ServiceProvider<?> highestWeightedServiceProvider = services.lookupFirst(criteria);
         System.out.println("Highest weighted service provider: " + highestWeightedServiceProvider);
-        System.out.println("-----");
 
         // trigger lazy activations for the highest weighted service provider
         System.out.println("Highest weighted service provider (after activation): " + highestWeightedServiceProvider.get());
-        System.out.println("-----");
 
         // trigger all activations for the (remaining unactivated) startup service providers
         startupServiceProviders.forEach(ServiceProvider::get);
         System.out.println("All service providers (after all activations): " + startupServiceProviders);
-        System.out.println("-----");
     }
 
 }

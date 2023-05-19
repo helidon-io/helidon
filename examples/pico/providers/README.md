@@ -18,28 +18,21 @@ java -jar target/helidon-examples-pico-providers.jar
 Expected Output:
 ```
 Startup service providers (ranked according to weight, pre-activated): [ToolBox:INIT, CircularSaw:INIT, NailGun:INIT, TableSaw:INIT]
-Highest weighted service provider: ToolBox:INIT
------
-Preferred Big Tool: Big Hammer
-Optional Little Hammer: Optional[Little Hammer]
------
-ToolBox Contents:
-Hammer:INIT
-BigHammer:ACTIVE
-LittleHammer:ACTIVE
-AngleGrinderSaw:INIT
-CircularSaw:INIT
-HandSaw:INIT
-NailGun:INIT
-TableSaw:INIT
------
-Highest weighted service provider (after activation): ToolBox
------
+Preferred (highest weighted) 'Big' Tool: Big Hammer
+Optional 'Little' Hammer: Optional[Little Hammer]
+Tools in the virtual ToolBox:
+ tool: Hammer:INIT
+ tool: BigHammer:ACTIVE
+ tool: LittleHammer:ACTIVE
+ tool: AngleGrinderSaw:INIT
+ tool: CircularSaw:INIT
+ tool: HandSaw:INIT
+ tool: NailGun:INIT
+ tool: TableSaw:INIT
 io.helidon.examples.pico.providers.CircularSaw::<init> will be injected with Optional.empty
 Circular Saw: (blade=null); initialized
 Nail Gun: (nail provider=NailProvider:INIT); initialized
 io.helidon.examples.pico.providers.TableSaw::<init> will be injected with Optional[LARGE Blade]
 Table Saw: (blade=LARGE Blade); initialized
 All service providers (after all activations): [ToolBox:ACTIVE, CircularSaw:ACTIVE, NailGun:ACTIVE, TableSaw:ACTIVE]
------
 ```

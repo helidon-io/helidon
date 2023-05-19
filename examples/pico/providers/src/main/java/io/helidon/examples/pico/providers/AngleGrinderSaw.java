@@ -19,20 +19,12 @@ package io.helidon.examples.pico.providers;
 import java.util.Optional;
 
 import io.helidon.examples.pico.basics.Little;
-import io.helidon.pico.api.RunLevel;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
-/**
- * Intentionally leaving this out as a {@link RunLevel#STARTUP} service.
- *
- * @see CircularSaw
- * @see TableSaw
- */
 @Singleton
-//@RunLevel(RunLevel.STARTUP)
 class AngleGrinderSaw implements Saw {
 
     private final Blade blade;

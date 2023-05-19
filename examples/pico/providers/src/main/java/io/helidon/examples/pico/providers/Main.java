@@ -16,9 +16,38 @@
 
 package io.helidon.examples.pico.providers;
 
+import java.util.List;
+
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.RunLevel;
+import io.helidon.pico.api.ServiceInfoCriteria;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.api.Services;
+
 /**
- * Providers example. Uses the same {@code main()} as {@link io.helidon.examples.pico.basics.Main}.
+ * Providers example.
  */
-public class Main extends io.helidon.examples.pico.basics.Main {
+public class Main {
+
+    /**
+     * Executes the example.
+     *
+     * @param args arguments
+     */
+    public static void main(String... args) {
+        Services services = PicoServices.realizedServices();
+
+        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
+                .runLevel(RunLevel.STARTUP)
+                .build();
+
+        List<ServiceProvider<?>> startupServiceProviders = services.lookupAll(criteria);
+        System.out.println("Startup service providers (ranked according to weight, pre-activated): " + startupServiceProviders);
+
+        // trigger all activations for startup service providers
+        startupServiceProviders.forEach(ServiceProvider::get);
+        System.out.println("All service providers (after all activations): " + startupServiceProviders);
+    }
 
 }

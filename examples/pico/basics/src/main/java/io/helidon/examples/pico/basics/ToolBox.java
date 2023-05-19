@@ -81,19 +81,17 @@ public class ToolBox {
     @PostConstruct
     @SuppressWarnings("unused")
     void init() {
-        System.out.println("Preferred Big Tool: " + preferredBigTool);
-        System.out.println("Optional Little Hammer: " + optionalLittleHammer);
+        System.out.println("Preferred (highest weighted) 'Big' Tool: " + preferredBigTool);
+        System.out.println("Optional 'Little' Hammer: " + optionalLittleHammer);
 
         printToolBoxContents();
     }
 
     public void printToolBoxContents() {
-        System.out.println("-----");
-        System.out.println("ToolBox Contents:");
+        System.out.println("Tools in the virtual ToolBox:");
         for (Provider<Tool> tool : allToolProviders) {
-            System.out.println(tool);
+            System.out.println(" tool: " + tool);
         }
-        System.out.println("-----");
     }
 
 }
