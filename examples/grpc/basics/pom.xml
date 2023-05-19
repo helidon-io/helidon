@@ -40,6 +40,14 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-health</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.examples.grpc</groupId>
             <artifactId>helidon-examples-grpc-common</artifactId>
             <version>${project.version}</version>
