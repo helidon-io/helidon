@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-= Oracle Cloud Infrastructure Integration
+= Oracle Cloud Infrastructure
 :description: Helidon OCI Integration
 :keywords: oci, cdi
 :feature-name: OCI Integration
