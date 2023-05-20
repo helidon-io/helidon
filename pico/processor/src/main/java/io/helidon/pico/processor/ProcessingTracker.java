@@ -50,7 +50,7 @@ import io.helidon.pico.tools.ToolsException;
  * <p>
  * Usage:
  * <ol>
- *     <li>{@link #initializeFrom} - during the anno processor initialization phase</li>
+ *     <li>{@link #initializeFrom} - during the APT initialization phase</li>
  *     <li>{@link #processing(String)} - during each processed type that the annotation processor visits in the round</li>
  *     <li>{@link #removedTypeNames()} or {@link #remainingTypeNames()} as needed - to see the changes over time</li>
  *     <li>{@link #close()} - during final lifecycle of the APT in order to persist state to be (re)written out to disk</li>
