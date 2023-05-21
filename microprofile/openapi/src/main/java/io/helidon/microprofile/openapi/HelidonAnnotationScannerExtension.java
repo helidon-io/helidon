@@ -18,7 +18,6 @@ package io.helidon.microprofile.openapi;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import io.smallrye.openapi.runtime.scanner.AnnotationScannerExtension;

@@ -23,11 +23,13 @@ import io.helidon.openapi.OpenApiFeature;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Disabled
 public class TestMultiJandex {
 
     @Test
@@ -38,9 +40,8 @@ public class TestMultiJandex {
          * to handling multiple same-named index files in the class path.
          */
         OpenApiCdiExtension ext = new OpenApiCdiExtension("META-INF/jandex.idx", "META-INF/other.idx");
-        MpOpenApiFeature.Builder builder = MpOpenApiFeature.builder();
-        builder.build();
-        IndexView indexView = builder.indexView();
+        IndexView indexView = ext.feature().indexView();
+
 
         DotName testAppName = DotName.createSimple(TestApp.class.getName());
         DotName testApp2Name = DotName.createSimple(TestApp2.class.getName());

@@ -15,48 +15,23 @@
  */
 package io.helidon.microprofile.openapi;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.lang.System.Logger.Level;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.cdi.RuntimeStart;
-import io.helidon.microprofile.server.JaxRsApplication;
-import io.helidon.microprofile.server.JaxRsCdiExtension;
-import io.helidon.microprofile.server.RoutingBuilders;
-import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
-import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.openapi.OpenApiFeature;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.jboss.jandex.CompositeIndex;
-import org.jboss.jandex.Index;
-import org.jboss.jandex.IndexReader;
-import org.jboss.jandex.IndexView;
-import org.jboss.jandex.Indexer;
 
-import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
@@ -64,7 +39,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
  * SmallRye OpenAPI) from CDI if no {@code META-INF/jandex.idx} file exists on
  * the class path.
  */
-public class OpenApiCdiExtension extends HelidonRestCdiExtension<OpenApiFeature> {
+public class OpenApiCdiExtension extends HelidonRestCdiExtension<MpOpenApiFeature> {
 
     private static final System.Logger LOGGER = System.getLogger(OpenApiCdiExtension.class.getName());
 
@@ -74,12 +49,12 @@ public class OpenApiCdiExtension extends HelidonRestCdiExtension<OpenApiFeature>
     static final String INDEX_PATH = "META-INF/jandex.idx";
 
 
-    private static Function<Config, OpenApiFeature> featureFactory(String... indexPaths) {
+    private static Function<Config, MpOpenApiFeature> featureFactory(String... indexPaths) {
         return (Config helidonConfig) -> {
 
             org.eclipse.microprofile.config.Config mpConfig = ConfigProvider.getConfig();
 
-            MpOpenApiFeature.Builder builder = MpOpenApiFeature.builder()
+            MPOpenAPIBuilder builder = MpOpenApiFeature.builder()
                     .config(helidonConfig)
                     .indexPaths(indexPaths)
                     .config(mpConfig);
@@ -142,7 +117,19 @@ public class OpenApiCdiExtension extends HelidonRestCdiExtension<OpenApiFeature>
         // SmallRye handles annotation processing. We have this method because the abstract superclass requires it.
     }
 
-//    private void configure(@Observes @RuntimeStart Config config) {
+
+    // Must run after the server has created the Application instances.
+    void buildModel(@Observes @Priority(PLATFORM_AFTER + 100 + 10) @Initialized(ApplicationScoped.class) Object event) {
+        serviceSupport().prepareModel();
+    }
+
+    // For testing
+     MpOpenApiFeature feature() {
+        return serviceSupport();
+    }
+
+
+    //    private void configure(@Observes @RuntimeStart Config config) {
 //        this.mpConfig = (org.eclipse.microprofile.config.Config) config;
 //        this.config = config;
 //    }
