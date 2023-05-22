@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Writeable multipart entity.
@@ -41,7 +42,7 @@ public class WriteableMultiPart {
     }
 
     /**
-     * Short-hand for creating {@link WriteableMultiPart} instances with the
+     * Shorthand for creating {@link WriteableMultiPart} instances with the
      * specified entities as body parts.
      *
      * @param entities the body part entities
@@ -56,7 +57,23 @@ public class WriteableMultiPart {
     }
 
     /**
-     * Short-hand for creating {@link WriteableMultiPart} instances with the
+     * Shorthand for creating {@link WriteableMultiPart} instances with the
+     * specified entities as body parts.
+     *
+     * @param suppliers suppliers of body part entity
+     * @return created MultiPart
+     */
+    @SafeVarargs
+    public static WriteableMultiPart create(Supplier<WriteableBodyPart>... suppliers) {
+        Builder builder = builder();
+        for (Supplier<WriteableBodyPart> supplier : suppliers) {
+            builder.bodyPart(supplier);
+        }
+        return builder.build();
+    }
+
+    /**
+     * Shorthand for creating {@link WriteableMultiPart} instances with the
      * specified entities as body parts.
      *
      * @param entities the body part entities
@@ -104,42 +121,52 @@ public class WriteableMultiPart {
         }
 
         /**
+         * Add a body part.
+         *
+         * @param supplier supplier of body part to add
+         * @return this builder instance
+         */
+        public Builder bodyPart(Supplier<WriteableBodyPart> supplier) {
+            return bodyPart(supplier.get());
+        }
+
+        /**
          * Add a new body part based on the name entity.
          *
-         * @param name body part name
+         * @param name   body part name
          * @param entity body part entity
          * @return this builder instance
          */
         public Builder bodyPart(String name, Object entity) {
             return bodyPart(WriteableBodyPart.builder()
-                                    .name(name)
-                                    .entity(entity)
-                                    .build());
+                                             .name(name)
+                                             .entity(entity)
+                                             .build());
         }
 
         /**
          * Add a new body part based on the name, filename and {@link Path} to the file.
          *
-         * @param name body part name
+         * @param name     body part name
          * @param filename body part filename
-         * @param file file path
+         * @param file     file path
          * @return this builder instance
          */
         public Builder bodyPart(String name, String filename, Path file) {
             bodyPart(WriteableBodyPart.builder()
-                             .name(name)
-                             .filename(filename)
-                             .entity(file)
-                             .build());
+                                      .name(name)
+                                      .filename(filename)
+                                      .entity(file)
+                                      .build());
             return this;
         }
 
         /**
          * Add a new body part based on the name and {@link Path} to the files.
-         *
+         * <br>
          * Filename for each file is set as actual file name.
          *
-         * @param name body part name
+         * @param name  body part name
          * @param files file path
          * @return this builder instance
          */

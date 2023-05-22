@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ public final class ReadableBodyPartHeaders extends ReadOnlyHeaders implements Bo
 
     /**
      * Create a new instance of {@link ReadableBodyPartHeaders}.
+     *
      * @return ReadableBodyPartHeaders
      */
     public static ReadableBodyPartHeaders create() {
@@ -92,17 +93,37 @@ public final class ReadableBodyPartHeaders extends ReadOnlyHeaders implements Bo
         /**
          * Add a new header.
          *
-         * @param name header name
+         * @param name  header name
          * @param value header value
          * @return this builder
          */
-        Builder header(String name, String value) {
-            List<String> values = headers.get(name);
-            if (values == null) {
-                values = new ArrayList<>();
-                headers.put(name, values);
-            }
-            values.add(value);
+        public Builder header(String name, String value) {
+            headers.computeIfAbsent(name, n -> new ArrayList<>())
+                   .add(value);
+            return this;
+        }
+
+        /**
+         * Add a new header.
+         *
+         * @param name   header name
+         * @param values header values
+         * @return this builder
+         */
+        public Builder header(String name, List<String> values) {
+            headers.computeIfAbsent(name, n -> new ArrayList<>())
+                   .addAll(values);
+            return this;
+        }
+
+        /**
+         * Add new headers.
+         *
+         * @param headers headers map
+         * @return this builder
+         */
+        public Builder headers(Map<String, List<String>> headers) {
+            headers.forEach(this::header);
             return this;
         }
 
