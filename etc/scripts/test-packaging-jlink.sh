@@ -40,9 +40,6 @@ done
 
 # Run tests with classpath and then module path
 
-# Classpath
-${jri_dir}/bin/start --test --jvm --enable-preview
-
 # Run MP-1
 cd ${WS_DIR}/tests/integration/native-image/mp-1
 jri_dir=${WS_DIR}/tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1-jri
