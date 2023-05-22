@@ -51,6 +51,9 @@ public class SeOpenApiFeature extends OpenApiFeature {
         return null;
     }
 
+    /**
+     * Builder class for the SE OpenAPI feature.
+     */
     public static class Builder extends OpenApiFeature.Builder<Builder, SeOpenApiFeature> {
 
         private static final System.Logger LOGGER = System.getLogger(Builder.class.getName());
