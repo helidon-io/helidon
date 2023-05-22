@@ -294,8 +294,8 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                 elementsOfInterest,
                 PicoServicesConfig.NAME + " does not currently support static or private elements",
                 0,
-                (it) -> toModifierNames(it.modifierNames()).stream().anyMatch(TypeInfo.MODIFIER_PRIVATE::equalsIgnoreCase)
-                        || toModifierNames(it.modifierNames()).stream().anyMatch(TypeInfo.MODIFIER_STATIC::equalsIgnoreCase));
+                (it) -> it.modifierNames().stream().anyMatch(TypeInfo.MODIFIER_PRIVATE::equalsIgnoreCase)
+                        || it.modifierNames().stream().anyMatch(TypeInfo.MODIFIER_STATIC::equalsIgnoreCase));
     }
 
     private void validatePerClass(Collection<TypedElementInfo> elementsOfInterest,
@@ -362,7 +362,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             TypeName superTypeName = superTypeInfo.typeName();
             services.addParentServiceType(serviceTypeName, superTypeName);
         }
-        Set<String> modifierNames = toModifierNames(service.modifierNames());
+        Set<String> modifierNames = service.modifierNames();
 
         toRunLevel(service).ifPresent(it -> services.addDeclaredRunLevel(serviceTypeName, it));
         toWeight(service).ifPresent(it -> services.addDeclaredWeight(serviceTypeName, it));
@@ -598,7 +598,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                 .filter(it -> service.typeName().equals(it.enclosingTypeName().orElseThrow()))
                 .toList();
         injectableElementsForThisService
-                .forEach(elem -> gatherInjectionPoints(builder, elem, service, toModifierNames(elem.modifierNames())));
+                .forEach(elem -> gatherInjectionPoints(builder, elem, service, elem.modifierNames()));
 
 //        // We expect activators at every level for abstract bases - we will therefore NOT recursive up the hierarchy
 //        service.superTypeInfo().ifPresent(it -> gatherInjectionPoints(builder, it, allElementsOfInterest, false));
@@ -725,11 +725,6 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                            utils().toTypeInfo(element, element.asType(), elementsOfInterest::contains).orElseThrow());
             }
         });
-    }
-
-    // will be resolved in https://github.com/helidon-io/helidon/issues/6764
-    private static Set<String> toModifierNames(Set<String> names) {
-        return names.stream().map(String::toUpperCase).collect(Collectors.toSet());
     }
 
 }
