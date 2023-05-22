@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
+
+import io.helidon.metrics.api.AbstractRegistry;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
@@ -135,8 +135,7 @@ class MetricProducer {
     @Produces
     @VendorDefined
     private Counter produceCounter(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, Counted.class, registry::getCounters,
-                registry::counter, Counter.class);
+        return produceMetric(registry, ip, Counted.class, registry::counter, Counter.class);
     }
 
     @Produces
@@ -147,8 +146,7 @@ class MetricProducer {
     @Produces
     @VendorDefined
     private Meter produceMeter(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, Metered.class, registry::getMeters,
-                registry::meter, Meter.class);
+        return produceMetric(registry, ip, Metered.class, registry::meter, Meter.class);
     }
 
     @Produces
@@ -159,14 +157,13 @@ class MetricProducer {
     @Produces
     @VendorDefined
     private Timer produceTimer(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, Timed.class, registry::getTimers, registry::timer, Timer.class);
+        return produceMetric(registry, ip, Timed.class, registry::timer, Timer.class);
     }
 
     @Produces
     @VendorDefined
     private SimpleTimer produceSimpleTimer(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, SimplyTimed.class, registry::getSimpleTimers, registry::simpleTimer,
-                SimpleTimer.class);
+        return produceMetric(registry, ip, SimplyTimed.class, registry::simpleTimer, SimpleTimer.class);
     }
 
     @Produces
@@ -182,8 +179,7 @@ class MetricProducer {
     @Produces
     @VendorDefined
     private Histogram produceHistogram(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, null, registry::getHistograms,
-                registry::histogram, Histogram.class);
+        return produceMetric(registry, ip, null, registry::histogram, Histogram.class);
     }
 
     @Produces
@@ -195,7 +191,7 @@ class MetricProducer {
     @VendorDefined
     private ConcurrentGauge produceConcurrentGauge(MetricRegistry registry, InjectionPoint ip) {
         return produceMetric(registry, ip, org.eclipse.microprofile.metrics.annotation.ConcurrentGauge.class,
-                registry::getConcurrentGauges, registry::concurrentGauge, ConcurrentGauge.class);
+                registry::concurrentGauge, ConcurrentGauge.class);
     }
 
     /**
@@ -245,21 +241,20 @@ class MetricProducer {
      * @param registry metric registry to use
      * @param ip the injection point
      * @param annotationClass annotation which represents a declaration of a metric
-     * @param getTypedMetricsFn caller-provided factory for creating the correct
      * type of metric (if there is no pre-existing one)
      * @param registerFn caller-provided function for registering a newly-created metric
      * @param clazz class for the metric type of interest
      * @return the existing metric (if any), or the newly-created and registered one
      */
-    private <T extends org.eclipse.microprofile.metrics.Metric, U extends Annotation> T produceMetric(MetricRegistry registry,
-            InjectionPoint ip, Class<U> annotationClass, Supplier<Map<MetricID, T>> getTypedMetricsFn,
-            BiFunction<Metadata, Tag[], T> registerFn, Class<T> clazz) {
+    @SuppressWarnings("unchecked")
+    <T extends org.eclipse.microprofile.metrics.Metric, U extends Annotation> T produceMetric(MetricRegistry registry,
+            InjectionPoint ip, Class<U> annotationClass, BiFunction<Metadata, Tag[], T> registerFn, Class<T> clazz) {
 
         final Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);
         final Tag[] tags = tags(metricAnno);
         final MetricID metricID = new MetricID(getName(metricAnno, ip), tags);
 
-        T result = getTypedMetricsFn.get().get(metricID);
+        T result = (T) ((AbstractRegistry<?>) registry).getMetric(metricID);
         final Metadata newMetadata = newMetadata(ip, metricAnno, MetricType.from(clazz));
         /*
          * If the injection point does not include the corresponding metric  annotation which would
