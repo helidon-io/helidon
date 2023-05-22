@@ -437,6 +437,16 @@ public abstract class AbstractRegistry<M extends HelidonMetric> extends MetricRe
     }
 
     /**
+     * Lookup metric by its metric ID.
+     *
+     * @param metricID the metric ID
+     * @return the metric or {@code null} if not found
+     */
+    public M getMetric(MetricID metricID) {
+        return allMetrics.get(metricID);
+    }
+
+    /**
      *
      * @return whether exemplars are to be implemented strictly
      */
