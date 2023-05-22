@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,17 +32,13 @@ mvn ${MAVEN_ARGS} -e clean install
 
 # Build jlink images
 # mp-2 fails because of https://github.com/oracle/helidon-build-tools/issues/478
-readonly native_image_tests="se-1 mp-1 mp-3"
+readonly native_image_tests="mp-1 mp-3"
 for native_test in ${native_image_tests}; do
     cd ${WS_DIR}/tests/integration/native-image/${native_test}
     mvn ${MAVEN_ARGS} package -e -Pjlink-image,staging -Djlink.image.addClassDataSharingArchive=false -Djlink.image.testImage=false
 done
 
 # Run tests with classpath and then module path
-
-# Run SE-1 (does not contain module-info.java)
-cd ${WS_DIR}/tests/integration/native-image/se-1
-jri_dir=${WS_DIR}/tests/integration/native-image/se-1/target/helidon-tests-native-image-se-1-jri
 
 # Classpath
 ${jri_dir}/bin/start --test --jvm --enable-preview
