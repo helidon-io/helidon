@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,21 @@
 package io.helidon.webclient;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.helidon.common.testing.junit5.ResetSystemProperties;
 import io.helidon.config.Config;
+
+import io.netty.channel.ChannelHandler;
+import io.netty.handler.proxy.HttpProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.webclient.WebClientRequestBuilderImpl.relativizeNoProxy;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -101,6 +108,54 @@ class ProxyTest {
                 .proxy(proxy)
                 .configuration();
         validateRelativizeNoProxy(webConfig);
+    }
+
+    @Test
+    @ResetSystemProperties
+    void testProxyWithSystemSelectorDirect() {
+        //We need to ensure there will be no properties interfering from our local system properties
+        clearSystemProxyProperties();
+
+        Proxy proxy = Proxy.create();
+        Optional<ChannelHandler> handler = proxy.handler(URI.create("www.example.com:80"));
+        assertThat(handler.isPresent(), is(false)); //no proxy set -> direct approach
+    }
+
+    @Test
+    @ResetSystemProperties
+    void testProxyWithSystemSelectorHttpHandler() {
+        //We need to ensure there will be no properties interfering from our local system properties
+        clearSystemProxyProperties();
+        System.setProperty("http.proxyHost", "localhost");
+        System.setProperty("http.proxyPort", "8080");
+
+        Proxy proxy = Proxy.create();
+        Optional<ChannelHandler> handler = proxy.handler(URI.create("www.example.com:80"));
+        assertThat(handler.isPresent(), is(true));
+        assertThat(handler.get(), instanceOf(HttpProxyHandler.class));
+    }
+
+    @Test
+    @ResetSystemProperties
+    void testProxyWithSystemSelectorSocksHandler() {
+        //We need to ensure there will be no properties interfering from our local system properties
+        clearSystemProxyProperties();
+        System.setProperty("socksProxyHost", "localhost");
+        System.setProperty("socksProxyPort", "1080");
+
+        Proxy proxy = Proxy.create();
+        Optional<ChannelHandler> handler = proxy.handler(URI.create("www.example.com:80"));
+        assertThat(handler.isPresent(), is(true));
+        assertThat(handler.get(), instanceOf(Socks5ProxyHandler.class));
+    }
+
+    private void clearSystemProxyProperties() {
+        System.clearProperty("http.proxyHost");
+        System.clearProperty("http.proxyPort");
+        System.clearProperty("https.proxyHost");
+        System.clearProperty("https.proxyPort");
+        System.clearProperty("socksProxyHost");
+        System.clearProperty("socksProxyPort");
     }
 
     @Test
