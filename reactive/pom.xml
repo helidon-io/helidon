@@ -44,7 +44,6 @@
         <module>webclient</module>
         <module>webserver</module>
         <module>service-common</module>
-        <module>openapi</module>
         <module>graphql</module>
     </modules>
 </project>
