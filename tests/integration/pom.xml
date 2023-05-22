@@ -58,6 +58,7 @@
         <module>restclient</module>
         <module>oidc</module>
         <module>gh-5792</module>
+        <module>se-gh-6845</module>
     </modules>
 
     <profiles>
