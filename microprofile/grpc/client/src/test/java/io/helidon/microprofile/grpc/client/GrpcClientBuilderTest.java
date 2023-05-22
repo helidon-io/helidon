@@ -23,19 +23,30 @@ import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
 
 import io.grpc.stub.StreamObserver;
+import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.inject.Singleton;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.mockito.Mockito.mock;
 
 public class GrpcClientBuilderTest {
+
+    private BeanManager beanManager;
+
+    @BeforeEach
+    public void setup() {
+        beanManager = mock(BeanManager.class);
+    }
+
     @Test
     public void shouldUseServiceNameFromAnnotation() {
         ServiceOne service = new ServiceOne();
-        GrpcClientBuilder builder = GrpcClientBuilder.create(service);
+        GrpcClientBuilder builder = GrpcClientBuilder.create(service, beanManager);
         ClientServiceDescriptor.Builder descriptorBuilder = builder.build();
 
         assertThat(descriptorBuilder.name(), is("ServiceOne/foo"));
@@ -44,7 +55,7 @@ public class GrpcClientBuilderTest {
     @Test
     public void shouldUseDefaultServiceName() {
         ServiceTwo service = new ServiceTwo();
-        GrpcClientBuilder builder = GrpcClientBuilder.create(service);
+        GrpcClientBuilder builder = GrpcClientBuilder.create(service, beanManager);
         ClientServiceDescriptor.Builder descriptorBuilder = builder.build();
 
         assertThat(descriptorBuilder.name(), is("ServiceTwo"));
@@ -53,12 +64,12 @@ public class GrpcClientBuilderTest {
     @Test
     public void shouldCreateServiceFromInstance() {
         ServiceOne service = new ServiceOne();
-        assertServiceOne(GrpcClientBuilder.create(service));
+        assertServiceOne(GrpcClientBuilder.create(service, beanManager));
     }
 
     @Test
     public void shouldCreateServiceFromClass() {
-        assertServiceOne(GrpcClientBuilder.create(ServiceOne.class));
+        assertServiceOne(GrpcClientBuilder.create(ServiceOne.class, beanManager));
     }
 
     public void assertServiceOne(GrpcClientBuilder builder) {
@@ -119,7 +130,7 @@ public class GrpcClientBuilderTest {
     @Test
     public void shouldCreateServiceWithMethodNamesFromAnnotation() {
         ServiceTwo service = new ServiceTwo();
-        GrpcClientBuilder builder = GrpcClientBuilder.create(service);
+        GrpcClientBuilder builder = GrpcClientBuilder.create(service, beanManager);
         ClientServiceDescriptor.Builder descriptorBuilder = builder.build();
 
         ClientServiceDescriptor descriptor = descriptorBuilder.build();

@@ -34,6 +34,7 @@ module io.helidon.microprofile.grpc.client {
     requires jakarta.inject;
 
     requires transitive io.helidon.microprofile.grpc.core;
+    requires transitive io.grpc;
 
     exports io.helidon.microprofile.grpc.client;
 

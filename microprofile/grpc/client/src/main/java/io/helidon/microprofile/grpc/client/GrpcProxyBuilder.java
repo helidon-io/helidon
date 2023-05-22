@@ -25,6 +25,7 @@ import io.helidon.grpc.client.GrpcServiceClient;
 
 import io.grpc.Channel;
 import io.grpc.inprocess.InProcessChannelBuilder;
+import jakarta.enterprise.inject.spi.BeanManager;
 
 /**
  * A builder for gRPC clients dynamic proxies.
@@ -40,9 +41,12 @@ public class GrpcProxyBuilder<T>
 
     private final Class<T> type;
 
-    private GrpcProxyBuilder(GrpcServiceClient client, Class<T> type) {
+    private final BeanManager beanManager;
+
+    private GrpcProxyBuilder(GrpcServiceClient client, Class<T> type, BeanManager beanManager) {
         this.client = client;
         this.type = type;
+        this.beanManager = beanManager;
     }
 
     /**
@@ -51,7 +55,7 @@ public class GrpcProxyBuilder<T>
      * <p>
      * This method will attempt to create in-process channel for the default
      * gRPC server. If you have changed the gRPC server name, use
-     * {@link #create(String, Class)} instead.
+     * {@link #create(String, Class, BeanManager)} instead.
      * <p>
      * The class passed to this method should be properly annotated with
      * {@link io.helidon.microprofile.grpc.core.Grpc} and
@@ -59,12 +63,14 @@ public class GrpcProxyBuilder<T>
      * so that the proxy can properly route calls to the server.
      *
      * @param type  the service type
+     * @param beanManager  the {@link jakarta.enterprise.inject.spi.BeanManager} to use
+     *                     to look-up CDI beans.
      * @param <T>   the service type
      * @return a {@link GrpcProxyBuilder} that can build dynamic proxies
      *         for the gRPC service
      */
-    public static <T> GrpcProxyBuilder<T> create(Class<T> type) {
-        return create("grpc.server", type);
+    public static <T> GrpcProxyBuilder<T> create(Class<T> type, BeanManager beanManager) {
+        return create("grpc.server", type, beanManager);
     }
 
     /**
@@ -78,12 +84,14 @@ public class GrpcProxyBuilder<T>
      *
      * @param serverName  the name of the gRPC server proxy should connect to
      * @param type        the service type
+     * @param beanManager  the {@link jakarta.enterprise.inject.spi.BeanManager} to use
+     *                     to look-up CDI beans.
      * @param <T>         the service type
      * @return a {@link GrpcProxyBuilder} that can build dynamic proxies
      *         for the gRPC service
      */
-    public static <T> GrpcProxyBuilder<T> create(String serverName, Class<T> type) {
-        return create(InProcessChannelBuilder.forName(serverName).usePlaintext().build(), type);
+    public static <T> GrpcProxyBuilder<T> create(String serverName, Class<T> type, BeanManager beanManager) {
+        return create(InProcessChannelBuilder.forName(serverName).usePlaintext().build(), type, beanManager);
     }
 
     /**
@@ -97,13 +105,15 @@ public class GrpcProxyBuilder<T>
      *
      * @param channel  the {@link Channel} to connect to the server
      * @param type     the service type
+     * @param beanManager  the {@link jakarta.enterprise.inject.spi.BeanManager} to use
+     *                     to look-up CDI beans.
      * @param <T>      the service type
      * @return a {@link GrpcProxyBuilder} that can build dynamic proxies
      *         for the gRPC service
      */
-    public static <T> GrpcProxyBuilder<T> create(Channel channel, Class<T> type) {
-        ClientServiceDescriptor descriptor = DESCRIPTORS.computeIfAbsent(type, GrpcProxyBuilder::createDescriptor);
-        return new GrpcProxyBuilder<>(GrpcServiceClient.builder(channel, descriptor).build(), type);
+    public static <T> GrpcProxyBuilder<T> create(Channel channel, Class<T> type, BeanManager beanManager) {
+        ClientServiceDescriptor descriptor = DESCRIPTORS.computeIfAbsent(type, t -> createDescriptor(t, beanManager));
+        return new GrpcProxyBuilder<>(GrpcServiceClient.builder(channel, descriptor).build(), type, beanManager);
     }
 
     /**
@@ -116,8 +126,8 @@ public class GrpcProxyBuilder<T>
         return client.proxy(type);
     }
 
-    private static ClientServiceDescriptor createDescriptor(Class<?> type) {
-        GrpcClientBuilder builder = GrpcClientBuilder.create(type);
+    private static ClientServiceDescriptor createDescriptor(Class<?> type, BeanManager beanManager) {
+        GrpcClientBuilder builder = GrpcClientBuilder.create(type, beanManager);
         ClientServiceDescriptor.Builder descriptorBuilder = builder.build();
         return descriptorBuilder.build();
     }

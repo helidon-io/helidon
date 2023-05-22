@@ -22,16 +22,28 @@ import java.util.concurrent.CompletionStage;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.Unary;
 
+import jakarta.enterprise.inject.spi.BeanManager;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class GrpcProxyBuilderTest {
+
+    private BeanManager beanManager;
+
+    @BeforeEach
+    public void setup() {
+        beanManager = mock(BeanManager.class);
+    }
+
     @Test
     public void shouldCreateProxyForMethodWithWithNestedGenerics() {
-        TestService service = GrpcProxyBuilder.create(TestService.class).build();
+        TestService service = GrpcProxyBuilder.create(TestService.class, beanManager).build();
         assertThat(service, is(notNullValue()));
     }
 
