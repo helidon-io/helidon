@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Writeable multipart entity.
@@ -37,7 +38,7 @@ public class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
     }
 
     /**
-     * Short-hand for creating {@link WriteableMultiPart} instances with the
+     * Shorthand for creating {@link WriteableMultiPart} instances with the
      * specified entities as body parts.
      *
      * @param entities the body part entities
@@ -52,7 +53,22 @@ public class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
     }
 
     /**
-     * Short-hand for creating {@link WriteableMultiPart} instances with the
+     * Shorthand for creating {@link WriteableMultiPart} instances with the
+     * specified entities as body parts.
+     *
+     * @param suppliers suppliers of body part entity
+     * @return created MultiPart
+     */
+    public static WriteableMultiPart create(Supplier<WriteableBodyPart>... suppliers) {
+        Builder builder = builder();
+        for (Supplier<WriteableBodyPart> supplier : suppliers) {
+            builder.bodyPart(supplier);
+        }
+        return builder.build();
+    }
+
+    /**
+     * Shorthand for creating {@link WriteableMultiPart} instances with the
      * specified entities as body parts.
      *
      * @param entities the body part entities
@@ -97,6 +113,16 @@ public class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
         public Builder bodyPart(WriteableBodyPart bodyPart) {
             bodyParts.add(bodyPart);
             return this;
+        }
+
+        /**
+         * Add a body part.
+         *
+         * @param supplier supplier of body part to add
+         * @return this builder instance
+         */
+        public Builder bodyPart(Supplier<WriteableBodyPart> supplier) {
+            return bodyPart(supplier.get());
         }
 
         /**

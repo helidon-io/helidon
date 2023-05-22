@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,11 @@
  */
 package io.helidon.media.multipart;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.media.common.MessageBodyReadableContent;
@@ -140,11 +143,36 @@ public final class ReadableBodyPart implements BodyPart {
 
         /**
          * Set the headers for this part.
+         *
          * @param headers headers
          * @return this builder instance
          */
         public Builder headers(ReadableBodyPartHeaders headers) {
             this.headers = headers;
+            return this;
+        }
+
+        /**
+         * Set the headers for this part.
+         *
+         * @param supplier headers supplier
+         * @return this builder instance
+         */
+        public Builder headers(Supplier<ReadableBodyPartHeaders> supplier) {
+            this.headers = supplier.get();
+            return this;
+        }
+
+        /**
+         * Set the headers for this part.
+         *
+         * @param headers headers map
+         * @return this builder instance
+         */
+        public Builder headers(Map<String, List<String>> headers) {
+            this.headers = ReadableBodyPartHeaders.builder()
+                                                  .headers(headers)
+                                                  .build();
             return this;
         }
 
