@@ -266,6 +266,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
                     CustomAnnotationTemplateCreator.class, CustomAnnotationTemplateCreator.class.getClassLoader());
         } catch (ServiceConfigurationError e) {
             // see issue #6261 - running inside the IDE?
+            // this version will use the thread ctx classloader
             System.getLogger(CustomAnnotationProcessor.class.getName()).log(System.Logger.Level.WARNING, e.getMessage(), e);
             return ServiceLoader.load(CustomAnnotationTemplateCreator.class);
         }
