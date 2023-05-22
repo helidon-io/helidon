@@ -121,7 +121,7 @@ public class HttpMethodCreator implements CustomAnnotationTemplateCreator {
 
         // http.params (full string)
         List<HeaderDef> headerList = new LinkedList<>();
-        List<TypedElementInfo> elementArgs = request.targetElementArgs();
+        List<TypedElementInfo> elementArgs = request.targetElement().parameterArguments();
         LinkedList<String> parameters = new LinkedList<>();
         int headerCount = 1;
         for (TypedElementInfo elementArg : elementArgs) {

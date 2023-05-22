@@ -114,14 +114,10 @@ class GenericTemplateCreatorDefault implements GenericTemplateCreator {
         substitutions.put("basicServiceInfo", req.serviceInfo());
         substitutions.put("weight", req.serviceInfo().realizedWeight());
         substitutions.put("runLevel", req.serviceInfo().realizedRunLevel());
-        substitutions.put("elementAccess", req.targetElementAccess());
-        substitutions.put("elementIsStatic", req.isElementStatic());
         substitutions.put("elementKind", req.targetElement().elementTypeKind());
         substitutions.put("elementName", req.targetElement().elementName());
         substitutions.put("elementAnnotations", req.targetElement().annotations());
         substitutions.put("elementEnclosingTypeName", req.targetElement().typeName());
-        substitutions.put("elementArgs", req.targetElementArgs());
-        substitutions.put("elementArgs-declaration", GeneralProcessorUtils.toString(req.targetElementArgs()));
         substitutions.putAll(genericRequest.overrideProperties());
         return substitutions;
     }

@@ -27,7 +27,6 @@ import io.helidon.common.types.TypeInfoDefault;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.common.types.TypedElementInfoDefault;
-import io.helidon.pico.api.ElementInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.processor.testsubjects.BasicEndpoint;
@@ -84,8 +83,6 @@ class CustomAnnotationProcessorTest {
                 .annoTypeName(create(ExtensibleGET.class))
                 .serviceInfo(serviceInfo)
                 .targetElement(target)
-                .targetElementArgs(List.of(arg1))
-                .targetElementAccess(ElementInfo.Access.PUBLIC)
                 .enclosingTypeInfo(enclosingTypeInfo)
                 .genericTemplateCreator(genericTemplateCreator)
                 .build();
