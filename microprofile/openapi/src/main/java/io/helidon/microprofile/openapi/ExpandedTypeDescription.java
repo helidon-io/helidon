@@ -22,9 +22,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
+import io.smallrye.openapi.api.models.media.SchemaImpl;
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.yaml.snakeyaml.TypeDescription;
@@ -33,7 +32,9 @@ import org.yaml.snakeyaml.introspector.MethodProperty;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertySubstitute;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
+import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
@@ -110,20 +111,6 @@ public class ExpandedTypeDescription extends TypeDescription {
         }
         result.setPropertyUtils(PROPERTY_UTILS);
         return result;
-    }
-
-    /**
-     * Build a map of implementations to types.
-     *
-     * @param helper parser helper
-     * @return map of implementation classes to descriptions
-     */
-    public static Map<Class<?>, ExpandedTypeDescription> buildImplsToTypes(ParserHelper helper) {
-        return Collections.unmodifiableMap(helper.entrySet()
-                                                   .stream()
-                                                   .map(Map.Entry::getValue)
-                                                   .collect(Collectors.toMap(ExpandedTypeDescription::impl,
-                                                                             Function.identity())));
     }
 
     /**
@@ -310,6 +297,24 @@ public class ExpandedTypeDescription extends TypeDescription {
 
         private SchemaTypeDescription(Class<?> clazz, Class<?> impl) {
             super(clazz, impl);
+        }
+
+        @Override
+        public Object newInstance(Node node) {
+            // Schemas specified in config often have a name, and in SmallRye we need to provide the name to the constructor.
+            // So find the name if it's there.
+            String name = "";
+            if (node instanceof MappingNode mappingNode) {
+                for (NodeTuple nodeTuple : mappingNode.getValue()) {
+                    if (nodeTuple.getKeyNode() instanceof ScalarNode scalarKeyNode) {
+                        if (scalarKeyNode.getValue().equals("name")) {
+                            name = scalarKeyNode.getValue();
+                            break;
+                        }
+                    }
+                }
+            }
+            return new SchemaImpl(name);
         }
 
         @Override

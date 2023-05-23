@@ -31,7 +31,7 @@ import org.yaml.snakeyaml.TypeDescription;
 /**
  * Wraps generated parser and uses {@link ExpandedTypeDescription} as its type.
  */
-public class ParserHelper {
+class ParserHelper {
 
     // Temporary to suppress SnakeYAML warnings.
     // As a static we keep a reference to the logger, thereby making sure any changes we make are persistent. (JUL holds
@@ -46,6 +46,7 @@ public class ParserHelper {
 
     private ParserHelper(SnakeYAMLParserHelper<ExpandedTypeDescription> generatedHelper) {
         this.generatedHelper = generatedHelper;
+        adjustTypeDescriptions(generatedHelper.types());
     }
 
     /**
@@ -53,13 +54,12 @@ public class ParserHelper {
      *
      * @return a new parser helper
      */
-    public static ParserHelper create() {
+    static ParserHelper create() {
         boolean warningsEnabled = Boolean.getBoolean("openapi.parsing.warnings.enabled");
         if (SNAKE_YAML_INTROSPECTOR_LOGGER.isLoggable(java.util.logging.Level.WARNING) && !warningsEnabled) {
             SNAKE_YAML_INTROSPECTOR_LOGGER.setLevel(java.util.logging.Level.SEVERE);
         }
         ParserHelper helper = new ParserHelper(SnakeYAMLParserHelper.create(ExpandedTypeDescription::create));
-        adjustTypeDescriptions(helper.types());
         return helper;
     }
 

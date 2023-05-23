@@ -142,6 +142,27 @@ public class Serializer {
             return result;
         }
 
+        @Override
+        protected Node representMapping(Tag tag, Map<?, ?> mapping, DumperOptions.FlowStyle flowStyle) {
+            Node result = super.representMapping(tag, mapping, flowStyle);
+            if (mapping instanceof Extensible<?> extensible) {
+                List<NodeTuple> tuples = ((MappingNode) result).getValue();
+                if (extensible.getExtensions() != null) {
+                    extensible.getExtensions().forEach((k, v) -> {
+                        NodeTuple extensionTuple = new NodeTuple(new ScalarNode(Tag.STR, k, null, null, stringStyle),
+                                                                 represent(v));
+                        tuples.add(extensionTuple);
+                    });
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public Node represent(Object data) {
+            Node result = super.represent(data);
+            return result;
+        }
         private boolean isExemptedFromQuotes(Tag tag) {
             return tag.equals(Tag.BINARY) || tag.equals(Tag.BOOL) || tag.equals(Tag.FLOAT)
                     || tag.equals(Tag.INT);
@@ -207,8 +228,19 @@ public class Serializer {
 
         @Override
         protected MappingNode representJavaBean(Set<Property> properties, Object javaBean) {
+            /*
+             * First, let SnakeYAML prepare the node normally. If the JavaBean is Extensible and has extension properties, the
+             * will contain a subnode called "extensions" which itself has one or more subnodes, one for each extension
+             * property assigned.
+             */
             MappingNode result = super.representJavaBean(properties, javaBean);
+
+            /*
+             * Now promote the individual subnodes for each extension property (if any) up one level so that they are peers of the
+             * other properties. Also remove the "extensions" node.
+             */
             processExtensions(result, javaBean);
+
             /*
              * Clearing representedObjects is an awkward but effective way of preventing SnakeYAML from using anchors and
              * aliases, which apparently the Jackson parser used in the TCK (as of this writing) does not handle properly.
@@ -222,31 +254,50 @@ public class Serializer {
                 return;
             }
 
-            List<NodeTuple> tuples = new ArrayList<>(node.getValue());
+            List<NodeTuple> tuples = node.getValue();
 
             if (tuples.isEmpty()) {
                 return;
             }
+            List<NodeTuple> updatedTuples = processExtensions(tuples);
+            node.setValue(updatedTuples);
+        }
+
+        /**
+         * Returns a (possibly) updated list of {@code NodeTuple} objects, promoting any node under the node {@code extensions}
+         * one level higher and removing the {@code extensions} node itself.
+         *
+         * @param tuples {@code NodeTuple} objects to process
+         * @return possibly updated list of node tuples
+         */
+        private List<NodeTuple> processExtensions(List<NodeTuple> tuples) {
             List<NodeTuple> updatedTuples = new ArrayList<>();
 
             tuples.forEach(tuple -> {
-                Node keyNode = tuple.getKeyNode();
-                if (keyNode.getTag().equals(Tag.STR)) {
-                    String key = ((ScalarNode) keyNode).getValue();
-                    if (key.equals(EXTENSIONS)) {
-                        Node valueNode = tuple.getValueNode();
-                        if (valueNode.getNodeId().equals(NodeId.mapping)) {
-                            MappingNode extensions = MappingNode.class.cast(valueNode);
-                            updatedTuples.addAll(extensions.getValue());
-                        }
-                    } else {
-                        updatedTuples.add(tuple);
-                    }
-                } else {
+                // Returns either null (if the tuple is not for "extensions") or a list of tuples for each extension property.
+                List<NodeTuple> extensionTuples = processExtensions(tuple);
+                if (extensionTuples == null) {
                     updatedTuples.add(tuple);
+                } else {
+                    updatedTuples.addAll(extensionTuples);
                 }
             });
-            node.setValue(updatedTuples);
+            return updatedTuples;
+        }
+
+        private List<NodeTuple> processExtensions(NodeTuple tuple) {
+            Node keyNode = tuple.getKeyNode();
+            if (keyNode.getTag().equals(Tag.STR)) {
+                String key = ((ScalarNode) keyNode).getValue();
+                if (key.equals(EXTENSIONS)) {
+                    Node valueNode = tuple.getValueNode();
+                    if (valueNode.getNodeId().equals(NodeId.mapping)) {
+                        MappingNode extensions = MappingNode.class.cast(valueNode);
+                        return extensions.getValue();
+                    }
+                }
+            }
+            return null;
         }
 
         /**

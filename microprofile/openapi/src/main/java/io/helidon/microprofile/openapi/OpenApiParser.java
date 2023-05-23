@@ -23,9 +23,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.eclipse.microprofile.openapi.models.OpenAPI;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.representer.Representer;
 
 /**
  * Abstraction for SnakeYAML parsing of JSON and YAML.
@@ -45,19 +47,52 @@ final class OpenApiParser {
      */
     static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, InputStream inputStream) throws IOException {
         try (Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
-            return parse(types, reader);
+            return parse(types, OpenAPI.class, reader);
         }
     }
 
-    static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, Reader reader) {
-        TypeDescription openAPITD = types.get(OpenAPI.class);
-        Constructor topConstructor = new CustomConstructor(openAPITD);
+//    static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, Reader reader) {
+//        TypeDescription openAPITD = types.get(OpenAPI.class);
+//        Constructor topConstructor = new CustomConstructor(openAPITD);
+//
+//        types.values()
+//                .forEach(topConstructor::addTypeDescription);
+//
+//        Yaml yaml = new Yaml(topConstructor);
+//        OpenAPI result = yaml.loadAs(reader, OpenAPI.class);
+//        return result;
+//    }
 
+    /**
+     * Parse YAML or JSON using the specified types, returning the specified type with input taken from the indicated reader.
+     *
+     * @param types type descriptions
+     * @param tClass POJO type to be parsed
+     * @param reader {@code Reader} containing the JSON or YAML input
+     * @return the parsed object
+     * @param <T> the type to be returned
+     */
+    static <T> T parse(Map<Class<?>, ExpandedTypeDescription> types, Class<T> tClass, Reader reader) {
+        return parse(types, tClass, reader, new Representer(new DumperOptions()));
+    }
+
+    /**
+     * Parse YAML or JSON using the specified types, returning the indicated type with input from the specified reader.
+     *
+     * @param types type descriptions
+     * @param tClass POJO type to be parsed
+     * @param reader {@code Reader} containing the JSON or YAML input
+     * @param representer the {@code Representer} to use during parsing
+     * @return the parsed object
+     * @param <T> the type to be returned
+     */
+    static <T> T parse(Map<Class<?>, ExpandedTypeDescription> types, Class<T> tClass, Reader reader, Representer representer) {
+        TypeDescription td = types.get(tClass);
+        Constructor topConstructor = new CustomConstructor(td);
         types.values()
                 .forEach(topConstructor::addTypeDescription);
 
-        Yaml yaml = new Yaml(topConstructor);
-        OpenAPI result = yaml.loadAs(reader, OpenAPI.class);
-        return result;
+        Yaml yaml = new Yaml(topConstructor, representer);
+        return yaml.loadAs(reader, tClass);
     }
 }

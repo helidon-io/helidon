@@ -95,6 +95,9 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
                             + "to create the index and add it to your app.",
                     OpenApiCdiExtension.INDEX_PATH));
         }
+        if (openApiConfig == null) {
+            openApiConfig = new OpenApiConfigImpl(mpConfig);
+        }
         return new MpOpenApiFeature(this);
     }
 

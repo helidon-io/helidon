@@ -29,6 +29,9 @@ import jakarta.json.JsonReader;
 import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
+import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.representer.Representer;
 
 /**
  * Extension we want SmallRye's OpenAPI implementation to use for parsing the JSON content in Extension annotations.
@@ -39,11 +42,29 @@ class HelidonAnnotationScannerExtension implements AnnotationScannerExtension {
 
     private static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Collections.emptyMap());
 
+    private static final Representer MISSING_FIELD_TOLERANT_REPRESENTER;
+
+    static {
+        MISSING_FIELD_TOLERANT_REPRESENTER = new Representer(new DumperOptions());
+        MISSING_FIELD_TOLERANT_REPRESENTER.getPropertyUtils().setSkipMissingProperties(true);
+    }
+
     @Override
     public Object parseExtension(String key, String value) {
+        try {
+            return parseValue(value);
+        } catch (Exception ex) {
+            LOGGER.log(System.Logger.Level.ERROR,
+                       String.format("Error parsing extension key: %s, value: %s", key, value),
+                       ex);
+            return null;
+        }
+    }
 
+    @Override
+    public Object parseValue(String value) {
         // Inspired by SmallRye's JsonUtil#parseValue method.
-        if (value == null) {
+        if (value == null || value.isEmpty()) {
             return null;
         }
 
@@ -59,11 +80,18 @@ class HelidonAnnotationScannerExtension implements AnnotationScannerExtension {
             try {
                 JsonReader reader = JSON_READER_FACTORY.createReader(new StringReader(value));
                 JsonValue jsonValue = reader.readValue();
+                // readValue will truncate the input to convert to a number if it can. Make sure the value is the same length
+                // as the original.
+                if (value.length() != jsonValue.toString().length()) {
+                    return value;
+                }
+
                 return convertJsonValue(jsonValue);
             } catch (Exception ex) {
                 LOGGER.log(System.Logger.Level.ERROR,
-                           String.format("Error parsing extension key: %s, value: %s", key, value),
+                           String.format("Error parsing JSON value: %s", value),
                            ex);
+                throw ex;
             }
         }
         default -> {
@@ -72,6 +100,14 @@ class HelidonAnnotationScannerExtension implements AnnotationScannerExtension {
 
         // Treat as JSON string.
         return value;
+    }
+
+    @Override
+    public Schema parseSchema(String jsonSchema) {
+        return OpenApiParser.parse(MpOpenApiFeature.PARSER_HELPER.get().types(),
+                                   Schema.class,
+                                   new StringReader(jsonSchema),
+                                   MISSING_FIELD_TOLERANT_REPRESENTER);
     }
 
     private static Object convertJsonValue(JsonValue jsonValue) {
