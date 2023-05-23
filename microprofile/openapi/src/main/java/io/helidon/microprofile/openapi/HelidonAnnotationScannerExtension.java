@@ -82,7 +82,8 @@ class HelidonAnnotationScannerExtension implements AnnotationScannerExtension {
                 JsonValue jsonValue = reader.readValue();
                 // readValue will truncate the input to convert to a number if it can. Make sure the value is the same length
                 // as the original.
-                if (value.length() != jsonValue.toString().length()) {
+                if (jsonValue.getValueType().equals(JsonValue.ValueType.NUMBER)
+                        && value.length() != jsonValue.toString().length()) {
                     return value;
                 }
 

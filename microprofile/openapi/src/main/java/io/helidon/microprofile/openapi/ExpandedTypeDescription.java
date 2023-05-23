@@ -308,8 +308,10 @@ public class ExpandedTypeDescription extends TypeDescription {
                 for (NodeTuple nodeTuple : mappingNode.getValue()) {
                     if (nodeTuple.getKeyNode() instanceof ScalarNode scalarKeyNode) {
                         if (scalarKeyNode.getValue().equals("name")) {
-                            name = scalarKeyNode.getValue();
-                            break;
+                            if (nodeTuple.getValueNode() instanceof ScalarNode scalarValueNode) {
+                                name = ((ScalarNode) nodeTuple.getValueNode()).getValue();
+                                break;
+                            }
                         }
                     }
                 }
