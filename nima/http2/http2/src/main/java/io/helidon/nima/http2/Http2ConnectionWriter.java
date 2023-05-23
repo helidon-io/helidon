@@ -151,6 +151,8 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             } finally {
                 streamLock.unlock();
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
