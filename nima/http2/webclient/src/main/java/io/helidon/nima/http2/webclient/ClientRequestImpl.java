@@ -194,6 +194,12 @@ class ClientRequestImpl implements Http2ClientRequest {
     }
 
     @Override
+    public Http2ClientRequest skipUriEncoding() {
+        this.uri.skipUriEncoding(true);
+        return this;
+    }
+
+    @Override
     public Http2ClientRequest priority(int priority) {
         if (priority < 1 || priority > 256) {
             throw new IllegalArgumentException("Priority must be between 1 and 256 (inclusive)");

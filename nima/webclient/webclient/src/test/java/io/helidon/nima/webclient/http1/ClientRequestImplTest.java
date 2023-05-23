@@ -17,6 +17,7 @@
 package io.helidon.nima.webclient.http1;
 
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -173,6 +174,23 @@ class ClientRequestImplTest {
                 }));
         client.head(url).connection(http1ClientConnection).request();
         http1ClientConnection.close();
+    }
+
+    @Test
+    void testSkipUrlEncoding() {
+        //Fill with chars which should be encoded
+        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/ěščžř")
+                .queryParam("specialChar+", "someValue,").fragment("someFragment,");
+        URI uri = request.resolvedUri();
+        assertThat(uri.getRawPath(), is("/%C4%9B%C5%A1%C4%8D%C5%BE%C5%99"));
+        assertThat(uri.getRawQuery(), is("specialChar%2B=someValue%2C"));
+        assertThat(uri.getRawFragment(), is("someFragment%2C"));
+
+        request = request.skipUriEncoding();
+        uri = request.resolvedUri();
+        assertThat(uri.getRawPath(), is("/ěščžř"));
+        assertThat(uri.getRawQuery(), is("specialChar+=someValue,"));
+        assertThat(uri.getRawFragment(), is("someFragment,"));
     }
 
     private static void validateSuccessfulResponse(Http1Client client, ClientConnection connection) {

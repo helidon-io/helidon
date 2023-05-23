@@ -174,6 +174,13 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
     B connection(ClientConnection connection);
 
     /**
+     * Disable uri encoding.
+     *
+     * @return updated client request
+     */
+    B skipUriEncoding();
+
+    /**
      * Handle output stream.
      */
     interface OutputStreamHandler {
