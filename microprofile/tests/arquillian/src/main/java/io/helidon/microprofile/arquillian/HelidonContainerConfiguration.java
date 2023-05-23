@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
  * is empty)</li>
  * <li>replaceConfigSourcesWithMp: (Optional) defaults to false: whether to replace config sources with microprofile if it
  * exists</li>
+ * <li>inWebContainer: defaults to false: sets web app context root, load WEB-INF/beans.xml and find any jakarta.ws.rs.core.Application in the webapp classes</li>
  * </ul>
  */
 public class HelidonContainerConfiguration implements ContainerConfiguration {
@@ -45,6 +46,7 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     private boolean deleteTmp = true;
     private boolean useRelativePath = false;
     private boolean useParentClassloader = true;
+    private boolean inWebContainer = false;
     private final List<Consumer<ConfigBuilder>> builderConsumers = new ArrayList<>();
 
     /**
@@ -102,6 +104,14 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
 
     public void setUseParentClassloader(boolean useParentClassloader) {
         this.useParentClassloader = useParentClassloader;
+    }
+
+    public boolean isInWebContainer() {
+        return inWebContainer;
+    }
+
+    public void setInWebContainer(boolean inWebContainer) {
+        this.inWebContainer = inWebContainer;
     }
 
     @Override
