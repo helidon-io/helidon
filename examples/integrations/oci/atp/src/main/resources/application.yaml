@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,15 +14,24 @@
 # limitations under the License.
 #
 
-# Send messages to the console
-handlers=io.helidon.logging.jul.HelidonConsoleHandler
+# The values are read from
+# ~/helidon/conf/examples.yaml
+# or you can just update them here
 
-# HelidonConsoleHandler uses a SimpleFormatter subclass that replaces "!thread!" with the current thread
-java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n
+server:
+  port: 8080
 
-# Global logging level. Can be overridden by specific loggers
-.level=INFO
+oracle:
+  ucp:
+    jdbc:
+      PoolDataSource:
+        atp:
+          connectionFactoryClassName: oracle.jdbc.pool.OracleDataSource
+          tnsNetServiceName: "${atp.db.tnsNetServiceName}"
+          user: "${atp.db.user}"
+          password: "${atp.db.password}"
 
-io.helidon.level=INFO
-io.helidon.integrations.level=INFO
-io.helidon.reactive.webclient.level=INFO
+oci:
+  atp:
+    ocid: "${oci.properties.atp-ocid}"
+    walletPassword: "${oci.properties.atp-walletPassword}"

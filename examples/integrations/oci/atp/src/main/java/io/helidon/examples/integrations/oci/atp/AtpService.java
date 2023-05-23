@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.integrations.oci.atp.cdi;
+package io.helidon.examples.integrations.oci.atp;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -25,7 +25,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -35,25 +34,34 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
+import com.oracle.bmc.ConfigFileReader;
+import com.oracle.bmc.auth.AuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.database.Database;
+import com.oracle.bmc.database.DatabaseClient;
 import com.oracle.bmc.database.model.GenerateAutonomousDatabaseWalletDetails;
 import com.oracle.bmc.database.requests.GenerateAutonomousDatabaseWalletRequest;
 import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletResponse;
 import com.oracle.bmc.http.client.Options;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.core.Response;
+
+import io.helidon.common.http.Http;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
+
+import oracle.jdbc.pool.OracleDataSource;
 import oracle.security.pki.OraclePKIProvider;
 import oracle.ucp.jdbc.PoolDataSource;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import oracle.ucp.jdbc.PoolDataSourceFactory;
+
 /**
- * JAX-RS resource - REST API for the atp example.
+ * REST API for the atp example.
  */
-@Path("/atp")
-public class AtpResource {
-    private static final Logger LOGGER = Logger.getLogger(AtpResource.class.getName());
+public class AtpService implements HttpService {
+    private static final Logger LOGGER = Logger.getLogger(AtpService.class.getName());
 
     private final Database databaseClient;
     private final PoolDataSource atpDataSource;
@@ -61,27 +69,40 @@ public class AtpResource {
 
     private final String atpOcid;
     private final String walletPassword;
+    private final Config config;
 
-    @Inject
-    AtpResource(Database databaseClient, @Named("atp") PoolDataSource atpDataSource,
-                @ConfigProperty(name = "oracle.ucp.jdbc.PoolDataSource.atp.tnsNetServiceName") String atpTnsNetServiceName,
-                @ConfigProperty(name = "oci.atp.ocid") String atpOcid,
-                @ConfigProperty(name = "oci.atp.walletPassword") String walletPassword) {
-        this.databaseClient = databaseClient;
-        this.atpDataSource = Objects.requireNonNull(atpDataSource);
-        this.atpTnsNetServiceName = atpTnsNetServiceName;
-        this.atpOcid = atpOcid;
-        this.walletPassword = walletPassword;
+    AtpService(Config config) {
+        try {
+            this.config = config;
+            AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(
+                    ConfigFileReader.parseDefault());
+            this.databaseClient = DatabaseClient.builder().build(authProvider);
+            this.atpTnsNetServiceName = config.get("oracle.ucp.jdbc.PoolDataSource.atp.tnsNetServiceName")
+                    .asString()
+                    .orElseThrow(() -> new IllegalStateException("Missing tnsNetServiceName!!"));
+            this.atpOcid = config.get("oci.atp.ocid")
+                    .asString()
+                    .orElseThrow(() -> new IllegalStateException("Missing ocid!!"));
+            this.walletPassword = config.get("oci.atp.walletPassword")
+                    .asString()
+                    .orElseThrow(() -> new IllegalStateException("Missing walletPassword!!"));
+            atpDataSource = PoolDataSourceFactory.getPoolDataSource();
+        } catch (IOException e) {
+            throw new ConfigException("Failed to read configuration properties", e);
+        }
+    }
+
+    public void routing(HttpRules rules) {
+        rules.get("/wallet", this::generateWallet);
     }
 
     /**
-     * Generate wallet file for the configured ATP.
+     * Generate wallet file for the configured ATP, make SQL query to the database and return its result in response.
      *
-     * @return response containing wallet file
+     * @param request  request
+     * @param response request
      */
-    @GET
-    @Path("/wallet")
-    public Response generateWallet() {
+    public void generateWallet(ServerRequest request, ServerResponse response) {
         Options.shouldAutoCloseResponseInputStream(false);
         GenerateAutonomousDatabaseWalletResponse walletResponse =
                 databaseClient.generateAutonomousDatabaseWallet(
@@ -95,7 +116,8 @@ public class AtpResource {
 
         if (walletResponse.getContentLength() == 0) {
             LOGGER.log(Level.SEVERE, "GenerateAutonomousDatabaseWalletResponse is empty");
-            return Response.status(Response.Status.NOT_FOUND).build();
+            response.status(Http.Status.NOT_FOUND_404);
+            return;
         }
 
         byte[] walletContent = null;
@@ -103,26 +125,40 @@ public class AtpResource {
             walletContent = walletResponse.getInputStream().readAllBytes();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error processing GenerateAutonomousDatabaseWalletResponse", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            return;
         }
-        String returnEntity = null;
+        String returnEntity;
         try {
-            this.atpDataSource.setSSLContext(getSSLContext(walletContent));
-            this.atpDataSource.setURL(getJdbcUrl(walletContent, this.atpTnsNetServiceName));
+            configureDataSource(walletContent);
             try (
-                Connection connection = this.atpDataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("SELECT 'Hello world!!' FROM DUAL");
-                ResultSet rs = ps.executeQuery()
-            ){
+                    Connection connection = this.atpDataSource.getConnection();
+                    PreparedStatement ps = connection.prepareStatement("SELECT 'Hello world!!' FROM DUAL");
+                    ResultSet rs = ps.executeQuery()
+            ) {
                 rs.next();
                 returnEntity = rs.getString(1);
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error setting up DataSource", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            return;
         }
 
-        return Response.status(Response.Status.OK).entity(returnEntity).build();
+        response.status(Http.Status.OK_200);
+        response.send(returnEntity);
+    }
+
+    private void configureDataSource(byte[] walletContent) throws SQLException {
+        atpDataSource.setSSLContext(getSSLContext(walletContent));
+        atpDataSource.setURL(getJdbcUrl(walletContent, this.atpTnsNetServiceName));
+        atpDataSource.setUser(config.get("atp.db.user")
+                .asString()
+                .orElseThrow(() -> new IllegalStateException("Missing DB user!!")));
+        atpDataSource.setPassword(config.get("atp.db.password")
+                .asString()
+                .orElseThrow(() -> new IllegalStateException("Missing user password!!")));
+        atpDataSource.setConnectionFactoryClassName(OracleDataSource.class.getName());
     }
 
     /**

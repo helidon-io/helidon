@@ -1,4 +1,4 @@
-# Helidon ATP MP Examples
+# Helidon ATP Nima Example
 
 This example demonstrates how user can easily retrieve wallet from their ATP instance running in OCI and use information from that wallet to setup DataSource to do Database operations.
 
@@ -16,7 +16,7 @@ Once you have updated required properties, you can run the example:
 
 ```shell script
 mvn clean install
-java -jar ./target/helidon-examples-integrations-oci-atp-cdi.jar
+java -jar ./target/helidon-examples-integrations-oci-atp.jar
 ```  
 
 To verify that, you can retrieve wallet and do database operation:
