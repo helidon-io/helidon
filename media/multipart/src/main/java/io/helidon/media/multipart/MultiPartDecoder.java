@@ -139,7 +139,12 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
         try {
             ByteBuffer[] byteBuffers = chunk.data();
             for (int i = 0; i < byteBuffers.length; i++) {
-                int id = parser.offer(byteBuffers[i]);
+                ByteBuffer byteBuffer = byteBuffers[i];
+                if (!byteBuffer.hasRemaining()) {
+                    // skip if empty
+                    continue;
+                }
+                int id = parser.offer(byteBuffer);
                 // record the chunk using the id of the last buffer
                 if (i == byteBuffers.length - 1) {
                     // drain() cannot be invoked concurrently, it is safe to use HashMap
