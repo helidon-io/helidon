@@ -72,7 +72,7 @@ import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.jboss.jandex.IndexView;
+import io.smallrye.jandex.IndexView;
 
 import static io.helidon.nima.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 

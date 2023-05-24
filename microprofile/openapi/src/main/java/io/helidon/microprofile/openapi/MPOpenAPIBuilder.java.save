@@ -40,11 +40,11 @@ import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Feature;
 import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.config.Config;
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationTarget;
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
+import io.smallrye.jandex.AnnotationInstance;
+import io.smallrye.jandex.AnnotationTarget;
+import io.smallrye.jandex.ClassInfo;
+import io.smallrye.jandex.DotName;
+import io.smallrye.jandex.IndexView;
 
 /**
  * Fluent builder for OpenAPISupport in Helidon MP.

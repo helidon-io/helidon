@@ -65,12 +65,12 @@ import org.eclipse.microprofile.lra.annotation.Forget;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.Status;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.CompositeIndex;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexReader;
-import org.jboss.jandex.IndexView;
-import org.jboss.jandex.Indexer;
+import io.smallrye.jandex.ClassInfo;
+import io.smallrye.jandex.CompositeIndex;
+import io.smallrye.jandex.DotName;
+import io.smallrye.jandex.IndexReader;
+import io.smallrye.jandex.IndexView;
+import io.smallrye.jandex.Indexer;
 
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 

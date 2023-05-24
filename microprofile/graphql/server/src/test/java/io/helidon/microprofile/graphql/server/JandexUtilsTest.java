@@ -20,9 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.Index;
+import io.smallrye.jandex.ClassInfo;
+import io.smallrye.jandex.DotName;
+import io.smallrye.jandex.Index;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

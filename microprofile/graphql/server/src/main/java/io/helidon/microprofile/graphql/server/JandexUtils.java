@@ -29,10 +29,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.Index;
-import org.jboss.jandex.IndexReader;
+import io.smallrye.jandex.ClassInfo;
+import io.smallrye.jandex.DotName;
+import io.smallrye.jandex.Index;
+import io.smallrye.jandex.IndexReader;
 
 /**
  * Utilities for working with Jandex indexes.

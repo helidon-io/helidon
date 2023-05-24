@@ -38,7 +38,7 @@ import org.eclipse.microprofile.lra.annotation.Forget;
 import org.eclipse.microprofile.lra.annotation.Status;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
-import org.jboss.jandex.AnnotationInstance;
+import io.smallrye.jandex.AnnotationInstance;
 
 import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_KEY_COORDINATOR_TIMEOUT;
 import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_KEY_COORDINATOR_TIMEOUT_UNIT;

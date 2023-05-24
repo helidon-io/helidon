@@ -220,7 +220,7 @@ ocimetrics:
             </list>
             <list key="maven-plugins">
                 <value template="mustache"><![CDATA[            <plugin>
-                <groupId>org.jboss.jandex</groupId>
+                <groupId>io.smallrye</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
                 <executions>
                     <execution>

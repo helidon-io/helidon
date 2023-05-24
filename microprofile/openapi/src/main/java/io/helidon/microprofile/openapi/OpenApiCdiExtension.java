@@ -181,7 +181,7 @@ public class OpenApiCdiExtension extends HelidonRestCdiExtension<MpOpenApiFeatur
     }
 
 //    /**
-//     * Reports an {@link org.jboss.jandex.IndexView} for the Jandex index that describes
+//     * Reports an {@link io.smallrye.jandex.IndexView} for the Jandex index that describes
 //     * annotated classes for endpoints.
 //     *
 //     * @return {@code IndexView} describing discovered classes

@@ -39,7 +39,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Disabled("3.0.0-JAKARTA") // OpenAPI: Caused by: java.lang.NoSuchMethodError:
-        // 'java.util.List org.jboss.jandex.ClassInfo.unsortedFields()'
+        // 'java.util.List io.smallrye.jandex.ClassInfo.unsortedFields()'
 class MainTest {
     private static Server server;
 

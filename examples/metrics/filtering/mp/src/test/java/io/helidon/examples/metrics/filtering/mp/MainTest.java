@@ -31,7 +31,7 @@ import static org.hamcrest.Matchers.is;
 
 @HelidonTest
 @Disabled("3.0.0-JAKARTA") // OpenAPI
-// Caused by: java.lang.NoSuchMethodError: 'java.util.List org.jboss.jandex.ClassInfo.unsortedFields()'
+// Caused by: java.lang.NoSuchMethodError: 'java.util.List io.smallrye.jandex.ClassInfo.unsortedFields()'
 public class MainTest {
 
     @Inject

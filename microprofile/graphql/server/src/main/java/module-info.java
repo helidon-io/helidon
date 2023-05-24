@@ -38,7 +38,7 @@ module io.helidon.microprofile.graphql.server {
     requires jakarta.cdi;
     requires org.eclipse.yasson;
 
-    requires org.jboss.jandex;
+    requires io.smallrye.jandex;
 
     requires io.helidon.config;
     requires io.helidon.nima.graphql.server;

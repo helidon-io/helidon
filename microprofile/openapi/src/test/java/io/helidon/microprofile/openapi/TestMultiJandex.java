@@ -20,9 +20,9 @@ import java.io.IOException;
 import io.helidon.microprofile.openapi.other.TestApp2;
 import io.helidon.openapi.OpenApiFeature;
 
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
+import io.smallrye.jandex.ClassInfo;
+import io.smallrye.jandex.DotName;
+import io.smallrye.jandex.IndexView;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

@@ -27,7 +27,7 @@ import io.helidon.lra.coordinator.client.CoordinatorClient;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ResourceInfo;
-import org.jboss.jandex.AnnotationInstance;
+import io.smallrye.jandex.AnnotationInstance;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 

@@ -38,7 +38,7 @@ module io.helidon.microprofile.openapi {
     requires microprofile.config.api;
     requires io.helidon.microprofile.server;
     requires io.helidon.openapi;
-    requires org.jboss.jandex;
+    requires io.smallrye.jandex;
 
     requires org.yaml.snakeyaml;
 

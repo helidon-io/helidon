@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @HelidonTest
 @Disabled("3.0.0-JAKARTA") // OpenAPI
-// Caused by: java.lang.NoSuchMethodError: 'java.util.List org.jboss.jandex.ClassInfo.unsortedFields()'
+// Caused by: java.lang.NoSuchMethodError: 'java.util.List io.smallrye.jandex.ClassInfo.unsortedFields()'
 class MicrostreamExampleGreetingsMpTest {
 
     @Inject

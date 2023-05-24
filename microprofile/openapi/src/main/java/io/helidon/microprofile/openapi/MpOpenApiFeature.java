@@ -46,7 +46,7 @@ import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 import io.smallrye.openapi.runtime.scanner.OpenApiAnnotationScanner;
 import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.jboss.jandex.IndexView;
+import io.smallrye.jandex.IndexView;
 
 /**
  * MP variant of OpenApiFeature.

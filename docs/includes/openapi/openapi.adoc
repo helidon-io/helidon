@@ -185,13 +185,13 @@ A Jandex index stores information about the classes and methods in your app and
 what annotations they have. It allows CDI to process annotations faster during your
 application's start-up.
 
-Add the link:https://github.com/wildfly/jandex-maven-plugin[Jandex maven plug-in] to the `<build><plugins>`
+Add the link:https://github.com/smallrye/jandex/maven-plugin[Jandex maven plug-in] to the `<build><plugins>`
 section of your `pom.xml`:
 
 [source,xml,subs="attributes+"]
 ----
 <plugin>
-    <groupId>org.jboss.jandex</groupId>
+    <groupId>io.smallrye</groupId>
     <artifactId>jandex-maven-plugin</artifactId>
     <version>{jandex-plugin-version}</version>
     <executions>

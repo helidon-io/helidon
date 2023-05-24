@@ -44,13 +44,13 @@ import org.eclipse.microprofile.lra.annotation.Forget;
 import org.eclipse.microprofile.lra.annotation.Status;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationValue;
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
-import org.jboss.jandex.MethodInfo;
-import org.jboss.jandex.Type;
+import io.smallrye.jandex.AnnotationInstance;
+import io.smallrye.jandex.AnnotationValue;
+import io.smallrye.jandex.ClassInfo;
+import io.smallrye.jandex.DotName;
+import io.smallrye.jandex.IndexView;
+import io.smallrye.jandex.MethodInfo;
+import io.smallrye.jandex.Type;
 
 @Reflected
 class InspectionService {
