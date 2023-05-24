@@ -29,6 +29,9 @@
     <artifactId>helidon-archetypes-project</artifactId>
     <name>Helidon Archetypes</name>
     <packaging>pom</packaging>
+    <properties>
+        <version.lib.helidon-archetype-engine>3.0.4</version.lib.helidon-archetype-engine>
+    </properties>
 
     <modules>
         <module>helidon</module>
@@ -48,7 +51,7 @@
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>helidon-archetype-maven-plugin</artifactId>
-                    <version>${version.plugin.helidon-build-tools}</version>
+                    <version>${version.lib.helidon-archetype-engine}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -59,12 +62,12 @@
             <dependency>
                 <groupId>io.helidon.build-tools.archetype</groupId>
                 <artifactId>helidon-archetype-engine-v2</artifactId>
-                <version>${version.plugin.helidon-build-tools}</version>
+                <version>${version.lib.helidon-archetype-engine}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.build-tools.common</groupId>
                 <artifactId>helidon-build-common-maven-url-support</artifactId>
-                <version>${version.plugin.helidon-build-tools}</version>
+                <version>${version.lib.helidon-archetype-engine}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
