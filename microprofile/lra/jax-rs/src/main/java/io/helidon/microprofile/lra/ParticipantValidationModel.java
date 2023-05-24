@@ -34,11 +34,11 @@ import io.helidon.common.reactive.Single;
 import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
-import io.smallrye.jandex.AnnotationInstance;
-import io.smallrye.jandex.ClassInfo;
-import io.smallrye.jandex.DotName;
-import io.smallrye.jandex.MethodInfo;
-import io.smallrye.jandex.Type;
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.DotName;
+import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.MethodParameterInfo;
 
 class ParticipantValidationModel {
 
@@ -155,8 +155,7 @@ class ParticipantValidationModel {
 
         String nameWithParams() {
             return methodInfo.name() + methodInfo.parameters().stream()
-                    .map(Type::name)
-                    .map(DotName::toString)
+                    .map(MethodParameterInfo::name)
                     .collect(Collectors.joining());
         }
 

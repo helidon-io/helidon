@@ -32,9 +32,9 @@ import graphql.ExecutionResult;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
 import org.hamcrest.CoreMatchers;
-import io.smallrye.jandex.Index;
-import io.smallrye.jandex.IndexWriter;
-import io.smallrye.jandex.Indexer;
+import org.jboss.jandex.Index;
+import org.jboss.jandex.IndexWriter;
+import org.jboss.jandex.Indexer;
 import org.junit.jupiter.api.Assertions;
 
 import static io.helidon.graphql.server.GraphQlConstants.COLUMN;

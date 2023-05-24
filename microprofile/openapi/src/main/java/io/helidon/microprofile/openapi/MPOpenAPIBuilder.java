@@ -43,15 +43,15 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Feature;
 import jakarta.ws.rs.ext.Provider;
-import io.smallrye.jandex.AnnotationInstance;
-import io.smallrye.jandex.AnnotationTarget;
-import io.smallrye.jandex.ClassInfo;
-import io.smallrye.jandex.CompositeIndex;
-import io.smallrye.jandex.DotName;
-import io.smallrye.jandex.Index;
-import io.smallrye.jandex.IndexReader;
-import io.smallrye.jandex.IndexView;
-import io.smallrye.jandex.Indexer;
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationTarget;
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.CompositeIndex;
+import org.jboss.jandex.DotName;
+import org.jboss.jandex.Index;
+import org.jboss.jandex.IndexReader;
+import org.jboss.jandex.IndexView;
+import org.jboss.jandex.Indexer;
 
 /**
  * Builder for the MP OpenAPI feature.
@@ -119,7 +119,7 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
     }
 
     /**
-     * Returns an {@link io.smallrye.jandex.IndexView} for the Jandex index that describes
+     * Returns an {@link org.jboss.jandex.IndexView} for the Jandex index that describes
      * annotated classes for endpoints.
      *
      * @return {@code IndexView} describing discovered classes
