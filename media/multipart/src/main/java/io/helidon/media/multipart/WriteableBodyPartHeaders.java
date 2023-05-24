@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,7 @@ public final class WriteableBodyPartHeaders extends HashHeaders implements BodyP
     /**
      * Create a new instance of {@link WriteableBodyPartHeaders} with empty
      * headers.
+     *
      * @return WriteableBodyPartHeaders
      */
     public static WriteableBodyPartHeaders create() {
@@ -111,7 +112,7 @@ public final class WriteableBodyPartHeaders extends HashHeaders implements BodyP
         /**
          * Add a new header.
          *
-         * @param name header name
+         * @param name  header name
          * @param value header value
          * @return this builder
          */
@@ -121,16 +122,42 @@ public final class WriteableBodyPartHeaders extends HashHeaders implements BodyP
         }
 
         /**
+         * Add a new header.
+         *
+         * @param name   header name
+         * @param values header values
+         * @return this builder
+         */
+        public Builder header(String name, List<String> values) {
+            headers.computeIfAbsent(name, n -> new ArrayList<>())
+                   .addAll(values);
+            return this;
+        }
+
+        /**
+         * Add new headers.
+         *
+         * @param headers headers map
+         * @return this builder
+         */
+        public Builder headers(Map<String, List<String>> headers) {
+            headers.forEach(this::header);
+            return this;
+        }
+
+        /**
          * Add a {@code Content-Type} header.
+         *
          * @param contentType value for the {@code Content-Type} header
          * @return this builder
          */
         public Builder contentType(MediaType contentType) {
-           return header(Http.Header.CONTENT_TYPE, contentType.toString());
+            return header(Http.Header.CONTENT_TYPE, contentType.toString());
         }
 
         /**
          * Add a {@code Content-Disposition} header.
+         *
          * @param contentDisp content disposition
          * @return this builder
          */
@@ -140,7 +167,7 @@ public final class WriteableBodyPartHeaders extends HashHeaders implements BodyP
 
         /**
          * Name which will be used in {@link ContentDisposition}.
-         *
+         * <br>
          * This value will be ignored if an actual instance of {@link ContentDisposition} is set.
          *
          * @param name content disposition name parameter
@@ -153,7 +180,7 @@ public final class WriteableBodyPartHeaders extends HashHeaders implements BodyP
 
         /**
          * Filename which will be used in {@link ContentDisposition}.
-         *
+         * <br>
          * This value will be ignored if an actual instance of {@link ContentDisposition} is set.
          *
          * @param fileName content disposition filename parameter

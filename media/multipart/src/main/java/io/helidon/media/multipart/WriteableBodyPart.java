@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,15 @@
  */
 package io.helidon.media.multipart;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
+import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Parameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.SubscriptionHelper;
 import io.helidon.media.common.MessageBodyWriterContext;
@@ -51,10 +53,11 @@ public final class WriteableBodyPart implements BodyPart {
 
     /**
      * Create a new out-bound part backed by the specified entity.
+     *
      * @param entity entity for the created part content
      * @return BodyPart
      */
-    public static WriteableBodyPart create(Object entity){
+    public static WriteableBodyPart create(Object entity) {
         return builder().entity(entity).build();
     }
 
@@ -86,6 +89,7 @@ public final class WriteableBodyPart implements BodyPart {
 
         /**
          * Create a new body part backed by the specified entity.
+         *
          * @param entity entity for the body part content
          * @return this builder instance
          */
@@ -96,9 +100,10 @@ public final class WriteableBodyPart implements BodyPart {
 
         /**
          * Create a new body part backed by the specified entity stream.
-         * @param <T> stream item type
+         *
+         * @param <T>    stream item type
          * @param stream stream of entities for the body part content
-         * @param type actual representation of the entity type
+         * @param type   actual representation of the entity type
          * @return this builder instance
          */
         public <T> Builder entityStream(Publisher<T> stream, Class<T> type) {
@@ -109,6 +114,7 @@ public final class WriteableBodyPart implements BodyPart {
 
         /**
          * Create a new body part backed by the specified publisher.
+         *
          * @param publisher publisher for the part content
          * @return this builder instance
          */
@@ -119,6 +125,7 @@ public final class WriteableBodyPart implements BodyPart {
 
         /**
          * Set the headers for this part.
+         *
          * @param headers headers
          * @return this builder instance
          */
@@ -128,8 +135,32 @@ public final class WriteableBodyPart implements BodyPart {
         }
 
         /**
-         * Name which will be used in {@link ContentDisposition}.
+         * Set the headers for this part.
          *
+         * @param supplier headers supplier
+         * @return this builder instance
+         */
+        public Builder headers(Supplier<WriteableBodyPartHeaders> supplier) {
+            this.headers = supplier.get();
+            return this;
+        }
+
+        /**
+         * Set the headers for this part.
+         *
+         * @param headers headers map
+         * @return this builder instance
+         */
+        public Builder headers(Map<String, List<String>> headers) {
+            this.headers = WriteableBodyPartHeaders.builder()
+                                                   .headers(headers)
+                                                   .build();
+            return this;
+        }
+
+        /**
+         * Name which will be used in {@link ContentDisposition}.
+         * <br>
          * This value will be ignored if an actual instance of {@link WriteableBodyPartHeaders} is set.
          *
          * @param name content disposition name parameter
@@ -142,7 +173,7 @@ public final class WriteableBodyPart implements BodyPart {
 
         /**
          * Filename which will be used in {@link ContentDisposition}.
-         *
+         * <br>
          * This value will be ignored if an actual instance of {@link WriteableBodyPartHeaders} is set.
          *
          * @param fileName content disposition filename parameter
@@ -157,19 +188,17 @@ public final class WriteableBodyPart implements BodyPart {
         public WriteableBodyPart build() {
             if (headers.toMap().size() == 0 && name != null) {
                 headers = WriteableBodyPartHeaders.builder()
-                        .name(name)
-                        .filename(fileName)
-                        .build();
+                                                  .name(name)
+                                                  .filename(fileName)
+                                                  .build();
             }
             return new WriteableBodyPart(content, headers);
         }
     }
 
-    private static final class RawBodyPartContent implements WriteableBodyPartContent {
+    private record RawBodyPartContent(Publisher<DataChunk> publisher) implements WriteableBodyPartContent {
 
-        private final Publisher<DataChunk> publisher;
-
-        RawBodyPartContent(Publisher<DataChunk> publisher) {
+        private RawBodyPartContent(Publisher<DataChunk> publisher) {
             this.publisher = Objects.requireNonNull(publisher, "entity cannot be null!");
         }
 
@@ -188,13 +217,13 @@ public final class WriteableBodyPart implements BodyPart {
 
         private final Object entity;
         private final GenericType<Object> type;
-        private final Parameters headers;
+        private final WriteableBodyPartHeaders headers;
         private Publisher<DataChunk> publisher;
 
-        EntityBodyPartContent(Object entity, Parameters headers) {
+        EntityBodyPartContent(Object entity, WriteableBodyPartHeaders headers) {
             this.entity = Objects.requireNonNull(entity, "entity cannot be null!");
             this.headers = Objects.requireNonNull(headers, "headers cannot be null");
-            type = GenericType.<Object>create(entity.getClass());
+            this.type = GenericType.<Object>create(entity.getClass());
         }
 
         @Override
@@ -218,10 +247,10 @@ public final class WriteableBodyPart implements BodyPart {
 
         private final Publisher<T> stream;
         private final GenericType<T> type;
-        private final Parameters headers;
+        private final WriteableBodyPartHeaders headers;
         private Publisher<DataChunk> publisher;
 
-        EntityStreamBodyPartContent(Publisher<T> stream, GenericType<T> type, Parameters headers) {
+        EntityStreamBodyPartContent(Publisher<T> stream, GenericType<T> type, WriteableBodyPartHeaders headers) {
             this.stream = Objects.requireNonNull(stream, "entity cannot be null!");
             this.type = Objects.requireNonNull(type, "type cannot be null!");
             this.headers = Objects.requireNonNull(headers, "headers cannot be null");
