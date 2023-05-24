@@ -309,7 +309,7 @@ public class ExpandedTypeDescription extends TypeDescription {
                     if (nodeTuple.getKeyNode() instanceof ScalarNode scalarKeyNode) {
                         if (scalarKeyNode.getValue().equals("name")) {
                             if (nodeTuple.getValueNode() instanceof ScalarNode scalarValueNode) {
-                                name = ((ScalarNode) nodeTuple.getValueNode()).getValue();
+                                name = scalarValueNode.getValue();
                                 break;
                             }
                         }
