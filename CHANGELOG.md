@@ -9,6 +9,43 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.1]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- LRA: Fix LRA logging [6746](https://github.com/helidon-io/helidon/pull/6746)
+- LRA: LRA coordinator docker fix [6726](https://github.com/helidon-io/helidon/pull/6726)
+- Media: Avoid calling MimeParser.offer with empty buffers [6851](https://github.com/helidon-io/helidon/pull/6851)
+- Media: MultiPart Builder improvements [6853](https://github.com/helidon-io/helidon/pull/6853)
+- Media: WritableMultiPart create methods fixed [6411](https://github.com/helidon-io/helidon/pull/6411)
+- Metrics: Improved performance of metric lookups in MetricProducer [6875](https://github.com/helidon-io/helidon/pull/6875)
+- Security: OIDC query params backport [6410](https://github.com/helidon-io/helidon/pull/6410)
+- Security: gRPC Unauthenticated status code fix [6880](https://github.com/helidon-io/helidon/pull/6880)
+- Tracing: Support for unordered scope closings in JaegerScopeManager [6239](https://github.com/helidon-io/helidon/pull/6239)
+- WebClient: Add option to disable DNS Resolver for WebClient. [6868](https://github.com/helidon-io/helidon/pull/6868)
+- WebClient: Proxy now properly selects proxy settings from system properties [6879](https://github.com/helidon-io/helidon/pull/6879)
+- WebServer: 6524 Intermittent watermark test fix [6836](https://github.com/helidon-io/helidon/pull/6836)
+- WebServer: Update ByteBufferDataChunk.isReleased and ByteBufDataChunk.isReleased to use AtomicBoolean [6846](https://github.com/helidon-io/helidon/pull/6846)
+- WebServer: Use checkNested(Throwable) for req.next(Throwable) [6704](https://github.com/helidon-io/helidon/pull/6704)
+- Build: Create Github Action for helidon-2.x branch [6521](https://github.com/helidon-io/helidon/pull/6521)
+- Dependencies: Kafka bump up 2.8.1 > 3.4.0 [6707](https://github.com/helidon-io/helidon/pull/6707)
+- Dependencies: Update grpc-java to version 1.54.1 [6715](https://github.com/helidon-io/helidon/pull/6715)
+- Dependencies: Update jaeger-client to 1.8.1 [6777](https://github.com/helidon-io/helidon/pull/6777)
+- Dependencies: Upgrade Netty to 4.1.90.Final and use Netty BOM for version management [6532](https://github.com/helidon-io/helidon/pull/6532)
+- Dependencies: Upgrade Weld #6575 [6805](https://github.com/helidon-io/helidon/pull/6805)
+- Dependencies: Upgrade eclipselink to 2.7.12 and hibernate to 5.6.15 [6513](https://github.com/helidon-io/helidon/pull/6513)
+- Dependencies: Upgrade graphql to 17.5 [6534](https://github.com/helidon-io/helidon/pull/6534)
+- Dependencies: Upgrade jersey to 2.39.1 [6488](https://github.com/helidon-io/helidon/pull/6488)
+- Dependencies: Upgrade oci sdk to 2.60.1 [6694](https://github.com/helidon-io/helidon/pull/6694)
+- Docs: Truncate example token in README so it is not valid [6780](https://github.com/helidon-io/helidon/pull/6780)
+- Docs: Update documentation of composite provider flag. (#6597) [6636](https://github.com/helidon-io/helidon/pull/6636)
+- Docs: Updated doc to reflect current support for FT thread pool properties [6616](https://github.com/helidon-io/helidon/pull/6616)
+- Tests: Add @Target(ElementType.METHOD) for annotation @MPTest [6350](https://github.com/helidon-io/helidon/pull/6350)
+- Tests: Fix params of @ExampleObject annotations in examples (#6785) [6786](https://github.com/helidon-io/helidon/pull/6786)
+- Tests: Use Hamcrest assertions instead of JUnit in security/providers/http-auth (#1749) [6431](https://github.com/helidon-io/helidon/pull/6431)
+
 ## [2.6.0]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
@@ -2093,7 +2130,8 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.5.6]: https://github.com/oracle/helidon/compare/2.5.6...2.6.0
+[2.6.1]: https://github.com/oracle/helidon/compare/2.6.0...2.6.1
+[2.6.0]: https://github.com/oracle/helidon/compare/2.5.6...2.6.0
 [2.5.6]: https://github.com/oracle/helidon/compare/2.5.5...2.5.6
 [2.5.5]: https://github.com/oracle/helidon/compare/2.5.4...2.5.5
 [2.5.4]: https://github.com/oracle/helidon/compare/2.5.3...2.5.4
