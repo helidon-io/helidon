@@ -268,8 +268,8 @@ public class LraCdiExtension implements Extension {
             }
             ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
 
-            indexer.index(new ByteArrayInputStream(baos.toByteArray()));
-            classInfo = Index.singleClass(new ByteArrayInputStream(baos.toByteArray()));// look also for extended classes
+            indexer.index(bais);
+            classInfo = Index.singleClass(new ByteArrayInputStream(baos.toByteArray())); // look also for extended classes
             runtimeIndex(classInfo.superName());
             // and implemented interfaces
             classInfo.interfaceNames().forEach(this::runtimeIndex);

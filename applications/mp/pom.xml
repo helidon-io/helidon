@@ -43,7 +43,7 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>io.smallrye</groupId>
+                    <groupId>org.jboss.jandex</groupId>
                     <artifactId>jandex-maven-plugin</artifactId>
                     <version>${version.plugin.jandex}</version>
                     <executions>

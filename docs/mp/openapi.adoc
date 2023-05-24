@@ -39,7 +39,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-include::{rootdir}/includes/openapi.adoc[tag=overview]
+include::{rootdir}/includes/openapi/openapi.adoc[tag=overview]
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -75,7 +75,7 @@ To use OpenAPI from your Helidon MP app, in addition to adding dependencies as d
 1. Furnish OpenAPI information about your application's endpoints.
 2. Update your application's configuration (optional).
 
-include::{rootdir}/includes/openapi.adoc[tag=furnish-openapi-info]
+include::{rootdir}/includes/openapi/openapi.adoc[tag=furnish-openapi-info]
 
 === Update your application configuration
 Beyond the two config properties that denote the model reader and filter, Helidon
@@ -83,11 +83,11 @@ MP OpenAPI supports a number of other mandated settings. These are described in 
 link:{microprofile-open-api-spec-url}#configuration[configuration section] of the MicroProfile
 OpenAPI spec.
 
-include::{rootdir}/includes/openapi.adoc[tag=usage-access-endpoint]
+include::{rootdir}/includes/openapi/openapi.adoc[tag=usage-access-endpoint]
 
 == API
 
-include::{rootdir}/includes/openapi.adoc[tag=api]
+include::{rootdir}/includes/openapi/openapi.adoc[tag=api]
 
 == Configuration
 
@@ -264,7 +264,7 @@ Full example is available link:{helidon-github-tree-url}}/examples/microprofile/
 
 
 == Additional Information
-include::{rootdir}/includes/openapi.adoc[tag=additional-building-jandex]
+include::{rootdir}/includes/openapi/openapi.adoc[tag=additional-building-jandex]
 
 == Reference
 
