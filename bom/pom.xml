@@ -1487,6 +1487,18 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Pico Integrations related -->
+            <dependency>
+                <groupId>io.helidon.pico.integrations.oci</groupId>
+                <artifactId>helidon-pico-integrations-oci-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico.integrations.oci</groupId>
+                <artifactId>helidon-pico-integrations-oci-runtime</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 </project>

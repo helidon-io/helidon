@@ -673,6 +673,29 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         }
     }
 
+    private void notifyObservers() {
+        List<PicoAnnotationProcessorObserver> observers = HelidonServiceLoader.create(observerLoader()).asList();
+        if (!observers.isEmpty()) {
+            ProcessingEvent event = ProcessingEventDefault.builder()
+                    .elementsOfInterest(allElementsOfInterestInThisModule)
+                    .build();
+            observers.forEach(it -> it.onProcessingEvent(event));
+        }
+    }
+
+    private static ServiceLoader<PicoAnnotationProcessorObserver> observerLoader() {
+        try {
+            // note: it is important to use this class' CL since maven will not give us the "right" one.
+            return ServiceLoader.load(
+                    PicoAnnotationProcessorObserver.class, PicoAnnotationProcessorObserver.class.getClassLoader());
+        } catch (ServiceConfigurationError e) {
+            // see issue #6261 - running inside the IDE?
+            // this version will use the thread ctx classloader
+            System.getLogger(PicoAnnotationProcessorObserver.class.getName()).log(System.Logger.Level.WARNING, e.getMessage(), e);
+            return ServiceLoader.load(PicoAnnotationProcessorObserver.class);
+        }
+    }
+
     /**
      * Processes all of the injection points for the provided typed element, accumulating the result in the provided builder
      * continuation instance.

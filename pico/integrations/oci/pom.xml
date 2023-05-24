@@ -18,39 +18,24 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.pico.integrations</groupId>
+        <artifactId>helidon-pico-integrations-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.helidon.pico</groupId>
-    <artifactId>helidon-pico-project</artifactId>
-    <name>Helidon Pico Project</name>
-
+    <groupId>io.helidon.pico.integrations.oci</groupId>
+    <artifactId>helidon-pico-integrations-oci-project</artifactId>
+    <name>Helidon Pico Integrations OCI Project</name>
     <packaging>pom</packaging>
 
-    <properties>
-        <!-- pico supports a universal debug flag -->
-        <pico.debug>true</pico.debug>
-    </properties>
-
-    <!-- this will show the progression of what has come over, and what is left to come over -->
     <modules>
-        <module>api</module>
-        <module>configdriven</module>
-        <module>tools</module>
         <module>processor</module>
-        <module>maven-plugin</module>
-        <module>testing</module>
         <module>runtime</module>
-        <module>integrations</module>
-        <module>tests</module>
     </modules>
 
 </project>
