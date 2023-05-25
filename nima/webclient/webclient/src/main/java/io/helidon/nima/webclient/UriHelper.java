@@ -44,7 +44,7 @@ public class UriHelper {
     private String path;
     private String host;
     private int port;
-    private boolean skipUriEncoding= false;
+    private boolean skipUriEncoding = false;
 
     private UriHelper() {
         this.baseScheme = null;
