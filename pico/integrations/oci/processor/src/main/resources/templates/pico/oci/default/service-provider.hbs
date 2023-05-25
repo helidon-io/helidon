@@ -16,12 +16,14 @@ limitations under the License.
 {{/header}}
 package {{packagename}};
 
-import com.oracle.bmc.auth.AuthenticationDetailsProvider;
+import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 
 import {{classname}}Client;
 import {{classname}}Client.Builder;
+import com.oracle.bmc.Region;
 
 import io.helidon.common.Weight;
+import io.helidon.pico.api.ContextualServiceQuery;
 import io.helidon.pico.api.InjectionPointProvider;
 import io.helidon.pico.api.ServiceInfoBasics;
 
@@ -36,17 +38,21 @@ import java.util.Optional;
 @Singleton
 @Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
 class {{simpleclassname}}$$Pico$$Provider implements InjectionPointProvider<{{classname}}> {
-	private final Provider<AuthenticationDetailsProvider> authProvider;
+	private final InjectionPointProvider<AbstractAuthenticationDetailsProvider> authProvider;
+    private final InjectionPointProvider<Region> regionProvider;
 
     @Deprecated
     @Inject
-    {{simpleclassname}}(Provider<AuthenticationDetailsProvider> authProvider) {
-        this.authProvider = authProvider;
+    {{simpleclassname}}$$Pico$$Provider(Provider<AbstractAuthenticationDetailsProvider> authProvider, Provider<Region> regionProvider) {
+        this.authProvider = (InjectionPointProvider<AbstractAuthenticationDetailsProvider>) authProvider;
+        this.regionProvider = (InjectionPointProvider<Region>) regionProvider;
     }
 
 	@Override
-	{{classname}} get() {
-		return {{simpleclassname}}Client.builder().build(authProvider.get());
+    public Optional<{{classname}}> first(ContextualServiceQuery query) {
+        {{simpleclassname}}Client.Builder builder = {{simpleclassname}}Client.builder();
+        regionProvider.first(query).ifPresent(it -> builder.region(it));
+		return Optional.of(builder.build(authProvider.first(query).orElseThrow()));
 	}
 
 }

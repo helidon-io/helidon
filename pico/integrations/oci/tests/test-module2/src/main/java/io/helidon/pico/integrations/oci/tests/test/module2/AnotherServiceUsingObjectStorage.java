@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.oci.tests;
+package io.helidon.pico.integrations.oci.tests.test.module2;
 
 import java.util.Objects;
 
@@ -27,20 +27,26 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 @Singleton
-public class AServiceUsingObjectStorage {
-
-    private final ObjectStorage objStoreClient;
-    private final Provider<ObjectStorage> standbyObjStoreClientProvider;
+public class AnotherServiceUsingObjectStorage {
 
     @Inject
-    AServiceUsingObjectStorage(ObjectStorage objStore,
-                               @Named("StandbyProfile") Provider<ObjectStorage> standbyObjStoreProvider) {
-        this.objStoreClient = Objects.requireNonNull(objStore);
-        this.standbyObjStoreClientProvider = Objects.requireNonNull(standbyObjStoreProvider);
+    ObjectStorage objStorageClient;
+    Provider<ObjectStorage> standbyObjStorageClientProvider;
+
+    @Inject
+    void setStandbyObjectStorageProvider(@Named("StandbyProfile") Provider<ObjectStorage> standbyObjStorageClientProvider) {
+        this.standbyObjStorageClientProvider = Objects.requireNonNull(standbyObjStorageClientProvider);
     }
 
     public String namespaceName() {
-        GetNamespaceResponse namespaceResponse = objStoreClient.getNamespace(GetNamespaceRequest.builder().build());
+        GetNamespaceResponse namespaceResponse = objStorageClient
+                .getNamespace(GetNamespaceRequest.builder().build());
+        return namespaceResponse.getValue();
+    }
+
+    public String namespaceNameOfStandby() {
+        GetNamespaceResponse namespaceResponse = standbyObjStorageClientProvider.get()
+                .getNamespace(GetNamespaceRequest.builder().build());
         return namespaceResponse.getValue();
     }
 

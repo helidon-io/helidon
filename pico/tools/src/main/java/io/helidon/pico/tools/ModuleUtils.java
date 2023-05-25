@@ -86,7 +86,7 @@ public class ModuleUtils {
      * @param defaultPackageName the default package name to use if all options are exhausted
      * @return the suggested package name
      */
-    public static String toSuggestedGeneratedPackageName(ModuleInfoDescriptor descriptor,
+    public static String toSuggestedGeneratedPackageName(Optional<ModuleInfoDescriptor> optDescriptor,
                                                          Collection<TypeName> typeNames,
                                                          String defaultPackageName) {
         Objects.requireNonNull(descriptor);
@@ -109,6 +109,7 @@ public class ModuleUtils {
                                                        Collection<TypeName> typeNames,
                                                        String defaultPackageName) {
         String export = null;
+
         if (descriptor != null) {
             Optional<ModuleInfoItem> provides = descriptor.first(Application.class.getName());
             if (provides.isEmpty() || provides.get().withOrTo().isEmpty()) {

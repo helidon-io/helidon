@@ -29,7 +29,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-pico-integrations-oci-processor</artifactId>
-    <name>Helidon Pico Integrations OCI APT</name>
+    <name>Helidon Pico Integrations OCI Processor</name>
 
     <dependencies>
         <dependency>

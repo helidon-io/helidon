@@ -18,13 +18,17 @@ package io.helidon.pico.integrations.oci.processor;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.processing.Filer;
+import javax.annotation.processing.FilerException;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
+import javax.tools.JavaFileObject;
 
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -37,6 +41,8 @@ import io.helidon.pico.tools.ToolsException;
 
 import jakarta.inject.Inject;
 
+import static io.helidon.common.types.TypeNameDefault.create;
+
 /**
  * Implementation that will monitor {@link io.helidon.pico.processor.PicoAnnotationProcessor} for all injection points
  * using the {@code OCI SDK Services} and translate those into code-generated {@link io.helidon.pico.api.Activator}s,
@@ -44,8 +50,13 @@ import jakarta.inject.Inject;
  */
 public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObserver {
 
-    static final String OCI_PACKAGE_NAME_PREFIX = "com.oracle.bmc.";
+    static final String OCI_ROOT_PACKAGE_NAME_PREFIX = "com.oracle.bmc.";
+    static final String GENERATED_PREFIX = "generated.";
+    static final String GENERATED_OCI_ROOT_PACKAGE_NAME_PREFIX = GENERATED_PREFIX + OCI_ROOT_PACKAGE_NAME_PREFIX;
     static final String TAG_TEMPLATE_SERVICE_PROVIDER_NAME = "service-provider.hbs";
+    static final Set<String> TYPENAME_EXCEPTIONS =
+            Set.of(OCI_ROOT_PACKAGE_NAME_PREFIX + "Region",
+                   OCI_ROOT_PACKAGE_NAME_PREFIX + "auth.AbstractAuthenticationDetailsProvider");
 
     /**
      * Service loader based constructor.
@@ -81,18 +92,32 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
         if (GeneralProcessorUtils.isProviderType(ociServiceTypeName)) {
             ociServiceTypeName = ociServiceTypeName.typeArguments().get(0);
         }
-        assert (ociServiceTypeName.name().startsWith(OCI_PACKAGE_NAME_PREFIX)) : ociServiceTypeName.name();
-        String body = toBody(ociServiceTypeName);
+        assert (ociServiceTypeName.name().startsWith(OCI_ROOT_PACKAGE_NAME_PREFIX)) : ociServiceTypeName.name();
+        TypeName generatedOciActivatorTypeName = toGeneratedTypeName(ociServiceTypeName);
+        String body = toBody(ociServiceTypeName, generatedOciActivatorTypeName);
         Filer filer = proccessingEnv.getFiler();
+        try {
+            JavaFileObject javaSrc = filer.createSourceFile(generatedOciActivatorTypeName.name());
+            try (Writer os = javaSrc.openWriter()) {
+                os.write(body);
+            }
+        } catch (FilerException x) {
+            proccessingEnv.getMessager().printWarning("Failed to write java file: " + x);
+        } catch (Exception x) {
+            System.getLogger(getClass().getName()).log(System.Logger.Level.ERROR, "Failed to write java file: " + x, x);
+            proccessingEnv.getMessager().printError("Failed to write java file: " + x);
+        }
     }
 
-    private String toBody(TypeName ociServiceTypeName) {
+    private String toBody(TypeName ociServiceTypeName,
+                          TypeName generatedOciActivatorTypeName) {
         TemplateHelper templateHelper = TemplateHelper.create();
         String template = loadTemplate(TAG_TEMPLATE_SERVICE_PROVIDER_NAME);
         Map<String, Object> subst = new HashMap<>();
         subst.put("classname", ociServiceTypeName.name());
         subst.put("simpleclassname", ociServiceTypeName.className());
-        subst.put("packagename", ociServiceTypeName.packageName());
+        subst.put("packagename", generatedOciActivatorTypeName.packageName());
+        subst.put("generatedanno", templateHelper.generatedStickerFor(getClass().getName()));
         return templateHelper.applySubstitutions(template, subst, true).trim();
     }
 
@@ -123,7 +148,8 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
             }
         } else if (TypeInfo.KIND_METHOD.equalsIgnoreCase(element.elementTypeKind())
                 || TypeInfo.KIND_CONSTRUCTOR.equalsIgnoreCase(element.elementTypeKind())) {
-            if (element.parameterArguments().stream().anyMatch(it -> shouldProcess(it.typeName(), processingEnv))) {
+            if (element.parameterArguments().stream()
+                    .anyMatch(it -> shouldProcess(it.typeName(), processingEnv))) {
                 return true;
             }
         }
@@ -137,17 +163,20 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
             typeName = typeName.typeArguments().get(0);
         }
 
-        if (!typeName.name().startsWith(OCI_PACKAGE_NAME_PREFIX)) {
+        if (!typeName.name().startsWith(OCI_ROOT_PACKAGE_NAME_PREFIX)
+                || TYPENAME_EXCEPTIONS.contains(typeName.name())
+                || typeName.name().endsWith("$$Pico$$Provider")) {
             return false;
         }
 
         // check to see if we already generated it before
-        TypeElement typeElement = processingEnv.getElementUtils().getTypeElement(toGeneratedClassName(typeName));
+        TypeElement typeElement = processingEnv.getElementUtils().getTypeElement(toGeneratedTypeName(typeName).name());
         return (typeElement == null);
     }
 
-    private static CharSequence toGeneratedClassName(TypeName typeName) {
-        return typeName.name() + "$$Pico$$Provider";
+    private static TypeName toGeneratedTypeName(TypeName typeName) {
+        return create(GENERATED_PREFIX + typeName.packageName(),
+                      typeName.className() + "$$Pico$$Provider");
     }
 
 }
