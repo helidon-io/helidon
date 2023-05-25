@@ -41,6 +41,13 @@ public interface OciConfigBean {
     @ConfiguredOption(key = "auth.fingerprint")
     Optional<String> authFingerprint();
 
+    // See https://github.com/helidon-io/helidon/issues/6908
+    @ConfiguredOption(key = "auth.passphrase"/* securitySensitive = true*/)
+    Optional<String> authPassphrase();
+
+    @ConfiguredOption(key = "auth.private-key"/* securitySensitive = true*/)
+    Optional<String> authPrivateKey();
+
     @ConfiguredOption(key = "auth.region")
     Optional<String> authRegion();
 
@@ -49,5 +56,12 @@ public interface OciConfigBean {
 
     @ConfiguredOption(key = "auth.user-id")
     Optional<String> authUserId();
+
+    default boolean simpleConfigIsPresent() {
+        return authFingerprint().isPresent()
+                && authRegion().isPresent()
+                && authTenantId().isPresent()
+                && authUserId().isPresent();
+    }
 
 }
