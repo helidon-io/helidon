@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
- * Domain objects for movie DB.
+ * Tests for Neo4j Helidon Nima app.
  */
-package io.helidon.examples.integrations.neo4j.mp.domain;
+package io.helidon.examples.integrations.neo4j.se;

@@ -23,9 +23,10 @@ import io.helidon.common.features.api.Preview;
  */
 @Preview
 @Feature(value = "Neo4j integration",
-        description = "Integration with Neo4j driver",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
-        path = "Neo4j"
+         description = "Integration with Neo4j driver",
+         in = {HelidonFlavor.MP, HelidonFlavor.NIMA},
+         invalidIn = HelidonFlavor.SE,
+         path = "Neo4j"
 )
 module io.helidon.integrations.neo4j {
     requires static io.helidon.common.features.api;
@@ -40,6 +41,4 @@ module io.helidon.integrations.neo4j {
     requires org.neo4j.driver;
 
     exports io.helidon.integrations.neo4j;
-
-    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.neo4j.Neo4jCdiExtension;
 }

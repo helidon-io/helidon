@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,28 @@
 
 package io.helidon.examples.integrations.neo4j.se;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.logging.LogManager;
-
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.examples.integrations.neo4j.se.domain.MovieRepository;
-import io.helidon.health.checks.HealthChecks;
+import io.helidon.health.checks.DeadlockHealthCheck;
+import io.helidon.health.checks.DiskSpaceHealthCheck;
+import io.helidon.health.checks.HeapMemoryHealthCheck;
 import io.helidon.integrations.neo4j.Neo4j;
 import io.helidon.integrations.neo4j.health.Neo4jHealthCheck;
-import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.media.jsonb.JsonbSupport;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.metrics.MetricsSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.observe.health.HealthFeature;
+import io.helidon.nima.observe.health.HealthObserveProvider;
+import io.helidon.nima.webserver.WebServer;
 
 import org.neo4j.driver.Driver;
+
+import static io.helidon.nima.webserver.http.HttpRouting.Builder;
 
 /**
  * The application main class.
  */
-public final class Main {
-
+public class Main {
     /**
      * Cannot be instantiated.
      */
@@ -50,63 +46,33 @@ public final class Main {
 
     /**
      * Application main entry point.
+     *
      * @param args command line arguments.
-     * @throws IOException if there are problems reading logging properties
      */
-    public static void main(final String[] args) throws IOException {
-        startServer();
-    }
-
-    /**
-     * Start the server.
-     * @return the created WebServer instance
-     */
-    public static Single<WebServer> startServer() {
+    public static void main(String[] args) {
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
+        startServer();
+    }
 
-        Single<WebServer> server = WebServer.builder(createRouting(config))
-                .config(config.get("server"))
-                .addMediaSupport(JsonpSupport.create())
-                .addMediaSupport(JsonbSupport.create())
-                .build()
+    static void startServer() {
+
+        Config config = Config.create();
+        WebServer server = WebServer.builder()
+                .addMediaSupport(JsonpSupport.create(config))
+                .routing(Main::routing)
                 .start();
 
-        server.thenAccept(ws -> {
-                    System.out.println(
-                            "WEB server is up! http://localhost:" + ws.port() + "/api/movies");
-                    ws.whenShutdown().thenRun(()
-                                                      -> System.out.println("WEB server is DOWN. Good bye!"));
-                })
-                .exceptionally(t -> {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                    return null;
-                });
-
-        return server;
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/api/movies");
     }
 
     /**
-     * Creates new Routing.
-     *
-     * @return routing configured with JSON support, a health check, and a service
-     * @param config configuration of this server
+     * Updates HTTP Routing.
      */
-    private static Routing createRouting(Config config) {
+    static void routing(Builder routing) {
 
-        MetricsSupport metrics = MetricsSupport.create();
-
-        Neo4j neo4j = Neo4j.create(config.get("neo4j"));
-
-        // registers all metrics
-        Neo4jMetricsSupport.builder()
-                .driver(neo4j.driver())
-                .build()
-                .initialize();
+        Neo4j neo4j = Neo4j.create(Config.create().get("neo4j"));
 
         Neo4jHealthCheck healthCheck = Neo4jHealthCheck.create(neo4j.driver());
 
@@ -114,25 +80,19 @@ public final class Main {
 
         MovieService movieService = new MovieService(new MovieRepository(neo4jDriver));
 
-        HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
-                .add(healthCheck)
+        ObserveFeature observe = ObserveFeature.builder()
+                .useSystemServices(false)
+                .addProvider(HealthObserveProvider.create(HealthFeature.builder()
+                                                                  .useSystemServices(false)
+                                                                  .addCheck(HeapMemoryHealthCheck.create())
+                                                                  .addCheck(DiskSpaceHealthCheck.create())
+                                                                  .addCheck(DeadlockHealthCheck.create())
+                                                                  .addCheck(healthCheck)
+                                                                  .build()))
                 .build();
 
-        return Routing.builder()
-                .register(health)                   // Health at "/health"
-                .register(metrics)                  // Metrics at "/metrics"
-                .register(movieService)
-                .build();
+        routing.register(movieService)
+                .addFeature(observe);
     }
-
-    /**
-     * Configure logging from logging.properties file.
-     */
-    private static void setupLogging() throws IOException {
-        try (InputStream is = Main.class.getResourceAsStream("/logging.properties")) {
-            LogManager.getLogManager().readConfiguration(is);
-        }
-    }
-
 }
+

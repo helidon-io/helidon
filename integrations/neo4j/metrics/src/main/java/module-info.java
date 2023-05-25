@@ -43,7 +43,4 @@ module io.helidon.integrations.neo4j.metrics {
     requires static jakarta.annotation;
 
     exports io.helidon.integrations.neo4j.metrics;
-
-    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.neo4j.metrics.Neo4jMetricsCdiExtension;
-
 }

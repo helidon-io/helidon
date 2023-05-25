@@ -31,7 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>neo4j-mp</module>
         <module>neo4j-se</module>
     </modules>
 
