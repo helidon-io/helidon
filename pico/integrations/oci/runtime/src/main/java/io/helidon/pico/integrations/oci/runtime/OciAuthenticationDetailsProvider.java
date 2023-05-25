@@ -24,15 +24,11 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
-import io.helidon.common.config.Config;
 import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.ContextualServiceQuery;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.InjectionPointProvider;
-import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfoBasics;
 
 import com.oracle.bmc.Region;
@@ -46,18 +42,11 @@ import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
 import static io.helidon.common.types.AnnotationAndValueDefault.findFirst;
-import static java.util.function.Predicate.not;
 
 @Singleton
 @Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
 class OciAuthenticationDetailsProvider implements InjectionPointProvider<AbstractAuthenticationDetailsProvider> {
     static final System.Logger LOGGER = System.getLogger(OciAuthenticationDetailsProvider.class.getName());
-    static final LazyValue<OciConfigBean> DEFAULT_OCI_CONFIG_BEAN = LazyValue.create(() -> OciConfigBeanDefault.builder()
-            .authStrategies(Arrays.stream(AuthStrategy.values())
-                                    .filter(not(it -> it == AuthStrategy.AUTO))
-                                    .map(AuthStrategy::id)
-                                    .toList())
-            .build());
 
     OciAuthenticationDetailsProvider() {
     }
@@ -65,7 +54,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     @Override
     public Optional<AbstractAuthenticationDetailsProvider> first(ContextualServiceQuery query) {
         String requestedNamedProfile = toNamedProfile(query.injectionPointInfo().orElse(null));
-        OciConfigBean ociConfig = ociConfig();
+        OciConfigBean ociConfig = OciExtension.ociConfig();
         return Optional.of(select(requestedNamedProfile, ociConfig));
     }
 
@@ -106,25 +95,6 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         }
 
         return nameProfile.trim();
-    }
-
-    static OciConfigBean ociConfig() {
-        Optional<Bootstrap> bootstrap = PicoServices.globalBootstrap();
-        if (bootstrap.isEmpty()) {
-            return DEFAULT_OCI_CONFIG_BEAN.get();
-        }
-
-        Config config = bootstrap.get().config().orElse(null);
-        if (config == null) {
-            return DEFAULT_OCI_CONFIG_BEAN.get();
-        }
-
-        config = config.get(OciConfigBean.NAME);
-        if (!config.exists()) {
-            return DEFAULT_OCI_CONFIG_BEAN.get();
-        }
-
-        return OciConfigBeanDefault.toBuilder(config);
     }
 
     static Path toPath(String profileName,
@@ -180,8 +150,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
 
         INSTANCE_PRINCIPALS("instance-principals",
                             InstancePrincipalsAuthenticationDetailsProvider.class,
-                            // TODO: this is different from OciExtension where it is checking the idms host name, etc.
-                            (profileName, configBean) -> (Region.getRegionFromImds() != null),
+                            (profileName, configBean) -> OciAvailabilityDefault.runningOnOci(configBean),
                             (profileName, configBean) -> {
                                 // TODO:
                                 return null;

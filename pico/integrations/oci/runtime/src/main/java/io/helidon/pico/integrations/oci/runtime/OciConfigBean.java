@@ -28,8 +28,23 @@ import io.helidon.config.metadata.ConfiguredOption;
 @ConfigBean(OciConfigBean.NAME)
 public interface OciConfigBean {
 
+    /**
+     * The config is expected to be under this key.
+     */
     String NAME = "oci";
 
+    /** primary base url of metadata service. */
+    String PRIMARY_METADATA_SERVICE_BASE_URL = "http://169.254.169.254/opc/v2/";
+
+    /** fallback base url of metadata service. */
+    String FALLBACK_METADATA_SERVICE_URL = "http://169.254.169.254/opc/v1/";
+
+    /**
+     * The list of auth strategies that will be attempted.
+     *
+     * @return the list of auth strategies
+     * @see io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.AuthStrategy
+     */
     List<String> authStrategies();
 
     @ConfiguredOption(key = "config.path")
@@ -59,6 +74,15 @@ public interface OciConfigBean {
 
     @ConfiguredOption(key = "auth.user-id")
     Optional<String> authUserId();
+
+    @ConfiguredOption(value = PRIMARY_METADATA_SERVICE_BASE_URL, key = "idms.hostname")
+    String idmsPrimaryHostName();
+
+    @ConfiguredOption(value = FALLBACK_METADATA_SERVICE_URL, key = "idms.fallback-hostname")
+    Optional<String> idmsFallbackHostName();
+
+    @ConfiguredOption(value = "100", key = "idms.timeout.milliseconds")
+    int idmsTimeoutMilliseconds();
 
     default boolean simpleConfigIsPresent() {
         return authFingerprint().isPresent()
