@@ -16,30 +16,36 @@
 
 package io.helidon.nima.tests.integration.http2.client;
 
-import java.time.Duration;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeoutException;
-
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.http2.webclient.Http2;
 import io.helidon.nima.http2.webclient.Http2ClientResponse;
 import io.helidon.nima.webclient.WebClient;
-
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import java.time.Duration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 
 class HeadersTest {
@@ -54,27 +60,39 @@ class HeadersTest {
     @BeforeAll
     static void beforeAll() throws ExecutionException, InterruptedException, TimeoutException {
         LogConfig.configureRuntime();
-        server = vertx.createHttpServer()
+        server = vertx.createHttpServer(new HttpServerOptions()
+                        .setInitialSettings(new Http2Settings().setMaxHeaderListSize(Integer.MAX_VALUE)))
                 .requestHandler(req -> {
                     HttpServerResponse res = req.response();
                     switch (req.path()) {
-                    case "/trailer" -> {
-                        res.putHeader("test", "before");
-                        res.write(DATA);
-                        res.putTrailer("Trailer-header", "trailer-test");
-                        res.end();
-                    }
-                    case "/cont" -> {
-                        for (int i = 0; i < 500; i++) {
-                            res.headers().add("test-header-" + i, DATA);
+                        case "/trailer" -> {
+                            res.putHeader("test", "before");
+                            res.write(DATA);
+                            res.putTrailer("Trailer-header", "trailer-test");
+                            res.end();
                         }
-                        res.write(DATA);
-                        res.end();
-                    }
-                    default -> res.setStatusCode(404).end();
+                        case "/cont-in" -> {
+                            for (int i = 0; i < 500; i++) {
+                                res.headers().add("test-header-" + i, DATA);
+                            }
+                            res.write(DATA);
+                            res.end();
+                        }
+                        case "/cont-out" -> {
+                            MultiMap headers = req.headers();
+                            StringBuilder sb = new StringBuilder();
+                            for (Map.Entry<String, String> header : headers) {
+                                if (!header.getKey().startsWith("test-header-")) continue;
+                                sb.append(header.getKey() + "=" + header.getValue() + "\n");
+                            }
+
+                            res.write(sb.toString());
+                            res.end();
+                        }
+                        default -> res.setStatusCode(404).end();
                     }
                 })
-                .listen(0)
+                .listen(8080)
                 .toCompletionStage()
                 .toCompletableFuture()
                 .get(TIMEOUT.toMillis(), MILLISECONDS);
@@ -97,7 +115,7 @@ class HeadersTest {
     }
 
     @Test
-    //FIXME: trailer headers are not implemented yet
+    //FIXME: #6544 trailer headers are not implemented yet
     @Disabled
     void trailerHeader() {
         try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
@@ -115,12 +133,13 @@ class HeadersTest {
     }
 
     @Test
-    void continuation() {
+    void continuationInbound() {
+        System.out.println("http://localhost:" + port + "/");
         try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
                 .baseUri("http://localhost:" + port + "/")
                 .build()
                 .method(Http.Method.GET)
-                .path("/cont")
+                .path("/cont-in")
                 .priorKnowledge(true)
                 .request()) {
 
@@ -131,6 +150,52 @@ class HeadersTest {
             }
 
             assertThat(res.as(String.class), is(DATA));
+        }
+    }
+
+    @Test
+    void continuationOutbound() {
+        System.out.println("http://localhost:" + port + "/");
+        Set<String> expected = new HashSet<>(500);
+        try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
+                .baseUri("http://localhost:" + port + "/")
+                .build()
+                .method(Http.Method.GET)
+                .path("/cont-out")
+                .priorKnowledge(true)
+                .headers(hv -> {
+                    for (int i = 0; i < 500; i++) {
+                        hv.add(Http.Header.createCached("test-header-" + i, DATA + i));
+                        expected.add("test-header-" + i + "=" + DATA + i);
+                    }
+                    return hv;
+                })
+                .request()) {
+            String actual = res.as(String.class);
+            assertThat(List.of(actual.split("\\n")), containsInAnyOrder(expected.toArray(new String[0])));
+        }
+    }
+
+    @Test
+    void continuationOutboundPost() {
+        System.out.println("http://localhost:" + port + "/");
+        Set<String> expected = new HashSet<>(500);
+        try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
+                .baseUri("http://localhost:" + port + "/")
+                .build()
+                .method(Http.Method.POST)
+                .path("/cont-out")
+                .priorKnowledge(true)
+                .headers(hv -> {
+                    for (int i = 0; i < 500; i++) {
+                        hv.add(Http.Header.createCached("test-header-" + i, DATA + i));
+                        expected.add("test-header-" + i + "=" + DATA + i);
+                    }
+                    return hv;
+                })
+                .submit(DATA)) {
+            String actual = res.as(String.class);
+            assertThat(List.of(actual.split("\\n")), containsInAnyOrder(expected.toArray(new String[0])));
         }
     }
 }

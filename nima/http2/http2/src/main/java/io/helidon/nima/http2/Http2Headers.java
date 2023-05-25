@@ -440,6 +440,27 @@ public class Http2Headers {
         }
     }
 
+    static BufferData[] split(BufferData bufferData, int size) {
+        int length = bufferData.available();
+        if (length <= size) {
+            return new BufferData[]{bufferData};
+        }
+
+        int lastFragmentSize = length % size;
+        // Avoid creating 0 length last fragment
+        int allFrames = (length / size) + (lastFragmentSize != 0 ? 1 : 0);
+        BufferData[] result = new BufferData[allFrames];
+
+        for (int i = 0; i < allFrames; i++) {
+            boolean lastFrame = allFrames == i + 1;
+            byte[] frag = new byte[lastFrame ? (lastFragmentSize != 0 ? lastFragmentSize : size) : size];
+            bufferData.read(frag);
+            result[i] = BufferData.create(frag);
+        }
+
+        return result;
+    }
+
     private static Http2Headers create(ServerRequestHeaders httpHeaders, PseudoHeaders pseudoHeaders) {
         return new Http2Headers(httpHeaders, pseudoHeaders);
     }
