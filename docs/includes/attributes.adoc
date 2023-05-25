@@ -93,7 +93,7 @@ endif::[]
 :microprofile-open-api-base-url: {microprofile-base-url}/microprofile-open-api-{version-lib-microprofile-openapi-api}
 :microprofile-open-api-spec-url: {microprofile-open-api-base-url}/microprofile-openapi-spec-{version-lib-microprofile-openapi-api}.html
 :microprofile-open-api-javadoc-base-url: {microprofile-open-api-base-url}/apidocs
-:microprofile-open-api-javadoc-url: {microprofile-open-api-javadoc-base-url}/apidocs/org/eclipse/microprofile/openapi/
+:microprofile-open-api-javadoc-url: {microprofile-open-api-javadoc-base-url}/org/eclipse/microprofile/openapi
 
 :microprofile-lra-base-url: {microprofile-base-url}/microprofile-lra-{version-lib-microprofile-lra-api}
 :microprofile-lra-spec-url: {microprofile-lra-base-url}/microprofile-lra-spec-{version-lib-microprofile-lra-api}.html
