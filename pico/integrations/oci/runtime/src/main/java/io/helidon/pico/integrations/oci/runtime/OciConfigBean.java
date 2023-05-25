@@ -38,6 +38,9 @@ public interface OciConfigBean {
     @ConfiguredOption(key = "config.profile")
     Optional<String> configProfile();
 
+    @ConfiguredOption(key = "auth.profile")
+    Optional<String> authProfile();
+
     @ConfiguredOption(key = "auth.fingerprint")
     Optional<String> authFingerprint();
 

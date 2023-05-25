@@ -27,7 +27,7 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 @Singleton
-public class AnotherServiceUsingObjectStorage {
+class AnotherServiceUsingObjectStorage {
 
     @Inject
     ObjectStorage objStorageClient;
@@ -38,13 +38,13 @@ public class AnotherServiceUsingObjectStorage {
         this.standbyObjStorageClientProvider = Objects.requireNonNull(standbyObjStorageClientProvider);
     }
 
-    public String namespaceName() {
+    String namespaceName() {
         GetNamespaceResponse namespaceResponse = objStorageClient
                 .getNamespace(GetNamespaceRequest.builder().build());
         return namespaceResponse.getValue();
     }
 
-    public String namespaceNameOfStandby() {
+    String namespaceNameOfStandby() {
         GetNamespaceResponse namespaceResponse = standbyObjStorageClientProvider.get()
                 .getNamespace(GetNamespaceRequest.builder().build());
         return namespaceResponse.getValue();
