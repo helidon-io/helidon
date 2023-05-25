@@ -29,6 +29,7 @@ public interface OciAvailability {
     /**
      * Returns true if the implementation determines it is running on/inside an OCI compute node.
      *
+     * @param ociConfigBean the oci config bean
      * @return true if there running on/inside an OCI compute node
      */
     boolean isRunningOnOci(OciConfigBean ociConfigBean);

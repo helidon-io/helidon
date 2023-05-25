@@ -37,6 +37,9 @@ public final class OciExtension {
                                     .toList())
             .build());
 
+    private OciExtension() {
+    }
+
     /**
      * Returns the {@link OciConfigBean} that is currently defined in the bootstrap environment. If one is not defined under
      * config {@link OciConfigBean#NAME} then a default implementation will be constructed.

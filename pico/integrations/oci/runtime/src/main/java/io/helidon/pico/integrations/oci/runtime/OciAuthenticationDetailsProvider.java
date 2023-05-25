@@ -16,13 +16,14 @@
 
 package io.helidon.pico.integrations.oci.runtime;
 
-import java.io.InputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
@@ -31,12 +32,14 @@ import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.InjectionPointProvider;
 import io.helidon.pico.api.ServiceInfoBasics;
 
+import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.SimplePrivateKeySupplier;
 import com.oracle.bmc.auth.StringPrivateKeySupplier;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -97,23 +100,12 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         return nameProfile.trim();
     }
 
-    static Path toPath(String profileName,
-                       String defaultProfileName) {
-        // TODO:
-        return null;
+    static boolean canReadPath(String pathName) {
+        return (pathName != null && Path.of(pathName).toFile().canRead());
     }
 
-    static boolean canOpen(Path pathName) {
-        // TODO:
-        return false;
-    }
-
-    static Supplier<InputStream> userHomePrivateKeySupplier(OciConfigBean ociConfigBean) {
-//        b.privateKeySupplier(new SimplePrivateKeySupplier(ociConfigBean.authPrivateKey() + "-path")
-//                                     .orElse(c.get("oci.auth.keyFile", String.class)
-//                                                     .orElse(Paths.get(System.getProperty("user.home"), ".oci", "oci_api_key.pem").toString())))));
-        // TODO:
-        return null;
+    static String userHomePrivateKeyPath(OciConfigBean ociConfigBean) {
+        return Paths.get(System.getProperty("user.home"), ".oci", ociConfigBean.authKeyFile()).toString();
     }
 
 
@@ -136,25 +128,34 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
                    ociConfigBean.authPassphrase().ifPresent(b::passPhrase);
                    ociConfigBean.authPrivateKey()
                            .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
-                                            () -> b.privateKeySupplier(userHomePrivateKeySupplier(ociConfigBean)));
+                                            () -> b.privateKeySupplier(new SimplePrivateKeySupplier(
+                                                    userHomePrivateKeyPath(ociConfigBean))));
                    return b.build();
                }),
 
         CONFIG_FILE("config-file",
                     ConfigFileAuthenticationDetailsProvider.class,
-                    (profileName, configBean) -> canOpen(toPath(profileName, configBean.configProfile().orElse(null))),
+                    (profileName, configBean) -> canReadPath(configBean.configPath().orElse(null)),
                     (profileName, configBean) -> {
-                        // TODO:
-                        return null;
+                        // https://github.com/oracle/oci-java-sdk/blob/master/bmc-common/src/main/java/com/oracle/bmc/auth/ConfigFileAuthenticationDetailsProvider.java
+                        // https://github.com/oracle/oci-java-sdk/blob/master/bmc-examples/src/main/java/ObjectStorageSyncExample.java
+                        try {
+                            if (profileName != null && configBean.configPath().isPresent()) {
+                                return new ConfigFileAuthenticationDetailsProvider(configBean.configPath().get(), profileName);
+                            } else if (profileName != null) {
+                                return new ConfigFileAuthenticationDetailsProvider(profileName);
+                            } else {
+                                return new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
+                            }
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e.getMessage(), e);
+                        }
                     }),
 
         INSTANCE_PRINCIPALS("instance-principals",
                             InstancePrincipalsAuthenticationDetailsProvider.class,
                             (profileName, configBean) -> OciAvailabilityDefault.runningOnOci(configBean),
-                            (profileName, configBean) -> {
-                                // TODO:
-                                return null;
-                            }),
+                            (profileName, configBean) -> InstancePrincipalsAuthenticationDetailsProvider.builder().build()),
 
         RESOURCE_PRINCIPAL("resource-principal",
                            ResourcePrincipalAuthenticationDetailsProvider.class,
@@ -162,10 +163,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
                                // https://github.com/oracle/oci-java-sdk/blob/v2.19.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
                                return (System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null);
                            },
-                           (profileName, configBean) -> {
-                               // TODO:
-                               return null;
-                           });
+                           (profileName, configBean) -> ResourcePrincipalAuthenticationDetailsProvider.builder().build());
 
         private final String id;
         private final Class<? extends AbstractAuthenticationDetailsProvider> type;

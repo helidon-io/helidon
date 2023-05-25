@@ -47,43 +47,119 @@ public interface OciConfigBean {
      */
     List<String> authStrategies();
 
+    /**
+     * The OCI configuration profile path.
+     *
+     * @return the OCI configuration profile path
+     */
     @ConfiguredOption(key = "config.path")
     Optional<String> configPath();
 
+    /**
+     * The OCI configuration profile name.
+     *
+     * @return the OCI configuration profile name
+     */
     @ConfiguredOption(key = "config.profile")
     Optional<String> configProfile();
 
+    /**
+     * The OCI authentication profile name.
+     *
+     * @return the OCI authentication profile name
+     */
     @ConfiguredOption(key = "auth.profile")
     Optional<String> authProfile();
 
+    /**
+     * The OCI authentication fingerprint.
+     *
+     * @return the OCI authentication fingerprint
+     */
     @ConfiguredOption(key = "auth.fingerprint")
     Optional<String> authFingerprint();
 
+    /**
+     * The OCI authentication key file.
+     *
+     * @return the OCI authentication key file
+     */
+    @ConfiguredOption(value = "oci_api_key.pem", key = "auth.keyFile")
+    String authKeyFile();
+
+    /**
+     * The OCI authentication passphrase.
+     *
+     * @return the OCI authentication passphrase
+     */
     // See https://github.com/helidon-io/helidon/issues/6908
     @ConfiguredOption(key = "auth.passphrase"/* securitySensitive = true*/)
     Optional<String> authPassphrase();
 
+    /**
+     * The OCI authentication private key.
+     *
+     * @return the OCI authentication private key
+     */
     @ConfiguredOption(key = "auth.private-key"/* securitySensitive = true*/)
     Optional<String> authPrivateKey();
 
+    /**
+     * The OCI region.
+     *
+     * @return the OCI region
+     */
     @ConfiguredOption(key = "auth.region")
     Optional<String> authRegion();
 
+    /**
+     * The OCI tenant id.
+     *
+     * @return the OCI tenant id
+     */
     @ConfiguredOption(key = "auth.tenant-id")
     Optional<String> authTenantId();
 
+    /**
+     * The OCI user id.
+     *
+     * @return the OCI user id
+     */
     @ConfiguredOption(key = "auth.user-id")
     Optional<String> authUserId();
 
+    /**
+     * The OCI idms primary hostname.
+     *
+     * @return the OCI idms primary hostname
+     */
     @ConfiguredOption(value = PRIMARY_METADATA_SERVICE_BASE_URL, key = "idms.hostname")
     String idmsPrimaryHostName();
 
+    /**
+     * The OCI idms fallback hostname.
+     *
+     * @return the OCI idms fallback hostname
+     * @see OciAvailability
+     */
     @ConfiguredOption(value = FALLBACK_METADATA_SERVICE_URL, key = "idms.fallback-hostname")
     Optional<String> idmsFallbackHostName();
 
+    /**
+     * The OCI idms connection timeout in millis. This is used to auto-detect availability.
+     *
+     * @return the OCI connection timeout in millis.
+     * @see OciAvailability
+     */
     @ConfiguredOption(value = "100", key = "idms.timeout.milliseconds")
     int idmsTimeoutMilliseconds();
 
+    /**
+     * Checks whether there is sufficient configuration defined in this bean to be used for simple authentication.
+     *
+     * @return true if there is sufficient attributes defined for simple OCI authentication
+     * @see OciAuthenticationDetailsProvider
+     */
     default boolean simpleConfigIsPresent() {
         return authFingerprint().isPresent()
                 && authRegion().isPresent()

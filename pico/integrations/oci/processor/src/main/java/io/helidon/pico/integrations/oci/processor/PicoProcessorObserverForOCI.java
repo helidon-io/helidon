@@ -198,7 +198,7 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
             typeName = typeName.typeArguments().get(0);
         }
 
-        String name = typeName.name();;
+        String name = typeName.name();
         if (!name.startsWith(OCI_ROOT_PACKAGE_NAME_PREFIX)
                 || TYPENAME_EXCEPTIONS.contains(name)
                 || name.endsWith(".Builder")

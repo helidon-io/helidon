@@ -31,6 +31,10 @@
     <artifactId>helidon-pico-integrations-oci-runtime</artifactId>
     <name>Helidon Pico Integrations OCI Runtime</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
