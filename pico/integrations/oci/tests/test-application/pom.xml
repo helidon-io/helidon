@@ -75,6 +75,22 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Arbitrarily-selected OCI libraries used for testing universal applicability. -->
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-ailanguage</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-objectstorage</artifactId>
+        </dependency>
+
+        <!-- Streaming OCI library because it is the only OCI service that doesn't quite match the other OCI services' design patterns. -->
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-streaming</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

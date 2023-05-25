@@ -19,8 +19,8 @@ package {{packagename}};
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 
 import {{classname}}Client;
-import {{classname}}Client.Builder;
-import com.oracle.bmc.Region;
+import {{classname}}Client{{dot}}Builder;{{#if usesRegion}}
+import com.oracle.bmc.Region;{{/if}}
 
 import io.helidon.common.Weight;
 import io.helidon.pico.api.ContextualServiceQuery;
@@ -37,22 +37,24 @@ import java.util.Optional;
 @Generated({{{generatedanno}}})
 @Singleton
 @Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
-class {{simpleclassname}}$$Pico$$Provider implements InjectionPointProvider<{{classname}}> {
-	private final InjectionPointProvider<AbstractAuthenticationDetailsProvider> authProvider;
-    private final InjectionPointProvider<Region> regionProvider;
-
+class {{simpleclassname}}$$Oci$$ClientBuilder implements InjectionPointProvider<{{simpleclassname}}Client{{dot}}Builder> {
+{{#if usesRegion}}private final InjectionPointProvider<Region> regionProvider;
     @Deprecated
     @Inject
-    {{simpleclassname}}$$Pico$$Provider(Provider<AbstractAuthenticationDetailsProvider> authProvider, Provider<Region> regionProvider) {
-        this.authProvider = (InjectionPointProvider<AbstractAuthenticationDetailsProvider>) authProvider;
+    {{simpleclassname}}$$Oci$$ClientBuilder(Provider<Region> regionProvider) {
         this.regionProvider = (InjectionPointProvider<Region>) regionProvider;
     }
-
+{{else}}
+    @Deprecated
+    @Inject
+    {{simpleclassname}}$$Oci$$ClientBuilder() {
+    }
+{{/if}}
 	@Override
-    public Optional<{{classname}}> first(ContextualServiceQuery query) {
-        {{simpleclassname}}Client.Builder builder = {{simpleclassname}}Client.builder();
-        regionProvider.first(query).ifPresent(it -> builder.region(it));
-		return Optional.of(builder.build(authProvider.first(query).orElseThrow()));
+    public Optional<{{simpleclassname}}Client{{dot}}Builder> first(ContextualServiceQuery query) {
+        {{simpleclassname}}Client{{dot}}Builder builder = {{simpleclassname}}Client.builder();{{#if usesRegion}}
+        regionProvider.first(query).ifPresent(it -> builder.region(it));{{/if}}
+		return Optional.of(builder);
 	}
 
 }
