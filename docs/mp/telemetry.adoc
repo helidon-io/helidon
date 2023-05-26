@@ -37,8 +37,6 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-
-
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
@@ -100,7 +98,7 @@ class HelidonBean {
     }
 }
 ----
-<1> Simple `@WithSpan` annotation usage;
+<1> Simple `@WithSpan` annotation usage.
 <2> Additional attributes can be set to the annotation.
 
 You can also inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and use `SpanBuilder` to manually create, star, and stop Spans.
@@ -128,10 +126,10 @@ public class HelidonEndpoint {
     }
 }
 ----
-<1> Inject `Tracer`;
-<2> Use `Tracer.spanBuilder` to create and start new `Span`;
+<1> Inject `Tracer`.
+<2> Use `Tracer.spanBuilder` to create and start new `Span`.
 
-To obtain the current span, it can be injected with CDI. The current span can also be obtained using the static method `Span.current()`.
+To obtain the current span, it can be injected by CDI. The current span can also be obtained using the static method `Span.current()`.
 
 .Inject the current span
 [source, java]
@@ -155,9 +153,9 @@ public class HelidonEndpoint {
     }
 }
 ----
-<1> Inject the current span;
-<2> Use the injected span;
-<3> Use `Span.current()` to access the current span;
+<1> Inject the current span.
+<2> Use the injected span.
+<3> Use `Span.current()` to access the current span.
 
 The same functionality is available for the `Baggage` API:
 
@@ -183,9 +181,9 @@ public class HelidonEndpoint {
     }
 }
 ----
-<1> Inject the current baggage;
-<2> Use the injected baggage;
-<3> Use `Baggage.current()` to access the current baggage;
+<1> Inject the current baggage.
+<2> Use the injected baggage.
+<3> Use `Baggage.current()` to access the current baggage.
 
 
 == Configuration
@@ -254,8 +252,8 @@ Together with Helidon Telemetry dependency, an OpenTelemetry Exporter dependency
     <artifactId>opentelemetry-exporter-jaeger</artifactId>  <2>
 </dependency>
 ----
-<1> Helidon Telemetry dependency
-<2> OpenTelemetry Jaeger exporter
+<1> Helidon Telemetry dependency.
+<2> OpenTelemetry Jaeger exporter.
 
 Add these lines to `META-INF/microprofile-config.properties`:
 
@@ -266,9 +264,9 @@ otel.sdk.disabled=false     <1>
 otel.traces.exporter=jaeger <2>
 otel.exporter.name=greeting-service <3>
 ----
-<1> Enable MicroProfile Telemetry
-<2> Set exporter to Jaeger
-<3> Name of our service
+<1> Enable MicroProfile Telemetry.
+<2> Set exporter to Jaeger.
+<3> Name of our service.
 
 Here we enable MicroProfile Telemetry, set tracer to "jaeger" and give a name, which will be used to identify our service in the tracer.
 
@@ -286,7 +284,7 @@ for our example we use Jaeger managing the tracing data. If you prefer to use Zi
 
 === Tracing at Method Level
 
-Let us create simple services and use `@WithSpan` and `Tracer` to create span and let MicroProfile Opentelemetry handle them
+Let us create simple services and use `@WithSpan` and `Tracer` to create span and let MicroProfile OpenTelemetry handle them
 
 [source, java]
 ----
@@ -336,10 +334,10 @@ public JsonObject useCustomSpan(){
             .build();
 }
 ----
-<1> Inject Opentelemetry `Tracer`
-<2> Create Span around the method `useCustomSpan()`
-<3> Create a custom `INTERNAL` span and start it
-<4> End the custom span
+<1> Inject Opentelemetry `Tracer`.
+<2> Create Span around the method `useCustomSpan()`.
+<3> Create a custom `INTERNAL` span and start it.
+<4> End the custom span.
 
 Let us call the custom endpoint:
 
@@ -367,9 +365,9 @@ public String outbound() {
     return target.request().accept(MediaType.TEXT_PLAIN).get(String.class); <3>
 }
 ----
-<1> Inject `WebTarget` pointing to Secondary service
-<2> Wrap method using `WithSpan`
-<3> Call the secondary service;
+<1> Inject `WebTarget` pointing to Secondary service.
+<2> Wrap method using `WithSpan`.
+<3> Call the secondary service.
 
 The secondary service is very simple, it has only one method, which is also annotated with `@WithSpan`.
 
@@ -382,8 +380,8 @@ public String getSecondaryMessage() {
     return "Secondary"; <2>
 }
 ----
-<1> Wrap method in a span
-<2> Return a string
+<1> Wrap method in a span.
+<2> Return a string.
 
 Let us call the _Outbound_ endpoint:
 
