@@ -16,14 +16,11 @@
 
 package io.helidon.pico.tools;
 
-import java.util.List;
-
 import io.helidon.builder.Builder;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
 
 /**
@@ -46,28 +43,6 @@ public interface CustomAnnotationTemplateRequest {
      * @return the target element being processed
      */
     TypedElementInfo targetElement();
-
-    /**
-     * The access modifier of the element.
-     *
-     * @return the access modifier of the element
-     */
-    InjectionPointInfo.Access targetElementAccess();
-
-    /**
-     * Only applicable for {@link javax.lang.model.element.ElementKind#METHOD} or
-     * {@link javax.lang.model.element.ElementKind#CONSTRUCTOR}.
-     *
-     * @return the list of typed arguments for this method or constructor
-     */
-    List<TypedElementInfo> targetElementArgs();
-
-    /**
-     * Returns true if the element is declared to be static.
-     *
-     * @return returns true if the element is declared to be private
-     */
-    boolean isElementStatic();
 
     /**
      * Projects the {@link #enclosingTypeInfo()} as a {@link ServiceInfoBasics} type.

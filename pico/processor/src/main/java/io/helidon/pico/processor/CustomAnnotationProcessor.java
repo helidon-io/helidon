@@ -16,7 +16,6 @@
 
 package io.helidon.pico.processor;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -31,7 +30,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
@@ -39,7 +37,6 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
-import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.CodeGenFiler;
@@ -55,8 +52,6 @@ import static io.helidon.pico.processor.GeneralProcessorUtils.hasValue;
 import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElementOf;
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
 import static io.helidon.pico.tools.TypeTools.createTypedElementInfoFromElement;
-import static io.helidon.pico.tools.TypeTools.isStatic;
-import static io.helidon.pico.tools.TypeTools.toAccess;
 import static io.helidon.pico.tools.TypeTools.toFilePath;
 
 /**
@@ -239,25 +234,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
                 .annoTypeName(annoTypeName)
                 .serviceInfo(siInfo)
                 .targetElement(createTypedElementInfoFromElement(typeToProcess, elements).orElseThrow())
-                .enclosingTypeInfo(enclosingClassTypeInfo)
-                // the following are duplicates that should be removed - get them from the enclosingTypeInfo instead
-                // see https://github.com/helidon-io/helidon/issues/6773
-                .targetElementArgs(toArgs(typeToProcess))
-                .targetElementAccess(toAccess(typeToProcess))
-                .elementStatic(isStatic(typeToProcess));
-    }
-
-    List<TypedElementInfo> toArgs(Element typeToProcess) {
-        if (!(typeToProcess instanceof ExecutableElement)) {
-            return List.of();
-        }
-
-        Elements elements = processingEnv.getElementUtils();
-        List<TypedElementInfo> result = new ArrayList<>();
-        ExecutableElement executableElement = (ExecutableElement) typeToProcess;
-        executableElement.getParameters().forEach(v -> result.add(
-                createTypedElementInfoFromElement(v, elements).orElseThrow()));
-        return result;
+                .enclosingTypeInfo(enclosingClassTypeInfo);
     }
 
     private static TypeElement toEnclosingClassTypeElement(Element typeToProcess) {
