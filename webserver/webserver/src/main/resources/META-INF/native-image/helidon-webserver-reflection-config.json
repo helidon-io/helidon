@@ -3,5 +3,9 @@
         "name": "io.netty.channel.socket.nio.NioServerSocketChannel",
         "allPublicConstructors": true,
         "allPublicMethods": true
+    },
+    {
+        "name": "io.netty.channel.DefaultChannelPipeline$TailContext",
+        "queryAllDeclaredMethods" : true
     }
 ]
