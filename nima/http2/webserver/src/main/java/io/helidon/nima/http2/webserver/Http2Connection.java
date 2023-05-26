@@ -560,6 +560,18 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         if (frameHeader.type() == Http2FrameType.CONTINUATION) {
             // end of continuations with header frames
             List<Http2FrameData> frames = streamContext.contData();
+
+            // Check MAX_HEADER_LIST_SIZE
+            long headerListSize = frames.stream()
+                    .map(d -> d.header().length())
+                    .mapToLong(Integer::longValue)
+                    .sum();
+
+            if (headerListSize > serverSettings().value(Http2Setting.MAX_HEADER_LIST_SIZE)){
+                throw new Http2Exception(Http2ErrorCode.REQUEST_HEADER_FIELDS_TOO_LARGE,
+                        "Request Header Fields Too Large");
+            }
+
             headers = Http2Headers.create(stream,
                                           requestDynamicTable,
                                           requestHuffman,

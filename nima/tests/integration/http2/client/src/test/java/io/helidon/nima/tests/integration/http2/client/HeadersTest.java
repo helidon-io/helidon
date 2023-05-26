@@ -61,7 +61,10 @@ class HeadersTest {
     static void beforeAll() throws ExecutionException, InterruptedException, TimeoutException {
         LogConfig.configureRuntime();
         server = vertx.createHttpServer(new HttpServerOptions()
-                        .setInitialSettings(new Http2Settings().setMaxHeaderListSize(Integer.MAX_VALUE)))
+                        .setInitialSettings(new Http2Settings()
+                                .setMaxHeaderListSize(Integer.MAX_VALUE)
+                        )
+                )
                 .requestHandler(req -> {
                     HttpServerResponse res = req.response();
                     switch (req.path()) {
