@@ -149,7 +149,7 @@
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.0.4</version.lib.tyrus>
         <version.lib.weld-api>4.0.SP1</version.lib.weld-api>
-        <version.lib.weld>4.0.2.Final</version.lib.weld>
+        <version.lib.weld>4.0.3.Final</version.lib.weld>
         <version.lib.yasson>2.0.4</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.12.0</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>

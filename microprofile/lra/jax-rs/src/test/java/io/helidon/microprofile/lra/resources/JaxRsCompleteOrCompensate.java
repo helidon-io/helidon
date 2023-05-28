@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,7 +42,7 @@ public class JaxRsCompleteOrCompensate {
     public static final String CS_START_LRA = PATH_BASE + PATH_START_LRA;
     public static final String CS_COMPLETE = PATH_BASE + PATH_COMPLETE;
     public static final String CS_COMPENSATE = PATH_BASE + PATH_COMPENSATE;
-    
+
     @Inject
     LoadBalancedCoordinatorTest basicTest;
 
@@ -69,6 +69,6 @@ public class JaxRsCompleteOrCompensate {
         basicTest.getCompletable(CS_COMPENSATE).complete(lraId);
         return Response.ok(ParticipantStatus.Compensated.name()).build();
     }
-    
-    
+
+
 }

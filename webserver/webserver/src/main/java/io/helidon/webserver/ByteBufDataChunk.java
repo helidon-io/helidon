@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.webserver;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Objects;
@@ -32,11 +34,20 @@ import io.netty.buffer.ByteBuf;
  */
 public class ByteBufDataChunk implements DataChunk {
 
+    private static final VarHandle IS_RELEASED;
+
+    static {
+        try {
+            IS_RELEASED = MethodHandles.lookup().findVarHandle(ByteBufDataChunk.class, "isReleased", int.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw (Error) new ExceptionInInitializerError(e.getMessage()).initCause(e);
+        }
+    }
     private final ByteBuf[] byteBufs;
     private final boolean flush;
     private final boolean readOnly;
     private final Runnable releaseCallback;
-    private boolean isReleased = false;
+    private volatile int isReleased;
     private CompletableFuture<DataChunk> writeFuture;
 
     /**
@@ -103,7 +114,7 @@ public class ByteBufDataChunk implements DataChunk {
 
     @Override
     public boolean isReleased() {
-        return isReleased;
+        return isReleased != 0;
     }
 
     @Override
@@ -118,11 +129,10 @@ public class ByteBufDataChunk implements DataChunk {
 
     @Override
     public void release() {
-        if (!isReleased) {
+        if (IS_RELEASED.compareAndSet(this, 0, 1)) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }
-            isReleased = true;
         }
     }
 
