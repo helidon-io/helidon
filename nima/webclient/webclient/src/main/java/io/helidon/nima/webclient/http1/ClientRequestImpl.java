@@ -33,6 +33,8 @@ import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.ClientConnection;
@@ -209,6 +211,21 @@ class ClientRequestImpl implements Http1ClientRequest {
 
     ClientRequestHeaders headers() {
         return ClientRequestHeaders.create(explicitHeaders);
+    }
+
+    @Override
+    public Http.Method httpMethod(){
+        return method;
+    }
+
+    @Override
+    public UriPath uriPath(){
+        return UriPath.create(uri.path());
+    }
+
+    @Override
+    public UriQuery uriQuery(){
+        return UriQuery.create(resolvedUri());
     }
 
     private ClientResponseImpl invokeServices(WebClientService.Chain callChain,
