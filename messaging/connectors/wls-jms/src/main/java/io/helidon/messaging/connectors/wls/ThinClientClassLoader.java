@@ -97,12 +97,14 @@ class ThinClientClassLoader extends URLClassLoader {
 
     boolean inWlsJar(String name) {
         // Load jms exceptions from inside the thin jar to avoid deserialization issues
-        if (name.startsWith("javax.jms") && name.endsWith("Exception")) {
+        if ((name.startsWith("javax.jms") || name.startsWith("jakarta.jms"))
+                && name.endsWith("Exception")) {
             return true;
         }
 
-        // Load only javax JMS API from outside, so cast works
+        // Load only javax and jakarta JMS API from outside, so cast works
         return !name.startsWith("javax.jms")
+                && !name.startsWith("jakarta.jms")
                 && !name.equals(IsolatedContextFactory.class.getName());
     }
 
