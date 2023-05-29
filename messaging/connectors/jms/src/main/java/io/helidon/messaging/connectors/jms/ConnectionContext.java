@@ -37,6 +37,7 @@ import static io.helidon.messaging.connectors.jms.JmsConnector.JNDI_DESTINATION_
 import static io.helidon.messaging.connectors.jms.JmsConnector.JNDI_JMS_FACTORY_ATTRIBUTE;
 import static io.helidon.messaging.connectors.jms.JmsConnector.JNDI_JMS_FACTORY_DEFAULT;
 import static io.helidon.messaging.connectors.jms.JmsConnector.JNDI_PROPS_ATTRIBUTE;
+import static io.helidon.messaging.connectors.jms.JmsConnector.NAMED_FACTORY_ATTRIBUTE;
 
 /**
  * Context related to one actual connection being constructed by JMS connector.
@@ -69,7 +70,8 @@ public class ConnectionContext {
     }
 
     boolean isJndi() {
-        return config.get(JNDI_ATTRIBUTE).exists();
+        return config.get(JNDI_ATTRIBUTE).exists()
+                && !config.get(NAMED_FACTORY_ATTRIBUTE).exists();
     }
 
     Optional<? extends ConnectionFactory> lookupFactory() {
