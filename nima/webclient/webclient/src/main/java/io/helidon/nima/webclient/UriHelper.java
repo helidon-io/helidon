@@ -44,6 +44,7 @@ public class UriHelper {
     private String path;
     private String host;
     private int port;
+    private boolean skipUriEncoding = false;
 
     private UriHelper() {
         this.baseScheme = null;
@@ -128,6 +129,15 @@ public class UriHelper {
      */
     public void path(String path, UriQueryWriteable query) {
         this.path = extractQuery(path, query);
+    }
+
+    /**
+     * Whether to skip uri encoding.
+     *
+     * @param skipUriEncoding skip uri encoding
+     */
+    public void skipUriEncoding(boolean skipUriEncoding) {
+        this.skipUriEncoding = skipUriEncoding;
     }
 
     /**
@@ -229,7 +239,7 @@ public class UriHelper {
      * @return string containing encoded path with query
      */
     public String pathWithQueryAndFragment(UriQuery query, UriFragment fragment) {
-        String queryString = query.rawValue();
+        String queryString = skipUriEncoding ? query.value() : query.rawValue();
 
         boolean hasQuery = !queryString.isEmpty();
 
@@ -237,14 +247,15 @@ public class UriHelper {
         if (this.path.equals("")) {
             path = "/";
         } else {
-            path = UriEncoding.encodeUri(this.path);
+            path = skipUriEncoding ? this.path : UriEncoding.encodeUri(this.path);
         }
 
         if (hasQuery) {
             path = path + '?' + queryString;
         }
         if (fragment.hasValue()) {
-            path = path + '#' + fragment.rawValue();
+            String fragmentValue = skipUriEncoding ? fragment.value() : fragment.rawValue();
+            path = path + '#' + fragmentValue;
         }
 
         return path;

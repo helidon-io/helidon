@@ -157,5 +157,10 @@ class HttpClientTest {
         public FakeHttpClientRequest connection(ClientConnection connection) {
             return null;
         }
+
+        @Override
+        public FakeHttpClientRequest skipUriEncoding() {
+            return null;
+        }
     }
 }
