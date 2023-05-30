@@ -18,7 +18,7 @@
 
 = Helidon Builder
 :description: about Helidon Builder
-:keywords: helidon, java, microservices, reactive, virtual threads, config, builder-config
+:keywords: helidon, java, microservices, fluent builder, virtual threads, config, builder-config
 
 
 
@@ -31,7 +31,6 @@
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
 
-//the purpose of this article is to introduce Helidon Builder and provide some high-level information about how and why its used. The examples and eventual Builder guide will provide the detailed steps. 
 
 
 == Overview
@@ -175,7 +174,6 @@ The Helidon Builder's annotation processor generates source code whenever it pro
 
 == Configuration
 
-//I wasn't sure how to position Builder Config. It seems like it fits in with Builder but perhaps we want to keep it separate? Also, are we using the term Pico Builder Config or something else?
 
 Pico Builder Config is a specialization of Builder that extends the builder to support additional integration with Helidon's configuration subsystem. It adds support for the `@ConfigBean` annotation. When applied to a target interface it will map that interface to configuration via a new toBuilder method generated on the implementation as follows:
 

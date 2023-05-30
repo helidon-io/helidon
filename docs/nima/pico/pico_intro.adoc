@@ -18,7 +18,7 @@
 
 = Helidon Pico
 :description: about Helidon Pico
-:keywords: helidon, java, microservices, reactive, virtual threads
+:keywords: helidon, java, microservices, fluent builder, virtual threads
 
 
 
@@ -175,11 +175,11 @@ The Pico API provides types that are generally useful at compile time to assign 
 
 == Configuration
 
-Configuration can be achieved through a Pico add-on that is based on Helidon's configuration subsystem, and adds support for something called _config-driven services_ using the `@ConfiguredBy` annotation. 
+Configuration can be achieved through Pico Config-Driven Services. This add-on is based on Helidon's configuration subsystem, and adds support for  _config-driven services_ using the `@ConfiguredBy` annotation. 
 
 When applied to a target service interface, the `@ConfiguredBy` annotation will allow you to use a higher level aggregation for application configuration, and then allow the configuration to drive activation of services in the Pico Framework.
 
-NOTE: You can use Pico configuration in combination with the Helidon configuration subsystem. 
+NOTE: You can use Pico Config-Driven Services in combination with the Helidon configuration subsystem. 
 
 There are a few additional caveats to understand about `ConfiguredBy` and its supporting infrastructure.
 
