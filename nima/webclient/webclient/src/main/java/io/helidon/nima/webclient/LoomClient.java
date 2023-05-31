@@ -22,7 +22,6 @@ import java.util.concurrent.Executors;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.socket.SocketOptions;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
