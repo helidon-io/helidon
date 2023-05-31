@@ -350,33 +350,18 @@ class ClientRequestImplTest {
     }
 
     private static void redirect(ServerRequest req, ServerResponse res) {
-        if (!req.headers().contains(Http.HeaderValues.EXPECT_100)) {
-            res.status(Http.Status.BAD_REQUEST_400)
-                    .send("Client should send Expect 100 continue before sending an entity");
-            return;
-        }
         res.status(Http.Status.FOUND_302)
                 .header(Http.Header.LOCATION, "/afterRedirect")
                 .send();
     }
 
     private static void redirectKeepMethod(ServerRequest req, ServerResponse res) {
-        if (!req.headers().contains(Http.HeaderValues.EXPECT_100)) {
-            res.status(Http.Status.BAD_REQUEST_400)
-                    .send("Client should send Expect 100 continue before sending an entity");
-            return;
-        }
         res.status(Http.Status.TEMPORARY_REDIRECT_307)
                 .header(Http.Header.LOCATION, "/afterRedirect")
                 .send();
     }
 
     private static void afterRedirectGet(ServerRequest req, ServerResponse res) {
-        if (req.headers().contains(Http.HeaderValues.EXPECT_100)) {
-            res.status(Http.Status.BAD_REQUEST_400)
-                    .send("GET after redirect endpoint reached with expect 100 continue");
-            return;
-        }
         if (req.content().hasEntity()) {
             res.status(Http.Status.BAD_REQUEST_400)
                     .send("GET after redirect endpoint reached with entity");
@@ -386,11 +371,6 @@ class ClientRequestImplTest {
     }
 
     private static void afterRedirectPut(ServerRequest req, ServerResponse res) {
-        if (!req.headers().contains(Http.HeaderValues.EXPECT_100)) {
-            res.status(Http.Status.BAD_REQUEST_400)
-                    .send("Client should send Expect 100 continue before sending an entity");
-            return;
-        }
         String entity = req.content().as(String.class);
         if (!entity.equals("Test entity")) {
             res.status(Http.Status.BAD_REQUEST_400)

@@ -64,13 +64,10 @@ class HttpCallEntityChain extends HttpCallChainBase {
                                               DataReader reader,
                                               BufferData writeBuffer) {
         byte[] entityBytes;
-        boolean expect100Continue = false;
         if (entity == BufferData.EMPTY_BYTES) {
             entityBytes = BufferData.EMPTY_BYTES;
         } else {
             entityBytes = entityBytes(entity, headers);
-            headers.add(Http.HeaderValues.EXPECT_100);
-            expect100Continue = true;
         }
 
         headers.set(Http.Header.create(Http.Header.CONTENT_LENGTH, entityBytes.length));
@@ -79,25 +76,6 @@ class HttpCallEntityChain extends HttpCallChainBase {
         writeHeaders(headers, writeBuffer);
         // we have completed writing the headers
         whenSent.complete(serviceRequest);
-
-        if (expect100Continue) {
-            writer.writeNow(writeBuffer);
-            Http.Status responseStatus = Http1StatusParser.readStatus(reader, maxStatusLineLength);
-            if (responseStatus != Http.Status.CONTINUE_100) {
-                ClientResponseHeaders responseHeaders = readHeaders(reader);
-                //We did not receive 100 continue, we should not send any entity and returning obtained response.
-                return WebClientServiceResponseDefault.builder()
-                        .connection(connection)
-                        .reader(reader)
-                        .headers(responseHeaders)
-                        .status(responseStatus)
-                        .whenComplete(whenComplete)
-                        .serviceRequest(serviceRequest)
-                        .build();
-            } else {
-                reader.skip(reader.available());
-            }
-        }
 
         if (entityBytes.length > 0) {
             writeBuffer.write(entityBytes);
