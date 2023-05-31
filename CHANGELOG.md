@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.13]
+
+This is a bug fix release of Helidon 1 that contains dependency upgrades.
+
+This release upgrades SnakeYaml from 1.27 to 2.0. Because of incompatible API changes in SnakeYaml 2 it is possible your application might be impacted if you use SnakeYaml directly. While we recommend you do the upgrade, if that is not possible you may force downgrade SnakeYaml to 1.32 and Helidon 1.4 will still work.
+
+### Fixes
+
+- Upgrade Netty to 4.1.86.Final and grpc to 1.49.2 [6477](https://github.com/helidon-io/helidon/pull/6477)
+- Upgrade to SnakeYAML 2.0 [6440](https://github.com/helidon-io/helidon/pull/6440)
+- Upgrade oci sdk to 2.62.0 [6888](https://github.com/helidon-io/helidon/pull/6888)
+- Fix native-image with Netty >= 4.1.83.Final [6914](https://github.com/helidon-io/helidon/pull/6914)
+- Create Github Action for helidon-1.x branch [6539](https://github.com/helidon-io/helidon/pull/6539)
+
 ## [1.4.12]
 
 This is a bug fix release of Helidon 1 that contains dependency upgrades.
@@ -787,6 +801,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
+[1.4.13]: https://github.com/oracle/helidon/compare/1.4.12..1.4.13
 [1.4.12]: https://github.com/oracle/helidon/compare/1.4.11..1.4.12
 [1.4.11]: https://github.com/oracle/helidon/compare/1.4.10..1.4.11
 [1.4.10]: https://github.com/oracle/helidon/compare/1.4.9..1.4.10
