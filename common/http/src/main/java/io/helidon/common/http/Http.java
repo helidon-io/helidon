@@ -430,6 +430,11 @@ public final class Http {
          */
         public static final Status TEMPORARY_REDIRECT_307 = new Status(307, "Temporary Redirect", true);
         /**
+         * 308 Permanent Redirect, see
+         * <a href="https://www.rfc-editor.org/rfc/rfc7538">HTTP Status Code 308 documentation</a>.
+         */
+        public static final Status PERMANENT_REDIRECT_308 = new Status(308, "Permanent Redirect", true);
+        /**
          * 400 Bad Request, see
          * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">HTTP/1.1 documentation</a>.
          */

@@ -66,4 +66,20 @@ public interface ClientConfig {
      */
     DnsAddressLookup dnsAddressLookup();
 
+    /**
+     * Whether to follow redirects.
+     *
+     * @return follow redirects
+     */
+    @ConfiguredOption("false")
+    boolean followRedirects();
+
+    /**
+     * Maximum number of redirects allowed.
+     *
+     * @return allowed number of redirects
+     */
+    @ConfiguredOption("5")
+    int maxRedirects();
+
 }

@@ -52,6 +52,8 @@ class ClientRequestImpl implements Http1ClientRequest {
     private final Http1ClientConfig clientConfig;
 
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
+    private boolean followRedirects;
+    private int maxRedirects;
     private Tls tls;
     private String uriTemplate;
     private ClientConnection connection;
@@ -65,8 +67,28 @@ class ClientRequestImpl implements Http1ClientRequest {
         this.uri = helper;
 
         this.clientConfig = clientConfig;
+        this.followRedirects = clientConfig.followRedirects();
+        this.maxRedirects = clientConfig.maxRedirects();
         this.tls = clientConfig.tls().orElse(null);
         this.query = query;
+
+        this.requestId = "http1-client-" + COUNTER.getAndIncrement();
+    }
+
+    //Copy constructor for redirection purposes
+    private ClientRequestImpl(ClientRequestImpl request,
+                              Http.Method method,
+                              UriHelper helper,
+                              UriQueryWriteable query) {
+        this.method = method;
+        this.uri = helper;
+        this.query = query;
+
+        this.clientConfig = request.clientConfig;
+        this.followRedirects = request.followRedirects;
+        this.maxRedirects = request.maxRedirects;
+        this.tls = request.tls;
+        this.connection = request.connection;
 
         this.requestId = "http1-client-" + COUNTER.getAndIncrement();
     }
@@ -126,6 +148,18 @@ class ClientRequestImpl implements Http1ClientRequest {
     }
 
     @Override
+    public Http1ClientRequest followRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+        return this;
+    }
+
+    @Override
+    public Http1ClientRequest maxRedirects(int maxRedirects) {
+        this.maxRedirects = maxRedirects;
+        return this;
+    }
+
+    @Override
     public Http1ClientResponse request() {
         return submit(BufferData.EMPTY_BYTES);
     }
@@ -135,23 +169,18 @@ class ClientRequestImpl implements Http1ClientRequest {
         if (entity != BufferData.EMPTY_BYTES) {
             rejectHeadWithEntity();
         }
-
-        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
-        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        WebClientService.Chain callChain = new HttpCallEntityChain(clientConfig,
-                                                                   connection,
-                                                                   tls,
-                                                                   whenSent,
-                                                                   whenComplete,
-                                                                   entity);
-
-        return invokeServices(callChain, whenSent, whenComplete);
+        if (followRedirects) {
+            return invokeWithFollowRedirectsEntity(entity);
+        }
+        return invokeRequestWithEntity(entity);
     }
 
     @Override
     public Http1ClientResponse outputStream(OutputStreamHandler streamHandler) {
         rejectHeadWithEntity();
-
+        if (followRedirects) {
+            throw new UnsupportedOperationException("This is not yet supported");
+        }
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         WebClientService.Chain callChain = new HttpCallOutputStreamChain(clientConfig,
@@ -192,6 +221,65 @@ class ClientRequestImpl implements Http1ClientRequest {
 
     ClientRequestHeaders headers() {
         return ClientRequestHeaders.create(explicitHeaders);
+    }
+
+    private ClientResponseImpl invokeWithFollowRedirectsEntity(Object entity) {
+        //Request object which should be used for invoking the next request. This will change in case of any redirection.
+        ClientRequestImpl clientRequest = this;
+        //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
+        Object entityToBeSent = entity;
+        for (int i = 0; i < maxRedirects; i++) {
+            ClientResponseImpl clientResponse = clientRequest.invokeRequestWithEntity(entityToBeSent);
+            int code = clientResponse.status().code();
+            if (code < 300 || code >= 400) {
+                return clientResponse;
+            } else if (!clientResponse.headers().contains(Http.Header.LOCATION)) {
+                throw new IllegalStateException("There is no " + Http.Header.LOCATION + " header present in the response! "
+                                                        + "It is not clear where to redirect.");
+            }
+            String redirectedUri = clientResponse.headers().get(Http.Header.LOCATION).value();
+            URI newUri = URI.create(redirectedUri);
+            UriQueryWriteable newQuery = UriQueryWriteable.create();
+            UriHelper redirectUri = UriHelper.create(newUri, newQuery);
+            String uriQuery = newUri.getQuery();
+            if (uriQuery != null) {
+                newQuery.fromQueryString(uriQuery);
+            }
+            if (newUri.getHost() == null) {
+                //To keep the information about the latest host, we need to use uri from the last performed request
+                //Example:
+                //request -> my-test.com -> response redirect -> my-example.com
+                //new request -> my-example.com -> response redirect -> /login
+                //with using the last request uri host etc, we prevent my-test.com/login from happening
+                redirectUri.scheme(clientRequest.uri.scheme());
+                redirectUri.host(clientRequest.uri.host());
+                redirectUri.port(clientRequest.uri.port());
+            }
+            //Method and entity is required to be the same as with original request with 307 and 308 requests
+            if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
+                    || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
+                clientRequest = new ClientRequestImpl(this, method, redirectUri, newQuery);
+            } else {
+                //It is possible to change to GET and send no entity with all other redirect codes
+                entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
+                clientRequest = new ClientRequestImpl(this, Http.Method.GET, redirectUri, newQuery);
+            }
+        }
+        throw new IllegalStateException("Maximum number of request redirections ("
+                                                + clientConfig.maxRedirects() + ") reached.");
+    }
+
+    private ClientResponseImpl invokeRequestWithEntity(Object entity) {
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        WebClientService.Chain callChain = new HttpCallEntityChain(clientConfig,
+                                                                   connection,
+                                                                   tls,
+                                                                   whenSent,
+                                                                   whenComplete,
+                                                                   entity);
+
+        return invokeServices(callChain, whenSent, whenComplete);
     }
 
     private ClientResponseImpl invokeServices(WebClientService.Chain callChain,

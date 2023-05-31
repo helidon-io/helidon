@@ -116,6 +116,20 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
             return this;
         }
 
+        @Override
+        public Http1ClientBuilder followRedirect(boolean followRedirect) {
+            super.followRedirect(followRedirect);
+            configBuilder.followRedirects(followRedirect);
+            return this;
+        }
+
+        @Override
+        public Http1ClientBuilder maxRedirects(int maxRedirects) {
+            super.maxRedirects(maxRedirects);
+            configBuilder.maxRedirects(maxRedirects);
+            return this;
+        }
+
         /**
          * Configure the maximum allowed header size of the response.
          *
