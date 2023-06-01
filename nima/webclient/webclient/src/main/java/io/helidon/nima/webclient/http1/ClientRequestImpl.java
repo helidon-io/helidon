@@ -178,9 +178,6 @@ class ClientRequestImpl implements Http1ClientRequest {
     @Override
     public Http1ClientResponse outputStream(OutputStreamHandler streamHandler) {
         rejectHeadWithEntity();
-        if (followRedirects) {
-            throw new UnsupportedOperationException("This is not yet supported");
-        }
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         WebClientService.Chain callChain = new HttpCallOutputStreamChain(clientConfig,

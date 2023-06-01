@@ -71,7 +71,7 @@ public interface ClientConfig {
      *
      * @return follow redirects
      */
-    @ConfiguredOption("false")
+    @ConfiguredOption("true")
     boolean followRedirects();
 
     /**

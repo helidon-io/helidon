@@ -291,12 +291,12 @@ class ClientRequestImplTest {
     @Test
     void testRedirect() {
         try (Http1ClientResponse response = injectedHttp1client.put("/redirect")
+                .followRedirects(false)
                 .submit("Test entity")) {
             assertThat(response.status(), is(Http.Status.FOUND_302));
         }
 
         try (Http1ClientResponse response = injectedHttp1client.put("/redirect")
-                .followRedirects(true)
                 .submit("Test entity")) {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is(EXPECTED_GET_AFTER_REDIRECT_STRING));
@@ -306,12 +306,12 @@ class ClientRequestImplTest {
     @Test
     void testRedirectKeepMethod() {
         try (Http1ClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
+                .followRedirects(false)
                 .submit("Test entity")) {
             assertThat(response.status(), is(Http.Status.TEMPORARY_REDIRECT_307));
         }
 
         try (Http1ClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
-                .followRedirects(true)
                 .submit("Test entity")) {
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
         }
