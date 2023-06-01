@@ -208,6 +208,16 @@ public abstract class AbstractServiceProvider<T>
         return Objects.requireNonNull(picoServices, description() + ": picoServices should have been previously set");
     }
 
+    /**
+     * Used to access the current pico services instance assigned to this service provider, or empty if not assigned.
+     *
+     * @return the pico services assigned to this service provider, or empty if not assigned
+     */
+    @Override
+    public Optional<PicoServices> safePicoServices() {
+        return Optional.ofNullable(picoServices);
+    }
+
     @Override
     public void picoServices(Optional<PicoServices> picoServices) {
         if (picoServices.isPresent()

@@ -297,7 +297,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     : null;
             String moduleInfoModuleName = getThisModuleName();
             Optional<ServiceProvider<ModuleComponent>> moduleSp = lookupThisModule(moduleInfoModuleName, services, false);
-            String packageName = determinePackageName(moduleSp, serviceTypeNames, descriptor, true);
+            String packageName = determinePackageName(moduleSp, serviceTypeNames, Optional.ofNullable(descriptor), true);
 
             CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
                     .generatedSourcesPath(getGeneratedSourceDirectory().getPath())

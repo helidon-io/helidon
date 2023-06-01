@@ -67,6 +67,9 @@ public class ServiceBinderDefault implements ServiceBinder {
         }
 
         Optional<ServiceProviderBindable<?>> bindableSp = toBindableProvider(sp);
+        if (bindableSp.isPresent() && alreadyBoundToThisPicoServices(bindableSp.get(), picoServices)) {
+            return;
+        }
 
         if (moduleName != null) {
             bindableSp.ifPresent(it -> it.moduleName(moduleName));
@@ -83,6 +86,12 @@ public class ServiceBinderDefault implements ServiceBinder {
 
         serviceRegistry.bind(sp);
         bindableSp.ifPresent(it -> it.picoServices(Optional.of(picoServices)));
+    }
+
+    private boolean alreadyBoundToThisPicoServices(ServiceProviderBindable<?> serviceProvider,
+                                                   PicoServices picoServices) {
+        PicoServices assigned = serviceProvider.safePicoServices().orElse(null);
+        return (assigned == picoServices);
     }
 
     /**

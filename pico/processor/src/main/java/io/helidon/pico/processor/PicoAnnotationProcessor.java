@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -38,6 +40,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
@@ -52,6 +55,9 @@ import io.helidon.pico.api.ExternalContracts;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.pico.processor.spi.PicoAnnotationProcessorObserver;
+import io.helidon.pico.processor.spi.ProcessingEvent;
+import io.helidon.pico.processor.spi.ProcessingEventDefault;
 import io.helidon.pico.runtime.Dependencies;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ActivatorCreatorCodeGenDefault;
@@ -191,6 +197,8 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                 ServicesToProcess services = toServicesToProcess(filtered, allElementsOfInterestInThisModule);
                 doFiler(services);
             }
+
+            notifyObservers();
 
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
         } catch (Throwable t) {
@@ -461,13 +469,13 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
     /**
      * Finds the first jakarta or javax annotation matching the given jakarta annotation class name.
      *
-     * @param jakartaAnnoName the jakarta annotation class name
-     * @param annotations     all of the annotations to search through
+     * @param annoTypeName  the annotation class name
+     * @param annotations   all of the annotations to search through
      * @return the annotation, or empty if not found
      */
-    protected Optional<? extends AnnotationAndValue> findFirst(String jakartaAnnoName,
+    protected Optional<? extends AnnotationAndValue> findFirst(String annoTypeName,
                                                                Collection<? extends AnnotationAndValue> annotations) {
-        return GeneralProcessorUtils.findFirst(jakartaAnnoName, annotations);
+        return GeneralProcessorUtils.findFirst(annoTypeName, annotations);
     }
 
     private ServicesToProcess toServicesToProcess(Set<TypeInfo> typesToCodeGenerate,
@@ -639,6 +647,30 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
 
 //        // We expect activators at every level for abstract bases - we will therefore NOT recursive up the hierarchy
 //        service.superTypeInfo().ifPresent(it -> gatherInjectionPoints(builder, it, allElementsOfInterest, false));
+    }
+
+    private void notifyObservers() {
+        List<PicoAnnotationProcessorObserver> observers = HelidonServiceLoader.create(observerLoader()).asList();
+        if (!observers.isEmpty()) {
+            ProcessingEvent event = ProcessingEventDefault.builder()
+                    .processingEnvironment(processingEnv)
+                    .elementsOfInterest(allElementsOfInterestInThisModule)
+                    .build();
+            observers.forEach(it -> it.onProcessingEvent(event));
+        }
+    }
+
+    private static ServiceLoader<PicoAnnotationProcessorObserver> observerLoader() {
+        try {
+            // note: it is important to use this class' CL since maven will not give us the "right" one.
+            return ServiceLoader.load(
+                    PicoAnnotationProcessorObserver.class, PicoAnnotationProcessorObserver.class.getClassLoader());
+        } catch (ServiceConfigurationError e) {
+            // see issue #6261 - running inside the IDE?
+            // this version will use the thread ctx classloader
+            System.getLogger(PicoAnnotationProcessorObserver.class.getName()).log(System.Logger.Level.WARNING, e.getMessage(), e);
+            return ServiceLoader.load(PicoAnnotationProcessorObserver.class);
+        }
     }
 
     /**

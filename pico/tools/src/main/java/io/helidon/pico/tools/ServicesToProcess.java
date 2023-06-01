@@ -45,6 +45,8 @@ import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.runtime.Dependencies;
 
+import static io.helidon.pico.tools.ModuleUtils.innerToSuggestedGeneratedPackageName;
+
 /**
  * Tracks the services to process, and ingests them to build the codegen model.
  * <p>
@@ -823,7 +825,8 @@ public class ServicesToProcess implements Resettable {
         }
 
         ModuleInfoDescriptor descriptor = lastKnownModuleInfoDescriptor();
-        String packageName = ModuleUtils.toSuggestedGeneratedPackageName(descriptor, serviceTypeNames(), PicoServicesConfig.NAME);
+        String packageName = innerToSuggestedGeneratedPackageName(descriptor, serviceTypeNames(), PicoServicesConfig.NAME);
+
         return Objects.requireNonNull(packageName);
     }
 

@@ -260,16 +260,16 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     /**
      * Determines the primary package name (which also typically doubles as the application name).
      *
-     * @param optModuleSp the module service provider
-     * @param typeNames   the type names
-     * @param descriptor  the descriptor
-     * @param persistIt   pass true to write it to scratch, so that we can use it in the future for this module
+     * @param optModuleSp    the module service provider
+     * @param typeNames      the type names
+     * @param optDescriptor  the descriptor
+     * @param persistIt      pass true to write it to scratch, so that we can use it in the future for this module
      * @return the package name (which also typically doubles as the application name)
      */
-    protected String determinePackageName(Optional<ServiceProvider<ModuleComponent>> optModuleSp,
-                                          Collection<TypeName> typeNames,
-                                          ModuleInfoDescriptor descriptor,
-                                          boolean persistIt) {
+    String determinePackageName(Optional<ServiceProvider<ModuleComponent>> optModuleSp,
+                                Collection<TypeName> typeNames,
+                                Optional<ModuleInfoDescriptor> optDescriptor,
+                                boolean persistIt) {
         String packageName = getPackageName();
         if (packageName == null) {
             // check for the existence of the file
@@ -281,8 +281,10 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
             ServiceProvider<ModuleComponent> moduleSp = optModuleSp.orElse(null);
             if (moduleSp != null) {
                 packageName = TypeNameDefault.createFromTypeName(moduleSp.serviceInfo().serviceTypeName()).packageName();
+            } else if (optDescriptor.isPresent()) {
+                packageName = toSuggestedGeneratedPackageName(optDescriptor.get(), typeNames, PicoServicesConfig.NAME);
             } else {
-                packageName = toSuggestedGeneratedPackageName(descriptor, typeNames, PicoServicesConfig.NAME);
+                packageName = toSuggestedGeneratedPackageName(typeNames, PicoServicesConfig.NAME);
             }
         }
 
