@@ -125,6 +125,7 @@ Compile-time dependency:
 * [tools](./tools) - contains the libraries and template-based codegen mustache resources as well as model validation tooling; depends on runtime services. Only required at build time and is not required for Pico at runtime.
 * [processor](./processor) - contains the libraries for annotation processing; depends on tools. Only required at build time and is not required for Pico at runtime.
 * [maven-plugin](./maven-plugin) - provides code generation Mojo wrappers for maven; depends on tools. Only required at build time and is not required for Pico at runtime. This is what would be used to create your <b>Application</b>.
+* [integrations](./integrations) - integrations with other frameworks (e.g., OCI).
 * [testing](./testing) - provides testing types useful for Pico unit & integration testing.
 * [tests](./tests) - used internally for testing Pico.
 * [examples](../examples/pico) - providing examples for how to use Pico as well as side-by-side comparisons for Pico compared to Guice, Dagger2, Hk2, etc.

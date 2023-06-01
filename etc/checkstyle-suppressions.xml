@@ -102,6 +102,8 @@
             checks=".*"/>
     <suppress files="pico/configdriven/tests/"
             checks=".*"/>
+    <suppress files="pico/integrations/oci/tests/"
+            checks=".*"/>
     <suppress files="examples/pico/"
             checks=".*"/>
 

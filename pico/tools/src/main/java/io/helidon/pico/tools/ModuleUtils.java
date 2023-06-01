@@ -86,14 +86,10 @@ public class ModuleUtils {
      * @param defaultPackageName the default package name to use if all options are exhausted
      * @return the suggested package name
      */
-    public static String toSuggestedGeneratedPackageName(Collection<TypeName> typeNames,
+    public static String toSuggestedGeneratedPackageName(ModuleInfoDescriptor descriptor,
+                                                         Collection<TypeName> typeNames,
                                                          String defaultPackageName) {
-        return innerToSuggestedGeneratedPackageName(null, typeNames, defaultPackageName);
-    }
-
-    static String innerToSuggestedGeneratedPackageName(ModuleInfoDescriptor descriptor,
-                                                       Collection<TypeName> typeNames,
-                                                       String defaultPackageName) {
+        String export = null;
         Objects.requireNonNull(descriptor);
         return innerToSuggestedGeneratedPackageName(descriptor, typeNames, defaultPackageName);
     }
@@ -110,11 +106,17 @@ public class ModuleUtils {
         return innerToSuggestedGeneratedPackageName(null, typeNames, defaultPackageName);
     }
 
+//    static String toSuggestedGeneratedPackageName(ModuleInfoDescriptor descriptor,
+//                                                  Collection<TypeName> typeNames,
+//                                                  String defaultPackageName) {
+//        Objects.requireNonNull(descriptor);
+//        return innerToSuggestedGeneratedPackageName(descriptor, typeNames, defaultPackageName);
+//    }
+//
     static String innerToSuggestedGeneratedPackageName(ModuleInfoDescriptor descriptor,
                                                        Collection<TypeName> typeNames,
                                                        String defaultPackageName) {
         String export = null;
-
         if (descriptor != null) {
             Optional<ModuleInfoItem> provides = descriptor.first(Application.class.getName());
             if (provides.isEmpty() || provides.get().withOrTo().isEmpty()) {

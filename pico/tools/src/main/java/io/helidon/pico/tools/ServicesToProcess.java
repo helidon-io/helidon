@@ -825,9 +825,7 @@ public class ServicesToProcess implements Resettable {
         }
 
         ModuleInfoDescriptor descriptor = lastKnownModuleInfoDescriptor();
-        String packageName = innerToSuggestedGeneratedPackageName(Optional.ofNullable(descriptor),
-                                                                         serviceTypeNames(),
-                                                                         PicoServicesConfig.NAME);
+        String packageName = innerToSuggestedGeneratedPackageName(descriptor, serviceTypeNames(), PicoServicesConfig.NAME);
         return Objects.requireNonNull(packageName);
     }
 
