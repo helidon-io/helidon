@@ -32,9 +32,14 @@ public final class CommonQualifiers {
     public static final TypeName NAMED = TypeNameDefault.create(Named.class);
 
     /**
+     * Represents a wildcard (i.e., matches anything).
+     */
+    public static final String WILDCARD = "*";
+
+    /**
      * Represents a wildcard {@link #NAMED} qualifier.
      */
-    public static final QualifierAndValue WILDCARD_NAMED = QualifierAndValueDefault.createNamed("*");
+    public static final QualifierAndValue WILDCARD_NAMED = QualifierAndValueDefault.createNamed(WILDCARD);
 
     private CommonQualifiers() {
     }

@@ -32,6 +32,7 @@ import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.TypeName;
+import io.helidon.pico.api.CommonQualifiers;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.ModuleComponent;
@@ -171,7 +172,7 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
     static boolean anyWildcardMatches(TypeName typeName,
                                       Set<String> permittedProviderTypeNames) {
         return permittedProviderTypeNames.stream()
-                .filter(it -> it.endsWith("*"))
+                .filter(it -> it.endsWith(CommonQualifiers.WILDCARD))
                 .map(it -> it.substring(0, it.length() - 1))
                 .anyMatch(it -> typeName.name().startsWith(it));
     }
