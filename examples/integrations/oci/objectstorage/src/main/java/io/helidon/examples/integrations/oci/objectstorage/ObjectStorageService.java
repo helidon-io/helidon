@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.integrations.oci.objectstorage.cdi;
+package io.helidon.examples.integrations.oci.objectstorage;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -24,6 +24,10 @@ import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.oracle.bmc.ConfigFileReader;
+import com.oracle.bmc.auth.AuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.objectstorage.ObjectStorageClient;
 import io.helidon.common.http.Http;
 
 import com.oracle.bmc.objectstorage.ObjectStorage;
@@ -35,45 +39,57 @@ import com.oracle.bmc.objectstorage.responses.DeleteObjectResponse;
 import com.oracle.bmc.objectstorage.responses.GetNamespaceResponse;
 import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
 import com.oracle.bmc.objectstorage.responses.PutObjectResponse;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 /**
- * JAX-RS resource - REST API for the objecstorage example.
+ * REST API for the objecstorage example.
  */
-@Path("/files")
-public class ObjectStorageResource {
-    private static final Logger LOGGER = Logger.getLogger(ObjectStorageResource.class.getName());
+public class ObjectStorageService implements HttpService {
+    private static final Logger LOGGER = Logger.getLogger(ObjectStorageService.class.getName());
     private final ObjectStorage objectStorageClient;
     private final String namespaceName;
     private final String bucketName;
 
-    @Inject
-    ObjectStorageResource(ObjectStorage objectStorageClient,
-                          @ConfigProperty(name = "oci.objectstorage.bucketName")
-                          String bucketName) {
-        this.objectStorageClient = objectStorageClient;
-        this.bucketName = bucketName;
-        GetNamespaceResponse namespaceResponse =
-                this.objectStorageClient.getNamespace(GetNamespaceRequest.builder().build());
-        this.namespaceName = namespaceResponse.getValue();
+
+    ObjectStorageService(Config config) {
+        try {
+            AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
+            this.objectStorageClient = ObjectStorageClient.builder().build(authProvider);
+            this.bucketName = config.get("oci.objectstorage.bucketName")
+                    .asString()
+                    .orElseThrow(() -> new IllegalStateException("Missing bucket name!!"));
+            GetNamespaceResponse namespaceResponse =
+                    this.objectStorageClient.getNamespace(GetNamespaceRequest.builder().build());
+            this.namespaceName = namespaceResponse.getValue();
+        } catch (IOException e) {
+            throw new ConfigException("Failed to read configuration properties", e);
+        }
+    }
+
+    /**
+     * A service registers itself by updating the routine rules.
+     *
+     * @param rules the routing rules.
+     */
+    public void routing(HttpRules rules) {
+        rules.get("/file/{file-name}", this::download);
+        rules.post("/file/{fileName}", this::upload);
+        rules.delete("/file/{file-name}", this::delete);
     }
 
     /**
      * Download a file from object storage.
      *
-     * @param fileName name of the object
-     * @return response
+     * @param request  request
+     * @param response response
      */
-    @GET
-    @Path("/file/{file-name}")
-    public Response download(@PathParam("file-name") String fileName) {
+    public void download(ServerRequest request, ServerResponse response) {
+        String fileName = request.path().pathParameters().value("file-name");
         GetObjectResponse getObjectResponse =
                 objectStorageClient.getObject(
                         GetObjectRequest.builder()
@@ -84,34 +100,33 @@ public class ObjectStorageResource {
 
         if (getObjectResponse.getContentLength() == 0) {
             LOGGER.log(Level.SEVERE, "GetObjectResponse is empty");
-            return Response.status(Response.Status.NOT_FOUND).build();
+            response.status(Http.Status.NOT_FOUND_404).send();
+            return;
         }
 
         try (InputStream fileStream = getObjectResponse.getInputStream()) {
             byte[] objectContent = fileStream.readAllBytes();
-            Response.ResponseBuilder ok = Response.ok(objectContent)
+            response
+                    .status(Http.Status.OK_200)
                     .header(Http.Header.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
                     .header("opc-request-id", getObjectResponse.getOpcRequestId())
-                    .header("request-id", getObjectResponse.getOpcClientRequestId())
-                    .header(Http.Header.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength());
+                    .header(Http.Header.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength().toString());
 
-            return ok.build();
+            response.send(objectContent);
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error processing GetObjectResponse", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
         }
     }
 
     /**
      * Upload a file to object storage.
      *
-     * @param fileName name of the object
-     * @return response
+     * @param request  request
+     * @param response response
      */
-    @POST
-    @Path("/file/{fileName}")
-    public Response upload(@PathParam("fileName") String fileName) {
-
+    public void upload(ServerRequest request, ServerResponse response) {
+        String fileName = request.path().pathParameters().value("fileName");
         PutObjectRequest putObjectRequest = null;
         try (InputStream stream = new FileInputStream(System.getProperty("user.dir") + File.separator + fileName)) {
             byte[] contents = stream.readAllBytes();
@@ -125,35 +140,31 @@ public class ObjectStorageResource {
                             .build();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error creating PutObjectRequest", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            return;
         }
         PutObjectResponse putObjectResponse = objectStorageClient.putObject(putObjectRequest);
 
-        Response.ResponseBuilder ok = Response.ok()
-                .header("opc-request-id", putObjectResponse.getOpcRequestId())
-                .header("request-id", putObjectResponse.getOpcClientRequestId());
+        response.status(Http.Status.OK_200).header("opc-request-id", putObjectResponse.getOpcRequestId());
 
-        return ok.build();
+        response.send();
     }
 
     /**
      * Delete a file from object storage.
      *
-     * @param fileName object name
-     * @return response
+     * @param request  request
+     * @param response response
      */
-    @DELETE
-    @Path("/file/{file-name}")
-    public Response delete(@PathParam("file-name") String fileName) {
+    public void delete(ServerRequest request, ServerResponse response) {
+        String fileName = request.path().pathParameters().value("file-name");
         DeleteObjectResponse deleteObjectResponse = objectStorageClient.deleteObject(DeleteObjectRequest.builder()
-                                                                                             .namespaceName(namespaceName)
-                                                                                             .bucketName(bucketName)
-                                                                                             .objectName(fileName)
-                                                                                             .build());
-        Response.ResponseBuilder ok = Response.ok()
-                .header("opc-request-id", deleteObjectResponse.getOpcRequestId())
-                .header("request-id", deleteObjectResponse.getOpcClientRequestId());
+                .namespaceName(namespaceName)
+                .bucketName(bucketName)
+                .objectName(fileName)
+                .build());
+        response.status(Http.Status.OK_200).header("opc-request-id", deleteObjectResponse.getOpcRequestId());
 
-        return ok.build();
+        response.send();
     }
 }

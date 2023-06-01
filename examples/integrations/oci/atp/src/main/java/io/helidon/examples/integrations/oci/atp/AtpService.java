@@ -92,6 +92,11 @@ public class AtpService implements HttpService {
         }
     }
 
+    /**
+     * A service registers itself by updating the routine rules.
+     *
+     * @param rules the routing rules.
+     */
     public void routing(HttpRules rules) {
         rules.get("/wallet", this::generateWallet);
     }
@@ -116,7 +121,7 @@ public class AtpService implements HttpService {
 
         if (walletResponse.getContentLength() == 0) {
             LOGGER.log(Level.SEVERE, "GenerateAutonomousDatabaseWalletResponse is empty");
-            response.status(Http.Status.NOT_FOUND_404);
+            response.status(Http.Status.NOT_FOUND_404).send();
             return;
         }
 
@@ -125,7 +130,7 @@ public class AtpService implements HttpService {
             walletContent = walletResponse.getInputStream().readAllBytes();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error processing GenerateAutonomousDatabaseWalletResponse", e);
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
             return;
         }
         String returnEntity;
@@ -141,7 +146,7 @@ public class AtpService implements HttpService {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error setting up DataSource", e);
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
             return;
         }
 
@@ -164,8 +169,8 @@ public class AtpService implements HttpService {
     /**
      * Returns SSLContext based on cwallet.sso in wallet.
      *
-     * @param walletContent
-     * @return SSLContext
+     * @param walletContent walletContent
+     * @return SSLContext SSLContext
      */
     private static SSLContext getSSLContext(byte[] walletContent) throws IllegalStateException {
         SSLContext sslContext = null;
@@ -195,8 +200,8 @@ public class AtpService implements HttpService {
     /**
      * Returns JDBC URL with connection description for the given service based on tnsnames.ora in wallet.
      *
-     * @param walletContent
-     * @param tnsNetServiceName
+     * @param walletContent walletContent
+     * @param tnsNetServiceName tnsNetServiceName
      * @return String
      */
     private static String getJdbcUrl(byte[] walletContent, String tnsNetServiceName) throws IllegalStateException {

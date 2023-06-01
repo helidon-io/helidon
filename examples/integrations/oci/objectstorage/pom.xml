@@ -23,28 +23,24 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-mp</artifactId>
+        <artifactId>helidon-se</artifactId>
         <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../../../../applications/mp/pom.xml</relativePath>
+        <relativePath>../../../../applications/se/pom.xml</relativePath>
     </parent>
 
     <groupId>io.helidon.examples.integrations.oci</groupId>
-    <artifactId>helidon-examples-integrations-oci-objectstorage-cdi</artifactId>
-    <name>Helidon Examples Integration OCI Object Storage CDI</name>
-    <description>CDI integration with OCI Object Storage.</description>
+    <artifactId>helidon-examples-integrations-oci-objectstorage</artifactId>
+    <name>Helidon Examples Integration OCI Object Storage</name>
+    <description>Integration with OCI Object Storage.</description>
 
     <properties>
-        <mainClass>io.helidon.examples.integrations.oci.objectstorage.cdi.ObjectStorageCdiMain</mainClass>
+        <mainClass>io.helidon.examples.integrations.oci.objectstorage.ObjectStorageMain</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.oci.sdk</groupId>
-            <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
@@ -52,11 +48,16 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml-mp</artifactId>
+            <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
             <scope>runtime</scope>
         </dependency>
     </dependencies>

@@ -53,7 +53,7 @@ public final class Main {
     }
 
     /**
-     * Updates HTTP Routing and registers observe providers.
+     * Updates HTTP Routing.
      */
     static void routing(HttpRouting.Builder routing) {
         AtpService atpService = new AtpService(config);
