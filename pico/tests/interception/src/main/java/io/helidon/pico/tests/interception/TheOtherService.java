@@ -19,7 +19,7 @@ package io.helidon.pico.tests.interception;
 import jakarta.inject.Singleton;
 
 @Singleton
-class TheOtherService implements OtherContract{
+class TheOtherService implements OtherContract {
     private boolean throwException;
 
     @Modify

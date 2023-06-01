@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,9 +73,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
     }
 
     static List<CustomAnnotationTemplateCreator> initialize() {
-        // note: it is important to use this class' CL since maven will not give us the "right" one.
-        List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(ServiceLoader.load(
-                CustomAnnotationTemplateCreator.class, CustomAnnotationTemplateCreator.class.getClassLoader())).asList();
+        List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(loader()).asList();
         creators.forEach(creator -> {
             try {
                 Set<String> annoTypes = creator.annoTypes();
@@ -235,6 +234,19 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
                 .serviceInfo(siInfo)
                 .targetElement(createTypedElementInfoFromElement(typeToProcess, elements).orElseThrow())
                 .enclosingTypeInfo(enclosingClassTypeInfo);
+    }
+
+    private static ServiceLoader<CustomAnnotationTemplateCreator> loader() {
+        try {
+            // note: it is important to use this class' CL since maven will not give us the "right" one.
+            return ServiceLoader.load(
+                    CustomAnnotationTemplateCreator.class, CustomAnnotationTemplateCreator.class.getClassLoader());
+        } catch (ServiceConfigurationError e) {
+            // see issue #6261 - running inside the IDE?
+            // this version will use the thread ctx classloader
+            System.getLogger(CustomAnnotationProcessor.class.getName()).log(System.Logger.Level.WARNING, e.getMessage(), e);
+            return ServiceLoader.load(CustomAnnotationTemplateCreator.class);
+        }
     }
 
     private static TypeElement toEnclosingClassTypeElement(Element typeToProcess) {

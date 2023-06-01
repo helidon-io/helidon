@@ -117,7 +117,10 @@ final class ActiveProcessorUtils implements Messager {
         out(System.Logger.Level.ERROR, Diagnostic.Kind.ERROR, message, null);
     }
 
-    void out(System.Logger.Level level, Diagnostic.Kind kind, String message, Throwable t) {
+    void out(System.Logger.Level level,
+             Diagnostic.Kind kind,
+             String message,
+             Throwable t) {
         if (logger.isLoggable(level)) {
             logger.log(level, getClass().getSimpleName() + ": " + message, t);
         }
@@ -189,10 +192,6 @@ final class ActiveProcessorUtils implements Messager {
                                   TypeMirror mirror,
                                   Predicate<TypedElementInfo> isOneWeCareAbout) {
         return typeInfoCreatorProvider.createTypeInfo(element, mirror, processingEnv, isOneWeCareAbout);
-    }
-
-    System.Logger.Level loggerLevel() {
-        return (Options.isOptionEnabled(Options.TAG_DEBUG)) ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
     }
 
     RoundEnvironment roundEnv() {

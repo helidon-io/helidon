@@ -33,5 +33,4 @@ module io.helidon.pico.tests.pico {
     exports io.helidon.pico.tests.pico.tbox;
 
     provides io.helidon.pico.api.ModuleComponent with io.helidon.pico.tests.pico.Pico$$Module;
-    provides io.helidon.pico.api.Application with io.helidon.pico.tests.pico.Pico$$Application;
 }

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -139,7 +140,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         CodeGenPaths codeGenPaths = req.codeGenPaths().orElse(null);
         Map<TypeName, Boolean> serviceTypeToIsAbstractType = req.codeGen().serviceTypeIsAbstractTypes();
         List<TypeName> activatorTypeNames = new ArrayList<>();
-        List<TypeName> activatorTypeNamesPutInModule = new ArrayList<>();
+        Set<TypeName> activatorTypeNamesPutInModule = new TreeSet<>(req.codeGen().allModuleActivatorTypeNames());
         Map<TypeName, ActivatorCodeGenDetail> activatorDetails = new LinkedHashMap<>();
         for (TypeName serviceTypeName : req.serviceTypeNames()) {
             try {
@@ -164,6 +165,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
             }
         }
         builder.serviceTypeNames(activatorTypeNames)
+                .activatorTypeNamesPutInComponentModule(activatorTypeNamesPutInModule)
                 .serviceTypeDetails(activatorDetails);
 
         ModuleDetail moduleDetail;
@@ -207,7 +209,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
     }
 
     private ModuleDetail toModuleDetail(ActivatorCreatorRequest req,
-                                        List<TypeName> activatorTypeNamesPutInModule,
+                                        Set<TypeName> activatorTypeNamesPutInModule,
                                         TypeName moduleTypeName,
                                         TypeName applicationTypeName,
                                         boolean isApplicationCreated,
@@ -628,7 +630,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                         String packageName,
                         String className,
                         String moduleName,
-                        List<TypeName> activatorTypeNames) {
+                        Set<TypeName> activatorTypeNames) {
         String template = templateHelper().safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_MODULE_HBS);
 
         Map<String, Object> subst = new HashMap<>();
