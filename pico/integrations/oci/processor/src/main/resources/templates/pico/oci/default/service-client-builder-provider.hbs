@@ -38,7 +38,8 @@ import java.util.Optional;
 @Singleton
 @Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
 class {{simpleclassname}}$$Oci$$ClientBuilder implements InjectionPointProvider<{{simpleclassname}}Client{{dot}}Builder> {
-{{#if usesRegion}}private final InjectionPointProvider<Region> regionProvider;
+{{#if usesRegion}}    private final InjectionPointProvider<Region> regionProvider;
+
     @Deprecated
     @Inject
     {{simpleclassname}}$$Oci$$ClientBuilder(Provider<Region> regionProvider) {
@@ -50,11 +51,11 @@ class {{simpleclassname}}$$Oci$$ClientBuilder implements InjectionPointProvider<
     {{simpleclassname}}$$Oci$$ClientBuilder() {
     }
 {{/if}}
-	@Override
+    @Override
     public Optional<{{simpleclassname}}Client{{dot}}Builder> first(ContextualServiceQuery query) {
         {{simpleclassname}}Client{{dot}}Builder builder = {{simpleclassname}}Client.builder();{{#if usesRegion}}
         regionProvider.first(query).ifPresent(it -> builder.region(it));{{/if}}
-		return Optional.of(builder);
-	}
+        return Optional.of(builder);
+    }
 
 }

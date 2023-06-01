@@ -135,9 +135,19 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
         }
     }
 
+    static TypeName toGeneratedServiceClientTypeName(TypeName typeName) {
+        return create(GENERATED_PREFIX + typeName.packageName(),
+                      typeName.className() + GENERATED_CLIENT_SUFFIX);
+    }
+
+    static TypeName toGeneratedServiceClientBuilderTypeName(TypeName typeName) {
+        return create(GENERATED_PREFIX + typeName.packageName(),
+                      typeName.className() + GENERATED_CLIENT_BUILDER_SUFFIX);
+    }
+
     static String toBody(String templateName,
-                          TypeName ociServiceTypeName,
-                          TypeName generatedOciActivatorTypeName) {
+                         TypeName ociServiceTypeName,
+                         TypeName generatedOciActivatorTypeName) {
         TemplateHelper templateHelper = TemplateHelper.create();
         String template = loadTemplate(templateName);
         Map<String, Object> subst = new HashMap<>();
@@ -207,21 +217,15 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
             return false;
         }
 
-        // check to see if we already generated it before, and if so we can skip creating it again
-        String generatedTypeName = toGeneratedServiceClientTypeName(typeName).name();
-        TypeElement typeElement = processingEnv.getElementUtils()
-                .getTypeElement(generatedTypeName);
-        return (typeElement == null);
-    }
+        if (processingEnv != null) {
+            // check to see if we already generated it before, and if so we can skip creating it again
+            String generatedTypeName = toGeneratedServiceClientTypeName(typeName).name();
+            TypeElement typeElement = processingEnv.getElementUtils()
+                    .getTypeElement(generatedTypeName);
+            return (typeElement == null);
+        }
 
-    private static TypeName toGeneratedServiceClientTypeName(TypeName typeName) {
-        return create(GENERATED_PREFIX + typeName.packageName(),
-                      typeName.className() + GENERATED_CLIENT_SUFFIX);
-    }
-
-    private static TypeName toGeneratedServiceClientBuilderTypeName(TypeName typeName) {
-        return create(GENERATED_PREFIX + typeName.packageName(),
-                      typeName.className() + GENERATED_CLIENT_BUILDER_SUFFIX);
+        return true;
     }
 
 }

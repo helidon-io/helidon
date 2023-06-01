@@ -61,8 +61,8 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         return Optional.of(select(requestedNamedProfile, ociConfig));
     }
 
-    static AbstractAuthenticationDetailsProvider select(String requestedNamedProfile,
-                                                        OciConfigBean ociConfigBean) {
+    private static AbstractAuthenticationDetailsProvider select(String requestedNamedProfile,
+                                                                OciConfigBean ociConfigBean) {
         List<AuthStrategy> strategies = ociConfigBean.authStrategies().stream()
                 .map(it -> AuthStrategy.fromNameOrId(it)
                         .orElseThrow(() -> new IllegalArgumentException("Unknown authentication strategy in: "

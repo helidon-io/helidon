@@ -39,8 +39,8 @@ import java.util.Optional;
 @Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
 @ExternalContracts({{classname}}.class)
 class {{simpleclassname}}$$Oci$$Client implements InjectionPointProvider<{{simpleclassname}}Client> {
-	private final InjectionPointProvider<AbstractAuthenticationDetailsProvider> authProvider;
-	private final InjectionPointProvider<{{simpleclassname}}Client{{dot}}Builder> builderProvider;
+    private final InjectionPointProvider<AbstractAuthenticationDetailsProvider> authProvider;
+    private final InjectionPointProvider<{{simpleclassname}}Client{{dot}}Builder> builderProvider;
 
     @Deprecated
     @Inject
@@ -49,9 +49,9 @@ class {{simpleclassname}}$$Oci$$Client implements InjectionPointProvider<{{simpl
         this.builderProvider = (InjectionPointProvider<{{simpleclassname}}Client{{dot}}Builder>) builderProvider;
     }
 
-	@Override
+    @Override
     public Optional<{{simpleclassname}}Client> first(ContextualServiceQuery query) {
-		return Optional.of(builderProvider.first(query).orElseThrow().build(authProvider.first(query).orElseThrow()));
-	}
+        return Optional.of(builderProvider.first(query).orElseThrow().build(authProvider.first(query).orElseThrow()));
+    }
 
 }
