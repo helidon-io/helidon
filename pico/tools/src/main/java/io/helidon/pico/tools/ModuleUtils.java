@@ -81,7 +81,7 @@ public class ModuleUtils {
     /**
      * Returns the suggested package name to use.
      *
-     * @param descriptor         the module-info descriptor
+     * @param descriptor         the module-info descriptor if it is present
      * @param typeNames          the set of types that are being codegen'ed
      * @param defaultPackageName the default package name to use if all options are exhausted
      * @return the suggested package name
