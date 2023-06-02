@@ -30,10 +30,6 @@
     <artifactId>helidon-integrations-neo4j-health</artifactId>
     <name>Helidon Neo4j Health Integrations</name>
 
-    <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.neo4j.driver</groupId>

@@ -59,8 +59,8 @@ public class Neo4jHelidonHealthCheck implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
+        HealthCheckResponse.Builder builder = HealthCheckResponse.builder();
         try (Session session = this.driver.session()) {
-            HealthCheckResponse.Builder builder = HealthCheckResponse.builder();
             return session.writeTransaction(tx -> {
                 var result = tx.run(CYPHER);
 
@@ -79,6 +79,8 @@ public class Neo4jHelidonHealthCheck implements HealthCheck {
 
                 return responseBuilder.status(HealthCheckResponse.Status.UP).build();
             });
+        } catch (Exception e) {
+            return builder.status(HealthCheckResponse.Status.DOWN).build();
         }
     }
 
