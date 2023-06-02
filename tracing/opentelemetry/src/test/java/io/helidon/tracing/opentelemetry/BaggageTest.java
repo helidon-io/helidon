@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.tracing.opentelemetery;
+package io.helidon.tracing.opentelemetry;
 
 import java.util.Optional;
 
@@ -37,7 +37,7 @@ class BaggageTest {
     private final Tracer tracer = TracerBuilder.create("test-service").registerGlobal(false).build();
 
     @Test
-    void testBaggage(){
+    void testBaggage() {
         Span span = tracer.spanBuilder("test-span").start();
         Span spanWithBaggage = span.baggage("key", "value");
         Optional<String> result = spanWithBaggage.baggage("key");
@@ -47,7 +47,7 @@ class BaggageTest {
     }
 
     @Test
-    void testBadBaggage(){
+    void testBadBaggage() {
         Span span = tracer.spanBuilder("test-bad-span").start();
         assertThrows(NullPointerException.class, () -> span.baggage(null, "value"));
         assertThrows(NullPointerException.class, () -> span.baggage("key", null));
