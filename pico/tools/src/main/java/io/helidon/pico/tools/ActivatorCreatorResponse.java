@@ -18,6 +18,7 @@ package io.helidon.pico.tools;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
@@ -37,12 +38,19 @@ public interface ActivatorCreatorResponse extends GeneralCreatorResponse {
     ActivatorCreatorConfigOptions getConfigOptions();
 
     /**
-     * return The interceptors that were generated.
+     * Return the interceptors that were generated.
      *
      * @return interceptors generated
      */
     @Singular
     Map<TypeName, InterceptionPlan> serviceTypeInterceptorPlans();
+
+    /**
+     * The activator types placed in the generated {@link io.helidon.pico.api.ModuleComponent}.
+     *
+     * @return the activator type names placed in the module component
+     */
+    Set<TypeName> activatorTypeNamesPutInComponentModule();
 
     /**
      * The module-info detail, if a module was created.

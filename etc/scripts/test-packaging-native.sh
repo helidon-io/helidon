@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,8 +58,7 @@ mvn ${MAVEN_ARGS} -e clean install
 
 # Build native images
 # TODO:java19
-# readonly native_image_tests="se-1 mp-1 mp-3"
-readonly native_image_tests="se-1 nima-1"
+readonly native_image_tests="nima-1"
 for native_test in ${native_image_tests}; do
     cd ${WS_DIR}/tests/integration/native-image/${native_test}
     mvn ${MAVEN_ARGS} -e clean package -Pnative-image
@@ -70,10 +69,6 @@ done
 # TODO:java19
 # cd ${WS_DIR}/tests/integration/native-image/mp-1
 # ${WS_DIR}/tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1 || true
-
-# Run SE-1 exiting on started
-cd ${WS_DIR}/tests/integration/native-image/se-1
-${WS_DIR}/tests/integration/native-image/se-1/target/helidon-tests-native-image-se-1 -Dexit.on.started=! || true
 
 # Run Nima-1 exiting on started
 cd ${WS_DIR}/tests/integration/native-image/nima-1

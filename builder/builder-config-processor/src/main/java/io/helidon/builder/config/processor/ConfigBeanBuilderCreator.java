@@ -50,7 +50,7 @@ import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.config.metadata.ConfiguredOption;
 
 import static io.helidon.builder.config.spi.ConfigBeanInfo.LevelType;
@@ -124,7 +124,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
      * Generic/simple map types are not supported on config beans, only &lt;String, &lt;Known ConfigBean types&gt;&gt;.
      */
     private void assertNoGenericMaps(TypeInfo typeInfo) {
-        List<TypedElementName> list = typeInfo.elementInfo().stream()
+        List<TypedElementInfo> list = typeInfo.interestingElementInfo().stream()
                 .filter(it -> it.typeName().isMap())
                 .filter(it -> {
                     TypeName typeName = it.typeName();
@@ -292,7 +292,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
 
             int i = 0;
             for (String attrName : ctx.allAttributeNames()) {
-                TypedElementName method = ctx.allTypeInfos().get(i);
+                TypedElementInfo method = ctx.allTypeInfos().get(i);
                 String configKey = toConfigKey(attrName, method, ctx.builderTriggerAnnotation());
 
                 // resolver.of(config, "port", int.class).ifPresent(this::port);
@@ -449,7 +449,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
     }
 
     private String toConfigKey(String attrName,
-                               TypedElementName method,
+                               TypedElementInfo method,
                                AnnotationAndValue ignoredBuilderAnnotation) {
         String configKey = null;
         Optional<? extends AnnotationAndValue> configuredOptions = AnnotationAndValueDefault
@@ -473,7 +473,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                                                     + " on " + typeInfo.typeName());
         }
 
-        for (TypedElementName elem : typeInfo.elementInfo()) {
+        for (TypedElementInfo elem : typeInfo.interestingElementInfo()) {
             anno = AnnotationAndValueDefault.findFirst(annoTypeName, elem.annotations());
             if (anno.isEmpty()) {
                 anno = AnnotationAndValueDefault.findFirst(annoTypeName, elem.elementTypeAnnotations());

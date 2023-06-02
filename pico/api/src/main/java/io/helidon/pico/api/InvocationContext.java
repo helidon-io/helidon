@@ -23,7 +23,7 @@ import java.util.Optional;
 import io.helidon.builder.Builder;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 
 import jakarta.inject.Provider;
 
@@ -59,14 +59,14 @@ public interface InvocationContext {
      *
      * @return the element info represents the method (or the constructor) being invoked
      */
-    TypedElementName elementInfo();
+    TypedElementInfo elementInfo();
 
     /**
      * The method/element argument info.
      *
      * @return the method/element argument info
      */
-    Optional<TypedElementName[]> elementArgInfo();
+    Optional<TypedElementInfo[]> elementArgInfo();
 
     /**
      * The interceptor chain.

@@ -38,7 +38,7 @@ import javax.tools.StandardLocation;
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeInfo;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.Options;
@@ -117,7 +117,10 @@ final class ActiveProcessorUtils implements Messager {
         out(System.Logger.Level.ERROR, Diagnostic.Kind.ERROR, message, null);
     }
 
-    void out(System.Logger.Level level, Diagnostic.Kind kind, String message, Throwable t) {
+    void out(System.Logger.Level level,
+             Diagnostic.Kind kind,
+             String message,
+             Throwable t) {
         if (logger.isLoggable(level)) {
             logger.log(level, getClass().getSimpleName() + ": " + message, t);
         }
@@ -187,12 +190,8 @@ final class ActiveProcessorUtils implements Messager {
      */
     Optional<TypeInfo> toTypeInfo(TypeElement element,
                                   TypeMirror mirror,
-                                  Predicate<TypedElementName> isOneWeCareAbout) {
+                                  Predicate<TypedElementInfo> isOneWeCareAbout) {
         return typeInfoCreatorProvider.createTypeInfo(element, mirror, processingEnv, isOneWeCareAbout);
-    }
-
-    System.Logger.Level loggerLevel() {
-        return (Options.isOptionEnabled(Options.TAG_DEBUG)) ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
     }
 
     RoundEnvironment roundEnv() {

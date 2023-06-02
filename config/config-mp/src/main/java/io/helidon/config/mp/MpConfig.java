@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package io.helidon.config.mp;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import io.helidon.config.ConfigSources;
 import io.helidon.config.OverrideSources;
@@ -48,29 +50,42 @@ public final class MpConfig {
             return (io.helidon.config.Config) mpConfig;
         }
 
-        // If the mpConfig is based on an SE config (such as when we use meta configuration)pom.xml
-        // we must reuse that se config instance
-        Iterator<ConfigSource> configSources = mpConfig.getConfigSources().iterator();
-        ConfigSource first = configSources.hasNext() ? configSources.next() : null;
-        if (!configSources.hasNext() && first instanceof MpHelidonConfigSource) {
-            // we only have Helidon SE config as a source - let's just use it
-            return ((MpHelidonConfigSource) first).unwrap();
+        if (mpConfig instanceof MpConfigImpl) {
+
+            // If the mpConfig is based on an SE config (such as when we use meta configuration)pom.xml
+            // we must reuse that se config instance
+            Iterator<ConfigSource> configSources = mpConfig.getConfigSources().iterator();
+            ConfigSource first = configSources.hasNext() ? configSources.next() : null;
+            if (!configSources.hasNext() && first instanceof MpHelidonConfigSource) {
+                // we only have Helidon SE config as a source - let's just use it
+                return ((MpHelidonConfigSource) first).unwrap();
+            }
+
+            // we use Helidon SE config to handle object mapping (and possible other mappers on classpath)
+            io.helidon.config.Config mapper = io.helidon.config.Config.builder()
+                    .sources(ConfigSources.empty())
+                    .overrides(OverrideSources.empty())
+                    .disableEnvironmentVariablesSource()
+                    .disableSystemPropertiesSource()
+                    .disableParserServices()
+                    .disableFilterServices()
+                    .disableCaching()
+                    .disableValueResolving()
+                    .changesExecutor(command -> {
+                    })
+                    .build();
+
+            return new SeConfig(mapper, mpConfig);
         }
 
-        // we use Helidon SE config to handle object mapping (and possible other mappers on classpath)
-        io.helidon.config.Config mapper = io.helidon.config.Config.builder()
-                .sources(ConfigSources.empty())
-                .overrides(OverrideSources.empty())
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .disableParserServices()
-                .disableFilterServices()
-                .disableCaching()
-                .disableValueResolving()
-                .changesExecutor(command -> {
-                })
-                .build();
+        // Generic Properties convert
+        Map<String, String> propertyMap = new HashMap<>();
+        for (ConfigSource configSource : mpConfig.getConfigSources()) {
+            for (String propertyName : configSource.getPropertyNames()) {
+                propertyMap.putIfAbsent(propertyName, configSource.getValue(propertyName));
+            }
+        }
 
-        return new SeConfig(mapper, mpConfig);
+        return io.helidon.config.Config.create(ConfigSources.create(propertyMap));
     }
 }

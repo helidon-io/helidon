@@ -47,7 +47,7 @@ import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.config.metadata.ConfiguredOption;
 
 import static io.helidon.builder.processor.tools.BodyContext.TAG_META_PROPS;
@@ -127,7 +127,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         Set<String> names = new LinkedHashSet<>();
         Set<String> duplicateNames = new LinkedHashSet<>();
 
-        typeInfo.elementInfo().stream()
+        typeInfo.interestingElementInfo().stream()
                 .map(DefaultBuilderCreatorProvider::nameOf)
                 .forEach(name -> {
                     if (!names.add(name)) {
@@ -342,7 +342,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         }
 
         for (int i = 0; i < ctx.allTypeInfos().size(); i++) {
-            TypedElementName method = ctx.allTypeInfos().get(i);
+            TypedElementInfo method = ctx.allTypeInfos().get(i);
             String beanAttributeName = ctx.allAttributeNames().get(i);
             appendAnnotations(builder, method.annotations(), "\t");
             builder.append("\tprivate ");
@@ -621,7 +621,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         // void visit(String key, Object value, Object userDefinedCtx, Class<?> type, Class<?>... typeArgument);
         int i = 0;
         for (String attrName : ctx.allAttributeNames()) {
-            TypedElementName method = ctx.allTypeInfos().get(i);
+            TypedElementInfo method = ctx.allTypeInfos().get(i);
             TypeName typeName = method.typeName();
             List<String> typeArgs = method.typeName().typeArguments().stream()
                     .map(this::normalize)
@@ -810,7 +810,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      */
     protected void maybeAppendSingularSetter(StringBuilder builder,
                                              BodyContext ctx,
-                                             TypedElementName method,
+                                             TypedElementInfo method,
                                              String beanAttributeName,
                                              boolean isList, boolean isMap, boolean isSet) {
         String singularVal = toValue(Singular.class, method, false, false).orElse(null);
@@ -843,7 +843,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      * @param elem the element
      * @return the (singular) name of the element
      */
-    protected static String nameOf(TypedElementName elem) {
+    protected static String nameOf(TypedElementInfo elem) {
         return AnnotationAndValueDefault.findFirst(Singular.class, elem.annotations())
                 .flatMap(AnnotationAndValue::value)
                 .filter(BuilderTypeTools::hasNonBlankValue)
@@ -863,7 +863,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                 BodyContext ctx,
                                 String beanAttributeName,
                                 String methodName,
-                                TypedElementName method) {
+                                TypedElementInfo method) {
         appendSetter(mainBuilder, ctx, beanAttributeName, methodName, method, true, "");
     }
 
@@ -871,7 +871,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                               BodyContext ctx,
                               String beanAttributeName,
                               String methodName,
-                              TypedElementName method,
+                              TypedElementInfo method,
                               boolean doClear,
                               String prefixName) {
         TypeName typeName = method.typeName();
@@ -954,7 +954,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     protected void appendDirectNonOptionalSetter(StringBuilder builder,
                                                  BodyContext ctx,
                                                  String beanAttributeName,
-                                                 TypedElementName method,
+                                                 TypedElementInfo method,
                                                  String methodName,
                                                  TypeName genericType) {
         GenerateMethod.nonOptionalSetter(builder, ctx, beanAttributeName, method, methodName, genericType);
@@ -991,7 +991,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      * @param upLevelToCollection true if the generics should be "up leveled"
      * @return the generic decl
      */
-    protected static String toGenerics(TypedElementName method,
+    protected static String toGenerics(TypedElementInfo method,
                                        boolean upLevelToCollection) {
         return toGenerics(method.typeName(), upLevelToCollection);
     }
@@ -1043,7 +1043,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      * @param avoidBlanks             flag indicating whether blank values should be ignored
      * @return the default value, or empty if there is no default value applicable for the given arguments
      */
-    protected static Optional<String> toConfiguredOptionValue(TypedElementName method,
+    protected static Optional<String> toConfiguredOptionValue(TypedElementInfo method,
                                                               boolean wantTypeElementDefaults,
                                                               boolean avoidBlanks) {
         String val = toValue(ConfiguredOption.class, method, wantTypeElementDefaults, avoidBlanks).orElse(null);
@@ -1060,7 +1060,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      * @return the default value, or empty if there is no default value applicable for the given arguments
      */
     protected static Optional<String> toValue(Class<? extends Annotation> annoType,
-                                              TypedElementName method,
+                                              TypedElementInfo method,
                                               boolean wantTypeElementDefaults,
                                               boolean avoidBlanks) {
         if (wantTypeElementDefaults && method.defaultValue().isPresent()) {
@@ -1187,7 +1187,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         } else {
             int i = 0;
             for (String beanAttributeName : ctx.allAttributeNames()) {
-                TypedElementName method = ctx.allTypeInfos().get(i);
+                TypedElementInfo method = ctx.allTypeInfos().get(i);
                 TypeName typeName = method.typeName();
                 boolean isList = typeName.isList();
                 boolean isMap = !isList && typeName.isMap();
@@ -1268,7 +1268,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             }
             i = 0;
             for (String beanAttributeName : ctx.allAttributeNames()) {
-                TypedElementName method = ctx.allTypeInfos().get(i++);
+                TypedElementInfo method = ctx.allTypeInfos().get(i++);
                 TypeName typeName = method.typeName();
                 String getterName = method.elementName();
                 builder.append("\t\t\t").append(beanAttributeName).append("(");
@@ -1301,7 +1301,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             boolean hasFinal = false;
             for (int i = 0; i < ctx.allAttributeNames().size(); i++) {
                 String beanAttributeName = ctx.allAttributeNames().get(i);
-                TypedElementName method = ctx.allTypeInfos().get(i);
+                TypedElementInfo method = ctx.allTypeInfos().get(i);
                 TypeName typeName = method.typeName();
                 if (typeName.isList() || typeName.isMap() || typeName.isSet()) {
                     hasFinal = true;
@@ -1315,7 +1315,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             // then any other field
             for (int i = 0; i < ctx.allAttributeNames().size(); i++) {
                 String beanAttributeName = ctx.allAttributeNames().get(i);
-                TypedElementName method = ctx.allTypeInfos().get(i);
+                TypedElementInfo method = ctx.allTypeInfos().get(i);
                 TypeName typeName = method.typeName();
                 if (typeName.isList() || typeName.isMap() || typeName.isSet()) {
                     continue;
@@ -1341,7 +1341,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
     private void addBuilderField(StringBuilder builder,
                                  BodyContext ctx,
-                                 TypedElementName method,
+                                 TypedElementInfo method,
                                  TypeName type,
                                  String beanAttributeName) {
         GenerateJavadoc.builderField(builder, method);
@@ -1362,7 +1362,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
     private void addCollectionField(StringBuilder builder,
                                     BodyContext ctx,
-                                    TypedElementName method,
+                                    TypedElementInfo method,
                                     TypeName typeName,
                                     String beanAttributeName) {
         GenerateJavadoc.builderField(builder, method);
@@ -1474,7 +1474,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
         int i = 0;
         for (String beanAttributeName : ctx.allAttributeNames()) {
-            TypedElementName method = ctx.allTypeInfos().get(i);
+            TypedElementInfo method = ctx.allTypeInfos().get(i);
             String extraPrefix = prefix + "\t";
             appendAnnotations(builder, method.annotations(), extraPrefix);
             builder.append(extraPrefix)
@@ -1537,7 +1537,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         }
         int i = 0;
         for (String beanAttributeName : ctx.allAttributeNames()) {
-            TypedElementName method = ctx.allTypeInfos().get(i++);
+            TypedElementInfo method = ctx.allTypeInfos().get(i++);
             builder.append("\t\tthis.").append(beanAttributeName).append(" = ");
 
             if (method.typeName().isList()) {
@@ -1573,7 +1573,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 builder.append("\t\tint hashCode = 1;\n");
             }
             List<String> methods = new ArrayList<>();
-            for (TypedElementName method : ctx.allTypeInfos()) {
+            for (TypedElementInfo method : ctx.allTypeInfos()) {
                 methods.add(method.elementName() + "()");
             }
             builder.append("\t\thashCode = 31 * hashCode + Objects.hash(").append(String.join(", ", methods)).append(");\n");
@@ -1595,7 +1595,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             } else {
                 builder.append("\t\tboolean equals = true;\n");
             }
-            for (TypedElementName method : ctx.allTypeInfos()) {
+            for (TypedElementInfo method : ctx.allTypeInfos()) {
                 String equalsClass = method.typeName().array() ? Arrays.class.getName() : "Objects";
                 builder.append("\t\tequals &= ").append(equalsClass).append(".equals(")
                         .append(method.elementName()).append("(), other.")
@@ -1630,7 +1630,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
         int i = 0;
         for (String beanAttributeName : ctx.allAttributeNames()) {
-            TypedElementName method = ctx.allTypeInfos().get(i++);
+            TypedElementInfo method = ctx.allTypeInfos().get(i++);
             TypeName typeName = method.typeName();
 
             builder.append("\t\tresult += \"").append(beanAttributeName).append("=\" + ");
@@ -1674,7 +1674,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     private void appendDefaultValueAssignment(StringBuilder builder,
-                                              TypedElementName method,
+                                              TypedElementInfo method,
                                               String defaultVal) {
         TypeName type = method.typeName();
         boolean isOptional = type.isOptional();
@@ -1714,7 +1714,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
     private void appendOverridesOfDefaultValues(StringBuilder builder,
                                                 BodyContext ctx) {
-        for (TypedElementName method : ctx.typeInfo().elementInfo()) {
+        for (TypedElementInfo method : ctx.typeInfo().interestingElementInfo()) {
             String beanAttributeName = toBeanAttributeName(method, ctx.beanStyleRequired());
             if (!ctx.allAttributeNames().contains(beanAttributeName)) {
                 // candidate for override...
@@ -1734,7 +1734,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             return null;
         }
         TypeInfo superTypeInfo = optSuperTypeInfo.get();
-        Optional<TypedElementName> method = superTypeInfo.elementInfo().stream()
+        Optional<TypedElementInfo> method = superTypeInfo.interestingElementInfo().stream()
                 .filter(it -> toBeanAttributeName(it, isBeanStyleRequired).equals(elemName))
                 .findFirst();
         if (method.isPresent()) {
@@ -1751,7 +1751,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
     private void appendDefaultOverride(StringBuilder builder,
                                        String attrName,
-                                       TypedElementName method,
+                                       TypedElementInfo method,
                                        String override) {
         builder.append("\t\t\t").append(attrName).append("(");
         appendDefaultValueAssignment(builder, method, override);
@@ -1771,7 +1771,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     private String mapOf(String attrName,
-                         TypedElementName method,
+                         TypedElementInfo method,
                          AtomicBoolean needsCustomMapOf) {
         Optional<? extends AnnotationAndValue> configuredOptions = AnnotationAndValueDefault
                 .findFirst(ConfiguredOption.class, method.annotations());

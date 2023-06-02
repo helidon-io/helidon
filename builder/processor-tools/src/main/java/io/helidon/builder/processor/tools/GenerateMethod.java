@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 
 final class GenerateMethod {
     static final String SINGULAR_PREFIX = "add";
@@ -50,7 +50,7 @@ final class GenerateMethod {
     static void stringToCharSetter(StringBuilder builder,
                                    BodyContext ctx,
                                    String beanAttributeName,
-                                   TypedElementName method,
+                                   TypedElementInfo method,
                                    String methodName) {
         GenerateJavadoc.setter(builder, beanAttributeName);
         builder.append("\t\tpublic ").append(ctx.genericBuilderAliasDecl()).append(" ").append(methodName)
@@ -76,7 +76,7 @@ final class GenerateMethod {
     static void nonOptionalSetter(StringBuilder builder,
                                   BodyContext ctx,
                                   String beanAttributeName,
-                                  TypedElementName method,
+                                  TypedElementInfo method,
                                   String methodName,
                                   TypeName genericType) {
         GenerateJavadoc.setter(builder, beanAttributeName);
@@ -102,7 +102,7 @@ final class GenerateMethod {
 
     static void singularSetter(StringBuilder builder,
                                BodyContext ctx,
-                               TypedElementName method,
+                               TypedElementInfo method,
                                String beanAttributeName,
                                char[] methodName) {
         TypeName typeName = method.typeName();
@@ -209,7 +209,7 @@ final class GenerateMethod {
         return (typeName.isMap() && typeName.typeArguments().size() > 1) ? typeName.typeArguments().get(1) : null;
     }
 
-    private static String toGenericsDecl(TypedElementName method,
+    private static String toGenericsDecl(TypedElementInfo method,
                                          boolean useSingluarMapValues,
                                          TypeName mapValueType) {
         List<TypeName> compTypeNames = method.typeName().typeArguments();

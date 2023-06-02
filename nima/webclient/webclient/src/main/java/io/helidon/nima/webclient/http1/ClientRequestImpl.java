@@ -56,6 +56,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private String uriTemplate;
     private ClientConnection connection;
     private UriFragment fragment;
+    private boolean skipUriEncoding = false;
 
     ClientRequestImpl(Http1ClientConfig clientConfig,
                       Http.Method method,
@@ -69,6 +70,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         this.query = query;
 
         this.requestId = "http1-client-" + COUNTER.getAndIncrement();
+        this.fragment = UriFragment.empty();
     }
 
     @Override
@@ -76,7 +78,11 @@ class ClientRequestImpl implements Http1ClientRequest {
         if (uri.indexOf('{') > -1) {
             this.uriTemplate = uri;
         } else {
-            uri(URI.create(UriEncoding.encodeUri(uri)));
+            if (skipUriEncoding) {
+                uri(URI.create(uri));
+            } else {
+                uri(URI.create(UriEncoding.encodeUri(uri)));
+            }
         }
 
         return this;
@@ -168,7 +174,11 @@ class ClientRequestImpl implements Http1ClientRequest {
     public URI resolvedUri() {
         if (uriTemplate != null) {
             String resolved = resolvePathParams(uriTemplate);
-            this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
+            if (skipUriEncoding) {
+                this.uri.resolve(URI.create(resolved), query);
+            } else {
+                this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
+            }
         }
         return URI.create(this.uri.scheme() + "://"
                                   + uri.authority()
@@ -179,6 +189,13 @@ class ClientRequestImpl implements Http1ClientRequest {
     @Override
     public Http1ClientRequest connection(ClientConnection connection) {
         this.connection = connection;
+        return this;
+    }
+
+    @Override
+    public Http1ClientRequest skipUriEncoding() {
+        this.skipUriEncoding = true;
+        this.uri.skipUriEncoding(true);
         return this;
     }
 
@@ -199,7 +216,11 @@ class ClientRequestImpl implements Http1ClientRequest {
                                               CompletableFuture<WebClientServiceResponse> whenComplete) {
         if (uriTemplate != null) {
             String resolved = resolvePathParams(uriTemplate);
-            this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
+            if (skipUriEncoding) {
+                this.uri.resolve(URI.create(resolved), query);
+            } else {
+                this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
+            }
         }
 
         ClientRequestHeaders headers = ClientRequestHeaders.create(explicitHeaders);

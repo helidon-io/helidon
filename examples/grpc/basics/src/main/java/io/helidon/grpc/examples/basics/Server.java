@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,10 @@ import io.helidon.grpc.examples.common.StringService;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
-import io.helidon.health.checks.HealthChecks;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 /**
  * A basic example of a Helidon gRPC server.
@@ -53,7 +52,7 @@ public class Server {
         GrpcServerConfiguration serverConfig =
                 GrpcServerConfiguration.builder(config.get("grpc")).build();
 
-        GrpcServer grpcServer = GrpcServer.create(serverConfig, createRouting(config));
+        GrpcServer grpcServer = GrpcServer.create(serverConfig, createGrpcRouting(config));
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
@@ -68,31 +67,18 @@ public class Server {
                     return null;
                 });
 
-        // add support for standard and gRPC health checks
-        HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())
-                .addLiveness(grpcServer.healthChecks())
-                .build();
+        WebServer server = WebServer.builder()
+                .routing(Server::routing)
+                .start();
 
-        // start web server with health endpoint
-        Routing routing = Routing.builder()
-                .register(health)
-                .build();
-
-        WebServer.create(routing, config.get("webserver"))
-                .start()
-                .thenAccept(s -> {
-                    System.out.println("HTTP server is UP! http://localhost:" + s.port());
-                    s.whenShutdown().thenRun(() -> System.out.println("HTTP server is DOWN. Good bye!"));
-                })
-                .exceptionally(t -> {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                    return null;
-                });
+        System.out.println("WEB server is up! http://localhost:" + server.port());
     }
 
-    private static GrpcRouting createRouting(Config config) {
+    private static void routing(HttpRouting.Builder routing) {
+        routing.addFeature(ObserveFeature.create());
+    }
+
+    private static GrpcRouting createGrpcRouting(Config config) {
         GreetService greetService = new GreetService(config);
         GreetServiceJava greetServiceJava = new GreetServiceJava(config);
 

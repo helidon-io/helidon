@@ -21,7 +21,7 @@ import java.util.Map;
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 
 /**
  * The response from {@link io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator#create(CustomAnnotationTemplateRequest)}.
@@ -50,7 +50,7 @@ public interface CustomAnnotationTemplateResponse {
      * @return map of generated type name (which is really just a directory path under resources) to the resource to be generated
      */
     @Singular
-    Map<TypedElementName, String> generatedResources();
+    Map<TypedElementInfo, String> generatedResources();
 
     /**
      * Aggregates the responses given to one response.

@@ -26,7 +26,7 @@ import java.util.Set;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.processor.PicoAnnotationProcessor;
 import io.helidon.pico.tools.ActivatorCreatorProvider;
 import io.helidon.pico.tools.ServicesToProcess;
@@ -65,7 +65,7 @@ public class ConfiguredByAnnotationProcessor extends PicoAnnotationProcessor {
     protected void processExtensions(ServicesToProcess services,
                                      TypeInfo service,
                                      Set<TypeName> serviceTypeNamesToCodeGenerate,
-                                     Collection<TypedElementName> allElementsOfInterest) {
+                                     Collection<TypedElementInfo> allElementsOfInterest) {
         Optional<? extends AnnotationAndValue> configuredByAnno = findFirst(PICO_CONFIGURED_BY, service.annotations());
         if (configuredByAnno.isEmpty()) {
             return;

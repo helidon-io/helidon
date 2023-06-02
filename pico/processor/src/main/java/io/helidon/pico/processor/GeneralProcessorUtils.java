@@ -35,7 +35,7 @@ import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.api.QualifierAndValue;
 import io.helidon.pico.api.QualifierAndValueDefault;
 import io.helidon.pico.api.RunLevel;
@@ -185,12 +185,12 @@ final class GeneralProcessorUtils {
      * @return the post construct method if available
      */
     static Optional<String> toPostConstructMethod(TypeInfo service) {
-        List<String> postConstructs = service.elementInfo().stream()
+        List<String> postConstructs = service.interestingElementInfo().stream()
                 .filter(it -> {
                     AnnotationAndValue anno = findFirst(PostConstruct.class, it.annotations()).orElse(null);
                     return (anno != null);
                 })
-                .map(TypedElementName::elementName)
+                .map(TypedElementInfo::elementName)
                 .toList();
         if (postConstructs.size() == 1) {
             return Optional.of(postConstructs.get(0));
@@ -215,12 +215,12 @@ final class GeneralProcessorUtils {
      * @return the pre destroy method if available
      */
     static Optional<String> toPreDestroyMethod(TypeInfo service) {
-        List<String> preDestroys = service.elementInfo().stream()
+        List<String> preDestroys = service.interestingElementInfo().stream()
                 .filter(it -> {
                     AnnotationAndValue anno = findFirst(PreDestroy.class, it.annotations()).orElse(null);
                     return (anno != null);
                 })
-                .map(TypedElementName::elementName)
+                .map(TypedElementInfo::elementName)
                 .toList();
         if (preDestroys.size() == 1) {
             return Optional.of(preDestroys.get(0));
@@ -311,7 +311,7 @@ final class GeneralProcessorUtils {
      * @param service the service for which the typed element belongs
      * @return the qualifiers associated with the provided element
      */
-    static Set<QualifierAndValue> toQualifiers(TypedElementName element,
+    static Set<QualifierAndValue> toQualifiers(TypedElementInfo element,
                                                TypeInfo service) {
         Set<QualifierAndValue> result = new LinkedHashSet<>();
 

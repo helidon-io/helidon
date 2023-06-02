@@ -188,4 +188,13 @@ public interface ActivatorCreatorCodeGen {
     @ConfiguredOption(DEFAULT_CLASS_PREFIX_NAME)
     String classPrefixName();
 
+    /**
+     * Used in conjunction with {@link ActivatorCreatorConfigOptions#isModuleCreated()}. If a module is created and this set is
+     * populated then this set will be used to represent all {@link io.helidon.pico.api.Activator} type names that should be code
+     * generated for this {@link io.helidon.pico.api.ModuleComponent}.
+     *
+     * @return all module activator type names known for this given module being processed
+     */
+    Set<TypeName> allModuleActivatorTypeNames();
+
 }

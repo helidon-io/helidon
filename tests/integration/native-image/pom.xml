@@ -36,7 +36,6 @@
 
     <modules>
         <module>static-content</module>
-        <module>se-1</module>
         <module>mp-1</module>
         <module>mp-2</module>
         <module>mp-3</module>

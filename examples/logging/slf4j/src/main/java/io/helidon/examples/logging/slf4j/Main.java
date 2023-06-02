@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,13 @@ package io.helidon.examples.logging.slf4j;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.HelidonMdc;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,18 +54,17 @@ public final class Main {
         // done by the webserver
         Contexts.runInContext(Context.create(), Main::logging);
 
-        WebServer.builder()
-                .routing(Routing.builder()
-                                 .get("/", (req, res) -> {
-                                     HelidonMdc.set("name", String.valueOf(req.requestId()));
-                                     LOGGER.info("Running in webserver, id:");
-                                     res.send("Hello");
-                                 })
-                                 .build())
-                .port(8080)
-                .build()
-                .start()
-                .await(10, TimeUnit.SECONDS);
+        WebServer server = WebServer.builder()
+                .routing(Main::routing)
+                .start();
+    }
+
+    private static void routing(HttpRouting.Builder routing) {
+        routing.get("/", (req, res) -> {
+            HelidonMdc.set("name", String.valueOf(req.id()));
+            LOGGER.info("Running in webserver, id:");
+            res.send("Hello");
+        });
     }
 
     private static void logging() {
