@@ -70,7 +70,10 @@ import static java.lang.invoke.MethodType.methodType;
  * <em>asynchronous service client</em>, or <em>asynchronous service
  * client builder</em> from the <a
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
- * target="_top">Oracle Cloud Infrastructure Java SDK</a>.
+ * target="_top">Oracle Cloud Infrastructure Java SDK</a>. It is intended for
+ * <em>Helidon MP</em>, CDI usage scenarios. For usages other than for
+ * <em>Helidon MP</em> please refer to
+ * {@linkplain io.helidon.pico.integrations.oci.runtime.OciExtension} instead.
  *
  * <h2>Terminology</h2>
  *

@@ -1,7 +1,7 @@
 # pico-integrations-oci
 
 **_Special Note:_**
-If your application is using **Helidon MP** then you should instead be using [OciExtension](../../../integrations/oci/sdk/cdi/src/main/java/io/helidon/integrations/oci/sdk/cdi/OciExtension.java) and _NOT_ these modules.
+If your application is using **Helidon MP** then you should instead be using [OciExtension](../../../integrations/oci/sdk/cdi/src/main/java/io/helidon/integrations/oci/sdk/cdi/OciExtension.java) and _NOT_ these modules. These modules are only intended for non-MP based Helidon applications.
 
 ## Modules
 

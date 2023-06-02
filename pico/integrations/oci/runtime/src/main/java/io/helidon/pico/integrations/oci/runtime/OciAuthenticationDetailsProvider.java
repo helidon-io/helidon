@@ -46,6 +46,12 @@ import jakarta.inject.Singleton;
 
 import static io.helidon.common.types.AnnotationAndValueDefault.findFirst;
 
+/**
+ * This (overridable) provider will provide the default implementation for {@link AbstractAuthenticationDetailsProvider}.
+ *
+ * @see OciExtension
+ * @see OciConfigBean
+ */
 @Singleton
 @Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
 class OciAuthenticationDetailsProvider implements InjectionPointProvider<AbstractAuthenticationDetailsProvider> {
@@ -125,9 +131,9 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
                    ociConfigBean.authUserId().ifPresent(b::userId);
                    ociConfigBean.authRegion().ifPresent(it -> b.region(Region.fromRegionCodeOrId(it)));
                    ociConfigBean.authFingerprint().ifPresent(b::fingerprint);
-                   ociConfigBean.authPassphrase().ifPresent(b::passPhrase);
+                   ociConfigBean.authPassphrase().ifPresent(chars -> b.passPhrase(String.valueOf(chars)));
                    ociConfigBean.authPrivateKey()
-                           .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
+                           .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(String.valueOf(pk))),
                                             () -> b.privateKeySupplier(new SimplePrivateKeySupplier(
                                                     userHomePrivateKeyPath(ociConfigBean))));
                    return b.build();
