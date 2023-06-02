@@ -17,20 +17,13 @@ package io.helidon.integrations.neo4j.health;
 
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
-import io.helidon.microprofile.health.BuiltInHealthCheck;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import org.eclipse.microprofile.health.Readiness;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 
 /**
  * Health support module for Neo4j (implements {@link io.helidon.health.HealthCheck}).
  */
-@Readiness
-@ApplicationScoped
-@BuiltInHealthCheck
 public class Neo4jHelidonHealthCheck implements HealthCheck {
 
     private static final String NAME = "Neo4j connection health check";
@@ -45,7 +38,6 @@ public class Neo4jHelidonHealthCheck implements HealthCheck {
      *
      * @param driver Neo4j.
      */
-    @Inject
     public Neo4jHelidonHealthCheck(Driver driver) {
         this.driver = driver;
     }

@@ -24,21 +24,17 @@ import io.helidon.common.features.api.Preview;
 @Preview
 @Feature(value = "Neo4j Health",
         description = "Health check for Neo4j integration",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.NIMA},
         path = {"Neo4j", "Health"}
 )
 module io.helidon.integrations.neo4j.health {
     requires static io.helidon.common.features.api;
 
-    requires microprofile.health.api;
     requires org.neo4j.driver;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
-    requires static io.helidon.microprofile.health;
     requires io.helidon.health;
 
     exports io.helidon.integrations.neo4j.health;
 
-    opens io.helidon.integrations.neo4j.health to weld.core.impl, io.helidon.microprofile.cdi;
+    opens io.helidon.integrations.neo4j.health;
 }

@@ -213,7 +213,7 @@ private static Routing createRouting(Config config) {
                 .build()
                 .initialize();
 
-        Neo4jHealthCheck healthCheck = Neo4jHealthCheck.create(neo4j.driver()); // <3>
+        Neo4jHelidonHealthCheck healthCheck = Neo4jHelidonHealthCheck.create(neo4j.driver()); // <3>
 
         Driver neo4jDriver = neo4j.driver();
 
@@ -221,7 +221,7 @@ private static Routing createRouting(Config config) {
 
         HealthSupport health = HealthSupport.builder()
                 .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
-                .addReadiness(healthCheck)
+                .add(healthCheck)
                 .build();
 
         return Routing.builder() // <5>
@@ -233,7 +233,7 @@ private static Routing createRouting(Config config) {
 ----
 <1> Use of `Neo4j` support object to initialise and configure the driver.
 <2> Use of `Neo4jMetricsSupport` to add _Neo4j_ metrics to `/metrics` output.
-<3> Use of `Neo4jHealthCheck` or `Neo4jHelidonHealthCheck` to add _Neo4j_ health support.
+<3> Use of `Neo4jHelidonHealthCheck` to add _Neo4j_ health support.
 <4> Initialize `MovieService` with _Neo4j_ driver.
 <5> Register the services in _Routing_.
 
@@ -326,10 +326,10 @@ To enable health checks run the following code:
 
 [source,java]
 ----
-Neo4jHealthCheck healthCheck = Neo4jHealthCheck.create(neo4j.driver());
+Neo4jHelidonHealthCheck healthCheck = Neo4jHelidonHealthCheck.create(neo4j.driver());
 
 HealthSupport health = HealthSupport.builder()
-        .addReadiness(healthCheck)
+        .add(healthCheck)
         .build();
 ----
 
