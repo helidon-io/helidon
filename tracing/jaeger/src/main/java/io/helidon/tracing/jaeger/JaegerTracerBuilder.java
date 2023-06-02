@@ -423,7 +423,8 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
         if (HelidonOpenTelemetry.AgentDetector.isAgentPresent(config)) {
             return HelidonOpenTelemetry.create(GlobalOpenTelemetry.get(),
-                    GlobalOpenTelemetry.getTracer(this.serviceName), tags);
+                                               GlobalOpenTelemetry.getTracer(this.serviceName),
+                                               tags);
         }
 
         if (enabled) {
