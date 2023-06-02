@@ -15,6 +15,6 @@
  */
 
 /**
- * Example of integration with OCI ATP in reactive application.
+ * Example of integration DBClient with ATP in Nima application.
  */
-package io.helidon.examples.integrations.oci.atp.reactive;
+package io.helidon.examples.integrations.oci.atp.dbclient;

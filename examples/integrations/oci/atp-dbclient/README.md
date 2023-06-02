@@ -1,4 +1,4 @@
-# Helidon ATP Reactive Examples
+# Helidon ATP DBClient Nima Example
 
 This example demonstrates how user can easily retrieve wallet from their ATP instance running in OCI and use information from that wallet to setup DataSource to do Database operations.
 
