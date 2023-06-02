@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,8 @@ public interface WebClient {
         private SocketOptions channelOptions;
         private DnsResolver dnsResolver;
         private DnsAddressLookup dnsAddressLookup;
+        private boolean followRedirect;
+        private int maxRedirect;
 
         /**
          * Common builder base for all the client builder.
@@ -89,7 +91,7 @@ public interface WebClient {
          */
         public B baseUri(URI baseUri) {
             this.baseUri = baseUri;
-            return (B) this;
+            return identity();
         }
 
         /**
@@ -102,7 +104,7 @@ public interface WebClient {
          */
         public B tls(Tls tls) {
             this.tls = tls;
-            return (B) this;
+            return identity();
         }
 
         /**
@@ -115,7 +117,7 @@ public interface WebClient {
          */
         public B tls(Supplier<Tls> tls) {
             this.tls = tls.get();
-            return (B) this;
+            return identity();
         }
 
         /**
@@ -126,7 +128,7 @@ public interface WebClient {
          */
         public B channelOptions(SocketOptions channelOptions) {
             this.channelOptions = channelOptions;
-            return (B) this;
+            return identity();
         }
 
         /**
@@ -137,7 +139,7 @@ public interface WebClient {
          */
         public B dnsResolver(DnsResolver dnsResolver) {
             this.dnsResolver = dnsResolver;
-            return (B) this;
+            return identity();
         }
 
         /**
@@ -148,7 +150,30 @@ public interface WebClient {
          */
         public B dnsAddressLookup(DnsAddressLookup dnsAddressLookup) {
             this.dnsAddressLookup = dnsAddressLookup;
-            return (B) this;
+            return identity();
+        }
+
+        /**
+         * Whether to follow redirects.
+         *
+         * @param followRedirect whether to follow redirects
+         * @return updated builder
+         */
+        public B followRedirect(boolean followRedirect) {
+            this.followRedirect = followRedirect;
+            return identity();
+        }
+
+        /**
+         * Max number of followed redirects.
+         * This is ignored if followRedirect option is false.
+         *
+         * @param maxRedirect max number of followed redirects
+         * @return updated builder
+         */
+        public B maxRedirects(int maxRedirect) {
+            this.maxRedirect = maxRedirect;
+            return identity();
         }
 
         /**
@@ -186,5 +211,12 @@ public interface WebClient {
             return dnsAddressLookup;
         }
 
+        boolean followRedirect() {
+            return followRedirect;
+        }
+
+        int maxRedirect() {
+            return maxRedirect;
+        }
     }
 }

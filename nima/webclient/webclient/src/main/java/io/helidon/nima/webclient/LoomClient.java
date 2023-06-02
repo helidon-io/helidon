@@ -41,6 +41,8 @@ public class LoomClient implements WebClient {
     private final SocketOptions channelOptions;
     private final DnsResolver dnsResolver;
     private final DnsAddressLookup dnsAddressLookup;
+    private final int maxRedirects;
+    private final boolean followRedirects;
 
     /**
      * Construct this instance from a subclass of builder.
@@ -53,6 +55,8 @@ public class LoomClient implements WebClient {
         this.channelOptions = builder.channelOptions() == null ? EMPTY_OPTIONS : builder.channelOptions();
         this.dnsResolver = builder.dnsResolver();
         this.dnsAddressLookup = builder.dnsAddressLookup();
+        this.maxRedirects = builder.maxRedirect();
+        this.followRedirects = builder.followRedirect();
     }
 
     /**
@@ -101,11 +105,30 @@ public class LoomClient implements WebClient {
     }
 
     /**
-     *
+     * DNS address lookup instance to be used for this client.
      *
      * @return DNS address lookup instance type
      */
     public DnsAddressLookup dnsAddressLookup() {
         return dnsAddressLookup;
     }
+
+    /**
+     * Whether to follow redirects.
+     *
+     * @return follow redirects
+     */
+    public boolean followRedirects() {
+        return followRedirects;
+    }
+
+    /**
+     * Maximum number of redirects allowed.
+     *
+     * @return allowed number of redirects
+     */
+    public int maxRedirects() {
+        return maxRedirects;
+    }
+
 }

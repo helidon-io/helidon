@@ -114,6 +114,16 @@ class HttpClientTest {
         }
 
         @Override
+        public FakeHttpClientRequest followRedirects(boolean followRedirects) {
+            return this;
+        }
+
+        @Override
+        public FakeHttpClientRequest maxRedirects(int maxRedirects) {
+            return this;
+        }
+
+        @Override
         public FakeHttpClientRequest header(Http.HeaderValue header) {
             return null;
         }

@@ -61,7 +61,9 @@ class ClientRequestImpl implements Http2ClientRequest {
     private Tls tls;
     private int priority;
     private boolean priorKnowledge;
+    private boolean followRedirects;
     private int requestPrefetch = 0;
+    private int maxRedirects;
     private ClientConnection explicitConnection;
     private Duration flowControlTimeout = Duration.ofMillis(100);
     private Duration timeout = Duration.ofSeconds(10);
@@ -84,6 +86,8 @@ class ClientRequestImpl implements Http2ClientRequest {
         this.connectionPrefetch = client.prefetch();
         this.tls = tls == null || !tls.enabled() ? null : tls;
         this.query = query;
+        this.followRedirects = client.followRedirects();
+        this.maxRedirects = client.maxRedirects();
     }
 
     @Override
@@ -236,6 +240,20 @@ class ClientRequestImpl implements Http2ClientRequest {
     public Http2ClientRequest fragment(String fragment) {
         this.fragment = UriFragment.create(fragment);
         return this;
+    }
+
+    @Override
+    public Http2ClientRequest followRedirects(boolean followRedirects) {
+//        this.followRedirects = followRedirects;
+//        return this;
+        throw new UnsupportedOperationException("Not supported in HTTP2 yet");
+    }
+
+    @Override
+    public Http2ClientRequest maxRedirects(int maxRedirects) {
+//        this.maxRedirects = maxRedirects;
+//        return this;
+        throw new UnsupportedOperationException("Not supported in HTTP2 yet");
     }
 
     UriHelper uriHelper() {

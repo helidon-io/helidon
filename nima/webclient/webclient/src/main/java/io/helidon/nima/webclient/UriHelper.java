@@ -110,6 +110,7 @@ public class UriHelper {
      */
     public void host(String host) {
         this.host = host;
+        authority(host, port);
     }
 
     /**
@@ -119,6 +120,7 @@ public class UriHelper {
      */
     public void port(int port) {
         this.port = port;
+        authority(host, port);
     }
 
     /**

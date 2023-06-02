@@ -67,6 +67,7 @@ public class FileServiceTest {
     public void testUpload() throws IOException {
         Path file = Files.writeString(Files.createTempFile(null, null), "bar\n");
         try (Http1ClientResponse response = client.post("/api")
+                                                  .followRedirects(false)
                                                   .submit(WriteableMultiPart.builder()
                                                                             .addPart(writeablePart("file[]", "foo.txt", file))
                                                                             .build())) {
@@ -81,6 +82,7 @@ public class FileServiceTest {
         Path file2 = Files.writeString(Files.createTempFile(null, null), "stream foo\n");
         try (Http1ClientResponse response = client.post("/api")
                                                   .queryParam("stream", "true")
+                                                  .followRedirects(false)
                                                   .submit(WriteableMultiPart
                                                           .builder()
                                                           .addPart(writeablePart("file[]", "streamed-foo.txt", file))
