@@ -36,7 +36,6 @@
         <module>atp</module>
         <module>atp-reactive</module>
         <module>metrics</module>
-        <module>objectstorage-reactive</module>
         <module>objectstorage</module>
         <module>vault-reactive</module>
         <module>vault-cdi</module>
