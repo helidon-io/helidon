@@ -421,7 +421,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     public Tracer build() {
         Tracer result;
 
-        if (HelidonOpenTelemetry.AgentDetector.isAgentPresent(config)){
+        if (HelidonOpenTelemetry.AgentDetector.isAgentPresent(config)) {
             return HelidonOpenTelemetry.create(GlobalOpenTelemetry.get(),
                     GlobalOpenTelemetry.getTracer(this.serviceName), tags);
         }
@@ -456,10 +456,10 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
             Resource serviceName = Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, this.serviceName));
             OpenTelemetry ot = OpenTelemetrySdk.builder()
                     .setTracerProvider(SdkTracerProvider.builder()
-                                               .addSpanProcessor(SimpleSpanProcessor.create(exporter))
-                                               .setSampler(sampler)
-                                               .setResource(serviceName)
-                                               .build())
+                            .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                            .setSampler(sampler)
+                            .setResource(serviceName)
+                            .build())
                     .setPropagators(ContextPropagators.create(TextMapPropagator.composite(createPropagators())))
                     .build();
 

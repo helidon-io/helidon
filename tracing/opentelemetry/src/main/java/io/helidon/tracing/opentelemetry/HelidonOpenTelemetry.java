@@ -88,7 +88,7 @@ public final class HelidonOpenTelemetry {
                 }
             }
 
-            if (checkContext() || checkSystemProperties()){
+            if (checkContext() || checkSystemProperties()) {
                 if (LOGGER.isLoggable(System.Logger.Level.INFO)) {
                     LOGGER.log(System.Logger.Level.INFO, "OpenTelemetry Agent detected");
                 }
@@ -106,6 +106,5 @@ public final class HelidonOpenTelemetry {
         private static boolean checkContext() {
             return io.opentelemetry.context.Context.current().getClass().getName().contains("agent");
         }
-
     }
 }

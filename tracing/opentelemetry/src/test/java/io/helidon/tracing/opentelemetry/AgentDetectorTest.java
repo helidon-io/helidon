@@ -36,7 +36,7 @@ class AgentDetectorTest {
 
     @Test
     @AddConfig(key = HelidonOpenTelemetry.OTEL_AGENT_PRESENT_PROPERTY, value = "true")
-    void shouldBeNoOpTelemetry(){
+    void shouldBeNoOpTelemetry() {
         Config config = CDI.current().select(Config.class).get();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
         assertThat(present, is(true));
@@ -44,14 +44,14 @@ class AgentDetectorTest {
 
     @Test
     @AddConfig(key = HelidonOpenTelemetry.OTEL_AGENT_PRESENT_PROPERTY, value = "false")
-    void shouldNotBeNoOpTelemetry(){
+    void shouldNotBeNoOpTelemetry() {
         Config config = CDI.current().select(Config.class).get();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
         assertThat(present, is(false));
     }
 
     @Test
-    void checkEnvVariable(){
+    void checkEnvVariable() {
         System.setProperty(HelidonOpenTelemetry.IO_OPENTELEMETRY_JAVAAGENT, "true");
         Config config = CDI.current().select(Config.class).get();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
