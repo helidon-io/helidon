@@ -159,6 +159,7 @@
                                     </excludes>
                                 </fileSet>
                             </fileSets>
+                            <indexDir>${project.build.testOutputDirectory}/META-INF</indexDir>
                         </configuration>
                     </execution>
                     <execution>
@@ -178,6 +179,7 @@
                                     </includes>
                                 </fileSet>
                             </fileSets>
+                            <indexDir>${project.build.testOutputDirectory}/META-INF</indexDir>
                         </configuration>
                     </execution>
                 </executions>
