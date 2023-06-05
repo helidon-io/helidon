@@ -35,7 +35,7 @@
 
 == Overview
 
-Helidon provides built-in test support for Helidon Níma testing with JUnit5.
+Helidon provides built-in test support for Helidon Níma testing with JUnit 5.
 
 include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
@@ -103,7 +103,7 @@ In addition, a static method annotated with `@SetUpServer` can be defined for `@
 The following table lists the injectable types (through constructor or method injection).
 
 - Type - type that can be injected
-- Socket? - if checked, you can use the `@Socket` annotation to obtain a value specific to that named socket
+- Socket - if checked, you can use the `@Socket` annotation to obtain a value specific to that named socket
 - Annotation - which annotations support this injection
 - Modules - which Níma extension modules support this injection
 - Notes - additional details
@@ -127,7 +127,7 @@ The following table lists the injectable types (through constructor or method in
 |x
 |`@ServerTest`
 |
-|The client that allows sending of anything, to test bad requests and such.
+|This client allows you to send anything in order to test for bad requests or other issues.
 
 |`Http1Client`
 |x
@@ -161,7 +161,7 @@ Extensions can enhance the features for the module `helidon-nima-testing-junit5-
 
 == Examples
 
-You can create the following test if we want to test our server to return the correct response.
+You can create the following test to validate that the server returns the correct response:
 
 .Basic Helidon Níma test framework usage.
 [source, java]
