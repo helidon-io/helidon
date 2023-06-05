@@ -38,7 +38,7 @@ import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.MethodInfo;
-
+gr
 class ParticipantValidationModel {
 
     private static final Set<DotName> PARTICIPANT_ANNOTATIONS = Set.of(

@@ -127,7 +127,7 @@
                             <goal>jandex</goal>
                         </goals>
                         <!-- phase is 'process-classes by default' -->
-                        <phase>integration-test</phase>
+                        <phase>process-test-resources</phase>
                         <configuration>
                             <fileSets>
                                 <fileSet>
