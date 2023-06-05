@@ -37,7 +37,7 @@
         <module>atp-dbclient</module>
         <module>metrics</module>
         <module>objectstorage</module>
-        <module>vault-reactive</module>
+        <module>vault</module>
         <module>vault-cdi</module>
     </modules>
 
