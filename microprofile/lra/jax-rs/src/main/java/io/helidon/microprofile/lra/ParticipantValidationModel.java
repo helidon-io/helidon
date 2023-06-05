@@ -38,6 +38,7 @@ import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.Type;
 
 class ParticipantValidationModel {
 
@@ -154,7 +155,8 @@ class ParticipantValidationModel {
 
         String nameWithParams() {
             return methodInfo.name() + methodInfo.parameterTypes().stream()
-                    .map(pt -> pt.name().toString())
+                    .map(Type::name)
+                    .map(DotName::toString)
                     .collect(Collectors.joining());
         }
 

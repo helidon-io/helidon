@@ -92,6 +92,7 @@
 
     <build>
         <plugins>
+<!-- Keep the comment block below; it might return, possibly in modified form, once SE OpenAPI support returns. -->
 <!--            <plugin>-->
 <!--                <groupId>org.apache.maven.plugins</groupId>-->
 <!--                <artifactId>maven-dependency-plugin</artifactId>-->

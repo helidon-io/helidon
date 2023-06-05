@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -43,6 +44,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Feature;
 import jakarta.ws.rs.ext.Provider;
+import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.ClassInfo;
@@ -86,14 +88,12 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
         List<URL> indexURLs = findIndexFiles(indexPaths);
         indexURLCount = indexURLs.size();
         if (indexURLs.isEmpty()) {
-            LOGGER.log(System.Logger.Level.INFO, () -> String.format(
-                    "OpenAPI feature could not locate the Jandex index file %s "
-                            + "so will build an in-memory index.%n"
-                            + "This slows your app start-up and, depending on CDI configuration, "
-                            + "might omit some type information needed for a complete OpenAPI document.%n"
-                            + "Consider using the Jandex maven plug-in during your build "
-                            + "to create the index and add it to your app.",
-                    OpenApiCdiExtension.INDEX_PATH));
+            LOGGER.log(Level.INFO, () -> String.format("""
+                 OpenAPI feature could not locate the Jandex index file %s so will build an in-memory index.
+                 This slows your app start-up and, depending on CDI configuration, might omit some type information \
+                 needed for a complete OpenAPI document.
+                 Consider using the Jandex maven plug-in during your build to create the index and add it to your app.""",
+                                                       OpenApiCdiExtension.INDEX_PATH));
         }
         if (openApiConfig == null) {
             openApiConfig = new OpenApiConfigImpl(mpConfig);
@@ -207,8 +207,8 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
 
         if (classesExplicitlyReferenced.isEmpty() && jaxRsApplications.size() == 1) {
             // No need to do filtering at all.
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                LOGGER.log(System.Logger.Level.TRACE, String.format(
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, String.format(
                         "No filtering required for %s which reports no explicitly referenced classes and "
                                 + "is the only JAX-RS application",
                         appClassName));
@@ -226,11 +226,11 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
                 classesFromGetClasses.isEmpty()
                         && (classesFromGetSingletons.isEmpty() || !useJaxRsSemantics))
                 && jaxRsApplications.size() == 1) {
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                LOGGER.log(System.Logger.Level.TRACE, String.format("""
-                        No filtering required for %s; although it returns a non-empty set from getSingletons, JAX-RS semantics
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, String.format("""
+                        No filtering required for %s; although it returns a non-empty set from getSingletons, JAX-RS semantics \
                         has been turned off for OpenAPI processing using %s""",
-                        appClassName, MPOpenAPIBuilder.USE_JAXRS_SEMANTICS_FULL_CONFIG_KEY));
+                                                      appClassName, MPOpenAPIBuilder.USE_JAXRS_SEMANTICS_FULL_CONFIG_KEY));
             }
             return viewFilteredByConfig;
         }
@@ -244,14 +244,14 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
         // delegate is the previously-created view based only on the MP configuration.
         FilteredIndexView result = new FilteredIndexView(viewFilteredByConfig,
                                                          new FilteringOpenApiConfigImpl(mpConfig, excludedClasses));
-        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+        if (LOGGER.isLoggable(Level.TRACE)) {
             String knownClassNames = result
                     .getKnownClasses()
                     .stream()
                     .map(ClassInfo::toString)
                     .sorted()
                     .collect(Collectors.joining("," + System.lineSeparator() + "    "));
-            LOGGER.log(System.Logger.Level.TRACE,
+            LOGGER.log(Level.TRACE,
                        String.format("FilteredIndexView for %n"
                                              + "  application class %s%n"
                                              + "  with explicitly-referenced classes %s%n"
@@ -355,8 +355,8 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
         Set<String> result = new HashSet<>(resourceClassNames(indexView));
         result.addAll(providerClassNames(indexView));
         result.addAll(featureClassNames(indexView));
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            LOGGER.log(System.Logger.Level.DEBUG, "Ancillary classes: {0}", result);
+        if (LOGGER.isLoggable(Level.DEBUG)) {
+            LOGGER.log(Level.DEBUG, "Ancillary classes: {0}", result);
         }
         return result;
     }
@@ -406,7 +406,7 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
          */
         for (URL indexURL : findIndexFiles(indexPaths)) {
             try (InputStream indexIS = indexURL.openStream()) {
-                LOGGER.log(System.Logger.Level.TRACE, "Adding Jandex index at {0}", indexURL.toString());
+                LOGGER.log(Level.TRACE, "Adding Jandex index at {0}", indexURL.toString());
                 indices.add(new IndexReader(indexIS).read());
             } catch (Exception ex) {
                 throw new IOException("Attempted to read from previously-located index file "
@@ -429,9 +429,9 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
                 .filter(Optional::isPresent)
                 .forEach(appClassOpt -> addClassToIndexer(indexer, appClassOpt.get()));
 
-        LOGGER.log(System.Logger.Level.TRACE, "Using internal Jandex index created from CDI bean discovery");
+        LOGGER.log(Level.TRACE, "Using internal Jandex index created from CDI bean discovery");
         Index result = indexer.complete();
-        dumpIndex(System.Logger.Level.DEBUG, result);
+        dumpIndex(Level.DEBUG, result);
         return result;
     }
 
@@ -444,7 +444,7 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
         }
     }
 
-    private static void dumpIndex(System.Logger.Level level, Index index) {
+    private static void dumpIndex(Level level, Index index) {
         if (LOGGER.isLoggable(level)) {
             LOGGER.log(level, "Dump of internal Jandex index:");
             PrintStream oldStdout = System.out;

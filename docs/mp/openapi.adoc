@@ -93,7 +93,7 @@ include::{rootdir}/includes/openapi/openapi.adoc[tag=api]
 
 Helidon OpenAPI configuration supports the following settings:
 
-include::{rootdir}/config/io_helidon_microprofile_openapi_MPOpenAPISupport.adoc[leveloffset=+1,tag=config]
+//include::{rootdir}/config/io_helidon_microprofile_openapi_MPOpenAPISupport.adoc[leveloffset=+1,tag=config]
 
 == Examples
 

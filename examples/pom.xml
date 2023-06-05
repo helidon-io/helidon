@@ -47,6 +47,8 @@
         <module>quickstarts</module>
         <module>microprofile</module>
         <module>media</module>
+<!--        TODO - reinstate once SE OpenAPI support returns-->
+<!--        <module>openapi</module>-->
         <module>openapi-tools</module>
         <module>security</module>
         <module>todo-app</module>
