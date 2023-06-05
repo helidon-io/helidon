@@ -336,6 +336,14 @@ backend:
               items:
                 - includes:
                     - "mp/health/*.adoc"
+            - title: "Integration"
+              pathprefix: /mp/integration
+              glyph:
+                type: "icon"
+                value: "filter_drama"
+              items:
+                - includes:
+                    - "mp/integration/*.adoc"
             - title: "JAX-RS/Jersey"
               pathprefix: "/mp/jaxrs"
               glyph:
