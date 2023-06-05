@@ -87,12 +87,12 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
         List<URL> indexURLs = findIndexFiles(indexPaths);
         indexURLCount = indexURLs.size();
         if (indexURLs.isEmpty()) {
-            LOGGER.log(Level.INFO, () -> String.format("""
+            LOGGER.log(Level.INFO, String.format("""
                  OpenAPI feature could not locate the Jandex index file %s so will build an in-memory index.
                  This slows your app start-up and, depending on CDI configuration, might omit some type information \
                  needed for a complete OpenAPI document.
                  Consider using the Jandex maven plug-in during your build to create the index and add it to your app.""",
-                                                       OpenApiCdiExtension.INDEX_PATH));
+                                                 OpenApiCdiExtension.INDEX_PATH));
         }
         if (openApiConfig == null) {
             openApiConfig = new OpenApiConfigImpl(mpConfig);
