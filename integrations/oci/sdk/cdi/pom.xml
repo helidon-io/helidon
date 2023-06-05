@@ -78,6 +78,12 @@
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency> <!-- only needed for javadoc and maven reactor ordering -->
+            <groupId>io.helidon.pico.integrations.oci</groupId>
+            <artifactId>helidon-pico-integrations-oci-runtime</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
 
         <!-- Runtime-scoped dependencies. -->
 
