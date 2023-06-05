@@ -16,6 +16,7 @@
 
 package io.helidon.pico.integrations.oci.runtime;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +25,14 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.metadata.ConfiguredValue;
 
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+
+import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.ALL_STRATEGIES;
+import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.AuthStrategy;
+import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.TAG_AUTO;
+import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.TAG_CONFIG;
+import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.TAG_CONFIG_FILE;
+import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.TAG_INSTANCE_PRINCIPALS;
+import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.TAG_RESOURCE_PRINCIPALS;
 
 /**
  * Configuration used by {@link OciAuthenticationDetailsProvider}.
@@ -39,16 +48,34 @@ public interface OciConfigBean {
      */
     String NAME = "oci";
 
+    /** primary hostname of metadata service. */
+    String IMDS_HOSTNAME = "169.254.169.254";
     /** primary base url of metadata service. */
-    String PRIMARY_METADATA_SERVICE_BASE_URL = "http://169.254.169.254/opc/v2/";
+    String PRIMARY_IMDS_URL = "http://" + IMDS_HOSTNAME + "/opc/v2/";
 
     /** fallback base url of metadata service. */
-    String FALLBACK_METADATA_SERVICE_URL = "http://169.254.169.254/opc/v1/";
+    String FALLBACK_IMDS_URL = "http://" + IMDS_HOSTNAME + "/opc/v1/";
 
     /**
-     * The list of auth strategies that will be attempted by
+     * The singular authentication strategy to apply. This will be preferred over {@link #authStrategies()} if both are
+     * present.
+     *
+     * @return the singular authentication strategy to be applied
+     */
+    @ConfiguredOption(allowedValues = {
+            @ConfiguredValue(value = TAG_AUTO, description = "auto select first applicable"),
+            @ConfiguredValue(value = TAG_CONFIG, description = "simple authentication provider"),
+            @ConfiguredValue(value = TAG_CONFIG_FILE, description = "config file authentication provider"),
+            @ConfiguredValue(value = TAG_INSTANCE_PRINCIPALS, description = "instance principals authentication provider"),
+            @ConfiguredValue(value = TAG_RESOURCE_PRINCIPALS, description = "resource principals authentication provider"),
+    })
+    Optional<String> authStrategy();
+
+    /**
+     * The list of authentication strategies that will be attempted by
      * {@link com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider} when one is
-     * called for.
+     * called for. This is only used if {@link #authStrategy()} is not present.
+     *
      * <ul>
      *      <li>{@code auto} - if present in the list, or if no value
      *          for this property exists, the behavior will be as if {@code
@@ -74,15 +101,15 @@ public interface OciConfigBean {
      * first one that is deemed to be available or suitable will
      * be used and all others will be ignored.
      *
-     * @return the list of auth strategies that will be applied, defaulting to {@code auto}
-     * @see io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.AuthStrategy
+     * @return the list of authentication strategies that will be applied, defaulting to {@code auto}
+     * @see AuthStrategy
      */
     @ConfiguredOption(allowedValues = {
-            @ConfiguredValue(value = "auto", description = "auto select first applicable"),
-            @ConfiguredValue(value = "config", description = "simple authentication provider"),
-            @ConfiguredValue(value = "config-file", description = "config file authentication provider"),
-            @ConfiguredValue(value = "instance-principals", description = "instance principals authentication provider"),
-            @ConfiguredValue(value = "resource-principals", description = "resource principals authentication provider"),
+            @ConfiguredValue(value = TAG_AUTO, description = "auto select first applicable"),
+            @ConfiguredValue(value = TAG_CONFIG, description = "simple authentication provider"),
+            @ConfiguredValue(value = TAG_CONFIG_FILE, description = "config file authentication provider"),
+            @ConfiguredValue(value = TAG_INSTANCE_PRINCIPALS, description = "instance principals authentication provider"),
+            @ConfiguredValue(value = TAG_RESOURCE_PRINCIPALS, description = "resource principals authentication provider"),
     })
     List<String> authStrategies();
 
@@ -111,7 +138,7 @@ public interface OciConfigBean {
      *
      * @return the optional OCI configuration/auth profile name
      */
-    @ConfiguredOption(key = "config.profile")
+    @ConfiguredOption(value = "DEFAULT", key = "config.profile")
     Optional<String> configProfile();
 
     /**
@@ -141,7 +168,7 @@ public interface OciConfigBean {
      * @return the OCI authentication key file
      */
     @ConfiguredOption(value = "oci_api_key.pem", key = "auth.keyFile")
-    String authKeyFile();
+    Optional<String> authKeyFile();
 
     /**
      * The OCI authentication key file path.
@@ -227,64 +254,81 @@ public interface OciConfigBean {
     Optional<String> authUserId();
 
     /**
-     * The OCI idms primary hostname.
+     * The OCI IMDS hostname.
      * <p>
      * This configuration property is used to identify the metadata service url.
      *
-     * @return the OCI idms primary hostname
+     * @return the OCI IMDS hostname
      */
-    @ConfiguredOption(value = PRIMARY_METADATA_SERVICE_BASE_URL, key = "idms.hostname")
-    String idmsPrimaryHostName();
+    @ConfiguredOption(value = IMDS_HOSTNAME, key = "imds.hostname")
+    String imdsHostName();
 
     /**
-     * The OCI idms fallback hostname.
-     * <p>
-     * This configuration property is used to identify the fallback metadata service url.
-     *
-     * @return the OCI idms fallback hostname
-     * @see OciAvailability
-     */
-    @ConfiguredOption(value = FALLBACK_METADATA_SERVICE_URL, key = "idms.fallback-hostname")
-    Optional<String> idmsFallbackHostName();
-
-    /**
-     * The OCI idms connection timeout in millis. This is used to auto-detect availability.
+     * The OCI IMDS connection timeout in millis. This is used to auto-detect availability.
      * <p>
      * This configuration property is used when attempting to connect to the metadata service.
      *
-     * @return the OCI connection timeout in millis
+     * @return the OCI IMDS connection timeout in millis
      * @see OciAvailability
      */
-    @ConfiguredOption(value = "100", key = "idms.timeout.milliseconds")
-    int idmsTimeoutMilliseconds();
+    @ConfiguredOption(value = "100", key = "imds.timeout.milliseconds")
+    int imdsTimeoutMilliseconds();
+
+    /**
+     * The list of {@link AuthStrategy} names
+     * (excluding {@link AuthStrategy#AUTO}) that
+     * are potentially applicable for use. Here, "potentially applicable or use" means that it is set explicitly by
+     * {@link #authStrategy()}, or else explicitly or implicitly by {@link #authStrategies()}.
+     *
+     * @return the list of potential auth strategies that are applicable
+     */
+    default List<String> potentialAuthStrategies() {
+        String authStrategy = authStrategy().orElse(null);
+        if (authStrategy != null
+                && !TAG_AUTO.equals(authStrategy)
+                && !authStrategy.isBlank()) {
+            return List.of(authStrategy);
+        }
+
+        List<String> result = new ArrayList<>(authStrategies());
+        result.remove("");
+        if (result.isEmpty() || result.contains(TAG_AUTO)) {
+            return ALL_STRATEGIES;
+        }
+
+        return result;
+    }
 
     /**
      * Determines whether there is sufficient configuration defined in this bean to be used for file-based authentication. This
-     * matches to the {@link OciAuthenticationDetailsProvider.AuthStrategy#CONFIG_FILE}.
+     * matches to the {@link AuthStrategy#CONFIG_FILE}.
      *
      * @return true if there is sufficient attributes defined for file-based OCI authentication provider applicability
      * @see OciAuthenticationDetailsProvider
      */
     default boolean fileConfigIsPresent() {
         return configPath().isPresent()
-                && configProfile().isPresent();
+                && !configPath().orElseThrow().isBlank()
+                && configProfile().isPresent()
+                && !configProfile().orElseThrow().isBlank();
     }
 
     /**
      * Determines whether there is sufficient configuration defined in this bean to be used for simple authentication. This
-     * matches to the {@link OciAuthenticationDetailsProvider.AuthStrategy#CONFIG}.
+     * matches to the {@link AuthStrategy#CONFIG}.
      *
      * @return true if there is sufficient attributes defined for simple OCI authentication provider applicability
      * @see OciAuthenticationDetailsProvider
      */
     default boolean simpleConfigIsPresent() {
-        return authRegion().isPresent()
-                && authTenantId().isPresent()
+        return authTenantId().isPresent()
                 && authUserId().isPresent()
                 && authPassphrase().isPresent()
-                && authFingerprint().isPresent();
-        // don't use the private key since it can be sourced from several different properties / locations
-//                && authPrivateKey().isPresent();
+                && authFingerprint().isPresent()
+                // don't test region since it can alternatively come from the region provider
+//                && authRegion().isPresent()
+                && (authPrivateKey().isPresent()
+                    || authPrivateKeyPath().isPresent());
     }
 
 }

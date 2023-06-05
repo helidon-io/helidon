@@ -57,28 +57,43 @@ import static io.helidon.common.types.AnnotationAndValueDefault.findFirst;
 class OciAuthenticationDetailsProvider implements InjectionPointProvider<AbstractAuthenticationDetailsProvider> {
     static final System.Logger LOGGER = System.getLogger(OciAuthenticationDetailsProvider.class.getName());
 
+    static final String TAG_AUTO = "auto";
+    static final String TAG_CONFIG = "config";
+    static final String TAG_CONFIG_FILE = "config-file";
+    static final String TAG_INSTANCE_PRINCIPALS = "instance-principals";
+    static final String TAG_RESOURCE_PRINCIPALS = "resource-principals";
+
+    static final List<String> ALL_STRATEGIES = List.of(TAG_CONFIG,
+                                                       TAG_CONFIG_FILE,
+                                                       TAG_INSTANCE_PRINCIPALS,
+                                                       TAG_RESOURCE_PRINCIPALS);
+
     OciAuthenticationDetailsProvider() {
     }
 
     @Override
     public Optional<AbstractAuthenticationDetailsProvider> first(ContextualServiceQuery query) {
-        String requestedNamedProfile = toNamedProfile(query.injectionPointInfo().orElse(null));
         OciConfigBean ociConfig = OciExtension.ociConfig();
-        return Optional.of(select(requestedNamedProfile, ociConfig));
+
+        String requestedNamedProfile = toNamedProfile(query.injectionPointInfo().orElse(null));
+        if (requestedNamedProfile != null && !requestedNamedProfile.isBlank()) {
+            ociConfig = OciConfigBeanDefault.toBuilder(ociConfig).configProfile(requestedNamedProfile).build();
+        }
+
+        return Optional.of(select(ociConfig));
     }
 
-    private static AbstractAuthenticationDetailsProvider select(String requestedNamedProfile,
-                                                                OciConfigBean ociConfigBean) {
+    private static AbstractAuthenticationDetailsProvider select(OciConfigBean ociConfigBean) {
         List<AuthStrategy> strategies = ociConfigBean.authStrategies().stream()
                 .map(it -> AuthStrategy.fromNameOrId(it)
                         .orElseThrow(() -> new IllegalArgumentException("Unknown authentication strategy in: "
                                                                                 + ociConfigBean.authStrategies())))
                 .toList();
         for (AuthStrategy s : strategies) {
-            if (s.isAvailable(requestedNamedProfile, ociConfigBean)) {
+            if (s.isAvailable(ociConfigBean)) {
                 LOGGER.log(System.Logger.Level.DEBUG, "Using authentication strategy " + s
                         + "; selected AbstractAuthenticationDetailsProvider " + s.type().getTypeName());
-                return s.select(requestedNamedProfile, ociConfigBean);
+                return s.select(ociConfigBean);
             } else {
                 LOGGER.log(System.Logger.Level.TRACE, "Skipping authentication strategy " + s + " because it is not available");
             }
@@ -93,7 +108,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
             return null;
         }
 
-        Optional<? extends AnnotationAndValue> named = findFirst(Named.class.getName(), ipi.annotations());
+        Optional<? extends AnnotationAndValue> named = findFirst(Named.class.getName(), ipi.qualifiers());
         if (named.isEmpty()) {
             return null;
         }
@@ -111,7 +126,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     }
 
     static String userHomePrivateKeyPath(OciConfigBean ociConfigBean) {
-        return Paths.get(System.getProperty("user.home"), ".oci", ociConfigBean.authKeyFile()).toString();
+        return Paths.get(System.getProperty("user.home"), ".oci", ociConfigBean.authKeyFile().orElseThrow()).toString();
     }
 
 
@@ -119,9 +134,9 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         /**
          * Auto selection of the auth strategy.
          */
-        AUTO("auto",
+        AUTO(TAG_AUTO,
              AbstractAuthenticationDetailsProvider.class,
-             (profileName, ociConfigBean) -> true,
+             (ociConfigBean) -> true,
              OciAuthenticationDetailsProvider::select),
 
         /**
@@ -129,10 +144,10 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
          *
          * @see OciConfigBean#simpleConfigIsPresent()
          */
-        CONFIG("config",
+        CONFIG(TAG_CONFIG,
                SimpleAuthenticationDetailsProvider.class,
-               (profileName, ociConfigBean) -> ociConfigBean.simpleConfigIsPresent(),
-               (profileName, ociConfigBean) -> {
+               OciConfigBean::simpleConfigIsPresent,
+               (ociConfigBean) -> {
                    SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder b =
                            SimpleAuthenticationDetailsProvider.builder();
                    ociConfigBean.authTenantId().ifPresent(b::tenantId);
@@ -152,18 +167,17 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
          *
          * @see OciConfigBean
          */
-        CONFIG_FILE("config-file",
+        CONFIG_FILE(TAG_CONFIG_FILE,
                     ConfigFileAuthenticationDetailsProvider.class,
-                    (profileName, configBean) -> configBean.fileConfigIsPresent()
+                    (configBean) -> configBean.fileConfigIsPresent()
                             && canReadPath(configBean.configPath().orElse(null)),
-                    (profileName, configBean) -> {
+                    (configBean) -> {
                         // https://github.com/oracle/oci-java-sdk/blob/master/bmc-common/src/main/java/com/oracle/bmc/auth/ConfigFileAuthenticationDetailsProvider.java
                         // https://github.com/oracle/oci-java-sdk/blob/master/bmc-examples/src/main/java/ObjectStorageSyncExample.java
                         try {
-                            if (profileName != null && configBean.configPath().isPresent()) {
-                                return new ConfigFileAuthenticationDetailsProvider(configBean.configPath().get(), profileName);
-                            } else if (profileName != null) {
-                                return new ConfigFileAuthenticationDetailsProvider(profileName);
+                            if (configBean.configPath().isPresent()) {
+                                return new ConfigFileAuthenticationDetailsProvider(configBean.configPath().get(),
+                                                                                   configBean.configProfile().orElseThrow());
                             } else {
                                 return new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
                             }
@@ -175,21 +189,21 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         /**
          * Corresponds to {@link InstancePrincipalsAuthenticationDetailsProvider}.
          */
-        INSTANCE_PRINCIPALS("instance-principals",
+        INSTANCE_PRINCIPALS(TAG_INSTANCE_PRINCIPALS,
                             InstancePrincipalsAuthenticationDetailsProvider.class,
-                            (profileName, configBean) -> OciAvailabilityDefault.runningOnOci(configBean),
-                            (profileName, configBean) -> InstancePrincipalsAuthenticationDetailsProvider.builder().build()),
+                            OciAvailabilityDefault::runningOnOci,
+                            (configBean) -> InstancePrincipalsAuthenticationDetailsProvider.builder().build()),
 
         /**
          * Corresponds to {@link ResourcePrincipalAuthenticationDetailsProvider}.
          */
-        RESOURCE_PRINCIPAL("resource-principal",
+        RESOURCE_PRINCIPAL(TAG_RESOURCE_PRINCIPALS,
                            ResourcePrincipalAuthenticationDetailsProvider.class,
-                           (profileName, configBean) -> {
+                           (configBean) -> {
                                // https://github.com/oracle/oci-java-sdk/blob/v2.19.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
                                return (System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null);
                            },
-                           (profileName, configBean) -> ResourcePrincipalAuthenticationDetailsProvider.builder().build());
+                           (configBean) -> ResourcePrincipalAuthenticationDetailsProvider.builder().build());
 
         private final String id;
         private final Class<? extends AbstractAuthenticationDetailsProvider> type;
@@ -214,14 +228,12 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
             return type;
         }
 
-        boolean isAvailable(String profileName,
-                            OciConfigBean ociConfigBean) {
-            return availability.isAvailable(profileName, ociConfigBean);
+        boolean isAvailable(OciConfigBean ociConfigBean) {
+            return availability.isAvailable(ociConfigBean);
         }
 
-        AbstractAuthenticationDetailsProvider select(String profileName,
-                                                     OciConfigBean ociConfigBean) {
-            return selector.select(profileName, ociConfigBean);
+        AbstractAuthenticationDetailsProvider select(OciConfigBean ociConfigBean) {
+            return selector.select(ociConfigBean);
         }
 
         static Optional<AuthStrategy> fromNameOrId(String nameOrId) {
@@ -238,14 +250,12 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
 
     @FunctionalInterface
     interface Availability {
-        boolean isAvailable(String profileName,
-                            OciConfigBean ociConfigBean);
+        boolean isAvailable(OciConfigBean ociConfigBean);
     }
 
     @FunctionalInterface
     interface Selector {
-        AbstractAuthenticationDetailsProvider select(String profileName,
-                                                     OciConfigBean ociConfigBean);
+        AbstractAuthenticationDetailsProvider select(OciConfigBean ociConfigBean);
     }
 
 }

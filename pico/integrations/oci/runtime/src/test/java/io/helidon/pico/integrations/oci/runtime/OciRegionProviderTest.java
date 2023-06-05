@@ -17,7 +17,13 @@
 package io.helidon.pico.integrations.oci.runtime;
 
 import io.helidon.config.Config;
+import io.helidon.pico.api.ContextualServiceQuery;
+import io.helidon.pico.api.ElementInfo;
+import io.helidon.pico.api.InjectionPointInfoDefault;
+import io.helidon.pico.api.PicoServiceProviderException;
 import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 
@@ -25,8 +31,17 @@ import com.oracle.bmc.Region;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
+import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.TAG_AUTO;
+import static io.helidon.pico.integrations.oci.runtime.OciConfigBeanTest.basicTestingConfigSource;
+import static io.helidon.pico.integrations.oci.runtime.OciConfigBeanTest.createTestConfig;
+import static io.helidon.pico.integrations.oci.runtime.OciConfigBeanTest.ociAuthConfigStrategies;
+import static io.helidon.pico.integrations.oci.runtime.OciConfigBeanTest.ociAuthSimpleConfig;
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
 import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciRegionProviderTest {
     PicoServices picoServices;
@@ -34,7 +49,7 @@ class OciRegionProviderTest {
 
     @AfterAll
     static void tearDown() {
-//        resetAll();
+        resetAll();
     }
 
     void resetWith(Config config) {
@@ -43,12 +58,37 @@ class OciRegionProviderTest {
         this.services = picoServices.services();
     }
 
-        @Test
+    @Test
     void regionProviderService() {
+        Config config = createTestConfig(
+                basicTestingConfigSource(),
+                ociAuthConfigStrategies(TAG_AUTO),
+                ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
+        resetWith(config);
+
         ServiceProvider<Region> regionProvider = PicoServices.realizedServices()
-                .lookupFirst(Region.class, true).orElseThrow();
-//        assertThat(regionProvider.get(),
-//                   nullValue());
+                .lookupFirst(Region.class, false).orElseThrow();
+        assertThrows(PicoServiceProviderException.class,
+                     regionProvider::get);
+
+        ContextualServiceQuery query = ContextualServiceQuery.create(
+                InjectionPointInfoDefault.builder()
+                        .serviceTypeName("whatever")
+                        .elementKind(ElementInfo.ElementKind.METHOD)
+                        .elementName("m")
+                        .elementTypeName(Region.class.getName())
+                        .baseIdentity("m")
+                        .id("m1")
+                        .access(ElementInfo.Access.PUBLIC)
+                        .addQualifier(QualifierAndValueDefault.createNamed("us-phoenix-1"))
+                        .dependencyToServiceInfo(ServiceInfoCriteriaDefault.builder()
+                                                         .addContractImplemented(Region.class.getName())
+                                                         .addQualifier(QualifierAndValueDefault.createNamed("us-phoenix-1"))
+                                                         .build())
+                        .build(),
+                false);
+        assertThat(regionProvider.first(query),
+                   optionalValue(equalTo(Region.US_PHOENIX_1)));
     }
 
 }

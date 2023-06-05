@@ -16,17 +16,22 @@
 
 package io.helidon.pico.integrations.oci.runtime;
 
+import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.builder.Singular;
 import io.helidon.common.types.AnnotationAndValueDefault;
+import io.helidon.config.Config;
 import io.helidon.pico.api.InjectionPointInfoDefault;
+import io.helidon.pico.api.QualifierAndValueDefault;
 
 import jakarta.inject.Named;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.TAG_AUTO;
 import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.canReadPath;
 import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.userHomePrivateKeyPath;
+import static io.helidon.pico.integrations.oci.runtime.OciConfigBeanTest.*;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -45,7 +50,7 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void testUserHomePrivateKeyPath() {
-        OciConfigBean ociConfigBean = OciExtension.ociConfig();
+        OciConfigBean ociConfigBean = Objects.requireNonNull(OciExtension.ociConfig());
         assertThat(userHomePrivateKeyPath(ociConfigBean),
                    endsWith("/.oci/oci_api_key.pem"));
 
@@ -75,15 +80,49 @@ class OciAuthenticationDetailsProviderTest {
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    nullValue());
 
-        ipi.annotations(Set.of(AnnotationAndValueDefault.create(Singular.class),
-                               AnnotationAndValueDefault.create(Named.class, "")));
+        ipi.qualifiers(Set.of(QualifierAndValueDefault.create(Singular.class),
+                               QualifierAndValueDefault.create(Named.class, "")));
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    nullValue());
 
-        ipi.annotations(Set.of(AnnotationAndValueDefault.create(Singular.class),
-                               AnnotationAndValueDefault.create(Named.class, " profileName ")));
+        ipi.qualifiers(Set.of(QualifierAndValueDefault.create(Singular.class),
+                              QualifierAndValueDefault.create(Named.class, " profileName ")));
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    equalTo("profileName"));
+    }
+
+    @Test
+    void authStrategiesAvailability() {
+        Config config = createTestConfig(
+                ociAuthConfigStrategies(TAG_AUTO),
+                ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
+        OciConfigBean cfg = OciConfigBeanDefault.toBuilder(config).build();
+        assertThat(OciAuthenticationDetailsProvider.AuthStrategy.AUTO.isAvailable(cfg),
+                   is(true));
+        assertThat(OciAuthenticationDetailsProvider.AuthStrategy.CONFIG.isAvailable(cfg),
+                   is(false));
+        assertThat(OciAuthenticationDetailsProvider.AuthStrategy.CONFIG_FILE.isAvailable(cfg),
+                   is(false));
+        assertThat(OciAuthenticationDetailsProvider.AuthStrategy.INSTANCE_PRINCIPALS.isAvailable(cfg),
+                   is(false));
+        assertThat(OciAuthenticationDetailsProvider.AuthStrategy.RESOURCE_PRINCIPAL.isAvailable(cfg),
+                   is(false));
+
+        config = createTestConfig(
+                ociAuthConfigStrategies(TAG_AUTO),
+                ociAuthConfigFile("./target", null),
+                ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", "pkp", null));
+        cfg = OciConfigBeanDefault.toBuilder(config).build();
+        assertThat(OciAuthenticationDetailsProvider.AuthStrategy.AUTO.isAvailable(cfg),
+                   is(true));
+        assertThat(OciAuthenticationDetailsProvider.AuthStrategy.CONFIG.isAvailable(cfg),
+                   is(true));
+        assertThat(OciAuthenticationDetailsProvider.AuthStrategy.CONFIG_FILE.isAvailable(cfg),
+                   is(true));
+        assertThat(OciAuthenticationDetailsProvider.AuthStrategy.INSTANCE_PRINCIPALS.isAvailable(cfg),
+                   is(false));
+        assertThat(OciAuthenticationDetailsProvider.AuthStrategy.RESOURCE_PRINCIPAL.isAvailable(cfg),
+                   is(false));
     }
 
 }

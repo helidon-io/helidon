@@ -20,11 +20,15 @@ import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.pico.api.ContextualServiceQuery;
+import io.helidon.pico.api.ContextualServiceQueryDefault;
 import io.helidon.pico.api.InjectionPointProvider;
+import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfoBasics;
 
 import com.oracle.bmc.Region;
 import jakarta.inject.Singleton;
+
+import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.toNamedProfile;
 
 /**
  * Can optionally be used to return a {@link Region} appropriate for the {@link io.helidon.pico.api.InjectionPointInfo} context.
@@ -37,8 +41,35 @@ class OciRegionProvider implements InjectionPointProvider<Region> {
     }
 
     @Override
+    public Region get() {
+        return first(ContextualServiceQueryDefault.builder()
+                             .serviceInfoCriteria(PicoServices.EMPTY_CRITERIA)
+                             .expected(false)
+                             .build())
+                .orElseThrow();
+    }
+
+    @Override
     public Optional<Region> first(ContextualServiceQuery query) {
-        return Optional.empty();
+        String requestedNamedProfile = toNamedProfile(query.injectionPointInfo().orElse(null));
+        Region region = toRegionFromNamedProfile(requestedNamedProfile);
+        if (region == null) {
+            region = Region.getRegionFromImds();
+        }
+        return Optional.ofNullable(region);
+    }
+
+    static Region toRegionFromNamedProfile(String requestedNamedProfile) {
+        if (requestedNamedProfile == null || requestedNamedProfile.isBlank()) {
+            return null;
+        }
+
+        try {
+            return Region.fromRegionCodeOrId(requestedNamedProfile);
+        } catch (Exception e) {
+            // eat it
+            return null;
+        }
     }
 
 }
