@@ -49,7 +49,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-OpenTelemetry comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
+link:https://opentelemetry.io/[OpenTelemetry] comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
 
 MicroProfile Telemetry 1.0 allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using variety of exporter.
 

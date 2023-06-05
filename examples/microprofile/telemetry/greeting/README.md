@@ -1,6 +1,6 @@
 # Helidon MicroProfile Telemetry Example
 
-This example implements demonstrates usage of MP Telemetry Tracing.
+This example demonstrates how to use MP Telemetry Tracing.
 
 ## Build and run
 
@@ -29,7 +29,7 @@ docker run -d --name jaeger \
   jaegertracing/all-in-one:1.41
 ```
 
-Run the Secondary service. Go to `secondary` folder and run:
+Run the Secondary service. Go to `secondary` project and run:
 
 With JDK17+
 ```bash
@@ -56,4 +56,4 @@ Secondary
 
 ```
 
-Proceed Jaeger UI http://localhost:16686. In the top-down menu select "greeting-service" and click "search button". Tracing information should become available.
+Open a browser and enter the Jaeger URL: http://localhost:16686. Once the site is loaded, open the top-down menu and select "greeting-service" , then click Search. The tracing information should become available.
