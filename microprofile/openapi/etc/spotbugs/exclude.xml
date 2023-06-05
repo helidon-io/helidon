@@ -40,4 +40,9 @@
         <Method name="filteredIndexView" />
         <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE" />
     </Match>
+    <Match>
+        <Class name="io.helidon.microprofile.openapi.MPOpenAPIBuilder" />
+        <Method name="build" />
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE" />
+    </Match>
 </FindBugsFilter>
