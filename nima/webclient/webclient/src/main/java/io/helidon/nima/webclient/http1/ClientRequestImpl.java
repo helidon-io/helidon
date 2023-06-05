@@ -37,6 +37,7 @@ import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.UriHelper;
 import io.helidon.nima.webclient.WebClientServiceRequest;
@@ -52,6 +53,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private final UriHelper uri;
     private final String requestId;
     private final Http1ClientConfig clientConfig;
+    private final MediaContext mediaContext;
 
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private boolean followRedirects;
@@ -70,6 +72,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         this.uri = helper;
 
         this.clientConfig = clientConfig;
+        this.mediaContext = clientConfig.mediaContext();
         this.followRedirects = clientConfig.followRedirects();
         this.maxRedirects = clientConfig.maxRedirects();
         this.tls = clientConfig.tls().orElse(null);
@@ -85,7 +88,8 @@ class ClientRequestImpl implements Http1ClientRequest {
                               UriHelper helper,
                               UriQueryWriteable query) {
         this(request.clientConfig, method, helper, query);
-
+        this.clientConfig = request.clientConfig;
+        this.mediaContext = request.mediaContext;
         this.followRedirects = request.followRedirects;
         this.maxRedirects = request.maxRedirects;
         this.tls = request.tls;
@@ -358,6 +362,7 @@ class ClientRequestImpl implements Http1ClientRequest {
                                       serviceResponse.headers(),
                                       serviceResponse.connection(),
                                       serviceResponse.reader(),
+                                      mediaContext,
                                       complete);
     }
 
