@@ -38,7 +38,6 @@
         <module>metrics</module>
         <module>objectstorage</module>
         <module>vault</module>
-        <module>vault-cdi</module>
     </modules>
 
 </project>
