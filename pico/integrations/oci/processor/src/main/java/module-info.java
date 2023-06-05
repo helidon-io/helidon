@@ -17,6 +17,7 @@
 /**
  * Pico Integrations OCI Processor module.
  */
+// TODO: should this be called "...oci.sdk..." instead ?
 module io.helidon.pico.integrations.oci.processor {
     requires static jakarta.inject;
     requires static jakarta.annotation;

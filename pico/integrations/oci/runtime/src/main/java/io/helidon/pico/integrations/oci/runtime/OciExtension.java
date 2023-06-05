@@ -68,7 +68,7 @@ import static java.util.function.Predicate.not;
  * href="https://search.maven.org/search?q=oci-java-sdk-"
  * target="_top"><code>oci-java-sdk-</code><strong><code>cloudexample</code></strong><code>-$VERSION.jar</code></a>,
  * where {@code $VERSION} should be replaced by a suitable version
- * number).</p>
+ * number).
  *
  * <h2>Advanced Usage</h2>
  *

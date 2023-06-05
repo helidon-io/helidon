@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package io.helidon.integrations.oci.sdk.cdi;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.net.ConnectException;
@@ -134,10 +133,10 @@ enum AdpSelectionStrategy {
             c.get(OCI_AUTH_PASSPHRASE, String.class).or(() -> c.get(OCI_AUTH_PASSPHRASE + "Characters", String.class))
                 .ifPresent(b::passPhrase);
             c.get(OCI_AUTH_PRIVATE_KEY, String.class).or(() -> c.get("oci.auth.privateKey", String.class))
-                .ifPresentOrElse(pk -> b.privateKeySupplier((Supplier<InputStream>) new StringPrivateKeySupplier(pk)),
-                                 () -> b.privateKeySupplier((Supplier<InputStream>) new SimplePrivateKeySupplier(c.get(OCI_AUTH_PRIVATE_KEY + "-path", String.class)
-                                                                                                                 .orElse(c.get("oci.auth.keyFile", String.class)
-                                                                                                                         .orElse(Paths.get(System.getProperty("user.home"), ".oci", "oci_api_key.pem").toString())))));
+                    .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
+                                     () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.get(OCI_AUTH_PRIVATE_KEY + "-path", String.class)
+                                         .orElse(c.get("oci.auth.keyFile", String.class)
+                                                         .orElse(Paths.get(System.getProperty("user.home"), ".oci", "oci_api_key.pem").toString())))));
             c.get(OCI_AUTH_REGION, Region.class)
                 .ifPresent(b::region);
             c.get(OCI_AUTH_TENANT_ID, String.class).or(() -> c.get("oci.auth.tenancy", String.class))

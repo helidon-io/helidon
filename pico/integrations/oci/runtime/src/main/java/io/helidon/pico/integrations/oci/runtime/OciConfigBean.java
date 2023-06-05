@@ -30,6 +30,7 @@ import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
  *
  * @see OciExtension
  */
+// note: this is intended to be a replica to the properties carried from the cdi integrations previously done for MP
 @ConfigBean(OciConfigBean.NAME)
 public interface OciConfigBean {
 
@@ -89,7 +90,7 @@ public interface OciConfigBean {
      * The OCI configuration profile path.
      * <p>
      * This configuration property has an effect only when {@code config-file} is, explicitly or implicitly,
-     * present in the value for the {@link #authStrategies()}.
+     * present in the value for the {@link #authStrategies()}. This is also known as {@link #fileConfigIsPresent()}.
      * When it is present, this property must also be present and then the
      * {@linkplain com.oracle.bmc.ConfigFileReader#parse(String)}
      * method will be passed this value. It is expected to be passed with a
@@ -104,25 +105,23 @@ public interface OciConfigBean {
      * The OCI configuration/auth profile name.
      * <p>
      * This configuration property has an effect only when {@code config-file} is, explicitly or implicitly,
-     * present in the value for the {@link #authStrategies()}.
+     * present in the value for the {@link #authStrategies()}. This is also known as {@link #fileConfigIsPresent()}.
      * When it is present, this property may also be optionally provided in order to override the default {@link
      * com.oracle.bmc.ConfigFileReader#DEFAULT_PROFILE_NAME}.
      *
      * @return the optional OCI configuration/auth profile name
      */
-    @ConfiguredOption(key= "config.profile")
+    @ConfiguredOption(key = "config.profile")
     Optional<String> configProfile();
 
     /**
      * The OCI authentication fingerprint.
      * <p>
      * This configuration property has an effect only when {@code config} is, explicitly or implicitly,
-     * present in the value for the {@link #authStrategies()}.
-     * When it is present, this property must be provided in order to set the {@link
-     * <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four"
-     * target="_top">API signing key's fingerprint</a>. See
-     * {@linkplain ConfigFileAuthenticationDetailsProvider#getFingerprint()}
-     * for more details.
+     * present in the value for the {@link #authStrategies()}. This is also known as {@link #simpleConfigIsPresent()}.
+     * When it is present, this property must be provided in order to set the <a
+     * href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm">API signing key's fingerprint</a>.
+     * See {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getFingerprint()} for more details.
      *
      * @return the OCI authentication fingerprint
      */
@@ -133,9 +132,11 @@ public interface OciConfigBean {
      * The OCI authentication key file.
      * <p>
      * This configuration property has an effect only when {@code config} is, explicitly or implicitly,
-     * present in the value for the {@link #authStrategies()}.
+     * present in the value for the {@link #authStrategies()}. This is also known as {@link #simpleConfigIsPresent()}.
      * When it is present, this property must be provided in order to set the
-     * {@linkplain ConfigFileAuthenticationDetailsProvider#getPemFilePath()}.
+     * {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPrivateKey()}. This file must exist in the
+     * {@code user.home} directory. Alternatively, this property can be set using either {@link #authPrivateKey()} or
+     * using {@link #authPrivateKeyPath()}.
      *
      * @return the OCI authentication key file
      */
@@ -143,12 +144,42 @@ public interface OciConfigBean {
     String authKeyFile();
 
     /**
+     * The OCI authentication key file path.
+     * <p>
+     * This configuration property has an effect only when {@code config} is, explicitly or implicitly,
+     * present in the value for the {@link #authStrategies()}. This is also known as {@link #simpleConfigIsPresent()}.
+     * When it is present, this property must be provided in order to set the
+     * {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPrivateKey()}. This file path is
+     * an alternative for using {@link #authKeyFile()} where the file must exist in the {@code user.home} directory.
+     * Alternatively, this property can be set using {@link #authPrivateKey()}.
+     *
+     * @return the OCI authentication key file path
+     */
+    @ConfiguredOption(key = "auth.private-key-path")
+    Optional<String> authPrivateKeyPath();
+
+    /**
+     * The OCI authentication private key.
+     * <p>
+     * This configuration property has an effect only when {@code config} is, explicitly or implicitly,
+     * present in the value for the {@link #authStrategies()}. This is also known as {@link #simpleConfigIsPresent()}.
+     * When it is present, this property must be provided in order to set the
+     * {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPrivateKey()}. Alternatively, this property
+     * can be set using either {@link #authKeyFile()} residing in the {@code user.home} directory, or using
+     * {@link #authPrivateKeyPath()}.
+     *
+     * @return the OCI authentication private key
+     */
+    @ConfiguredOption(key = "auth.private-key"/* securitySensitive = true*/)
+    Optional<char[]> authPrivateKey();
+
+    /**
      * The OCI authentication passphrase.
      * <p>
      * This configuration property has an effect only when {@code config} is, explicitly or implicitly,
-     * present in the value for the {@link #authStrategies()}.
+     * present in the value for the {@link #authStrategies()}. This is also known as {@link #simpleConfigIsPresent()}.
      * When it is present, this property must be provided in order to set the
-     * {@linkplain ConfigFileAuthenticationDetailsProvider#getPassphraseCharacters()}.
+     * {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPassphraseCharacters()}.
      *
      * @return the OCI authentication passphrase
      */
@@ -157,23 +188,10 @@ public interface OciConfigBean {
     Optional<char[]> authPassphrase();
 
     /**
-     * The OCI authentication private key.
-     * <p>
-     * This configuration property has an effect only when {@code config} is, explicitly or implicitly,
-     * present in the value for the {@link #authStrategies()}.
-     * When it is present, this property must be provided in order to set the
-     * {@linkplain ConfigFileAuthenticationDetailsProvider#getPrivateKey()}.
-     *
-     * @return the OCI authentication private key
-     */
-    @ConfiguredOption(key = "auth.private-key"/* securitySensitive = true*/)
-    Optional<char[]> authPrivateKey();
-
-    /**
      * The OCI region.
      * <p>
      * This configuration property has an effect only when {@code config} is, explicitly or implicitly,
-     * present in the value for the {@link #authStrategies()}.
+     * present in the value for the {@link #authStrategies()}. This is also known as {@link #simpleConfigIsPresent()}.
      * When it is present, either this property or {@link com.oracle.bmc.auth.RegionProvider} must be provide a value in order
      * to set the {@linkplain ConfigFileAuthenticationDetailsProvider#getRegion()}.
      *
@@ -186,7 +204,7 @@ public interface OciConfigBean {
      * The OCI tenant id.
      * <p>
      * This configuration property has an effect only when {@code config} is, explicitly or implicitly,
-     * present in the value for the {@link #authStrategies()}.
+     * present in the value for the {@link #authStrategies()}. This is also known as {@link #simpleConfigIsPresent()}.
      * When it is present, this property must be provided in order to set the
      * {@linkplain ConfigFileAuthenticationDetailsProvider#getTenantId()}.
      *
@@ -241,7 +259,20 @@ public interface OciConfigBean {
     int idmsTimeoutMilliseconds();
 
     /**
-     * Determines whether there is sufficient configuration defined in this bean to be used for simple authentication.
+     * Determines whether there is sufficient configuration defined in this bean to be used for file-based authentication. This
+     * matches to the {@link OciAuthenticationDetailsProvider.AuthStrategy#CONFIG_FILE}.
+     *
+     * @return true if there is sufficient attributes defined for file-based OCI authentication provider applicability
+     * @see OciAuthenticationDetailsProvider
+     */
+    default boolean fileConfigIsPresent() {
+        return configPath().isPresent()
+                && configProfile().isPresent();
+    }
+
+    /**
+     * Determines whether there is sufficient configuration defined in this bean to be used for simple authentication. This
+     * matches to the {@link OciAuthenticationDetailsProvider.AuthStrategy#CONFIG}.
      *
      * @return true if there is sufficient attributes defined for simple OCI authentication provider applicability
      * @see OciAuthenticationDetailsProvider
@@ -251,9 +282,9 @@ public interface OciConfigBean {
                 && authTenantId().isPresent()
                 && authUserId().isPresent()
                 && authPassphrase().isPresent()
-                && authFingerprint().isPresent()
-                && authPrivateKey().isPresent();
-
+                && authFingerprint().isPresent();
+        // don't use the private key since it can be sourced from several different properties / locations
+//                && authPrivateKey().isPresent();
     }
 
 }

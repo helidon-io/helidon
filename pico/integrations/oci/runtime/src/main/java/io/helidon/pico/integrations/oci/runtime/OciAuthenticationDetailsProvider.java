@@ -116,11 +116,19 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
 
 
     enum AuthStrategy {
+        /**
+         * Auto selection of the auth strategy.
+         */
         AUTO("auto",
              AbstractAuthenticationDetailsProvider.class,
              (profileName, ociConfigBean) -> true,
              OciAuthenticationDetailsProvider::select),
 
+        /**
+         * Corresponds to {@link SimpleAuthenticationDetailsProvider}.
+         *
+         * @see OciConfigBean#simpleConfigIsPresent()
+         */
         CONFIG("config",
                SimpleAuthenticationDetailsProvider.class,
                (profileName, ociConfigBean) -> ociConfigBean.simpleConfigIsPresent(),
@@ -139,9 +147,15 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
                    return b.build();
                }),
 
+        /**
+         * Corresponds to {@link ConfigFileAuthenticationDetailsProvider}.
+         *
+         * @see OciConfigBean
+         */
         CONFIG_FILE("config-file",
                     ConfigFileAuthenticationDetailsProvider.class,
-                    (profileName, configBean) -> canReadPath(configBean.configPath().orElse(null)),
+                    (profileName, configBean) -> configBean.fileConfigIsPresent()
+                            && canReadPath(configBean.configPath().orElse(null)),
                     (profileName, configBean) -> {
                         // https://github.com/oracle/oci-java-sdk/blob/master/bmc-common/src/main/java/com/oracle/bmc/auth/ConfigFileAuthenticationDetailsProvider.java
                         // https://github.com/oracle/oci-java-sdk/blob/master/bmc-examples/src/main/java/ObjectStorageSyncExample.java
@@ -158,11 +172,17 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
                         }
                     }),
 
+        /**
+         * Corresponds to {@link InstancePrincipalsAuthenticationDetailsProvider}.
+         */
         INSTANCE_PRINCIPALS("instance-principals",
                             InstancePrincipalsAuthenticationDetailsProvider.class,
                             (profileName, configBean) -> OciAvailabilityDefault.runningOnOci(configBean),
                             (profileName, configBean) -> InstancePrincipalsAuthenticationDetailsProvider.builder().build()),
 
+        /**
+         * Corresponds to {@link ResourcePrincipalAuthenticationDetailsProvider}.
+         */
         RESOURCE_PRINCIPAL("resource-principal",
                            ResourcePrincipalAuthenticationDetailsProvider.class,
                            (profileName, configBean) -> {
