@@ -84,7 +84,7 @@ include::{incdir}/openapi.adoc[tag=usage-access-endpoint]
 
 include::{incdir}/openapi.adoc[tag=api]
 
-// == Configuration
+== Configuration
 //
 // Helidon OpenAPI configuration supports the following settings:
 //
