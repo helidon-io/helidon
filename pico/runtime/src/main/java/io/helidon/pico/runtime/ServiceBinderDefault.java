@@ -90,7 +90,7 @@ public class ServiceBinderDefault implements ServiceBinder {
 
     private boolean alreadyBoundToThisPicoServices(ServiceProviderBindable<?> serviceProvider,
                                                    PicoServices picoServices) {
-        PicoServices assigned = serviceProvider.safePicoServices().orElse(null);
+        PicoServices assigned = serviceProvider.picoServices(false).orElse(null);
         return (assigned == picoServices);
     }
 

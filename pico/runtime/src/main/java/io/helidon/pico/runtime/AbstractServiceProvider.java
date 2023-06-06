@@ -202,19 +202,15 @@ public abstract class AbstractServiceProvider<T>
     /**
      * Used to access the current pico services instance assigned to this service provider.
      *
+     * @param expected true to indicate that the return values is expected to be non-empty
      * @return the pico services assigned to this service provider
      */
-    public PicoServices picoServices() {
-        return Objects.requireNonNull(picoServices, description() + ": picoServices should have been previously set");
-    }
-
-    /**
-     * Used to access the current pico services instance assigned to this service provider, or empty if not assigned.
-     *
-     * @return the pico services assigned to this service provider, or empty if not assigned
-     */
     @Override
-    public Optional<PicoServices> safePicoServices() {
+    public Optional<PicoServices> picoServices(boolean expected) {
+        if (expected) {
+            Objects.requireNonNull(picoServices, description() + ": picoServices should have been previously set");
+        }
+
         return Optional.ofNullable(picoServices);
     }
 
@@ -537,9 +533,8 @@ public abstract class AbstractServiceProvider<T>
                     InjectionPointInfo ipInfo = InjectionPointInfoDefault.builder()
                             .id(id)
                             .dependencyToServiceInfo(serviceInfo);
-                    //                            .build();
                     Object resolved = Objects.requireNonNull(
-                            resolver.resolve(ipInfo, picoServices(), AbstractServiceProvider.this, false));
+                            resolver.resolve(ipInfo, picoServices(true).orElseThrow(), AbstractServiceProvider.this, false));
                     PicoInjectionPlan plan = createBuilder(id)
                             .unqualifiedProviders(List.of(resolved))
                             .resolved(false)
@@ -610,8 +605,8 @@ public abstract class AbstractServiceProvider<T>
             dependencies(dependencies());
         }
 
-        Map<String, PicoInjectionPlan> plan =
-                DefaultInjectionPlans.createInjectionPlans(picoServices(), this, dependencies, resolveIps, logger());
+        Map<String, PicoInjectionPlan> plan = DefaultInjectionPlans
+                .createInjectionPlans(picoServices(true).orElseThrow(), this, dependencies, resolveIps, logger());
         assert (this.injectionPlan == null);
         this.injectionPlan = Objects.requireNonNull(plan);
 
@@ -681,7 +676,7 @@ public abstract class AbstractServiceProvider<T>
             return ActivationResult.createSuccess(this);
         }
 
-        PicoServices picoServices = picoServices();
+        PicoServices picoServices = picoServices(true).orElseThrow();
         PicoServicesConfig cfg = picoServices.config();
 
         // if we are here then we are not yet at the ultimate target phase, and we either have to activate or deactivate

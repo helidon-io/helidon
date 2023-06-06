@@ -234,8 +234,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                              Phase phase) {
         if (phase == Phase.POST_BIND_ALL_MODULES) {
             assertIsInitializing();
-            PicoServices picoServices = picoServices();
-            assert (picoServices != null);
+            PicoServices picoServices = picoServices(true).orElseThrow();
 
             if (Phase.INIT == currentActivationPhase()) {
                 LogEntryAndResult logEntryAndResult = createLogEntryAndResult(Phase.PENDING);
@@ -804,7 +803,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
         // override our service info
         instance.serviceInfo(newServiceInfo);
-        instance.picoServices(Optional.of(picoServices()));
+        instance.picoServices(picoServices(true));
         instance.rootProvider(this);
 
         if (logger().isLoggable(System.Logger.Level.DEBUG)) {
