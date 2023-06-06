@@ -235,6 +235,18 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
             configBuilder.servicesUseServiceLoader(useServiceLoader);
             return this;
         }
+
+        /**
+         * Can be set to {@code true} to force the use of relative URIs in all requests,
+         * regardless of the presence or absence of proxies or no-proxy lists.
+         *
+         * @param relativeUris relative URIs flag
+         * @return updated builder instance
+         */
+        public Http1ClientBuilder relativeUris(boolean relativeUris) {
+            configBuilder.relativeUris(relativeUris);
+            return this;
+        }
     }
 
 }
