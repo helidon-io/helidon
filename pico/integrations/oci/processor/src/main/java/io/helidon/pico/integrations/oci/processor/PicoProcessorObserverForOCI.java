@@ -16,11 +16,19 @@
 
 package io.helidon.pico.integrations.oci.processor;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,6 +38,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -43,6 +52,7 @@ import jakarta.inject.Inject;
 import static io.helidon.common.types.TypeNameDefault.create;
 import static io.helidon.pico.processor.GeneralProcessorUtils.findFirst;
 import static io.helidon.pico.processor.GeneralProcessorUtils.isProviderType;
+import static java.util.function.Predicate.not;
 
 /**
  * Implementation that will monitor {@link io.helidon.pico.processor.PicoAnnotationProcessor} for all injection points
@@ -55,17 +65,18 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
     static final String GENERATED_CLIENT_SUFFIX = "$$Oci$$Client";
     static final String GENERATED_CLIENT_BUILDER_SUFFIX = GENERATED_CLIENT_SUFFIX + "Builder";
     static final String GENERATED_OCI_ROOT_PACKAGE_NAME_PREFIX = GENERATED_PREFIX + OCI_ROOT_PACKAGE_NAME_PREFIX;
+
     static final String TAG_TEMPLATE_SERVICE_CLIENT_PROVIDER_NAME = "service-client-provider.hbs";
     static final String TAG_TEMPLATE_SERVICE_CLIENT_BUILDER_PROVIDER_NAME = "service-client-builder-provider.hbs";
-    static final Set<String> TYPENAME_EXCEPTIONS =
-            Set.of(OCI_ROOT_PACKAGE_NAME_PREFIX + "Region",
-                   OCI_ROOT_PACKAGE_NAME_PREFIX + "auth.AbstractAuthenticationDetailsProvider",
-                   OCI_ROOT_PACKAGE_NAME_PREFIX + "circuitbreaker.OciCircuitBreaker"
-            );
-    static final Set<String> NO_DOT_EXCEPTIONS =
-            Set.of(OCI_ROOT_PACKAGE_NAME_PREFIX + "streaming.Stream",
-                   OCI_ROOT_PACKAGE_NAME_PREFIX + "streaming.StreamAsync"
-            );
+
+    // note that these can be used as -A values also
+    static final String TAG_TYPENAME_EXCEPTIONS = "typename.exceptions";
+    static final String TAG_NO_DOT_EXCEPTIONS = "no.dot.exceptions";
+
+    static final LazyValue<Set<String>> TYPENAME_EXCEPTIONS = LazyValue
+            .create(PicoProcessorObserverForOCI::loadTypeNameExceptions);
+    static final LazyValue<Set<String>> NO_DOT_EXCEPTIONS = LazyValue
+            .create(PicoProcessorObserverForOCI::loadNoDotExceptions);
 
     /**
      * Service loader based constructor.
@@ -79,6 +90,7 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
     @Override
     public void onProcessingEvent(ProcessingEvent event) {
         ProcessingEnvironment processingEnv = event.processingEnvironment().orElseThrow();
+        layerInManualOptions(processingEnv);
         event.elementsOfInterest().stream()
                 .filter(it -> shouldProcess(it, processingEnv))
                 .forEach(it -> process(it, processingEnv));
@@ -161,12 +173,12 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
     }
 
     static String maybeDot(TypeName ociServiceTypeName) {
-        return NO_DOT_EXCEPTIONS.contains(ociServiceTypeName.name()) ? "" : ".";
+        return NO_DOT_EXCEPTIONS.get().contains(ociServiceTypeName.name()) ? "" : ".";
     }
 
     static boolean usesRegion(TypeName ociServiceTypeName) {
         // it turns out that the same exceptions used for dotting the builder also applies to whether it uses region
-        return !NO_DOT_EXCEPTIONS.contains(ociServiceTypeName.name());
+        return !NO_DOT_EXCEPTIONS.get().contains(ociServiceTypeName.name());
     }
 
     static String loadTemplate(String name) {
@@ -182,6 +194,59 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
         } catch (Exception e) {
             throw new ToolsException(e.getMessage(), e);
         }
+    }
+
+    static Set<String> loadTypeNameExceptions() {
+        return loadSet(TAG_TYPENAME_EXCEPTIONS);
+    }
+
+    static Set<String> loadNoDotExceptions() {
+        return loadSet(TAG_NO_DOT_EXCEPTIONS);
+    }
+
+    static void layerInManualOptions(ProcessingEnvironment processingEnv) {
+        Map<String, String> opts = processingEnv.getOptions();
+        TYPENAME_EXCEPTIONS.get().addAll(splitToSet(opts.get(TAG_TYPENAME_EXCEPTIONS)));
+        NO_DOT_EXCEPTIONS.get().addAll(splitToSet(opts.get(TAG_NO_DOT_EXCEPTIONS)));
+    }
+
+    static Set<String> splitToSet(String val) {
+        if (val == null) {
+            return Set.of();
+        }
+        List<String> list = Arrays.stream(val.split(","))
+                .map(String::trim)
+                .filter(not(String::isEmpty))
+                .filter(not(s -> s.startsWith("#")))
+                .toList();
+        return new LinkedHashSet<>(list);
+    }
+
+    static Set<String> loadSet(String name) {
+        // note: we need to keep this mutable for later when we process the env options passed manually in
+        Set<String> result = new LinkedHashSet<>();
+
+        name = PicoProcessorObserverForOCI.class.getPackageName().replace(".", "/") + "/" + name;
+        try {
+            Enumeration<URL> resources = PicoProcessorObserverForOCI.class.getClassLoader().getResources(name);
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                try (
+                        InputStream in = url.openStream();
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))
+                ) {
+                    reader.lines()
+                            .map(String::trim)
+                            .filter(not(String::isEmpty))
+                            .filter(not(s -> s.startsWith("#")))
+                            .forEach(result::add);
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        return result;
     }
 
     static boolean shouldProcess(TypedElementInfo element,
@@ -210,10 +275,10 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
 
         String name = typeName.name();
         if (!name.startsWith(OCI_ROOT_PACKAGE_NAME_PREFIX)
-                || TYPENAME_EXCEPTIONS.contains(name)
                 || name.endsWith(".Builder")
                 || name.endsWith("Client")
-                || name.endsWith("ClientBuilder")) {
+                || name.endsWith("ClientBuilder")
+                || TYPENAME_EXCEPTIONS.get().contains(name)) {
             return false;
         }
 

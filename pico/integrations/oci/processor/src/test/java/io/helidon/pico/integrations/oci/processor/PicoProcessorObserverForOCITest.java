@@ -18,6 +18,7 @@ package io.helidon.pico.integrations.oci.processor;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.tools.ToolsException;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.types.TypeNameDefault.create;
 import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
+import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI.*;
 import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI.TAG_TEMPLATE_SERVICE_CLIENT_BUILDER_PROVIDER_NAME;
 import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI.TAG_TEMPLATE_SERVICE_CLIENT_PROVIDER_NAME;
 import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI.shouldProcess;
@@ -39,6 +41,7 @@ import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverFo
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 class PicoProcessorObserverForOCITest {
 
@@ -70,21 +73,21 @@ class PicoProcessorObserverForOCITest {
     @Test
     void oddballServiceTypeNames() {
         TypeName ociServiceType = create(Stream.class);
-        assertThat(PicoProcessorObserverForOCI.maybeDot(ociServiceType),
+        assertThat(maybeDot(ociServiceType),
                    equalTo(""));
-        assertThat(PicoProcessorObserverForOCI.usesRegion(ociServiceType),
+        assertThat(usesRegion(ociServiceType),
                    equalTo(false));
 
         ociServiceType = create(StreamAsync.class);
-        assertThat(PicoProcessorObserverForOCI.maybeDot(ociServiceType),
+        assertThat(maybeDot(ociServiceType),
                    equalTo(""));
-        assertThat(PicoProcessorObserverForOCI.usesRegion(ociServiceType),
+        assertThat(usesRegion(ociServiceType),
                    equalTo(false));
 
         ociServiceType = create(StreamAdmin.class);
-        assertThat(PicoProcessorObserverForOCI.maybeDot(ociServiceType),
+        assertThat(maybeDot(ociServiceType),
                    equalTo("."));
-        assertThat(PicoProcessorObserverForOCI.usesRegion(ociServiceType),
+        assertThat(usesRegion(ociServiceType),
                    equalTo(true));
     }
 
@@ -113,6 +116,33 @@ class PicoProcessorObserverForOCITest {
         typeName = createFromTypeName("com.oracle.bmc.ServiceClientBuilder");
         assertThat(shouldProcess(typeName, null),
                    is(false));
+    }
+
+    @Test
+    void loadTypeNameExceptions() {
+        Set<String> set = TYPENAME_EXCEPTIONS.get();
+        set.addAll(splitToSet(" M1,  M2,,, "));
+        assertThat(set,
+                   containsInAnyOrder("M1",
+                                      "M2",
+                                      "test1",
+                                      "com.oracle.bmc.Region",
+                                      "com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider",
+                                      "com.oracle.bmc.circuitbreaker.OciCircuitBreaker"
+                   ));
+    }
+
+    @Test
+    void loadNoDotExceptions() {
+        Set<String> set = NO_DOT_EXCEPTIONS.get();
+        set.addAll(splitToSet("Manual1, Manual2 "));
+        assertThat(set,
+                   containsInAnyOrder("Manual1",
+                                      "Manual2",
+                                      "test2",
+                                      "com.oracle.bmc.streaming.Stream",
+                                      "com.oracle.bmc.streaming.StreamAsync"
+                   ));
     }
 
     static String loadStringFromResource(String resourceNamePath) {
