@@ -15,13 +15,23 @@
  */
 package io.helidon.microprofile.metrics.tck;
 
+import io.helidon.microprofile.cdi.RuntimeStart;
+
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 
 public class MetricsTckCdiExtension implements Extension {
 
     void before(@Observes BeforeBeanDiscovery discovery) {
         discovery.addAnnotatedType(ArrayParamConverterProvider.class, ArrayParamConverterProvider.class.getSimpleName());
+    }
+
+    void clear(@Observes @RuntimeStart Object event, MetricRegistry appRegistry) {
+
+        // Erase the application registry so it is clear at the start of each TCK test.
+        appRegistry.getNames()
+                .forEach(appRegistry::remove);
     }
 }

@@ -736,9 +736,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
         Routing.Builder defaultRouting = super.registerService(adv, bm, server);
         MetricsSupport metricsSupport = serviceSupport();
 
-        // Initialize our implementation
-        RegistryProducer.clearApplicationRegistry();
-
         registerMetricsForAnnotatedSites();
         registerAnnotatedGauges(bm);
         registerRestRequestMetrics();
