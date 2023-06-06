@@ -24,7 +24,7 @@ import org.neo4j.driver.Session;
 /**
  * Health support module for Neo4j (implements {@link io.helidon.health.HealthCheck}).
  */
-public class Neo4jHelidonHealthCheck implements HealthCheck {
+public class Neo4jHealthCheck implements HealthCheck {
 
     private static final String NAME = "Neo4j connection health check";
     private final Driver driver;
@@ -38,7 +38,7 @@ public class Neo4jHelidonHealthCheck implements HealthCheck {
      *
      * @param driver Neo4j.
      */
-    public Neo4jHelidonHealthCheck(Driver driver) {
+    public Neo4jHealthCheck(Driver driver) {
         this.driver = driver;
     }
 
@@ -46,10 +46,10 @@ public class Neo4jHelidonHealthCheck implements HealthCheck {
      * Creates the Neo4j driver.
      *
      * @param driver Neo4j.
-     * @return Neo4jHelidonHealthCheck.
+     * @return Neo4jHealthCheck.
      */
-    public static Neo4jHelidonHealthCheck create(Driver driver) {
-        return new Neo4jHelidonHealthCheck(driver);
+    public static Neo4jHealthCheck create(Driver driver) {
+        return new Neo4jHealthCheck(driver);
     }
 
     @Override
