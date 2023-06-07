@@ -16,6 +16,8 @@
 
 package io.helidon.nima.http2.webserver;
 
+import java.io.UncheckedIOException;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -165,7 +167,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                 sendErrorDetails ? e.getMessage() : "");
             connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             state = State.FINISHED;
-        } catch (CloseConnectionException | InterruptedException e) {
+        } catch (CloseConnectionException
+                 | InterruptedException
+                 | UncheckedIOException e) {
             throw e;
         } catch (Throwable e) {
             if (state == State.FINISHED) {
@@ -489,7 +493,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             stream.headers(upgradeHeaders, !hasEntity);
             upgradeHeaders = null;
             ctx.executor()
-                    .submit(new StreamRunnable(streams, stream, stream.streamId()));
+                    .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
         }
     }
 
@@ -592,7 +596,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         // we now have all information needed to execute
         ctx.executor()
-                .submit(new StreamRunnable(streams, stream, stream.streamId()));
+                .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
     }
 
     private void pingFrame() {
@@ -768,21 +772,26 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         UNKNOWN
     }
 
-    private static final class StreamRunnable implements Runnable {
-        private final Map<Integer, StreamContext> streams;
-        private final Http2Stream stream;
-        private final int streamId;
-
-        private StreamRunnable(Map<Integer, StreamContext> streams, Http2Stream stream, int streamId) {
-            this.streams = streams;
-            this.stream = stream;
-            this.streamId = streamId;
-        }
+    private record StreamRunnable(Map<Integer, StreamContext> streams,
+                                  Http2Stream stream,
+                                  Thread handlerThread) implements Runnable {
 
         @Override
         public void run() {
-            stream.run();
-            streams.remove(stream.streamId());
+            try {
+                stream.run();
+            } catch (UncheckedIOException e) {
+                // Broken connection
+                if (e.getCause() instanceof SocketException) {
+                    // Interrupt handler thread
+                    handlerThread.interrupt();
+                    LOGGER.log(DEBUG, "Socket error on writer thread", e);
+                } else {
+                    throw e;
+                }
+            } finally {
+                streams.remove(stream.streamId());
+            }
         }
     }
 
