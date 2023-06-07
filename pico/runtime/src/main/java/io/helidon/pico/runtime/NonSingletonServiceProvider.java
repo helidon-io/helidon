@@ -34,7 +34,7 @@ class NonSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
 
     private NonSingletonServiceProvider(AbstractServiceProvider<T> delegate) {
         this.delegate = delegate;
-        picoServices(delegate.picoServices(true));
+        picoServices(delegate.picoServices());
         serviceInfo(delegate.serviceInfo());
         dependencies(delegate.dependencies());
     }

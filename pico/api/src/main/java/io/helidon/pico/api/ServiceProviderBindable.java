@@ -111,12 +111,11 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
     /**
      * Returns the previously assigned {@link PicoServices} instance.
      *
-     * @param expected true if the result is expected to be non-empty
      * @return the previously assigned pico services instance, or empty if never assigned
      *
      * @see #picoServices(Optional)
      */
-    Optional<PicoServices> picoServices(boolean expected);
+    Optional<PicoServices> picoServices();
 
     /**
      * Assigns the services instance this provider is bound to. A service provider can be associated with 0..1 services instance.
