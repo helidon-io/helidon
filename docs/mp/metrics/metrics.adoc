@@ -37,6 +37,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<API, API>>
 ** <<Metrics Annotations, Metrics Annotations>>
 ** <<The MetricRegistry API, The MetricRegistry API>>
+** <<Working with Metrics in CDI Extensions, Working with Metrics in CDI Extensions>>
 - <<Configuration, Configuration>>
 ** <<Configuration Options, Configuration Options>>
 - <<Examples, Examples>>
@@ -122,6 +123,13 @@ Helidon automatically looks up the metric referenced from any injection site and
 
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=metric-registry-api]
 
+=== Working with Metrics in CDI Extensions
+You can work with metrics inside your own CDI extensions, but be careful to do so at the correct point in the CDI lifecycle.
+
+Configuration can influence how the metrics system behaves, as the <<Configuration, configuration>> section below explains.
+Your code should work with metrics only after the Helidon metrics system has initialized itself using configuration.
+One way to accomplish this is to deal with metrics in a method that observes the Helidon `RuntimeStart` CDI event, which the xref:extension_example[extension example below] illustrates.
+
 // Here's Configuration.
 include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
 
@@ -139,6 +147,7 @@ The rest of this section contains other examples of working with metrics:
 - <<Class-Level Metrics, Class-Level Metrics>>
 - <<Field-Level Metrics, Field-Level Metrics>>
 - <<Gauge Metric, Gauge Metric>>
+- <<Working with Metrics in CDI Extensions, Working with Metrics in CDI Extensions>>
 
 ==== Adding Method-Level Annotations
 The following example adds a new resource class, `GreetingCards`, to the Helidon MP QuickStart example. It shows how to use the `@Counted` annotation to track the number of times
@@ -578,6 +587,42 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 }
 ----
 <1> The application has been running for 6 seconds.
+
+[[extension_example]]
+==== Working with Metrics in CDI Extensions
+
+You can work with metrics from your own CDI extension by observing the `RuntimeStart` event.
+
+[source,java]
+.CDI Extension that works correctly with metrics
+----
+import io.helidon.microprofile.cdi.RuntimeStart;
+
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.Extension;
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
+public class MyExtension implements Extension {
+
+    void startup(@Observes @RuntimeStart Object event,  // <1>
+                 MetricRegistry metricRegistry) {       // <2>
+        metricRegistry.counter("myCounter");         // <3>
+        }
+}
+----
+<1> Declares that your observer method responds to the `RuntimeStart` event. By this time, Helidon has initialized the metrics system.
+<2> Injects a `MetricRegistry` (the application registry by default).
+<3> Uses the injected registry to register a metric (a counter in this case).
+
+[NOTE]
+====
+Helidon does not prevent you from working with metrics earlier than the `RuntimeStart` event, but, if you do so, then Helidon might ignore certain configuration settings that would otherwise control how metrics behaves.
+
+Your extension might use earlier lifecycle events (such as `ProcessAnnotatedType`) to gather and store information about metrics that you want to register.
+Then your `RuntimeStart` observer method would use that stored information to register the metrics you need.
+====
+
 
 // Config examples
 include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-examples]
