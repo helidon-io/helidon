@@ -53,7 +53,7 @@ class BoundedServiceProvider<T> implements ServiceProvider<T> {
         ContextualServiceQuery query = ContextualServiceQueryDefault.builder()
                 .injectionPointInfo(ipInfoCtx)
                 .serviceInfoCriteria(ipInfoCtx.dependencyToServiceInfo())
-                .expected(true).build();
+                .expected(false).build();
         this.instance = LazyValue.create(() -> binding.first(query).orElse(null));
         this.instances = LazyValue.create(() -> binding.list(query));
     }

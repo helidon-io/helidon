@@ -1125,7 +1125,7 @@ public abstract class AbstractServiceProvider<T>
         ActivationLogEntryDefault.Builder res = logEntryAndResult.logEntry;
         Throwable prev = res.error().orElse(null);
         if (prev == null || !(t instanceof InjectionException)) {
-            String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "failed to complete operation";
+            String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "Failed to complete operation";
             e = new InjectionException(msg, t, this);
             log.ifPresent(e::activationLog);
         } else {
