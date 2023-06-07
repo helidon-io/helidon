@@ -30,10 +30,6 @@
     <artifactId>helidon-integrations-neo4j-health</artifactId>
     <name>Helidon Neo4j Health Integrations</name>
 
-    <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.neo4j.driver</groupId>
@@ -41,23 +37,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.microprofile.health</groupId>
-            <artifactId>microprofile-health-api</artifactId>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.health</groupId>
-            <artifactId>helidon-microprofile-health</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <!-- only needed for compilation, not required in runtime -->
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <optional>true</optional>
         </dependency>
     </dependencies>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,20 +24,17 @@ import io.helidon.common.features.api.Preview;
 @Preview
 @Feature(value = "Neo4j Health",
         description = "Health check for Neo4j integration",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.NIMA},
         path = {"Neo4j", "Health"}
 )
 module io.helidon.integrations.neo4j.health {
     requires static io.helidon.common.features.api;
 
-    requires microprofile.health.api;
     requires org.neo4j.driver;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
-    requires static io.helidon.microprofile.health;
+    requires io.helidon.health;
 
     exports io.helidon.integrations.neo4j.health;
 
-    opens io.helidon.integrations.neo4j.health to weld.core.impl, io.helidon.microprofile.cdi;
+    opens io.helidon.integrations.neo4j.health;
 }
