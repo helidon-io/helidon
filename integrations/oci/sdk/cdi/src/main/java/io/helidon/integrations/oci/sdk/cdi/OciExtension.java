@@ -73,7 +73,7 @@ import static java.lang.invoke.MethodType.methodType;
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>. It is intended for
  * <em>Helidon MP</em>, CDI usage scenarios. For usages other than for
  * <em>Helidon MP</em> please refer to
- * {@linkplain io.helidon.pico.integrations.oci.runtime.OciExtension} instead.
+ * {@code io.helidon.pico.integrations.oci.runtime.OciExtension} instead.
  *
  * <h2>Terminology</h2>
  *

@@ -34,7 +34,7 @@ import static java.util.function.Predicate.not;
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>. It is intended for
  * non-<em>Helidon MP</em>, non-CDI usage scenarios. For usages that involve
  * <em>Helidon MP</em> and CDI please refer to
- * {@linkplain io.helidon.integrations.oci.sdk.cdi.OciExtension} instead. This
+ * {@code io.helidon.integrations.oci.sdk.cdi.OciExtension} instead. This
  * integration will follow the same terminology and usage pattern as specified
  * for <em>Helidon MP</em> integration. The implementation strategy, however, is
  * different between the two. Please take a moment to familiarize yourself to the
@@ -109,6 +109,7 @@ import static java.util.function.Predicate.not;
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>
  */
 public final class OciExtension {
+    static final System.Logger LOGGER = System.getLogger(OciExtension.class.getName());
     static final LazyValue<OciConfigBean> DEFAULT_OCI_CONFIG_BEAN = LazyValue.create(() -> OciConfigBeanDefault.builder()
             .authStrategies(Arrays.stream(OciAuthenticationDetailsProvider.AuthStrategy.values())
                                     .filter(not(it -> it == OciAuthenticationDetailsProvider.AuthStrategy.AUTO))
@@ -128,19 +129,23 @@ public final class OciExtension {
     public static OciConfigBean ociConfig() {
         Optional<Bootstrap> bootstrap = PicoServices.globalBootstrap();
         if (bootstrap.isEmpty()) {
+            LOGGER.log(System.Logger.Level.DEBUG, "No bootstrap - using default oci config");
             return DEFAULT_OCI_CONFIG_BEAN.get();
         }
 
         Config config = bootstrap.get().config().orElse(null);
         if (config == null) {
+            LOGGER.log(System.Logger.Level.DEBUG, "No config in bootstrap - using default oci config");
             return DEFAULT_OCI_CONFIG_BEAN.get();
         }
 
         config = config.get(OciConfigBean.NAME);
         if (!config.exists()) {
+            LOGGER.log(System.Logger.Level.DEBUG, "No oci config in bootstrap - using default oci config");
             return DEFAULT_OCI_CONFIG_BEAN.get();
         }
 
+        LOGGER.log(System.Logger.Level.DEBUG, "Using specified oci config");
         return OciConfigBeanDefault.toBuilder(config);
     }
 

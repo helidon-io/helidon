@@ -16,6 +16,7 @@
 
 package io.helidon.pico.integrations.oci.runtime;
 
+import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.Set;
 
@@ -23,22 +24,51 @@ import io.helidon.builder.Singular;
 import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.config.Config;
 import io.helidon.pico.api.InjectionPointInfoDefault;
+import io.helidon.pico.api.PicoServiceProviderException;
+import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.api.Services;
 
+import com.oracle.bmc.Region;
+import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import jakarta.inject.Named;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.TAG_AUTO;
 import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.canReadPath;
 import static io.helidon.pico.integrations.oci.runtime.OciAuthenticationDetailsProvider.userHomePrivateKeyPath;
-import static io.helidon.pico.integrations.oci.runtime.OciConfigBeanTest.*;
+import static io.helidon.pico.integrations.oci.runtime.OciConfigBeanTest.basicTestingConfigSource;
+import static io.helidon.pico.integrations.oci.runtime.OciConfigBeanTest.createTestConfig;
+import static io.helidon.pico.integrations.oci.runtime.OciConfigBeanTest.ociAuthConfigFile;
+import static io.helidon.pico.integrations.oci.runtime.OciConfigBeanTest.ociAuthConfigStrategies;
+import static io.helidon.pico.integrations.oci.runtime.OciConfigBeanTest.ociAuthSimpleConfig;
+import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
+import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciAuthenticationDetailsProviderTest {
+
+    PicoServices picoServices;
+    Services services;
+
+    @AfterAll
+    static void tearDown() {
+        resetAll();
+    }
+
+    void resetWith(Config config) {
+        resetAll();
+        this.picoServices = testableServices(config);
+        this.services = picoServices.services();
+    }
 
     @Test
     void testCanReadPath() {
@@ -95,7 +125,8 @@ class OciAuthenticationDetailsProviderTest {
     void authStrategiesAvailability() {
         Config config = createTestConfig(
                 ociAuthConfigStrategies(TAG_AUTO),
-                ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
+                ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"))
+                .get(OciConfigBean.NAME);
         OciConfigBean cfg = OciConfigBeanDefault.toBuilder(config).build();
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.AUTO.isAvailable(cfg),
                    is(true));
@@ -111,7 +142,8 @@ class OciAuthenticationDetailsProviderTest {
         config = createTestConfig(
                 ociAuthConfigStrategies(TAG_AUTO),
                 ociAuthConfigFile("./target", null),
-                ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", "pkp", null));
+                ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", "pkp", null))
+                .get(OciConfigBean.NAME);
         cfg = OciConfigBeanDefault.toBuilder(config).build();
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.AUTO.isAvailable(cfg),
                    is(true));
@@ -123,6 +155,62 @@ class OciAuthenticationDetailsProviderTest {
                    is(false));
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.RESOURCE_PRINCIPAL.isAvailable(cfg),
                    is(false));
+    }
+
+    @Test
+    void selectionWhenNoConfigIsSet() {
+        Config config = createTestConfig(
+                basicTestingConfigSource());
+        resetWith(config);
+
+        ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =
+                services.lookupFirst(AbstractAuthenticationDetailsProvider.class, true).orElseThrow();
+
+        PicoServiceProviderException e = assertThrows(PicoServiceProviderException.class, () -> authServiceProvider.get());
+        assertThat(e.getCause().getMessage(),
+                   equalTo("No instances of com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider available for use. " +
+                           "Verify your configuration named: oci"));
+    }
+
+    @Test
+    void selectionWhenFileConfigIsSetWithAuto() {
+        Config config = createTestConfig(
+                basicTestingConfigSource(),
+                ociAuthConfigStrategies(TAG_AUTO),
+                ociAuthConfigFile("./target", "profile"));
+        resetWith(config);
+
+        ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =
+                services.lookupFirst(AbstractAuthenticationDetailsProvider.class, true).orElseThrow();
+
+        PicoServiceProviderException e = assertThrows(PicoServiceProviderException.class, authServiceProvider::get);
+        assertThat(e.getCause().getClass(),
+                   equalTo(UncheckedIOException.class));
+    }
+
+    @Test
+    void selectionWhenSimpleConfigIsSetWithAuto() {
+        Config config = createTestConfig(
+                basicTestingConfigSource(),
+                ociAuthConfigStrategies(TAG_AUTO),
+                ociAuthSimpleConfig("tenant", "user", "passphrase", "fp", "privKey", null, "us-phoenix-1"));
+        resetWith(config);
+
+        ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =
+                services.lookupFirst(AbstractAuthenticationDetailsProvider.class, true).orElseThrow();
+
+        AbstractAuthenticationDetailsProvider authProvider = authServiceProvider.get();
+        assertThat(authProvider.getClass(),
+                   equalTo(SimpleAuthenticationDetailsProvider.class));
+        SimpleAuthenticationDetailsProvider auth = (SimpleAuthenticationDetailsProvider) authProvider;
+        assertThat(auth.getTenantId(),
+                   equalTo("tenant"));
+        assertThat(auth.getUserId(),
+                   equalTo("user"));
+        assertThat(auth.getRegion(),
+                   equalTo(Region.US_PHOENIX_1));
+        assertThat(new String(auth.getPassphraseCharacters()),
+                   equalTo("passphrase"));
     }
 
 }

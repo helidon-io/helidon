@@ -21,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -84,11 +85,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     }
 
     private static AbstractAuthenticationDetailsProvider select(OciConfigBean ociConfigBean) {
-        List<AuthStrategy> strategies = ociConfigBean.authStrategies().stream()
-                .map(it -> AuthStrategy.fromNameOrId(it)
-                        .orElseThrow(() -> new IllegalArgumentException("Unknown authentication strategy in: "
-                                                                                + ociConfigBean.authStrategies())))
-                .toList();
+        List<AuthStrategy> strategies = AuthStrategy.convert(ociConfigBean.potentialAuthStrategies());
         for (AuthStrategy s : strategies) {
             if (s.isAvailable(ociConfigBean)) {
                 LOGGER.log(System.Logger.Level.DEBUG, "Using authentication strategy " + s
@@ -100,7 +97,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         }
         throw new NoSuchElementException("No instances of "
                                                  + AbstractAuthenticationDetailsProvider.class.getName()
-                                                 + " available for use");
+                                                 + " available for use. Verify your configuration named: " + OciConfigBean.NAME);
     }
 
     static String toNamedProfile(InjectionPointInfo ipi) {
@@ -246,12 +243,21 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
                         .findFirst();
             }
         }
+
+        static List<AuthStrategy> convert(Collection<String> authStrategies) {
+            return authStrategies.stream()
+                    .map(AuthStrategy::fromNameOrId)
+                    .map(Optional::orElseThrow)
+                    .toList();
+        }
     }
+
 
     @FunctionalInterface
     interface Availability {
         boolean isAvailable(OciConfigBean ociConfigBean);
     }
+
 
     @FunctionalInterface
     interface Selector {

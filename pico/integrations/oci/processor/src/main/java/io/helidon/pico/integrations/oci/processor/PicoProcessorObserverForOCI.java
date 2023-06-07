@@ -55,9 +55,35 @@ import static io.helidon.pico.processor.GeneralProcessorUtils.isProviderType;
 import static java.util.function.Predicate.not;
 
 /**
- * Implementation that will monitor {@link io.helidon.pico.processor.PicoAnnotationProcessor} for all injection points
- * using the {@code OCI SDK Services} and translate those into code-generated {@link io.helidon.pico.api.Activator}s,
- * {@link io.helidon.pico.api.ModuleComponent}, etc.
+ * This processor is an implementation of {@link PicoAnnotationProcessorObserver}. When on the APT classpath, it will monitor
+ * {@link io.helidon.pico.processor.PicoAnnotationProcessor} for all injection points that are
+ * using the {@code OCI SDK Services} and translate those injection points into code-generated
+ * {@link io.helidon.pico.api.Activator}s, {@link io.helidon.pico.api.ModuleComponent}, etc. for those services / components.
+ * This process will therefore make the {@code OCI SDK} set of services injectable by your (non-MP-based) Helidon application, and
+ * be tailored to exactly what is actually used by your application from the SDK.
+ * <p>
+ * For example, if your code had this:
+ * <pre>
+ * {@code
+ *   @Inject
+ *   com.oracle.bmc.ObjectStorage objStore;
+ * }
+ * </pre>
+ * This would result in code generating the necessary artifacts at compile time that will make {@code ObjectStorage} injectable.
+ * <p>
+ * All injection points using the same package name as the OCI SDK (e.g., {@code com.oracle.bmc} as shown with ObjectStorage in
+ * the case above) will be observed and processed and eventually result in code generation into your
+ * {@code target/generated-sources} directory. This is the case for any artifact that is attempted to be injected unless there is
+ * found a configuration signaling an exception to the code generation.
+ * <p>
+ * The processor will allows exceptions in one of three ways:
+ * <ul>
+ *     <li>via the code - modify the code directly in this class.</li>
+ *     <li>via resources on the classpath - the implementation looks for files names {@link #TAG_TYPENAME_EXCEPTIONS} and
+ *     {@link #TAG_NO_DOT_EXCEPTIONS} in the same package name as this class, and will read those resources during
+ *     initialization.</li>
+ *     <li>via {@code -A} directives on the compiler command line. Using the same tags as referenced above.</li>
+ * </ul>
  */
 public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObserver {
     static final String OCI_ROOT_PACKAGE_NAME_PREFIX = "com.oracle.bmc.";

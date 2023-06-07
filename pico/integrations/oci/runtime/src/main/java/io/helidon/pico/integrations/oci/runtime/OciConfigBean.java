@@ -19,6 +19,7 @@ package io.helidon.pico.integrations.oci.runtime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import io.helidon.builder.config.ConfigBean;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -285,13 +286,25 @@ public interface OciConfigBean {
     default List<String> potentialAuthStrategies() {
         String authStrategy = authStrategy().orElse(null);
         if (authStrategy != null
-                && !TAG_AUTO.equals(authStrategy)
+                && !TAG_AUTO.equalsIgnoreCase(authStrategy)
                 && !authStrategy.isBlank()) {
+            if (!ALL_STRATEGIES.contains(authStrategy)) {
+                throw new IllegalStateException("Unknown auth strategy: " + authStrategy);
+            }
+
             return List.of(authStrategy);
         }
 
-        List<String> result = new ArrayList<>(authStrategies());
-        result.remove("");
+        List<String> result = new ArrayList<>();
+        authStrategies().stream()
+                .map(String::trim)
+                .filter(Predicate.not(String::isBlank))
+                .forEach(s -> {
+                    if (!ALL_STRATEGIES.contains(s) && !TAG_AUTO.equals(s)) {
+                        throw new IllegalStateException("Unknown auth strategy: " + s);
+                    }
+                    result.add(s);
+                });
         if (result.isEmpty() || result.contains(TAG_AUTO)) {
             return ALL_STRATEGIES;
         }

@@ -149,19 +149,6 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <additionalDependencies>
-                        <additionalDependency>
-                            <groupId>io.helidon.pico.integrations.oci</groupId>
-                            <artifactId>helidon-pico-integrations-oci-runtime</artifactId>
-                            <version>${helidon.version}</version>
-                        </additionalDependency>
-                    </additionalDependencies>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
