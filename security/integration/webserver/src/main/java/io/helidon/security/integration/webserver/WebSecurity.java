@@ -103,13 +103,18 @@ public final class WebSecurity implements Service {
     private final Security security;
     private final Config config;
     private final SecurityHandler defaultHandler;
-    private final Supplier<ExecutorService> executorService;
+    private final Supplier<ExecutorService> executorService = ThreadPoolSupplier.builder()
+                .name("security-thread-pool")
+                .build();
 
-    private WebSecurity(Builder builder) {
-        this.security = builder.security;
-        this.config = builder.config;
-        this.defaultHandler = builder.securityHandler;
-        this.executorService = builder.executorService;
+    private WebSecurity(Security security, Config config) {
+        this(security, config, SecurityHandler.create());
+    }
+
+    private WebSecurity(Security security, Config config, SecurityHandler defaultHandler) {
+        this.security = security;
+        this.config = config;
+        this.defaultHandler = defaultHandler;
     }
 
     /**
@@ -126,7 +131,7 @@ public final class WebSecurity implements Service {
      * @return routing config consumer
      */
     public static WebSecurity create(Security security) {
-        return builder().security(security).build();
+        return new WebSecurity(security, null);
     }
 
     /**
@@ -138,7 +143,8 @@ public final class WebSecurity implements Service {
      * @return routing config consumer
      */
     public static WebSecurity create(Config config) {
-        return builder().config(config).build();
+        Security security = Security.create(config);
+        return create(security, config);
     }
 
     /**
@@ -151,19 +157,7 @@ public final class WebSecurity implements Service {
      * @return routing config consumer
      */
     public static WebSecurity create(Security security, Config config) {
-        return builder()
-                .security(security)
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create a new {@link Builder} instance to configure {@link WebSecurity}.
-     *
-     * @return new builder instance
-     */
-    public static Builder builder() {
-        return new Builder();
+        return new WebSecurity(security, config);
     }
 
     /**
@@ -328,11 +322,7 @@ public final class WebSecurity implements Service {
      */
     public WebSecurity securityDefaults(SecurityHandler defaultHandler) {
         Objects.requireNonNull(defaultHandler, "Default security handler must not be null");
-        return builder()
-                .config(config)
-                .security(security)
-                .defaultSecurityHandler(defaultHandler)
-                .build();
+        return new WebSecurity(security, config, defaultHandler);
     }
 
     @Override
@@ -380,7 +370,7 @@ public final class WebSecurity implements Service {
             SecurityContext context = contextBuilder.build();
 
             req.context().register(context);
-            req.context().register(SecurityHandler.class, executorService.get());
+            req.context().register(SecurityHandler.class, executorService);
             req.context().register(defaultHandler);
         }
 
@@ -413,78 +403,4 @@ public final class WebSecurity implements Service {
             }
         });
     }
-
-    /**
-     * Fluent API builder for {@link WebSecurity}.
-     */
-    public static final class Builder implements io.helidon.common.Builder<Builder, WebSecurity> {
-
-        private Config config;
-        private Security security;
-        private SecurityHandler securityHandler = SecurityHandler.create();
-        private Supplier<ExecutorService> executorService = ThreadPoolSupplier.builder()
-                .name("security-thread-pool")
-                .build();
-
-        private Builder() {
-        }
-
-        @Override
-        public WebSecurity build() {
-            if (security == null && config != null) {
-                security = Security.create(config);
-            }
-            return new WebSecurity(this);
-        }
-
-        /**
-         * Configures this {@link WebSecurity.Builder} from the supplied {@link Config}.
-         *
-         * @param config config instance
-         * @return updated builder
-         */
-        public Builder config(Config config) {
-            this.config = config;
-            executorService(ThreadPoolSupplier.create(config.get("environment.executor-service"), "security-thread-pool"));
-            return this;
-        }
-
-        /**
-         * Configure executor service to be used for blocking operations within security.
-         *
-         * @param supplier supplier of an executor service, as as {@link io.helidon.common.configurable.ThreadPoolSupplier}
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "environment.executor-service", type = ThreadPoolSupplier.class)
-        public Builder executorService(Supplier<ExecutorService> supplier) {
-            this.executorService = supplier;
-            return this;
-        }
-
-        /**
-         * Set new {@link Security} instance to be used.
-         *
-         * @param security security instance
-         * @return updated builder
-         */
-        public Builder security(Security security) {
-            this.security = security;
-            return this;
-        }
-
-        /**
-         * Set new default handler as base for all handlers used.
-         * If handlers are loaded from config, than this is the least significant value.
-         *
-         * @param securityHandler if a security handler is configured for a route, it will take its defaults from this handler
-         * @return updated builder
-         */
-        public Builder defaultSecurityHandler(SecurityHandler securityHandler) {
-            Objects.requireNonNull(securityHandler, "Default security handler must not be null");
-            this.securityHandler = securityHandler;
-            return this;
-        }
-
-    }
-
 }
