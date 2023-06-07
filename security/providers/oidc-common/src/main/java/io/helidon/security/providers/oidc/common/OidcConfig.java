@@ -307,6 +307,11 @@ import io.helidon.webclient.api.WebClientConfig;
  *     <td>Force https for redirects to identity provider.
  *     This is helpful if you have a frontend SSL or cloud load balancer in front and Helidon is serving plain http.</td>
  * </tr>
+ * <tr>
+ *     <td>{@code optional-audience}</td>
+ *     <td>{@code false}</td>
+ *     <td>Allow audience claim to be optional.</td>
+ * </tr>
  * </table>
  */
 public final class OidcConfig extends TenantConfigImpl {
@@ -363,6 +368,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private final OidcCookieHandler tokenCookieHandler;
     private final OidcCookieHandler idTokenCookieHandler;
     private final OidcCookieHandler tenantCookieHandler;
+    private final boolean optionalAudience;
 
     private OidcConfig(Builder builder) {
         super(builder);
@@ -393,6 +399,7 @@ public final class OidcConfig extends TenantConfigImpl {
 
         this.webClientBuilderSupplier = builder.webClientBuilderSupplier;
         this.defaultTenant = LazyValue.create(() -> Tenant.create(this, this));
+        this.optionalAudience = builder.optionalAudience();
 
         LOGGER.log(Level.TRACE, () -> "Redirect URI with host: " + frontendUri + redirectUri);
     }
@@ -998,6 +1005,8 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("tenants").asList(Config.class)
                     .ifPresent(confList -> confList.forEach(tenantConfig -> tenantFromConfig(config, tenantConfig)));
 
+            config.get("optional-audience").asBoolean().ifPresent(this::optionalAudience);
+
             return this;
         }
 
@@ -1528,5 +1537,18 @@ public final class OidcConfig extends TenantConfigImpl {
             tenantConfigurations.put(tenantConfig.name(), tenantConfig);
             return this;
         }
+
+        /**
+         * Allow audience claim to be optional.
+         *
+         * @param optional whether the audience claim is be optional (true) or not (false)
+         * @return updated builder instance
+         */
+        @ConfiguredOption("false")
+        public Builder optionalAudience(Boolean optional) {
+            setOptionalAudience(optional);
+            return this;
+        }
+
     }
 }
