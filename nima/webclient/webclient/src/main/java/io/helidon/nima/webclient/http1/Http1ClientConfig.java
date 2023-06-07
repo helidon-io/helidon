@@ -65,6 +65,10 @@ interface Http1ClientConfig extends ClientConfig {
     @ConfiguredOption("true")
     boolean servicesUseServiceLoader();
 
+    // TODO Set the default value to false when proxy is implemented and see Http1CallChainBase.prologue for other changes
+    @ConfiguredOption("true")
+    boolean relativeUris();
+
     @Singular
     List<WebClientService> services();
 }
