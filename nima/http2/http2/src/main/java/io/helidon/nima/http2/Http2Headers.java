@@ -452,7 +452,7 @@ public class Http2Headers {
         BufferData[] result = new BufferData[allFrames];
 
         for (int i = 0; i < allFrames; i++) {
-            boolean lastFrame = allFrames == i + 1;
+            boolean lastFrame = (allFrames == i + 1);
             byte[] frag = new byte[lastFrame ? (lastFragmentSize != 0 ? lastFragmentSize : size) : size];
             bufferData.read(frag);
             result[i] = BufferData.create(frag);

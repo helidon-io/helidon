@@ -95,7 +95,7 @@ class HeadersTest {
                         default -> res.setStatusCode(404).end();
                     }
                 })
-                .listen(8080)
+                .listen(0)
                 .toCompletionStage()
                 .toCompletableFuture()
                 .get(TIMEOUT.toMillis(), MILLISECONDS);
@@ -137,7 +137,6 @@ class HeadersTest {
 
     @Test
     void continuationInbound() {
-        System.out.println("http://localhost:" + port + "/");
         try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
                 .baseUri("http://localhost:" + port + "/")
                 .build()
@@ -158,7 +157,6 @@ class HeadersTest {
 
     @Test
     void continuationOutbound() {
-        System.out.println("http://localhost:" + port + "/");
         Set<String> expected = new HashSet<>(500);
         try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
                 .baseUri("http://localhost:" + port + "/")
@@ -181,7 +179,6 @@ class HeadersTest {
 
     @Test
     void continuationOutboundPost() {
-        System.out.println("http://localhost:" + port + "/");
         Set<String> expected = new HashSet<>(500);
         try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
                 .baseUri("http://localhost:" + port + "/")

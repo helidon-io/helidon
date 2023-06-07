@@ -53,7 +53,7 @@ public class HeadersTest {
 
     @SetUpServer
     static void setUpServer(WebServer.Builder serverBuilder) {
-        serverBuilder.port(8080)
+        serverBuilder.port(-1)
                 // HTTP/2 prior knowledge config
                 .addConnectionProvider(Http2ConnectionProvider.builder()
                         .http2Config(Http2ConfigDefault.builder()
