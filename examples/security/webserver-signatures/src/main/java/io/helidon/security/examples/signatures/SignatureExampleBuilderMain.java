@@ -128,10 +128,7 @@ public class SignatureExampleBuilderMain {
         // build routing (security is loaded from config)
         return Routing.builder()
                 // helper method to load both security and web server security from configuration
-                .register(WebSecurity.builder()
-                                  .security(security2())
-                                  .defaultSecurityHandler(WebSecurity.authenticate())
-                                  .build())
+                .register(WebSecurity.create(security2()).securityDefaults(WebSecurity.authenticate()))
                 .get("/service2", WebSecurity.rolesAllowed("user"))
                 .get("/service2-rsa", WebSecurity.rolesAllowed("user"))
                 // web server does not (yet) have possibility to configure routes in config files, so explicit...
@@ -151,10 +148,7 @@ public class SignatureExampleBuilderMain {
     private static Routing routing1() {
         // build routing (security is loaded from config)
         return Routing.builder()
-                .register(WebSecurity.builder()
-                                  .security(security1())
-                                  .defaultSecurityHandler(WebSecurity.authenticate())
-                                  .build())
+                .register(WebSecurity.create(security2()).securityDefaults(WebSecurity.authenticate()))
                 .get("/service1",
                      WebSecurity.rolesAllowed("user"),
                      (req, res) -> SignatureExampleUtil.processService1Request(req, res, "/service2", service2Server.port()))

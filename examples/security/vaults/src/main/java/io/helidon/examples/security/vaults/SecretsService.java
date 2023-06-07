@@ -36,11 +36,7 @@ class SecretsService implements Service {
 
     private void secret(ServerRequest req, ServerResponse res) {
         String secretName = req.path().param("name");
-        try {
-            String secret = security.secret(secretName, "default-" + secretName);
-            res.send(secret);
-        } catch (Exception e) {
-            res.send(e);
-        }
+        String secret = security.secret(secretName, "default-" + secretName);
+        res.send(secret);
     }
 }

@@ -41,12 +41,8 @@ class DigestService implements Service {
         String configName = req.path().param("config");
         String text = req.path().param("text");
 
-        try {
-            String toSend = security.digest(configName, text.getBytes(StandardCharsets.UTF_8));
-            res.send(toSend);
-        } catch (Exception e) {
-            res.send(e);
-        }
+        String toSend = security.digest(configName, text.getBytes(StandardCharsets.UTF_8));
+        res.send(toSend);
     }
 
     private void verify(ServerRequest req, ServerResponse res) {
@@ -54,14 +50,10 @@ class DigestService implements Service {
         String text = req.path().param("text");
         String digest = req.path().param("digest");
 
-        try {
-            if (security.verifyDigest(configName, text.getBytes(StandardCharsets.UTF_8), digest)) {
-                res.send("Valid");
-            } else {
-                res.send("Invalid");
-            }
-        } catch (Exception e) {
-            res.send(e);
+        if (security.verifyDigest(configName, text.getBytes(StandardCharsets.UTF_8), digest)) {
+            res.send("Valid");
+        } else {
+            res.send("Invalid");
         }
     }
 }

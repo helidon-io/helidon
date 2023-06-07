@@ -83,10 +83,7 @@ public class OutboundSecurityIT {
 
         // secured web server's Routing
         Routing webRouting = Routing.builder()
-                .register(WebSecurity.builder()
-                                  .security(security)
-                                  .defaultSecurityHandler(WebSecurity.authenticate())
-                                  .build())
+                .register(WebSecurity.create(security).securityDefaults(WebSecurity.authenticate()))
                 .get("/test", WebSecurity.rolesAllowed("admin"), OutboundSecurityIT::echoWebRequest)
                 .get("/propagate", WebSecurity.rolesAllowed("user"), OutboundSecurityIT::propagateCredentialsWebRequest)
                 .get("/override", WebSecurity.rolesAllowed("user"), OutboundSecurityIT::overrideCredentialsWebRequest)

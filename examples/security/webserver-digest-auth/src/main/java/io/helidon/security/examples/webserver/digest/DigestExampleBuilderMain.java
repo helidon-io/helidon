@@ -67,7 +67,7 @@ public final class DigestExampleBuilderMain {
 
         // build routing (same as done in application.conf)
         Routing routing = Routing.builder()
-                .register(buildWebSecurity())
+                .register(buildWebSecurity().securityDefaults(WebSecurity.authenticate()))
                 .get("/noRoles", WebSecurity.enforce())
                 .get("/user[/{*}]", WebSecurity.rolesAllowed("user"))
                 .get("/admin", WebSecurity.rolesAllowed("admin"))
@@ -99,10 +99,7 @@ public final class DigestExampleBuilderMain {
                                 .userStore(buildUserStore()),
                         "digest-auth")
                 .build();
-        return WebSecurity.builder()
-                .security(security)
-                .defaultSecurityHandler(WebSecurity.authenticate())
-                .build();
+        return WebSecurity.create(security);
     }
 
     private static SecureUserStore buildUserStore() {

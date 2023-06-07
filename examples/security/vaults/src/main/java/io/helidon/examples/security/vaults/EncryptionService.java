@@ -41,23 +41,15 @@ class EncryptionService implements Service {
         String configName = req.path().param("config");
         String text = req.path().param("text");
 
-        try {
-            String encrypted = security.encrypt(configName, text.getBytes(StandardCharsets.UTF_8));
-            res.send(encrypted);
-        } catch (Exception e) {
-            res.send(e);
-        }
+        String encrypted = security.encrypt(configName, text.getBytes(StandardCharsets.UTF_8));
+        res.send(encrypted);
     }
 
     private void decrypt(ServerRequest req, ServerResponse res) {
         String configName = req.path().param("config");
         String cipherText = req.path().param("cipherText");
 
-        try {
-            byte[] decrypted = security.decrypt(configName, cipherText);
-            res.send(decrypted);
-        } catch (Exception e) {
-            res.send(e);
-        }
+        byte[] decrypted = security.decrypt(configName, cipherText);
+        res.send(decrypted);
     }
 }
