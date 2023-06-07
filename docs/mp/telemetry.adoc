@@ -210,9 +210,9 @@ This way, Helidon will explicitly get all the configuration and objects from the
 
 == Examples
 
-This guide showcases how to incorporate MicroProfile Telemetry into Helidon and provides illustrations of how to view traces. Jaeger is employed in all the examples, and the Jaeger UI is used to view the traces.
+This guide demonstrates how to incorporate MicroProfile Telemetry into Helidon and provides illustrations of how to view traces. Jaeger is employed in all the examples, and the Jaeger UI is used to view the traces.
 
-=== Setup Jaeger
+=== Set Up Jaeger
 
 For the examples Jaeger will be used for gathering of the tracing information.
 
@@ -272,7 +272,8 @@ Here we enable MicroProfile Telemetry, set tracer to "jaeger" and give a name, w
 
 [NOTE]
 ====
-for our example we use Jaeger managing the tracing data. If you prefer to use Zipkin, please set `otel.traces.exporter` property to "zipkin". To find more information on how to use Zipkin, please proceed to link:https://zipkin.io/[]. Also a corresponding Maven dependency for the exporter should be added:
+
+For this example, you will use Jaeger to manage data tracing. If you prefer to use Zipkin, please set `otel.traces.exporter` property to "zipkin". For more information using about Zipkin, see link:https://zipkin.io/[]. Also a corresponding Maven dependency for the exporter should be added:
 ----
 <dependency>
     <groupId>io.opentelemetry</groupId>
@@ -284,7 +285,7 @@ for our example we use Jaeger managing the tracing data. If you prefer to use Zi
 
 === Tracing at Method Level
 
-Let us create simple services and use `@WithSpan` and `Tracer` to create span and let MicroProfile OpenTelemetry handle them
+To create simple services, use `@WithSpan` and `Tracer` to create span and let MicroProfile OpenTelemetry handle them.
 
 [source, java]
 ----
@@ -308,7 +309,7 @@ curl localhost:8080/greet
 Hello World
 ----
 
-After that if we proceed to Jaeger UI at link:http://localhost:16686/[] the expected output is:
+Next, launch the Jaeger UI at link:http://localhost:16686/[]. The expected output is:
 
 image::telemetry/telemetry-greeting-jaeger.png[Greeting service tracing output]
 
@@ -346,7 +347,7 @@ Let us call the custom endpoint:
 curl localhost:8080/greeting/custom
 ----
 
-After that if we proceed to Jaeger UI at link:http://localhost:16686/[] the expected output is:
+Again you can launch the Jaeger UI at link:http://localhost:16686/[]. The expected output is:
 
 image::telemetry/telemetry-custom-jaeger.png[Custom span usage]
 
@@ -393,7 +394,7 @@ Secondary
 
 The `greeting-service` call `secondary-service`. Each service will create Spans with corresponding names, and a service class hierarchy will be created.
 
-If we proceed to Jaeger UI at link:http://localhost:16686/[] the expected output is:
+Launch the Jaeger UI at link:http://localhost:16686/[] to see the expected output (shown below).
 
 image::telemetry/telemetry-outbound-jaeger.png[Secondary service outbound call]
 
