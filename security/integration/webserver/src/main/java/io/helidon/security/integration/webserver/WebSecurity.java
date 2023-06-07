@@ -370,7 +370,7 @@ public final class WebSecurity implements Service {
             SecurityContext context = contextBuilder.build();
 
             req.context().register(context);
-            req.context().register(SecurityHandler.class, executorService);
+            req.context().register(SecurityHandler.class, executorService.get());
             req.context().register(defaultHandler);
         }
 
