@@ -398,7 +398,6 @@ Launch the Jaeger UI at link:http://localhost:16686/[] to see the expected outpu
 
 image::telemetry/telemetry-outbound-jaeger.png[Secondary service outbound call]
 
-Full example is available in Examples <PUT URL HERE>
 
 == Additional Information
 
