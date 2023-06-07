@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,20 @@ package io.helidon.security.providers.oidc.common;
 
 import io.helidon.config.Config;
 
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  * Unit test for {@link OidcConfig}.
  */
 class OidcConfigFromConfigTest extends OidcConfigAbstractTest {
     private OidcConfig oidcConfig;
+    private Config config;
 
     OidcConfigFromConfigTest() {
-        Config config = Config.builder()
+        config = Config.builder()
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
@@ -37,4 +43,12 @@ class OidcConfigFromConfigTest extends OidcConfigAbstractTest {
     OidcConfig getConfig() {
         return oidcConfig;
     }
+
+    @Test
+    void testOptionalAudience() {
+        OidcConfig oidcConfig = OidcConfig.create(config.get("security.oidc-optional-aud"));
+        String audience = oidcConfig.audience();
+        assertThat(audience, nullValue());
+    }
+
 }

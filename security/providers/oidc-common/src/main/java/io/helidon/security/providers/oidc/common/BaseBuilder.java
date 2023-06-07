@@ -65,6 +65,8 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
     private URI introspectUri;
     private String scopeAudience;
     private boolean useWellKnown = true;
+    // Audience claim is optional
+    private boolean optionalAudience = false;
 
     BaseBuilder() {
     }
@@ -78,7 +80,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         OidcUtil.validateExists(collector, clientSecret, "Client Secret", "client-secret");
         OidcUtil.validateExists(collector, identityUri, "Identity URI", "identity-uri");
 
-        if ((audience == null) && (identityUri != null)) {
+        if (audience == null && !optionalAudience && identityUri != null) {
             this.audience = identityUri.toString();
         }
         // first set of validations
@@ -501,4 +503,13 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
     String name() {
         return TenantConfigFinder.DEFAULT_TENANT_ID;
     }
+
+    boolean optionalAudience() {
+        return optionalAudience;
+    }
+
+    void setOptionalAudience(boolean optional) {
+        this.optionalAudience = optional;
+    }
+
 }
