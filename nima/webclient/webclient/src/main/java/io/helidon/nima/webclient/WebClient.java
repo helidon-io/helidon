@@ -274,7 +274,7 @@ public interface WebClient {
             return maxRedirect;
         }
 
-        WritableHeaders<?> defaultHeaders() {
+        protected WritableHeaders<?> defaultHeaders() {
             return defaultHeaders;
         }
 

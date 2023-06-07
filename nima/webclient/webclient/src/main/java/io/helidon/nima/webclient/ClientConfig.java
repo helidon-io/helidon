@@ -19,6 +19,8 @@ package io.helidon.nima.webclient;
 import java.net.URI;
 import java.util.Optional;
 
+import io.helidon.common.http.Headers;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.common.tls.Tls;
@@ -81,5 +83,12 @@ public interface ClientConfig {
      */
     @ConfiguredOption("5")
     int maxRedirects();
+
+    /**
+     * Custom client headers.
+     *
+     * @return client headers
+     */
+    Headers defaultHeaders();
 
 }
