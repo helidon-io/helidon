@@ -31,7 +31,6 @@ import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;

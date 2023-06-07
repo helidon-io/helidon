@@ -148,7 +148,7 @@ public class SignatureExampleBuilderMain {
     private static Routing routing1() {
         // build routing (security is loaded from config)
         return Routing.builder()
-                .register(WebSecurity.create(security2()).securityDefaults(WebSecurity.authenticate()))
+                .register(WebSecurity.create(security1()).securityDefaults(WebSecurity.authenticate()))
                 .get("/service1",
                      WebSecurity.rolesAllowed("user"),
                      (req, res) -> SignatureExampleUtil.processService1Request(req, res, "/service2", service2Server.port()))
