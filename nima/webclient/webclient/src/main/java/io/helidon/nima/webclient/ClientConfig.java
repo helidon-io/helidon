@@ -20,7 +20,6 @@ import java.net.URI;
 import java.util.Optional;
 
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.common.tls.Tls;

@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webclient.DefaultDnsResolverProvider;
 import io.helidon.nima.webclient.DnsAddressLookup;
 import io.helidon.nima.webclient.WebClient;

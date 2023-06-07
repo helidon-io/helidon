@@ -84,7 +84,6 @@ import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
-import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.TokenHandler;
 
 import jakarta.enterprise.inject.spi.DeploymentException;
