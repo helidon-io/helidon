@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.integrations.oci.vault.reactive;
+package io.helidon.examples.integrations.oci.vault;
 
 import java.io.IOException;
 
+import com.oracle.bmc.keymanagement.KmsCrypto;
+import com.oracle.bmc.keymanagement.KmsCryptoClient;
+import com.oracle.bmc.secrets.Secrets;
+import com.oracle.bmc.secrets.SecretsClient;
+import com.oracle.bmc.vault.Vaults;
+import com.oracle.bmc.vault.VaultsClient;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
 
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
-import com.oracle.bmc.keymanagement.KmsCryptoAsync;
-import com.oracle.bmc.keymanagement.KmsCryptoAsyncClient;
 import com.oracle.bmc.model.BmcException;
-import com.oracle.bmc.secrets.SecretsAsync;
-import com.oracle.bmc.secrets.SecretsAsyncClient;
-import com.oracle.bmc.vault.VaultsAsync;
-import com.oracle.bmc.vault.VaultsAsyncClient;
+import io.helidon.nima.webserver.WebServer;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -70,28 +69,28 @@ public final class OciVaultMain {
         // ~/.oci/config
         AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
 
-        SecretsAsync secrets = SecretsAsyncClient.builder().build(authProvider);
-        KmsCryptoAsync crypto = KmsCryptoAsyncClient.builder()
+        Secrets secrets = SecretsClient.builder().build(authProvider);
+        KmsCrypto crypto = KmsCryptoClient.builder()
                 .endpoint(cryptoEndpoint)
                 .build(authProvider);
-        VaultsAsync vaults = VaultsAsyncClient.builder().build(authProvider);
+        Vaults vaults = VaultsClient.builder().build(authProvider);
 
-        WebServer.builder()
-                .config(config.get("server"))
-                .routing(Routing.builder()
-                                 .register("/vault", new VaultService(secrets,
-                                                                      vaults,
-                                                                      crypto,
-                                                                      vaultOcid,
-                                                                      compartmentOcid,
-                                                                      encryptionKey,
-                                                                      signatureKey))
-                                 // OCI SDK error handling
-                                 .error(BmcException.class, (req, res, ex) -> res.status(ex.getStatusCode())
-                                         .send(ex.getMessage())))
-                .build()
-                .start()
-                .await();
+        WebServer server = WebServer.builder()
+                .routing(routing -> routing
+                        .register("/vault", new VaultService(secrets,
+                                vaults,
+                                crypto,
+                                vaultOcid,
+                                compartmentOcid,
+                                encryptionKey,
+                                signatureKey))
+                        .error(BmcException.class, (req, res, ex) -> res.status(
+                                ex.getStatusCode()).send(ex.getMessage())))
+                .port(config.get("server.port").asInt().orElse(8080))
+                .start();
+
+        System.out.println("WEB server is up! http://localhost:" + server.port());
+
     }
 
     private static Config buildConfig() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,6 @@
  */
 
 /**
- * Example of OCI Vault integration in a reactive application.
+ * Example of OCI Vault integration in a Nima application.
  */
-package io.helidon.examples.integrations.oci.vault.reactive;
+package io.helidon.examples.integrations.oci.vault;
