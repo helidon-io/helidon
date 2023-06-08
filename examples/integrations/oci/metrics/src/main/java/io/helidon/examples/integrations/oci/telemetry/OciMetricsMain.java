@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.integrations.oci.telemetry.reactive;
+package io.helidon.examples.integrations.oci.telemetry;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -22,16 +22,15 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
+import com.oracle.bmc.monitoring.Monitoring;
+import com.oracle.bmc.monitoring.MonitoringClient;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.config.Config;
 
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
-import com.oracle.bmc.monitoring.MonitoringAsync;
-import com.oracle.bmc.monitoring.MonitoringAsyncClient;
 import com.oracle.bmc.monitoring.model.Datapoint;
 import com.oracle.bmc.monitoring.model.FailedMetricRecord;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
@@ -39,7 +38,6 @@ import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
 import com.oracle.bmc.monitoring.model.PostMetricDataResponseDetails;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
 import com.oracle.bmc.monitoring.responses.PostMetricDataResponse;
-import com.oracle.bmc.responses.AsyncHandler;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -54,6 +52,7 @@ public final class OciMetricsMain {
 
     /**
      * Main method.
+     *
      * @param args ignored
      */
     public static void main(String[] args) throws Exception {
@@ -67,29 +66,23 @@ public final class OciMetricsMain {
         // this requires OCI configuration in the usual place
         // ~/.oci/config
         AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
-        MonitoringAsync monitoringAsyncClient = new MonitoringAsyncClient(authProvider);
-        monitoringAsyncClient.setEndpoint(monitoringAsyncClient.getEndpoint().replace("telemetry.", "telemetry-ingestion."));
+        try (Monitoring monitoringClient = MonitoringClient.builder().build(authProvider)) {
+            monitoringClient.setEndpoint(monitoringClient.getEndpoint().replace("telemetry.", "telemetry-ingestion."));
 
-        PostMetricDataRequest postMetricDataRequest = PostMetricDataRequest.builder()
-                .postMetricDataDetails(getPostMetricDataDetails(config))
-                .build();
-        /*
-         * Invoke the API call. I use .await() to block the call, as otherwise our
-         * main method would finish without waiting for the response.
-         * In a real reactive application, this should not be done (as you would write the response
-         * to a server response or use other reactive/non-blocking APIs).
-         */
-        ResponseHandler<PostMetricDataRequest, PostMetricDataResponse> monitoringHandler =
-                new ResponseHandler<>();
-        monitoringAsyncClient.postMetricData(postMetricDataRequest, monitoringHandler);
-        PostMetricDataResponse postMetricDataResponse = monitoringHandler.waitForCompletion();
-        PostMetricDataResponseDetails postMetricDataResponseDetails = postMetricDataResponse.getPostMetricDataResponseDetails();
-        int count = postMetricDataResponseDetails.getFailedMetricsCount();
-        System.out.println("Failed count: " + count);
-        if (count > 0) {
-            System.out.println("Failed metrics:");
-            for (FailedMetricRecord failedMetric : postMetricDataResponseDetails.getFailedMetrics()) {
-                System.out.println("\t" + failedMetric.getMessage() + ": " + failedMetric.getMetricData());
+            PostMetricDataRequest postMetricDataRequest = PostMetricDataRequest.builder()
+                    .postMetricDataDetails(getPostMetricDataDetails(config))
+                    .build();
+
+            // Invoke the API call.
+            PostMetricDataResponse postMetricDataResponse = monitoringClient.postMetricData(postMetricDataRequest);
+            PostMetricDataResponseDetails postMetricDataResponseDetails = postMetricDataResponse.getPostMetricDataResponseDetails();
+            int count = postMetricDataResponseDetails.getFailedMetricsCount();
+            System.out.println("Failed count: " + count);
+            if (count > 0) {
+                System.out.println("Failed metrics:");
+                for (FailedMetricRecord failedMetric : postMetricDataResponseDetails.getFailedMetrics()) {
+                    System.out.println("\t" + failedMetric.getMessage() + ": " + failedMetric.getMetricData());
+                }
             }
         }
     }
@@ -142,34 +135,5 @@ public final class OciMetricsMain {
             map.put(data[i], data[i + 1]);
         }
         return map;
-    }
-
-    private static class ResponseHandler<IN, OUT> implements AsyncHandler<IN, OUT> {
-        private OUT item;
-        private Throwable failed = null;
-        private CountDownLatch latch = new CountDownLatch(1);
-
-        private OUT waitForCompletion() throws Exception {
-            latch.await();
-            if (failed != null) {
-                if (failed instanceof Exception) {
-                    throw (Exception) failed;
-                }
-                throw (Error) failed;
-            }
-            return item;
-        }
-
-        @Override
-        public void onSuccess(IN request, OUT response) {
-            item = response;
-            latch.countDown();
-        }
-
-        @Override
-        public void onError(IN request, Throwable error) {
-            failed = error;
-            latch.countDown();
-        }
     }
 }
