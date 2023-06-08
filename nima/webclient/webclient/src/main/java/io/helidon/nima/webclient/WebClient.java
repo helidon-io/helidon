@@ -17,6 +17,7 @@
 package io.helidon.nima.webclient;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -69,12 +70,15 @@ public interface WebClient {
         private URI baseUri;
         private Tls tls;
         private SocketOptions channelOptions;
+        private final SocketOptions.Builder channelOptionsBuilder = SocketOptions.builder();
         private DnsResolver dnsResolver;
         private DnsAddressLookup dnsAddressLookup;
         private boolean followRedirect;
         private int maxRedirect;
         private WritableHeaders<?> defaultHeaders = WritableHeaders.create();
         private ParserMode mediaTypeParserMode = ParserMode.STRICT;
+        private Duration connectTimeout;
+        private Duration readTimeout;
 
         /**
          * Common builder base for all the client builder.
@@ -134,9 +138,14 @@ public interface WebClient {
          *
          * @param channelOptions options
          * @return updated builder
+         * @see #readTimeout(Duration)
+         * @see #connectTimeout(Duration)
+         * @see #keepAlive(boolean)
          */
         public B channelOptions(SocketOptions channelOptions) {
             this.channelOptions = channelOptions;
+            this.readTimeout = channelOptions.readTimeout();
+            this.connectTimeout = channelOptions.connectTimeout();
             return identity();
         }
 
@@ -182,6 +191,41 @@ public interface WebClient {
          */
         public B maxRedirects(int maxRedirect) {
             this.maxRedirect = maxRedirect;
+            return identity();
+        }
+
+        /**
+         * Sets new connection timeout.
+         *
+         * @param timeout amount of time
+         * @return updated builder
+         */
+        public B connectTimeout(Duration timeout) {
+            this.connectTimeout = timeout;
+            return identity();
+        }
+
+        /**
+         * Sets new read timeout.
+         *
+         * @param timeout amount of time
+         * @return updated builder
+         */
+        public B readTimeout(Duration timeout) {
+            this.readTimeout = timeout;
+            return identity();
+        }
+
+        /**
+         * Whether connection should be kept alive after request.
+         * <p>Operates on the default {@link SocketOptions.Builder}.
+         * Using of {@link #channelOptions(SocketOptions)} will discard changes made to the default {@link SocketOptions.Builder}.
+         *
+         * @param keepAlive keep alive
+         * @return updated builder
+         */
+        public B keepAlive(boolean keepAlive) {
+            channelOptionsBuilder.socketKeepAlive(keepAlive);
             return identity();
         }
 
@@ -285,6 +329,24 @@ public interface WebClient {
 
         int maxRedirect() {
             return maxRedirect;
+        }
+
+        /**
+         * Connection timeout.
+         *
+         * @return connection timeout
+         */
+        Duration connectTimeout() {
+            return channelOptions == null ? null : channelOptions.connectTimeout();
+        }
+
+        /**
+         * Read timeout.
+         *
+         * @return Read timeout.
+         */
+        Duration readTimeout() {
+            return channelOptions == null ? null : channelOptions.readTimeout();
         }
 
         protected WritableHeaders<?> defaultHeaders() {

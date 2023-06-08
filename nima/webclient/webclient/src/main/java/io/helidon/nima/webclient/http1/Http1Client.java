@@ -67,6 +67,8 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
                     .createDnsResolver();
         });
 
+        private MediaContext.Builder mediaContextBuilder;
+
         private static final SocketOptions EMPTY_OPTIONS = SocketOptions.builder().build();
 
         private MediaContext.Builder mediaContextBuilder;
@@ -86,6 +88,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
             if (mediaContextBuilder != null) {
                 configBuilder.mediaContext(mediaContextBuilder.fallback(configBuilder.mediaContext()).build());
             }
+            configBuilder.socketOptions(super.channelOptions());
             return new Http1ClientImpl(configBuilder.build());
         }
 
