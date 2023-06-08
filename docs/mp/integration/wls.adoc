@@ -68,17 +68,22 @@ To enable Oracle WebLogic Server REST Integration, add the following dependencie
 ----
 <dependency>
     <groupId>io.helidon.microprofile.bundles</groupId>
-    <artifactId>helidon-microprofile-core</artifactId>
+    <artifactId>helidon-microprofile</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.fasterxml.jackson.core</groupId>
-    <artifactId>jackson-databind</artifactId>
-    <version>2.14.1</version>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient</artifactId>
+    <version>2.5.5</version>
 </dependency>
 <dependency>
-    <groupId>org.junit.jupiter</groupId>
-    <artifactId>junit-jupiter-api</artifactId>
-    <scope>test</scope>
+    <groupId>io.helidon.media</groupId>
+    <artifactId>helidon-media-jackson</artifactId>
+    <version>2.5.5</version>
+</dependency>
+<dependency>
+    <groupId>io.helidon.microprofile.rest-client</groupId>
+    <artifactId>helidon-microprofile-rest-client</artifactId>
+    <version>2.5.5</version>
 </dependency>
 ----
 
@@ -289,7 +294,7 @@ Helion MP and WebLogic Server Web Services integration enables the Helidon micro
 
 === Maven Coordinates [[Web-Services-Integration-Maven-Coordinates]]
 
-Add the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` client file downloaded from https://edelivery.oracle.com/osdc/faces/Home.jspx[Oracle Software Delivery Cloud], as part of the Maven dependencies:
+Add the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` client file as part of the Maven dependencies. You can find this file in the `WL_HOME\server\lib` directory of your WebLogic Server installation.
 
 [source,xml]
 ----
