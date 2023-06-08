@@ -404,11 +404,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private void doContinuation() {
         Http2Flag.ContinuationFlags flags = frameHeader.flags(Http2FrameTypes.CONTINUATION);
-        List<Http2FrameData> continuationData = stream(frameHeader.streamId()).contData();
-        if (continuationData.isEmpty()) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received continuation without headers.");
-        }
-        continuationData.add(new Http2FrameData(frameHeader, inProgressFrame()));
+
+        stream(frameHeader.streamId())
+                .addContinuation(new Http2FrameData(frameHeader, inProgressFrame()));
+
         if (flags.endOfHeaders()) {
             state = State.HEADERS;
         } else {
@@ -548,9 +547,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // first frame, expecting continuation
         if (frameHeader.type() == Http2FrameType.HEADERS && !frameHeader.flags(Http2FrameTypes.HEADERS).endOfHeaders()) {
             // this needs to retain the data until we receive last continuation, cannot use the same data
-            streamContext.contData().clear();
-            streamContext.contData().add(new Http2FrameData(frameHeader, inProgressFrame().copy()));
-            streamContext.continuationHeader = frameHeader;
+            streamContext.addHeadersToBeContinued(frameHeader, inProgressFrame().copy());
             this.continuationExpectedStreamId = streamId;
             this.state = State.READ_FRAME;
             return;
@@ -563,14 +560,12 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         if (frameHeader.type() == Http2FrameType.CONTINUATION) {
             // end of continuations with header frames
-            List<Http2FrameData> frames = streamContext.contData();
             headers = Http2Headers.create(stream,
                                           requestDynamicTable,
                                           requestHuffman,
-                                          frames.toArray(new Http2FrameData[0]));
-            endOfStream = streamContext.continuationHeader.flags(Http2FrameTypes.HEADERS).endOfStream();
-            frames.clear();
-            streamContext.continuationHeader = null;
+                                          streamContext.contData());
+            endOfStream = streamContext.contHeader().flags(Http2FrameTypes.HEADERS).endOfStream();
+            streamContext.clearContinuations();
             continuationExpectedStreamId = 0;
         } else {
             endOfStream = frameHeader.flags(Http2FrameTypes.HEADERS).endOfStream();
@@ -720,6 +715,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             }
 
             streamContext = new StreamContext(streamId,
+                                              http2Config.maxHeaderListSize(),
                                               new Http2Stream(ctx,
                                                               routing,
                                                               http2Config,
@@ -797,13 +793,16 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private static class StreamContext {
         private final List<Http2FrameData> continuationData = new ArrayList<>();
+        private final long maxHeaderListSize;
         private final int streamId;
         private final Http2Stream stream;
+        private long headerListSize = 0;
 
         private Http2FrameHeader continuationHeader;
 
-        StreamContext(int streamId, Http2Stream stream) {
+        StreamContext(int streamId, long maxHeaderListSize, Http2Stream stream) {
             this.streamId = streamId;
+            this.maxHeaderListSize = maxHeaderListSize;
             this.stream = stream;
         }
 
@@ -811,12 +810,41 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             return stream;
         }
 
-        public Http2FrameHeader contHeader() {
+        Http2FrameData[] contData() {
+            return continuationData.toArray(new Http2FrameData[0]);
+        }
+
+        Http2FrameHeader contHeader() {
             return continuationHeader;
         }
 
-        public List<Http2FrameData> contData() {
-            return continuationData;
+        void addContinuation(Http2FrameData frameData) {
+            if (continuationData.isEmpty()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received continuation without headers.");
+            }
+            this.continuationData.add(frameData);
+            addAndValidateHeaderListSize(frameData.header().length());
+        }
+
+        void addHeadersToBeContinued(Http2FrameHeader frameHeader,  BufferData bufferData) {
+            clearContinuations();
+            continuationHeader = frameHeader;
+            this.continuationData.add(new Http2FrameData(frameHeader, bufferData));
+            addAndValidateHeaderListSize(frameHeader.length());
+        }
+
+        private void addAndValidateHeaderListSize(int headerSizeIncrement){
+            // Check MAX_HEADER_LIST_SIZE
+            headerListSize += headerSizeIncrement;
+            if (headerListSize > maxHeaderListSize){
+                throw new Http2Exception(Http2ErrorCode.REQUEST_HEADER_FIELDS_TOO_LARGE,
+                        "Request Header Fields Too Large");
+            }
+        }
+
+        private void clearContinuations() {
+            continuationData.clear();
+            headerListSize = 0;
         }
     }
 }
