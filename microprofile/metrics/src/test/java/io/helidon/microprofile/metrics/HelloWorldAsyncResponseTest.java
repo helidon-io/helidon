@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ public class HelloWorldAsyncResponseTest {
                                                                                     AsyncResponse.class,
                                                                                     ServerResponse.class));
 
+        HelloWorldResource.initSlowRequest();
         SortedMap<MetricID, SimpleTimer> simpleTimers = registry.getSimpleTimers();
 
         SimpleTimer explicitSimpleTimer = simpleTimers.get(new MetricID(SLOW_MESSAGE_SIMPLE_TIMER));
@@ -96,12 +97,22 @@ public class HelloWorldAsyncResponseTest {
         assertThat("Timer", timer, is(notNullValue()));
         long slowMessageTimerCountBefore= timer.getCount();
 
-        String result = HelloWorldTest.runAndPause(() ->webTarget
+        Future<String> future = webTarget
                 .path("helloworld/slow")
                 .request()
                 .accept(MediaType.TEXT_PLAIN)
-                .get(String.class)
-        );
+                .async()
+                .get(String.class);
+
+        HelloWorldResource.awaitSlowRequestStarted();
+
+        // We don't need to access the in-flight counter for this test, but we need to managed the
+        // countdown latches as if we do so the server can progress in an orderly way.
+        HelloWorldResource.reportDuringRequestFetched();
+
+        String result = future.get();
+
+        HelloWorldResource.awaitResponseSent();
 
         /*
          * We test simple timers (explicit and the implicit REST.request one) and timers on the async method.
