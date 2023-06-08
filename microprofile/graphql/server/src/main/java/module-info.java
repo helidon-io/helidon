@@ -31,6 +31,7 @@ import io.helidon.microprofile.graphql.server.GraphQlCdiExtension;
 module io.helidon.microprofile.graphql.server {
     requires static io.helidon.common.features.api;
 
+    requires java.logging;
     requires java.desktop;
 
     requires jakarta.json.bind;
@@ -47,7 +48,7 @@ module io.helidon.microprofile.graphql.server {
     requires io.helidon.microprofile.server;
 
     requires com.graphqljava;
-    requires graphql.java.extended.scalars;
+    requires com.graphqljava.extendedscalars;
     requires microprofile.graphql.api;
     requires microprofile.config.api;
 
