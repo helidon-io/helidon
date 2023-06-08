@@ -104,8 +104,8 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
 
     @Override
     protected Subject enhance(ProviderRequest request,
-                                      AuthenticationResponse previousResponse,
-                                      Subject subject) {
+                              AuthenticationResponse previousResponse,
+                              Subject subject) {
         String username = subject.principal().getName();
 
         Optional<List<Grant>> grants = roleCache.computeValue(username, Optional::empty);

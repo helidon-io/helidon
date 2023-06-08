@@ -129,8 +129,8 @@ public class HeaderAtnProvider implements AuthenticationProvider, OutboundSecuri
 
     @Override
     public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
-                                                        SecurityEnvironment outboundEnv,
-                                                        EndpointConfig outboundEndpointConfig) {
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundEndpointConfig) {
 
         Optional<Subject> toPropagate;
         if (subjectType == SubjectType.USER) {

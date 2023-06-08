@@ -34,6 +34,7 @@ module io.helidon.security.providers.oidc.common {
     requires static io.helidon.config.metadata;
     requires io.helidon.cors;
     requires io.helidon.nima.http.media.jsonp;
+    requires io.helidon.nima.webclient.tracing;
 
     exports io.helidon.security.providers.oidc.common;
     exports io.helidon.security.providers.oidc.common.spi;

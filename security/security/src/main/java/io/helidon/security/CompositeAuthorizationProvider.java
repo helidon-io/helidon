@@ -89,12 +89,6 @@ final class CompositeAuthorizationProvider implements AuthorizationProvider {
         }
 
         if (previous.status() == SecurityResponse.SecurityStatus.ABSTAIN) {
-            // TODO how to resolve optional - too many places to configure it
-            //                if (context.getSecurityContext().getEndpointConfig().isOptional()) {
-            //                    return AuthorizationResponse.permit();
-            //                } else {
-            //                    return AuthorizationResponse.abstain();
-            //                }
             return AuthorizationResponse.abstain();
         }
         return previous;

@@ -26,6 +26,7 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.tracing.WebClientTracing;
 
 final class OidcUtil {
     private static final System.Logger LOGGER = System.getLogger(OidcUtil.class.getName());
@@ -53,8 +54,7 @@ final class OidcUtil {
                                                                boolean relativeUris,
                                                                Duration clientTimeout) {
         Http1Client.Http1ClientBuilder webClientBuilder = WebClient.builder()
-                //TODO Níma client tracing
-//                .addService(WebClientTracing.create())
+                .addService(WebClientTracing.create())
                 .mediaContext(MediaContext.builder()
                                       .discoverServices(false)
                                       .addMediaSupport(JsonpSupport.create(Config.empty()))
@@ -62,9 +62,8 @@ final class OidcUtil {
                 .channelOptions(SocketOptions.builder()
                                         .connectTimeout(clientTimeout)
                                         .readTimeout(clientTimeout)
-                                        .build());
-//        TODO Níma relative uris
-//                .relativeUris(relativeUris);
+                                        .build())
+                .relativeUris(relativeUris);
 
         //TODO Níma client proxy
 //        if (proxyHost != null) {

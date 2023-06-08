@@ -93,8 +93,8 @@ public class OidcCookieHandler {
             this.encryptFunction = it -> cookieEncryption.encrypt(it.getBytes(StandardCharsets.UTF_8));
             this.decryptFunction = it -> new String(cookieEncryption.decrypt(it), StandardCharsets.UTF_8);
         } else {
-            this.encryptFunction = it -> it;
-            this.decryptFunction = it -> it;
+            this.encryptFunction = Function.identity();
+            this.decryptFunction = Function.identity();
         }
 
         if (LOGGER.isLoggable(Level.TRACE)) {
