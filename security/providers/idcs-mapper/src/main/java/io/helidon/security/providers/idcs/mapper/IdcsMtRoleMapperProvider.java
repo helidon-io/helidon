@@ -74,7 +74,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     private final TokenHandler idcsAppNameTokenHandler;
     private final EvictableCache<MtCacheKey, List<Grant>> cache;
     private final MultitenancyEndpoints multitenantEndpoints;
-    private final ConcurrentHashMap<String, AppTokenRx> tokenCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AppToken> tokenCache = new ConcurrentHashMap<>();
 
     /**
      * Configure instance from any descendant of
@@ -273,9 +273,9 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      */
     protected Optional<String> getAppToken(String idcsTenantId, RoleMapTracing tracing) {
         // if cached and valid, use the cached token
-        return tokenCache.computeIfAbsent(idcsTenantId, key -> new AppTokenRx(oidcConfig().appWebClient(),
-                                                                              multitenantEndpoints.tokenEndpoint(idcsTenantId),
-                                                                              oidcConfig().tokenRefreshSkew()))
+        return tokenCache.computeIfAbsent(idcsTenantId, key -> new AppToken(oidcConfig().appWebClient(),
+                                                                            multitenantEndpoints.tokenEndpoint(idcsTenantId),
+                                                                            oidcConfig().tokenRefreshSkew()))
                 .getToken(tracing);
     }
 

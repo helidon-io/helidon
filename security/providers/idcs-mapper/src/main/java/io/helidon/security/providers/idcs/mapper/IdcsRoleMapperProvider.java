@@ -57,7 +57,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
     private final URI tokenEndpointUri;
 
     // caching application token (as that can be re-used for group requests)
-    private final AppTokenRx appToken;
+    private final AppToken appToken;
 
     /**
      * Constructor that accepts any {@link IdcsRoleMapperProvider.Builder} descendant.
@@ -73,7 +73,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         this.asserterUri = oidcConfig.identityUri() + "/admin/v1/Asserter";
         this.tokenEndpointUri = oidcConfig.tokenEndpointUri();
 
-        this.appToken = new AppTokenRx(oidcConfig.appWebClient(), tokenEndpointUri, oidcConfig.tokenRefreshSkew());
+        this.appToken = new AppToken(oidcConfig.appWebClient(), tokenEndpointUri, oidcConfig.tokenRefreshSkew());
     }
 
     /**

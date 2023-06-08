@@ -379,7 +379,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
     /**
      * Reactive token for app access to IDCS.
      */
-    protected static class AppTokenRx {
+    protected static class AppToken {
         private static final List<Validator<Jwt>> TIME_VALIDATORS = Jwt.defaultTimeValidators();
 
         private final AtomicReference<LazyValue<AppTokenData>> token = new AtomicReference<>();
@@ -387,7 +387,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         private final URI tokenEndpointUri;
         private final Duration tokenRefreshSkew;
 
-        protected AppTokenRx(Http1Client webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
+        protected AppToken(Http1Client webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
             this.webClient = webClient;
             this.tokenEndpointUri = tokenEndpointUri;
             this.tokenRefreshSkew = tokenRefreshSkew;
