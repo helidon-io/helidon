@@ -144,7 +144,7 @@ To enable Oracle WebLogic Server JMS  with Helidon, add the following dependenci
    <artifactId>helidon-microprofile-messaging</artifactId>
 </dependency>
 ----
-*Dependency for JMS connector*
+*Dependency for JMS Connector*
 
 [source,xml]
 ----
@@ -153,7 +153,7 @@ To enable Oracle WebLogic Server JMS  with Helidon, add the following dependenci
     <artifactId>helidon-messaging-jms</artifactId>
 </dependency>
 ----
-*Dependency for Messaging Health Metrics*
+*Dependency for Messaging Health*
 
 [source,xml]
 ----
@@ -163,17 +163,31 @@ To enable Oracle WebLogic Server JMS  with Helidon, add the following dependenci
 </dependency>
 ----
 
-*Dependencies for the WLS thin client JAR file*
+*Dependencies for the WLS Thin Client JAR File*
 
-Download the Jakarta thin client JAR (`wlthint3client.jakarta`) file from https://edelivery.oracle.com/osdc/faces/Home.jspx[Oracle Software Delivery Cloud], and add it as part of the Maven dependencies:
+Helidon 2.x supports the javax thin client JAR file `wlthint3client`. This file is created when you install WebLogic Server and it is located in the `WL_HOME\server\lib` directory of your WebLogic Server installation.
+
+Add this file as part of the Maven compilation/runtime dependencies, as shown below:
 
 [source,xml]
 ----
 <dependency>
-    <groupId>wlthint3client.jakarta</groupId>
-    <artifactId>wlthint3client-jakarta</artifactId>
+    <groupId>wlthint3client</groupId>
+    <artifactId>wlthint3client</artifactId>
     <version>1.0</version>
 </dependency>
+----
+
+[NOTE]
+====
+Ensure that the values for `groupId`, `artifactId`, and `version` are identical to the values used in the `mvn install:install-file` command. 
+====
+
+Use the following Maven command to add the javax thin client to the Maven repository:
+
+[source,shell]
+----
+mvn install:install-file -Dfile=<WLS_ORACLE_HOME>/wlserver/server/lib/wlthint3client.jar -DgroupId=wlthint3client -DartifactId=wlthint3client -Dversion=1.0
 ----
 
 === Usage [[JMS-Integration-Usage]]
@@ -257,8 +271,9 @@ mp:
 
 === References [[JMS-Integration-References]]
 
-* https://helidon.io/docs/v3/#/mp/reactivemessaging/jms[JMS Connector]
-https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/oracle-weblogic-server-helidon-integration.html#GUID-F7E4D3C2-6FE3-4C6E-B69B-805667B78312[Integrating Oracle WebLogic Server with Helidon]
+* https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/oracle-weblogic-server-helidon-integration.html#GUID-F7E4D3C2-6FE3-4C6E-B69B-805667B78312[Integrating Oracle WebLogic Server with Helidon]
+
+* https://helidon.io/docs/v2/#/mp/reactivemessaging/05_jms[JMS Connector]
 
 == Web Services Integration [[Web-Services-Integration]]
 
@@ -570,7 +585,7 @@ ut.rollback();
 
 ==== Building and Deploying the Helidon Participant Application
 
-Download the image for MicroTx Free from https://container-registry.oracle.com/[Oracle Container Registry] and add the 'TmmLib' library to the local Maven repository. This library is available in the '<OTMM_BINARIES_EXTRACTED_PATH>/lib/java/' location.
+Obtain the image for MicroTx Free from https://container-registry.oracle.com/[Oracle Container Registry] and add the 'TmmLib' library to the local Maven repository. This library is available in the '<OTMM_BINARIES_EXTRACTED_PATH>/lib/java/' location.
 
 Install the OTMM library to the local Maven repository using the following command:
 
