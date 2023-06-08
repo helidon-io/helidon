@@ -62,8 +62,7 @@ final class OidcUtil {
                 .channelOptions(SocketOptions.builder()
                                         .connectTimeout(clientTimeout)
                                         .readTimeout(clientTimeout)
-                                        .build())
-                .relativeUris(relativeUris);
+                                        .build());
 
         //TODO Níma client proxy
 //        if (proxyHost != null) {
@@ -73,6 +72,8 @@ final class OidcUtil {
 //                                           .host(proxyHost)
 //                                           .port(proxyPort)
 //                                           .build());
+                //relative uris should be set when proxy is used
+//                .relativeUris(relativeUris);
 //        }
         return webClientBuilder;
     }
