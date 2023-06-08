@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.types.TypeNameDefault.create;
 import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
-import static io.helidon.integrations.oci.sdk.processor.InjectionProcessorObserverForOCI.shouldProcess;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
