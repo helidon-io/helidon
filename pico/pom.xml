@@ -49,7 +49,6 @@
         <module>maven-plugin</module>
         <module>testing</module>
         <module>runtime</module>
-        <module>integrations</module>
         <module>tests</module>
     </modules>
 

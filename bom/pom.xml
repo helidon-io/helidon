@@ -1489,13 +1489,13 @@
 
             <!-- Pico Integrations related -->
             <dependency>
-                <groupId>io.helidon.pico.integrations.oci</groupId>
-                <artifactId>helidon-pico-integrations-oci-processor</artifactId>
+                <groupId>io.helidon.integrations.oci.sdk</groupId>
+                <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.pico.integrations.oci</groupId>
-                <artifactId>helidon-pico-integrations-oci-runtime</artifactId>
+                <groupId>io.helidon.integrations.oci.sdk</groupId>
+                <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
