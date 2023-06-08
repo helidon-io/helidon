@@ -79,7 +79,7 @@ class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServiceProvid
     }
 
     @Override
-    public PicoServices picoServices() {
+    public Optional<PicoServices> picoServices() {
         return delegate.picoServices();
     }
 

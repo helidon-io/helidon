@@ -1362,7 +1362,7 @@ public final class TypeTools extends BuilderTypeTools {
         boolean startsWithJakarta = typeName.startsWith(TypeNames.PREFIX_JAKARTA);
         boolean startsWithJavax = !startsWithJakarta && typeName.startsWith(TypeNames.PREFIX_JAVAX);
 
-        assert (startsWithJakarta || startsWithJavax);
+        assert (startsWithJakarta || startsWithJavax) : typeName;
 
         if (startsWithJakarta) {
             return typeName.replace(TypeNames.PREFIX_JAKARTA, TypeNames.PREFIX_JAVAX);

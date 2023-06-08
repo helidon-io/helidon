@@ -32,6 +32,7 @@ import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.Weight;
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.TypeName;
+import io.helidon.pico.api.CommonQualifiers;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.ModuleComponent;
@@ -160,8 +161,20 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         } else if (ApplicationCreatorConfigOptions.PermittedProviderType.NONE == opt) {
             return false;
         } else {
-            return configOptions.permittedProviderNames().contains(typeName.name());
+            if (configOptions.permittedProviderNames().contains(typeName.name())) {
+                return true;
+            }
+
+            return anyWildcardMatches(typeName, configOptions.permittedProviderNames());
         }
+    }
+
+    static boolean anyWildcardMatches(TypeName typeName,
+                                      Set<String> permittedProviderTypeNames) {
+        return permittedProviderTypeNames.stream()
+                .filter(it -> it.endsWith(CommonQualifiers.WILDCARD))
+                .map(it -> it.substring(0, it.length() - 1))
+                .anyMatch(it -> typeName.name().startsWith(it));
     }
 
     static ServiceInfoCriteria toServiceInfoCriteria(TypeName typeName) {

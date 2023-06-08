@@ -55,7 +55,7 @@ import jakarta.inject.Singleton;
  *
  * @see ActiveProcessorUtils
  */
-final class GeneralProcessorUtils {
+public final class GeneralProcessorUtils {
     private GeneralProcessorUtils() {
     }
 
@@ -335,7 +335,7 @@ final class GeneralProcessorUtils {
      * @param typeName the type name to check
      * @return true if the provided type is a provider type.
      */
-    static boolean isProviderType(TypeName typeName) {
+    public static boolean isProviderType(TypeName typeName) {
         String name = typeName.name();
         return (name.equals(TypeNames.JAKARTA_PROVIDER)
                         || name.equals(TypeNames.JAVAX_PROVIDER)
@@ -355,27 +355,34 @@ final class GeneralProcessorUtils {
     /**
      * Looks for either a jakarta or javax annotation.
      *
-     * @param jakartaAnno the jakarta annotation class type
+     * @param annoType the annotation type
      * @param annotations the set of annotations to look in
      * @return the optional annotation if there is a match
      */
-    static Optional<? extends AnnotationAndValue> findFirst(Class<? extends Annotation> jakartaAnno,
-                                                            Collection<? extends AnnotationAndValue> annotations) {
-        return findFirst(jakartaAnno.getName(), annotations);
+    public static Optional<? extends AnnotationAndValue> findFirst(Class<? extends Annotation> annoType,
+                                                                   Collection<? extends AnnotationAndValue> annotations) {
+        return findFirst(annoType.getName(), annotations);
     }
 
-    static Optional<? extends AnnotationAndValue> findFirst(String jakartaAnnoName,
+    static Optional<? extends AnnotationAndValue> findFirst(String annoTypeName,
                                                             Collection<? extends AnnotationAndValue> annotations) {
         if (annotations == null) {
             return Optional.empty();
         }
 
-        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault.findFirst(jakartaAnnoName, annotations);
+        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault.findFirst(annoTypeName, annotations);
         if (anno.isPresent()) {
             return anno;
         }
 
-        return AnnotationAndValueDefault.findFirst(TypeTools.oppositeOf(jakartaAnnoName), annotations);
+        boolean startsWithJakarta = annoTypeName.startsWith(TypeNames.PREFIX_JAKARTA);
+        boolean startsWithJavax = !startsWithJakarta && annoTypeName.startsWith(TypeNames.PREFIX_JAVAX);
+
+        if (startsWithJakarta || startsWithJavax) {
+            return AnnotationAndValueDefault.findFirst(TypeTools.oppositeOf(annoTypeName), annotations);
+        }
+
+        return Optional.empty();
     }
 
     static ServiceInfoBasics toBasicServiceInfo(TypeInfo service) {
