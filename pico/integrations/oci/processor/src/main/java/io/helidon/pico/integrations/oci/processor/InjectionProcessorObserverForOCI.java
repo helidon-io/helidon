@@ -74,18 +74,20 @@ import static java.util.function.Predicate.not;
  * All injection points using the same package name as the OCI SDK (e.g., {@code com.oracle.bmc} as shown with ObjectStorage in
  * the case above) will be observed and processed and eventually result in code generation into your
  * {@code target/generated-sources} directory. This is the case for any artifact that is attempted to be injected unless there is
- * found a configuration signaling an exception to the code generation.
+ * found a configuration signaling an exception to avoid the code generation for the activator.
  * <p>
  * The processor will allows exceptions in one of three ways:
  * <ul>
- *     <li>via the code - modify the code directly in this class.</li>
- *     <li>via resources on the classpath - the implementation looks for files names {@link #TAG_TYPENAME_EXCEPTIONS} and
- *     {@link #TAG_NO_DOT_EXCEPTIONS} in the same package name as this class, and will read those resources during
- *     initialization.</li>
- *     <li>via {@code -A} directives on the compiler command line. Using the same tags as referenced above.</li>
+ *     <li>via the code directly here - see the {@link #shouldProcess} method.</li>
+ *     <li>via resources on the classpath - the implementation looks for files named {@link #TAG_TYPENAME_EXCEPTIONS} in the same
+ *     package name as this class, and will read those resources during initialization. Each line of this file would be a fully
+ *     qualified type name to avoid processing that type name.</li>
+ *     <li>via {@code -A} directives on the compiler command line. Using the same tag as referenced above. The line can be
+ *     comma-delimited, and each token will be treated as a fully qualified type name to signal that the type should be
+ *     not be processed.</li>
  * </ul>
  */
-public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObserver {
+public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessorObserver {
     static final String OCI_ROOT_PACKAGE_NAME_PREFIX = "com.oracle.bmc.";
     static final String GENERATED_PREFIX = "generated.";
     static final String GENERATED_CLIENT_SUFFIX = "$$Oci$$Client";
@@ -100,9 +102,9 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
     static final String TAG_NO_DOT_EXCEPTIONS = "no.dot.exceptions";
 
     static final LazyValue<Set<String>> TYPENAME_EXCEPTIONS = LazyValue
-            .create(PicoProcessorObserverForOCI::loadTypeNameExceptions);
+            .create(InjectionProcessorObserverForOCI::loadTypeNameExceptions);
     static final LazyValue<Set<String>> NO_DOT_EXCEPTIONS = LazyValue
-            .create(PicoProcessorObserverForOCI::loadNoDotExceptions);
+            .create(InjectionProcessorObserverForOCI::loadNoDotExceptions);
 
     /**
      * Service loader based constructor.
@@ -110,7 +112,7 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
      * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
     @Deprecated
-    public PicoProcessorObserverForOCI() {
+    public InjectionProcessorObserverForOCI() {
     }
 
     @Override
@@ -210,7 +212,7 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
     static String loadTemplate(String name) {
         String path = "templates/pico/oci/default/" + name;
         try {
-            InputStream in = PicoProcessorObserverForOCI.class.getClassLoader().getResourceAsStream(path);
+            InputStream in = InjectionProcessorObserverForOCI.class.getClassLoader().getResourceAsStream(path);
             if (in == null) {
                 throw new IOException("Could not find template " + path + " on classpath.");
             }
@@ -252,9 +254,9 @@ public class PicoProcessorObserverForOCI implements PicoAnnotationProcessorObser
         // note: we need to keep this mutable for later when we process the env options passed manually in
         Set<String> result = new LinkedHashSet<>();
 
-        name = PicoProcessorObserverForOCI.class.getPackageName().replace(".", "/") + "/" + name;
+        name = InjectionProcessorObserverForOCI.class.getPackageName().replace(".", "/") + "/" + name;
         try {
-            Enumeration<URL> resources = PicoProcessorObserverForOCI.class.getClassLoader().getResources(name);
+            Enumeration<URL> resources = InjectionProcessorObserverForOCI.class.getClassLoader().getResources(name);
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 try (

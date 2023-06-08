@@ -31,19 +31,19 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.types.TypeNameDefault.create;
 import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
-import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI.*;
-import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI.TAG_TEMPLATE_SERVICE_CLIENT_BUILDER_PROVIDER_NAME;
-import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI.TAG_TEMPLATE_SERVICE_CLIENT_PROVIDER_NAME;
-import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI.shouldProcess;
-import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI.toBody;
-import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI.toGeneratedServiceClientBuilderTypeName;
-import static io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI.toGeneratedServiceClientTypeName;
+import static io.helidon.pico.integrations.oci.processor.InjectionProcessorObserverForOCI.*;
+import static io.helidon.pico.integrations.oci.processor.InjectionProcessorObserverForOCI.TAG_TEMPLATE_SERVICE_CLIENT_BUILDER_PROVIDER_NAME;
+import static io.helidon.pico.integrations.oci.processor.InjectionProcessorObserverForOCI.TAG_TEMPLATE_SERVICE_CLIENT_PROVIDER_NAME;
+import static io.helidon.pico.integrations.oci.processor.InjectionProcessorObserverForOCI.shouldProcess;
+import static io.helidon.pico.integrations.oci.processor.InjectionProcessorObserverForOCI.toBody;
+import static io.helidon.pico.integrations.oci.processor.InjectionProcessorObserverForOCI.toGeneratedServiceClientBuilderTypeName;
+import static io.helidon.pico.integrations.oci.processor.InjectionProcessorObserverForOCI.toGeneratedServiceClientTypeName;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
-class PicoProcessorObserverForOCITest {
+class InjectionProcessorObserverForOCITest {
 
     @Test
     void generatedPicoArtifactsForTypicalOciServices() {
@@ -147,7 +147,7 @@ class PicoProcessorObserverForOCITest {
 
     static String loadStringFromResource(String resourceNamePath) {
         try {
-            try (InputStream in = PicoProcessorObserverForOCITest.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
+            try (InputStream in = InjectionProcessorObserverForOCITest.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
             }
         } catch (Exception e) {

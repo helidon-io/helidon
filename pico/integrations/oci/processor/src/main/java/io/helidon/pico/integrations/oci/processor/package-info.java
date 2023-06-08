@@ -15,6 +15,6 @@
  */
 
 /**
- * Pico Integrations OCI Processor package.
+ * Helidon Injection Integration for the OCI SDK support.
  */
 package io.helidon.pico.integrations.oci.processor;

@@ -42,8 +42,8 @@ public class ModuleComponentNamerDefault implements ModuleComponentNamer {
     public Optional<String> suggestedPackageName(Collection<TypeName> typeNames) {
         String suggested = typeNames.stream()
                 .sorted()
-                .filter(not(it -> it.name().startsWith(PicoProcessorObserverForOCI.GENERATED_OCI_ROOT_PACKAGE_NAME_PREFIX)))
-                .filter(not(it -> it.name().startsWith(PicoProcessorObserverForOCI.OCI_ROOT_PACKAGE_NAME_PREFIX)))
+                .filter(not(it -> it.name().startsWith(InjectionProcessorObserverForOCI.GENERATED_OCI_ROOT_PACKAGE_NAME_PREFIX)))
+                .filter(not(it -> it.name().startsWith(InjectionProcessorObserverForOCI.OCI_ROOT_PACKAGE_NAME_PREFIX)))
                 .map(TypeName::packageName)
                 .findFirst().orElse(null);
         return Optional.ofNullable(suggested);

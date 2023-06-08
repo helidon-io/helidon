@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+import io.helidon.pico.integrations.oci.processor.InjectionProcessorObserverForOCI;
+
 /**
- * Pico Integrations OCI Processor module.
+ * Helidon Injection Integrations for OCI SDK module.
  */
-// TODO: should this be called "...oci.sdk..." instead ?
 module io.helidon.pico.integrations.oci.processor {
     requires static jakarta.inject;
     requires static jakarta.annotation;
@@ -32,7 +33,7 @@ module io.helidon.pico.integrations.oci.processor {
     uses io.helidon.pico.tools.spi.ModuleComponentNamer;
 
     provides io.helidon.pico.processor.spi.PicoAnnotationProcessorObserver with
-            io.helidon.pico.integrations.oci.processor.PicoProcessorObserverForOCI;
+            InjectionProcessorObserverForOCI;
     provides io.helidon.pico.tools.spi.ModuleComponentNamer with
             io.helidon.pico.integrations.oci.processor.ModuleComponentNamerDefault;
 }
