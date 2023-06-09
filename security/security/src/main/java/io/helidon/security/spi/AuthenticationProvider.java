@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package io.helidon.security.spi;
-
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Principal;
@@ -50,5 +48,5 @@ public interface AuthenticationProvider extends SecurityProvider {
      * @return response that either authenticates the request, fails authentication or abstains from authentication
      * @see AuthenticationResponse#success(Subject)
      */
-    CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest);
+    AuthenticationResponse authenticate(ProviderRequest providerRequest);
 }

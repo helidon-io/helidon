@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
 
 /**
- * Service for {@link IdcsRoleMapperRxProvider}.
+ * Service for {@link IdcsRoleMapperProvider}.
  */
 public class IdcsRoleMapperProviderService implements SecurityProviderService {
 
@@ -34,16 +34,16 @@ public class IdcsRoleMapperProviderService implements SecurityProviderService {
     // This is for backward compatibility only. This will be changed in 3.x
     @Override
     public Class<? extends SecurityProvider> providerClass() {
-        return IdcsRoleMapperProvider.class;
+        return IdcsMtRoleMapperProvider.class;
     }
 
     @Override
     public SecurityProvider providerInstance(Config config) {
         if (config.get("multitenant").asBoolean().orElse(true)) {
-            return IdcsMtRoleMapperRxProvider.create(config);
+            return IdcsMtRoleMapperProvider.create(config);
         }
         // we now use the new reactive implementation by default
         // the behavior is backward compatible (and configuration as well)
-        return IdcsRoleMapperRxProvider.create(config);
+        return IdcsRoleMapperProvider.create(config);
     }
 }

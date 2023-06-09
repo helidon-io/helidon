@@ -18,11 +18,10 @@ package io.helidon.security.providers.oidc.common;
 
 import java.lang.System.Logger.Level;
 import java.net.URI;
-import java.time.Duration;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
-import io.helidon.reactive.webclient.WebClient;
+import io.helidon.nima.webclient.http1.Http1Client;
 
 import jakarta.json.JsonObject;
 
@@ -95,7 +94,7 @@ final class OidcMetadata {
     static class Builder implements io.helidon.common.Builder<Builder, OidcMetadata> {
         private boolean enableRemoteLoad;
         private JsonObject metadata;
-        private WebClient webClient;
+        private Http1Client webClient;
         private Errors.Collector collector = Errors.collector();
         private URI identityUri;
 
@@ -120,7 +119,7 @@ final class OidcMetadata {
             return this;
         }
 
-        Builder webClient(WebClient webClient) {
+        Builder webClient(Http1Client webClient) {
             this.webClient = webClient;
             return this;
         }
@@ -141,8 +140,7 @@ final class OidcMetadata {
             try {
                 this.metadata = webClient.get()
                         .uri(wellKnown)
-                        .request(JsonObject.class)
-                        .await(Duration.ofSeconds(20));
+                        .request(JsonObject.class);
 
                 LOGGER.log(Level.TRACE, () -> "OIDC Metadata loaded from well known URI: " + wellKnown);
             } catch (Exception e) {

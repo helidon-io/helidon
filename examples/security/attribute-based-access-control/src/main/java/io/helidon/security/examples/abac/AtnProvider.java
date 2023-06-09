@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,14 +41,13 @@ import io.helidon.security.SecurityLevel;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
 import io.helidon.security.spi.AuthenticationProvider;
-import io.helidon.security.spi.SynchronousProvider;
 
 /**
  * Example authentication provider that reads annotation to create a subject.
  */
-public class AtnProvider extends SynchronousProvider implements AuthenticationProvider {
+public class AtnProvider implements AuthenticationProvider {
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         List<SecurityLevel> securityLevels = providerRequest.endpointConfig().securityLevels();
         ListIterator<SecurityLevel> listIterator = securityLevels.listIterator(securityLevels.size());
         Subject user = null;

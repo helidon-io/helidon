@@ -51,20 +51,16 @@
             <artifactId>helidon-cors</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient</artifactId>
+            <groupId>io.helidon.nima.webclient</groupId>
+            <artifactId>helidon-nima-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient-security</artifactId>
+            <groupId>io.helidon.nima.webclient</groupId>
+            <artifactId>helidon-nima-webclient-tracing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient-tracing</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jsonp</artifactId>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jsonp</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.jersey</groupId>

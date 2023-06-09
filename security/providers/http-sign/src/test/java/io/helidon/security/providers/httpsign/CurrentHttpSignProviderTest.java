@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,6 @@ abstract class CurrentHttpSignProviderTest {
         HttpSignProvider provider = getProvider();
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         SecurityEnvironment se = SecurityEnvironment.builder()
                 .path("/my/resource")
                 .headers(headers)
@@ -84,7 +83,7 @@ abstract class CurrentHttpSignProviderTest {
         when(request.env()).thenReturn(se);
         when(request.endpointConfig()).thenReturn(ep);
 
-        AuthenticationResponse atnResponse = Single.create(provider.authenticate(request)).await(TIMEOUT);
+        AuthenticationResponse atnResponse = provider.authenticate(request);
 
         assertThat(atnResponse.description().orElse("Unknown problem"),
                    atnResponse.status(),
@@ -114,7 +113,6 @@ abstract class CurrentHttpSignProviderTest {
         HttpSignProvider provider = getProvider();
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         SecurityEnvironment se = SecurityEnvironment.builder()
                 .path("/my/resource")
                 .headers(headers)
@@ -126,7 +124,7 @@ abstract class CurrentHttpSignProviderTest {
         when(request.env()).thenReturn(se);
         when(request.endpointConfig()).thenReturn(ep);
 
-        AuthenticationResponse atnResponse = Single.create(provider.authenticate(request)).await(TIMEOUT);
+        AuthenticationResponse atnResponse = provider.authenticate(request);
 
         assertThat(atnResponse.description().orElse("Unknown problem"),
                    atnResponse.status(),
@@ -150,7 +148,6 @@ abstract class CurrentHttpSignProviderTest {
         headers.put("authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.securityContext()).thenReturn(context);
         SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
@@ -164,8 +161,7 @@ abstract class CurrentHttpSignProviderTest {
         boolean outboundSupported = getProvider().isOutboundSupported(request, outboundEnv, outboundEp);
         assertThat("Outbound should be supported", outboundSupported, is(true));
 
-        OutboundSecurityResponse response = Single.create(getProvider().outboundSecurity(request, outboundEnv, outboundEp))
-                .await(TIMEOUT);
+        OutboundSecurityResponse response = getProvider().outboundSecurity(request, outboundEnv, outboundEp);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
@@ -194,7 +190,6 @@ abstract class CurrentHttpSignProviderTest {
         headers.put("date", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.securityContext()).thenReturn(context);
 
@@ -209,8 +204,7 @@ abstract class CurrentHttpSignProviderTest {
         boolean outboundSupported = getProvider().isOutboundSupported(request, outboundEnv, outboundEp);
         assertThat("Outbound should be supported", outboundSupported, is(true));
 
-        OutboundSecurityResponse response = Single.create(getProvider().outboundSecurity(request, outboundEnv, outboundEp))
-                                                                  .await(TIMEOUT);
+        OutboundSecurityResponse response = getProvider().outboundSecurity(request, outboundEnv, outboundEp);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 

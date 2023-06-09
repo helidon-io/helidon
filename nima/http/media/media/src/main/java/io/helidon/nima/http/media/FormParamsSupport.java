@@ -65,7 +65,7 @@ public class FormParamsSupport implements MediaSupport {
 
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
-        if (!type.equals(Parameters.GENERIC_TYPE)) {
+        if (!Parameters.class.isAssignableFrom(type.rawType())) {
             return ReaderResponse.unsupported();
         }
 
@@ -89,7 +89,7 @@ public class FormParamsSupport implements MediaSupport {
                                         Headers requestHeaders,
                                         WritableHeaders<?> responseHeaders) {
 
-        if (!type.equals(Parameters.GENERIC_TYPE)) {
+        if (!Parameters.class.isAssignableFrom(type.rawType())) {
             return WriterResponse.unsupported();
         }
 
@@ -112,7 +112,7 @@ public class FormParamsSupport implements MediaSupport {
     public <T> ReaderResponse<T> reader(GenericType<T> type,
                                         Headers requestHeaders,
                                         Headers responseHeaders) {
-        if (!type.equals(Parameters.GENERIC_TYPE)) {
+        if (!Parameters.class.isAssignableFrom(type.rawType())) {
             return ReaderResponse.unsupported();
         }
 
@@ -133,7 +133,7 @@ public class FormParamsSupport implements MediaSupport {
 
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        if (!type.equals(Parameters.GENERIC_TYPE)) {
+        if (!Parameters.class.isAssignableFrom(type.rawType())) {
             return WriterResponse.unsupported();
         }
         return requestHeaders.contentType()

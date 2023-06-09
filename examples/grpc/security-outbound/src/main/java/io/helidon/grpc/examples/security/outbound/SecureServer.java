@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,9 +121,9 @@ public class SecureServer {
     private static WebServer createWebServer(Config config, Security security) {
 
         Routing routing = Routing.builder()
-                                 .register(WebSecurity.create(security).securityDefaults(WebSecurity.authenticate()))
-                                 .register(new RestService())
-                                 .build();
+                .register(WebSecurity.create(security).securityDefaults(WebSecurity.authenticate()))
+                .register(new RestService())
+                .build();
 
         WebServer webServer = WebServer.create(routing, config);
 

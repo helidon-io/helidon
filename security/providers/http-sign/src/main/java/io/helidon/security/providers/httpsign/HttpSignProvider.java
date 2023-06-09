@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -121,26 +119,21 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     }
 
     @Override
-    public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         Map<String, List<String>> headers = providerRequest.env().headers();
 
         if ((headers.get("Signature") != null) && acceptHeaders.contains(HttpSignHeader.SIGNATURE)) {
-            return CompletableFuture
-                    .supplyAsync(() -> signatureHeader(headers.get("Signature"), providerRequest.env()),
-                                 providerRequest.securityContext().executorService());
+            return signatureHeader(headers.get("Signature"), providerRequest.env());
         } else if ((headers.get("Authorization") != null) && acceptHeaders.contains(HttpSignHeader.AUTHORIZATION)) {
             // TODO when authorization header in use and "authorization" is also a
             // required header to be signed, we must either fail or ignore, as we cannot sign ourselves
-            return CompletableFuture
-                    .supplyAsync(() -> authorizeHeader(providerRequest.env()),
-                                 providerRequest.securityContext().executorService());
+            return authorizeHeader(providerRequest.env());
         }
 
         if (optional) {
-            return CompletableFuture.completedFuture(AuthenticationResponse.abstain());
+            return AuthenticationResponse.abstain();
         }
-        return CompletableFuture
-                .completedFuture(AuthenticationResponse.failed("Missing header. Accepted headers: " + acceptHeaders));
+        return AuthenticationResponse.failed("Missing header. Accepted headers: " + acceptHeaders);
     }
 
     private AuthenticationResponse authorizeHeader(SecurityEnvironment env) {
@@ -256,12 +249,10 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     }
 
     @Override
-    public CompletionStage<OutboundSecurityResponse> outboundSecurity(ProviderRequest providerRequest,
-                                                                      SecurityEnvironment outboundEnv,
-                                                                      EndpointConfig outboundConfig) {
-
-        return CompletableFuture.supplyAsync(() -> signRequest(outboundEnv),
-                                             providerRequest.securityContext().executorService());
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundConfig) {
+        return signRequest(outboundEnv);
     }
 
     private OutboundSecurityResponse signRequest(SecurityEnvironment outboundEnv) {

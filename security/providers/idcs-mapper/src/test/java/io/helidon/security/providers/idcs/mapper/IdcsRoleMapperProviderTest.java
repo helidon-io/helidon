@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.Principal;
@@ -41,12 +40,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableWithSize.iterableWithSize;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class IdcsRoleMapperRxProviderTest {
+class IdcsRoleMapperProviderTest {
     private static TestProvider provider;
 
     @BeforeAll
     static void prepareProvider() {
-        IdcsRoleMapperRxProvider.Builder<?> builder = IdcsRoleMapperRxProvider.builder();
+        IdcsRoleMapperProvider.Builder<?> builder = IdcsRoleMapperProvider.builder();
         builder.oidcConfig(OidcConfig.builder()
                                    .oidcMetadataWellKnown(false)
                                    .clientId("client-id")
@@ -71,9 +70,7 @@ class IdcsRoleMapperRxProviderTest {
                                                            .user(Subject.builder()
                                                                          .principal(Principal.create(username))
                                                                          .build())
-                                                           .build())
-                .toCompletableFuture()
-                .join();
+                                                           .build());
 
         Subject subject = response.user()
                 .get();
@@ -89,9 +86,7 @@ class IdcsRoleMapperRxProviderTest {
                                         .user(Subject.builder()
                                                       .principal(Principal.create(username))
                                                       .build())
-                                        .build())
-                .toCompletableFuture()
-                .join();
+                                        .build());
         grants = response.user().get().grants(Role.class);
         assertThat(grants, iterableWithSize(5));
         Role counted2 = findCounted(grants);
@@ -120,24 +115,24 @@ class IdcsRoleMapperRxProviderTest {
         return null;
     }
 
-    private static final class TestProvider extends IdcsRoleMapperRxProvider {
+    private static final class TestProvider extends IdcsRoleMapperProvider {
         private static final AtomicInteger COUNTER = new AtomicInteger();
         private TestProvider(Builder<?> builder) {
             super(builder);
         }
 
         @Override
-        protected Single<List<? extends Grant>> getGrantsFromServer(Subject subject) {
+        protected List<? extends Grant> getGrantsFromServer(Subject subject) {
             String id = subject.principal().id();
-            return Single.just(List.of(Role.create("counted_"+ COUNTER.incrementAndGet()),
-                                       Role.create("fixed"),
-                                       Role.create(id)));
+            return List.of(Role.create("counted_"+ COUNTER.incrementAndGet()),
+                           Role.create("fixed"),
+                           Role.create(id));
         }
 
         @Override
-        protected Single<List<? extends Grant>> addAdditionalGrants(Subject subject, List<Grant> idcsGrants) {
-            return Single.just(List.of(Role.create("additional_"+ COUNTER.incrementAndGet()),
-                                       Role.create("additional-fixed")));
+        protected List<? extends Grant> addAdditionalGrants(Subject subject, List<Grant> idcsGrants) {
+            return List.of(Role.create("additional_"+ COUNTER.incrementAndGet()),
+                           Role.create("additional-fixed"));
         }
     }
 }

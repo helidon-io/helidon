@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -523,14 +521,11 @@ public final class SecurityHandler implements Handler {
                                                .build());
 
         try {
-            AtxResult atnResult = processAuthentication(res, securityContext, tracing.atnTracing()).toCompletableFuture()
-                    .get();
+            AtxResult atnResult = processAuthentication(res, securityContext, tracing.atnTracing());
 
             AtxResult atzResult;
             if (atnResult.proceed) {
-                atzResult = processAuthorization(req, res, securityContext, tracing.atzTracing())
-                        .toCompletableFuture()
-                        .get();
+                atzResult = processAuthorization(req, res, securityContext, tracing.atzTracing());
             } else {
                 atzResult = AtxResult.STOP;
             }
@@ -609,20 +604,19 @@ public final class SecurityHandler implements Handler {
         securityContext.audit(auditEvent);
     }
 
-    private CompletionStage<AtxResult> processAuthentication(ServerResponse res,
-                                                             SecurityContext securityContext,
-                                                             AtnTracing atnTracing) {
+    private AtxResult processAuthentication(ServerResponse res,
+                                            SecurityContext securityContext,
+                                            AtnTracing atnTracing) {
         if (!authenticate.orElse(false)) {
-            return CompletableFuture.completedFuture(AtxResult.PROCEED);
+            return AtxResult.PROCEED;
         }
-
-        CompletableFuture<AtxResult> future = new CompletableFuture<>();
 
         SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext.atnClientBuilder();
         configureSecurityRequest(clientBuilder,
                                  atnTracing.findParent().orElse(null));
 
-        clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit().thenAccept(response -> {
+        try {
+            AuthenticationResponse response = clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit();
             // copy headers to be returned with the current response
             response.responseHeaders()
                     .forEach((key, value) -> res.headers().set(Http.Header.create(Http.Header.create(key), value)));
@@ -632,38 +626,32 @@ public final class SecurityHandler implements Handler {
                 //everything is fine, we can continue with processing
                 break;
             case FAILURE_FINISH:
-                if (atnFinishFailure(res, future, response)) {
+                if (atnFinishFailure(res, response)) {
                     atnSpanFinish(atnTracing, response);
-                    return;
+                    return AtxResult.STOP;
                 }
                 break;
             case SUCCESS_FINISH:
-                atnFinish(res, future, response);
+                atnFinish(res, response);
                 atnSpanFinish(atnTracing, response);
-                return;
+                return AtxResult.STOP;
             case ABSTAIN:
             case FAILURE:
-                if (atnAbstainFailure(res, future, response)) {
+                if (atnAbstainFailure(res, response)) {
                     atnSpanFinish(atnTracing, response);
-                    return;
+                    return AtxResult.STOP;
                 }
                 break;
             default:
-                Exception e = new SecurityException("Invalid SecurityStatus returned: " + response.status());
-                future.completeExceptionally(e);
-                atnTracing.error(e);
-                return;
+                throw new SecurityException("Invalid SecurityStatus returned: " + response.status());
             }
 
             atnSpanFinish(atnTracing, response);
-            future.complete(new AtxResult(clientBuilder.buildRequest()));
-        }).exceptionally(throwable -> {
-            atnTracing.error(throwable);
-            future.completeExceptionally(throwable);
-            return null;
-        });
-
-        return future;
+            return new AtxResult(clientBuilder.buildRequest());
+        } catch (Exception e) {
+            atnTracing.error(e);
+            throw e;
+        }
     }
 
     private void atnSpanFinish(AtnTracing atnTracing, AuthenticationResponse response) {
@@ -674,9 +662,7 @@ public final class SecurityHandler implements Handler {
         atnTracing.finish();
     }
 
-    private boolean atnAbstainFailure(ServerResponse res,
-                                      CompletableFuture<AtxResult> future,
-                                      AuthenticationResponse response) {
+    private boolean atnAbstainFailure(ServerResponse res, AuthenticationResponse response) {
         if (authenticationOptional.orElse(false)) {
             LOGGER.finest("Authentication failed, but was optional, so assuming anonymous");
             return false;
@@ -687,14 +673,10 @@ public final class SecurityHandler implements Handler {
                      Http.Status.UNAUTHORIZED_401.code(),
                      Map.of(Http.Header.WWW_AUTHENTICATE,
                             List.of("Basic realm=\"Security Realm\"")));
-        future.complete(AtxResult.STOP);
         return true;
     }
 
-    private boolean atnFinishFailure(ServerResponse res,
-                                     CompletableFuture<AtxResult> future,
-                                     AuthenticationResponse response) {
-
+    private boolean atnFinishFailure(ServerResponse res, AuthenticationResponse response) {
         if (authenticationOptional.orElse(false)) {
             LOGGER.finest("Authentication failed, but was optional, so assuming anonymous");
             return false;
@@ -702,19 +684,13 @@ public final class SecurityHandler implements Handler {
             int defaultStatusCode = Http.Status.UNAUTHORIZED_401.code();
 
             abortRequest(res, response, defaultStatusCode, Map.of());
-            future.complete(AtxResult.STOP);
             return true;
         }
     }
 
-    private void atnFinish(ServerResponse res,
-                           CompletableFuture<AtxResult> future,
-                           AuthenticationResponse response) {
-
+    private void atnFinish(ServerResponse res, AuthenticationResponse response) {
         int defaultStatusCode = Http.Status.OK_200.code();
-
         abortRequest(res, response, defaultStatusCode, Map.of());
-        future.complete(AtxResult.STOP);
     }
 
     private void abortRequest(ServerResponse res,
@@ -752,18 +728,15 @@ public final class SecurityHandler implements Handler {
                 .tracingSpan(parentSpanContext);
     }
 
-    @SuppressWarnings("ThrowableNotThrown")
-    private CompletionStage<AtxResult> processAuthorization(ServerRequest req,
-                                                            ServerResponse res,
-                                                            SecurityContext context,
-                                                            AtzTracing atzTracing) {
-        CompletableFuture<AtxResult> future = new CompletableFuture<>();
+    private AtxResult processAuthorization(ServerRequest req,
+                                           ServerResponse res,
+                                           SecurityContext context,
+                                           AtzTracing atzTracing) {
 
         if (!authorize.orElse(false)) {
-            future.complete(AtxResult.PROCEED);
             atzTracing.logStatus(SecurityResponse.SecurityStatus.ABSTAIN);
             atzTracing.finish();
-            return future;
+            return AtxResult.PROCEED;
         }
 
         Set<String> rolesSet = rolesAllowed.orElse(Set.of());
@@ -777,17 +750,15 @@ public final class SecurityHandler implements Handler {
                 if (rolesSet.stream().noneMatch(role -> context.isUserInRole(role, explicitAuthorizer.get()))) {
                     auditRoleMissing(context, req.path(), context.user(), rolesSet);
                     abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
-                    future.complete(AtxResult.STOP);
                     atzTracing.finish();
-                    return future;
+                    return AtxResult.STOP;
                 }
             } else {
                 if (rolesSet.stream().noneMatch(context::isUserInRole)) {
                     auditRoleMissing(context, req.path(), context.user(), rolesSet);
                     abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
-                    future.complete(AtxResult.STOP);
                     atzTracing.finish();
-                    return future;
+                    return AtxResult.STOP;
                 }
             }
         }
@@ -798,7 +769,8 @@ public final class SecurityHandler implements Handler {
         configureSecurityRequest(client,
                                  atzTracing.findParent().orElse(null));
 
-        client.explicitProvider(explicitAuthorizer.orElse(null)).submit().thenAccept(response -> {
+        try {
+            AuthorizationResponse response = client.explicitProvider(explicitAuthorizer.orElse(null)).submit();
             atzTracing.logStatus(response.status());
 
             switch (response.status()) {
@@ -813,31 +785,23 @@ public final class SecurityHandler implements Handler {
 
                 atzTracing.finish();
                 abortRequest(res, response, defaultStatus, Map.of());
-                future.complete(AtxResult.STOP);
-                return;
+                return AtxResult.STOP;
             case ABSTAIN:
             case FAILURE:
                 atzTracing.finish();
                 abortRequest(res, response, Http.Status.FORBIDDEN_403.code(), Map.of());
-                future.complete(AtxResult.STOP);
-                return;
+                return AtxResult.STOP;
             default:
-                SecurityException e = new SecurityException("Invalid SecurityStatus returned: " + response.status());
-                atzTracing.error(e);
-                future.completeExceptionally(e);
-                return;
+                throw new SecurityException("Invalid SecurityStatus returned: " + response.status());
             }
 
             atzTracing.finish();
             // everything was OK
-            future.complete(AtxResult.PROCEED);
-        }).exceptionally(throwable -> {
-            atzTracing.error(throwable);
-            future.completeExceptionally(throwable);
-            return null;
-        });
-
-        return future;
+            return AtxResult.PROCEED;
+        } catch (Exception e) {
+            atzTracing.error(e);
+            throw e;
+        }
     }
 
     private void auditRoleMissing(SecurityContext context,

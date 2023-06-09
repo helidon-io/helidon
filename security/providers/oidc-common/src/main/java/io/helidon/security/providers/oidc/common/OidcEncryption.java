@@ -30,7 +30,6 @@ import java.util.UUID;
 import io.helidon.common.Base64Value;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.crypto.SymmetricCipher;
-import io.helidon.common.reactive.Single;
 import io.helidon.security.Security;
 import io.helidon.security.spi.EncryptionProvider.EncryptionSupport;
 
@@ -64,8 +63,8 @@ final class OidcEncryption {
     private static EncryptionSupport symmetricCipher(char[] masterPassword) {
         SymmetricCipher cipher = SymmetricCipher.create(masterPassword);
         return EncryptionSupport.create(
-                bytes -> Single.just(cipher.encrypt(Base64Value.create(bytes)).toBase64()),
-                cipherText -> Single.just(cipher.decrypt(Base64Value.createFromEncoded(cipherText)).toBytes())
+                bytes -> cipher.encrypt(Base64Value.create(bytes)).toBase64(),
+                cipherText -> cipher.decrypt(Base64Value.createFromEncoded(cipherText)).toBytes()
         );
     }
 

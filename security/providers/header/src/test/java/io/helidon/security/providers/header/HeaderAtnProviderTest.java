@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public abstract class HeaderAtnProviderTest {
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.env()).thenReturn(env);
 
-        AuthenticationResponse response = provider.syncAuthenticate(request);
+        AuthenticationResponse response = provider.authenticate(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
         assertThat(response.user(), is(not(Optional.empty())));
@@ -81,7 +81,7 @@ public abstract class HeaderAtnProviderTest {
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.env()).thenReturn(env);
 
-        AuthenticationResponse response = provider.syncAuthenticate(request);
+        AuthenticationResponse response = provider.authenticate(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
         assertThat(response.user(), is(Optional.empty()));
@@ -109,7 +109,7 @@ public abstract class HeaderAtnProviderTest {
         assertThat("Outbound should be supported", provider.isOutboundSupported(request, outboundEnv, outboundEp),
                    is(true));
 
-        OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
+        OutboundSecurityResponse response = provider.outboundSecurity(request, outboundEnv, outboundEp);
 
         List<String> custom = response.requestHeaders().get("Custom");
         assertThat(custom, notNullValue());
@@ -132,7 +132,7 @@ public abstract class HeaderAtnProviderTest {
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.env()).thenReturn(env);
 
-        AuthenticationResponse response = provider.syncAuthenticate(request);
+        AuthenticationResponse response = provider.authenticate(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
         assertThat(response.user(), is(Optional.empty()));
@@ -153,7 +153,7 @@ public abstract class HeaderAtnProviderTest {
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.env()).thenReturn(env);
 
-        AuthenticationResponse response = provider.syncAuthenticate(request);
+        AuthenticationResponse response = provider.authenticate(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.service(), is(Optional.empty()));
@@ -180,7 +180,7 @@ public abstract class HeaderAtnProviderTest {
         EndpointConfig outboundEp = EndpointConfig.create();
 
         assertThat("Outbound should be supported", provider.isOutboundSupported(request, outboundEnv, outboundEp), is(true));
-        OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
+        OutboundSecurityResponse response = provider.outboundSecurity(request, outboundEnv, outboundEp);
 
         List<String> custom = response.requestHeaders().get("Authorization");
         assertThat(custom, notNullValue());
@@ -201,7 +201,7 @@ public abstract class HeaderAtnProviderTest {
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.env()).thenReturn(env);
 
-        AuthenticationResponse response = provider.syncAuthenticate(request);
+        AuthenticationResponse response = provider.authenticate(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
         assertThat(response.user(), is(Optional.empty()));

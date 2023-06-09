@@ -57,7 +57,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private Tls tls;
     private String uriTemplate;
     private ClientConnection connection;
-    private UriFragment fragment;
+    private UriFragment fragment = UriFragment.empty();
     private boolean skipUriEncoding = false;
 
     ClientRequestImpl(Http1ClientConfig clientConfig,
@@ -74,7 +74,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         this.query = query;
 
         this.requestId = "http1-client-" + COUNTER.getAndIncrement();
-        this.fragment = UriFragment.empty();
+        this.explicitHeaders = WritableHeaders.create(clientConfig.defaultHeaders());
     }
 
     //Copy constructor for redirection purposes
@@ -82,17 +82,12 @@ class ClientRequestImpl implements Http1ClientRequest {
                               Http.Method method,
                               UriHelper helper,
                               UriQueryWriteable query) {
-        this.method = method;
-        this.uri = helper;
-        this.query = query;
+        this(request.clientConfig, method, helper, query);
 
-        this.clientConfig = request.clientConfig;
         this.followRedirects = request.followRedirects;
         this.maxRedirects = request.maxRedirects;
         this.tls = request.tls;
         this.connection = request.connection;
-
-        this.requestId = "http1-client-" + COUNTER.getAndIncrement();
     }
 
     @Override
