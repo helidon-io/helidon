@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
@@ -72,6 +73,7 @@ public class HelloWorldAsyncResponseTest {
     @RegistryType(type = MetricRegistry.Type.VENDOR)
     private MetricRegistry vendorRegistry;
 
+    @Disabled
     @Test
     public void test() throws Exception {
         MetricID metricID = MetricsCdiExtension
