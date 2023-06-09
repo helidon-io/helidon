@@ -230,9 +230,10 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
     @Override
     protected void innerExecute() {
-        this.permittedProviderType = (permittedProviderTypes == null || permittedProviderTypes.isBlank()) ?
-                ApplicationCreatorConfigOptions.DEFAULT_PERMITTED_PROVIDER_TYPE
-                : PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
+        this.permittedProviderType =
+                (permittedProviderTypes == null || permittedProviderTypes.isBlank())
+                        ? ApplicationCreatorConfigOptions.DEFAULT_PERMITTED_PROVIDER_TYPE
+                        : PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
 
         CallingContext callCtx = null;
         Optional<CallingContextDefault.Builder> callingContextBuilder =
