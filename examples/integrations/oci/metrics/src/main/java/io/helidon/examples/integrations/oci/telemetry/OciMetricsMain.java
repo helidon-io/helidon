@@ -23,19 +23,15 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.oracle.bmc.monitoring.Monitoring;
-import com.oracle.bmc.monitoring.MonitoringClient;
-import io.helidon.logging.common.LogConfig;
 import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
 
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
-import com.oracle.bmc.monitoring.model.Datapoint;
-import com.oracle.bmc.monitoring.model.FailedMetricRecord;
-import com.oracle.bmc.monitoring.model.MetricDataDetails;
-import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
-import com.oracle.bmc.monitoring.model.PostMetricDataResponseDetails;
+import com.oracle.bmc.monitoring.Monitoring;
+import com.oracle.bmc.monitoring.MonitoringClient;
+import com.oracle.bmc.monitoring.model.*;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
 import com.oracle.bmc.monitoring.responses.PostMetricDataResponse;
 

@@ -32,11 +32,6 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
-import com.oracle.bmc.ConfigFileReader;
-import com.oracle.bmc.auth.AuthenticationDetailsProvider;
-import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
-import com.oracle.bmc.database.Database;
-import com.oracle.bmc.database.DatabaseClient;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
@@ -47,6 +42,11 @@ import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.dbclient.jdbc.JdbcDbClientProvider;
 
+import com.oracle.bmc.ConfigFileReader;
+import com.oracle.bmc.auth.AuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.database.Database;
+import com.oracle.bmc.database.DatabaseClient;
 import com.oracle.bmc.database.model.GenerateAutonomousDatabaseWalletDetails;
 import com.oracle.bmc.database.requests.GenerateAutonomousDatabaseWalletRequest;
 import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletResponse;

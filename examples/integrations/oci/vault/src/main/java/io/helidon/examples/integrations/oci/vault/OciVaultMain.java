@@ -18,20 +18,20 @@ package io.helidon.examples.integrations.oci.vault;
 
 import java.io.IOException;
 
-import com.oracle.bmc.keymanagement.KmsCrypto;
-import com.oracle.bmc.keymanagement.KmsCryptoClient;
-import com.oracle.bmc.secrets.Secrets;
-import com.oracle.bmc.secrets.SecretsClient;
-import com.oracle.bmc.vault.Vaults;
-import com.oracle.bmc.vault.VaultsClient;
-import io.helidon.logging.common.LogConfig;
 import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
+import io.helidon.nima.webserver.WebServer;
 
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.keymanagement.KmsCrypto;
+import com.oracle.bmc.keymanagement.KmsCryptoClient;
 import com.oracle.bmc.model.BmcException;
-import io.helidon.nima.webserver.WebServer;
+import com.oracle.bmc.secrets.Secrets;
+import com.oracle.bmc.secrets.SecretsClient;
+import com.oracle.bmc.vault.Vaults;
+import com.oracle.bmc.vault.VaultsClient;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -86,7 +86,7 @@ public final class OciVaultMain {
                                 signatureKey))
                         .error(BmcException.class, (req, res, ex) -> res.status(
                                 ex.getStatusCode()).send(ex.getMessage())))
-                .port(config.get("server.port").asInt().orElse(8080))
+                .config(config.get("server"))
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port());

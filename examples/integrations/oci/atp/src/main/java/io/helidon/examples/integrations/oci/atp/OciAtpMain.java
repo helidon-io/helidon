@@ -18,8 +18,8 @@ package io.helidon.examples.integrations.oci.atp;
 
 import java.io.IOException;
 
-import io.helidon.logging.common.LogConfig;
 import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -51,7 +51,7 @@ public final class OciAtpMain {
 
         WebServer server = WebServer.builder()
                 .routing(OciAtpMain::routing)
-                .port(config.get("server.port").asInt().orElse(8080))
+                .config(config.get("server"))
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port());

@@ -24,13 +24,19 @@ import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.Http;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
+
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
-import com.oracle.bmc.objectstorage.ObjectStorageClient;
-import io.helidon.common.http.Http;
-
 import com.oracle.bmc.objectstorage.ObjectStorage;
+import com.oracle.bmc.objectstorage.ObjectStorageClient;
 import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
 import com.oracle.bmc.objectstorage.requests.GetNamespaceRequest;
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
@@ -39,12 +45,6 @@ import com.oracle.bmc.objectstorage.responses.DeleteObjectResponse;
 import com.oracle.bmc.objectstorage.responses.GetNamespaceResponse;
 import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
 import com.oracle.bmc.objectstorage.responses.PutObjectResponse;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
 
 /**
  * REST API for the objecstorage example.

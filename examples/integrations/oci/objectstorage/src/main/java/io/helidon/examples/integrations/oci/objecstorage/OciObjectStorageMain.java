@@ -56,6 +56,7 @@ public final class OciObjectStorageMain {
 
         WebServer server = WebServer.builder()
                 .routing(OciObjectStorageMain::routing)
+                .config(config.get("server"))
                 .start();
     }
 
