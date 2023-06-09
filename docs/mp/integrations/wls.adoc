@@ -19,10 +19,13 @@
 
 = Oracle WebLogic Server 
 :description: Helidon Oracle WebLogic Server Integration
-:keywords: wls, jms, rest, single sign-on, sso, microtx, web services
+:keywords: wls, jms, rest, single sign-on, sso, web services
 :feature-name: Oracle WebLogic Server Integration Integration
 :rootdir: {docdir}/../..
 
+include::{rootdir}/includes/mp.adoc[]
+
+:jakarta-version: Jakarta EE {version-lib-jakarta-ee}
 :wls-version: 14.1.1.0
 // TODO: Change the link! This is UAT!
 :wls-root-url: https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/{wls-version}
@@ -33,8 +36,11 @@
 :wls-jaxrs-client-url: {wls-root-url}/restf/develop-restful-client.html#GUID-F50F4FB3-8A25-439F-8554-484F1C58315C
 :wls-jaxrs-client-link: {wls-jaxrs-url}[Developing RESTful Web Service Clients for Oracle WebLogic Server]
 
-:wls-jms-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-jms-helidon.html#GUID-431439D4-F2F0-4D89-8A65-287A822BA83D
+:wls-jms-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-jms-helidon.html#GUID-8E1A4C48-D7C9-4599-B0C1-89E1FEA823B2
 :wls-jms-link: {wls-jms-url}[Integrating WebLogic JMS with Helidon]
+
+:wls-thin-url: {wls-root-url}/saclt/wlthint3client.html#GUID-D352B8F0-1B9D-43E8-A675-BBFE7E4DE1E9
+:wls-thin-link: {wls-thin-url}[Weblogic thin T3 client]
 
 :wls-soap-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-web-services-helidon.html#GUID-DA893D15-13CB-49AF-AD5B-43FD716618BB
 :wls-soap-link: {wls-jms-url}[Integrating Oracle WebLogic Server Web Services with Helidon]
@@ -48,8 +54,6 @@
 :jersey-url: https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest
 :jersey-link: {jersey-url}[Eclipse Jersey]
 
-include::{rootdir}/includes/mp.adoc[]
-
 == Contents
 
 - <<Overview, Overview>>
@@ -59,6 +63,14 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Single Sign-On on OCI Integration, Single Sign-On on OCI Integration>>
 
 == Overview
+
+The Oracle WebLogic Server and Helidon integration enables interaction between a Helidon microservice application and an application installed on Oracle WebLogic Server.
+The following integrations are explained in this document:
+
+* The REST integration allows Oracle WebLogic Server applications and Helidon microservices to communicate through RESTful web service invocations.
+* The JMS integration allows Helidon microservices to publish and consume messages from Oracle WebLogic JMS Server.
+* The Oracle WebLogic Web Services integration allows Helidon microservices to interact with Oracle WebLogic Server applications through SOAP (Simple Object Access Protocol) web service calls from Helidon to Oracle WebLogic Server.
+* The Oracle WebLogic Server and Helidon integration allows communication between a WebLogic cluster-hosted application and a Helidon microservice application by implementing Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
 
 Integration between Helidon and Oracle Weblogic Server is possible over numerous protocols, most notably RESTful web services,
 SOAP web services and JMS. Both Helidon and Oracle Weblogic Server supports Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
@@ -71,12 +83,13 @@ SOAP web services and JMS. Both Helidon and Oracle Weblogic Server supports Sing
 - <<REST-Services-References, References>>
 
 === Overview [[REST-Services-Overview]]
+The REST services integration with Helidon enables bidirectional REST calls between Helidon and Oracle WebLogic Server.
 RESTful integration between Oracle Weblogic Server and Helidon MP is easy to develop and maintain because
 both runtimes supports JAX-RS for serving and calling RESTful resources.
-Thanks to the Jakarata EE compliance you can create same RESTful resource or client which will work in both environments.
+Thanks to the Jakarata EE support you can create same RESTful resource or client which will work in both environments.
 
 Main difference in usage of JAX-RS between Helidon and Oracle Weblogic Server is caused by the version of the supported Jakarta specification.
-While Oracle Weblogic Server supports Jakarta EE 8, Helidon supports JAX-RS or newly Jakarta RESTful Web Services from Jakarta EE 9.1.
+While Oracle Weblogic Server supports Jakarta EE 8, Helidon supports JAX-RS or newly Jakarta RESTful Web Services from {jakarta-version}.
 Most notable difference between those two versions of Jakarta EE is the package name change, where `javax` has been replaced with `jakarta`.
 
 [source, java]
@@ -171,53 +184,113 @@ For developing and deploying JAX-RS clients on Oracle Weblogic Server follow {wl
 - <<JMS-Integration-Overview, Overview>>
 - <<JMS-Integration-Maven-Coordinates, Maven Coordinates>>
 - <<JMS-Integration-Usage, Usage>>
-- <<JMS-Integration-Examples, Examples>>
 - <<JMS-Integration-References, References>>
 
 === Overview [[JMS-Integration-Overview]]
+Oracle Weblogic Server provides Java Message Service (JMS) and acts as a messaging broker accessible even from outside the cluster.
+To access Oracle Weblogic JMS Server from outside, client library is needed.
+Helidon JMS connector for reactive messaging can be configured to use {wls-thin-link} for either consuming or
+emitting messages.
 
-The integration of the Oracle WebLogic Server Java Message Service (JMS) with Helidon enables Oracle WebLogic Server applications and Helidon microservices to communicate through messaging, in one or both directions.
+{wls-thin-link} can be obtained from multiple sources.
+Legacy versions of thin client can be found in server/lib directory(`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.
+
+WARNING: Helidon supports {jakarta-version} and legacy versions of `javax` based thin T3 client wouldn't work correctly when on it's classpath.
+Legacy thin T3 clients must be used with specialized xref:../../mp/reactivemessaging/weblogic.adoc[WebLogic JMS Connector] in order to work.
+
+Updated version of thin T3 client compatible with modern Jakarta runtimes is available at {osdc-link} as `wlthint3client.jakarta`.
+After the download, thin T3 client artefact needs to be installed in the maven repository accessible from
+your application build.
+
+[source, shell]
+.Example of installing thin T3 client artefact to the local maven repository
+----
+mvn install:install-file \
+-Dfile=<JAR_FILE_PATH>/wlthint3client.jakarta.jar \
+-DgroupId=wlthint3client.jakarta \
+-DartifactId=wlthint3client-jakarta \
+-Dversion=1.0
+----
 
 === Maven Coordinates [[JMS-Integration-Maven-Coordinates]]
 
 To enable Oracle WebLogic Server JMS  with Helidon, add the following dependencies to your project’s `pom.xml` file:
 
-*Dependency for Reactive Messaging*
 [source,xml]
+.Dependencies for Reactive Messaging with thin T3 client
 ----
 <dependency>
    <groupId>io.helidon.microprofile.messaging</groupId>
-   <artifactId>helidon-microprofile-messaging</artifactId>
+   <artifactId>helidon-microprofile-messaging</artifactId> <1>
 </dependency>
-----
-*Dependency for JMS connector*
-[source,xml]
-----
 <dependency>
     <groupId>io.helidon.messaging.jms</groupId>
-    <artifactId>helidon-messaging-jms</artifactId>
+    <artifactId>helidon-messaging-jms</artifactId> <2>
 </dependency>
-----
-
-*Dependencies for the WLS thin client JAR file*
-Download the jakarta thin client JAR (`wlthint3client.jakarta`) file from https://edelivery.oracle.com/osdc/faces/Home.jspx[Oracle Software Delivery Cloud], and add it as part of the Maven dependencies:
-[source,xml]
-----
 <dependency>
     <groupId>wlthint3client.jakarta</groupId>
-    <artifactId>wlthint3client-jakarta</artifactId>
+    <artifactId>wlthint3client-jakarta</artifactId> <3>
     <version>1.0</version>
 </dependency>
 ----
+<1> Dependency for Reactive Messaging
+<2> Dependency for JMS connector
+<3> Dependency for manually installed WLS thin client
+
 
 === Usage [[JMS-Integration-Usage]]
 
-After adding the Maven dependencies, configure the Helidon JMS connector including the JMS environment properties and the JMS resources such as the connection factory, destination, and destination type.
+After adding the Maven dependencies,
+configure the Helidon JMS connector including the JMS environment properties and the JMS resources such as the connection factory,
+destination, and destination type.
 
-After you have configured the Helidon JMS connector, add the Java code to send and receive messages to and from Oracle WebLogic Server.
+The following example shows the `helidon-jms` connector configuration in the `application.yaml` configuration file.
 
-Sample method to consume a message from the JMS channel:
+[source, yaml]
+.Example messaging configuration with JMS connector and thin T3 client
+----
+wls-username: weblogic
+wls-password: welcome1
+wls-admin-url: t3://localhost:7001 #<1>
+wls-cluster-url: t3://localhost:7003,localhost:7005,localhost:7007 #<2>
+
+mp:
+  messaging:
+    connector:
+      helidon-jms:
+        jndi:
+           jms-factory: qcf #<3>
+           env-properties: #<4>
+              java.naming.factory.initial: weblogic.jndi.WLInitialContextFactory
+              java.naming.provider.url: ${wls-admin-url}
+              java.naming.security.principal: ${wls-username}
+              java.naming.security.credentials: ${wls-password}
+
+    incoming:
+      from-wls-q:
+        connector: helidon-jms
+        jndi.destination: queuejndi #<5>
+        type: queue
+
+    outgoing:
+      to-wls-q:
+        connector: helidon-jms
+        jndi.destination: queuejndi #<5>
+        type: queue
+----
+<1> Admin server t3 connection URL
+<2> Example of WLS Cluster t3 connection URL
+<3> Connection factory name
+<4> JMS environment properties to lookup resources
+<5> Destination with `jndi.` prefix is evaluated as JNDI name, simple `destination` is evaluated as a CDI syntax
+
+For more detailed reading about Reactive Messaging configuration see xref:../../mp/reactivemessaging/introduction.adoc#_configuration[Reactive Messaging Configuration].
+
+After you have configured the Helidon JMS connector,
+you can use xref:../../mp/reactivemessaging/introduction.adoc[Helidon Reactive Messaging] for consuming and sending messages.
+
 [source, java]
+.Consuming messages from Oracle Weblogic JMS Server
 ----
 @Incoming("from-wls-q")
 public void receive(String msg) {
@@ -225,8 +298,8 @@ public void receive(String msg) {
 }
 ----
 
-Sample method to produce messages to the JMS channel:
 [source, java]
+.Producing messages to Oracle Weblogic JMS Server
 ----
 @Outgoing("to-wls-q")
 public PublisherBuilder<String> produceToJms() {
@@ -234,62 +307,14 @@ public PublisherBuilder<String> produceToJms() {
 }
 ----
 
-For more information about this integration, see {wls-jms-link}
-
-=== Examples [[JMS-Integration-Examples]]
-The following example shows the helidon-jms connector configurations added to the `application.yaml` file.
-
-[source, yaml]
-----
-# User-defined properties
-wls-username: weblogic
-wls-password: welcome1
-# WLS Admin server t3 connection URL
-wls-admin-url: t3://localhost:7001
-# WLS Cluster t3 connection URL
-wls-cluster-url: t3://localhost:7003,localhost:7005,localhost:7007
- 
-mp:
-  messaging:
-    connector:
-      helidon-jms:
-        jndi:
-           #Default connection factory name. This can be overridden in individual resource configurations
-           jms-factory: qcf
-           #JMS environment properties to lookup resources
-           env-properties:
-              java.naming.factory.initial: weblogic.jndi.WLInitialContextFactory
-              java.naming.provider.url: ${wls-admin-url}
-              java.naming.security.principal: ${wls-username}
-              java.naming.security.credentials: ${wls-password}
- 
-    # Add all consumer resources-related configurations below incoming 
-    incoming:
-      #Identifier "from-wls-q" is used with @Incoming annotation
-      from-wls-q:
-        #Connector Name as specific in connector section. It is predefined
-        connector: helidon-jms
-        #JMS Destination Name in JNDI format
-        jndi.destination: queuejndi
-        #JMS Destination Type
-        type: queue
-        #JMS Connection Factory 
-        jndi.jms-factory: qcf
- 
-    # Add all producer resources-related configurations below outgoing 
-    outgoing:
-      #Identifier "to-wls-q" is used with @Outgoing annotation
-      to-wls-q:
-        connector: helidon-jms
-        jndi.destination: queuejndi
-        type: queue
-        jndi.jms-factory: qcf
-----
-
+For more information about setting up JMS integration between Helidon and Oracle Weblogic Server, see {wls-jms-link}.
 
 === References [[JMS-Integration-References]]
 
+* xref:../../mp/reactivemessaging/introduction.adoc[Reactive Messaging]
 * xref:../../mp/reactivemessaging/jms.adoc[JMS Connector]
+* xref:../../mp/reactivemessaging/weblogic.adoc[WebLogic JMS Connector for legacy thin T3 clients]
+* {osdc-link}
 * {wls-jms-link}
 
 == Web Services Integration [[Web-Services-Integration]]

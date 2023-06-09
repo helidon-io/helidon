@@ -23,7 +23,11 @@
 :microprofile-bundle: false
 :rootdir: {docdir}/../..
 
+
 include::{rootdir}/includes/mp.adoc[]
+
+:jakarta-version: Jakarta EE {version-lib-jakarta-ee}
+
 
 == Contents
 
@@ -34,17 +38,23 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-Connecting streams to WebLogic JMS with Reactive Messaging couldn't be easier.
-This connector extends Helidon JMS connector with special handling for WebLogic T3 thin client.
+WebLogic JMS Connector extends Helidon JMS connector with special handling for legacy WebLogic T3 thin clients.
+Legacy versions of thin client can be found in server/lib directory(`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.
 
-Connecting to WebLogic JMS connection factories requires proprietary T3 thin client library which can be obtained from
-WebLogic installation.
+Helidon supports {jakarta-version} and legacy versions of `javax` based thin T3 client wouldn't work correctly when on it's classpath.
+Legacy thin T3 clients must be loaded from filesystem location specified by `thin-jar` property.
 
-WARNING: Avoid placing `wlthint3client.jar` on Helidon classpath, client library location needs to be
+WARNING: Avoid placing legacy `wlthint3client.jar` on Helidon classpath, client library location needs to be
 configured and loaded by Helidon messaging connector.
 
-WARNING: Don't forget to start your Helidon app with `--add-opens=java.base/java.io=ALL-UNNAMED` to allow
+WARNING: Don't forget to start your Helidon app with `--add-opens=java.base/java.io=ALL-UNNAMED` to allow legacy
 wlthint3client use reflection.
+
+Updated version of thin T3 client compatible with modern Jakarta runtimes can be downloaded from {osdc-link} as `wlthint3client.jakarta`.
+Jakarta based thin client can be placed on Helidon classpath and used with this specialized connector or
+the xref:../../mp/reactivemessaging/jms.adoc[JMS connector]
+After the download, thin T3 client artefact needs to be installed in the maven repository accessible from
+your application build.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
