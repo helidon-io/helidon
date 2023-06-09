@@ -61,6 +61,7 @@ public class HelloWorldResource {
     static final String MESSAGE_SIMPLE_TIMER = "messageSimpleTimer";
     static final String SLOW_MESSAGE_TIMER = "slowMessageTimer";
     static final String SLOW_MESSAGE_SIMPLE_TIMER = "slowMessageSimpleTimer";
+    static final String SLOW_MESSAGE_WITH_ARG_SIMPLE_TIMER = "slowMessageWithArgSimpleTimer";
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
@@ -177,7 +178,7 @@ public class HelloWorldResource {
     @GET
     @Path("/slowWithArg/{name}")
     @Produces(MediaType.TEXT_PLAIN)
-    @SimplyTimed(name = SLOW_MESSAGE_SIMPLE_TIMER, absolute = true)
+    @SimplyTimed(name = SLOW_MESSAGE_WITH_ARG_SIMPLE_TIMER, absolute = true)
     @Timed(name = SLOW_MESSAGE_TIMER, absolute = true)
     public void slowMessageWithArg(@PathParam("name") String input, @Suspended AsyncResponse ar) {
         executorService.execute(() -> {

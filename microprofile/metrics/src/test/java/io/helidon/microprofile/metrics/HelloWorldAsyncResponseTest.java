@@ -79,7 +79,6 @@ public class HelloWorldAsyncResponseTest {
                                                                                     AsyncResponse.class,
                                                                                     ServerResponse.class));
 
-        HelloWorldResource.initSlowRequest();
         SortedMap<MetricID, SimpleTimer> simpleTimers = registry.getSimpleTimers();
 
         SimpleTimer explicitSimpleTimer = simpleTimers.get(new MetricID(SLOW_MESSAGE_SIMPLE_TIMER));
@@ -97,22 +96,12 @@ public class HelloWorldAsyncResponseTest {
         assertThat("Timer", timer, is(notNullValue()));
         long slowMessageTimerCountBefore= timer.getCount();
 
-        Future<String> future = webTarget
+        String result = HelloWorldTest.runAndPause(() ->webTarget
                 .path("helloworld/slow")
                 .request()
                 .accept(MediaType.TEXT_PLAIN)
-                .async()
-                .get(String.class);
-
-        HelloWorldResource.awaitSlowRequestStarted();
-
-        // We don't need to access the in-flight counter for this test, but we need to managed the
-        // countdown latches as if we do so the server can progress in an orderly way.
-        HelloWorldResource.reportDuringRequestFetched();
-
-        String result = future.get();
-
-        HelloWorldResource.awaitResponseSent();
+                .get(String.class)
+        );
 
         /*
          * We test simple timers (explicit and the implicit REST.request one) and timers on the async method.
@@ -133,8 +122,6 @@ public class HelloWorldAsyncResponseTest {
         long explicitDiffNanos = explicitSimpleTimer.getElapsedTime().toNanos() - explicitSimpleTimerDurationBefore.toNanos();
         assertThat("Change in elapsed time for explicit SimpleTimer", explicitDiffNanos, is(greaterThan(minDuration.toNanos())));
 
-        // Helidon updates the synthetic simple timer after the response has been sent. It's possible that the server has not
-        // done that update yet due to thread scheduling. So retry.
         assertThatWithRetry("Change in synthetic SimpleTimer elapsed time",
                             () -> simpleTimer.getElapsedTime().toNanos() - syntheticSimpleTimerDurationBefore.toNanos(),
                             is(greaterThan(minDuration.toNanos())));
