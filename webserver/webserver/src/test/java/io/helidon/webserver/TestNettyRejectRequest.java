@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.webserver;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalToIgnoringCase;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
 
 public class TestNettyRejectRequest {
@@ -74,6 +76,27 @@ public class TestNettyRejectRequest {
 
         assertThat(headers, hasKey(equalToIgnoringCase("content-length")));
         assertThat(status, is(Http.Status.BAD_REQUEST_400));
-        assertThat(entity, containsString("invalid character"));
+        assertThat(entity, containsString("see server log"));
+        assertThat(entity, not(containsString("anything")));
+    }
+
+    @Test
+    public void testBadUrl() throws Exception {
+        String response = SocketHttpClient.sendAndReceive("/anyjavascript%3a/*%3c/script%3e%3cimg/onerror%3d'\\''" +
+                        "-/%22/-/%20onmouseover%d1/-/[%60*/[]/[(new(Image)).src%3d(/%3b/%2b/255t6qeelp23xlr08hn1uv" +
+                        "vnkeqae02stgk87yvnX%3b.oastifycom/).replace(/.%3b/g%2c[])]//'\\''src%3d%3e",
+                Http.Method.GET,
+                null,
+                Collections.emptyList(),
+                server);
+
+        Map<String, String> headers = SocketHttpClient.headersFromResponse(response);
+        Http.ResponseStatus status = SocketHttpClient.statusFromResponse(response);
+        String entity = SocketHttpClient.entityFromResponse(response, false);
+
+        assertThat(headers, hasKey(equalToIgnoringCase("content-length")));
+        assertThat(status, is(Http.Status.BAD_REQUEST_400));
+        assertThat(entity, containsString("see server log"));
+        assertThat(entity, not(containsString("javascript")));
     }
 }
