@@ -15,6 +15,6 @@
  */
 
 /**
- * Helidon Injection Integration for the OCI SDK.
+ * Helidon Injection Processor Integration for the OCI SDK.
  */
 package io.helidon.integrations.oci.sdk.processor;

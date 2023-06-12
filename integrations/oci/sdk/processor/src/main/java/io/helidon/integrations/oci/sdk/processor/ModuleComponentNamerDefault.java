@@ -25,7 +25,7 @@ import io.helidon.pico.tools.spi.ModuleComponentNamer;
 import static java.util.function.Predicate.not;
 
 /**
- * Avoids using any OCI SDK package names.
+ * Avoids using any OCI SDK package name(s) as the {@link io.helidon.pico.api.ModuleComponent} name that is code-generated.
  */
 public class ModuleComponentNamerDefault implements ModuleComponentNamer {
 
