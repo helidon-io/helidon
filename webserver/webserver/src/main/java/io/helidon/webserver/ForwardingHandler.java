@@ -523,7 +523,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 .handle(new DirectHandlerRequest(request),
                         DirectHandler.EventType.BAD_REQUEST,
                         Http.Status.BAD_REQUEST_400,
-                        t);
+                        "Bad request, see server log for more information\n");
 
         FullHttpResponse response = toNettyResponse(handlerResponse);
         // 400 -> close connection
@@ -552,7 +552,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 .handle(new DirectHandlerRequest(request),
                         DirectHandler.EventType.PAYLOAD_TOO_LARGE,
                         Http.Status.REQUEST_ENTITY_TOO_LARGE_413,
-                        "");
+                        "Payload too large, see server log for more information\n");
 
         FullHttpResponse response = toNettyResponse(transportResponse);
         // too big entity -> close connection
