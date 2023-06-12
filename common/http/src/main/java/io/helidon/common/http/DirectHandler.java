@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.http;
 
+import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -29,10 +30,10 @@ import java.util.Optional;
  */
 @FunctionalInterface
 public interface DirectHandler {
+
     /**
      * Default handler will HTML encode the message (if any),
      * use the default status code for the event type, and copy all headers configured.
-     *
      *
      * @return default direct handler
      */
@@ -45,6 +46,7 @@ public interface DirectHandler {
      * <p>
      * This method should be used to return custom status, header and possible entity.
      * If there is a need to handle more details, please redirect the client to a proper endpoint to handle them.
+     * This method shall not send an unsafe message back as an entity to avoid potential data leaks.
      *
      * @param request request as received with as much known information as possible
      * @param eventType type of the event
@@ -58,6 +60,41 @@ public interface DirectHandler {
                                      Http.Status defaultStatus,
                                      ServerResponseHeaders responseHeaders,
                                      Throwable thrown) {
+        return handle(request, eventType, defaultStatus, responseHeaders, thrown, null);
+    }
+
+    /**
+     * Handler of responses that bypass router.
+     * <p>
+     * This method should be used to return custom status, header and possible entity.
+     * If there is a need to handle more details, please redirect the client to a proper endpoint to handle them.
+     * This method shall not send an unsafe message back as an entity to avoid potential data leaks.
+     *
+     * @param request request as received with as much known information as possible
+     * @param eventType type of the event
+     * @param defaultStatus default status expected to be returned
+     * @param responseHeaders headers to be added to response
+     * @param thrown throwable caught as part of processing with possible additional details about the reason of failure
+     * @param logger Possibly null logger to use for unsafe messages
+     * @return response to use to return to original request
+     */
+    default TransportResponse handle(TransportRequest request,
+                                     EventType eventType,
+                                     Http.Status defaultStatus,
+                                     ServerResponseHeaders responseHeaders,
+                                     Throwable thrown,
+                                     System.Logger logger) {
+        if (thrown instanceof RequestException re) {
+            if (re.safeMessage()) {
+                return handle(request, eventType, defaultStatus, responseHeaders, thrown.getMessage());
+            } else {
+                if (logger != null) {
+                    logger.log(Level.ERROR, thrown);
+                }
+                return handle(request, eventType, defaultStatus, responseHeaders,
+                        "Bad request, see server log for more information");
+            }
+        }
         return handle(request, eventType, defaultStatus, responseHeaders, thrown.getMessage());
     }
 
