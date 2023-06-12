@@ -79,7 +79,7 @@ class BaggageTest {
             // Confirm that baggage was NOT propagated (the bug)
             final var allKeys = consumer.keys().toString();
             assertTrue(allKeys.contains("fubar") // this fails!
-                    , () -> "No injected baggage-fubar found in "+allKeys);
+                    , () -> "No injected baggage-fubar found in " + allKeys);
 
         } catch (final Exception x) {
             span.end(x);
