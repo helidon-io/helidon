@@ -30,12 +30,10 @@ import io.opentracing.tag.Tags;
 class OpenTracingSpan implements Span {
     private final Tracer tracer;
     private final io.opentracing.Span delegate;
-    private final OpenTracingContext context;
 
     OpenTracingSpan(Tracer tracer, io.opentracing.Span delegate) {
         this.tracer = tracer;
         this.delegate = delegate;
-        this.context = new OpenTracingContext(delegate.context());
     }
 
 
@@ -66,7 +64,7 @@ class OpenTracingSpan implements Span {
 
     @Override
     public SpanContext context() {
-        return context;
+        return Span.current().orElseThrow().context();
     }
 
     @Override
@@ -100,7 +98,6 @@ class OpenTracingSpan implements Span {
     public Span baggage(String key, String value) {
         Objects.requireNonNull(key, "Baggage Key cannot be null");
         Objects.requireNonNull(value, "Baggage Value cannot be null");
-
         delegate.setBaggageItem(key, value);
         return this;
     }
