@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ an important distinction when more than one provider is used
 |`atn-token.handler.prefix`|string |{nbsp}  |Prefix before the token value (optional)
 |`atn-token.handler.regexp`|string |{nbsp} |Regular expression to obtain the token, first matching group is used (optional)
 |`sign-token`|string |{nbsp} |A group for configuring outbound security
-|`sign-token.jwk.resource.*` |{nbsp} |Configuration of the JWK to use when generating tokens (follows same rules as atn-token.jwk above), this JWK must contain private keys when using asymmetric ciphers
+|`sign-token.jwk.resource.*`|string |{nbsp} |Configuration of the JWK to use when generating tokens (follows same rules as atn-token.jwk above), this JWK must contain private keys when using asymmetric ciphers
 |`sign-token.jwt-issuer`|string |{nbsp} |When we issue a new token, this is the issuer to be placed into it (validated by target service)
 |`sign-token.outbound`|string |{nbsp} |A group for configuring outbound rules (based on transport, host and.or path)
 |`sign-token.outbound.*.name`|string |{nbsp} |A short descriptive name for configured target service(s)
