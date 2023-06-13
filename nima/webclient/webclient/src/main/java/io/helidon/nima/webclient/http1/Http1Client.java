@@ -27,6 +27,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.MediaSupport;
 import io.helidon.nima.webclient.DefaultDnsResolverProvider;
 import io.helidon.nima.webclient.DnsAddressLookup;
 import io.helidon.nima.webclient.HttpClient;
@@ -67,6 +68,8 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
 
         private static final SocketOptions EMPTY_OPTIONS = SocketOptions.builder().build();
 
+        private MediaContext.Builder mediaContextBuilder;
+
         private final Http1ClientConfigDefault.Builder configBuilder = Http1ClientConfigDefault.builder()
                 .mediaContext(MediaContext.create())
                 .dnsResolver(DEFAULT_DNS_RESOLVER.get())
@@ -79,6 +82,9 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
         @Override
         public Http1Client build() {
             configBuilder.defaultHeaders(defaultHeaders());
+            if (mediaContextBuilder != null) {
+                configBuilder.mediaContext(mediaContextBuilder.fallback(configBuilder.mediaContext()).build());
+            }
             return new Http1ClientImpl(configBuilder.build());
         }
 
@@ -188,8 +194,27 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          * @return updated builder
          */
         public Http1ClientBuilder mediaContext(MediaContext mediaContext) {
-            Objects.requireNonNull(mediaContext);
-            configBuilder.mediaContext(mediaContext);
+            configBuilder.mediaContext(Objects.requireNonNull(mediaContext, "mediaContext"));
+            return this;
+        }
+
+        /**
+         * Add an explicit media support to the list.
+         * By default, all discovered media supports will be available to the server. Use this method only when
+         * the media support is not discoverable by service loader, or when using explicit
+         * {@link #mediaContext(io.helidon.nima.http.media.MediaContext)}.
+         *
+         * @param mediaSupport media support to add
+         * @return updated builder
+         */
+        public Http1ClientBuilder addMediaSupport(MediaSupport mediaSupport) {
+            Objects.requireNonNull(mediaSupport);
+            if (mediaContextBuilder == null) {
+                mediaContextBuilder = MediaContext.builder()
+                        .discoverServices(false);
+            }
+
+            mediaContextBuilder.addMediaSupport(mediaSupport);
             return this;
         }
 

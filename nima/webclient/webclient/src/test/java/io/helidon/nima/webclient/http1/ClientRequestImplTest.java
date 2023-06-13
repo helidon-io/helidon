@@ -507,8 +507,9 @@ class ClientRequestImplTest {
                                   Headers requestHeaders,
                                   WritableHeaders<?> responseHeaders) {
                     if (object instanceof String) {
-                        String maxLen5 = ((String) object).substring(0, 5);
-                        impl.write(type, (T) maxLen5, outputStream, requestHeaders, responseHeaders);
+                        @SuppressWarnings("unchecked")
+                        final T maxLen5 = (T)((String) object).substring(0, 5);
+                        impl.write(type, maxLen5, outputStream, requestHeaders, responseHeaders);
                     } else {
                         impl.write(type, object, outputStream, requestHeaders, responseHeaders);
                     }

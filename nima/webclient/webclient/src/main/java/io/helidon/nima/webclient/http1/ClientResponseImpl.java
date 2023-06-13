@@ -62,7 +62,7 @@ class ClientResponseImpl implements Http1ClientResponse {
     private final DataReader reader;
     // todo configurable
     private final ContentEncodingContext encodingSupport = ContentEncodingContext.create();
-    private final MediaContext mediaContext = MediaContext.create();
+    private final MediaContext mediaContext;
     private final String channelId;
     private final CompletableFuture<Void> whenComplete;
     private final boolean hasTrailers;
@@ -78,12 +78,14 @@ class ClientResponseImpl implements Http1ClientResponse {
                        ClientResponseHeaders responseHeaders,
                        ClientConnection connection,
                        DataReader reader,
+                       MediaContext mediaContext,
                        CompletableFuture<Void> whenComplete) {
         this.responseStatus = responseStatus;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
         this.connection = connection;
         this.reader = reader;
+        this.mediaContext = mediaContext;
         this.channelId = connection.channelId();
         this.whenComplete = whenComplete;
 
