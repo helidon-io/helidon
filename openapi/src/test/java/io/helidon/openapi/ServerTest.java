@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.reactive.openapi;
+package io.helidon.openapi;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,20 +49,20 @@ public class ServerTest {
     private static final String TIME_PATH = "/openapi-time";
 
     private static final Config OPENAPI_CONFIG_DISABLED_CORS = Config.create(
-            ConfigSources.classpath("serverNoCORS.properties").build()).get(OpenAPISupport.Builder.CONFIG_KEY);
+            ConfigSources.classpath("serverNoCORS.properties").build()).get(OpenApiFeature.Builder.CONFIG_KEY);
 
     private static final Config OPENAPI_CONFIG_RESTRICTED_CORS = Config.create(
-            ConfigSources.classpath("serverCORSRestricted.yaml").build()).get(OpenAPISupport.Builder.CONFIG_KEY);
+            ConfigSources.classpath("serverCORSRestricted.yaml").build()).get(OpenApiFeature.Builder.CONFIG_KEY);
 
-    static final OpenAPISupport.Builder GREETING_OPENAPI_SUPPORT_BUILDER
-            = OpenAPISupport.builder()
-                    .staticFile("src/test/resources/openapi-greeting.yml")
+    static final OpenApiFeature.Builder<?, ?> GREETING_OPENAPI_SUPPORT_BUILDER
+            = StaticFileOnlyOpenApiFeatureImpl.builder()
+                    .staticFile("openapi-greeting.yml")
                     .webContext(GREETING_PATH)
                     .config(OPENAPI_CONFIG_DISABLED_CORS);
 
-    static final OpenAPISupport.Builder TIME_OPENAPI_SUPPORT_BUILDER
-            = OpenAPISupport.builder()
-                    .staticFile("src/test/resources/openapi-time-server.yml")
+    static final OpenApiFeature.Builder<?, ?> TIME_OPENAPI_SUPPORT_BUILDER
+            = StaticFileOnlyOpenApiFeatureImpl.builder()
+                    .staticFile("openapi-time-server.yml")
                     .webContext(TIME_PATH)
                     .config(OPENAPI_CONFIG_RESTRICTED_CORS);
 
@@ -146,12 +149,17 @@ public class ServerTest {
      * @throws Exception in case of errors sending the request or receiving the
      * response
      */
-    @Test
-    public void checkExplicitResponseMediaTypeViaHeaders() throws Exception {
-        connectAndConsumePayload(MediaTypes.APPLICATION_OPENAPI_YAML);
-        connectAndConsumePayload(MediaTypes.APPLICATION_YAML);
-        connectAndConsumePayload(MediaTypes.APPLICATION_OPENAPI_JSON);
-        connectAndConsumePayload(MediaTypes.APPLICATION_JSON);
+    @ParameterizedTest
+    @MethodSource()
+    public void checkExplicitResponseMediaTypeViaHeaders(MediaType testMediaType) throws Exception {
+        connectAndConsumePayload(testMediaType);
+    }
+
+    static Stream<MediaType> checkExplicitResponseMediaTypeViaHeaders() {
+        return Stream.of(MediaTypes.APPLICATION_OPENAPI_YAML,
+                         MediaTypes.APPLICATION_YAML,
+                         MediaTypes.APPLICATION_OPENAPI_JSON,
+                         MediaTypes.APPLICATION_JSON);
     }
 
     @Test
@@ -165,17 +173,6 @@ public class ServerTest {
                                           GREETING_PATH,
                                           "format=YAML",
                                           MediaTypes.APPLICATION_OPENAPI_YAML);
-    }
-
-    /**
-     * Makes sure that the response is correct if the request specified no
-     * explicit Accept.
-     *
-     * @throws Exception error sending the request or receiving the response
-     */
-    @Test
-    public void checkDefaultResponseMediaType() throws Exception {
-        connectAndConsumePayload(null);
     }
 
     @Test

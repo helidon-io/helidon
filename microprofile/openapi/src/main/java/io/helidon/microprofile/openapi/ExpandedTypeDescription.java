@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.openapi;
+package io.helidon.microprofile.openapi;
 
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
@@ -22,9 +22,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
+import io.smallrye.openapi.api.models.media.SchemaImpl;
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.yaml.snakeyaml.TypeDescription;
@@ -33,7 +32,9 @@ import org.yaml.snakeyaml.introspector.MethodProperty;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertySubstitute;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
+import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
@@ -110,20 +111,6 @@ public class ExpandedTypeDescription extends TypeDescription {
         }
         result.setPropertyUtils(PROPERTY_UTILS);
         return result;
-    }
-
-    /**
-     * Build a map of implementations to types.
-     *
-     * @param helper parser helper
-     * @return map of implementation classes to descriptions
-     */
-    public static Map<Class<?>, ExpandedTypeDescription> buildImplsToTypes(ParserHelper helper) {
-        return Collections.unmodifiableMap(helper.entrySet()
-                                                   .stream()
-                                                   .map(Map.Entry::getValue)
-                                                   .collect(Collectors.toMap(ExpandedTypeDescription::impl,
-                                                                             Function.identity())));
     }
 
     /**
@@ -226,6 +213,15 @@ public class ExpandedTypeDescription extends TypeDescription {
         }
     }
 
+    /**
+     * Returns the default property for the type.
+     *
+     * @return the 'default' property for this type; null if none
+     */
+    Property defaultProperty() {
+        return getPropertyNoEx("defaultValue");
+    }
+
     private static boolean setupExtensionType(String key, Node valueNode) {
         if (isExtension(key)) {
             /*
@@ -271,7 +267,7 @@ public class ExpandedTypeDescription extends TypeDescription {
      * This type description customizes the handling of {@code additionalProperties} to account for all that.
      * </p>
      *
-     * @see io.helidon.openapi.Serializer (specifically doRepresentJavaBeanProperty) for output handling for
+     * @see Serializer (specifically doRepresentJavaBeanProperty) for output handling for
      *         additionalProperties
      */
     static final class SchemaTypeDescription extends ExpandedTypeDescription {
@@ -301,6 +297,26 @@ public class ExpandedTypeDescription extends TypeDescription {
 
         private SchemaTypeDescription(Class<?> clazz, Class<?> impl) {
             super(clazz, impl);
+        }
+
+        @Override
+        public Object newInstance(Node node) {
+            // Schemas specified in config often have a name, and in SmallRye we need to provide the name to the constructor.
+            // So find the name if it's there.
+            String name = "";
+            if (node instanceof MappingNode mappingNode) {
+                for (NodeTuple nodeTuple : mappingNode.getValue()) {
+                    if (nodeTuple.getKeyNode() instanceof ScalarNode scalarKeyNode) {
+                        if (scalarKeyNode.getValue().equals("name")) {
+                            if (nodeTuple.getValueNode() instanceof ScalarNode scalarValueNode) {
+                                name = scalarValueNode.getValue();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            return new SchemaImpl(name);
         }
 
         @Override

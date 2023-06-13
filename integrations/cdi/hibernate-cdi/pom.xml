@@ -44,7 +44,7 @@
 
         <!-- Runtime-scoped dependencies. -->
         <dependency>
-            <groupId>org.jboss</groupId>
+            <groupId>io.smallrye</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
         </dependency>
@@ -71,6 +71,13 @@
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
             <scope>compile</scope>
+            <!-- Use the io.smallrye jandex artifact (which the rest of Helidon uses) instead of the org.jboss one. -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss</groupId>
+                    <artifactId>jandex</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <!-- As we exclude javax from hibernate, we need to add jakarta -->
@@ -89,7 +96,7 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.jboss.jandex</groupId>
+                <groupId>io.smallrye</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
                 <executions>
                     <execution>

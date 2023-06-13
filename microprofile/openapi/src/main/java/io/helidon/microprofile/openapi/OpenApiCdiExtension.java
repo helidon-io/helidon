@@ -15,39 +15,23 @@
  */
 package io.helidon.microprofile.openapi;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.lang.System.Logger.Level;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.cdi.RuntimeStart;
-import io.helidon.microprofile.server.JaxRsApplication;
-import io.helidon.microprofile.server.RoutingBuilders;
-import io.helidon.nima.openapi.OpenApiService;
+import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
+import io.helidon.openapi.OpenApiFeature;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
-import org.jboss.jandex.CompositeIndex;
-import org.jboss.jandex.Index;
-import org.jboss.jandex.IndexReader;
-import org.jboss.jandex.IndexView;
-import org.jboss.jandex.Indexer;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
+import org.eclipse.microprofile.config.ConfigProvider;
 
-import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 /**
@@ -55,20 +39,30 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
  * SmallRye OpenAPI) from CDI if no {@code META-INF/jandex.idx} file exists on
  * the class path.
  */
-public class OpenApiCdiExtension implements Extension {
-
-    private static final String INDEX_PATH = "META-INF/jandex.idx";
+public class OpenApiCdiExtension extends HelidonRestCdiExtension<MpOpenApiFeature> {
 
     private static final System.Logger LOGGER = System.getLogger(OpenApiCdiExtension.class.getName());
 
-    private final String[] indexPaths;
-    private final int indexURLCount;
+    /**
+     * Normal location of Jandex index files.
+     */
+    static final String INDEX_PATH = "META-INF/jandex.idx";
+
+
+    private static Function<Config, MpOpenApiFeature> featureFactory(String... indexPaths) {
+        return (Config helidonConfig) -> {
+
+            org.eclipse.microprofile.config.Config mpConfig = ConfigProvider.getConfig();
+
+            MPOpenAPIBuilder builder = MpOpenApiFeature.builder()
+                    .config(helidonConfig)
+                    .indexPaths(indexPaths)
+                    .config(mpConfig);
+            return builder.build();
+        };
+    }
 
     private final Set<Class<?>> annotatedTypes = new HashSet<>();
-
-    private org.eclipse.microprofile.config.Config mpConfig;
-    private Config config;
-    private MPOpenAPISupport openApiSupport;
 
     /**
      * Creates a new instance of the index builder.
@@ -80,156 +74,39 @@ public class OpenApiCdiExtension implements Extension {
     }
 
     OpenApiCdiExtension(String... indexPaths) throws IOException {
-        this.indexPaths = indexPaths;
-        List<URL> indexURLs = findIndexFiles(indexPaths);
-        indexURLCount = indexURLs.size();
-        if (indexURLs.isEmpty()) {
-            LOGGER.log(Level.INFO, () -> String.format(
-                    "OpenAPI support could not locate the Jandex index file %s "
-                            + "so will build an in-memory index.%n"
-                            + "This slows your app start-up and, depending on CDI configuration, "
-                            + "might omit some type information needed for a complete OpenAPI document.%n"
-                            + "Consider using the Jandex maven plug-in during your build "
-                            + "to create the index and add it to your app.",
-                    INDEX_PATH));
-        }
+        super(LOGGER, featureFactory(indexPaths), OpenApiFeature.Builder.CONFIG_KEY);
     }
 
-    private void configure(@Observes @RuntimeStart Config config) {
-        this.mpConfig = (org.eclipse.microprofile.config.Config) config;
-        this.config = config;
+    @Override
+    protected void processManagedBean(ProcessManagedBean<?> processManagedBean) {
+        // SmallRye handles annotation processing. We have this method because the abstract superclass requires it.
     }
 
-    void registerOpenApi(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object event) {
-        Config openapiNode = config.get(OpenApiService.Builder.CONFIG_KEY);
-        openApiSupport = new MPOpenAPIBuilder()
-                .config(mpConfig)
-                .singleIndexViewSupplier(this::indexView)
-                .config(openapiNode)
-                .build();
-
-        openApiSupport
-                .configureEndpoint(RoutingBuilders.create(openapiNode).routingBuilder());
-    }
 
     // Must run after the server has created the Application instances.
     void buildModel(@Observes @Priority(PLATFORM_AFTER + 100 + 10) @Initialized(ApplicationScoped.class) Object event) {
-        openApiSupport.prepareModel();
+        serviceSupport().prepareModel();
+    }
+
+    // For testing
+     MpOpenApiFeature feature() {
+        return serviceSupport();
+    }
+
+
+    Set<Class<?>> annotatedTypes() {
+        return annotatedTypes;
     }
 
     /**
-     * Records each type that is annotated unless Jandex index(es) were found on
-     * the classpath (in which case we do not need to build our own in memory).
+     * Records each type that is annotated.
      *
      * @param <X> annotated type
      * @param event {@code ProcessAnnotatedType} event
      */
     private <X> void processAnnotatedType(@Observes ProcessAnnotatedType<X> event) {
-        if (indexURLCount == 0) {
-            Class<?> c = event.getAnnotatedType()
-                    .getJavaClass();
-            annotatedTypes.add(c);
-        }
-    }
-
-    /**
-     * Reports an {@link org.jboss.jandex.IndexView} for the Jandex index that describes
-     * annotated classes for endpoints.
-     *
-     * @return {@code IndexView} describing discovered classes
-     */
-    public IndexView indexView() {
-        try {
-            return indexURLCount > 0 ? existingIndexFileReader() : indexFromHarvestedClasses();
-        } catch (IOException e) {
-            // wrap so we can use this method in a reference
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Builds an {@code IndexView} from existing Jandex index file(s) on the classpath.
-     *
-     * @return IndexView from all index files
-     * @throws IOException in case of error attempting to open an index file
-     */
-    private IndexView existingIndexFileReader() throws IOException {
-        List<IndexView> indices = new ArrayList<>();
-        /*
-         * Do not reuse the previously-computed indexURLs; those values will be incorrect with native images.
-         */
-        for (URL indexURL : findIndexFiles(indexPaths)) {
-            try (InputStream indexIS = indexURL.openStream()) {
-                LOGGER.log(Level.DEBUG, "Adding Jandex index at {0}", indexURL.toString());
-                indices.add(new IndexReader(indexIS).read());
-            } catch (Exception ex) {
-                throw new IOException("Attempted to read from previously-located index file "
-                        + indexURL + " but the index cannot be read", ex);
-            }
-        }
-        return indices.size() == 1 ? indices.get(0) : CompositeIndex.create(indices);
-    }
-
-    private IndexView indexFromHarvestedClasses() throws IOException {
-        Indexer indexer = new Indexer();
-        annotatedTypes.forEach(c -> addClassToIndexer(indexer, c));
-
-        /*
-         * Some apps might be added dynamically, not via annotation processing. Add those classes to the index if they are not
-         * already present.
-         */
-        MPOpenAPIBuilder.jaxRsApplicationsToRun().stream()
-                .map(JaxRsApplication::applicationClass)
-                .filter(Optional::isPresent)
-                .forEach(appClassOpt -> addClassToIndexer(indexer, appClassOpt.get()));
-
-        LOGGER.log(Level.DEBUG, "Using internal Jandex index created from CDI bean discovery");
-        Index result = indexer.complete();
-        dumpIndex(Level.TRACE, result);
-        return result;
-    }
-
-    private void addClassToIndexer(Indexer indexer, Class<?> c) {
-        try (InputStream is = contextClassLoader().getResourceAsStream(resourceNameForClass(c))) {
-            indexer.index(is);
-        } catch (IOException ex) {
-            throw new RuntimeException(String.format("Cannot load bytecode from class %s at %s for annotation processing",
-                    c.getName(), resourceNameForClass(c)), ex);
-        }
-    }
-
-    private List<URL> findIndexFiles(String... indexPaths) throws IOException {
-        List<URL> result = new ArrayList<>();
-        for (String indexPath : indexPaths) {
-            Enumeration<URL> urls = contextClassLoader().getResources(indexPath);
-            while (urls.hasMoreElements()) {
-                result.add(urls.nextElement());
-            }
-        }
-        return result;
-    }
-
-    private static void dumpIndex(Level level, Index index) {
-        if (LOGGER.isLoggable(level)) {
-            LOGGER.log(level, "Dump of internal Jandex index:");
-            PrintStream oldStdout = System.out;
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (PrintStream newPS = new PrintStream(baos, true, Charset.defaultCharset())) {
-                System.setOut(newPS);
-                index.printAnnotations();
-                index.printSubclasses();
-                LOGGER.log(level, baos.toString(Charset.defaultCharset()));
-            } finally {
-                System.setOut(oldStdout);
-            }
-        }
-    }
-
-    private static ClassLoader contextClassLoader() {
-        return Thread.currentThread().getContextClassLoader();
-    }
-
-    private static String resourceNameForClass(Class<?> c) {
-        return c.getName().replace('.', '/') + ".class";
+        Class<?> c = event.getAnnotatedType()
+                .getJavaClass();
+        annotatedTypes.add(c);
     }
 }

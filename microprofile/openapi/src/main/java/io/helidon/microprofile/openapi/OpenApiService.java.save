@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.reactive.openapi;
+package io.helidon.microprofile.openapi;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,20 +47,12 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
-import io.helidon.openapi.ExpandedTypeDescription;
-import io.helidon.openapi.OpenAPIMediaType;
-import io.helidon.openapi.OpenAPIParser;
-import io.helidon.openapi.ParserHelper;
-import io.helidon.openapi.Serializer;
+import io.helidon.nima.webserver.cors.CorsEnabledServiceHelper;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
-import io.helidon.reactive.media.common.MessageBodyReaderContext;
-import io.helidon.reactive.media.common.MessageBodyWriterContext;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
-import io.helidon.reactive.webserver.cors.CorsEnabledServiceHelper;
 
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiDocument;
@@ -80,28 +71,21 @@ import jakarta.json.JsonReader;
 import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
-import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.eclipse.microprofile.openapi.models.Operation;
-import org.eclipse.microprofile.openapi.models.PathItem;
-import org.eclipse.microprofile.openapi.models.Reference;
-import org.eclipse.microprofile.openapi.models.media.Schema;
-import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
-import org.jboss.jandex.IndexView;
-import org.yaml.snakeyaml.TypeDescription;
+import io.smallrye.jandex.IndexView;
 
-import static io.helidon.reactive.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
+import static io.helidon.nima.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
  * that describes the endpoints handled by the server.
  * <p>
- * The server can use the {@link io.helidon.reactive.openapi.OpenAPISupport.Builder} to set OpenAPI-related attributes. If
+ * The server can use the {@link OpenApiService.Builder} to set OpenAPI-related attributes. If
  * the server uses none of these builder methods and does not provide a static
  * {@code openapi} file, then the {@code /openapi} endpoint responds with a
  * nearly-empty OpenAPI document.
  */
-public class OpenAPISupport implements Service {
+public class OpenApiService implements HttpService {
 
     /**
      * Default path for serving the OpenAPI document.
@@ -114,7 +98,7 @@ public class OpenAPISupport implements Service {
      */
     public static final MediaType DEFAULT_RESPONSE_MEDIA_TYPE = MediaTypes.APPLICATION_OPENAPI_YAML;
     private static final String OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER = "format";
-    private static final System.Logger LOGGER = System.getLogger(OpenAPISupport.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(OpenApiService.class.getName());
     private static final String DEFAULT_STATIC_FILE_PATH_PREFIX = "META-INF/openapi.";
     private static final String OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using specified OpenAPI static file %s";
     private static final String OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using default OpenAPI static file %s";
@@ -142,17 +126,17 @@ public class OpenAPISupport implements Service {
      *
      * @param builder the builder to use in constructing the instance
      */
-    protected OpenAPISupport(Builder builder) {
+    protected OpenApiService(AbstractBuilder<?, ?> builder) {
         implsToTypes = ExpandedTypeDescription.buildImplsToTypes(HELPER.get());
         webContext = builder.webContext();
-        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(FEATURE_NAME, builder.crossOriginConfig);
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(FEATURE_NAME, builder.crossOriginConfig());
         openApiConfig = builder.openAPIConfig();
         openApiStaticFile = builder.staticFile();
         indexViewsSupplier = builder.indexViewsSupplier();
     }
 
     /**
-     * Creates a new {@link io.helidon.reactive.openapi.OpenAPISupport.Builder} for {@code OpenAPISupport} using defaults.
+     * Creates a new {@link OpenApiService.Builder} for {@code OpenAPISupport} using defaults.
      *
      * @return new Builder
      */
@@ -161,16 +145,16 @@ public class OpenAPISupport implements Service {
     }
 
     /**
-     * Creates a new {@link io.helidon.reactive.openapi.OpenAPISupport} instance using defaults.
+     * Creates a new {@link OpenApiService} instance using defaults.
      *
      * @return new OpenAPISUpport
      */
-    public static OpenAPISupport create() {
+    public static OpenApiService create() {
         return builder().build();
     }
 
     /**
-     * Creates a new {@link io.helidon.reactive.openapi.OpenAPISupport} instance using the
+     * Creates a new {@link OpenApiService} instance using the
      * 'openapi' portion of the provided
      * {@link io.helidon.config.Config} object.
      *
@@ -178,12 +162,12 @@ public class OpenAPISupport implements Service {
      * @return new {@code OpenAPISupport} instance created using the
      *         helidonConfig settings
      */
-    public static OpenAPISupport create(Config config) {
+    public static OpenApiService create(Config config) {
         return builder().config(config).build();
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         configureEndpoint(rules);
     }
 
@@ -193,10 +177,9 @@ public class OpenAPISupport implements Service {
      *
      * @param rules routing rules to be augmented with OpenAPI endpoint
      */
-    public void configureEndpoint(Routing.Rules rules) {
+    public void configureEndpoint(HttpRules rules) {
 
-        rules.get(this::registerJsonpSupport)
-                .any(webContext, corsEnabledServiceHelper.processor())
+        rules.any(webContext, corsEnabledServiceHelper.processor())
                 .get(webContext, this::prepareResponse);
     }
 
@@ -239,74 +222,6 @@ public class OpenAPISupport implements Service {
         return result;
     }
 
-    private static void adjustTypeDescriptions(Map<Class<?>, ExpandedTypeDescription> types) {
-        /*
-         * We need to adjust the {@code TypeDescription} objects set up by the generated {@code SnakeYAMLParserHelper} class
-         * because there are some OpenAPI-specific issues that the general-purpose helper generator cannot know about.
-         */
-
-        /*
-         * In the OpenAPI document, HTTP methods are expressed in lower-case. But the associated Java methods on the PathItem
-         * class use the HTTP method names in upper-case. So for each HTTP method, "add" a property to PathItem's type
-         * description using the lower-case name but upper-case Java methods and exclude the upper-case property that
-         * SnakeYAML's automatic analysis of the class already created.
-         */
-        ExpandedTypeDescription pathItemTD = types.get(PathItem.class);
-        for (PathItem.HttpMethod m : PathItem.HttpMethod.values()) {
-            pathItemTD.substituteProperty(m.name().toLowerCase(), Operation.class, getter(m), setter(m));
-            pathItemTD.addExcludes(m.name());
-        }
-
-        /*
-         * An OpenAPI document can contain a property named "enum" for Schema and ServerVariable, but the related Java methods
-         * use "enumeration".
-         */
-        Set.<Class<?>>of(Schema.class, ServerVariable.class).forEach(c -> {
-            ExpandedTypeDescription tdWithEnumeration = types.get(c);
-            tdWithEnumeration.substituteProperty("enum", List.class, "getEnumeration", "setEnumeration");
-            tdWithEnumeration.addPropertyParameters("enum", String.class);
-            tdWithEnumeration.addExcludes("enumeration");
-        });
-
-        /*
-         * SnakeYAML derives properties only from methods declared directly by each OpenAPI interface, not from methods defined
-         *  on other interfaces which the original one extends. Those we have to handle explicitly.
-         */
-        for (ExpandedTypeDescription td : types.values()) {
-            if (Extensible.class.isAssignableFrom(td.getType())) {
-                td.addExtensions();
-            }
-            if (td.hasDefaultProperty()) {
-                td.substituteProperty("default", Object.class, "getDefaultValue", "setDefaultValue");
-                td.addExcludes("defaultValue");
-            }
-            if (isRef(td)) {
-                td.addRef();
-            }
-        }
-    }
-
-    private static boolean isRef(TypeDescription td) {
-        for (Class<?> c : td.getType().getInterfaces()) {
-            if (c.equals(Reference.class)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static String getter(PathItem.HttpMethod method) {
-        return methodName("get", method);
-    }
-
-    private static String setter(PathItem.HttpMethod method) {
-        return methodName("set", method);
-    }
-
-    private static String methodName(String operation, PathItem.HttpMethod method) {
-        return operation + method.name();
-    }
-
     private static ClassLoader getContextClassLoader() {
         return Thread.currentThread().getContextClassLoader();
     }
@@ -341,13 +256,6 @@ public class OpenAPISupport implements Service {
         });
     }
 
-    private void registerJsonpSupport(ServerRequest req, ServerResponse res) {
-        MessageBodyReaderContext readerContext = req.content().readerContext();
-        MessageBodyWriterContext writerContext = res.writerContext();
-        JsonpSupport.create().register(readerContext, writerContext);
-        req.next();
-    }
-
     /**
      * Prepares the OpenAPI model that later will be used to create the OpenAPI
      * document for endpoints in this application.
@@ -367,7 +275,8 @@ public class OpenAPISupport implements Service {
             OpenApiDocument.INSTANCE.config(config);
             OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
             if (staticFile != null) {
-                OpenApiDocument.INSTANCE.modelFromStaticFile(OpenAPIParser.parse(HELPER.get().types(), staticFile.getContent()));
+                OpenApiDocument.INSTANCE.modelFromStaticFile(OpenAPIParser.parse(HELPER.get().types(),
+                                                                                 staticFile.getContent()));
             }
             if (isAnnotationProcessingEnabled(config)) {
                 expandModelUsingAnnotations(config, filteredIndexViews);
@@ -450,7 +359,7 @@ public class OpenAPISupport implements Service {
          * Response media type default is application/vnd.oai.openapi (YAML)
          * unless otherwise specified.
          */
-        Optional<String> queryParameterFormat = req.queryParams()
+        Optional<String> queryParameterFormat = req.query()
                 .first(OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER);
         if (queryParameterFormat.isPresent()) {
             String queryParameterFormatValue = queryParameterFormat.get();
@@ -583,10 +492,30 @@ public class OpenAPISupport implements Service {
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.reactive.openapi.OpenAPISupport}.
+     * Fluent API builder for {@link OpenApiService}.
      */
     @Configured(description = "OpenAPI support configuration")
-    public static class Builder implements io.helidon.common.Builder<Builder, OpenAPISupport> {
+    public static class Builder extends AbstractBuilder<Builder, OpenApiService> {
+        private Builder() {
+        }
+
+        @Override
+        public OpenApiService build() {
+            OpenApiService openAPISupport = new OpenApiService(this);
+            openAPISupport.prepareModel();
+            return openAPISupport;
+        }
+    }
+
+    /**
+     * Base builder for OpenAPI service builders, extended by {@link OpenApiService.Builder}
+     * and MicroProfile implementation.
+     *
+     * @param <B> type of the builder (subclass)
+     * @param <T> type of the built target
+     */
+    public abstract static class AbstractBuilder<B extends AbstractBuilder<B, T>, T extends OpenApiService>
+            implements io.helidon.common.Builder<B, T> {
 
         /**
          * Config key to select the openapi node from Helidon config.
@@ -598,14 +527,7 @@ public class OpenAPISupport implements Service {
         private String staticFilePath;
         private CrossOriginConfig crossOriginConfig = null;
 
-        private Builder() {
-        }
-
-        @Override
-        public OpenAPISupport build() {
-            OpenAPISupport openAPISupport = new OpenAPISupport(this);
-            openAPISupport.prepareModel();
-            return openAPISupport;
+        protected AbstractBuilder() {
         }
 
         /**
@@ -619,26 +541,28 @@ public class OpenAPISupport implements Service {
          * @throws NullPointerException if the provided {@code Config} is null
          */
         @ConfiguredOption(type = OpenApiConfig.class)
-        public Builder config(Config config) {
+        public B config(Config config) {
             config.get("web-context")
                     .asString()
                     .ifPresent(this::webContext);
             config.get("static-file")
                     .asString()
                     .ifPresent(this::staticFile);
-            config.get(CORS_CONFIG_KEY)
+            config.get(CorsEnabledServiceHelper.CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
-            return this;
+            return identity();
         }
 
         /**
          * Makes sure the set-up for OpenAPI is consistent, internally and with
          * the current Helidon runtime environment (SE or MP).
          *
+         * @return this builder
          * @throws IllegalStateException if validation fails
          */
-        public void validate() throws IllegalStateException {
+        protected B validate() throws IllegalStateException {
+            return identity();
         }
 
         /**
@@ -649,12 +573,12 @@ public class OpenAPISupport implements Service {
          * @return updated builder instance
          */
         @ConfiguredOption(DEFAULT_WEB_CONTEXT)
-        public Builder webContext(String path) {
+        public B webContext(String path) {
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
             this.webContext = path;
-            return this;
+            return identity();
         }
 
         /**
@@ -664,10 +588,10 @@ public class OpenAPISupport implements Service {
          * @return updated builder instance
          */
         @ConfiguredOption(value = DEFAULT_STATIC_FILE_PATH_PREFIX + "*")
-        public Builder staticFile(String path) {
+        public B staticFile(String path) {
             Objects.requireNonNull(path, "path to static file must be non-null");
             staticFilePath = path;
-            return this;
+            return identity();
         }
 
         /**
@@ -676,11 +600,11 @@ public class OpenAPISupport implements Service {
          * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CORS_CONFIG_KEY)
-        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
+        @ConfiguredOption(key = CorsEnabledServiceHelper.CORS_CONFIG_KEY)
+        public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
             this.crossOriginConfig = crossOriginConfig;
-            return this;
+            return identity();
         }
 
         /**
@@ -689,10 +613,10 @@ public class OpenAPISupport implements Service {
          * @param className name of the model reader class
          * @return updated builder instance
          */
-        public Builder modelReader(String className) {
+        public B modelReader(String className) {
             Objects.requireNonNull(className, "modelReader class name must be non-null");
             apiConfigBuilder.modelReader(className);
-            return this;
+            return identity();
         }
 
         /**
@@ -701,10 +625,10 @@ public class OpenAPISupport implements Service {
          * @param className name of the filter class
          * @return updated builder instance
          */
-        public Builder filter(String className) {
+        public B filter(String className) {
             Objects.requireNonNull(className, "filter class name must be non-null");
             apiConfigBuilder.filter(className);
-            return this;
+            return identity();
         }
 
         /**
@@ -713,10 +637,10 @@ public class OpenAPISupport implements Service {
          * @param serverList comma-separated list of servers
          * @return updated builder instance
          */
-        public Builder servers(String serverList) {
+        public B servers(String serverList) {
             Objects.requireNonNull(serverList, "serverList must be non-null");
             apiConfigBuilder.servers(serverList);
-            return this;
+            return identity();
         }
 
         /**
@@ -726,11 +650,11 @@ public class OpenAPISupport implements Service {
          * @param operationServer name of the server to add for this operation
          * @return updated builder instance
          */
-        public Builder addOperationServer(String operationID, String operationServer) {
+        public B addOperationServer(String operationID, String operationServer) {
             Objects.requireNonNull(operationID, "operationID must be non-null");
             Objects.requireNonNull(operationServer, "operationServer must be non-null");
             apiConfigBuilder.addOperationServer(operationID, operationServer);
-            return this;
+            return identity();
         }
 
         /**
@@ -740,11 +664,11 @@ public class OpenAPISupport implements Service {
          * @param pathServer name of the server to add for this path
          * @return updated builder instance
          */
-        public Builder addPathServer(String path, String pathServer) {
+        public B addPathServer(String path, String pathServer) {
             Objects.requireNonNull(path, "path must be non-null");
             Objects.requireNonNull(pathServer, "pathServer must be non-null");
             apiConfigBuilder.addPathServer(path, pathServer);
-            return this;
+            return identity();
         }
 
         /**
@@ -763,7 +687,7 @@ public class OpenAPISupport implements Service {
          *
          * @return {@code OpenApiConfig} conveying how OpenAPI should behave
          */
-        OpenApiConfig openAPIConfig() {
+        protected OpenApiConfig openAPIConfig() {
             return apiConfigBuilder.build();
         }
 
@@ -785,6 +709,10 @@ public class OpenAPISupport implements Service {
             return webContextPath;
         }
 
+        CrossOriginConfig crossOriginConfig() {
+            return crossOriginConfig;
+        }
+
         /**
          * Returns the path to a static OpenAPI document file (if any exists),
          * either as explicitly set using {@link #staticFile(String) }
@@ -802,10 +730,11 @@ public class OpenAPISupport implements Service {
             String specifiedFileType = typeFromPath(path);
             OpenAPIMediaType specifiedMediaType = OpenAPIMediaType.byFileType(specifiedFileType)
                     .orElseThrow(() -> new IllegalArgumentException("OpenAPI file path "
-                                                           + path.toAbsolutePath()
-                                                           + " is not one of recognized types: "
-                                                           + OpenAPIMediaType.recognizedFileTypes()));
+                                                                            + path.toAbsolutePath()
+                                                                            + " is not one of recognized types: "
+                                                                            + OpenAPIMediaType.recognizedFileTypes()));
 
+            // DO NOT use try-with-close; the stream needs to remain open because it is not consumed until later.
             try {
                 InputStream is = new BufferedInputStream(Files.newInputStream(path));
                 LOGGER.log(Level.DEBUG,

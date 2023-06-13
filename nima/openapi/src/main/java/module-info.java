@@ -36,10 +36,6 @@ module io.helidon.nima.openapi {
     requires io.helidon.cors;
     requires io.helidon.openapi;
 
-    requires smallrye.open.api.core;
-    requires org.jboss.jandex;
-    requires org.yaml.snakeyaml;
-
     requires static io.helidon.config.metadata;
     requires io.helidon.nima.webserver;
     requires jakarta.json;

@@ -50,6 +50,10 @@
             <artifactId>helidon-nima-observe-health</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.nima.openapi</groupId>
+            <artifactId>helidon-nima-openapi</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>

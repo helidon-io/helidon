@@ -15,6 +15,8 @@
  */
 package io.helidon.microprofile.lra;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
@@ -68,6 +70,7 @@ import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.CompositeIndex;
 import org.jboss.jandex.DotName;
+import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Indexer;
@@ -255,9 +258,18 @@ public class LraCdiExtension implements Extension {
         if (fqdn == null) return;
         LOGGER.log(Level.DEBUG, "Indexing " + fqdn);
         ClassInfo classInfo;
-        try {
-            classInfo = indexer.index(classLoader.getResourceAsStream(fqdn.toString().replace('.', '/') + ".class"));
-            // look also for extended classes
+        try (InputStream classStream = classLoader.getResourceAsStream(fqdn.toString().replace('.', '/') + ".class")) {
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            int bytesRead;
+            byte[] buffer = new byte[512];
+            while ((bytesRead = classStream.read(buffer)) != -1) {
+                baos.write(buffer, 0, bytesRead);
+            }
+            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+
+            indexer.index(bais);
+            classInfo = Index.singleClass(new ByteArrayInputStream(baos.toByteArray())); // look also for extended classes
             runtimeIndex(classInfo.superName());
             // and implemented interfaces
             classInfo.interfaceNames().forEach(this::runtimeIndex);
