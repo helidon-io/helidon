@@ -26,8 +26,6 @@ The net of all of this is that there are two modules that you will need to integ
 * [runtime](./runtime) - required to be added as a normal dependency in your final application.
 * [tests](./tests) - tests for OCI SDK integration.
 
-Please remember, though, that if your application is using **Helidon MP** then you should be using [OciExtension](./oci/sdk/cdi/src/main/java/io/helidon/integrations/oci/sdk/cdi/OciExtension.java) and _NOT_ these modules. These modules are only intended for non-MP based Helidon applications.
-
 
 ### Usage
 
@@ -67,3 +65,6 @@ Add the runtime dependency to your pom.xml, along with any other OCI SDK library
         <artifactId>oci-java-sdk-objectstorage</artifactId>
     </dependency>
 ```
+
+### How it works
+See the [InjectionProcessorObserverForOci javadoc](processor/src/main/java/io/helidon/integrations/oci/sdk/processor/InjectionProcessorObserverForOCI.java) for a description. In summary, this processor will observe **OCI SDK** injection points and then code generate **Activators** enabling injection of SDK services in conjuction with the [runtime](./runtime) module on the classpath.
