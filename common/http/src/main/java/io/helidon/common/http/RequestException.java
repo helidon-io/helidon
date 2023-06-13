@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ public class RequestException extends RuntimeException {
     private final DirectHandler.TransportRequest transportRequest;
     private final boolean keepAlive;
     private final ServerResponseHeaders responseHeaders;
+    private final boolean safeMessage;
 
     /**
      * A new exception with a predefined status, even type.
@@ -41,6 +42,7 @@ public class RequestException extends RuntimeException {
         this.transportRequest = builder.request;
         this.keepAlive = builder.keepAlive;
         this.responseHeaders = builder.responseHeaders;
+        this.safeMessage = builder.safeMessage;
     }
 
     /**
@@ -98,6 +100,16 @@ public class RequestException extends RuntimeException {
     }
 
     /**
+     * Safe message flag used to control which messages can be sent as
+     * part of a response and which should only be logged by the server.
+     *
+     * @return safe message flag
+     */
+    public boolean safeMessage() {
+        return safeMessage;
+    }
+
+    /**
      * Fluent API builder for {@link RequestException}.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, RequestException> {
@@ -108,6 +120,7 @@ public class RequestException extends RuntimeException {
         private Http.Status status;
         private Boolean keepAlive;
         private final ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        private boolean safeMessage = true;
 
         private Builder() {
         }
@@ -207,6 +220,18 @@ public class RequestException extends RuntimeException {
          */
         public Builder header(Http.HeaderValue header) {
             this.responseHeaders.set(header);
+            return this;
+        }
+
+        /**
+         * Safe message flag that indicates if it safe to return message
+         * as part of the response. Defaults to {@code true}.
+         *
+         * @param safeMessage whether is safe to return message
+         * @return updated builder
+         */
+        public Builder safeMessage(boolean safeMessage) {
+            this.safeMessage = safeMessage;
             return this;
         }
     }
