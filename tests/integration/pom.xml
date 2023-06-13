@@ -61,6 +61,7 @@
         <module>oidc</module>
         <module>gh-5792</module>
         <module>se-gh-6845</module>
+        <module>gh-6970</module>
     </modules>
 
     <profiles>

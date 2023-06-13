@@ -16,22 +16,17 @@
 
 package io.helidon.tracing.opentelemetry;
 
-import java.util.Optional;
-import java.util.TreeMap;
-
-import io.helidon.tracing.HeaderConsumer;
-import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test if baggage is handled correctly.
@@ -56,35 +51,5 @@ class BaggageTest {
         assertThrows(NullPointerException.class, () -> span.baggage(null, "value"));
         assertThrows(NullPointerException.class, () -> span.baggage("key", null));
         assertThrows(NullPointerException.class, () -> span.baggage(null, null));
-    }
-
-    /**
-     * Test for: https://github.com/helidon-io/helidon/issues/6970
-     */
-    @Test
-    @Disabled // temporary disabled
-    void baggageCanaryMinimal() {
-        final var tracer = io.helidon.tracing.Tracer.global();
-        final var span = tracer.spanBuilder("baggageCanaryMinimal").start();
-        try {
-            // Set baggage and confirm that it's known in the span
-            span.baggage("fubar", "1");
-            assertThat("1", is(span.baggage("fubar").orElseThrow()));
-
-            // Inject the span (context) into the consumer
-            final var consumer = HeaderConsumer
-                    .create(new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
-            tracer.inject(span.context(), HeaderProvider.empty(), consumer);
-
-            // Confirm that baggage was NOT propagated (the bug)
-            final var allKeys = consumer.keys().toString();
-            assertTrue(allKeys.contains("fubar") // this fails!
-                    , () -> "No injected baggage-fubar found in " + allKeys);
-
-        } catch (final Exception x) {
-            span.end(x);
-        } finally {
-            span.end();
-        }
     }
 }
