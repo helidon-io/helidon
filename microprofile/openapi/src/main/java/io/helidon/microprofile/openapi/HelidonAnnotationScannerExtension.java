@@ -22,9 +22,7 @@ import java.util.stream.Collectors;
 
 import io.smallrye.openapi.runtime.scanner.AnnotationScannerExtension;
 import jakarta.json.Json;
-import jakarta.json.JsonArray;
 import jakarta.json.JsonNumber;
-import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonString;
@@ -64,7 +62,7 @@ class HelidonAnnotationScannerExtension implements AnnotationScannerExtension {
     @Override
     public Object parseValue(String value) {
         // Inspired by SmallRye's JsonUtil#parseValue method.
-        if (value == null || value.isEmpty()) {
+        if (value == null || value.isBlank()) {
             return null;
         }
 
@@ -112,37 +110,20 @@ class HelidonAnnotationScannerExtension implements AnnotationScannerExtension {
     }
 
     private static Object convertJsonValue(JsonValue jsonValue) {
-        switch (jsonValue.getValueType()) {
-        case ARRAY -> {
-            JsonArray jsonArray = jsonValue.asJsonArray();
-            return jsonArray.stream()
+        return switch (jsonValue.getValueType()) {
+            case ARRAY -> jsonValue.asJsonArray()
+                    .stream()
                     .map(HelidonAnnotationScannerExtension::convertJsonValue)
                     .collect(Collectors.toList());
-        }
-        case FALSE -> {
-            return Boolean.FALSE;
-        }
-        case TRUE -> {
-            return Boolean.TRUE;
-        }
-        case NULL -> {
-            return null;
-        }
-        case STRING -> {
-            return JsonString.class.cast(jsonValue).getString();
-        }
-        case NUMBER -> {
-            JsonNumber jsonNumber = JsonNumber.class.cast(jsonValue);
-            return jsonNumber.numberValue();
-        }
-        case OBJECT -> {
-            JsonObject jsonObject = jsonValue.asJsonObject();
-            return jsonObject.entrySet().stream()
+            case FALSE -> Boolean.FALSE;
+            case TRUE -> Boolean.TRUE;
+            case NULL -> null;
+            case STRING -> JsonString.class.cast(jsonValue).getString();
+            case NUMBER -> JsonNumber.class.cast(jsonValue).numberValue();
+            case OBJECT -> jsonValue.asJsonObject()
+                    .entrySet()
+                    .stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, entry -> convertJsonValue(entry.getValue())));
-        }
-        default -> {
-            return jsonValue.toString();
-        }
-        }
+        };
     }
 }

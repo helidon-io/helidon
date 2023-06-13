@@ -69,8 +69,8 @@ public class OpenApiStaticFile {
 
         @Override
         public OpenApiStaticFile build() {
-            Objects.requireNonNull(openApiMediaType);
-            Objects.requireNonNull(content);
+            Objects.requireNonNull(openApiMediaType, "openApiMediaType");
+            Objects.requireNonNull(content, "content");
             return new OpenApiStaticFile(this);
         }
 

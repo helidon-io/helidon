@@ -235,13 +235,6 @@ public class TestUtil {
         return result;
     }
 
-    static JsonStructure jsonFromReader(Reader reader) {
-        JsonReader jsonReader = JSON_READER_FACTORY.createReader(reader);
-        JsonStructure result = jsonReader.read();
-        jsonReader.close();
-        return result;
-    }
-
     /**
      * Converts a JSON pointer possibly containing slashes and tildes into a
      * JSON pointer with such characters properly escaped.

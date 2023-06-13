@@ -223,8 +223,9 @@ public class MpOpenApiFeature extends OpenApiFeature {
         });
         OpenApiDocument.INSTANCE.modelFromAnnotations(aggregateModelRef.get());
     }
+
     private OpenAPI model() {
-        return access(modelAccess, () -> {
+        return access(() -> {
             if (model == null) {
                 model = prepareModel(openApiConfig, toSmallRye(openApiStaticFile), filteredIndexViewsSupplier.get());
             }
@@ -243,12 +244,12 @@ public class MpOpenApiFeature extends OpenApiFeature {
                         toFormat(staticFile.openApiMediaType()));
     }
 
-    private static <T> T access(Lock guard, Supplier<T> operation) {
-        guard.lock();
+    private <T> T access(Supplier<T> operation) {
+        modelAccess.lock();
         try {
             return operation.get();
         } finally {
-            guard.unlock();
+            modelAccess.unlock();
         }
     }
 }

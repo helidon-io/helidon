@@ -51,18 +51,6 @@ final class OpenApiParser {
         }
     }
 
-//    static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, Reader reader) {
-//        TypeDescription openAPITD = types.get(OpenAPI.class);
-//        Constructor topConstructor = new CustomConstructor(openAPITD);
-//
-//        types.values()
-//                .forEach(topConstructor::addTypeDescription);
-//
-//        Yaml yaml = new Yaml(topConstructor);
-//        OpenAPI result = yaml.loadAs(reader, OpenAPI.class);
-//        return result;
-//    }
-
     /**
      * Parse YAML or JSON using the specified types, returning the specified type with input taken from the indicated reader.
      *

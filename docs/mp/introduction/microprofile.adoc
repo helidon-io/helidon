@@ -146,7 +146,7 @@ To use Jandex, configure a Maven plugin that adds the index to your
         <plugin>
             <groupId>io.smallrye</groupId>
             <artifactId>jandex-maven-plugin</artifactId>
-            <version>3.1.1</version>
+            <version>3.1.2</version>
             <executions>
                 <execution>
                     <id>make-index</id>

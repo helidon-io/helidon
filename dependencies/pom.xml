@@ -82,7 +82,7 @@
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.1.0</version.lib.jakarta.websockets-api>
         <version.lib.jakarta.xml.bind-api>4.0.0</version.lib.jakarta.xml.bind-api>
-        <version.lib.jandex>3.1.1</version.lib.jandex>
+        <version.lib.jandex>3.1.2</version.lib.jandex>
         <version.lib.jaxb-core>3.0.2</version.lib.jaxb-core>
         <version.lib.jaxb-impl>3.0.2</version.lib.jaxb-impl>
         <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>

@@ -158,11 +158,6 @@ public class Serializer {
             return result;
         }
 
-        @Override
-        public Node represent(Object data) {
-            Node result = super.represent(data);
-            return result;
-        }
         private boolean isExemptedFromQuotes(Tag tag) {
             return tag.equals(Tag.BINARY) || tag.equals(Tag.BOOL) || tag.equals(Tag.FLOAT)
                     || tag.equals(Tag.INT);
@@ -287,17 +282,12 @@ public class Serializer {
 
         private List<NodeTuple> processExtensions(NodeTuple tuple) {
             Node keyNode = tuple.getKeyNode();
-            if (keyNode.getTag().equals(Tag.STR)) {
-                String key = ((ScalarNode) keyNode).getValue();
-                if (key.equals(EXTENSIONS)) {
-                    Node valueNode = tuple.getValueNode();
-                    if (valueNode.getNodeId().equals(NodeId.mapping)) {
-                        MappingNode extensions = MappingNode.class.cast(valueNode);
-                        return extensions.getValue();
-                    }
-                }
-            }
-            return null;
+            return keyNode.getTag().equals(Tag.STR)
+                        && ((ScalarNode) keyNode).getValue().equals(EXTENSIONS)
+                        && tuple.getValueNode() instanceof MappingNode extensions
+                        && extensions.getNodeId().equals(NodeId.mapping)
+                    ? extensions.getValue()
+                    : null;
         }
 
         /**

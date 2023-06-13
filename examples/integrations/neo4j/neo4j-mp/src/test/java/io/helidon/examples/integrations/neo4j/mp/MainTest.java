@@ -38,7 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Main tests of the application done here.
  */
 @Disabled("3.0.0-JAKARTA") // OpenAPI
-// Caused by: java.lang.NoSuchMethodError: 'java.util.List io.smallrye.jandex.ClassInfo.unsortedFields()'
+// Caused by: java.lang.NoSuchMethodError: 'java.util.List org.jboss.jandex.ClassInfo.unsortedFields()'
 class MainTest {
     private static Server server;
     private static Neo4j embeddedDatabaseServer;

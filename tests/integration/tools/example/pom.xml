@@ -38,7 +38,7 @@
     <name>Helidon Integration Tests Tools: Test Example</name>
 
     <properties>
-        <version.lib.jandex-maven-plugin>3.1.1</version.lib.jandex-maven-plugin>
+        <version.lib.jandex-maven-plugin>3.1.2</version.lib.jandex-maven-plugin>
         <mainClass>io.helidon.tests.integration.tools.example.ServerMain</mainClass>
     </properties>
 
