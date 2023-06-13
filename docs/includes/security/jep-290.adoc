@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 - <<Deserialization Setup, Deserialization Setup>>
 - <<System Property Configuration, System Property Configuration>>
 - <<Programmatic Configuration, Programmatic Configuration>>
+- <<JEP-290 Pattern syntax, JEP-290 Pattern syntax>>
+- <<Troubleshooting, Troubleshooting>>
 
 == Overview
 
@@ -101,3 +103,59 @@ SerializationConfig.builder()
 <3> Ignore files defined in {metainf}
 <4> In case there is an existing global serialization configuration on JDK, ignore it and continue (global filter cannot be reconfigured)
 <5> Configure this serialization config as the default for this JVM
+
+== JEP-290 Pattern syntax
+Serialization patterns are fully qualified class names, or package names with wildcards delimited with semicolon`;`
+
+.Pattern syntax
+- Package name ending with `.*` - All classes in the package
+- Package name ending with `.**` - All classes in the package and subpackages
+- FQDN ending with `*` - Standard wildcard, matches all classes with the prefix
+- FQDN matches exact class
+- Patterns starting with `!` - NOT, rejects pattern if matched
+- `<MODULE_NAME>/<FQDN>` - When pattern contains `/`, name before it marks module name.
+
+
+[source, shell]
+.Example of `META-INF/helidon/serial-config.properties` content
+----
+pattern=java.util.**;!java.util.ArrayList;my.package.*
+----
+
+[source, shell]
+.Example of pattern supplied as a system property
+----
+java -Dhelidon.serialFilter.pattern="java.util.**;!java.util.ArrayList;my.package.*" -jar my-app.jar
+----
+
+== Troubleshooting
+Helidon serialization config filter doesn't trace actual rejected classes by default.
+All you are going to find in the logs is InvalidClassException with message `filter status: REJECTED`.
+
+[code, java]
+.Default reject message
+----
+java.io.InvalidClassException: filter status: REJECTED
+----
+
+To find out which class has been actually rejected, system property `helidon.serialFilter.trace`
+needs to be set to either `basic` or `full`.
+
+[code, shell]
+.Running Helidon application in basic trace mode
+----
+java -Dhelidon.serialFilter.trace=basic -jar ./target/custom-mp.jar
+----
+
+Each accepted or rejected class is logged only once with `basic` trace filter setting.
+
+[code, shell]
+.Logs with basic filter trace
+----
+...
+ALLOWED class: class java.util.LinkedList, arrayLength: -1, depth: 2, references: 3, streamBytes: 84
+REJECTED class: class java.util.ArrayList, arrayLength: -1, depth: 2, references: 3, streamBytes: 90
+----
+
+You can compose proper serialization filter pattern with the list of REJECTED classes.
+

@@ -202,6 +202,28 @@ mvn install:install-file \
 -Dversion=1.0
 ----
 
+WARNING: Helidon has hardened serialization security with xref:../../mp/security/jep-290.adoc[JEP-290]
+so every class needs to be whitelisted for deserialization otherwise `java.io.InvalidClassException: filter status: REJECTED` is thrown.
+
+As T3 thin client uses RMI, list of the classes needed to be whitelisted can get extensive.
+JEP-290 filter with usual suspects for JMS looks like this:
+
+[source, shell]
+----
+weblogic.**;java.util.**;java.lang.**;java.io.**;java.rmi.**;javax.naming.**;jakarta.jms.**
+----
+You can set the filter either with system property `java -Dhelidon.serialFilter.pattern="<FILTER_PATTERN>" -jar ...` or
+by adding file `META-INF/helidon/serial-config.properties` to your jar file with `pattern=<FILTER_PATTERN>` .
+
+[source, shell]
+.Example of `serial-config.properties` content
+----
+pattern=weblogic.**;java.util.**;java.lang.**;java.io.**;java.rmi.**;javax.naming.**;jakarta.jms.**
+----
+
+xref:../../mp/reactivemessaging/weblogic.adoc[WebLogic JMS Connector for legacy thin T3 clients] includes serialization
+filter with usual suspects already.
+
 === Maven Coordinates [[JMS-Integration-Maven-Coordinates]]
 
 To enable WebLogic Server JMS  with Helidon, add the following dependencies to your project’s `pom.xml` file:
