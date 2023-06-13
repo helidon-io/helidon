@@ -66,9 +66,7 @@ class MainTest {
 
         // Check baggage propagated
         final var allKeys = consumer.keys().toString();
-        assertTrue(allKeys.contains("fubar")
-                , () -> "No injected baggage-fubar found in " + allKeys);
-
+        assertThat(allKeys.contains("fubar"), is(true));
         span.end();
     }
 
