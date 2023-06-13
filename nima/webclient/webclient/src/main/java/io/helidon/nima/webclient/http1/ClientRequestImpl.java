@@ -88,7 +88,6 @@ class ClientRequestImpl implements Http1ClientRequest {
                               UriHelper helper,
                               UriQueryWriteable query) {
         this(request.clientConfig, method, helper, query);
-        this.clientConfig = request.clientConfig;
         this.mediaContext = request.mediaContext;
         this.followRedirects = request.followRedirects;
         this.maxRedirects = request.maxRedirects;
