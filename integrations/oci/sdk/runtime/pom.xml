@@ -64,8 +64,7 @@
         <dependency>
             <groupId>io.helidon.pico.configdriven</groupId>
             <artifactId>helidon-pico-configdriven-processor</artifactId>
-            <scope>provided</scope> <!-- force reactor dependencies -->
-            <optional>true</optional>
+            <optional>true</optional> <!-- force reactor dependencies -->
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
