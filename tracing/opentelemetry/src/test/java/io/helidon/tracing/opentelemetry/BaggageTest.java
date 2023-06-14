@@ -16,12 +16,13 @@
 
 package io.helidon.tracing.opentelemetry;
 
+import java.util.Optional;
+
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
