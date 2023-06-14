@@ -17,18 +17,22 @@ package io.helidon.tests.integration.tracerbaggage;
 
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracer;
 import io.helidon.webserver.WebServer;
-import org.hamcrest.core.Is;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MainTest {
 
@@ -36,7 +40,7 @@ class MainTest {
 
     @BeforeAll
     static void startTheServer() {
-        webServer = Main.startServer().await();
+        webServer = Main.startServer().await(10, TimeUnit.SECONDS);
 
     }
 
@@ -53,20 +57,21 @@ class MainTest {
      */
     @Test
     void baggageCanaryMinimal() {
-        final var tracer = io.helidon.tracing.Tracer.global();
-        final var span = tracer.spanBuilder("baggageCanaryMinimal").start();
+        Tracer tracer = Tracer.global();
+        Span span = tracer.spanBuilder("baggageCanaryMinimal").start();
         // Set baggage and confirm that it's known in the span
         span.baggage("fubar", "1");
         assertThat(span.baggage("fubar").orElse(null), is("1"));
 
         // Inject the span (context) into the consumer
-        final var consumer = HeaderConsumer
+        HeaderConsumer consumer = HeaderConsumer
                 .create(new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
         tracer.inject(span.context(), HeaderProvider.empty(), consumer);
 
         // Check baggage propagated
-        final var allKeys = consumer.keys().toString();
-        assertThat(allKeys.contains("fubar"), is(true));
+        List<String> result = new ArrayList<>();
+        consumer.keys().forEach(result::add);
+        assertThat(result, hasItem(containsString("fubar")));
         span.end();
     }
 

@@ -22,7 +22,6 @@ import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebTracingConfig;
 
 /**
  * The application main class.
