@@ -100,6 +100,7 @@ class OpenTracingSpan implements Span {
     public Span baggage(String key, String value) {
         Objects.requireNonNull(key, "Baggage Key cannot be null");
         Objects.requireNonNull(value, "Baggage Value cannot be null");
+
         delegate.setBaggageItem(key, value);
         return this;
     }
