@@ -66,11 +66,7 @@ class OpenTracingSpan implements Span {
 
     @Override
     public SpanContext context() {
-        try {
-            return Span.current().orElseThrow().context();
-        } catch (Exception e) {
-            return context;
-        }
+        return context;
     }
 
     @Override
@@ -89,9 +85,9 @@ class OpenTracingSpan implements Span {
     public void end(Throwable throwable) {
         status(Status.ERROR);
         delegate.log(Map.of("event", "error",
-                "error.kind", "Exception",
-                "error.object", throwable,
-                "message", throwable.getMessage()));
+                            "error.kind", "Exception",
+                            "error.object", throwable,
+                            "message", throwable.getMessage()));
         delegate.finish();
     }
 
@@ -104,7 +100,6 @@ class OpenTracingSpan implements Span {
     public Span baggage(String key, String value) {
         Objects.requireNonNull(key, "Baggage Key cannot be null");
         Objects.requireNonNull(value, "Baggage Value cannot be null");
-
         delegate.setBaggageItem(key, value);
         return this;
     }
@@ -122,6 +117,6 @@ class OpenTracingSpan implements Span {
             return spanClass.cast(delegate);
         }
         throw new IllegalArgumentException("Cannot provide an instance of " + spanClass.getName()
-                + ", open tracing span is: " + delegate.getClass().getName());
+                                                   + ", open tracing span is: " + delegate.getClass().getName());
     }
 }
