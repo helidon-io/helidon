@@ -45,7 +45,7 @@ class InjectionProcessorObserverForOCITest {
 
         TypeName generatedOciServiceClientTypeName = InjectionProcessorObserverForOCI.toGeneratedServiceClientTypeName(ociServiceType);
         assertThat(generatedOciServiceClientTypeName.name(),
-                   equalTo("generated." + ociServiceType.name() + "$$Oci$$Client"));
+                   equalTo("io.helidon.integrations.generated." + ociServiceType.name() + "$$Oci$$Client"));
 
         String serviceClientBody = InjectionProcessorObserverForOCI.toBody(InjectionProcessorObserverForOCI.TAG_TEMPLATE_SERVICE_CLIENT_PROVIDER_NAME,
                                                                            ociServiceType,
@@ -55,7 +55,7 @@ class InjectionProcessorObserverForOCITest {
 
         TypeName generatedOciServiceClientBuilderTypeName = InjectionProcessorObserverForOCI.toGeneratedServiceClientBuilderTypeName(ociServiceType);
         assertThat(generatedOciServiceClientBuilderTypeName.name(),
-                   equalTo("generated." + ociServiceType.name() + "$$Oci$$ClientBuilder"));
+                   equalTo("io.helidon.integrations.generated." + ociServiceType.name() + "$$Oci$$ClientBuilder"));
 
         String serviceClientBuilderBody = InjectionProcessorObserverForOCI.toBody(InjectionProcessorObserverForOCI.TAG_TEMPLATE_SERVICE_CLIENT_BUILDER_PROVIDER_NAME,
                                                                                   ociServiceType,

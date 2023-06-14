@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-com.oracle.bmc.Region
-com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider
-com.oracle.bmc.circuitbreaker.OciCircuitBreaker
+
+# these classes do not follow the normal dotted names for the Client Builder - see `{{dot}}` in the hbs template files
+
+com.oracle.bmc.streaming.Stream
+com.oracle.bmc.streaming.StreamAsync

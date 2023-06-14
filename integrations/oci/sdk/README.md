@@ -66,5 +66,7 @@ Add the runtime dependency to your pom.xml, along with any other OCI SDK library
     </dependency>
 ```
 
+Note that if you are using JPMS (i.e., _module-info.java_), then you will also need to be sure to export the _io.helidon.integrations.generated_ derivative package names from your module(s).
+
 ### How it works
 See the [InjectionProcessorObserverForOci javadoc](processor/src/main/java/io/helidon/integrations/oci/sdk/processor/InjectionProcessorObserverForOCI.java) for a description. In summary, this processor will observe **OCI SDK** injection points and then code generate **Activators** enabling injection of SDK services in conjuction with the [runtime](./runtime) module on the classpath.

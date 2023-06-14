@@ -13,5 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-com.oracle.bmc.streaming.Stream
-com.oracle.bmc.streaming.StreamAsync
+
+# these classes will result in code generation to be skipped if they are @Inject'ed
+
+com.oracle.bmc.Region
+com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider
+com.oracle.bmc.circuitbreaker.OciCircuitBreaker

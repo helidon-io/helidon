@@ -89,7 +89,11 @@ import static java.util.function.Predicate.not;
  */
 public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessorObserver {
     static final String OCI_ROOT_PACKAGE_NAME_PREFIX = "com.oracle.bmc.";
-    static final String GENERATED_PREFIX = "generated.";
+
+    // all generated sources will have this package prefix
+    static final String GENERATED_PREFIX = "io.helidon.integrations.generated.";
+
+    // all generated sources will have this class name suffix
     static final String GENERATED_CLIENT_SUFFIX = "$$Oci$$Client";
     static final String GENERATED_CLIENT_BUILDER_SUFFIX = GENERATED_CLIENT_SUFFIX + "Builder";
     static final String GENERATED_OCI_ROOT_PACKAGE_NAME_PREFIX = GENERATED_PREFIX + OCI_ROOT_PACKAGE_NAME_PREFIX;
@@ -98,8 +102,8 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
     static final String TAG_TEMPLATE_SERVICE_CLIENT_BUILDER_PROVIDER_NAME = "service-client-builder-provider.hbs";
 
     // note that these can be used as -A values also
-    static final String TAG_TYPENAME_EXCEPTIONS = "typename.exceptions";
-    static final String TAG_NO_DOT_EXCEPTIONS = "no.dot.exceptions";
+    static final String TAG_TYPENAME_EXCEPTIONS = "codegen-exclusions";
+    static final String TAG_NO_DOT_EXCEPTIONS = "builder-name-exceptions";
 
     static final LazyValue<Set<String>> TYPENAME_EXCEPTIONS = LazyValue
             .create(InjectionProcessorObserverForOCI::loadTypeNameExceptions);
@@ -210,7 +214,7 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
     }
 
     static String loadTemplate(String name) {
-        String path = "templates/pico/oci/default/" + name;
+        String path = "io/helidon/integrations/oci/sdk/processor/templates/" + name;
         try {
             InputStream in = InjectionProcessorObserverForOCI.class.getClassLoader().getResourceAsStream(path);
             if (in == null) {
@@ -251,10 +255,10 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
     }
 
     static Set<String> loadSet(String name) {
-        // note: we need to keep this mutable for later when we process the env options passed manually in
+        // note that we need to keep this mutable for later when we process the env options passed manually in
         Set<String> result = new LinkedHashSet<>();
 
-        name = InjectionProcessorObserverForOCI.class.getPackageName().replace(".", "/") + "/" + name;
+        name = InjectionProcessorObserverForOCI.class.getPackageName().replace(".", "/") + "/" + name + ".txt";
         try {
             Enumeration<URL> resources = InjectionProcessorObserverForOCI.class.getClassLoader().getResources(name);
             while (resources.hasMoreElements()) {

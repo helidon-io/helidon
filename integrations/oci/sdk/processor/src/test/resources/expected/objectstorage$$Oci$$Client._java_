@@ -1,4 +1,4 @@
-package generated.com.oracle.bmc.objectstorage;
+package io.helidon.integrations.generated.com.oracle.bmc.objectstorage;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 
