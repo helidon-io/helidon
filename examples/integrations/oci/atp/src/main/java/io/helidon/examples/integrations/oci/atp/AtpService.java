@@ -45,7 +45,6 @@ import io.helidon.reactive.dbclient.jdbc.JdbcDbClientProvider;
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
-import com.oracle.bmc.database.Database;
 import com.oracle.bmc.database.DatabaseClient;
 import com.oracle.bmc.database.model.GenerateAutonomousDatabaseWalletDetails;
 import com.oracle.bmc.database.requests.GenerateAutonomousDatabaseWalletRequest;
@@ -58,7 +57,7 @@ import oracle.ucp.jdbc.PoolDataSourceFactory;
 class AtpService implements HttpService {
     private static final Logger LOGGER = Logger.getLogger(AtpService.class.getName());
 
-    private final Database databaseAsyncClient;
+    private final DatabaseClient databaseClient;
     private final Config config;
 
     AtpService(Config config) {
@@ -66,7 +65,7 @@ class AtpService implements HttpService {
             // this requires OCI configuration in the usual place
             // ~/.oci/config
             AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
-            databaseAsyncClient = DatabaseClient.builder().build(authProvider);
+            databaseClient = DatabaseClient.builder().build(authProvider);
             this.config = config;
         } catch (IOException e) {
             throw new ConfigException("Failed to read configuration properties", e);
@@ -89,7 +88,7 @@ class AtpService implements HttpService {
      * @param res response
      */
     private void generateWallet(ServerRequest req, ServerResponse res) {
-        GenerateAutonomousDatabaseWalletResponse walletResponse = databaseAsyncClient.generateAutonomousDatabaseWallet(
+        GenerateAutonomousDatabaseWalletResponse walletResponse = databaseClient.generateAutonomousDatabaseWallet(
                 GenerateAutonomousDatabaseWalletRequest.builder()
                         .autonomousDatabaseId(config.get("oci.atp.ocid").asString().get())
                         .generateAutonomousDatabaseWalletDetails(
