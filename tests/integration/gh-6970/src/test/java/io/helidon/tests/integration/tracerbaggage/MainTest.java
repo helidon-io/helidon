@@ -36,6 +36,8 @@ import static org.hamcrest.core.Is.is;
 
 class MainTest {
 
+    public static final String KEY = "fubar";
+    public static final String VALUE = "1";
     private static WebServer webServer;
 
     @BeforeAll
@@ -60,8 +62,8 @@ class MainTest {
         Tracer tracer = Tracer.global();
         Span span = tracer.spanBuilder("baggageCanaryMinimal").start();
         // Set baggage and confirm that it's known in the span
-        span.baggage("fubar", "1");
-        assertThat(span.baggage("fubar").orElse(null), is("1"));
+        span.baggage(KEY, VALUE);
+        assertThat(span.baggage(KEY).orElse(null), is(VALUE));
 
         // Inject the span (context) into the consumer
         HeaderConsumer consumer = HeaderConsumer
@@ -71,9 +73,12 @@ class MainTest {
         // Check baggage propagated
         List<String> result = new ArrayList<>();
         consumer.keys().forEach(result::add);
-        assertThat(result, hasItem(containsString("fubar")));
+        assertThat(result, hasItem(containsString(KEY)));
+
+        //Check baggage value
+        String fubar = result.stream().filter(e -> e.contains(KEY)).findFirst().orElseThrow();
+        assertThat(consumer.get(fubar).orElseThrow(), is(VALUE));
         span.end();
     }
-
 
 }

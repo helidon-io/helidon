@@ -41,9 +41,9 @@ class BaggageTest {
         Span span = tracer.spanBuilder("test-span").start();
         Span spanWithBaggage = span.baggage("key", "value");
         Optional<String> result = spanWithBaggage.baggage("key");
-        span.end();
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), equalTo("value"));
+        span.end();
     }
 
     @Test
