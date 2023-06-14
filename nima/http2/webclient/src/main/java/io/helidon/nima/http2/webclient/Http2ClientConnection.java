@@ -42,6 +42,7 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.SocketWriter;
@@ -103,12 +104,14 @@ class Http2ClientConnection {
     private DataReader reader;
     private DataWriter dataWriter;
     private Future<?> handleTask;
+    private final ParserMode mediaTypeParserMode;
 
     Http2ClientConnection(ExecutorService executor,
                           SocketOptions socketOptions,
                           ConnectionKey connectionKey,
                           String primaryPath,
-                          ConnectionContext connectionContext) {
+                          ConnectionContext connectionContext,
+                          ParserMode mediaTypeParserMode) {
         this.executor = executor;
         this.socketOptions = socketOptions;
         this.connectionKey = connectionKey;
@@ -119,6 +122,7 @@ class Http2ClientConnection {
                 .initialWindowSize(connectionContext.initialWindowSize())
                 .blockTimeout(connectionContext.timeout())
                 .build();
+        this.mediaTypeParserMode = mediaTypeParserMode;
     }
 
     Http2ConnectionWriter writer() {
@@ -415,7 +419,7 @@ class Http2ClientConnection {
         reader.skip("HTTP/1.1 ".length());
         String status = reader.readAsciiString(3);
         String message = reader.readLine();
-        WritableHeaders<?> headers = Http1HeadersParser.readHeaders(reader, 8192, false);
+        WritableHeaders<?> headers = Http1HeadersParser.readHeaders(reader, 8192, mediaTypeParserMode, false);
         switch (status) {
         case "101":
             break;

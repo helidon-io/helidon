@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,13 +151,26 @@ public final class MediaTypes {
 
     /**
      * Create a new media type from the full media type string.
+     * Strict media type parsing mode is used.
      *
      * @param fullType media type string, such as {@code application/json}
      * @return media type for the string
      */
     public static MediaType create(String fullType) {
         MediaTypeEnum types = MediaTypeEnum.find(fullType);
-        return types == null ? MediaTypeImpl.parse(fullType) : types;
+        return types == null ? MediaTypeImpl.parse(fullType, ParserMode.STRICT) : types;
+    }
+
+    /**
+     * Create a new media type from the full media type string.
+     *
+     * @param fullType media type string, such as {@code application/json}
+     * @param parserMode media type parsing mode
+     * @return media type for the string
+     */
+    public static MediaType create(String fullType, ParserMode parserMode) {
+        MediaTypeEnum types = MediaTypeEnum.find(fullType);
+        return types == null ? MediaTypeImpl.parse(fullType, parserMode) : types;
     }
 
     /**

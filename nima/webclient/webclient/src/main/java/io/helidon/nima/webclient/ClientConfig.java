@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.Optional;
 
 import io.helidon.common.http.Headers;
+import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.common.tls.Tls;
@@ -89,5 +90,14 @@ public interface ClientConfig {
      * @return client headers
      */
     Headers defaultHeaders();
+
+    /**
+     * Client {@code Content-Type} header matching mode.
+     * Supported values are {@code ParserMode.STRICT} and {@code ParserMode.RELAXED}.
+     *
+     * @return {@code Content-Type} header matching mode
+     */
+    @ConfiguredOption("STRICT")
+    ParserMode mediaTypeParserMode();
 
 }

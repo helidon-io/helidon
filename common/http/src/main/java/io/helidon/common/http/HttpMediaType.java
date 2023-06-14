@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.media.type.ParserMode;
 
 /**
  * Media type used in HTTP headers, in addition to the media type definition, these may contain additional
@@ -106,12 +107,24 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
 
     /**
      * Parse media type from the provided string.
+     * Strict media type parsing mode is used.
      *
      * @param mediaTypeString media type string
      * @return HTTP media type parsed from the string
      */
     static HttpMediaType create(String mediaTypeString) {
-        return Builder.parse(mediaTypeString);
+        return Builder.parse(mediaTypeString, ParserMode.STRICT);
+    }
+
+    /**
+     * Parse media type from the provided string.
+     *
+     * @param mediaTypeString media type string
+     * @param parserMode media type parsing mode
+     * @return HTTP media type parsed from the string
+     */
+    static HttpMediaType create(String mediaTypeString, ParserMode parserMode) {
+        return Builder.parse(mediaTypeString, parserMode);
     }
 
     /**
@@ -310,7 +323,7 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
             return mediaType;
         }
 
-        private static HttpMediaType parse(String mediaTypeString) {
+        private static HttpMediaType parse(String mediaTypeString, ParserMode parserMode) {
             // text/plain; charset=UTF-8
 
             Builder b = builder();
@@ -337,7 +350,7 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
                     }
                 }
             } else {
-                b.mediaType(MediaTypes.create(mediaTypeString));
+                b.mediaType(MediaTypes.create(mediaTypeString, parserMode));
             }
             return b.build();
         }

@@ -22,6 +22,7 @@ import java.util.concurrent.Executors;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.http.Headers;
+import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.spi.DnsResolver;
@@ -45,6 +46,7 @@ public class LoomClient implements WebClient {
     private final int maxRedirects;
     private final boolean followRedirects;
     private final Headers defaultHeaders;
+    private final ParserMode mediaTypeParserMode;
 
     /**
      * Construct this instance from a subclass of builder.
@@ -60,6 +62,7 @@ public class LoomClient implements WebClient {
         this.maxRedirects = builder.maxRedirect();
         this.followRedirects = builder.followRedirect();
         this.defaultHeaders = builder.defaultHeaders();
+        this.mediaTypeParserMode = builder.mediaTypeParserMode();
     }
 
     /**
@@ -141,6 +144,15 @@ public class LoomClient implements WebClient {
      */
     public Headers defaultHeaders() {
         return defaultHeaders;
+    }
+
+    /**
+     * Media type parsing mode for HTTP {@code Content-Type} header.
+     *
+     * @return media type parsing mode
+     */
+    protected ParserMode mediaTypeParserMode() {
+        return mediaTypeParserMode;
     }
 
 }

@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 
 // a representation of a single remote endpoint
@@ -37,15 +38,18 @@ class Http2ClientConnectionHandler {
     private final AtomicReference<Http2ClientConnection> activeConnection = new AtomicReference<>();
     // simple solution for now
     private final Semaphore semaphore = new Semaphore(1);
+    private final ParserMode mediaTypeParserMode;
 
     Http2ClientConnectionHandler(ExecutorService executor,
                                  SocketOptions socketOptions,
                                  String primaryPath,
-                                 ConnectionKey connectionKey) {
+                                 ConnectionKey connectionKey,
+                                 ParserMode mediaTypeParserMode) {
         this.executor = executor;
         this.socketOptions = socketOptions;
         this.primaryPath = primaryPath;
         this.connectionKey = connectionKey;
+        this.mediaTypeParserMode = mediaTypeParserMode;
     }
 
     public Http2ClientStream newStream(ConnectionContext ctx) {
@@ -77,7 +81,12 @@ class Http2ClientConnectionHandler {
 
     private Http2ClientConnection createConnection(ConnectionKey connectionKey, ConnectionContext connectionContext) {
         Http2ClientConnection conn =
-                new Http2ClientConnection(executor, socketOptions, connectionKey, primaryPath, connectionContext);
+                new Http2ClientConnection(executor,
+                                          socketOptions,
+                                          connectionKey,
+                                          primaryPath,
+                                          connectionContext,
+                                          mediaTypeParserMode);
         conn.connect();
         activeConnection.set(conn);
         fullConnections.add(conn);
