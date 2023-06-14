@@ -43,7 +43,7 @@ class Http2ClientImpl extends LoomClient implements Http2Client {
         UriQueryWriteable query = UriQueryWriteable.create();
         UriHelper helper = (uri() == null) ? UriHelper.create() : UriHelper.create(uri(), query);
 
-        return new ClientRequestImpl(this, executor(), method, helper, tls(), query);
+        return new ClientRequestImpl(this, executor(), method, helper, tls(), query, mediaTypeParserMode());
     }
 
     long maxHeaderListSize() {

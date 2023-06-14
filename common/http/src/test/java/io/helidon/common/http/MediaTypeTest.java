@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.media.type.ParserMode;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +31,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableWithSize.iterableWithSize;
 import static org.hamcrest.number.IsCloseTo.closeTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link MediaType}.
@@ -134,4 +136,20 @@ class MediaTypeTest {
         assertThat(mediaType.parameters(), is(Map.of("q", "0.1", "charset", "ISO-8859-2")));
         assertThat(mediaType.qualityFactor(), closeTo(0.1, 0.000001));
     }
+
+    // Calling create method with "text" argument shall throw IllegalArgumentException in strict mode.
+    @Test
+    void parseInvalidTextInStrictMode() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            HttpMediaType.create("text");
+        });
+    }
+
+    // Calling create method with "text" argument shall return "text/plain" in relaxed mode.
+    @Test
+    void parseInvalidTextInRelaxedMode() {
+        HttpMediaType type = HttpMediaType.create("text", ParserMode.RELAXED);
+        assertThat(type.text(), is("text/plain"));
+    }
+
 }

@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.MediaContext;
@@ -273,6 +274,18 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
             configBuilder.relativeUris(relativeUris);
             return this;
         }
+
+        /**
+         * Configure media type parsing mode for HTTP {@code Content-Type} header.
+         *
+         * @param mode media type parsing mode
+         * @return updated builder instance
+         */
+        public Http1ClientBuilder mediaTypeParserMode(ParserMode mode) {
+            configBuilder.mediaTypeParserMode(mode);
+            return this;
+        }
+
     }
 
 }

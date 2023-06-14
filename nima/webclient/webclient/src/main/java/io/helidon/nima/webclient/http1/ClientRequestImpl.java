@@ -361,6 +361,7 @@ class ClientRequestImpl implements Http1ClientRequest {
                                       serviceResponse.connection(),
                                       serviceResponse.reader(),
                                       mediaContext,
+                                      clientConfig.mediaTypeParserMode(),
                                       complete);
     }
 

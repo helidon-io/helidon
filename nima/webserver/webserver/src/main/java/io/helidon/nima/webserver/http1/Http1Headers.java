@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.RequestException;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.ParserMode;
 import io.helidon.nima.webserver.http.DirectTransportRequest;
 
 /**
@@ -54,7 +55,8 @@ public final class Http1Headers {
      */
     public WritableHeaders<?> readHeaders(HttpPrologue prologue) {
         try {
-            return Http1HeadersParser.readHeaders(reader, maxHeadersSize, validateHeaders);
+            // Server always uses strict parsing mode for HTTP Content-Type media type
+            return Http1HeadersParser.readHeaders(reader, maxHeadersSize, ParserMode.STRICT, validateHeaders);
         } catch (IllegalStateException | IllegalArgumentException e) {
             throw RequestException.builder()
                     .type(DirectHandler.EventType.BAD_REQUEST)

@@ -203,7 +203,10 @@ class WsClientImpl extends LoomClient implements WsClient {
             throw new WsClientException("Failed to upgrade to WebSocket, expected switching protocols status, but got: "
                                                 + status);
         }
-        WritableHeaders<?> responseHeaders = Http1HeadersParser.readHeaders(reader, 4096, true);
+        WritableHeaders<?> responseHeaders = Http1HeadersParser.readHeaders(reader,
+                                                                            4096,
+                                                                            mediaTypeParserMode(),
+                                                                            true);
         if (!responseHeaders.contains(HEADER_CONN_UPGRADE)) {
             throw new WsClientException("Failed to upgrade to WebSocket, expected Connection: Upgrade header. Headers: "
                                                 + responseHeaders);

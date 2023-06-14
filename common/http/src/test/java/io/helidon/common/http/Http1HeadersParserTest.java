@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.common.http;
 import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.media.type.ParserMode;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +34,7 @@ class Http1HeadersParserTest {
                 "Set-Cookie: c1=v1\r\nSet-Cookie: c2=v2\r\n"
                         + "Header: hv1\r\nheader: hv2\r\nheaDer: hv3\r\n"
                         + "\r\n").getBytes(StandardCharsets.US_ASCII));
-        WritableHeaders<?> headers = Http1HeadersParser.readHeaders(reader, 1024, true);
+        WritableHeaders<?> headers = Http1HeadersParser.readHeaders(reader, 1024, ParserMode.STRICT, true);
 
         testHeader(headers, "Set-Cookie", "c1=v1", "c2=v2");
         testHeader(headers, "set-cookie", "c1=v1", "c2=v2");

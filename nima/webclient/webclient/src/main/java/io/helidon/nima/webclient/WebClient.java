@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.http1.Http1;
@@ -73,6 +74,7 @@ public interface WebClient {
         private boolean followRedirect;
         private int maxRedirect;
         private WritableHeaders<?> defaultHeaders = WritableHeaders.create();
+        private ParserMode mediaTypeParserMode = ParserMode.STRICT;
 
         /**
          * Common builder base for all the client builder.
@@ -232,6 +234,17 @@ public interface WebClient {
         }
 
         /**
+         * Configure media type parsing mode for HTTP {@code Content-Type} header.
+         *
+         * @param mode media type parsing mode
+         * @return updated builder instance
+         */
+        public B mediaTypeParserMode(ParserMode mode) {
+            this.mediaTypeParserMode = mode;
+            return identity();
+        }
+
+        /**
          * Channel options.
          *
          * @return socket options
@@ -276,6 +289,10 @@ public interface WebClient {
 
         protected WritableHeaders<?> defaultHeaders() {
             return defaultHeaders;
+        }
+
+        protected ParserMode mediaTypeParserMode() {
+            return this.mediaTypeParserMode;
         }
 
     }
