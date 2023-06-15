@@ -15,19 +15,14 @@
  */
 package io.helidon.tests.integration.tracerbaggage;
 
-import io.helidon.tracing.HeaderConsumer;
-import io.helidon.tracing.HeaderProvider;
-import io.helidon.tracing.Span;
-import io.helidon.tracing.Tracer;
-import io.helidon.webserver.WebServer;
-import org.junit.jupiter.api.AfterAll;
+import io.helidon.config.Config;
+import io.helidon.tracing.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -38,20 +33,17 @@ class MainTest {
 
     public static final String KEY = "fubar";
     public static final String VALUE = "1";
-    private static WebServer webServer;
 
     @BeforeAll
     static void startTheServer() {
-        webServer = Main.startServer().await(10, TimeUnit.SECONDS);
+        Config config = Config.create();
 
-    }
+        TracerBuilder.create(config.get("tracing"))
+                .serviceName("helidon-service")
+                .registerGlobal(true)
+                .build();
 
-    @AfterAll
-    static void stopServer() {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .await(10, TimeUnit.SECONDS);
-        }
+
     }
 
     /**
