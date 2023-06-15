@@ -16,7 +16,11 @@
 package io.helidon.tests.integration.tracerbaggage;
 
 import io.helidon.config.Config;
-import io.helidon.tracing.*;
+import io.helidon.tracing.HeaderConsumer;
+import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracer;
+import io.helidon.tracing.TracerBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +39,7 @@ class MainTest {
     public static final String VALUE = "1";
 
     @BeforeAll
-    static void startTheServer() {
+    static void prepareTracer() {
         Config config = Config.create();
 
         TracerBuilder.create(config.get("tracing"))
