@@ -93,10 +93,9 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
     ClientResponseHeaders readHeaders(DataReader reader) {
         WritableHeaders<?> writable = Http1HeadersParser.readHeaders(reader,
                                                                      clientConfig.maxHeaderSize(),
-                                                                     clientConfig.mediaTypeParserMode(),
                                                                      clientConfig.validateHeaders());
 
-        return ClientResponseHeaders.create(writable);
+        return ClientResponseHeaders.create(writable, clientConfig.mediaTypeParserMode());
     }
 
     private ClientConnection obtainConnection(WebClientServiceRequest request) {

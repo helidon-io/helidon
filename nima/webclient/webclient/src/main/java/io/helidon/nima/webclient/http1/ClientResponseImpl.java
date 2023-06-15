@@ -90,8 +90,8 @@ class ClientResponseImpl implements Http1ClientResponse {
         this.connection = connection;
         this.reader = reader;
         this.mediaContext = mediaContext;
-        this.channelId = connection.channelId();
         this.parserMode = parserMode;
+        this.channelId = connection.channelId();
         this.whenComplete = whenComplete;
 
         if (responseHeaders.contains(Header.CONTENT_LENGTH)) {
@@ -265,6 +265,6 @@ class ClientResponseImpl implements Http1ClientResponse {
     }
 
     private void readTrailers() {
-        this.trailers = Http1HeadersParser.readHeaders(reader, 1024, parserMode, true);
+        this.trailers = Http1HeadersParser.readHeaders(reader, 1024, true);
     }
 }

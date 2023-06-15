@@ -37,14 +37,8 @@ public enum ParserMode {
     RELAXED;
 
     // Relaxed media types mapping
-    private static final Map<String, String> RELAXED_TYPES = Map.of(
-            "text", "text/plain"
-    );
-
-    // Lower-case value names mapping
-    private static final Map<String, ParserMode> VALUE_OF_MAPPING = Map.of(
-            STRICT.name().toLowerCase(), STRICT,
-            RELAXED.name().toLowerCase(), RELAXED
+    private static final Map<String, MediaType> RELAXED_TYPES = Map.of(
+            "text",  new MediaTypeImpl("text", "plain", "text/plain") // text -> text/plain
     );
 
     /**
@@ -54,26 +48,10 @@ public enum ParserMode {
      * @return mapped media type value or {@code Optional.empty()}
      *         when no mapping for given value exists
      */
-    public static Optional<String> findRelaxedMediaType(String value) {
+    static Optional<MediaType> findRelaxedMediaType(String value) {
         Objects.requireNonNull(value);
-        String relaxedValue = RELAXED_TYPES.get(value);
+        MediaType relaxedValue = RELAXED_TYPES.get(value);
         return (relaxedValue != null) ? Optional.of(relaxedValue) : Optional.empty();
-    }
-
-    // Config value resolving helper
-    /**
-     * Resolve {@link String} values to {@link ParserMode} instances.
-     * Matching is case-insensitive, source names are converted to lower-case.
-     *
-     * @param name ParserMode instance name
-     * @param defaultMode ParserMode instance to use when provided name
-     *                    does not match any known name.
-     * @return matching {@link ParserMode} instance or {@code defaultMode}
-     *         when provided name does not match any known mode name.
-     */
-    public static ParserMode valueOfIgnoreCase(String name, ParserMode defaultMode) {
-        Objects.requireNonNull(name);
-        return VALUE_OF_MAPPING.getOrDefault(name, defaultMode);
     }
 
 }

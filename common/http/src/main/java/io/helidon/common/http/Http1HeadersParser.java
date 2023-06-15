@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,15 @@
 package io.helidon.common.http;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.LazyString;
-import io.helidon.common.media.type.ParserMode;
 
 /**
  * Used by both HTTP server and client to parse headers from {@link io.helidon.common.buffers.DataReader}.
  */
 public final class Http1HeadersParser {
-
-    private static final System.Logger LOGGER = System.getLogger(Http1HeadersParser.class.getName());
-
     // TODO expand set of fastpath headers
     private static final byte[] HD_HOST = (HeaderEnum.HOST.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
     private static final byte[] HD_ACCEPT = (HeaderEnum.ACCEPT.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
@@ -48,14 +43,10 @@ public final class Http1HeadersParser {
      *
      * @param reader         reader to pull data from
      * @param maxHeadersSize maximal size of all headers, in bytes
-     * @param parserMode     media type parsing mode
      * @param validate       whether to validate headers
      * @return a new mutable headers instance containing all headers parsed from reader
      */
-    public static WritableHeaders<?> readHeaders(DataReader reader,
-                                                 int maxHeadersSize,
-                                                 ParserMode parserMode,
-                                                 boolean validate) {
+    public static WritableHeaders<?> readHeaders(DataReader reader, int maxHeadersSize, boolean validate) {
         WritableHeaders<?> headers = WritableHeaders.create();
         int maxLength = maxHeadersSize;
 
@@ -67,10 +58,6 @@ public final class Http1HeadersParser {
 
             Http.HeaderName header = readHeaderName(reader, maxLength, validate);
             maxLength -= header.defaultCase().length() + 2;
-            // Skip spaces after header name
-            while (' ' == reader.lookup()) {
-                reader.skip(1);
-            }
             int eol = reader.findNewLine(maxLength);
             if (eol == maxLength) {
                 throw new IllegalStateException("Header size exceeded");
@@ -80,22 +67,7 @@ public final class Http1HeadersParser {
             reader.skip(2);
             maxLength -= eol + 1;
 
-            if (parserMode == ParserMode.RELAXED && header == HeaderEnum.CONTENT_TYPE) {
-                String valueString = value.toString();
-                Optional<String> maybeRelaxedMediaType = ParserMode.findRelaxedMediaType(valueString);
-                if (maybeRelaxedMediaType.isPresent()) {
-                    headers.add(Http.Header.create(header, maybeRelaxedMediaType.get()));
-                    LOGGER.log(System.Logger.Level.WARNING,
-                               () -> String.format("Invalid %s header value \"%s\" replaced with \"%s\"",
-                                                   HeaderEnum.CONTENT_TYPE.defaultCase(),
-                                                   valueString,
-                                                   maybeRelaxedMediaType.get()));
-                } else {
-                    headers.add(Http.Header.create(header, valueString));
-                }
-            } else {
-                headers.add(Http.Header.create(header, value));
-            }
+            headers.add(Http.Header.create(header, value));
             if (maxLength < 0) {
                 throw new IllegalStateException("Header size exceeded");
             }

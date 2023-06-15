@@ -21,12 +21,10 @@ import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigValue;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.common.media.type.ParserMode;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
@@ -47,13 +45,8 @@ public class MultiPartSupport implements MediaSupport {
             .withParameter("boundary", DEFAULT_BOUNDARY);
 
     private MediaContext context;
-    private final ParserMode parserMode;
 
-    private MultiPartSupport(Config config) {
-        ConfigValue<String> parserModeConfig = config.get("parser-mode").as(String.class);
-        this.parserMode = parserModeConfig.isPresent()
-                ? ParserMode.valueOfIgnoreCase(parserModeConfig.get(), ParserMode.STRICT)
-                : ParserMode.STRICT;
+    private MultiPartSupport() {
     }
 
     /**
@@ -63,7 +56,7 @@ public class MultiPartSupport implements MediaSupport {
      * @return a new {@link MultiPartSupport}
      */
     public static MediaSupport create(Config config) {
-        return new MultiPartSupport(config);
+        return new MultiPartSupport();
     }
 
     @Override
@@ -101,8 +94,7 @@ public class MultiPartSupport implements MediaSupport {
             return ReaderResponse.unsupported();
         }
         return new ReaderResponse<>(SupportLevel.SUPPORTED, () -> (EntityReader<T>) new MultiPartReader(context,
-                                                                                                        boundary,
-                                                                                                        parserMode));
+                                                                                                        boundary));
     }
 
     @Override
@@ -172,8 +164,7 @@ public class MultiPartSupport implements MediaSupport {
             return ReaderResponse.unsupported();
         }
         return new ReaderResponse<>(SupportLevel.SUPPORTED, () -> (EntityReader<T>) new MultiPartReader(context,
-                                                                                                        boundary,
-                                                                                                        parserMode));
+                                                                                                        boundary));
     }
 
     @Override

@@ -34,7 +34,6 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQueryWriteable;
@@ -69,15 +68,13 @@ class ClientRequestImpl implements Http2ClientRequest {
     private Duration flowControlTimeout = Duration.ofMillis(100);
     private Duration timeout = Duration.ofSeconds(10);
     private UriFragment fragment = UriFragment.empty();
-    private final ParserMode mediaTypeParserMode;
 
     ClientRequestImpl(Http2ClientImpl client,
                       ExecutorService executor,
                       Http.Method method,
                       UriHelper helper,
                       Tls tls,
-                      UriQueryWriteable query,
-                      ParserMode mediaTypeParserMode) {
+                      UriQueryWriteable query) {
         this.client = client;
         this.executor = executor;
         this.method = method;
@@ -92,7 +89,6 @@ class ClientRequestImpl implements Http2ClientRequest {
         this.followRedirects = client.followRedirects();
         this.maxRedirects = client.maxRedirects();
         this.explicitHeaders = WritableHeaders.create(client.defaultHeaders());
-        this.mediaTypeParserMode = mediaTypeParserMode;
     }
 
     @Override
@@ -319,8 +315,7 @@ class ClientRequestImpl implements Http2ClientRequest {
                                                  key -> new Http2ClientConnectionHandler(executor,
                                                                                          SocketOptions.builder().build(),
                                                                                          uri.path(),
-                                                                                         key,
-                                                                                         mediaTypeParserMode))
+                                                                                         key))
                     // this statement may block a single connection key
                     .newStream(new ConnectionContext(priority,
                                                      priorKnowledge,

@@ -16,8 +16,11 @@
 
 package io.helidon.nima.webclient.http1;
 
+import java.util.Optional;
+
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.nima.webclient.ClientResponse;
 import io.helidon.nima.webclient.HttpClient;
@@ -29,6 +32,7 @@ import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -51,6 +55,7 @@ class HeadersTest {
         server.stop();
     }
 
+    // Verify that invalid content type is present in response headers and is accesible
     @Test
     public void testInvalidContentType() {
         HttpClient<Http1ClientRequest, Http1ClientResponse> client = WebClient.builder()
@@ -66,6 +71,7 @@ class HeadersTest {
         }
     }
 
+    // Verify that "Content-Type: text" header parsing fails in strict mode
     @Test
     public void testInvalidTextContentTypeStrict() {
         HttpClient<Http1ClientRequest, Http1ClientResponse> client = WebClient.builder()
@@ -74,12 +80,21 @@ class HeadersTest {
         ClientResponse res = client.method(Http.Method.GET)
                 .path("/invalidTextContentType")
                 .request();
-        Headers h = res.headers();
-        Http.HeaderValue contentType = h.get(Http.Header.CONTENT_TYPE);
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(contentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
+        Headers h = res.headers();
+        // Raw protocol data value
+        Http.HeaderValue rawContentType = h.get(Http.Header.CONTENT_TYPE);
+        assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
+        // Media type parsed value is invalid, IllegalArgumentException shall be thrown
+        try {
+            h.contentType();
+            Assertions.fail("Content-Type: text parsing must throw an exception in strict mode");
+        } catch (IllegalArgumentException ex) {
+            assertThat(ex.getMessage(), is("Cannot parse media type: text"));
+        }
     }
 
+    // Verify that "Content-Type: text" header parsing returns text/plain in relaxed mode
     @Test
     public void testInvalidTextContentTypeRelaxed() {
         HttpClient<Http1ClientRequest, Http1ClientResponse> client = WebClient.builder()
@@ -89,10 +104,15 @@ class HeadersTest {
         ClientResponse res = client.method(Http.Method.GET)
                 .path("/invalidTextContentType")
                 .request();
-        Headers h = res.headers();
-        Http.HeaderValue contentType = h.get(Http.Header.CONTENT_TYPE);
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(contentType.value(), is(TestService.RELAXED_CONTENT_TYPE_TEXT));
+        Headers h = res.headers();
+        // Raw protocol data value
+        Http.HeaderValue rawContentType = h.get(Http.Header.CONTENT_TYPE);
+        assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
+        // Media type parsed value
+        Optional<HttpMediaType> contentType = h.contentType();
+        assertThat(contentType.isPresent(), is(true));
+        assertThat(contentType.get().text(), is(TestService.RELAXED_CONTENT_TYPE_TEXT));
     }
 
     static final class TestService implements HttpService {
