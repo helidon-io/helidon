@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.nima.pico;
+package io.helidon.examples.nima.faulttolerance;
 
-import org.junit.jupiter.api.Test;
+import io.helidon.common.http.Endpoint;
 
-class GreetEndpointTest {
+import jakarta.inject.Singleton;
 
-    @Test
-    void testIt() {
-        PicoMain.main(new String[] {});
+@Singleton
+@Endpoint.Path("/admin")
+@Endpoint.Listener("admin")
+class AdminEndpoint {
+    @Endpoint.GET
+    String admin() {
+        return "This is the admin endpoint, that may be available on a dedicated admin socket";
     }
-
 }

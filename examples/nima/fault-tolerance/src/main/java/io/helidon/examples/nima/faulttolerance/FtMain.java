@@ -14,45 +14,37 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.nima.pico;
-
-import java.util.Optional;
+package io.helidon.examples.nima.faulttolerance;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.pico.api.Bootstrap;
-import io.helidon.pico.api.BootstrapDefault;
 import io.helidon.pico.api.PicoServices;
 
-/**
- * As simple as possible with a fixed port.
- */
-public final class PicoMain {
-    private PicoMain() {
-    }
-
+public class FtMain {
     /**
      * Start the example.
      *
      * @param args ignored
      */
     public static void main(String[] args) {
-        // todo move to a Níma on Pico module
+        // TODO move to a helidon-inject-runtime module (or similar) to set everything up
         LogConfig.configureRuntime();
 
-        Optional<Bootstrap> existingBootstrap = PicoServices.globalBootstrap();
-        if (existingBootstrap.isEmpty()) {
-            Config config = Config.builder()
-                    .addSource(ConfigSources.classpath("application.yaml"))
-                    .disableSystemPropertiesSource()
-                    .disableEnvironmentVariablesSource()
-                    .build();
-            Bootstrap bootstrap = BootstrapDefault.builder()
-                    .config(config)
-                    .build();
-            PicoServices.globalBootstrap(bootstrap);
-        }
+        Config config = Config.builder()
+                .addSource(ConfigSources.classpath("application.yaml"))
+                .disableSystemPropertiesSource()
+                .disableEnvironmentVariablesSource()
+                .build();
+
+        ConfigService.config(config);
+
+        Bootstrap bootstrap = Bootstrap.builder()
+                .config(config)
+                .build();
+
+        PicoServices.globalBootstrap(bootstrap);
 
         PicoServices picoServices = PicoServices.picoServices().get();
         // this line is needed!

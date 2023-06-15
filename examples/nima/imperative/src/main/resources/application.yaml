@@ -17,8 +17,7 @@
 server:
   host: "localhost"
   port: 8080
-#  sockets: - not yet
-#    - name: "https"
-#      port: 8081
-#    - name: "admin"
-#      port: 8082
+  sockets:
+    - name: "https"
+      host: "localhost"
+      port: 8081

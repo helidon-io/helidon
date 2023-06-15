@@ -20,3 +20,7 @@ app:
 server:
   port: 8080
   host: 0.0.0.0
+#  experimental:
+#    http2:
+#      enable: true
+#      max-content-length: 16384

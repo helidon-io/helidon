@@ -16,52 +16,95 @@
 
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.common.http.Http;
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.http.HttpRouting;
+import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
+import io.helidon.reactive.webserver.WebServer;
+
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ServerTest
 class MainTest {
 
-    private final Http1Client client;
+    private static WebServer webServer;
+    private static WebClient webClient;
+    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
+    private static final JsonObject TEST_JSON_OBJECT;
 
-    protected MainTest(Http1Client client) {
-        this.client = client;
+    static {
+        TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
+                .add("greeting", "Hola")
+                .build();
     }
 
-    @SetUpRoute
-    static void routing(HttpRouting.Builder builder) {
-        Main.routing(builder);
+    @BeforeAll
+    static void startTheServer() {
+        webServer = Main.startServer().await();
+
+        webClient = WebClient.builder()
+                .baseUri("http://localhost:" + webServer.port())
+                .addMediaSupport(JsonpSupport.create())
+                .build();
     }
 
-    @Test
-    void testRootRoute() {
-        try (Http1ClientResponse response = client.get("/greet").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
-            JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("message"), is("Hello World!"));
+    @AfterAll
+    static void stopServer() {
+        if (webServer != null) {
+            webServer.shutdown()
+                    .await(10, TimeUnit.SECONDS);
         }
     }
 
     @Test
-    void testHealthObserver() {
-        try (Http1ClientResponse response = client.get("/observe/health").request()) {
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
-        }
+    void testHelloWorld() {
+        JsonObject jsonObject;
+        WebClientResponse response;
+
+        jsonObject = webClient.get()
+                .path("/greet")
+                .request(JsonObject.class)
+                .await();
+        assertThat(jsonObject.getString("message"), is("Hello World!"));
+
+        jsonObject = webClient.get()
+                .path("/greet/Joe")
+                .request(JsonObject.class)
+                .await();
+        assertThat(jsonObject.getString("message"), is("Hello Joe!"));
+
+        response = webClient.put()
+                .path("/greet/greeting")
+                .submit(TEST_JSON_OBJECT)
+                .await();
+        assertThat(response.status().code(), is(204));
+
+        jsonObject = webClient.get()
+                .path("/greet/Joe")
+                .request(JsonObject.class)
+                .await();
+        assertThat(jsonObject.getString("message"), is("Hola Joe!"));
+
+        response = webClient.get()
+                .path("/health")
+                .request()
+                .await();
+        assertThat(response.status().code(), is(200));
+
+        response = webClient.get()
+                .path("/metrics")
+                .request()
+                .await();
+        assertThat(response.status().code(), is(200));
     }
 
-    @Test
-    void testDeadlockHealthCheck() {
-        try (Http1ClientResponse response = client.get("/observe/health/live/deadlock").request()) {
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
-        }
-    }
 }

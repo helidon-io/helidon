@@ -46,6 +46,7 @@ public class ObserveMain {
         WebServer server = WebServer.builder()
                 .config(config.get("server"))
                 .routing(it -> routing(config, it))
+                .build()
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port());

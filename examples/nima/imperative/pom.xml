@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,11 +26,12 @@
     </parent>
 
     <groupId>io.helidon.examples.nima</groupId>
-    <artifactId>helidon-examples-nima-pico</artifactId>
-    <name>Helidon Níma Pico Example</name>
+    <artifactId>helidon-nima-examples-imperative</artifactId>
+    <name>Helidon Níma Examples Imperative</name>
+    <description>Example of imperative ("pure" programmatic) approach using Helidon SE</description>
 
     <properties>
-        <mainClass>io.helidon.examples.nima.pico.PicoMain</mainClass>
+        <mainClass>io.helidon.examples.nima.imperative.ImperativeMain</mainClass>
     </properties>
 
     <dependencies>
@@ -41,14 +42,6 @@
         <dependency>
             <groupId>io.helidon.nima.webserver</groupId>
             <artifactId>helidon-nima-webserver</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.features</groupId>
-            <artifactId>helidon-common-features</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.pico</groupId>
@@ -72,11 +65,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
@@ -94,44 +82,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.pico</groupId>
-                            <artifactId>helidon-pico-processor</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.nima.http</groupId>
-                            <artifactId>helidon-nima-http-processor</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
                     <compilerArgs>
-                        <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>
+                        <arg>--enable-preview</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>io.helidon.pico</groupId>-->
-<!--                <artifactId>helidon-pico-maven-plugin</artifactId>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>compile</id>-->
-<!--                        <phase>compile</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>application-create</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                    <execution>-->
-<!--                        <id>testCompile</id>-->
-<!--                        <phase>test-compile</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>test-application-create</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>

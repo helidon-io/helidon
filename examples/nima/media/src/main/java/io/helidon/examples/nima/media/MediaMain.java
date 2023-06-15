@@ -40,6 +40,7 @@ public class MediaMain {
         WebServer server = WebServer.builder()
                 .routing(MediaMain::routing)
                 .port(8080)
+                .build()
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port());

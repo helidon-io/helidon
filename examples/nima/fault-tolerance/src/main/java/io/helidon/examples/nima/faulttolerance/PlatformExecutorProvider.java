@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.nima.pico;
+package io.helidon.examples.nima.faulttolerance;
 
-import io.helidon.config.Config;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.LazyValue;
+
+import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
@@ -26,9 +31,17 @@ import jakarta.inject.Singleton;
  * It may use pico to get config sources exposed through pico.
  */
 @Singleton
-public class ConfigService implements Provider<Config> {
+@Named("platform-executor")
+class PlatformExecutorProvider implements Provider<ExecutorService> {
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+
+    private static final LazyValue<ExecutorService> EXECUTOR_SERVICE = LazyValue.create(() -> {
+        return Executors.newFixedThreadPool(10,
+                                            r -> new Thread(r, "platform-" + COUNTER.getAndIncrement()));
+    });
+
     @Override
-    public Config get() {
-        return Config.create();
+    public ExecutorService get() {
+        return EXECUTOR_SERVICE.get();
     }
 }
