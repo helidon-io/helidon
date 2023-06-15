@@ -28,6 +28,7 @@ open module helidon.webserver.websocket.test {
 
     requires org.glassfish.tyrus.client;
     requires org.glassfish.tyrus.container.jdk.client;
+    requires org.glassfish.tyrus.core;
 
     exports io.helidon.webserver.websocket.test;
 }

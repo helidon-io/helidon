@@ -30,7 +30,15 @@
     <name>Helidon WebServer WebSocket</name>
 
     <properties>
-        <surefire.argLine>-Dio.netty.leakDetectionLevel=paranoid</surefire.argLine>
+        <!--
+         This is needed for Java 17.
+         ConnectionClosingTest needs access to non-public fields of internal Tyrus remote and socket classes.
+         This is not needed for runtime, as it's only used to simulate unclean client disconnect.
+         -->
+        <surefire.argLine>
+            --add-opens org.glassfish.tyrus.core/org.glassfish.tyrus.core=helidon.webserver.websocket.test
+            -Dio.netty.leakDetectionLevel=paranoid
+        </surefire.argLine>
     </properties>
 
     <dependencies>

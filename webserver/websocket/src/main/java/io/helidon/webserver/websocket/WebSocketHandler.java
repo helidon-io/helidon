@@ -147,6 +147,10 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        if (connection != null) {
+            connection.close(new CloseReason(CloseReason.CloseCodes.CLOSED_ABNORMALLY, "Client connection closed"));
+        }
+
         tyrusServerContainer.shutdown();
         super.channelUnregistered(ctx);
     }
