@@ -17,16 +17,15 @@
 package io.helidon.pico.tools;
 
 import java.io.File;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,23 +49,16 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 
-import io.helidon.builder.processor.tools.BuilderTypeTools;
-import io.helidon.common.LazyValue;
-import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.AnnotationAndValueDefault;
-import io.helidon.common.types.TypeInfo;
+import io.helidon.common.processor.AnnotationFactory;
+import io.helidon.common.processor.TypeFactory;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
+import io.helidon.common.types.TypeValues;
+import io.helidon.pico.api.AccessModifier;
 import io.helidon.pico.api.ElementInfo;
-import io.helidon.pico.api.ElementInfoDefault;
 import io.helidon.pico.api.InjectionPointInfo;
-import io.helidon.pico.api.InjectionPointInfoDefault;
-import io.helidon.pico.api.InjectionPointProvider;
-import io.helidon.pico.api.PicoServicesConfig;
-import io.helidon.pico.api.QualifierAndValue;
-import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.runtime.Dependencies;
 
 import io.github.classgraph.AnnotationInfo;
@@ -82,7 +74,6 @@ import io.github.classgraph.MethodInfoList;
 import io.github.classgraph.MethodParameterInfo;
 import io.github.classgraph.TypeArgument;
 import io.github.classgraph.TypeSignature;
-import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 import static io.helidon.pico.tools.CommonUtils.first;
@@ -92,20 +83,7 @@ import static io.helidon.pico.tools.CommonUtils.hasValue;
  * Generically handles Pico generated artifact creation via APT.
  */
 @SuppressWarnings("deprecation")
-public final class TypeTools extends BuilderTypeTools {
-    private static final LazyValue<Map<String, TypeName>> OBJ_TYPES = LazyValue.create(() -> {
-        Map<String, TypeName> map = new LinkedHashMap<>();
-        map.put(boolean.class.getName(), TypeNameDefault.create(Boolean.class));
-        map.put(byte.class.getName(), TypeNameDefault.create(Byte.class));
-        map.put(char.class.getName(), TypeNameDefault.create(Character.class));
-        map.put(short.class.getName(), TypeNameDefault.create(Short.class));
-        map.put(int.class.getName(), TypeNameDefault.create(Integer.class));
-        map.put(long.class.getName(), TypeNameDefault.create(Long.class));
-        map.put(float.class.getName(), TypeNameDefault.create(Float.class));
-        map.put(double.class.getName(), TypeNameDefault.create(Double.class));
-        return map;
-    });
-
+public final class TypeTools {
     private TypeTools() {
     }
 
@@ -153,18 +131,7 @@ public final class TypeTools extends BuilderTypeTools {
         if (classInfo == null) {
             return null;
         }
-        return TypeNameDefault.create(classInfo.getPackageName(), classInfo.getSimpleName());
-    }
-
-    /**
-     * Will convert any primitive type name to its Object type counterpart. If not primitive, will return the value passed.
-     *
-     * @param type the type name
-     * @return the Object type name for the given type (e.g., "int.class" -> "Integer.class")
-     */
-    static TypeName toObjectTypeName(String type) {
-        TypeName result = OBJ_TYPES.get().get(type);
-        return (result == null) ? TypeNameDefault.createFromTypeName(type) : result;
+        return TypeName.create(classInfo.getName());
     }
 
     /**
@@ -175,8 +142,8 @@ public final class TypeTools extends BuilderTypeTools {
      * @deprecated switch to using pure annotation processing wherever possible
      */
     @Deprecated
-    static AnnotationAndValue createAnnotationAndValueFromAnnotation(Annotation annotation) {
-        return AnnotationAndValueDefault.create(TypeNameDefault.create(annotation.annotationType()), extractValues(annotation));
+    static Annotation createAnnotationFromAnnotation(java.lang.annotation.Annotation annotation) {
+        return Annotation.create(TypeName.create(annotation.annotationType()), extractValues(annotation));
     }
 
     /**
@@ -188,12 +155,12 @@ public final class TypeTools extends BuilderTypeTools {
      * @deprecated switch to use pure annotation processing instead of reflection
      */
     @Deprecated
-    public static List<AnnotationAndValue> createAnnotationAndValueListFromAnnotations(Annotation[] annotations) {
+    public static List<Annotation> createAnnotationListFromAnnotations(java.lang.annotation.Annotation[] annotations) {
         if (annotations == null || annotations.length <= 0) {
             return List.of();
         }
 
-        return Arrays.stream(annotations).map(TypeTools::createAnnotationAndValueFromAnnotation).collect(Collectors.toList());
+        return Arrays.stream(annotations).map(TypeTools::createAnnotationFromAnnotation).collect(Collectors.toList());
     }
 
     /**
@@ -204,10 +171,10 @@ public final class TypeTools extends BuilderTypeTools {
      * @deprecated switch to use pure annotation processing instead of reflection
      */
     @Deprecated
-    static Map<String, String> extractValues(Annotation annotation) {
+    static Map<String, String> extractValues(java.lang.annotation.Annotation annotation) {
         Map<String, String> result = new HashMap<>();
 
-        Class<? extends Annotation> aClass = annotation.annotationType();
+        Class<? extends java.lang.annotation.Annotation> aClass = annotation.annotationType();
         Method[] declaredMethods = aClass.getDeclaredMethods();
         for (Method declaredMethod : declaredMethods) {
             String propertyName = declaredMethod.getName();
@@ -263,34 +230,28 @@ public final class TypeTools extends BuilderTypeTools {
      * @param typeName the type name, that might use generics
      * @return the generics component type name
      */
-    static String componentTypeNameOf(String typeName) {
+    static TypeName componentTypeNameOf(String typeName) {
         int pos = typeName.indexOf('<');
         if (pos < 0) {
-            return typeName;
+            return TypeName.create(typeName);
         }
 
         int lastPos = typeName.indexOf('>', pos);
         assert (lastPos > pos) : typeName;
-        return typeName.substring(pos + 1, lastPos);
+        return TypeName.create(typeName.substring(pos + 1, lastPos));
     }
 
-    private static String toString(AnnotationParameterValue val) {
-        if (val == null) {
-            return null;
+    /**
+     * Converts "Optional<Whatever>" or "Provider<Whatever>" -> "Whatever".
+     *
+     * @param typeName the type name, that might use generics
+     * @return the generics component type name
+     */
+    static TypeName componentTypeNameOf(TypeName typeName) {
+        if (typeName.typeArguments().size() == 1) {
+            return typeName.typeArguments().get(0);
         }
-
-        Object v = val.getValue();
-        if (v == null) {
-            return null;
-        }
-
-        Class<?> clazz = v.getClass();
-        if (!clazz.isArray()) {
-            return v.toString();
-        }
-
-        Object[] arr = (Object[]) v;
-        return "{" + CommonUtils.toString(Arrays.asList(arr)) + "}";
+        return typeName;
     }
 
     /**
@@ -299,8 +260,8 @@ public final class TypeTools extends BuilderTypeTools {
      * @param classInfo the class info
      * @return the qualifiers
      */
-    static Set<QualifierAndValue> createQualifierAndValueSet(ClassInfo classInfo) {
-        return createQualifierAndValueSet(classInfo.getAnnotationInfo());
+    static Set<Qualifier> createQualifierSet(ClassInfo classInfo) {
+        return createQualifierSet(classInfo.getAnnotationInfo());
     }
 
     /**
@@ -309,8 +270,8 @@ public final class TypeTools extends BuilderTypeTools {
      * @param methodInfo the method info
      * @return the qualifiers
      */
-    static Set<QualifierAndValue> createQualifierAndValueSet(MethodInfo methodInfo) {
-        return createQualifierAndValueSet(methodInfo.getAnnotationInfo());
+    static Set<Qualifier> createQualifierSet(MethodInfo methodInfo) {
+        return createQualifierSet(methodInfo.getAnnotationInfo());
     }
 
     /**
@@ -319,8 +280,8 @@ public final class TypeTools extends BuilderTypeTools {
      * @param fieldInfo the field info
      * @return the qualifiers
      */
-    static Set<QualifierAndValue> createQualifierAndValueSet(FieldInfo fieldInfo) {
-        return createQualifierAndValueSet(fieldInfo.getAnnotationInfo());
+    static Set<Qualifier> createQualifierSet(FieldInfo fieldInfo) {
+        return createQualifierSet(fieldInfo.getAnnotationInfo());
     }
 
     /**
@@ -329,35 +290,34 @@ public final class TypeTools extends BuilderTypeTools {
      * @param annotationInfoList the list of annotations
      * @return the qualifiers
      */
-    static Set<QualifierAndValue> createQualifierAndValueSet(AnnotationInfoList annotationInfoList) {
-        Set<AnnotationAndValue> set = createAnnotationAndValueSetFromMetaAnnotation(annotationInfoList,
-                                                                                    TypeNames.JAKARTA_QUALIFIER);
+    static Set<Qualifier> createQualifierSet(AnnotationInfoList annotationInfoList) {
+        Set<Annotation> set = createAnnotationSetFromMetaAnnotation(annotationInfoList,
+                                                                    TypeNames.JAKARTA_QUALIFIER);
         if (set.isEmpty()) {
             return Set.of();
         }
 
-        return set.stream().map(QualifierAndValueDefault::convert)
+        return set.stream()
+                .map(Qualifier::create)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**
      * Creates a set of qualifiers given the owning element.
-
      * @param type the element type (from anno processing)
      * @return the set of qualifiers that the owning element has
      */
-    public static Set<QualifierAndValue> createQualifierAndValueSet(Element type) {
-        return createQualifierAndValueSet(type.getAnnotationMirrors());
+    public static Set<Qualifier> createQualifierSet(Element type) {
+        return createQualifierSet(type.getAnnotationMirrors());
     }
 
     /**
      * Creates a set of qualifiers given the owning element's annotation type mirror.
-
      * @param annoMirrors the annotation type mirrors (from anno processing)
      * @return the set of qualifiers that the owning element has
      */
-    public static Set<QualifierAndValue> createQualifierAndValueSet(List<? extends AnnotationMirror> annoMirrors) {
-        Set<QualifierAndValue> result = new LinkedHashSet<>();
+    public static Set<Qualifier> createQualifierSet(List<? extends AnnotationMirror> annoMirrors) {
+        Set<Qualifier> result = new LinkedHashSet<>();
 
         for (AnnotationMirror annoMirror : annoMirrors) {
             if (findAnnotationMirror(TypeNames.JAKARTA_QUALIFIER, annoMirror.getAnnotationType()
@@ -373,8 +333,8 @@ public final class TypeTools extends BuilderTypeTools {
                         break;
                     }
                 }
-                QualifierAndValueDefault.Builder qualifier = QualifierAndValueDefault.builder();
-                qualifier.typeName(TypeTools.createTypeNameFromDeclaredType(annoMirror.getAnnotationType()).orElseThrow());
+                Qualifier.Builder qualifier = Qualifier.builder();
+                qualifier.typeName(TypeFactory.createTypeName(annoMirror.getAnnotationType()).orElseThrow());
                 if (val != null) {
                     qualifier.value(val);
                 }
@@ -397,8 +357,11 @@ public final class TypeTools extends BuilderTypeTools {
                         values.put(method.getSimpleName().toString(), String.valueOf(value.getValue()));
                     });
 
-                    TypeName annot = TypeNameDefault.createFromTypeName(annoMirror.getAnnotationType().toString());
-                    result.add(QualifierAndValueDefault.create(annot, values));
+                    TypeName annot = TypeName.create(annoMirror.getAnnotationType().toString());
+                    result.add(Qualifier.builder()
+                                       .typeName(annot)
+                                       .values(values)
+                                       .build());
                 }
             }
         }
@@ -409,13 +372,15 @@ public final class TypeTools extends BuilderTypeTools {
     /**
      * Returns the annotations on the type having the meta annotation provided.
      *
-     * @param type         the type to inspect
-     * @param metaAnnoType the meta annotation type name
+     * @param processingEnv annotation processing environment
+     * @param type          the type to inspect
+     * @param metaAnnoType  the meta annotation type name
      * @return the annotations on the type having the meta annotation
      */
-    public static List<AnnotationAndValue> annotationsWithAnnotationOf(TypeElement type,
-                                                                       String metaAnnoType) {
-        Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(type);
+    public static List<Annotation> annotationsWithAnnotationOf(ProcessingEnvironment processingEnv,
+                                                               TypeElement type,
+                                                               String metaAnnoType) {
+        Set<Annotation> annotations = AnnotationFactory.createAnnotations(type, processingEnv.getElementUtils());
         if (annotations.isEmpty()) {
             return List.of();
         }
@@ -430,38 +395,16 @@ public final class TypeTools extends BuilderTypeTools {
                 .collect(Collectors.toList());
     }
 
-    private static List<String> annotationsWithAnnotationsOfNoOpposite(TypeElement type,
-                                                                       String annotation) {
-        List<String> list = new ArrayList<>();
-        type.getAnnotationMirrors()
-                .forEach(am -> findAnnotationMirror(annotation,
-                                                    am.getAnnotationType().asElement()
-                                                            .getAnnotationMirrors())
-                        .ifPresent(it -> list.add(am.getAnnotationType().asElement().toString())));
-        return list;
-    }
-
     /**
      * Creates a set of annotations based upon class info introspection.
      *
      * @param classInfo the class info
      * @return the annotation value set
      */
-    static Set<AnnotationAndValue> createAnnotationAndValueSet(ClassInfo classInfo) {
-        return classInfo.getAnnotationInfo().stream()
-                .map(TypeTools::createAnnotationAndValue)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    /**
-     * Creates a set of annotations based using annotation processor.
-     *
-     * @param type the enclosing/owing type element
-     * @return the annotation value set
-     */
-    public static Set<AnnotationAndValue> createAnnotationAndValueSet(Element type) {
-        return type.getAnnotationMirrors().stream()
-                .map(TypeTools::createAnnotationAndValue)
+    static Set<Annotation> createAnnotationSet(ClassInfo classInfo) {
+        return classInfo.getAnnotationInfo()
+                .stream()
+                .map(TypeTools::createAnnotation)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -471,9 +414,9 @@ public final class TypeTools extends BuilderTypeTools {
      * @param annotationInfoList the list of annotations
      * @return the annotation and value set
      */
-    public static Set<AnnotationAndValue> createAnnotationAndValueSet(AnnotationInfoList annotationInfoList) {
+    public static Set<Annotation> createAnnotationSet(AnnotationInfoList annotationInfoList) {
         return annotationInfoList.stream()
-                .map(TypeTools::createAnnotationAndValue)
+                .map(TypeTools::createAnnotation)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -483,9 +426,9 @@ public final class TypeTools extends BuilderTypeTools {
      * @param annotationInfo the introspected annotation
      * @return the annotation and value
      */
-    static AnnotationAndValue createAnnotationAndValue(AnnotationInfo annotationInfo) {
+    static Annotation createAnnotation(AnnotationInfo annotationInfo) {
         TypeName annoTypeName = createTypeNameFromClassInfo(annotationInfo.getClassInfo());
-        return AnnotationAndValueDefault.create(annoTypeName, extractValues(annotationInfo.getParameterValues()));
+        return Annotation.create(annoTypeName, extractValues(annotationInfo.getParameterValues()));
     }
 
     /**
@@ -494,11 +437,11 @@ public final class TypeTools extends BuilderTypeTools {
      * @param classInfo the classInfo of the enclosing class type
      * @return the complete set of annotations
      */
-    static Set<AnnotationAndValue> gatherAllAnnotationsUsedOnPublicNonStaticMethods(ClassInfo classInfo) {
-        Set<AnnotationAndValue> result = new LinkedHashSet<>(createAnnotationAndValueSet(classInfo));
+    static Set<Annotation> gatherAllAnnotationsUsedOnPublicNonStaticMethods(ClassInfo classInfo) {
+        Set<Annotation> result = new LinkedHashSet<>(createAnnotationSet(classInfo));
         classInfo.getMethodAndConstructorInfo()
                 .filter(m -> !m.isPrivate() && !m.isStatic())
-                .forEach(mi -> result.addAll(createAnnotationAndValueSet(mi.getAnnotationInfo())));
+                .forEach(mi -> result.addAll(createAnnotationSet(mi.getAnnotationInfo())));
         return result;
     }
 
@@ -509,16 +452,16 @@ public final class TypeTools extends BuilderTypeTools {
      * @param processEnv the processing environment
      * @return the complete set of annotations
      */
-    static Set<AnnotationAndValue> gatherAllAnnotationsUsedOnPublicNonStaticMethods(TypeElement serviceTypeElement,
-                                                                                    ProcessingEnvironment processEnv) {
+    static Set<Annotation> gatherAllAnnotationsUsedOnPublicNonStaticMethods(TypeElement serviceTypeElement,
+                                                                            ProcessingEnvironment processEnv) {
         Elements elementUtils = processEnv.getElementUtils();
-        Set<AnnotationAndValue> result = new LinkedHashSet<>();
-        createAnnotationAndValueSet(serviceTypeElement).forEach(anno -> {
+        Set<Annotation> result = new LinkedHashSet<>();
+        AnnotationFactory.createAnnotations(serviceTypeElement, processEnv.getElementUtils()).forEach(anno -> {
             result.add(anno);
             TypeElement typeElement = elementUtils.getTypeElement(anno.typeName().name());
             if (typeElement != null) {
                 typeElement.getAnnotationMirrors()
-                        .forEach(am -> result.add(createAnnotationAndValue(am)));
+                        .forEach(am -> result.add(AnnotationFactory.createAnnotation(am, processEnv.getElementUtils())));
             }
         });
         serviceTypeElement.getEnclosedElements().stream()
@@ -528,12 +471,13 @@ public final class TypeTools extends BuilderTypeTools {
                 .map(ExecutableElement.class::cast)
                 .forEach(exec -> {
                     exec.getAnnotationMirrors().forEach(am -> {
-                        AnnotationAndValue anno = createAnnotationAndValue(am);
+                        Annotation anno = AnnotationFactory.createAnnotation(am, processEnv.getElementUtils());
                         result.add(anno);
                         TypeElement typeElement = elementUtils.getTypeElement(anno.typeName().name());
                         if (typeElement != null) {
                             typeElement.getAnnotationMirrors()
-                                    .forEach(am2 -> result.add(createAnnotationAndValue(am2)));
+                                    .forEach(am2 -> result.add(AnnotationFactory.createAnnotation(am2,
+                                                                                                  processEnv.getElementUtils())));
                         }
                     });
                 });
@@ -547,29 +491,29 @@ public final class TypeTools extends BuilderTypeTools {
      * @param metaAnnoType the meta-annotation type
      * @return the qualifiers
      */
-    static Set<AnnotationAndValue> createAnnotationAndValueSetFromMetaAnnotation(AnnotationInfoList annotationInfoList,
-                                                                                 String metaAnnoType) {
+    static Set<Annotation> createAnnotationSetFromMetaAnnotation(AnnotationInfoList annotationInfoList,
+                                                                 String metaAnnoType) {
         // resolve meta annotations uses the opposite of already
         AnnotationInfoList list = resolveMetaAnnotations(annotationInfoList, metaAnnoType);
         if (list == null) {
             return Set.of();
         }
 
-        Set<AnnotationAndValue> result = new LinkedHashSet<>();
+        Set<Annotation> result = new LinkedHashSet<>();
         for (AnnotationInfo ai : list) {
-            TypeName annotationType = TypeNameDefault.createFromTypeName(translate(ai.getName()));
+            TypeName annotationType = translate(TypeName.create(ai.getName()));
             AnnotationParameterValueList values = ai.getParameterValues();
             if (values == null || values.isEmpty()) {
-                result.add(AnnotationAndValueDefault.create(annotationType));
+                result.add(Annotation.create(annotationType));
             } else if (values.size() > 1) {
                 Map<String, String> strVals = extractValues(values);
-                result.add(AnnotationAndValueDefault.create(annotationType, strVals));
+                result.add(Annotation.create(annotationType, strVals));
             } else {
                 Object value = values.get(0).getValue();
                 String strValue = (value != null) ? String.valueOf(value) : null;
-                AnnotationAndValue annotationAndValue = (strValue == null)
-                        ? AnnotationAndValueDefault.create(annotationType)
-                        : AnnotationAndValueDefault.create(annotationType, strValue);
+                Annotation annotationAndValue = (strValue == null)
+                        ? Annotation.create(annotationType)
+                        : Annotation.create(annotationType, strValue);
                 result.add(annotationAndValue);
             }
         }
@@ -579,13 +523,14 @@ public final class TypeTools extends BuilderTypeTools {
     /**
      * Extracts all of the scope type names from the provided type.
      *
+     * @param processingEnv annotation processing environment
      * @param type the type to analyze
      * @return the list of all scope type annotation and values
      */
-    public static List<AnnotationAndValue> toScopeAnnotations(TypeElement type) {
-        List<AnnotationAndValue> scopeAnnotations = annotationsWithAnnotationOf(type, TypeNames.JAKARTA_SCOPE);
+    public static List<Annotation> toScopeAnnotations(ProcessingEnvironment processingEnv, TypeElement type) {
+        List<Annotation> scopeAnnotations = annotationsWithAnnotationOf(processingEnv, type, TypeNames.JAKARTA_SCOPE);
         if (scopeAnnotations.isEmpty()) {
-            scopeAnnotations = annotationsWithAnnotationOf(type, TypeNames.JAKARTA_CDI_NORMAL_SCOPE);
+            scopeAnnotations = annotationsWithAnnotationOf(processingEnv, type, TypeNames.JAKARTA_CDI_NORMAL_SCOPE);
         }
 
         if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
@@ -594,7 +539,7 @@ public final class TypeTools extends BuilderTypeTools {
                     .anyMatch(it -> it.equals(TypeNames.JAKARTA_APPLICATION_SCOPED)
                             || it.equals(TypeNames.JAVAX_APPLICATION_SCOPED));
             if (hasApplicationScope) {
-                scopeAnnotations.add(AnnotationAndValueDefault.create(Singleton.class));
+                scopeAnnotations.add(Annotation.create(Singleton.class));
             }
         }
 
@@ -607,13 +552,13 @@ public final class TypeTools extends BuilderTypeTools {
      * @param classInfo the introspected class
      * @return the scope name, or null if no scope found
      */
-    static String extractScopeTypeName(ClassInfo classInfo) {
+    static TypeName extractScopeTypeName(ClassInfo classInfo) {
         AnnotationInfoList list = resolveMetaAnnotations(classInfo.getAnnotationInfo(), TypeNames.JAKARTA_SCOPE);
         if (list == null) {
             return null;
         }
 
-        return translate(first(list, false).getName());
+        return translate(TypeName.create(first(list, false).getName()));
     }
 
     /**
@@ -735,32 +680,20 @@ public final class TypeTools extends BuilderTypeTools {
     }
 
     /**
-     * Should only be called if the encloser of the typeArgument is known to be Provider type.
-     */
-    private static String providerTypeOf(TypeArgument typeArgument,
-                                         Object enclosingElem) {
-        if (!(typeArgument.getTypeSignature() instanceof ClassRefTypeSignature)) {
-            throw new IllegalStateException("Unsupported provider<> type of " + typeArgument + " in " + enclosingElem);
-        }
-        return typeArgument.toString();
-    }
-
-    /**
      * Determines the {@link jakarta.inject.Provider} contract type.
      *
      * @param sig class type signature
      * @return the provided type
      * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
-    static String providesContractType(TypeSignature sig) {
-        if (sig instanceof ClassRefTypeSignature) {
-            ClassRefTypeSignature csig = (ClassRefTypeSignature) sig;
-            if (isProviderType(csig.getFullyQualifiedClassName())) {
+    static TypeName providesContractType(TypeSignature sig) {
+        if (sig instanceof ClassRefTypeSignature csig) {
+            if (isProviderType(TypeName.create(csig.getFullyQualifiedClassName()))) {
                 TypeArgument typeArg = csig.getTypeArguments().get(0);
                 if (!(typeArg.getTypeSignature() instanceof ClassRefTypeSignature)) {
                     throw new IllegalStateException("Unsupported signature: " + sig);
                 }
-                return typeArg.toString();
+                return TypeName.create(typeArg.toString());
             }
         }
         return null;
@@ -787,38 +720,53 @@ public final class TypeTools extends BuilderTypeTools {
     static InjectionPointInfo createInjectionPointInfo(TypeName serviceTypeName,
                                                        MethodInfo elemInfo,
                                                        Integer elemOffset) {
-        String elemType;
-        Set<QualifierAndValue> qualifiers;
-        Set<AnnotationAndValue> annotations;
+        TypeName elemType;
+        Set<Qualifier> qualifiers;
+        Set<Annotation> annotations;
         AtomicReference<Boolean> isProviderWrapped = new AtomicReference<>();
         AtomicReference<Boolean> isListWrapped = new AtomicReference<>();
         AtomicReference<Boolean> isOptionalWrapped = new AtomicReference<>();
+        String ipName;
+        TypeName ipType;
         if (elemOffset != null) {
             MethodParameterInfo paramInfo = elemInfo.getParameterInfo()[elemOffset - 1];
             elemType = extractInjectionPointTypeInfo(paramInfo, isProviderWrapped, isListWrapped, isOptionalWrapped);
-            qualifiers = createQualifierAndValueSet(paramInfo.getAnnotationInfo());
-            annotations = createAnnotationAndValueSet(paramInfo.getAnnotationInfo());
+            TypeSignature typeSignature = paramInfo.getTypeSignature();
+            typeSignature = typeSignature == null ? paramInfo.getTypeDescriptor() : typeSignature;
+            ipType = TypeName.create(typeSignature.toString());
+            qualifiers = createQualifierSet(paramInfo.getAnnotationInfo());
+            annotations = createAnnotationSet(paramInfo.getAnnotationInfo());
+            ipName = paramInfo.getName();
+            if (ipName == null) {
+                ipName = "arg" + elemOffset;
+            }
         } else {
-            elemType = elemInfo.getTypeDescriptor().getResultType().toString();
-            qualifiers = createQualifierAndValueSet(elemInfo);
-            annotations = createAnnotationAndValueSet(elemInfo.getAnnotationInfo());
+            elemType = TypeName.create(elemInfo.getTypeDescriptor().getResultType().toString());
+            ipType = elemType;
+            qualifiers = createQualifierSet(elemInfo);
+            annotations = createAnnotationSet(elemInfo.getAnnotationInfo());
+            ipName = elemInfo.getName();
+            if (ipName == null) {
+                ipName = "arg";
+            }
         }
+
         String elemName = elemInfo.isConstructor()
                 ? InjectionPointInfo.CONSTRUCTOR : elemInfo.getName();
         int elemArgs = elemInfo.getParameterInfo().length;
-        ElementInfo.Access access = toAccess(elemInfo.getModifiers());
+        AccessModifier access = toAccess(elemInfo.getModifiers());
         String packageName = serviceTypeName.packageName();
-        ServiceInfoCriteria serviceInfo = ServiceInfoCriteriaDefault.builder()
+        ServiceInfoCriteria serviceInfo = ServiceInfoCriteria.builder()
                 .serviceTypeName(elemType)
                 .build();
-        return InjectionPointInfoDefault.builder()
-                .baseIdentity(Dependencies.toMethodBaseIdentity(elemName, elemArgs, access, () -> packageName))
-                .id(Dependencies.toMethodIdentity(elemName, elemArgs, elemOffset, access, () -> packageName))
+        return InjectionPointInfo.builder()
+                .baseIdentity(Dependencies.toMethodBaseIdentity(elemName, elemArgs, access, packageName))
+                .id(Dependencies.toMethodIdentity(elemName, elemArgs, elemOffset, access, packageName))
                 .dependencyToServiceInfo(serviceInfo)
-                .serviceTypeName(serviceTypeName.name())
+                .serviceTypeName(serviceTypeName)
                 .elementName(elemName)
                 .elementKind(elemInfo.isConstructor()
-                                     ? InjectionPointInfo.ElementKind.CONSTRUCTOR : InjectionPointInfo.ElementKind.METHOD)
+                                     ? io.helidon.pico.api.ElementKind.CONSTRUCTOR : io.helidon.pico.api.ElementKind.METHOD)
                 .elementTypeName(elemType)
                 .elementArgs(elemArgs)
                 .elementOffset(elemOffset)
@@ -829,6 +777,8 @@ public final class TypeTools extends BuilderTypeTools {
                 .optionalWrapped(isOptionalWrapped.get())
                 .providerWrapped(isProviderWrapped.get())
                 .listWrapped(isListWrapped.get())
+                .ipName(ipName)
+                .ipType(ipType)
                 .build();
     }
 
@@ -840,25 +790,24 @@ public final class TypeTools extends BuilderTypeTools {
      * @return the method info
      */
     static MethodElementInfo createMethodElementInfo(MethodInfo methodInfo,
-                                                     Set<AnnotationAndValue> serviceLevelAnnos) {
+                                                     Set<Annotation> serviceLevelAnnos) {
         TypeName serviceTypeName = createTypeNameFromClassInfo(methodInfo.getClassInfo());
-        String elemType = methodInfo.getTypeDescriptor().getResultType().toString();
-        Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(methodInfo);
-        Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(methodInfo.getAnnotationInfo());
+        TypeName elemType = TypeName.create(methodInfo.getTypeDescriptor().getResultType().toString());
+        Set<Qualifier> qualifiers = createQualifierSet(methodInfo);
+        Set<Annotation> annotations = createAnnotationSet(methodInfo.getAnnotationInfo());
         if (serviceLevelAnnos != null) {
             annotations.addAll(serviceLevelAnnos);
         }
         List<String> throwables = extractThrowableTypeNames(methodInfo);
         List<ElementInfo> parameters = createParameterInfo(serviceTypeName, methodInfo);
-        return MethodElementInfoDefault.builder()
-                .serviceTypeName(serviceTypeName.name())
+        return MethodElementInfo.builder()
+                .serviceTypeName(serviceTypeName)
                 .elementName(methodInfo.isConstructor()
                                      ? InjectionPointInfo.CONSTRUCTOR : methodInfo.getName())
                 .elementKind(methodInfo.isConstructor()
-                                     ? InjectionPointInfo.ElementKind.CONSTRUCTOR : InjectionPointInfo.ElementKind.METHOD)
+                                     ? io.helidon.pico.api.ElementKind.CONSTRUCTOR : io.helidon.pico.api.ElementKind.METHOD)
                 .elementTypeName(elemType)
                 .elementArgs(methodInfo.getParameterInfo().length)
-                .elementOffset(Optional.empty())
                 .access(toAccess(methodInfo.getModifiers()))
                 .staticDeclaration(isStatic(methodInfo.getModifiers()))
                 .annotations(annotations)
@@ -876,27 +825,27 @@ public final class TypeTools extends BuilderTypeTools {
      * @param serviceLevelAnnos the annotation at the class level that should be inherited at the method level
      * @return the method info
      */
-    static MethodElementInfo createMethodElementInfo(TypeElement serviceTypeElement,
+    static MethodElementInfo createMethodElementInfo(ProcessingEnvironment processingEnv,
+                                                     TypeElement serviceTypeElement,
                                                      ExecutableElement ee,
-                                                     Set<AnnotationAndValue> serviceLevelAnnos) {
-        TypeName serviceTypeName = createTypeNameFromElement(serviceTypeElement).orElseThrow();
-        String elemType = ee.getReturnType().toString();
-        Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(ee);
-        Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(ee);
+                                                     Set<Annotation> serviceLevelAnnos) {
+        TypeName serviceTypeName = TypeFactory.createTypeName(serviceTypeElement).orElseThrow();
+        TypeName elemType = TypeName.create(ee.getReturnType().toString());
+        Set<Qualifier> qualifiers = createQualifierSet(ee);
+        Set<Annotation> annotations = AnnotationFactory.createAnnotations(ee, processingEnv.getElementUtils());
         if (serviceLevelAnnos != null) {
             annotations.addAll(serviceLevelAnnos);
         }
         List<String> throwables = extractThrowableTypeNames(ee);
-        List<ElementInfo> parameters = createParameterInfo(serviceTypeName, ee);
-        return MethodElementInfoDefault.builder()
-                .serviceTypeName(serviceTypeName.name())
+        List<ElementInfo> parameters = createParameterInfo(processingEnv, serviceTypeName, ee);
+        return MethodElementInfo.builder()
+                .serviceTypeName(serviceTypeName)
                 .elementName((ee.getKind() == ElementKind.CONSTRUCTOR)
                                      ? InjectionPointInfo.CONSTRUCTOR : ee.getSimpleName().toString())
                 .elementKind((ee.getKind() == ElementKind.CONSTRUCTOR)
-                                     ? InjectionPointInfo.ElementKind.CONSTRUCTOR : InjectionPointInfo.ElementKind.METHOD)
+                                     ? io.helidon.pico.api.ElementKind.CONSTRUCTOR : io.helidon.pico.api.ElementKind.METHOD)
                 .elementTypeName(elemType)
                 .elementArgs(ee.getParameters().size())
-                .elementOffset(Optional.empty())
                 .access(toAccess(ee))
                 .staticDeclaration(isStatic(ee))
                 .qualifiers(qualifiers)
@@ -907,71 +856,6 @@ public final class TypeTools extends BuilderTypeTools {
     }
 
     /**
-     * Returns the throwable types on a method.
-     *
-     * @param methodInfo the method info
-     * @return the list of throwable type names
-     */
-    private static List<String> extractThrowableTypeNames(MethodInfo methodInfo) {
-        String[] thrownExceptionNames = methodInfo.getThrownExceptionNames();
-        if (thrownExceptionNames == null || thrownExceptionNames.length == 0) {
-            return List.of();
-        }
-
-        return Arrays.asList(thrownExceptionNames);
-    }
-
-    /**
-     * Returns the throwable types on a method.
-     *
-     * @param methodInfo the method info
-     * @return the list of throwable type names
-     */
-    private static List<String> extractThrowableTypeNames(ExecutableElement methodInfo) {
-        List<? extends TypeMirror> thrownExceptionTypes = methodInfo.getThrownTypes();
-        if (thrownExceptionTypes == null) {
-            return List.of();
-        }
-        return thrownExceptionTypes.stream().map(TypeMirror::toString).collect(Collectors.toList());
-    }
-
-    /**
-     * Returns the list of parameter info through introspection.
-     *
-     * @param serviceTypeName the enclosing service type name
-     * @param methodInfo the method info
-     * @return the list of info elements/parameters
-     */
-    private static List<ElementInfo> createParameterInfo(TypeName serviceTypeName,
-                                                         MethodInfo methodInfo) {
-        List<ElementInfo> result = new ArrayList<>();
-        int count = 0;
-        for (MethodParameterInfo ignore : methodInfo.getParameterInfo()) {
-            count++;
-            result.add(createParameterInfo(serviceTypeName, methodInfo, count));
-        }
-        return result;
-    }
-
-    /**
-     * Returns the list of parameter info through annotation processing.
-     *
-     * @param serviceTypeName the enclosing service type name
-     * @param methodInfo the method info
-     * @return the list of info elements/parameters
-     */
-    private static List<ElementInfo> createParameterInfo(TypeName serviceTypeName,
-                                                         ExecutableElement methodInfo) {
-        List<ElementInfo> result = new ArrayList<>();
-        int count = 0;
-        for (VariableElement ignore : methodInfo.getParameters()) {
-            count++;
-            result.add(createParameterInfo(serviceTypeName, methodInfo, count));
-        }
-        return result;
-    }
-
-    /**
      * Returns the element info given a method element parameter.
      *
      * @param serviceTypeName   the enclosing service type name
@@ -979,17 +863,17 @@ public final class TypeTools extends BuilderTypeTools {
      * @param elemOffset        the argument position - starts at 1 not 0
      * @return the element info
      */
-    static ElementInfoDefault createParameterInfo(TypeName serviceTypeName,
-                                                  MethodInfo elemInfo,
-                                                  int elemOffset) {
+    static ElementInfo createParameterInfo(TypeName serviceTypeName,
+                                           MethodInfo elemInfo,
+                                           int elemOffset) {
         MethodParameterInfo paramInfo = elemInfo.getParameterInfo()[elemOffset - 1];
-        String elemType = paramInfo.getTypeDescriptor().toString();
-        Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(paramInfo.getAnnotationInfo());
-        return ElementInfoDefault.builder()
-                .serviceTypeName(serviceTypeName.name())
+        TypeName elemType = TypeName.create(paramInfo.getTypeDescriptor().toString());
+        Set<Annotation> annotations = createAnnotationSet(paramInfo.getAnnotationInfo());
+        return ElementInfo.builder()
+                .serviceTypeName(serviceTypeName)
                 .elementName("p" + elemOffset)
                 .elementKind(elemInfo.isConstructor()
-                                     ? InjectionPointInfo.ElementKind.CONSTRUCTOR : InjectionPointInfo.ElementKind.METHOD)
+                                     ? io.helidon.pico.api.ElementKind.CONSTRUCTOR : io.helidon.pico.api.ElementKind.METHOD)
                 .elementTypeName(elemType)
                 .elementArgs(elemInfo.getParameterInfo().length)
                 .elementOffset(elemOffset)
@@ -1002,23 +886,26 @@ public final class TypeTools extends BuilderTypeTools {
     /**
      * Returns the element info given a method element parameter.
      *
+     * @param processingEnv     the processing environment
      * @param serviceTypeName   the enclosing service type name
      * @param elemInfo          the method element info
      * @param elemOffset        the argument position - starts at 1 not 0
      * @return the element info
      */
-    static ElementInfoDefault createParameterInfo(TypeName serviceTypeName,
-                                                  ExecutableElement elemInfo,
-                                                  int elemOffset) {
+    static ElementInfo createParameterInfo(ProcessingEnvironment processingEnv,
+                                           TypeName serviceTypeName,
+                                           ExecutableElement elemInfo,
+                                           int elemOffset) {
         VariableElement paramInfo = elemInfo.getParameters().get(elemOffset - 1);
-        TypeName elemTypeName = TypeTools.createTypeNameFromElement(paramInfo).orElseThrow();
-        Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(paramInfo.getAnnotationMirrors());
-        return ElementInfoDefault.builder()
-                .serviceTypeName(serviceTypeName.name())
+        TypeName elemTypeName = TypeFactory.createTypeName(paramInfo).orElseThrow();
+        Set<Annotation> annotations = AnnotationFactory.createAnnotations(paramInfo.getAnnotationMirrors(),
+                                                                          processingEnv.getElementUtils());
+        return ElementInfo.builder()
+                .serviceTypeName(serviceTypeName)
                 .elementName("p" + elemOffset)
                 .elementKind(elemInfo.getKind() == ElementKind.CONSTRUCTOR
-                                     ? InjectionPointInfo.ElementKind.CONSTRUCTOR : InjectionPointInfo.ElementKind.METHOD)
-                .elementTypeName(elemTypeName.name())
+                                     ? io.helidon.pico.api.ElementKind.CONSTRUCTOR : io.helidon.pico.api.ElementKind.METHOD)
+                .elementTypeName(elemTypeName)
                 .elementArgs(elemInfo.getParameters().size())
                 .elementOffset(elemOffset)
                 .access(toAccess(elemInfo))
@@ -1039,20 +926,20 @@ public final class TypeTools extends BuilderTypeTools {
         AtomicReference<Boolean> isProviderWrapped = new AtomicReference<>();
         AtomicReference<Boolean> isListWrapped = new AtomicReference<>();
         AtomicReference<Boolean> isOptionalWrapped = new AtomicReference<>();
-        String elemType = extractInjectionPointTypeInfo(elemInfo, isProviderWrapped, isListWrapped, isOptionalWrapped);
-        Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(elemInfo);
+        TypeName elemType = extractInjectionPointTypeInfo(elemInfo, isProviderWrapped, isListWrapped, isOptionalWrapped);
+        Set<Qualifier> qualifiers = createQualifierSet(elemInfo);
         String elemName = elemInfo.getName();
-        String id = Dependencies.toFieldIdentity(elemName, serviceTypeName::packageName);
-        ServiceInfoCriteria serviceInfo = ServiceInfoCriteriaDefault.builder()
+        String id = Dependencies.toFieldIdentity(elemName, serviceTypeName.packageName());
+        ServiceInfoCriteria serviceInfo = ServiceInfoCriteria.builder()
                 .serviceTypeName(elemType)
                 .build();
-        return InjectionPointInfoDefault.builder()
+        return InjectionPointInfo.builder()
                 .baseIdentity(id)
                 .id(id)
                 .dependencyToServiceInfo(serviceInfo)
-                .serviceTypeName(serviceTypeName.name())
+                .serviceTypeName(serviceTypeName)
                 .elementName(elemInfo.getName())
-                .elementKind(InjectionPointInfo.ElementKind.FIELD)
+                .elementKind(io.helidon.pico.api.ElementKind.FIELD)
                 .elementTypeName(elemType)
                 .access(toAccess(elemInfo.getModifiers()))
                 .staticDeclaration(isStatic(elemInfo.getModifiers()))
@@ -1060,11 +947,13 @@ public final class TypeTools extends BuilderTypeTools {
                 .optionalWrapped(isOptionalWrapped.get())
                 .providerWrapped(isProviderWrapped.get())
                 .listWrapped(isListWrapped.get())
+                .ipName(elemInfo.getName())
+                .ipType(elemType)
                 .build();
     }
 
     /**
-     * Determines the meta parts making up {@link InjectionPointInfo}.
+     * Determines the meta parts making up {@link io.helidon.pico.api.InjectionPointInfo}.
      *
      * @param paramInfo         the method info
      * @param isProviderWrapped set to indicate that the ip is a provided type
@@ -1072,10 +961,10 @@ public final class TypeTools extends BuilderTypeTools {
      * @param isOptionalWrapped set to indicate that the ip is am optional type
      * @return the return type of the parameter type
      */
-    static String extractInjectionPointTypeInfo(MethodParameterInfo paramInfo,
-                                                AtomicReference<Boolean> isProviderWrapped,
-                                                AtomicReference<Boolean> isListWrapped,
-                                                AtomicReference<Boolean> isOptionalWrapped) {
+    static TypeName extractInjectionPointTypeInfo(MethodParameterInfo paramInfo,
+                                                  AtomicReference<Boolean> isProviderWrapped,
+                                                  AtomicReference<Boolean> isListWrapped,
+                                                  AtomicReference<Boolean> isOptionalWrapped) {
         TypeSignature sig = Objects.requireNonNull(paramInfo).getTypeSignature();
         if (sig == null) {
             sig = Objects.requireNonNull(paramInfo.getTypeDescriptor());
@@ -1085,7 +974,7 @@ public final class TypeTools extends BuilderTypeTools {
     }
 
     /**
-     * Determines the meta parts making up {@link InjectionPointInfo}.
+     * Determines the meta parts making up {@link io.helidon.pico.api.InjectionPointInfo}.
      *
      * @param elemInfo          the field info
      * @param isProviderWrapped set to indicate that the ip is a provided type
@@ -1093,10 +982,10 @@ public final class TypeTools extends BuilderTypeTools {
      * @param isOptionalWrapped set to indicate that the ip is an optional type
      * @return the return type of the injection point
      */
-    static String extractInjectionPointTypeInfo(FieldInfo elemInfo,
-                                                AtomicReference<Boolean> isProviderWrapped,
-                                                AtomicReference<Boolean> isListWrapped,
-                                                AtomicReference<Boolean> isOptionalWrapped) {
+    static TypeName extractInjectionPointTypeInfo(FieldInfo elemInfo,
+                                                  AtomicReference<Boolean> isProviderWrapped,
+                                                  AtomicReference<Boolean> isListWrapped,
+                                                  AtomicReference<Boolean> isOptionalWrapped) {
         TypeSignature sig = Objects.requireNonNull(elemInfo).getTypeSignature();
         if (sig == null) {
             sig = Objects.requireNonNull(elemInfo.getTypeDescriptor());
@@ -1105,22 +994,8 @@ public final class TypeTools extends BuilderTypeTools {
                                              isProviderWrapped, isListWrapped, isOptionalWrapped);
     }
 
-    private static ClassRefTypeSignature toClassRefSignature(TypeSignature sig,
-                                                             Object enclosingElem) {
-        if (!(Objects.requireNonNull(sig) instanceof ClassRefTypeSignature)) {
-            throw new IllegalStateException("Unsupported type for " + sig + " in " + enclosingElem);
-        }
-        return (ClassRefTypeSignature) sig;
-    }
-
-    private static ClassRefTypeSignature toClassRefSignature(
-            TypeArgument arg,
-            Object enclosingElem) {
-        return toClassRefSignature(arg.getTypeSignature(), enclosingElem);
-    }
-
     /**
-     * Determines the meta parts making up {@link InjectionPointInfo} for reflective processing.
+     * Determines the meta parts making up {@link io.helidon.pico.api.InjectionPointInfo} for reflective processing.
      *
      * @param sig               the variable / element type
      * @param isProviderWrapped set to indicate that the ip is a provided type
@@ -1129,11 +1004,11 @@ public final class TypeTools extends BuilderTypeTools {
      * @return the return type of the injection point
      * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
-    static String extractInjectionPointTypeInfo(TypeSignature sig,
-                                                Object enclosingElem,
-                                                AtomicReference<Boolean> isProviderWrapped,
-                                                AtomicReference<Boolean> isListWrapped,
-                                                AtomicReference<Boolean> isOptionalWrapped) {
+    static TypeName extractInjectionPointTypeInfo(TypeSignature sig,
+                                                  Object enclosingElem,
+                                                  AtomicReference<Boolean> isProviderWrapped,
+                                                  AtomicReference<Boolean> isListWrapped,
+                                                  AtomicReference<Boolean> isOptionalWrapped) {
         ClassRefTypeSignature csig = toClassRefSignature(sig, enclosingElem);
         boolean isProvider = false;
         boolean isOptional = false;
@@ -1153,7 +1028,7 @@ public final class TypeTools extends BuilderTypeTools {
                             || isListType(typeArgClassName)
                             || typeArgClassName.equals(Collections.class.getName())) {
                         // not handled
-                    } else if (isProviderType(typeArgClassName)) {
+                    } else if (isProviderType(TypeName.create(typeArgClassName))) {
                         isProvider = true;
                         varTypeName = toClassRefSignature(typeArgSig.getTypeArguments().get(0), enclosingElem).toString();
                         handled = true;
@@ -1167,7 +1042,7 @@ public final class TypeTools extends BuilderTypeTools {
                 ClassRefTypeSignature typeArgSig = toClassRefSignature(csig.getTypeArguments().get(0), enclosingElem);
                 varTypeName = typeArgSig.toString();
                 handled = typeArgSig.getTypeArguments().isEmpty();
-                if (!handled && isProviderType(typeArgSig.getClassInfo().getName())) {
+                if (!handled && isProviderType(TypeName.create(typeArgSig.getClassInfo().getName()))) {
                     isProvider = true;
                     varTypeName = toClassRefSignature(typeArgSig.getTypeArguments().get(0), enclosingElem).toString();
                     handled = true;
@@ -1187,7 +1062,7 @@ public final class TypeTools extends BuilderTypeTools {
     }
 
     /**
-     * Determines the meta parts making up {@link InjectionPointInfo} for annotation processing.
+     * Determines the meta parts making up {@link io.helidon.pico.api.InjectionPointInfo} for annotation processing.
      *
      * @param typeElement       the variable / element type
      * @param isProviderWrapped set to indicate that the ip is a provided type
@@ -1196,16 +1071,15 @@ public final class TypeTools extends BuilderTypeTools {
      * @return the return type of the injection point
      * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
-    public static String extractInjectionPointTypeInfo(Element typeElement,
-                                                       AtomicReference<Boolean> isProviderWrapped,
-                                                       AtomicReference<Boolean> isListWrapped,
-                                                       AtomicReference<Boolean> isOptionalWrapped) {
+    public static TypeName extractInjectionPointTypeInfo(Element typeElement,
+                                                         AtomicReference<Boolean> isProviderWrapped,
+                                                         AtomicReference<Boolean> isListWrapped,
+                                                         AtomicReference<Boolean> isOptionalWrapped) {
         TypeMirror typeMirror = typeElement.asType();
-        if (!(typeMirror instanceof DeclaredType)) {
+        if (!(typeMirror instanceof DeclaredType declaredTypeMirror)) {
             throw new IllegalStateException("Unsupported type for " + typeElement.getEnclosingElement() + "."
-                                             + typeElement + " with " + typeMirror.getKind());
+                                                    + typeElement + " with " + typeMirror.getKind());
         }
-        DeclaredType declaredTypeMirror = (DeclaredType) typeMirror;
         TypeElement declaredClassType = ((TypeElement) declaredTypeMirror.asElement());
 
         boolean isProvider = false;
@@ -1232,7 +1106,7 @@ public final class TypeTools extends BuilderTypeTools {
                                 || isListType(varTypeName)
                                 || varTypeName.equals(Collections.class.getName())) {
                             // not handled
-                        } else if (isProviderType(varTypeName)) {
+                        } else if (isProviderType(TypeName.create(varTypeName))) {
                             isProvider = true;
                             varTypeName = declaredTypeMirror.getTypeArguments().get(0).toString();
                             handled = true;
@@ -1260,7 +1134,7 @@ public final class TypeTools extends BuilderTypeTools {
                             varTypeName = declaredClassType.toString();
                             if (!declaredTypeMirror.getTypeArguments().isEmpty()) {
                                 throw new IllegalStateException("Unsupported generics usage for " + typeMirror + " in "
-                                                                 + typeElement.getEnclosingElement());
+                                                                        + typeElement.getEnclosingElement());
                             }
                             handled = true;
                         }
@@ -1275,7 +1149,7 @@ public final class TypeTools extends BuilderTypeTools {
 
         if (!handled && !isOptional) {
             throw new IllegalStateException("Unsupported type for " + typeElement.getEnclosingElement()
-                                             + "." + typeElement + " with " + typeMirror.getKind());
+                                                    + "." + typeElement + " with " + typeMirror.getKind());
         }
 
         return Objects.requireNonNull(componentTypeNameOf(varTypeName));
@@ -1285,27 +1159,23 @@ public final class TypeTools extends BuilderTypeTools {
      * Determines whether the type is a {@link jakarta.inject.Provider} (or javax equiv) type.
      *
      * @param typeElement the type element to check
-     * @return true if {@link jakarta.inject.Provider} or {@link InjectionPointProvider}
+     * @return true if {@link jakarta.inject.Provider} or {@link io.helidon.pico.api.InjectionPointProvider}
      */
     static boolean isProviderType(TypeElement typeElement) {
-        return isProviderType(typeElement.getQualifiedName().toString());
-    }
-
-    private static boolean isProviderType(ClassRefTypeSignature sig) {
-        return isProviderType(sig.getFullyQualifiedClassName());
+        return isProviderType(TypeName.create(typeElement.getQualifiedName().toString()));
     }
 
     /**
      * Determines whether the type is a {@link jakarta.inject.Provider} (or javax equiv) type.
      *
      * @param typeName the type name to check
-     * @return true if {@link jakarta.inject.Provider} or {@link InjectionPointProvider}
+     * @return true if {@link jakarta.inject.Provider} or {@link io.helidon.pico.api.InjectionPointProvider}
      */
-    public static boolean isProviderType(String typeName) {
-        String type = translate(componentTypeNameOf(typeName));
-        return (Provider.class.getName().equals(type)
-                        || TypeNames.JAVAX_PROVIDER.equals(type)
-                        || InjectionPointProvider.class.getName().equals(type));
+    public static boolean isProviderType(TypeName typeName) {
+        TypeName type = translate(componentTypeNameOf(typeName));
+        return TypeNames.JAKARTA_PROVIDER_TYPE.equals(type)
+                || TypeNames.JAVAX_PROVIDER_TYPE.equals(type)
+                || TypeNames.PICO_INJECTION_POINT_PROVIDER_TYPE.equals(type);
     }
 
     /**
@@ -1318,10 +1188,6 @@ public final class TypeTools extends BuilderTypeTools {
         return isOptionalType(typeElement.getQualifiedName().toString());
     }
 
-    private static boolean isOptionalType(ClassRefTypeSignature sig) {
-        return isOptionalType(sig.getFullyQualifiedClassName());
-    }
-
     /**
      * Determines whether the type is an {@link java.util.Optional} type.
      *
@@ -1329,7 +1195,7 @@ public final class TypeTools extends BuilderTypeTools {
      * @return true if {@link java.util.Optional}
      */
     static boolean isOptionalType(String typeName) {
-        return Optional.class.getName().equals(componentTypeNameOf(typeName));
+        return TypeNames.OPTIONAL_TYPE.equals(componentTypeNameOf(typeName));
     }
 
     /**
@@ -1349,7 +1215,7 @@ public final class TypeTools extends BuilderTypeTools {
      * @return true if {@link java.util.List}
      */
     static boolean isListType(String typeName) {
-        return List.class.getName().equals(componentTypeNameOf(typeName));
+        return TypeNames.LIST_TYPE.equals(componentTypeNameOf(typeName));
     }
 
     /**
@@ -1377,12 +1243,14 @@ public final class TypeTools extends BuilderTypeTools {
      * @param typeName the type name
      * @return the normalized, transposed value or the original if it doesn't contain javax
      */
-    static String translate(String typeName) {
-        if (typeName == null || typeName.startsWith(TypeNames.PREFIX_JAKARTA)) {
+    static TypeName translate(TypeName typeName) {
+        if (typeName.packageName().startsWith(TypeNames.PREFIX_JAKARTA)) {
             return typeName;
         }
 
-        return typeName.replace(TypeNames.PREFIX_JAVAX, TypeNames.PREFIX_JAKARTA);
+        return TypeName.builder(typeName)
+                .packageName(typeName.packageName().replace(TypeNames.PREFIX_JAVAX, TypeNames.PREFIX_JAKARTA))
+                .build();
     }
 
     /**
@@ -1448,38 +1316,38 @@ public final class TypeTools extends BuilderTypeTools {
     }
 
     /**
-     * Converts the modifiers to an {@link io.helidon.pico.api.ElementInfo.Access} type.
+     * Converts the modifiers to an {@link io.helidon.pico.api.AccessModifier} type.
      *
      * @param modifiers the modifiers
      * @return the access
      */
-    static InjectionPointInfo.Access toAccess(int modifiers) {
+    static AccessModifier toAccess(int modifiers) {
         if (Modifier.isPublic(modifiers)) {
-            return InjectionPointInfo.Access.PUBLIC;
+            return AccessModifier.PUBLIC;
         } else if (Modifier.isProtected(modifiers)) {
-            return InjectionPointInfo.Access.PROTECTED;
+            return AccessModifier.PROTECTED;
         } else if (Modifier.isPrivate(modifiers)) {
-            return InjectionPointInfo.Access.PRIVATE;
+            return AccessModifier.PRIVATE;
         } else {
-            return InjectionPointInfo.Access.PACKAGE_PRIVATE;
+            return AccessModifier.PACKAGE_PRIVATE;
         }
     }
 
     /**
-     * Converts the modifiers to an {@link io.helidon.pico.api.ElementInfo.Access} type.
+     * Converts the modifiers to an {@link io.helidon.pico.api.AccessModifier} type.
      *
      * @param modifiers the modifiers
      * @return the access
      */
-    public static ElementInfo.Access toAccess(Set<String> modifiers) {
-        if (modifiers.stream().anyMatch(TypeInfo.MODIFIER_PROTECTED::equalsIgnoreCase)) {
-            return ElementInfo.Access.PROTECTED;
-        } else if (modifiers.stream().anyMatch(TypeInfo.MODIFIER_PRIVATE::equalsIgnoreCase)) {
-            return ElementInfo.Access.PRIVATE;
-        } else if (modifiers.stream().anyMatch(TypeInfo.MODIFIER_PUBLIC::equalsIgnoreCase)) {
-            return ElementInfo.Access.PUBLIC;
+    public static AccessModifier toAccess(Set<String> modifiers) {
+        if (modifiers.contains(TypeValues.MODIFIER_PROTECTED)) {
+            return AccessModifier.PROTECTED;
+        } else if (modifiers.contains(TypeValues.MODIFIER_PRIVATE)) {
+            return AccessModifier.PRIVATE;
+        } else if (modifiers.contains(TypeValues.MODIFIER_PUBLIC)) {
+            return AccessModifier.PUBLIC;
         }
-        return ElementInfo.Access.PACKAGE_PRIVATE;
+        return AccessModifier.PACKAGE_PRIVATE;
     }
 
     /**
@@ -1488,19 +1356,19 @@ public final class TypeTools extends BuilderTypeTools {
      * @param element the element
      * @return the access
      */
-    public static InjectionPointInfo.Access toAccess(Element element) {
-        InjectionPointInfo.Access access = InjectionPointInfo.Access.PACKAGE_PRIVATE;
+    public static AccessModifier toAccess(Element element) {
+        AccessModifier access = AccessModifier.PACKAGE_PRIVATE;
         Set<javax.lang.model.element.Modifier> modifiers = element.getModifiers();
         if (modifiers != null) {
             for (javax.lang.model.element.Modifier modifier : modifiers) {
                 if (javax.lang.model.element.Modifier.PUBLIC == modifier) {
-                    access = InjectionPointInfo.Access.PUBLIC;
+                    access = AccessModifier.PUBLIC;
                     break;
                 } else if (javax.lang.model.element.Modifier.PROTECTED == modifier) {
-                    access = InjectionPointInfo.Access.PROTECTED;
+                    access = AccessModifier.PROTECTED;
                     break;
                 } else if (javax.lang.model.element.Modifier.PRIVATE == modifier) {
-                    access = InjectionPointInfo.Access.PRIVATE;
+                    access = AccessModifier.PRIVATE;
                     break;
                 }
             }
@@ -1514,9 +1382,9 @@ public final class TypeTools extends BuilderTypeTools {
      * @param methodInfo the method info
      * @return the kind
      */
-    static ElementInfo.ElementKind toKind(MethodInfo methodInfo) {
+    static ElementKind toKind(MethodInfo methodInfo) {
         return (methodInfo.isConstructor())
-                ? ElementInfo.ElementKind.CONSTRUCTOR : ElementInfo.ElementKind.METHOD;
+                ? ElementKind.CONSTRUCTOR : ElementKind.METHOD;
     }
 
     /**
@@ -1525,9 +1393,9 @@ public final class TypeTools extends BuilderTypeTools {
      * @param methodInfo the method info
      * @return the kind
      */
-    static ElementInfo.ElementKind toKind(ExecutableElement methodInfo) {
+    static ElementKind toKind(ExecutableElement methodInfo) {
         return (methodInfo.getKind() == ElementKind.CONSTRUCTOR)
-                ? ElementInfo.ElementKind.CONSTRUCTOR : ElementInfo.ElementKind.METHOD;
+                ? ElementKind.CONSTRUCTOR : ElementKind.METHOD;
     }
 
     /**
@@ -1537,9 +1405,10 @@ public final class TypeTools extends BuilderTypeTools {
      * @return true if the package name needs to be declared
      */
     public static boolean needToDeclarePackageUsage(String packageName) {
-        return !(packageName.startsWith("java.")
-                         || packageName.startsWith("sun.")
-                         || packageName.toLowerCase().endsWith(".impl"));
+        return !(
+                packageName.startsWith("java.")
+                        || packageName.startsWith("sun.")
+                        || packageName.toLowerCase().endsWith(".impl"));
     }
 
     /**
@@ -1549,11 +1418,170 @@ public final class TypeTools extends BuilderTypeTools {
      * @return true if the module name needs to be declared
      */
     public static boolean needToDeclareModuleUsage(String moduleName) {
-        return (moduleName != null) && !moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME)
-                && !(moduleName.startsWith("java.")
-                             || moduleName.startsWith("sun.")
-                             || moduleName.startsWith("jakarta.inject")
-                             || moduleName.startsWith(PicoServicesConfig.FQN));
+        return (moduleName != null) && !moduleName.equals(ModuleInfoDescriptorBlueprint.DEFAULT_MODULE_NAME)
+                && !(
+                moduleName.startsWith("java.")
+                        || moduleName.startsWith("sun.")
+                        || moduleName.startsWith("jakarta.inject")
+                        || moduleName.startsWith("io.helidon.pico"));
+    }
+
+    /**
+     * Translates a {@link javax.lang.model.type.TypeMirror} into a {@link javax.lang.model.element.TypeElement}.
+     *
+     * @param typeMirror the type mirror
+     * @return the type element
+     */
+    public static Optional<TypeElement> toTypeElement(TypeMirror typeMirror) {
+        if (TypeKind.DECLARED == typeMirror.getKind()) {
+            TypeElement te = (TypeElement) ((DeclaredType) typeMirror).asElement();
+            return (te.toString().equals(Object.class.getName())) ? Optional.empty() : Optional.of(te);
+        }
+        return Optional.empty();
+    }
+
+    private static String toString(AnnotationParameterValue val) {
+        if (val == null) {
+            return null;
+        }
+
+        Object v = val.getValue();
+        if (v == null) {
+            return null;
+        }
+
+        Class<?> clazz = v.getClass();
+        if (!clazz.isArray()) {
+            return v.toString();
+        }
+
+        Object[] arr = (Object[]) v;
+        return "{" + CommonUtils.toString(Arrays.asList(arr)) + "}";
+    }
+
+    private static List<String> annotationsWithAnnotationsOfNoOpposite(TypeElement type,
+                                                                       String annotation) {
+        List<String> list = new ArrayList<>();
+        type.getAnnotationMirrors()
+                .forEach(am -> findAnnotationMirror(annotation,
+                                                    am.getAnnotationType().asElement()
+                                                            .getAnnotationMirrors())
+                        .ifPresent(it -> list.add(am.getAnnotationType().asElement().toString())));
+        return list;
+    }
+
+    /**
+     * Should only be called if the encloser of the typeArgument is known to be Provider type.
+     */
+    private static String providerTypeOf(TypeArgument typeArgument,
+                                         Object enclosingElem) {
+        if (!(typeArgument.getTypeSignature() instanceof ClassRefTypeSignature)) {
+            throw new IllegalStateException("Unsupported provider<> type of " + typeArgument + " in " + enclosingElem);
+        }
+        return typeArgument.toString();
+    }
+
+    /**
+     * Returns the throwable types on a method.
+     *
+     * @param methodInfo the method info
+     * @return the list of throwable type names
+     */
+    private static List<String> extractThrowableTypeNames(MethodInfo methodInfo) {
+        String[] thrownExceptionNames = methodInfo.getThrownExceptionNames();
+        if (thrownExceptionNames == null || thrownExceptionNames.length == 0) {
+            return List.of();
+        }
+
+        return Arrays.asList(thrownExceptionNames);
+    }
+
+    /**
+     * Returns the throwable types on a method.
+     *
+     * @param methodInfo the method info
+     * @return the list of throwable type names
+     */
+    private static List<String> extractThrowableTypeNames(ExecutableElement methodInfo) {
+        List<? extends TypeMirror> thrownExceptionTypes = methodInfo.getThrownTypes();
+        if (thrownExceptionTypes == null) {
+            return List.of();
+        }
+        return thrownExceptionTypes.stream().map(TypeMirror::toString).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the list of parameter info through introspection.
+     *
+     * @param serviceTypeName the enclosing service type name
+     * @param methodInfo the method info
+     * @return the list of info elements/parameters
+     */
+    private static List<ElementInfo> createParameterInfo(TypeName serviceTypeName,
+                                                         MethodInfo methodInfo) {
+        List<ElementInfo> result = new ArrayList<>();
+        int count = 0;
+        for (MethodParameterInfo ignore : methodInfo.getParameterInfo()) {
+            count++;
+            result.add(createParameterInfo(serviceTypeName, methodInfo, count));
+        }
+        return result;
+    }
+
+    /**
+     * Returns the list of parameter info through annotation processing.
+     *
+     * @param processingEnv the processing environment
+     * @param serviceTypeName the enclosing service type name
+     * @param methodInfo the method info
+     * @return the list of info elements/parameters
+     */
+    private static List<ElementInfo> createParameterInfo(ProcessingEnvironment processingEnv,
+                                                         TypeName serviceTypeName,
+                                                         ExecutableElement methodInfo) {
+        List<ElementInfo> result = new ArrayList<>();
+        int count = 0;
+        for (VariableElement ignore : methodInfo.getParameters()) {
+            count++;
+            result.add(createParameterInfo(processingEnv, serviceTypeName, methodInfo, count));
+        }
+        return result;
+    }
+
+    private static ClassRefTypeSignature toClassRefSignature(TypeSignature sig,
+                                                             Object enclosingElem) {
+        if (!(Objects.requireNonNull(sig) instanceof ClassRefTypeSignature)) {
+            throw new IllegalStateException("Unsupported type for " + sig + " in " + enclosingElem);
+        }
+        return (ClassRefTypeSignature) sig;
+    }
+
+    private static ClassRefTypeSignature toClassRefSignature(
+            TypeArgument arg,
+            Object enclosingElem) {
+        return toClassRefSignature(arg.getTypeSignature(), enclosingElem);
+    }
+
+    private static boolean isProviderType(ClassRefTypeSignature sig) {
+        return isProviderType(TypeName.create(sig.getFullyQualifiedClassName()));
+    }
+
+    private static boolean isOptionalType(ClassRefTypeSignature sig) {
+        return isOptionalType(sig.getFullyQualifiedClassName());
+    }
+
+    /**
+     * Locate an annotation mirror by name.
+     *
+     * @param annotationType the annotation type to search for
+     * @param ams            the collection to search through
+     * @return the annotation mirror, or empty if not found
+     */
+    private static Optional<? extends AnnotationMirror> findAnnotationMirror(String annotationType,
+                                                                             Collection<? extends AnnotationMirror> ams) {
+        return ams.stream()
+                .filter(it -> annotationType.equals(it.getAnnotationType().toString()))
+                .findFirst();
     }
 
 }

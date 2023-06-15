@@ -31,17 +31,18 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import io.helidon.common.config.Config;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.ActivationLog;
 import io.helidon.pico.api.ActivationLogEntry;
-import io.helidon.pico.api.ActivationLogEntryDefault;
 import io.helidon.pico.api.ActivationLogQuery;
 import io.helidon.pico.api.ActivationPhaseReceiver;
 import io.helidon.pico.api.ActivationResult;
-import io.helidon.pico.api.ActivationResultDefault;
 import io.helidon.pico.api.ActivationStatus;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.Bootstrap;
@@ -50,9 +51,7 @@ import io.helidon.pico.api.CallingContextFactory;
 import io.helidon.pico.api.Event;
 import io.helidon.pico.api.Injector;
 import io.helidon.pico.api.InjectorOptions;
-import io.helidon.pico.api.InjectorOptionsDefault;
 import io.helidon.pico.api.Metrics;
-import io.helidon.pico.api.MetricsDefault;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoException;
@@ -60,10 +59,9 @@ import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 
-import static io.helidon.pico.api.CallingContext.toErrorMessage;
+import static io.helidon.pico.runtime.DefaultPicoServicesConfig.PROVIDER;
 
 /**
  * The default implementation for {@link PicoServices}.
@@ -93,7 +91,11 @@ class DefaultPicoServices implements PicoServices, Resettable {
     DefaultPicoServices(Bootstrap bootstrap,
                         boolean global) {
         this.bootstrap = bootstrap;
-        this.cfg = DefaultPicoServicesConfig.createDefaultConfigBuilder().build();
+        this.cfg = io.helidon.pico.api.PicoServicesConfig.builder()
+                .providerName(PROVIDER)
+                .providerVersion(Versions.CURRENT_PICO_VERSION)
+                .config(bootstrap.config().orElseGet(Config::empty).get("pico"))
+                .build();
         this.isGlobal = global;
         this.log = cfg.activationLogs()
                 ? DefaultActivationLog.createRetainedLog(LOGGER)
@@ -125,7 +127,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
         DefaultServices thisServices = services.get();
         if (thisServices == null) {
             // never has been any lookup yet
-            return Optional.of(MetricsDefault.builder().build());
+            return Optional.of(Metrics.builder().build());
         }
         return Optional.of(thisServices.metrics());
     }
@@ -175,8 +177,8 @@ class DefaultPicoServices implements PicoServices, Resettable {
     }
 
     @Override
-    public Optional<Map<String, ActivationResult>> shutdown() {
-        Map<String, ActivationResult> result = Map.of();
+    public Optional<Map<TypeName, ActivationResult>> shutdown() {
+        Map<TypeName, ActivationResult> result = Map.of();
         DefaultServices current = services.get();
         if (services.compareAndSet(current, null) && current != null) {
             State currentState = state.clone().currentPhase(Phase.PRE_DESTROYING);
@@ -246,7 +248,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
         return initializingServicesStarted.get() && initializingServicesFinished.get();
     }
 
-    private Map<String, ActivationResult> doShutdown(DefaultServices services,
+    private Map<TypeName, ActivationResult> doShutdown(DefaultServices services,
                                                      State state) {
         long start = System.currentTimeMillis();
 
@@ -254,24 +256,21 @@ class DefaultPicoServices implements PicoServices, Resettable {
             Thread thread = new Thread(r);
             thread.setDaemon(false);
             thread.setPriority(Thread.MAX_PRIORITY);
-            thread.setName(PicoServicesConfig.NAME + "-shutdown-" + System.currentTimeMillis());
+            thread.setName("pico-shutdown-" + System.currentTimeMillis());
             return thread;
         };
 
         Shutdown shutdown = new Shutdown(services, state);
-        ExecutorService es = Executors.newSingleThreadExecutor(threadFactory);
+
         long finish;
-        try {
+        try (ExecutorService es = Executors.newSingleThreadExecutor(threadFactory)) {
             return es.submit(shutdown)
-                    // https://github.com/helidon-io/helidon/issues/6434: have an appropriate timeout config for this
-//                    .get(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS);
-                    .get();
+                    .get(cfg.shutdownTimeout().toMillis(), TimeUnit.MILLISECONDS);
         } catch (Throwable t) {
             finish = System.currentTimeMillis();
             errorLog("Error detected during shutdown (elapsed = " + (finish - start) + " ms)", t);
             throw new PicoException("Error detected during shutdown", t);
         } finally {
-            es.shutdown();
             state.finished(true);
             finish = System.currentTimeMillis();
             log("Finished shutdown (elapsed = " + (finish - start) + " ms)");
@@ -285,7 +284,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
                     + isBinding + ", initializingServicesFinished="
                     + initializingServicesFinished + ")";
             String msg = (initializationCallingContext == null)
-                    ? toErrorMessage(desc) : toErrorMessage(initializationCallingContext, desc);
+                    ? PicoExceptions.toErrorMessage(desc) : PicoExceptions.toErrorMessage(initializationCallingContext, desc);
             throw new PicoException(msg);
         }
     }
@@ -303,7 +302,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
 
         if (isGlobal) {
             // iterate over all modules, binding to each one's set of services, but with NO activations
-            List<ModuleComponent> modules = findModules(true);
+            List<ModuleComponent> modules = findModules();
             try {
                 isBinding.set(true);
                 bindModules(thisServices, modules);
@@ -317,7 +316,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
         if (isGlobal) {
             // look for the literal injection plan
             // typically only be one Application in non-testing runtimes
-            List<Application> apps = findApplications(true);
+            List<Application> apps = findApplications();
             bindApplications(thisServices, apps);
         }
 
@@ -351,50 +350,46 @@ class DefaultPicoServices implements PicoServices, Resettable {
         state.finished(true);
     }
 
-    private List<Application> findApplications(boolean load) {
+    private List<Application> findApplications() {
         List<Application> result = applicationList.get();
         if (result != null) {
             return result;
         }
 
         result = new ArrayList<>();
-        if (load) {
-            ServiceLoader<Application> serviceLoader = ServiceLoader.load(Application.class);
-            for (Application app : serviceLoader) {
-                result.add(app);
-            }
+        ServiceLoader<Application> serviceLoader = ServiceLoader.load(Application.class);
+        for (Application app : serviceLoader) {
+            result.add(app);
+        }
 
-            if (!cfg.permitsDynamic()) {
-                applicationList.compareAndSet(null, List.copyOf(result));
-                result = applicationList.get();
-            }
+        if (!cfg.permitsDynamic()) {
+            applicationList.compareAndSet(null, List.copyOf(result));
+            result = applicationList.get();
         }
         return result;
     }
 
-    private List<ModuleComponent> findModules(boolean load) {
+    private List<ModuleComponent> findModules() {
         List<ModuleComponent> result = moduleList.get();
         if (result != null) {
             return result;
         }
 
         result = new ArrayList<>();
-        if (load) {
-            ServiceLoader<ModuleComponent> serviceLoader = ServiceLoader.load(ModuleComponent.class);
-            for (ModuleComponent module : serviceLoader) {
-                result.add(module);
-            }
+        ServiceLoader<ModuleComponent> serviceLoader = ServiceLoader.load(ModuleComponent.class);
+        for (ModuleComponent module : serviceLoader) {
+            result.add(module);
+        }
 
-            if (!cfg.permitsDynamic()) {
-                moduleList.compareAndSet(null, List.copyOf(result));
-                result = moduleList.get();
-            }
+        if (!cfg.permitsDynamic()) {
+            moduleList.compareAndSet(null, List.copyOf(result));
+            result = moduleList.get();
         }
         return result;
     }
 
     private void bindApplications(DefaultServices services,
-                          Collection<Application> apps) {
+                                  Collection<Application> apps) {
         if (!cfg.usesCompileTimeApplications()) {
             LOGGER.log(System.Logger.Level.DEBUG, "Application binding is disabled");
             return;
@@ -427,7 +422,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
     }
 
     private void log(String message) {
-        ActivationLogEntry entry = ActivationLogEntryDefault.builder()
+        ActivationLogEntry entry = ActivationLogEntry.builder()
                 .message(message)
                 .build();
         log.record(entry);
@@ -435,7 +430,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
 
     private void errorLog(String message,
                           Throwable t) {
-        ActivationLogEntry entry = ActivationLogEntryDefault.builder()
+        ActivationLogEntry entry = ActivationLogEntry.builder()
                 .message(message)
                 .error(t)
                 .build();
@@ -445,13 +440,13 @@ class DefaultPicoServices implements PicoServices, Resettable {
     /**
      * Will attempt to shut down in reverse order of activation, but only if activation logs are retained.
      */
-    private class Shutdown implements Callable<Map<String, ActivationResult>> {
+    private class Shutdown implements Callable<Map<TypeName, ActivationResult>> {
         private final DefaultServices services;
         private final State state;
         private final ActivationLog log;
         private final Injector injector;
-        private final InjectorOptions opts = InjectorOptionsDefault.builder().build();
-        private final Map<String, ActivationResult> map = new LinkedHashMap<>();
+        private final InjectorOptions opts = InjectorOptions.builder().build();
+        private final Map<TypeName, ActivationResult> map = new LinkedHashMap<>();
 
         Shutdown(DefaultServices services,
                  State state) {
@@ -462,7 +457,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
         }
 
         @Override
-        public Map<String, ActivationResult> call() {
+        public Map<TypeName, ActivationResult> call() {
             state.currentPhase(Phase.DESTROYED);
 
             ActivationLogQuery query = log.toQuery().orElse(null);
@@ -488,7 +483,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
             }
 
             // next get all services that are beyond INIT state, and sort by runlevel order, and shut those down also
-            List<ServiceProvider<?>> serviceProviders = services.lookupAll(ServiceInfoCriteriaDefault.builder().build(), false);
+            List<ServiceProvider<?>> serviceProviders = services.lookupAll(ServiceInfoCriteria.builder().build(), false);
             serviceProviders = serviceProviders.stream()
                     .filter(sp -> sp.currentActivationPhase().eligibleForDeactivation())
                     .collect(Collectors.toList());
@@ -513,7 +508,7 @@ class DefaultPicoServices implements PicoServices, Resettable {
                     result = injector.deactivate(csp, opts);
                 } catch (Throwable t) {
                     errorLog("error during shutdown", t);
-                    result = ActivationResultDefault.builder()
+                    result = ActivationResult.builder()
                             .serviceProvider(csp)
                             .startingActivationPhase(startingActivationPhase)
                             .targetActivationPhase(Phase.DESTROYED)

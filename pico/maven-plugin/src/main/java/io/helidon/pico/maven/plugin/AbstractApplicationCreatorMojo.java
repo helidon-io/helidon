@@ -32,14 +32,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.CallingContext;
-import io.helidon.pico.api.CallingContextDefault;
 import io.helidon.pico.api.CallingContextFactory;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.PicoServicesConfig;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
+import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.ServiceProviderProvider;
 import io.helidon.pico.api.Services;
@@ -47,18 +44,14 @@ import io.helidon.pico.runtime.ServiceBinderDefault;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 import io.helidon.pico.tools.ApplicationCreatorCodeGen;
-import io.helidon.pico.tools.ApplicationCreatorCodeGenDefault;
 import io.helidon.pico.tools.ApplicationCreatorConfigOptions;
-import io.helidon.pico.tools.ApplicationCreatorConfigOptionsDefault;
 import io.helidon.pico.tools.ApplicationCreatorRequest;
-import io.helidon.pico.tools.ApplicationCreatorRequestDefault;
 import io.helidon.pico.tools.ApplicationCreatorResponse;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CodeGenPaths;
-import io.helidon.pico.tools.CodeGenPathsDefault;
 import io.helidon.pico.tools.CompilerOptions;
-import io.helidon.pico.tools.CompilerOptionsDefault;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
+import io.helidon.pico.tools.PermittedProviderType;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.spi.ApplicationCreator;
 
@@ -66,13 +59,12 @@ import org.apache.maven.model.Build;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import static io.helidon.pico.api.CallingContext.globalCallingContext;
-import static io.helidon.pico.api.CallingContext.toErrorMessage;
+import static io.helidon.pico.api.CallingContextFactory.globalCallingContext;
 import static io.helidon.pico.maven.plugin.MavenPluginUtils.applicationCreator;
 import static io.helidon.pico.maven.plugin.MavenPluginUtils.hasValue;
 import static io.helidon.pico.maven.plugin.MavenPluginUtils.picoServices;
 import static io.helidon.pico.maven.plugin.MavenPluginUtils.toDescriptions;
-import static io.helidon.pico.tools.ApplicationCreatorConfigOptions.PermittedProviderType;
+import static io.helidon.pico.runtime.PicoExceptions.toErrorMessage;
 import static io.helidon.pico.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
 import static io.helidon.pico.tools.ModuleUtils.isUnnamedModuleName;
 import static io.helidon.pico.tools.ModuleUtils.toBasePath;
@@ -92,22 +84,22 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
      * The approach for handling providers.
      * See {@link io.helidon.pico.tools.ApplicationCreatorConfigOptions#permittedProviderTypes()}.
      */
-    @Parameter(property = PicoServicesConfig.NAME + ".permitted.provider.types", readonly = true)
+    @Parameter(property = "pico.permitted.provider.types", readonly = true)
     private String permittedProviderTypes;
     private PermittedProviderType permittedProviderType;
 
     /**
      * Sets the named types permitted for providers, assuming use of
-     * {@link io.helidon.pico.tools.ApplicationCreatorConfigOptions.PermittedProviderType#NAMED}.
+     * {@link io.helidon.pico.tools.PermittedProviderType#NAMED}.
      */
-    @Parameter(property = PicoServicesConfig.NAME + ".permitted.provider.type.names", readonly = true)
+    @Parameter(property = "pico.permitted.provider.type.names", readonly = true)
     private List<String> permittedProviderTypeNames;
 
     /**
      * Sets the named qualifier types permitted for providers, assuming use of
-     * {@link io.helidon.pico.tools.ApplicationCreatorConfigOptions.PermittedProviderType#NAMED}.
+     * {@link io.helidon.pico.tools.PermittedProviderType#NAMED}.
      */
-    @Parameter(property = PicoServicesConfig.NAME + ".permitted.provider.qualifier.type.names", readonly = true)
+    @Parameter(property = "pico.permitted.provider.qualifier.type.names", readonly = true)
     private List<String> permittedProviderQualifierTypeNames;
 
     /**
@@ -122,7 +114,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     static ToolsException noModuleFoundError(String moduleName) {
-        return new ToolsException("No " + PicoServicesConfig.NAME + " module named '" + moduleName
+        return new ToolsException("No Pico module named '" + moduleName
                                           + "' was found in the current module - was APT run?");
     }
 
@@ -236,10 +228,11 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                         : PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
 
         CallingContext callCtx = null;
-        Optional<CallingContextDefault.Builder> callingContextBuilder =
+        Optional<CallingContext.Builder> callingContextBuilder =
                 CallingContextFactory.createBuilder(false);
         if (callingContextBuilder.isPresent()) {
-            callingContextBuilder.get().moduleName(Optional.ofNullable(getThisModuleName()));
+            callingContextBuilder.get()
+                    .update(it -> Optional.ofNullable(getThisModuleName()).ifPresent(it::moduleName));
             callCtx = callingContextBuilder.get().build();
             globalCallingContext(callCtx, true);
         }
@@ -267,8 +260,8 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             ApplicationCreator creator = applicationCreator();
 
             List<ServiceProvider<?>> allModules = services
-                    .lookupAll(ServiceInfoCriteriaDefault.builder()
-                                       .addContractImplemented(ModuleComponent.class.getName())
+                    .lookupAll(ServiceInfoCriteria.builder()
+                                       .addContractImplemented(ModuleComponent.class)
                                        .build());
             if (PicoServices.isDebugEnabled()) {
                 getLog().info("processing modules: " + toDescriptions(allModules));
@@ -281,7 +274,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
             // retrieves all the services in the registry
             List<ServiceProvider<?>> allServices = services
-                    .lookupAll(ServiceInfoCriteriaDefault.builder()
+                    .lookupAll(ServiceInfoCriteria.builder()
                                        .includeIntercepted(true)
                                        .build(), false);
             if (allServices.isEmpty()) {
@@ -302,39 +295,39 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             Optional<ServiceProvider<ModuleComponent>> moduleSp = lookupThisModule(moduleInfoModuleName, services, false);
             String packageName = determinePackageName(moduleSp, serviceTypeNames, Optional.ofNullable(descriptor), true);
 
-            CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
+            CodeGenPaths codeGenPaths = CodeGenPaths.builder()
                     .generatedSourcesPath(getGeneratedSourceDirectory().getPath())
                     .outputPath(getOutputDirectory().getPath())
-                    .moduleInfoPath(ofNullable(moduleInfoPath))
+                    .update(it -> ofNullable(moduleInfoPath).ifPresent(it::moduleInfoPath))
                     .build();
-            ApplicationCreatorCodeGen applicationCodeGen = ApplicationCreatorCodeGenDefault.builder()
+            ApplicationCreatorCodeGen applicationCodeGen = ApplicationCreatorCodeGen.builder()
                     .packageName(packageName)
                     .className(getGeneratedClassName())
                     .classPrefixName(classPrefixName)
                     .build();
             List<String> compilerArgs = getCompilerArgs();
-            CompilerOptions compilerOptions = CompilerOptionsDefault.builder()
-                    .classpath(classpath)
-                    .modulepath(modulepath)
+            CompilerOptions compilerOptions = CompilerOptions.builder()
+                    .classpath(List.copyOf(classpath))
+                    .modulepath(List.copyOf(modulepath))
                     .sourcepath(getSourceRootPaths())
                     .source(getSource())
                     .target(getTarget())
                     .commandLineArguments((compilerArgs != null) ? compilerArgs : List.of())
                     .build();
-            ApplicationCreatorConfigOptions configOptions = ApplicationCreatorConfigOptionsDefault.builder()
+            ApplicationCreatorConfigOptions configOptions = ApplicationCreatorConfigOptions.builder()
                     .permittedProviderTypes(permittedProviderType)
-                    .permittedProviderNames(permittedProviderTypeNames)
-                    .permittedProviderQualifierTypeNames(toTypeNames(permittedProviderQualifierTypeNames))
+                    .permittedProviderNames(Set.copyOf(permittedProviderTypeNames))
+                    .permittedProviderQualifierTypeNames(Set.copyOf(toTypeNames(permittedProviderQualifierTypeNames)))
                     .build();
             String moduleName = getModuleName();
             AbstractFilerMessager directFiler = AbstractFilerMessager.createDirectFiler(codeGenPaths, getLogger());
             CodeGenFiler codeGenFiler = CodeGenFiler.create(directFiler);
-            ApplicationCreatorRequestDefault.Builder reqBuilder = ApplicationCreatorRequestDefault.builder()
+            ApplicationCreatorRequest.Builder reqBuilder = ApplicationCreatorRequest.builder()
                     .codeGen(applicationCodeGen)
                     .messager(new Messager2LogAdapter())
                     .filer(codeGenFiler)
                     .configOptions(configOptions)
-                    .serviceTypeNames(serviceTypeNames)
+                    .serviceTypeNames(List.copyOf(serviceTypeNames))
                     .codeGenPaths(codeGenPaths)
                     .compilerOptions(compilerOptions)
                     .throwIfError(isFailOnError())
@@ -356,8 +349,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                 getLog().error("failed to process", res.error().orElse(null));
             }
         } catch (Exception e) {
-            throw new ToolsException("An error occurred creating the " + PicoServicesConfig.NAME
-                                             + " Application in " + getClass().getName(), e);
+            throw new ToolsException("An error occurred creating the Pico Application in " + getClass().getName(), e);
         } finally {
             Thread.currentThread().setContextClassLoader(prev);
         }
@@ -369,7 +361,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         }
 
         return permittedProviderQualifierTypeNames.stream()
-                .map(TypeNameDefault::createFromTypeName)
+                .map(TypeName::create)
                 .collect(Collectors.toList());
     }
 
@@ -377,9 +369,8 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         Map<TypeName, ServiceProvider<?>> result = new LinkedHashMap<>();
         services.forEach(sp -> {
             sp = ServiceBinderDefault.toRootProvider(sp);
-            String serviceType = sp.serviceInfo().serviceTypeName();
-            TypeName name = TypeNameDefault.createFromTypeName(serviceType);
-            ServiceProvider<?> prev = result.put(name, sp);
+            TypeName serviceType = sp.serviceInfo().serviceTypeName();
+            ServiceProvider<?> prev = result.put(serviceType, sp);
             if (prev != null) {
                 if (!(prev instanceof ServiceProviderProvider)) {
                     throw new ToolsException("There are two registrations for the same service type: " + prev + " and " + sp);
@@ -391,11 +382,11 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     void warn(String msg) {
-        Optional<CallingContextDefault.Builder> optBuilder = CallingContextFactory.createBuilder(false);
-        CallingContext callCtx = (optBuilder.isPresent())
-                ? optBuilder.get().moduleName(Optional.ofNullable(getThisModuleName())).build() : null;
+        Optional<CallingContext.Builder> optBuilder = CallingContextFactory.createBuilder(false);
+        CallingContext callCtx = optBuilder.<CallingContext>map(builder -> builder
+                .update(it -> Optional.ofNullable(getThisModuleName()).ifPresent(it::moduleName))).orElse(null);
         String desc = "no modules to process";
-        String ctxMsg = (callCtx == null) ? CallingContext.toErrorMessage(desc) : CallingContext.toErrorMessage(callCtx, desc);
+        String ctxMsg = (callCtx == null) ? toErrorMessage(desc) : toErrorMessage(callCtx, desc);
         ToolsException e = new ToolsException(ctxMsg);
         if (PicoServices.isDebugEnabled()) {
             getLog().warn(e.getMessage(), e);

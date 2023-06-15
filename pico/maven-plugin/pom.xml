@@ -59,7 +59,7 @@
     </reporting>
 
     <dependencies>
-        <!-- enforcer crap for maven resolution -->
+        <!-- required by enforcer for maven resolution -->
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-classworlds</artifactId>
@@ -84,8 +84,12 @@
         </dependency>
         <!-- for ConfigBeanRegistry (reset) -->
         <dependency>
+            <groupId>io.helidon.pico.configdriven</groupId>
+            <artifactId>helidon-pico-configdriven-runtime</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-config</artifactId>
+            <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

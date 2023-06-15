@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.pico.api.Application;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.ServiceInfo;
@@ -32,6 +32,8 @@ import io.helidon.pico.api.ServiceProvider;
  * Public helpers around shared Pico services usages.
  */
 public final class ServiceUtils {
+    private static final TypeName MODULE_COMPONENT = TypeName.create(ModuleComponent.class);
+    private static final TypeName APPLICATION = TypeName.create(ModuleComponent.class);
 
     private ServiceUtils() {
     }
@@ -44,12 +46,12 @@ public final class ServiceUtils {
      */
     public static boolean isQualifiedInjectionTarget(ServiceProvider<?> sp) {
         ServiceInfo serviceInfo = sp.serviceInfo();
-        Set<String> contractsImplemented = serviceInfo.contractsImplemented();
+        Set<TypeName> contractsImplemented = serviceInfo.contractsImplemented();
         DependenciesInfo deps = sp.dependencies();
         return (deps != AbstractServiceProvider.NO_DEPS)
                 || (!contractsImplemented.isEmpty()
-                    && !contractsImplemented.contains(ModuleComponent.class.getName())
-                    && !contractsImplemented.contains(Application.class.getName()));
+                    && !contractsImplemented.contains(MODULE_COMPONENT)
+                    && !contractsImplemented.contains(APPLICATION));
     }
 
     /**

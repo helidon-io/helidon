@@ -23,7 +23,6 @@ import java.util.Optional;
 import io.helidon.common.LazyValue;
 import io.helidon.pico.api.Activator;
 import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.ContextualServiceQueryDefault;
 import io.helidon.pico.api.DeActivator;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.InjectionPointInfo;
@@ -50,7 +49,7 @@ class BoundedServiceProvider<T> implements ServiceProvider<T> {
                                    InjectionPointInfo ipInfoCtx) {
         this.binding = Objects.requireNonNull(binding);
         this.ipInfoCtx = Objects.requireNonNull(ipInfoCtx);
-        ContextualServiceQuery query = ContextualServiceQueryDefault.builder()
+        ContextualServiceQuery query = ContextualServiceQuery.builder()
                 .injectionPointInfo(ipInfoCtx)
                 .serviceInfoCriteria(ipInfoCtx.dependencyToServiceInfo())
                 .expected(false).build();
@@ -166,4 +165,8 @@ class BoundedServiceProvider<T> implements ServiceProvider<T> {
         return Optional.of((ServiceProviderBindable<T>) binding);
     }
 
+    @Override
+    public Class<?> serviceType() {
+        return binding.serviceType();
+    }
 }

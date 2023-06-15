@@ -19,12 +19,15 @@ package io.helidon.pico.api;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.types.TypeName;
+
 /**
  * The service registry. The service registry generally has knowledge about all the services that are available within your
  * application, along with the contracts (i.e., interfaces) they advertise, the qualifiers that optionally describe them, and oll
  * of each services' dependencies on other service contracts, etc.
  * <p>
- * Collectively these service instances are considered "the managed service instances" under Pico. A {@link ServiceProvider} wrapper
+ * Collectively these service instances are considered "the managed service instances" under Pico. A {@link ServiceProvider}
+ * wrapper
  * provides lifecycle management on the underlying service instances that each provider "manages" in terms of activation, scoping,
  * etc. The service providers are typically created during compile-time processing when the Pico APT processor is applied to your
  * module (i.e., any service annotated using {@link jakarta.inject.Singleton},
@@ -39,7 +42,8 @@ import java.util.Optional;
  * Note that activation of a service might result in activation chaining. For example, service A injects service B, etc. When
  * service A is activated then service A's dependencies (i.e., injection points) need to be activated as well. To avoid long
  * activation chaining, it is recommended to that users strive to use {@link jakarta.inject.Provider} injection whenever possible.
- * Provider injection (a) breaks long activation chains from occurring by deferring activation until when those services are really
+ * Provider injection (a) breaks long activation chains from occurring by deferring activation until when those services are
+ * really
  * needed, and (b) breaks circular references that lead to {@link InjectionException} during activation (i.e.,
  * service A injects B, and service B injects A).
  * <p>
@@ -140,10 +144,10 @@ public interface Services {
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     default <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> contract, ServiceInfoCriteria criteria, boolean expected) {
-        return (Optional) lookupFirst(ServiceInfoCriteriaDefault.toBuilder(criteria)
-                                   .addContractImplemented(contract.getName())
-                                   .build(),
-                           expected);
+        return (Optional) lookupFirst(ServiceInfoCriteria.builder(criteria)
+                                              .addContractImplemented(TypeName.create(contract))
+                                              .build(),
+                                      expected);
     }
 
     /**
@@ -206,10 +210,10 @@ public interface Services {
      * @return list of service providers matching criteria
      * @param <T> type of the service being managed
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     default <T> List<ServiceProvider<T>> lookupAll(Class<T> type, ServiceInfoCriteria criteria) {
-        return (List) lookupAll(ServiceInfoCriteriaDefault.toBuilder(criteria)
-                                        .addContractImplemented(type.getName())
+        return (List) lookupAll(ServiceInfoCriteria.builder(criteria)
+                                        .addContractImplemented(TypeName.create(type))
                                         .build());
     }
 

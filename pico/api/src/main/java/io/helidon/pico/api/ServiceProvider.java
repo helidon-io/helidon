@@ -121,4 +121,10 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
      */
     Optional<ServiceProviderBindable<T>> serviceProviderBindable();
 
+    /**
+     * The type of the service being managed.
+     *
+     * @return the service type being managed
+     */
+    Class<?> serviceType();
 }

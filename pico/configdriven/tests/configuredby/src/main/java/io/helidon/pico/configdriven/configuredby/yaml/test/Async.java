@@ -16,11 +16,11 @@
 
 package io.helidon.pico.configdriven.configuredby.yaml.test;
 
-import io.helidon.pico.configdriven.api.ConfiguredBy;
+import io.helidon.pico.configdriven.api.ConfigDriven;
 
 import jakarta.inject.Inject;
 
-@ConfiguredBy(AsyncConfig.class)
+@ConfigDriven(AsyncConfigBlueprint.class)
 public class Async {
 
     final AsyncConfig cfg;

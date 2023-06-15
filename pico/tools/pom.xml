@@ -71,7 +71,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder</artifactId>
+            <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>

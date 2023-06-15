@@ -18,23 +18,26 @@ package io.helidon.pico.configdriven.configuredby.test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServiceProviderException;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.PicoServicesConfig;
-import io.helidon.pico.api.QualifierAndValueDefault;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
+import io.helidon.pico.api.Qualifier;
+import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
-import io.helidon.pico.configdriven.api.ConfiguredBy;
+import io.helidon.pico.configdriven.api.ConfigDriven;
+import io.helidon.pico.configdriven.api.NamedInstance;
 import io.helidon.pico.configdriven.runtime.ConfigBeanRegistry;
+import io.helidon.pico.configdriven.tests.config.FakeServerConfig;
+import io.helidon.pico.configdriven.tests.config.FakeTlsWSNotDrivenByCB;
+import io.helidon.pico.configdriven.tests.config.FakeWebServer;
+import io.helidon.pico.configdriven.tests.config.FakeWebServerContract;
 import io.helidon.pico.testing.PicoTestingSupport;
 
 import org.junit.jupiter.api.AfterAll;
@@ -46,11 +49,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Tests for {@link io.helidon.pico.configdriven.api.ConfiguredBy}.
+ * Tests for {@link io.helidon.pico.configdriven.api.ConfigDriven}.
  */
 public abstract class AbstractConfiguredByTest {
     protected static final String FAKE_SOCKET_CONFIG = "sockets";
@@ -61,7 +66,7 @@ public abstract class AbstractConfiguredByTest {
 
     @BeforeAll
     static void initialStateChecks() {
-        ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
+        ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
         assertThat(cbr.ready(), is(false));
     }
 
@@ -79,18 +84,18 @@ public abstract class AbstractConfiguredByTest {
     public MapConfigSource.Builder createBasicTestingConfigSource() {
         return ConfigSources.create(
                 Map.of(
-                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
-                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_ACTIVATION_LOGS, "true",
-                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_SERVICE_LOOKUP_CACHING, "true"
+                        "pico.permits-dynamic", "true",
+                        "pico.activation-logs", "true",
+                        "pico.service-lookup-caching", "true"
                 ), "config-basic");
     }
 
     public MapConfigSource.Builder createRootDefault8080TestingConfigSource() {
         return ConfigSources.create(
                 Map.of(
-                        FAKE_SERVER_CONFIG + ".name", "fake-server",
-                        FAKE_SERVER_CONFIG + ".port", "8080",
-                        FAKE_SERVER_CONFIG + ".worker-count", "1"
+                        "server.name", "fake-server",
+                        "server.port", "8080",
+                        "server.worker-count", "1"
                 ), "config-root-default-8080");
     }
 
@@ -121,43 +126,43 @@ public abstract class AbstractConfiguredByTest {
 
     //    @Test
     void testRegistry() {
-        ServiceInfoCriteriaDefault criteria = ServiceInfoCriteriaDefault.builder()
-                .addQualifier(QualifierAndValueDefault.create(ConfiguredBy.class))
+        ServiceInfoCriteria criteria = ServiceInfoCriteria.builder()
+                .addQualifier(Qualifier.create(ConfigDriven.class))
                 .build();
         List<ServiceProvider<?>> list = services.lookupAll(criteria);
         List<String> desc = list.stream()
-                .filter(it -> !it.serviceInfo().serviceTypeName().contains(".yaml."))
+                .filter(it -> !it.serviceInfo().serviceTypeName().fqName().contains(".yaml."))
                 .map(ServiceProvider::description)
                 .collect(Collectors.toList());
         // order matters here since it should be based upon weight
         assertThat("root providers are config-driven, auto-started services unless overridden to not be driven", desc,
-                   contains("ASingletonService{root}:ACTIVE",
+                   containsInAnyOrder("ASingletonService{root}:ACTIVE",
                             "FakeTlsWSNotDrivenByCB{root}:PENDING",
                             "FakeWebServer{root}:ACTIVE",
                             "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{root}:PENDING",
                             "SomeConfiguredServiceWithAnAbstractBase{root}:PENDING"
                    ));
 
-        criteria = ServiceInfoCriteriaDefault.builder()
-                .addContractImplemented(FakeWebServerContract.class.getName())
+        criteria = ServiceInfoCriteria.builder()
+                .addContractImplemented(FakeWebServerContract.class)
                 .build();
         list = services.lookupAll(criteria);
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat("no root providers expected in result, but all are auto-started unless overridden", desc,
-                   contains("FakeWebServer{fake-server}:ACTIVE",
-                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{fake-server}:PENDING"));
+                   contains("FakeWebServer{@default}:ACTIVE",
+                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{@default}:PENDING"));
 
-        criteria = ServiceInfoCriteriaDefault.builder()
-                .serviceTypeName(FakeTlsWSNotDrivenByCB.class.getName())
+        criteria = ServiceInfoCriteria.builder()
+                .serviceTypeName(TypeName.create(FakeTlsWSNotDrivenByCB.class))
                 .build();
         list = services.lookupAll(criteria);
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat("root providers expected here since we looked up by service type name", desc,
                    contains("FakeTlsWSNotDrivenByCB{root}:PENDING"));
 
-        criteria = ServiceInfoCriteriaDefault.builder()
-                .addContractImplemented(FakeTlsWSNotDrivenByCB.class.getName())
-                .addQualifier(QualifierAndValueDefault.createNamed("*"))
+        criteria = ServiceInfoCriteria.builder()
+                .addContractImplemented(FakeTlsWSNotDrivenByCB.class)
+                .addQualifier(Qualifier.createNamed("*"))
                 .build();
         list = services.lookupAll(criteria);
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
@@ -169,9 +174,9 @@ public abstract class AbstractConfiguredByTest {
         assertThat("There is no configuration, so cannot activate this service", e.getMessage(),
                    equalTo("Expected to find a match: service provider: FakeTlsWSNotDrivenByCB{root}:PENDING"));
 
-        criteria = ServiceInfoCriteriaDefault.builder()
-                .addContractImplemented(ASingletonService.class.getName())
-                .addQualifier(QualifierAndValueDefault.createNamed("jane"))
+        criteria = ServiceInfoCriteria.builder()
+                .addContractImplemented(ASingletonService.class)
+                .addQualifier(Qualifier.createNamed("jane"))
                 .build();
         list = services.lookupAll(criteria);
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
@@ -190,14 +195,20 @@ public abstract class AbstractConfiguredByTest {
 
     //    @Test
     void testBeanRegistry() {
-        ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
+        ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
         assertThat(cbr.ready(), is(true));
 
-        Set<String> set = cbr.allConfigBeans().keySet();
-        assertThat(set, containsInAnyOrder(
-                "@default",
-                "fake-server"
-        ));
+        Map<Class<?>, List<NamedInstance<?>>> beansByType = cbr.allConfigBeans();
+        List<NamedInstance<?>> namedInstances = beansByType.get(FakeServerConfig.class);
+
+        assertThat("We should have instances created for FakeServerConfig", namedInstances, notNullValue());
+
+        List<String> names = namedInstances.stream()
+                .map(NamedInstance::name)
+                .toList();
+
+        // only default is created
+        assertThat(names, hasItems("@default"));
     }
 
 }

@@ -36,6 +36,48 @@ import io.helidon.pico.tools.InterceptionPlan;
 public interface InterceptorCreator {
 
     /**
+     * Determines the strategy being applied.
+     *
+     * @return the strategy being applied
+     */
+    default Strategy strategy() {
+        return Strategy.BLENDED;
+    }
+
+    /**
+     * Applicable when {@link io.helidon.pico.tools.spi.InterceptorCreator.Strategy#ALLOW_LISTED} is in use.
+     *
+     * @return the set of type names that should trigger creation
+     */
+    default Set<String> allowListedAnnotationTypes() {
+        return Set.of();
+    }
+
+    /**
+     * Applicable when {@link io.helidon.pico.tools.spi.InterceptorCreator.Strategy#CUSTOM} is in use.
+     *
+     * @param annotationType the annotation type name
+     * @return true if the annotation type should trigger interceptor creation
+     */
+    default boolean isAllowListed(String annotationType) {
+        Objects.requireNonNull(annotationType);
+        return allowListedAnnotationTypes().contains(annotationType);
+    }
+
+    /**
+     * Returns the processor appropriate for the context revealed in the calling arguments, favoring reflection if
+     * the serviceTypeElement is provided.
+     *
+     * @param interceptedService    the service being intercepted
+     * @param delegateCreator       the "real" creator
+     * @param processEnv            optionally, the processing environment (should be passed if in annotation processor)
+     * @return the processor to use for the given arguments
+     */
+    InterceptorProcessor createInterceptorProcessor(ServiceInfoBasics interceptedService,
+                                                    InterceptorCreator delegateCreator,
+                                                    Optional<ProcessingEnvironment> processEnv);
+
+    /**
      * The strategy applied for resolving annotations that trigger interception.
      */
     enum Strategy {
@@ -77,49 +119,6 @@ public interface InterceptorCreator {
         BLENDED
 
     }
-
-    /**
-     * Determines the strategy being applied.
-     *
-     * @return the strategy being applied
-     */
-    default Strategy strategy() {
-        return Strategy.BLENDED;
-    }
-
-    /**
-     * Applicable when {@link Strategy#ALLOW_LISTED} is in use.
-     *
-     * @return the set of type names that should trigger creation
-     */
-    default Set<String> allowListedAnnotationTypes() {
-        return Set.of();
-    }
-
-    /**
-     * Applicable when {@link Strategy#CUSTOM} is in use.
-     *
-     * @param annotationType the annotation type name
-     * @return true if the annotation type should trigger interceptor creation
-     */
-    default boolean isAllowListed(String annotationType) {
-        Objects.requireNonNull(annotationType);
-        return allowListedAnnotationTypes().contains(annotationType);
-    }
-
-    /**
-     * Returns the processor appropriate for the context revealed in the calling arguments, favoring reflection if
-     * the serviceTypeElement is provided.
-     *
-     * @param interceptedService    the service being intercepted
-     * @param delegateCreator       the "real" creator
-     * @param processEnv            optionally, the processing environment (should be passed if in annotation processor)
-     * @return the processor to use for the given arguments
-     */
-    InterceptorProcessor createInterceptorProcessor(ServiceInfoBasics interceptedService,
-                                                    InterceptorCreator delegateCreator,
-                                                    Optional<ProcessingEnvironment> processEnv);
-
 
     /**
      * Abstraction for interceptor processing.

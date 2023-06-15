@@ -18,7 +18,7 @@ package io.helidon.pico.tests.plain.interceptor;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.types.TypeNameDefault;
+import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
@@ -38,7 +38,7 @@ public class TestNamedInterceptor implements Interceptor {
         assert (ctx != null);
 
         TypedElementInfo methodInfo = ctx.elementInfo();
-        if (methodInfo != null && methodInfo.typeName().equals(TypeNameDefault.create(long.class))) {
+        if (methodInfo != null && methodInfo.typeName().equals(TypeName.create(long.class))) {
             V result = chain.proceed(args);
             long longResult = (Long) result;
             Object interceptedResult = (longResult * 2);

@@ -26,7 +26,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
-import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.TypeNames;
 
@@ -116,7 +115,7 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
                     return false;
                 }
 
-                String msg = "This module contains unsupported annotations for " + PicoServicesConfig.NAME
+                String msg = "This module contains unsupported annotations for Pico "
                                 + " to process: " + annotationTypeNames + ".\n";
                 if (annotationTypeNames.contains(TypeNames.JAKARTA_APPLICATION_SCOPED)
                         || annotationTypeNames.contains(TypeNames.JAVAX_APPLICATION_SCOPED)) {

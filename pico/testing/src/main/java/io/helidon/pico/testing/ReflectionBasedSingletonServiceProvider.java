@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.util.Map;
 import java.util.Objects;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.InjectionException;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
@@ -65,11 +66,11 @@ public class ReflectionBasedSingletonServiceProvider<T> extends AbstractServiceP
         Objects.requireNonNull(serviceType);
         Objects.requireNonNull(siBasics);
 
-        if (!serviceType.getName().equals(siBasics.serviceTypeName())) {
+        if (!TypeName.create(serviceType).equals(siBasics.serviceTypeName())) {
             throw new IllegalArgumentException("Mismatch in service types: " + serviceType.getName());
         }
 
-        return new ReflectionBasedSingletonServiceProvider<>(serviceType, ServiceInfo.toBuilder(siBasics).build());
+        return new ReflectionBasedSingletonServiceProvider<>(serviceType, ServiceInfo.builder(siBasics).build());
     }
 
     @Override
@@ -88,4 +89,8 @@ public class ReflectionBasedSingletonServiceProvider<T> extends AbstractServiceP
         }
     }
 
+    @Override
+    public Class<T> serviceType() {
+        return serviceType;
+    }
 }

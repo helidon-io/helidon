@@ -18,17 +18,42 @@ package io.helidon.pico.configdriven.runtime;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import io.helidon.builder.config.spi.ConfigBeanInfo;
-import io.helidon.builder.config.spi.HelidonConfigBeanRegistry;
+import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.Qualifier;
+import io.helidon.pico.configdriven.api.NamedInstance;
 
 /**
- * The highest ranked/weighted implementor of this contract is responsible for managing the set of
- * {@link io.helidon.builder.config.ConfigBean}'s that are active, along with whether the application is configured to
- * support dynamic aspects (i.e., dynamic in content, dynamic in lifecycle, etc.).
+ * Manages the set of active {@link io.helidon.pico.configdriven.api.ConfigBean}'s, along with whether the application is
+ * configured to support dynamic aspects (i.e., dynamic in content, dynamic in lifecycle, etc.).
  */
-public interface ConfigBeanRegistry extends HelidonConfigBeanRegistry {
+public interface ConfigBeanRegistry {
+    /**
+     * Config bean registry instance for the current VM.
+     *
+     * @return config bean registry
+     */
+    static ConfigBeanRegistry instance() {
+        return ConfigBeanRegistryImpl.CONFIG_BEAN_REGISTRY.get();
+    }
+
+    /**
+     * Binds a {@link ConfiguredServiceProvider} to the
+     * {@link io.helidon.pico.configdriven.api.ConfigBean} annotation it is configured by.
+     *
+     * @param configuredServiceProvider the configured service provider
+     * @param configuredByQualifier the qualifier associated with the {@link io.helidon.pico.configdriven.api.ConfigBean}
+     * @throws io.helidon.config.ConfigException if the bind operation encountered an error
+     */
+    void bind(ConfiguredServiceProvider<?, ?> configuredServiceProvider, Qualifier configuredByQualifier);
+
+    /**
+     * The first call to this initialize the bean registry, by loading all the backing configuration from the config
+     * subsystem.
+     *
+     * @param picoServices the pico services instance
+     */
+    void initialize(PicoServices picoServices);
 
     /**
      * The config bean registry is initialized as part of Pico's initialization, which happens when the service registry
@@ -39,64 +64,9 @@ public interface ConfigBeanRegistry extends HelidonConfigBeanRegistry {
     boolean ready();
 
     /**
-     * These are the services that are configurable, mapping to the configuration beans each expects.
-     * Each entry in the returned map is the master/root for the config beans it manages. The result, therefore, is
-     * not associated with config beans. Use {@link #configuredServiceProviders()} for configured service instances.
+     * All active configuration beans (including default instances).
      *
-     * @return the map of configurable services to the meta config beans each expects
+     * @return map of all configuration beans, key is the config bean class, values are named instances
      */
-    Map<ConfiguredServiceProvider<?, ?>, ConfigBeanInfo> configurableServiceProviders();
-
-    /**
-     * These are the managed/slave service providers that are associated with config bean instances.
-     *
-     * @return the list of configured services
-     */
-    List<ConfiguredServiceProvider<?, ?>> configuredServiceProviders();
-
-    /**
-     * These are the managed/slave service providers that are associated with config bean instances with the config {@code key}
-     * provided.
-     *
-     * @param key the config options key - note that this is a partial key - and not relative to the parent - the same
-     *            key used by {@link io.helidon.builder.config.ConfigBean#value()}.
-     * @return the list of configured services
-     */
-    List<ConfiguredServiceProvider<?, ?>> configuredServiceProvidersConfiguredBy(String key);
-
-    /**
-     * Returns all the known config beans in order of rank given the {@code key}. Callers should understand
-     * that this list might be incomplete until ready state is reached (see {@link #ready()}). Note also that callers should
-     * attempt to use {@link #configBeansByConfigKey(String)} whenever possible since it will generate more precise matches.
-     *
-     * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
-     *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
-     * @return the set of known config keys
-     */
-    Set<?> configBeansByConfigKey(String key);
-
-    /**
-     * Returns all the known config beans in order of rank matching the {@code key} and {@code fullConfigKey}. Callers should
-     * understand that this list might be incomplete until ready state is reached (see {@link #ready()}).
-     *
-     * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
-     *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
-     * @param fullConfigKey the full config key
-     * @return the set of known config keys matching the provided criteria
-     */
-    Set<?> configBeansByConfigKey(String key,
-                                  String fullConfigKey);
-
-    /**
-     * Similar to {@link #configBeansByConfigKey}, but instead returns all the known config beans in a
-     * map where the key of the map is the config key.
-     *
-     * @param key           the config options key - note that this is a partial key - and not relative to the parent - the same
-     *                      key used by {@link io.helidon.builder.config.ConfigBean#value()}.
-     * @param fullConfigKey the full config key
-     * @return the map of known config keys to config beans
-     */
-    Map<String, ?> configBeanMapByConfigKey(String key,
-                                            String fullConfigKey);
-
+    Map<Class<?>, List<NamedInstance<?>>> allConfigBeans();
 }

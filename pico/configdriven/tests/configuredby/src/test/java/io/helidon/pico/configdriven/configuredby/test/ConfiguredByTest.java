@@ -19,22 +19,17 @@ package io.helidon.pico.configdriven.configuredby.test;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
-import io.helidon.builder.config.testsubjects.fakes.FakeServerConfig;
-import io.helidon.builder.config.testsubjects.fakes.FakeSocketConfig;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.configdriven.api.NamedInstance;
 import io.helidon.pico.configdriven.runtime.ConfigBeanRegistry;
-import io.helidon.pico.configdriven.runtime.ConfiguredServiceProvider;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -69,49 +64,26 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
                           .disableSystemPropertiesSource()
                           .build());
 
-        ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
+        ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
         assertThat(cbr.ready(),
                    is(true));
 
-        Set<String> set = cbr.allConfigBeans().keySet();
-        assertThat(set, containsInAnyOrder(
-                "@default",
-                "fake-server"
-        ));
+        Map<Class<?>, List<NamedInstance<?>>> beans = cbr.allConfigBeans();
+        assertThat(beans, hasKey(SomeServiceConfig.class));
+        assertThat(beans, hasKey(ASingletonConfigBean.class));
+
+        assertHasNamed(beans.get(SomeServiceConfig.class), "@default");
+        assertHasNamed(beans.get(ASingletonConfigBean.class), "@default");
     }
 
-    @Test
-    void serverConfigWithOneSocketConfigNested() {
-        resetWith(io.helidon.config.Config.builder(createBasicTestingConfigSource(),
-                                                   createRootPlusOneSocketTestingConfigSource())
-                          .disableEnvironmentVariablesSource()
-                          .disableSystemPropertiesSource()
-                          .build());
+    private void assertHasNamed(List<NamedInstance<?>> namedInstances, String... expectedNames) {
+        List<String> nameList = namedInstances.stream()
+                .map(NamedInstance::name)
+                .toList();
+        Set<String> nameSet = Set.copyOf(nameList);
 
-        ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
-        assertThat(cbr.ready(),
-                   is(true));
-
-        Set<String> set = cbr.allConfigBeans().keySet();
-        assertThat(set,
-                   containsInAnyOrder("@default",
-                                      "fake-server"
-        ));
-
-        Set<?> configBeans = cbr.configBeansByConfigKey("fake-server");
-        assertThat(configBeans.toString(), configBeans.size(),
-                   is(1));
-
-        List<ConfiguredServiceProvider<?, ?>> list = cbr.configuredServiceProvidersConfiguredBy("fake-server");
-        List<String> desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
-        assertThat(desc,
-                   contains("FakeWebServer{root}:ACTIVE",
-                            "FakeWebServerNotDrivenAndHavingConfiguredByOverrides{root}:PENDING"));
-
-        FakeServerConfig cfg = (FakeServerConfig) configBeans.iterator().next();
-        Map<String, FakeSocketConfig> sockets = cfg.sockets();
-        assertThat(sockets.toString(), sockets.size(),
-                   is(1));
+        assertThat("Names should be unique.", nameList, is(List.copyOf(nameSet)));
+        assertThat(nameSet, contains(expectedNames));
     }
 
 }

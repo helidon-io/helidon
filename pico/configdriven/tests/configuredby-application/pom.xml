@@ -26,7 +26,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-pico-configdriven-test-configuredby-application</artifactId>
+    <artifactId>helidon-pico-configdriven-tests-configuredby-application</artifactId>
     <name>Helidon Pico Config-Driven ConfiguredBy Appl Tests</name>
     <description>the same tests as test-configuredby, but instead using the maven application generation in order to calc di plan at compile-time</description>
 
@@ -47,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.pico.configdriven.tests</groupId>
-            <artifactId>helidon-pico-configdriven-test-configuredby</artifactId>
+            <artifactId>helidon-pico-configdriven-tests-configuredby</artifactId>
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
@@ -110,7 +110,7 @@
                         </path>
                         <path>
                             <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-config-processor</artifactId>
+                            <artifactId>helidon-builder-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>

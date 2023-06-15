@@ -25,15 +25,13 @@ module io.helidon.pico.processor {
     requires java.compiler;
 
     requires io.helidon.common;
-    requires io.helidon.builder.processor.spi;
+    requires io.helidon.common.processor;
     requires transitive io.helidon.pico.tools;
     requires io.helidon.builder.processor;
 
     exports io.helidon.pico.processor;
     exports io.helidon.pico.processor.spi;
 
-    uses io.helidon.builder.processor.BuilderProcessor;
-    uses io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
     uses io.helidon.pico.processor.spi.PicoAnnotationProcessorObserver;
     uses io.helidon.pico.tools.spi.InterceptorCreator;
     uses io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;

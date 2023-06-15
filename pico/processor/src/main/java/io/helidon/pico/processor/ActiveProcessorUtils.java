@@ -21,7 +21,6 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -30,17 +29,16 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
-import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
-import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.processor.TypeInfoFactory;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.tools.Messager;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
+import io.helidon.pico.tools.ModuleInfoOrdering;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ServicesToProcess;
 
@@ -60,19 +58,12 @@ final class ActiveProcessorUtils implements Messager {
 
     private final System.Logger logger;
     private final ProcessingEnvironment processingEnv;
-    private final TypeInfoCreatorProvider typeInfoCreatorProvider;
     private RoundEnvironment roundEnv;
 
     ActiveProcessorUtils(AbstractProcessor processor,
                          ProcessingEnvironment processingEnv) {
         this.logger = System.getLogger(processor.getClass().getName());
         this.processingEnv = Objects.requireNonNull(processingEnv);
-        this.typeInfoCreatorProvider = HelidonServiceLoader.create(
-                        ServiceLoader.load(TypeInfoCreatorProvider.class, TypeInfoCreatorProvider.class.getClassLoader()))
-                .asList()
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No available " + TypeInfoCreatorProvider.class));
 
         Options.init(processingEnv);
         debug("*** Processing " + processor.getClass().getSimpleName() + " ***");
@@ -184,14 +175,16 @@ final class ActiveProcessorUtils implements Messager {
      * Converts the provided element and mirror into a {@link TypeInfo} structure.
      *
      * @param element          the element of the target service
-     * @param mirror           the type mirror of the target service
      * @param isOneWeCareAbout a predicate filter that is used to determine the elements of particular interest (e.g., injectable)
      * @return the type info for the target
      */
     Optional<TypeInfo> toTypeInfo(TypeElement element,
-                                  TypeMirror mirror,
                                   Predicate<TypedElementInfo> isOneWeCareAbout) {
-        return typeInfoCreatorProvider.createTypeInfo(element, mirror, processingEnv, isOneWeCareAbout);
+        return TypeInfoFactory.create(processingEnv, element, isOneWeCareAbout);
+    }
+
+    System.Logger.Level loggerLevel() {
+        return (Options.isOptionEnabled(Options.TAG_DEBUG)) ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
     }
 
     RoundEnvironment roundEnv() {
@@ -215,7 +208,7 @@ final class ActiveProcessorUtils implements Messager {
             if (file.exists()) {
                 try {
                     return Optional.of(
-                            ModuleInfoDescriptor.create(file.toPath(), ModuleInfoDescriptor.Ordering.NATURAL_PRESERVE_COMMENTS));
+                            ModuleInfoDescriptor.create(file.toPath(), ModuleInfoOrdering.NATURAL_PRESERVE_COMMENTS));
                 } catch (Exception e) {
                     debug("unable to read source module-info.java from: " + srcRoot + "; " + e.getMessage(), e);
                 }

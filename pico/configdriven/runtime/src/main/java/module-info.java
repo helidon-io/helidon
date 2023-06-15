@@ -24,26 +24,11 @@ module io.helidon.pico.configdriven.runtime {
 
     // required for compilation of generated types
     requires transitive io.helidon.pico.configdriven.api;
-    requires transitive io.helidon.builder;
-    requires transitive io.helidon.builder.config;
+    requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.types;
     requires transitive io.helidon.config;
     requires transitive io.helidon.pico.api;
     requires transitive io.helidon.pico.runtime;
 
     exports io.helidon.pico.configdriven.runtime;
-
-    uses io.helidon.builder.config.spi.ConfigBeanRegistryProvider;
-    uses io.helidon.builder.config.spi.StringValueParserProvider;
-    uses io.helidon.builder.config.spi.ConfigBeanMapperProvider;
-    uses io.helidon.builder.config.spi.ConfigResolverProvider;
-
-    provides io.helidon.builder.config.spi.ConfigBeanBuilderValidatorProvider
-            with io.helidon.pico.configdriven.runtime.DefaultConfigBeanBuilderValidatorProvider;
-    provides io.helidon.builder.config.spi.ConfigBeanRegistryProvider
-            with io.helidon.pico.configdriven.runtime.DefaultConfigBeanRegistryProvider;
-    provides io.helidon.builder.config.spi.ConfigResolverProvider
-            with io.helidon.pico.configdriven.runtime.DefaultConfigResolverProvider;
-    provides io.helidon.builder.config.spi.StringValueParserProvider
-            with io.helidon.pico.configdriven.runtime.DefaultStringValueParserProvider;
 }

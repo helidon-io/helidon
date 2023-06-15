@@ -22,11 +22,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.pico.spi.PicoServicesProvider;
-
-import static io.helidon.pico.api.CallingContext.DEBUG_HINT;
 
 /**
  * The holder for the globally active {@link PicoServices} singleton instance, as well as its associated
@@ -34,8 +34,15 @@ import static io.helidon.pico.api.CallingContext.DEBUG_HINT;
  */
 // exposed in the testing module as non deprecated
 public abstract class PicoServicesHolder {
+    /**
+     * Helpful hint to give developers needing to see more debug info.
+     */
+    public static final String DEBUG_HINT = "use the (-D and/or -A) tag 'pico.debug=true' to see full trace output.";
+
     private static final AtomicReference<InternalBootstrap> BOOTSTRAP = new AtomicReference<>();
     private static final AtomicReference<ProviderAndServicesTuple> INSTANCE = new AtomicReference<>();
+    private static final List<Resettable> RESETTABLES = new ArrayList<>();
+    private static final Lock RESETTABLES_LOCK = new ReentrantLock();
 
     /**
      * Default Constructor.
@@ -59,7 +66,7 @@ public abstract class PicoServicesHolder {
             if (INSTANCE.get().picoServices == null) {
                 System.getLogger(PicoServices.class.getName())
                         .log(System.Logger.Level.WARNING,
-                             PicoServicesConfig.NAME + " runtime services not detected on the classpath");
+                             "Pico runtime services not detected on the classpath");
             }
         }
         return Optional.ofNullable(INSTANCE.get().picoServices);
@@ -73,17 +80,44 @@ public abstract class PicoServicesHolder {
         if (instance != null) {
             instance.reset();
         }
+
+        try {
+            RESETTABLES_LOCK.lock();
+            RESETTABLES.forEach(it -> it.reset(true));
+            RESETTABLES.clear();
+        } finally {
+            RESETTABLES_LOCK.unlock();
+        }
+
         INSTANCE.set(null);
         BOOTSTRAP.set(null);
     }
 
+    /**
+     * Register a resettable instance. When {@link #reset()} is called, this instance is removed from the list.
+     *
+     * @param instance resettable type that can be reset during testing
+     */
+    protected static void addResettable(Resettable instance) {
+        try {
+            RESETTABLES_LOCK.lock();
+            RESETTABLES.add(instance);
+        } finally {
+            RESETTABLES_LOCK.unlock();
+        }
+
+    }
+
     static void bootstrap(Bootstrap bootstrap) {
         Objects.requireNonNull(bootstrap);
-        InternalBootstrap iBootstrap = InternalBootstrap.create(bootstrap, null);
-        if (!BOOTSTRAP.compareAndSet(null, iBootstrap)) {
-            InternalBootstrap existing = BOOTSTRAP.get();
-            CallingContext callingContext = (existing == null) ? null : existing.callingContext().orElse(null);
-            StackTraceElement[] trace = (callingContext == null) ? new StackTraceElement[] {} : callingContext.trace();
+        InternalBootstrap iBootstrap = InternalBootstrap.builder().bootStrap(bootstrap).build();
+
+        InternalBootstrap existing = BOOTSTRAP.compareAndExchange(null, iBootstrap);
+        if (existing != null) {
+            CallingContext callingContext = existing.callingContext().orElse(null);
+            StackTraceElement[] trace = (callingContext == null)
+                    ? new StackTraceElement[] {}
+                    : callingContext.stackTrace().orElse(null);
             if (trace != null && trace.length > 0) {
                 throw new IllegalStateException(
                         "bootstrap was previously set from this code path:\n" + prettyPrintStackTraceOf(trace)
@@ -100,35 +134,8 @@ public abstract class PicoServicesHolder {
         }
 
         InternalBootstrap iBootstrap = BOOTSTRAP.get();
-        return Optional.ofNullable((iBootstrap != null) ? iBootstrap.bootStrap() : null);
-    }
-
-    private static Optional<PicoServicesProvider> load() {
-        return HelidonServiceLoader.create(ServiceLoader.load(PicoServicesProvider.class,
-                                                              PicoServicesProvider.class.getClassLoader()))
-                .asList()
-                .stream()
-                .findFirst();
-    }
-
-    // we need to keep the provider and the instance the provider creates together as one entity
-    private static class ProviderAndServicesTuple {
-        private final PicoServicesProvider provider;
-        private final PicoServices picoServices;
-
-        private ProviderAndServicesTuple(Optional<PicoServicesProvider> provider) {
-            this.provider = provider.orElse(null);
-            this.picoServices = (provider.isPresent())
-                    ? this.provider.services(bootstrap(true).orElseThrow()) : null;
-        }
-
-        private void reset() {
-            if (provider instanceof Resettable) {
-                ((Resettable) provider).reset(true);
-            } else if (picoServices instanceof Resettable) {
-                ((Resettable) picoServices).reset(true);
-            }
-        }
+        return Optional.ofNullable(iBootstrap)
+                .flatMap(InternalBootstrap::bootStrap);
     }
 
     /**
@@ -153,6 +160,36 @@ public abstract class PicoServicesHolder {
      */
     static String prettyPrintStackTraceOf(StackTraceElement[] trace) {
         return String.join("\n", stackTraceOf(trace));
+    }
+
+    private static Optional<PicoServicesProvider> load() {
+        return HelidonServiceLoader.create(ServiceLoader.load(PicoServicesProvider.class,
+                                                              PicoServicesProvider.class.getClassLoader()))
+                .asList()
+                .stream()
+                .findFirst();
+    }
+
+    // we need to keep the provider and the instance the provider creates together as one entity
+    private static class ProviderAndServicesTuple {
+        private final PicoServicesProvider provider;
+        private final PicoServices picoServices;
+
+        private ProviderAndServicesTuple(Optional<PicoServicesProvider> provider) {
+            this.provider = provider.orElse(null);
+            this.picoServices = provider.isPresent()
+                    ? this.provider.services(bootstrap(true)
+                                                     .orElseThrow(() -> new PicoException("Failed to assign bootstrap")))
+                    : null;
+        }
+
+        private void reset() {
+            if (provider instanceof Resettable) {
+                ((Resettable) provider).reset(true);
+            } else if (picoServices instanceof Resettable) {
+                ((Resettable) picoServices).reset(true);
+            }
+        }
     }
 
 }

@@ -48,7 +48,12 @@
         <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-processor</artifactId>
-            <scope>provided</scope> <!-- to force reactor ordering -->
+            <optional>true</optional> <!-- to force reactor ordering -->
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

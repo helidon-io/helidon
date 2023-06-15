@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,30 +42,29 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.AnnotationAndValueDefault;
+import io.helidon.common.processor.TypeFactory;
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
+import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.pico.api.AccessModifier;
 import io.helidon.pico.api.Activator;
 import io.helidon.pico.api.Contract;
 import io.helidon.pico.api.DependenciesInfo;
-import io.helidon.pico.api.ElementInfo;
+import io.helidon.pico.api.ElementKind;
 import io.helidon.pico.api.ExternalContracts;
-import io.helidon.pico.api.PicoServicesConfig;
-import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.processor.spi.PicoAnnotationProcessorObserver;
 import io.helidon.pico.processor.spi.ProcessingEvent;
 import io.helidon.pico.processor.spi.ProcessingEventDefault;
 import io.helidon.pico.runtime.Dependencies;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
-import io.helidon.pico.tools.ActivatorCreatorCodeGenDefault;
-import io.helidon.pico.tools.ActivatorCreatorConfigOptionsDefault;
+import io.helidon.pico.tools.ActivatorCreatorConfigOptions;
 import io.helidon.pico.tools.ActivatorCreatorDefault;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
-import io.helidon.pico.tools.ActivatorCreatorRequestDefault;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
 import io.helidon.pico.tools.InterceptionPlan;
 import io.helidon.pico.tools.InterceptorCreatorProvider;
@@ -79,9 +79,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 
-import static io.helidon.builder.processor.tools.BeanUtils.isBuiltInJavaType;
-import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
-import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
+import static io.helidon.common.processor.TypeInfoFactory.createTypedElementInfoFromElement;
 import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
 import static io.helidon.pico.processor.GeneralProcessorUtils.isProviderType;
 import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElementOf;
@@ -93,11 +91,6 @@ import static io.helidon.pico.processor.GeneralProcessorUtils.toRunLevel;
 import static io.helidon.pico.processor.GeneralProcessorUtils.toScopeNames;
 import static io.helidon.pico.processor.GeneralProcessorUtils.toServiceTypeHierarchy;
 import static io.helidon.pico.processor.GeneralProcessorUtils.toWeight;
-import static io.helidon.pico.processor.ProcessingTracker.DEFAULT_SCRATCH_FILE_NAME;
-import static io.helidon.pico.processor.ProcessingTracker.initializeFrom;
-import static io.helidon.pico.tools.CodeGenFiler.scratchClassOutputPath;
-import static io.helidon.pico.tools.CodeGenFiler.targetClassOutputPath;
-import static io.helidon.pico.tools.TypeTools.createTypedElementInfoFromElement;
 import static io.helidon.pico.tools.TypeTools.toAccess;
 import static java.util.Objects.requireNonNull;
 
@@ -105,8 +98,6 @@ import static java.util.Objects.requireNonNull;
  * An annotation processor that will find everything needing to be processed related to core Pico conde generation.
  */
 public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
-    private static boolean disableBaseProcessing;
-
     private static final Set<String> SUPPORTED_SERVICE_CLASS_TARGET_ANNOTATIONS = Set.of(
             TypeNames.JAKARTA_SINGLETON,
             TypeNames.JAVAX_SINGLETON,
@@ -114,10 +105,8 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             TypeNames.JAVAX_APPLICATION_SCOPED,
             TypeNames.PICO_EXTERNAL_CONTRACTS,
             TypeNames.PICO_INTERCEPTED);
-
     private static final Set<String> SUPPORTED_CONTRACT_CLASS_TARGET_ANNOTATIONS = Set.of(
             TypeNames.PICO_CONTRACT);
-
     private static final Set<String> SUPPORTED_ELEMENT_TARGET_ANNOTATIONS = Set.of(
             TypeNames.JAKARTA_INJECT,
             TypeNames.JAVAX_INJECT,
@@ -125,7 +114,11 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             TypeNames.JAKARTA_POST_CONSTRUCT,
             TypeNames.JAVAX_PRE_DESTROY,
             TypeNames.JAVAX_POST_CONSTRUCT);
-
+    private static final Set<TypeName> SERVICE_DEFINING_ANNOTATIONS = Set.of(
+            TypeName.create(TypeNames.JAKARTA_SINGLETON),
+            TypeName.create(TypeNames.JAKARTA_APPLICATION_SCOPED)
+    );
+    private static boolean disableBaseProcessing;
     private final Set<TypedElementInfo> allElementsOfInterestInThisModule = new LinkedHashSet<>();
     private final Map<TypeName, TypeInfo> typeInfoToCreateActivatorsForInThisModule = new LinkedHashMap<>();
     private ProcessingTracker tracker;
@@ -179,6 +172,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         }
 
         ServicesToProcess.onBeginProcessing(utils(), getSupportedAnnotationTypes(), roundEnv);
+        //        ServicesToProcess.addOnDoneRunnable(CreatorHandler.reporting());
 
         try {
             // build the model
@@ -267,7 +261,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         }
 
         boolean processingOver = utils().roundEnv().processingOver();
-        ActivatorCreatorConfigOptionsDefault configOptions = ActivatorCreatorConfigOptionsDefault.builder()
+        ActivatorCreatorConfigOptions configOptions = ActivatorCreatorConfigOptions.builder()
                 .applicationPreCreated(Options.isOptionEnabled(Options.TAG_APPLICATION_PRE_CREATE))
                 .moduleCreated(processingOver)
                 .build();
@@ -395,10 +389,28 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         TypeName serviceTypeName = service.typeName();
         TypeInfo superTypeInfo = service.superTypeInfo().orElse(null);
         if (superTypeInfo != null) {
-            TypeName superTypeName = superTypeInfo.typeName();
-            services.addParentServiceType(serviceTypeName, superTypeName);
+            Optional<TypeName> serviceProvider = findServiceProviderInHierarchy(superTypeInfo, new HashSet<>());
+            if (serviceProvider.isPresent()) {
+                // if supertype is ServiceProvider itself, we can just extend directly
+                services.addParentServiceType(serviceTypeName, serviceProvider.get());
+            } else {
+                Optional<TypeName> activatedType = findActivatedInHierarchy(superTypeInfo, new HashSet<>());
+                if (activatedType.isPresent()) {
+                    TypeName typeName = activatedType.get();
+                    // in case one the super types is activated, extend that activator
+                    services.addParentServiceType(serviceTypeName, TypeName.builder(typeName.genericTypeName())
+                            .className(typeName.classNameWithEnclosingNames().replace('.', '$')
+                                               + ActivatorCreatorDefault.INNER_ACTIVATOR_CLASS_NAME)
+                            .build());
+                } else {
+                    // otherwise extends AbstractServiceProvider with the correct type
+                    services.addParentServiceType(serviceTypeName, TypeName.builder(TypeNames.PICO_ABSTRACT_SERVICE_PROVIDER_TYPE)
+                            .addTypeArgument(serviceTypeName)
+                            .build());
+                }
+            }
         }
-        Set<String> modifierNames = service.modifierNames();
+        Set<String> modifierNames = toModifierNames(service.modifiers());
 
         toRunLevel(service).ifPresent(it -> services.addDeclaredRunLevel(serviceTypeName, it));
         toWeight(service).ifPresent(it -> services.addDeclaredWeight(serviceTypeName, it));
@@ -409,12 +421,212 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         services.addAccessLevel(serviceTypeName,
                                 toAccess(modifierNames));
         services.addIsAbstract(serviceTypeName,
-                               modifierNames.stream().anyMatch(TypeInfo.MODIFIER_ABSTRACT::equalsIgnoreCase));
+                               modifierNames.contains(TypeValues.MODIFIER_ABSTRACT));
         services.addServiceTypeHierarchy(serviceTypeName,
                                          toServiceTypeHierarchy(service));
         services.addQualifiers(serviceTypeName,
                                toQualifiers(service));
         gatherContractsIntoServicesToProcess(services, service);
+    }
+
+    protected Set<TypeName> serviceDefiningAnnotations() {
+        return SERVICE_DEFINING_ANNOTATIONS;
+    }
+
+    /**
+     * Process any extensions (e.g., config-driven) requiring extra processing or any modifications to {@link ServicesToProcess}.
+     *
+     * @param services                          the services to process builder
+     * @param service                           the service type info to process right now
+     * @param serviceTypeNamesToCodeGenerate    the entire set of types that are planned to be code-generated
+     * @param allElementsOfInterest             all of the elements of interest that pico "knows" about
+     */
+    @SuppressWarnings("unused")
+    protected void processExtensions(ServicesToProcess services,
+                                     TypeInfo service,
+                                     Set<TypeName> serviceTypeNamesToCodeGenerate,
+                                     Collection<TypedElementInfo> allElementsOfInterest) {
+        // NOP; expected that derived classes will implement this
+    }
+
+    /**
+     * Finds the first jakarta or javax annotation matching the given jakarta annotation class name.
+     *
+     * @param annotTypeName the jakarta annotation class name
+     * @param annotations     all of the annotations to search through
+     * @return the annotation, or empty if not found
+     */
+    protected Optional<? extends Annotation> findFirst(String annotTypeName,
+                                                       Collection<? extends Annotation> annotations) {
+        return GeneralProcessorUtils.findFirst(annotTypeName, annotations);
+    }
+
+    /**
+     * Processes all of the injection points for the provided typed element, accumulating the result in the provided builder
+     * continuation instance.
+     *
+     * @param builder  the builder continuation instance
+     * @param typedElement the typed element to convert
+     * @param service the type info of the backing service
+     */
+    private static void gatherInjectionPoints(Dependencies.BuilderContinuation builder,
+                                              TypedElementInfo typedElement,
+                                              TypeInfo service,
+                                              Set<String> modifierNames) {
+        String elemName = typedElement.elementName();
+        AccessModifier access = toAccess(modifierNames);
+        ElementKind elemKind = ElementKind.valueOf(typedElement.elementTypeKind());
+        boolean isField = (elemKind == ElementKind.FIELD);
+        if (isField) {
+            TypeName typeName = typedElement.typeName();
+            boolean isOptional = typeName.isOptional();
+            typeName = (isOptional) ? typeName.typeArguments().get(0) : typeName;
+            boolean isList = typeName.isList();
+            typeName = (isList) ? typeName.typeArguments().get(0) : typeName;
+            boolean isProviderType = isProviderType(typeName);
+            typeName = (isProviderType) ? typeName.typeArguments().get(0) : typeName;
+            Set<Qualifier> qualifiers = toQualifiers(typedElement, service);
+
+            builder.add(service.typeName(),
+                        elemName,
+                        typeName,
+                        elemKind,
+                        0,
+                        access)
+                    .ipName(elemName)
+                    .ipType(typedElement.typeName())
+                    .qualifiers(qualifiers)
+                    .listWrapped(isList)
+                    .providerWrapped(isProviderType)
+                    .optionalWrapped(isOptional);
+        } else {
+            int elemArgs = typedElement.parameterArguments().size();
+            AtomicInteger elemOffset = new AtomicInteger();
+            typedElement.parameterArguments().forEach(it -> {
+                TypeName typeName = it.typeName();
+                boolean isOptional = typeName.isOptional();
+                typeName = (isOptional) ? typeName.typeArguments().get(0) : typeName;
+                boolean isList = typeName.isList();
+                typeName = (isList) ? typeName.typeArguments().get(0) : typeName;
+                boolean isProviderType = isProviderType(typeName);
+                typeName = (isProviderType) ? typeName.typeArguments().get(0) : typeName;
+
+                int pos = elemOffset.incrementAndGet();
+                Set<Qualifier> qualifiers = toQualifiers(it, service);
+
+                builder.add(service.typeName(),
+                            elemName,
+                            typeName,
+                            elemKind,
+                            elemArgs,
+                            access)
+                        .ipName(it.elementName())
+                        .ipType(it.typeName())
+                        .qualifiers(qualifiers)
+                        .elemOffset(pos)
+                        .listWrapped(isList)
+                        .providerWrapped(isProviderType)
+                        .optionalWrapped(isOptional);
+            });
+        }
+    }
+
+    // will be resolved in https://github.com/helidon-io/helidon/issues/6764
+    private static Set<String> toModifierNames(Set<String> names) {
+        return names.stream().map(String::toLowerCase).collect(Collectors.toSet());
+    }
+
+    private static ServiceLoader<PicoAnnotationProcessorObserver> observerLoader() {
+        try {
+            // note: it is important to use this class' CL since maven will not give us the "right" one.
+            return ServiceLoader.load(
+                    PicoAnnotationProcessorObserver.class, PicoAnnotationProcessorObserver.class.getClassLoader());
+        } catch (ServiceConfigurationError e) {
+            // see issue #6261 - running inside the IDE?
+            // this version will use the thread ctx classloader
+            System.getLogger(PicoAnnotationProcessorObserver.class.getName()).log(System.Logger.Level.WARNING, e.getMessage(), e);
+            return ServiceLoader.load(PicoAnnotationProcessorObserver.class);
+        }
+    }
+
+    private Optional<TypeName> findActivatedInHierarchy(TypeInfo superTypeInfo, Set<TypeName> processed) {
+        if (!processed.add(superTypeInfo.typeName())) {
+            return Optional.empty();
+        }
+        // any type that has
+        // - @Singleton on type (or any other "service defining annotation"), or has @Scope meta annotation
+        // - @Inject on any field or constructor
+        // same code in ExternalModuleCreatorDefault for ClassInfo
+
+        Set<TypeName> serviceDefining = serviceDefiningAnnotations();
+        for (Annotation annotation : superTypeInfo.annotations()) {
+            // bean defining
+            if (serviceDefining.contains(annotation.typeName())) {
+                return Optional.of(superTypeInfo.typeName());
+            }
+        }
+        Set<String> kindsOfInterest = Set.of(TypeValues.KIND_CONSTRUCTOR, TypeValues.KIND_FIELD, TypeValues.KIND_METHOD);
+        if (Stream.concat(superTypeInfo.elementInfo().stream(), superTypeInfo.otherElementInfo().stream())
+                .filter(it -> kindsOfInterest.contains(it.elementTypeKind()))
+                .anyMatch(it -> it.hasAnnotation(TypeNames.JAKARTA_INJECT_TYPE)
+                        || it.hasAnnotation(TypeNames.JAVAX_INJECT_TYPE))) {
+            return Optional.of(superTypeInfo.typeName());
+        }
+        return superTypeInfo.superTypeInfo()
+                .flatMap(it -> findActivatedInHierarchy(it, processed));
+    }
+
+    private Optional<TypeName> findServiceProviderInHierarchy(TypeInfo superTypeInfo, Set<TypeName> processed) {
+        // any type that implements ServiceProvider (or its child) is eligible
+        if (!processed.add(superTypeInfo.typeName())) {
+            return Optional.empty();
+        }
+
+        for (TypeInfo typeInfo : superTypeInfo.interfaceTypeInfo()) {
+            Optional<TypeName> maybe = findServiceProviderInHierarchy(superTypeInfo, typeInfo, processed);
+            if (maybe.isPresent()) {
+                return maybe;
+            }
+        }
+        return superTypeInfo.superTypeInfo()
+                .flatMap(it -> findServiceProviderInHierarchy(it, processed));
+    }
+
+    private Optional<TypeName> findServiceProviderInHierarchy(TypeInfo classInfo,
+                                                              TypeInfo interfaceInfo,
+                                                              Set<TypeName> processed) {
+        if (!processed.add(interfaceInfo.typeName())) {
+            // already processed
+            return Optional.empty();
+        }
+        if (TypeNames.PICO_SERVICE_PROVIDER_TYPE.equals(interfaceInfo.typeName())) {
+            // yes!
+            return Optional.of(classInfo.typeName());
+        }
+
+        // navigate interface hierarchy
+        for (TypeInfo typeInfo : interfaceInfo.interfaceTypeInfo()) {
+            Optional<TypeName> maybe = findServiceProviderInHierarchy(classInfo, typeInfo, processed);
+            if (maybe.isPresent()) {
+                return maybe;
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private void validatePerClass(Collection<TypedElementInfo> elementsOfInterest,
+                                  String msg,
+                                  int maxAllowed,
+                                  Predicate<TypedElementInfo> matcher) {
+        Map<TypeName, List<TypedElementInfo>> allTypeNamesToMatchingElements = new LinkedHashMap<>();
+        elementsOfInterest.stream()
+                .filter(matcher)
+                .forEach(it -> allTypeNamesToMatchingElements
+                        .computeIfAbsent(it.enclosingType().orElseThrow(), (n) -> new ArrayList<>()).add(it));
+        allTypeNamesToMatchingElements.values().stream()
+                .filter(list -> list.size() > maxAllowed)
+                .forEach(it -> utils().error(msg + " for " + it.get(0).enclosingType(), null));
     }
 
     /**
@@ -448,34 +660,6 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             utils().log("unable to produce an interception plan for: " + serviceTypeName);
         }
         services.addInterceptorPlanFor(serviceTypeName, plan);
-    }
-
-    /**
-     * Process any extensions (e.g., config-driven) requiring extra processing or any modifications to {@link ServicesToProcess}.
-     *
-     * @param services                          the services to process builder
-     * @param service                           the service type info to process right now
-     * @param serviceTypeNamesToCodeGenerate    the entire set of types that are planned to be code-generated
-     * @param allElementsOfInterest             all of the elements of interest that pico "knows" about
-     */
-    @SuppressWarnings("unused")
-    protected void processExtensions(ServicesToProcess services,
-                                     TypeInfo service,
-                                     Set<TypeName> serviceTypeNamesToCodeGenerate,
-                                     Collection<TypedElementInfo> allElementsOfInterest) {
-        // NOP; expected that derived classes will implement this
-    }
-
-    /**
-     * Finds the first jakarta or javax annotation matching the given jakarta annotation class name.
-     *
-     * @param annoTypeName  the annotation class name
-     * @param annotations   all of the annotations to search through
-     * @return the annotation, or empty if not found
-     */
-    protected Optional<? extends AnnotationAndValue> findFirst(String annoTypeName,
-                                                               Collection<? extends AnnotationAndValue> annotations) {
-        return GeneralProcessorUtils.findFirst(annoTypeName, annotations);
     }
 
     private ServicesToProcess toServicesToProcess(Set<TypeInfo> typesToCodeGenerate,
@@ -516,10 +700,10 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         services.addExternalRequiredModules(serviceTypeName, externalModuleNames);
 
         utils().debug(serviceTypeName
-                            + ": contracts=" + contracts
-                            + ", providers=" + providerForSet
-                            + ", externalContracts=" + externalContracts
-                            + ", externalModuleNames=" + externalModuleNames);
+                              + ": contracts=" + contracts
+                              + ", providers=" + providerForSet
+                              + ", externalContracts=" + externalContracts
+                              + ", externalModuleNames=" + externalModuleNames);
     }
 
     private void gatherContracts(Set<TypeName> contracts,
@@ -538,7 +722,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
 
         if (isThisTypeEligibleToBeAContract && !genericTypeName.wildcard()) {
             if (fqProviderTypeName != null) {
-                if (!genericTypeName.generic()) {
+                if (!fqTypeName.generic()) {
                     providerForSet.add(genericTypeName);
                     extractModuleAndContract(contracts,
                                              externalContracts,
@@ -552,15 +736,15 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                 externalContracts.add(genericProviderTypeName);
                 filterModuleName(typeInfo.moduleNameOf(genericProviderTypeName)).ifPresent(externalModuleNamesRequired::add);
                 if (genericProviderTypeName.name().equals(TypeNames.PICO_INJECTION_POINT_PROVIDER)) {
-                    TypeName jakartaProviderTypeName = createFromTypeName(TypeNames.JAKARTA_PROVIDER);
+                    TypeName jakartaProviderTypeName = TypeName.create(TypeNames.JAKARTA_PROVIDER);
                     externalContracts.add(jakartaProviderTypeName);
                     filterModuleName(typeInfo.moduleNameOf(jakartaProviderTypeName)).ifPresent(externalModuleNamesRequired::add);
                 }
             } else {
-                boolean isTypeAnInterface = typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE);
+                boolean isTypeAnInterface = typeInfo.typeKind().equals(TypeValues.KIND_INTERFACE);
                 boolean isTypeAContract = autoAddInterfaces
                         || !isTypeAnInterface
-                        || AnnotationAndValueDefault.findFirst(Contract.class, typeInfo.annotations()).isPresent();
+                        || Annotations.findFirst(Contract.class, typeInfo.annotations()).isPresent();
                 if (isTypeAContract) {
                     extractModuleAndContract(contracts,
                                              externalContracts,
@@ -571,18 +755,18 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             }
         }
 
-        AnnotationAndValue externalContractAnno = AnnotationAndValueDefault
+        Annotation externalContractAnno = Annotations
                 .findFirst(ExternalContracts.class, typeInfo.annotations())
                 .orElse(null);
         if (externalContractAnno != null) {
-            String[] externalContractNames = externalContractAnno.value("value").orElse("").split(",[ \t]*");
+            String[] externalContractNames = externalContractAnno.getValue("value").orElse("").split(",[ \t]*");
             for (String externalContractName : externalContractNames) {
-                TypeName externalContractTypeName = createFromTypeName(externalContractName);
+                TypeName externalContractTypeName = TypeName.create(externalContractName);
                 externalContracts.add(externalContractTypeName);
                 filterModuleName(typeInfo.moduleNameOf(externalContractTypeName)).ifPresent(externalModuleNamesRequired::add);
             }
 
-            String[] moduleNames = externalContractAnno.value("moduleNames").orElse("").split(",[ \t]*");
+            String[] moduleNames = externalContractAnno.getValue("moduleNames").orElse("").split(",[ \t]*");
             for (String externalModuleName : moduleNames) {
                 if (!externalModuleName.isBlank()) {
                     externalModuleNamesRequired.add(externalModuleName);
@@ -629,7 +813,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
 
     private Optional<DependenciesInfo> toInjectionDependencies(TypeInfo service,
                                                                Collection<TypedElementInfo> allElementsOfInterest) {
-        Dependencies.BuilderContinuation builder = Dependencies.builder(service.typeName().name());
+        Dependencies.BuilderContinuation builder = Dependencies.builder(service.typeName());
         gatherInjectionPoints(builder, service, allElementsOfInterest);
         DependenciesInfo deps = builder.build();
         return deps.serviceInfoDependencies().isEmpty() ? Optional.empty() : Optional.of(deps);
@@ -640,103 +824,13 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                                        Collection<TypedElementInfo> allElementsOfInterest) {
         List<TypedElementInfo> injectableElementsForThisService = allElementsOfInterest.stream()
                 .filter(it -> GeneralProcessorUtils.findFirst(Inject.class, it.annotations()).isPresent())
-                .filter(it -> service.typeName().equals(it.enclosingTypeName().orElseThrow()))
+                .filter(it -> service.typeName().equals(it.enclosingType().orElseThrow()))
                 .toList();
         injectableElementsForThisService
-                .forEach(elem -> gatherInjectionPoints(builder, elem, service, elem.modifierNames()));
+                .forEach(elem -> gatherInjectionPoints(builder, elem, service, toModifierNames(elem.modifiers())));
 
-//        // We expect activators at every level for abstract bases - we will therefore NOT recursive up the hierarchy
-//        service.superTypeInfo().ifPresent(it -> gatherInjectionPoints(builder, it, allElementsOfInterest, false));
-    }
-
-    private void notifyObservers() {
-        List<PicoAnnotationProcessorObserver> observers = HelidonServiceLoader.create(observerLoader()).asList();
-        if (!observers.isEmpty()) {
-            ProcessingEvent event = ProcessingEventDefault.builder()
-                    .processingEnvironment(processingEnv)
-                    .elementsOfInterest(allElementsOfInterestInThisModule)
-                    .build();
-            observers.forEach(it -> it.onProcessingEvent(event));
-        }
-    }
-
-    private static ServiceLoader<PicoAnnotationProcessorObserver> observerLoader() {
-        try {
-            // note: it is important to use this class' CL since maven will not give us the "right" one.
-            return ServiceLoader.load(
-                    PicoAnnotationProcessorObserver.class, PicoAnnotationProcessorObserver.class.getClassLoader());
-        } catch (ServiceConfigurationError e) {
-            // see issue #6261 - running inside the IDE?
-            // this version will use the thread ctx classloader
-            System.getLogger(PicoAnnotationProcessorObserver.class.getName()).log(System.Logger.Level.WARNING, e.getMessage(), e);
-            return ServiceLoader.load(PicoAnnotationProcessorObserver.class);
-        }
-    }
-
-    /**
-     * Processes all of the injection points for the provided typed element, accumulating the result in the provided builder
-     * continuation instance.
-     *
-     * @param builder  the builder continuation instance
-     * @param typedElement the typed element to convert
-     * @param service the type info of the backing service
-     */
-    private static void gatherInjectionPoints(Dependencies.BuilderContinuation builder,
-                                              TypedElementInfo typedElement,
-                                              TypeInfo service,
-                                              Set<String> modifierNames) {
-        String elemName = typedElement.elementName();
-        ElementInfo.Access access = toAccess(modifierNames);
-        ElementInfo.ElementKind elemKind = ElementInfo.ElementKind.valueOf(typedElement.elementTypeKind());
-        boolean isField = (elemKind == ElementInfo.ElementKind.FIELD);
-        if (isField) {
-            TypeName typeName = typedElement.typeName();
-            boolean isOptional = typeName.isOptional();
-            typeName = (isOptional) ? typeName.typeArguments().get(0) : typeName;
-            boolean isList = typeName.isList();
-            typeName = (isList) ? typeName.typeArguments().get(0) : typeName;
-            boolean isProviderType = isProviderType(typeName);
-            typeName = (isProviderType) ? typeName.typeArguments().get(0) : typeName;
-            Set<QualifierAndValue> qualifiers = toQualifiers(typedElement, service);
-
-            builder.add(service.typeName().name(),
-                        elemName,
-                        typeName.name(),
-                        elemKind,
-                        0,
-                        access)
-                    .qualifiers(qualifiers)
-                    .listWrapped(isList)
-                    .providerWrapped(isProviderType)
-                    .optionalWrapped(isOptional);
-        } else {
-            int elemArgs = typedElement.parameterArguments().size();
-            AtomicInteger elemOffset = new AtomicInteger();
-            typedElement.parameterArguments().forEach(it -> {
-                TypeName typeName = it.typeName();
-                boolean isOptional = typeName.isOptional();
-                typeName = (isOptional) ? typeName.typeArguments().get(0) : typeName;
-                boolean isList = typeName.isList();
-                typeName = (isList) ? typeName.typeArguments().get(0) : typeName;
-                boolean isProviderType = isProviderType(typeName);
-                typeName = (isProviderType) ? typeName.typeArguments().get(0) : typeName;
-
-                int pos = elemOffset.incrementAndGet();
-                Set<QualifierAndValue> qualifiers = toQualifiers(it, service);
-
-                builder.add(service.typeName().name(),
-                            elemName,
-                            typeName.name(),
-                            elemKind,
-                            elemArgs,
-                            access)
-                        .qualifiers(qualifiers)
-                        .elemOffset(pos)
-                        .listWrapped(isList)
-                        .providerWrapped(isProviderType)
-                        .optionalWrapped(isOptional);
-            });
-        }
+        //        // We expect activators at every level for abstract bases - we will therefore NOT recursive up the hierarchy
+        //        service.superTypeInfo().ifPresent(it -> gatherInjectionPoints(builder, it, allElementsOfInterest, false));
     }
 
     private Set<TypedElementInfo> gatherElementsOfInterestInThisModule() {
@@ -748,7 +842,8 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             TypeElement annoTypeElement = elementUtils.getTypeElement(annoType);
             if (annoTypeElement != null) {
                 Set<? extends Element> typesToProcess = utils().roundEnv().getElementsAnnotatedWith(annoTypeElement);
-                typesToProcess.forEach(it -> result.add(createTypedElementInfoFromElement(it, elementUtils).orElseThrow()));
+                typesToProcess.forEach(it -> result.add(createTypedElementInfoFromElement(processingEnv, it, elementUtils)
+                                                                .orElseThrow()));
             }
         }
 
@@ -765,12 +860,12 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             if (annoTypeElement != null) {
                 Set<? extends Element> typesToProcess = utils().roundEnv().getElementsAnnotatedWith(annoTypeElement);
                 typesToProcess.forEach(it -> {
-                    TypeName typeName = createTypeNameFromElement(it).orElseThrow().genericTypeName();
+                    TypeName typeName = TypeFactory.createTypeName(it).orElseThrow().genericTypeName();
                     if (!result.containsKey(typeName)) {
                         // first time processing this type name
                         TypeElement typeElement = (TypeElement) it;
                         Optional<TypeInfo> typeInfo =
-                                utils().toTypeInfo(typeElement, typeElement.asType(), elementsOfInterest::contains);
+                                utils().toTypeInfo(typeElement, elementsOfInterest::contains);
                         typeInfo.ifPresent(it2 -> result.put(typeName, it2));
                     }
                 });
@@ -779,7 +874,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
 
         // this section gathers based upon the element-level annotations in order to discover what to process
         Set<TypeName> enclosingElementsOfInterest = elementsOfInterest.stream()
-                .map(TypedElementInfo::enclosingTypeName)
+                .map(TypedElementInfo::enclosingType)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toSet());
@@ -791,9 +886,20 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             if (!result.containsKey(typeName)) {
                 TypeElement element = requireNonNull(elementUtils.getTypeElement(it.name()), it.name());
                 result.put(creator.toActivatorImplTypeName(typeName),
-                           utils().toTypeInfo(element, element.asType(), elementsOfInterest::contains).orElseThrow());
+                           utils().toTypeInfo(element, elementsOfInterest::contains).orElseThrow());
             }
         });
+    }
+
+    private void notifyObservers() {
+        List<PicoAnnotationProcessorObserver> observers = HelidonServiceLoader.create(observerLoader()).asList();
+        if (!observers.isEmpty()) {
+            ProcessingEvent event = ProcessingEventDefault.builder()
+                    .processingEnvironment(processingEnv)
+                    .elementsOfInterest(allElementsOfInterestInThisModule)
+                    .build();
+            observers.forEach(it -> it.onProcessingEvent(event));
+        }
     }
 
     private Path trackerStatePath() {

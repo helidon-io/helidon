@@ -16,7 +16,6 @@
 
 package io.helidon.pico.processor;
 
-import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,24 +30,21 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Weight;
-import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.AnnotationAndValueDefault;
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.pico.api.QualifierAndValue;
-import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.api.RunLevel;
+import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
-import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.TypeNames;
 import io.helidon.pico.tools.TypeTools;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import jakarta.inject.Qualifier;
-import jakarta.inject.Singleton;
 
 /**
  * Carries static methods that are agnostic to the active processing environment.
@@ -143,8 +139,8 @@ public final class GeneralProcessorUtils {
      * @return the declared run level if available
      */
     static Optional<Integer> toRunLevel(TypeInfo service) {
-        AnnotationAndValue runLevelAnno =
-                AnnotationAndValueDefault.findFirst(RunLevel.class, service.annotations()).orElse(null);
+        Annotation runLevelAnno =
+                Annotations.findFirst(RunLevel.class, service.annotations()).orElse(null);
         if (runLevelAnno != null) {
             return Optional.of(Integer.valueOf(runLevelAnno.value().orElseThrow()));
         }
@@ -164,8 +160,8 @@ public final class GeneralProcessorUtils {
      * @return the declared weight if available
      */
     static Optional<Double> toWeight(TypeInfo service) {
-        AnnotationAndValue weightAnno =
-                AnnotationAndValueDefault.findFirst(Weight.class, service.annotations()).orElse(null);
+        Annotation weightAnno =
+                Annotations.findFirst(Weight.class, service.annotations()).orElse(null);
         if (weightAnno != null) {
             return Optional.of(Double.valueOf(weightAnno.value().orElseThrow()));
         }
@@ -185,9 +181,9 @@ public final class GeneralProcessorUtils {
      * @return the post construct method if available
      */
     static Optional<String> toPostConstructMethod(TypeInfo service) {
-        List<String> postConstructs = service.interestingElementInfo().stream()
+        List<String> postConstructs = service.elementInfo().stream()
                 .filter(it -> {
-                    AnnotationAndValue anno = findFirst(PostConstruct.class, it.annotations()).orElse(null);
+                    Annotation anno = findFirst(PostConstruct.class, it.annotations()).orElse(null);
                     return (anno != null);
                 })
                 .map(TypedElementInfo::elementName)
@@ -215,9 +211,9 @@ public final class GeneralProcessorUtils {
      * @return the pre destroy method if available
      */
     static Optional<String> toPreDestroyMethod(TypeInfo service) {
-        List<String> preDestroys = service.interestingElementInfo().stream()
+        List<String> preDestroys = service.elementInfo().stream()
                 .filter(it -> {
-                    AnnotationAndValue anno = findFirst(PreDestroy.class, it.annotations()).orElse(null);
+                    Annotation anno = findFirst(PreDestroy.class, it.annotations()).orElse(null);
                     return (anno != null);
                 })
                 .map(TypedElementInfo::elementName)
@@ -244,23 +240,23 @@ public final class GeneralProcessorUtils {
      * @param service the service
      * @return the set of declared scope names
      */
-    static Set<String> toScopeNames(TypeInfo service) {
-        Set<String> scopeAnnotations = new LinkedHashSet<>();
+    static Set<TypeName> toScopeNames(TypeInfo service) {
+        Set<TypeName> scopeAnnotations = new LinkedHashSet<>();
 
         service.referencedTypeNamesToAnnotations()
                 .forEach((typeName, listOfAnnotations) -> {
                     if (listOfAnnotations.stream()
-                            .map(it -> it.typeName().name())
-                            .anyMatch(it -> it.equals(TypeNames.JAKARTA_SCOPE))) {
-                        scopeAnnotations.add(typeName.name());
+                            .map(Annotation::typeName)
+                            .anyMatch(TypeNames.JAKARTA_SCOPE_TYPE::equals)) {
+                        scopeAnnotations.add(typeName);
                     }
                 });
 
         if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
             boolean hasApplicationScope = findFirst(TypeNames.JAKARTA_APPLICATION_SCOPED, service.annotations()).isPresent();
             if (hasApplicationScope) {
-                scopeAnnotations.add(Singleton.class.getName());
-                scopeAnnotations.add(TypeNames.JAKARTA_APPLICATION_SCOPED);
+                scopeAnnotations.add(TypeNames.JAKARTA_SINGLETON_TYPE);
+                scopeAnnotations.add(TypeNames.JAKARTA_APPLICATION_SCOPED_TYPE);
             }
         }
 
@@ -286,14 +282,14 @@ public final class GeneralProcessorUtils {
      * @param service the service
      * @return the qualifiers of the service
      */
-    static Set<QualifierAndValue> toQualifiers(TypeInfo service) {
-        Set<QualifierAndValue> result = new LinkedHashSet<>();
+    static Set<Qualifier> toQualifiers(TypeInfo service) {
+        Set<Qualifier> result = new LinkedHashSet<>();
 
-        for (AnnotationAndValue anno : service.annotations()) {
-            List<AnnotationAndValue> metaAnnotations = service.referencedTypeNamesToAnnotations().get(anno.typeName());
-            Optional<? extends AnnotationAndValue> qual = findFirst(Qualifier.class, metaAnnotations);
+        for (Annotation anno : service.annotations()) {
+            List<Annotation> metaAnnotations = service.referencedTypeNamesToAnnotations().get(anno.typeName());
+            Optional<? extends Annotation> qual = findFirst(jakarta.inject.Qualifier.class, metaAnnotations);
             if (qual.isPresent()) {
-                result.add(QualifierAndValueDefault.convert(anno));
+                result.add(Qualifier.create(anno));
             }
         }
 
@@ -311,16 +307,16 @@ public final class GeneralProcessorUtils {
      * @param service the service for which the typed element belongs
      * @return the qualifiers associated with the provided element
      */
-    static Set<QualifierAndValue> toQualifiers(TypedElementInfo element,
+    static Set<Qualifier> toQualifiers(TypedElementInfo element,
                                                TypeInfo service) {
-        Set<QualifierAndValue> result = new LinkedHashSet<>();
+        Set<Qualifier> result = new LinkedHashSet<>();
 
-        for (AnnotationAndValue anno : element.annotations()) {
-            List<AnnotationAndValue> metaAnnotations = service.referencedTypeNamesToAnnotations().get(anno.typeName());
-            Optional<? extends AnnotationAndValue> qual = (metaAnnotations == null)
-                    ? Optional.empty() : findFirst(Qualifier.class, metaAnnotations);
+        for (Annotation anno : element.annotations()) {
+            List<Annotation> metaAnnotations = service.referencedTypeNamesToAnnotations().get(anno.typeName());
+            Optional<? extends Annotation> qual = (metaAnnotations == null)
+                    ? Optional.empty() : findFirst(jakarta.inject.Qualifier.class, metaAnnotations);
             if (qual.isPresent()) {
-                result.add(QualifierAndValueDefault.convert(anno));
+                result.add(Qualifier.create(anno));
             }
         }
 
@@ -335,11 +331,12 @@ public final class GeneralProcessorUtils {
      * @param typeName the type name to check
      * @return true if the provided type is a provider type.
      */
-    public static boolean isProviderType(TypeName typeName) {
+    static boolean isProviderType(TypeName typeName) {
         String name = typeName.name();
         return (name.equals(TypeNames.JAKARTA_PROVIDER)
                         || name.equals(TypeNames.JAVAX_PROVIDER)
-                        || name.equals(TypeNames.PICO_INJECTION_POINT_PROVIDER));
+                        || name.equals(TypeNames.PICO_INJECTION_POINT_PROVIDER)
+                        || TypeNames.PICO_SERVICE_PROVIDER.equals(name));
     }
 
     /**
@@ -359,37 +356,30 @@ public final class GeneralProcessorUtils {
      * @param annotations the set of annotations to look in
      * @return the optional annotation if there is a match
      */
-    public static Optional<? extends AnnotationAndValue> findFirst(Class<? extends Annotation> annoType,
-                                                                   Collection<? extends AnnotationAndValue> annotations) {
+    static Optional<? extends Annotation> findFirst(Class<? extends java.lang.annotation.Annotation> annoType,
+                                                            Collection<? extends Annotation> annotations) {
         return findFirst(annoType.getName(), annotations);
     }
 
-    static Optional<? extends AnnotationAndValue> findFirst(String annoTypeName,
-                                                            Collection<? extends AnnotationAndValue> annotations) {
+    static Optional<? extends Annotation> findFirst(String annoTypeName,
+                                                            Collection<? extends Annotation> annotations) {
         if (annotations == null) {
             return Optional.empty();
         }
 
-        Optional<? extends AnnotationAndValue> anno = AnnotationAndValueDefault.findFirst(annoTypeName, annotations);
+        Optional<? extends Annotation> anno = Annotations.findFirst(annoTypeName, annotations);
         if (anno.isPresent()) {
             return anno;
         }
 
-        boolean startsWithJakarta = annoTypeName.startsWith(TypeNames.PREFIX_JAKARTA);
-        boolean startsWithJavax = !startsWithJakarta && annoTypeName.startsWith(TypeNames.PREFIX_JAVAX);
-
-        if (startsWithJakarta || startsWithJavax) {
-            return AnnotationAndValueDefault.findFirst(TypeTools.oppositeOf(annoTypeName), annotations);
-        }
-
-        return Optional.empty();
+        return Annotations.findFirst(TypeTools.oppositeOf(annoTypeName), annotations);
     }
 
     static ServiceInfoBasics toBasicServiceInfo(TypeInfo service) {
-        return ServiceInfoDefault.builder()
-                .serviceTypeName(service.typeName().name())
-                .declaredWeight(toWeight(service))
-                .declaredRunLevel(toRunLevel(service))
+        return ServiceInfo.builder()
+                .serviceTypeName(service.typeName())
+                .update(it -> toWeight(service).ifPresent(it::declaredWeight))
+                .update(it -> toRunLevel(service).ifPresent(it::declaredRunLevel))
                 .scopeTypeNames(toScopeNames(service))
                 .build();
     }
