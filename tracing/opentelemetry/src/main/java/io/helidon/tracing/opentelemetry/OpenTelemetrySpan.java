@@ -104,7 +104,8 @@ class OpenTelemetrySpan implements Span {
         Baggage.builder()
                 .put(key, value)
                 .build()
-                .storeInContext(getContext())
+                .storeInContext(getContext()
+                        .with(delegate))
                 .makeCurrent();
         return this;
     }
