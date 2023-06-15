@@ -38,7 +38,7 @@ public enum ParserMode {
 
     // Relaxed media types mapping
     private static final Map<String, MediaType> RELAXED_TYPES = Map.of(
-            "text",  new MediaTypeImpl("text", "plain", "text/plain") // text -> text/plain
+            "text",  MediaTypes.TEXT_PLAIN // text -> text/plain
     );
 
     /**
