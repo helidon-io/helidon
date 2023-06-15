@@ -34,7 +34,6 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.media.type.ParserMode;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
@@ -424,8 +423,7 @@ class ClientRequestImplTest {
             }
 
             // Read Headers
-            WritableHeaders<?> reqHeaders = Http1HeadersParser.readHeaders(
-                    serverReader, 16384, ParserMode.STRICT, true);
+            WritableHeaders<?> reqHeaders = Http1HeadersParser.readHeaders(serverReader, 16384, true);
 
             int entitySize = 0;
             if (reqHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {

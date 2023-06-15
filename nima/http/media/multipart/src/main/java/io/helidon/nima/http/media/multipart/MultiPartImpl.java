@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.media.type.ParserMode;
 import io.helidon.nima.http.media.MediaContext;
 
 class MultiPartImpl extends MultiPart {
@@ -39,9 +38,8 @@ class MultiPartImpl extends MultiPart {
     private ReadablePartAbstract inProgress;
     private boolean finished;
     private int index;
-    private final ParserMode parserMode;
 
-    MultiPartImpl(MediaContext context, String boundary, InputStream stream, ParserMode parserMode) {
+    MultiPartImpl(MediaContext context, String boundary, InputStream stream) {
         this.context = context;
         this.boundary = "--" + boundary;
         this.endBoundary = "--" + boundary + "--";
@@ -58,7 +56,6 @@ class MultiPartImpl extends MultiPart {
                 throw new UncheckedIOException(e);
             }
         }, true);
-        this.parserMode = parserMode;
     }
 
     @Override
@@ -85,10 +82,7 @@ class MultiPartImpl extends MultiPart {
         String probablyBoundary = dataReader.readAsciiString(newLine);
         if (probablyBoundary.equals(boundary)) {
             dataReader.skip(2); // skip the new line after boundary
-            WritableHeaders<?> headers = Http1HeadersParser.readHeaders(dataReader,
-                                                                        1024,
-                                                                        parserMode,
-                                                                        true);
+            WritableHeaders<?> headers = Http1HeadersParser.readHeaders(dataReader, 1024, true);
             if (headers.contains(Header.CONTENT_LENGTH)) {
                 next = new ReadablePartLength(context,
                                               headers,

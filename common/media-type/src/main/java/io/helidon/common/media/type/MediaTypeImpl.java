@@ -26,18 +26,13 @@ record MediaTypeImpl(String type, String subtype, String text) implements MediaT
         int slashIndex = fullType.indexOf('/');
         if (slashIndex < 1) {
             if (parserMode == ParserMode.RELAXED) {
-                Optional<String> maybeRelaxedType = ParserMode.findRelaxedMediaType(fullType);
+                Optional<MediaType> maybeRelaxedType = ParserMode.findRelaxedMediaType(fullType);
                 if (maybeRelaxedType.isPresent()) {
-                    String relaxedType = maybeRelaxedType.get();
-                    slashIndex = relaxedType.indexOf('/');
-                    LOGGER.log(System.Logger.Level.WARNING,
+                    LOGGER.log(System.Logger.Level.DEBUG,
                                () -> String.format("Invalid media type value \"%s\" replaced with \"%s\"",
                                                    fullType,
-                                                   relaxedType));
-
-                    return new MediaTypeImpl(relaxedType.substring(0, slashIndex),
-                                             relaxedType.substring(slashIndex + 1),
-                                             relaxedType);
+                                                   maybeRelaxedType.get().text()));
+                    return maybeRelaxedType.get();
                 }
             }
             throw new IllegalArgumentException("Cannot parse media type: " + fullType);
