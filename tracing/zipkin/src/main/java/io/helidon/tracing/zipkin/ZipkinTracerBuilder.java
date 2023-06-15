@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.tracing.zipkin;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,11 @@ import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
 
 import brave.Tracing;
+import brave.baggage.BaggageField;
+import brave.baggage.BaggagePropagation;
+import brave.baggage.BaggagePropagationConfig;
 import brave.opentracing.BraveTracer;
+import brave.propagation.B3Propagation;
 import io.opentracing.Tracer;
 import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.util.GlobalTracer;
@@ -128,6 +133,8 @@ public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTrace
     private String userInfo;
     private boolean enabled = DEFAULT_ENABLED;
     private boolean global = true;
+
+    private List<String> baggageKeys = new ArrayList<>(0);
 
     /**
      * Default constructor, does not modify state.
@@ -264,6 +271,8 @@ public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTrace
         config.get("port").asInt().ifPresent(this::collectorPort);
         config.get("path").asString().ifPresent(this::collectorPath);
         config.get("api-version").asString().ifPresent(this::configApiVersion);
+        config.get("baggage").asList(String.class).ifPresent(this::baggage);
+
 
         config.get("tags").detach()
                 .asMap()
@@ -311,11 +320,20 @@ public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTrace
             Reporter<Span> reporter = AsyncReporter.builder(buildSender)
                     .build(version.encoder());
 
+            //Take care of the baggage propagation
+            BaggagePropagation.FactoryBuilder baggageFactoryBuilder = BaggagePropagation.newFactoryBuilder(B3Propagation.FACTORY);
+            baggageKeys.forEach(item -> baggageFactoryBuilder.add(
+                    BaggagePropagationConfig
+                            .SingleBaggageField
+                            .remote(BaggageField.create(item))));
+
+
             // Now, create a Brave tracing component with the service name you want to see in Zipkin.
             //   (the dependency is io.zipkin.brave:brave)
             Tracing braveTracing = Tracing.newBuilder()
                     .localServiceName(serviceName)
                     .spanReporter(reporter)
+                    .propagationFactory(baggageFactoryBuilder.build())
                     .build();
 
             if (null == sender) {
@@ -348,6 +366,19 @@ public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTrace
     @ConfiguredOption(value = "V2", key = "api-version")
     public ZipkinTracerBuilder version(Version version) {
         this.version = version;
+        return this;
+    }
+
+
+    /**
+     * Baggage keys to be propagated.
+     *
+     * @param baggageKeys that will be propagated.
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "baggage")
+    public ZipkinTracerBuilder baggage(List<String> baggageKeys) {
+        this.baggageKeys = baggageKeys;
         return this;
     }
 
