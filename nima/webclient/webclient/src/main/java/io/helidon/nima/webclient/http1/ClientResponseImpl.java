@@ -68,13 +68,13 @@ class ClientResponseImpl implements Http1ClientResponse {
     private final CompletableFuture<Void> whenComplete;
     private final boolean hasTrailers;
     private final List<String> trailerNames;
+    // Media type parsing mode configured on client.
+    private final ParserMode parserMode;
 
     private ClientConnection connection;
     private long entityLength;
     private boolean entityFullyRead;
     private WritableHeaders<?> trailers;
-    // Media type parsing mode configured on client.
-    private final ParserMode parserMode;
 
     ClientResponseImpl(Http.Status responseStatus,
                        ClientRequestHeaders requestHeaders,

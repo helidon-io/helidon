@@ -51,7 +51,7 @@ public enum ParserMode {
     static Optional<MediaType> findRelaxedMediaType(String value) {
         Objects.requireNonNull(value);
         MediaType relaxedValue = RELAXED_TYPES.get(value);
-        return (relaxedValue != null) ? Optional.of(relaxedValue) : Optional.empty();
+        return relaxedValue != null ? Optional.of(relaxedValue) : Optional.empty();
     }
 
 }
