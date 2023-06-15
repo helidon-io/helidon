@@ -682,6 +682,16 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.common.processor</groupId>
+                <artifactId>helidon-common-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.processor</groupId>
+                <artifactId>helidon-common-processor-helidon-copyright</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.common.testing</groupId>
                 <artifactId>helidon-common-testing-junit5</artifactId>
                 <version>${helidon.version}</version>
@@ -1396,6 +1406,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.nima.fault-tolerance</groupId>
+                <artifactId>helidon-nima-fault-tolerance-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.nima.openapi</groupId>
                 <artifactId>helidon-nima-openapi</artifactId>
                 <version>${helidon.version}</version>
@@ -1404,7 +1419,7 @@
             <!-- Builder -->
             <dependency>
                 <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder</artifactId>
+                <artifactId>helidon-builder-api</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
