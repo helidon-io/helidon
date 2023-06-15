@@ -15,23 +15,10 @@
  */
 package io.helidon.webserver.websocket;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.UriComponent;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -39,6 +26,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.util.ReferenceCountUtil;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.DeploymentException;
 import jakarta.websocket.Extension;
@@ -51,6 +39,18 @@ import org.glassfish.tyrus.spi.CompletionHandler;
 import org.glassfish.tyrus.spi.Connection;
 import org.glassfish.tyrus.spi.WebSocketEngine;
 import org.glassfish.tyrus.spi.Writer;
+
+import java.io.IOException;
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static jakarta.websocket.CloseReason.CloseCodes.UNEXPECTED_CONDITION;
 
@@ -69,12 +69,12 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     private final TyrusServerContainer tyrusServerContainer;
     private volatile Connection connection;
     private final WebSocketEngine.UpgradeInfo upgradeInfo;
-    private final BufferedEmittingPublisher<ByteBuffer> emitter;
+    private final BufferedEmittingPublisher<ByteBuf> emitter;
 
     WebSocketHandler(ChannelHandlerContext ctx, String path,
-                            FullHttpRequest upgradeRequest,
-                            HttpHeaders upgradeResponseHeaders,
-                            WebSocketRouting webSocketRouting) {
+                     FullHttpRequest upgradeRequest,
+                     HttpHeaders upgradeResponseHeaders,
+                     WebSocketRouting webSocketRouting) {
         int k = path.indexOf('?');
         if (k > 0) {
             this.path = path.substring(0, k);
@@ -154,23 +154,28 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ByteBuf byteBuf) {
-            emitter.emit(byteBuf.copy().nioBuffer());
+            emitter.emit(byteBuf.copy());
         }
     }
 
-    private void sendBytesToTyrus(ChannelHandlerContext ctx, ByteBuffer nioBuffer) {
-        // Pass all data to Tyrus spi
-        int retries = MAX_RETRIES;
-        while (nioBuffer.remaining() > 0 && retries-- > 0) {
-            connection.getReadHandler().handle(nioBuffer);
-        }
+    private void sendBytesToTyrus(ChannelHandlerContext ctx, ByteBuf byteBuf) {
+        try {
+            ByteBuffer nioBuffer = byteBuf.nioBuffer();
+            // Pass all data to Tyrus spi
+            int retries = MAX_RETRIES;
+            while (nioBuffer.remaining() > 0 && retries-- > 0) {
+                connection.getReadHandler().handle(nioBuffer);
+            }
 
-        // If we can't push all data to Tyrus, cancel and report problem
-        if (retries == 0) {
-            ctx.close();
-            connection.close(
-                    new CloseReason(UNEXPECTED_CONDITION, "Tyrus did not consume all data after " + MAX_RETRIES + " retries")
-            );
+            // If we can't push all data to Tyrus, cancel and report problem
+            if (retries == 0) {
+                ctx.close();
+                connection.close(
+                        new CloseReason(UNEXPECTED_CONDITION, "Tyrus did not consume all data after " + MAX_RETRIES + " retries")
+                );
+            }
+        } finally {
+            ReferenceCountUtil.release(byteBuf);
         }
     }
 
@@ -236,7 +241,7 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
     }
 
-    private void logError(Throwable throwable){
+    private void logError(Throwable throwable) {
         LOGGER.log(Level.SEVERE, "WS handler ERROR ", throwable);
     }
 
