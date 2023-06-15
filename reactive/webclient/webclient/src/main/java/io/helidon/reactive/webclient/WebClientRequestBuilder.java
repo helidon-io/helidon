@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,7 +136,7 @@ public interface WebClientRequestBuilder {
     WebClientRequestBuilder proxy(Proxy proxy);
 
     /**
-     * Configure headers. Copy all headers from supplied {@link Headers} instance.
+     * Configure headers. Copy all headers from supplied {@link io.helidon.common.http.Headers} instance.
      *
      * @param headers to copy
      * @return updated builder instance

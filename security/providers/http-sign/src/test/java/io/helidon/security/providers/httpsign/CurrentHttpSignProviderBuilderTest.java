@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.security.SubjectType;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
@@ -73,13 +73,12 @@ class CurrentHttpSignProviderBuilderTest extends CurrentHttpSignProviderTest {
                         .builder("rsa-key-12345")
                         .signedHeaders(inboundRequiredHeaders("host", SignedHeadersConfig
                                 .REQUEST_TARGET))
-                        .privateKeyConfig(KeyConfig.keystoreBuilder()
-                                                  .keystore(Resource.create(Paths.get(
-                                                          "src/test/resources/keystore"
-                                                                  + ".p12")))
-                                                  .keystorePassphrase("password"
-                                                                              .toCharArray())
-                                                  .keyAlias("myPrivateKey")
+                        .privateKeyConfig(Keys.builder()
+                                                  .keystore(keystore ->
+                                                                    keystore.keystore(Resource.create(Paths.get(
+                                                                                    "src/test/resources/keystore.p12")))
+                                                                            .passphrase("password")
+                                                                            .keyAlias("myPrivateKey"))
                                                   .build())
                         .build())
                 .build();
@@ -89,10 +88,12 @@ class CurrentHttpSignProviderBuilderTest extends CurrentHttpSignProviderTest {
         return InboundClientDefinition.builder("rsa-key-12345")
                 .principalName("aUser")
                 .subjectType(SubjectType.USER)
-                .publicKeyConfig(KeyConfig.keystoreBuilder()
-                                         .keystore(Resource.create(Paths.get("src/test/resources/keystore.p12")))
-                                         .keystorePassphrase("password".toCharArray())
-                                         .certAlias("service_cert")
+                .publicKeyConfig(Keys.builder()
+                                         .keystore(keystore ->
+                                                           keystore.keystore(Resource.create(Paths.get(
+                                                                           "src/test/resources/keystore.p12")))
+                                                                   .passphrase("password")
+                                                                   .certAlias("service_cert"))
                                          .build())
                 .build();
     }

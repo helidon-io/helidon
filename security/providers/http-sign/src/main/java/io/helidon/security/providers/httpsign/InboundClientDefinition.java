@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -37,7 +37,7 @@ public class InboundClientDefinition {
     private final String principalName;
     private final SubjectType subjectType;
     private final String algorithm;
-    private final KeyConfig keyConfig;
+    private final Keys keyConfig;
     private final byte[] hmacSharedSecret;
 
     private InboundClientDefinition(Builder builder) {
@@ -132,7 +132,7 @@ public class InboundClientDefinition {
      *
      * @return Public key configuration to validate signature or empty optional if none configured
      */
-    public Optional<KeyConfig> keyConfig() {
+    public Optional<Keys> keyConfig() {
         return Optional.ofNullable(keyConfig);
     }
 
@@ -153,7 +153,7 @@ public class InboundClientDefinition {
     public static final class Builder implements io.helidon.common.Builder<Builder, InboundClientDefinition> {
         private String keyId;
         private String algorithm;
-        private KeyConfig keyConfig;
+        private Keys keyConfig;
         private byte[] hmacSharedSecret;
         private String principalName;
         private SubjectType subjectType = SubjectType.SERVICE;
@@ -224,7 +224,7 @@ public class InboundClientDefinition {
          * @return updated builder instance
          */
         @ConfiguredOption(key = "public-key")
-        public Builder publicKeyConfig(KeyConfig keyConfig) {
+        public Builder publicKeyConfig(Keys keyConfig) {
             if (null == algorithm) {
                 algorithm = HttpSignProvider.ALGORITHM_RSA;
             }
@@ -277,7 +277,7 @@ public class InboundClientDefinition {
             keyId(config.get("key-id").asString().get());
             config.get("principal-name").asString().ifPresent(this::principalName);
             config.get("principal-type").asString().as(SubjectType::valueOf).ifPresent(this::subjectType);
-            config.get("public-key").as(KeyConfig::create).ifPresent(this::publicKeyConfig);
+            config.get("public-key").as(Keys::create).ifPresent(this::publicKeyConfig);
             config.get("hmac.secret").asString().ifPresent(this::hmacSecret);
             config.get("algorithm").asString().ifPresent(this::algorithm);
 

@@ -54,7 +54,7 @@ import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -750,8 +750,8 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
         }
 
         private JwkKeys loadPlainPrivateKey(String stringContent) {
-            PrivateKey privateKey = KeyConfig.pemBuilder()
-                    .key(Resource.create("private key from PKCS8", stringContent))
+            PrivateKey privateKey = Keys.builder()
+                    .pem(pem -> pem.key(Resource.create("private key from PKCS8", stringContent)))
                     .build()
                     .privateKey()
                     .orElseThrow(() -> new DeploymentException(
@@ -891,8 +891,8 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
         }
 
         private JwkKeys loadPlainPublicKey(String stringContent) {
-            PublicKey publicKey = KeyConfig.pemBuilder()
-                    .publicKey(Resource.create("public key from PKCS8", stringContent))
+            PublicKey publicKey = Keys.builder()
+                    .pem(pem -> pem.publicKey(Resource.create("public key from PKCS8", stringContent)))
                     .build()
                     .publicKey()
                     .orElseThrow(() -> new DeploymentException(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import io.helidon.common.Builder;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 
 /**
@@ -44,8 +44,8 @@ public final class SSLContextBuilder implements Builder<SSLContextBuilder, SSLCo
     private static final String PROTOCOL = "TLS";
     private static final Random RANDOM = new Random();
 
-    private KeyConfig privateKeyConfig;
-    private KeyConfig trustConfig;
+    private Keys privateKeyConfig;
+    private Keys trustConfig;
     private long sessionCacheSize;
     private long sessionTimeout;
 
@@ -58,7 +58,7 @@ public final class SSLContextBuilder implements Builder<SSLContextBuilder, SSLCo
      * @param privateKeyConfig the required private key configuration parameter
      * @return this builder
      */
-    public static SSLContextBuilder create(KeyConfig privateKeyConfig) {
+    public static SSLContextBuilder create(Keys privateKeyConfig) {
         return new SSLContextBuilder().privateKeyConfig(privateKeyConfig);
     }
 
@@ -71,14 +71,14 @@ public final class SSLContextBuilder implements Builder<SSLContextBuilder, SSLCo
      *                               a {@link java.security.GeneralSecurityException}
      */
     public static SSLContext create(Config sslConfig) {
-        return new SSLContextBuilder().privateKeyConfig(KeyConfig.create(sslConfig.get("private-key")))
+        return new SSLContextBuilder().privateKeyConfig(Keys.create(sslConfig.get("private-key")))
                                       .sessionCacheSize(sslConfig.get("session-cache-size").asInt().orElse(0))
                                       .sessionTimeout(sslConfig.get("session-timeout").asInt().orElse(0))
-                                      .trustConfig(KeyConfig.create(sslConfig.get("trust")))
+                                      .trustConfig(Keys.create(sslConfig.get("trust")))
                                       .build();
     }
 
-    private SSLContextBuilder privateKeyConfig(KeyConfig privateKeyConfig) {
+    private SSLContextBuilder privateKeyConfig(Keys privateKeyConfig) {
         this.privateKeyConfig = privateKeyConfig;
         return this;
     }
@@ -89,7 +89,7 @@ public final class SSLContextBuilder implements Builder<SSLContextBuilder, SSLCo
      * @param trustConfig the trust configuration
      * @return an updated builder
      */
-    public SSLContextBuilder trustConfig(KeyConfig trustConfig) {
+    public SSLContextBuilder trustConfig(Keys trustConfig) {
         this.trustConfig = trustConfig;
         return this;
     }
@@ -135,8 +135,8 @@ public final class SSLContextBuilder implements Builder<SSLContextBuilder, SSLCo
         }
     }
 
-    private static SSLContext newSSLContext(KeyConfig privateKeyConfig,
-                                            KeyConfig trustConfig,
+    private static SSLContext newSSLContext(Keys privateKeyConfig,
+                                            Keys trustConfig,
                                             long sessionCacheSize,
                                             long sessionTimeout)
             throws IOException, GeneralSecurityException {
@@ -157,7 +157,7 @@ public final class SSLContextBuilder implements Builder<SSLContextBuilder, SSLCo
         return ctx;
     }
 
-    private static KeyManagerFactory buildKmf(KeyConfig privateKeyConfig) throws IOException, GeneralSecurityException {
+    private static KeyManagerFactory buildKmf(Keys privateKeyConfig) throws IOException, GeneralSecurityException {
         String algorithm = Security.getProperty("ssl.KeyManagerFactory.algorithm");
         if (algorithm == null) {
             algorithm = "SunX509";
@@ -180,7 +180,7 @@ public final class SSLContextBuilder implements Builder<SSLContextBuilder, SSLCo
         return kmf;
     }
 
-    private static TrustManagerFactory buildTmf(KeyConfig trustConfig)
+    private static TrustManagerFactory buildTmf(Keys trustConfig)
             throws IOException, GeneralSecurityException {
         List<X509Certificate> certs;
 

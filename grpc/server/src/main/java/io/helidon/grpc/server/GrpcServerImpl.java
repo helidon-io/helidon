@@ -36,7 +36,7 @@ import javax.net.ssl.SSLContext;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.GrpcTlsDescriptor;
 import io.helidon.grpc.core.InterceptorPriorities;
@@ -160,10 +160,12 @@ public class GrpcServerImpl implements GrpcServer {
         try {
             if (tlsConfig != null) {
                 if (tlsConfig.isJdkSSL()) {
-                    SSLContext sslCtx = SSLContextBuilder.create(KeyConfig.pemBuilder()
+                    SSLContext sslCtx = SSLContextBuilder.create(Keys.builder()
+                                                                         .pem(pemBuilder -> pemBuilder
                                                                          .key(tlsConfig.tlsKey())
-                                                                         .certChain(tlsConfig.tlsCert())
-                                                                         .build()).build();
+                                                                         .certChain(tlsConfig.tlsCert()))
+                                                                         .build())
+                            .build();
                     sslContext = new JdkSslContext(sslCtx, false, ClientAuth.NONE);
 
                 } else {
