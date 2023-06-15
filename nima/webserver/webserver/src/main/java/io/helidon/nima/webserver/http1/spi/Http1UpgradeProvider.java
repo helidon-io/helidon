@@ -16,32 +16,40 @@
 
 package io.helidon.nima.webserver.http1.spi;
 
-import java.util.Set;
-import java.util.function.Function;
-
-import io.helidon.config.Config;
+import io.helidon.nima.webserver.ProtocolConfigs;
+import io.helidon.nima.webserver.spi.ProtocolConfig;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for HTTP/1.1 connection upgrade provider.
  * This interface serves as {@link Http1Upgrader} builder
- * which receives requested configuration nodes from the server configuration when server builder
+ * which receives requested configuration from the server configuration when server builder
  * is running.
+ *
+ * @param <T> type of the protocol configuration of this upgrade provider
  */
-public interface Http1UpgradeProvider {
+public interface Http1UpgradeProvider<T extends ProtocolConfig> {
 
     /**
-     * Provider's specific configuration node name.
+     * Provider's type.
      *
-     * @return name of the node to request
+     * @return protocol type (also the type expected in configuration)
      */
-    Set<String> configKeys();
+    String protocolType();
+
+    /**
+     * Type of supported configuration.
+     *
+     * @return protocol config type
+     */
+    Class<T> protocolConfigType();
 
     /**
      * Creates an instance of HTTP/HTTP/1.1 connection upgrader.
      *
-     * @param config {@link io.helidon.config.Config} configuration function that provides a value for any {@link #configKeys()}
+     * @param config configuration of this protocol
+     * @param configs configuration for possible nested protocols
      * @return new server HTTP/1.1 connection upgrade selector
      */
-    Http1Upgrader create(Function<String, Config> config);
+    Http1Upgrader create(T config, ProtocolConfigs configs);
 
 }

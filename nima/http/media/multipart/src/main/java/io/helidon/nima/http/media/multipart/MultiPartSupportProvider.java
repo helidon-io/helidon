@@ -39,8 +39,8 @@ public class MultiPartSupportProvider implements MediaSupportProvider {
     }
 
     @Override
-    public MediaSupport create(Config config) {
-        return MultiPartSupport.create(config);
+    public MediaSupport create(Config config, String name) {
+        return MultiPartSupport.create(config, name);
     }
 
 }

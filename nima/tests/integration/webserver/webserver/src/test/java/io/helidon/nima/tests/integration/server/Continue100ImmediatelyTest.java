@@ -26,7 +26,7 @@ import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http1.Http1ConfigDefault;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider;
 import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.time.Duration;
@@ -82,7 +82,7 @@ class Continue100ImmediatelyTest {
 
     @SetUpServer
     static void server(WebServer.Builder wsb){
-        ServerConnectionProvider http1 = Http1ConnectionProvider.builder()
+        ServerConnectionSelectorProvider http1 = Http1ConnectionProvider.builder()
                 .http1Config(Http1ConfigDefault.builder()
                         .continueImmediately(true)
                         .build())

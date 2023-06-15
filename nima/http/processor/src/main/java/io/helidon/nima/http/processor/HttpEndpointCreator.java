@@ -23,19 +23,20 @@ import java.util.Set;
 
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
+import io.helidon.common.types.TypeValues;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.GenericTemplateCreatorRequest;
-import io.helidon.pico.tools.GenericTemplateCreatorRequestDefault;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
  * Annotation processor that generates a service for each class annotated with {@value #PATH_ANNOTATION} annotation.
  * Service provider implementation of a {@link io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator}.
  */
-public class HttpEndpointCreator implements CustomAnnotationTemplateCreator {
-    private static final String PATH_ANNOTATION = "io.helidon.common.http.Path";
+public class HttpEndpointCreator extends HttpCreatorBase implements CustomAnnotationTemplateCreator {
+    private static final System.Logger LOGGER = System.getLogger(HttpEndpointCreator.class.getName());
+    private static final String PATH_ANNOTATION = "io.helidon.common.http.Endpoint.Path";
+    private static final String LISTENER_ANNOTATION = "io.helidon.common.http.Endpoint.Listener";
 
     /**
      * Default constructor used by the {@link java.util.ServiceLoader}.
@@ -51,16 +52,19 @@ public class HttpEndpointCreator implements CustomAnnotationTemplateCreator {
     @Override
     public Optional<CustomAnnotationTemplateResponse> create(CustomAnnotationTemplateRequest request) {
         TypeInfo enclosingType = request.enclosingTypeInfo();
-        if (!enclosingType.typeKind().equals(TypeInfo.KIND_CLASS)) {
+        if (!enclosingType.typeKind().equals(TypeValues.KIND_CLASS)) {
             // we are only interested in classes, not in methods
             return Optional.empty();
         }
 
-        String classname = enclosingType.typeName().className() + "_GeneratedService";
-        TypeName generatedTypeName = TypeNameDefault.create(enclosingType.typeName().packageName(), classname);
+        String classname = className(enclosingType.typeName(), "GeneratedService");
+        TypeName generatedTypeName = TypeName.builder()
+                .packageName(enclosingType.typeName().packageName())
+                .className(classname)
+                .build();
 
         String template = Templates.loadTemplate("nima", "http-endpoint.java.hbs");
-        GenericTemplateCreatorRequest genericCreatorRequest = GenericTemplateCreatorRequestDefault.builder()
+        GenericTemplateCreatorRequest genericCreatorRequest = GenericTemplateCreatorRequest.builder()
                 .customAnnotationTemplateRequest(request)
                 .template(template)
                 .generatedTypeName(generatedTypeName)
@@ -73,12 +77,25 @@ public class HttpEndpointCreator implements CustomAnnotationTemplateCreator {
         Map<String, Object> response = new HashMap<>();
 
         var annots = request.enclosingTypeInfo().annotations();
+        Map<String, Object> httpMap = new HashMap<>();
         for (var annot : annots) {
-            if (annot.typeName().name().equals(PATH_ANNOTATION)) {
-                response.put("http", Map.of("path", annot.value().orElse("/")));
-                break;
+            String annotationName = annot.typeName().fqName();
+            switch (annotationName) {
+            case PATH_ANNOTATION -> httpMap.put("path", annot.value().orElse("/"));
+            case LISTENER_ANNOTATION -> {
+                httpMap.put("hasListener", true);
+                httpMap.put("listenerValue", annot.value().orElse("@default"));
+                httpMap.put("listenerRequired", annot.getValue("required").map(Boolean::parseBoolean).orElse(false));
+            }
+            default -> {
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    LOGGER.log(System.Logger.Level.TRACE, "Unsupported annotation by this processor: " + annotationName);
+                }
+            }
             }
         }
+
+        response.put("http", httpMap);
 
         return response;
     }

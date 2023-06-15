@@ -24,7 +24,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webserver.WebServer;
 
@@ -47,7 +47,7 @@ class Http2WebServerStopIdleTest {
 
     @Test
     void stopWhenIdleExpectTimelyStopHttp2() throws IOException, InterruptedException {
-        KeyConfig privateKeyConfig = KeyConfig.keystoreBuilder()
+        Keys privateKeyConfig = Keys.keystoreBuilder()
                 .keystore(Resource.create("certificate.p12"))
                 .keystorePassphrase("helidon")
                 .build();

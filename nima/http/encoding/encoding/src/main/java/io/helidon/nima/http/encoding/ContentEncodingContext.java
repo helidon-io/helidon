@@ -16,22 +16,18 @@
 
 package io.helidon.nima.http.encoding;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.function.Consumer;
 
-import io.helidon.common.HelidonServiceLoader;
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
 import io.helidon.common.http.Headers;
-import io.helidon.nima.http.encoding.spi.ContentEncodingProvider;
 
 /**
  * Content encoding support to obtain encoders and decoders.
  */
-public interface ContentEncodingContext {
+@RuntimeType.Prototype(ContentEncodingContextConfig.class)
+public interface ContentEncodingContext extends RuntimeType<ContentEncodingContextConfig> {
     /**
      * Create a new encoding support.
      *
@@ -49,6 +45,37 @@ public interface ContentEncodingContext {
      */
     static ContentEncodingContext create(Config config) {
         return builder().config(config).build();
+    }
+
+    /**
+     * Create content encoding context from its prototype.
+     *
+     * @param config content encoding context configuration
+     * @return a new content encoding context
+     */
+    static ContentEncodingContext create(ContentEncodingContextConfig config) {
+        return new ContentEncodingSupportImpl(config);
+    }
+
+    /**
+     * Create media context, customizing its configuration.
+     *
+     * @param consumer consumer of media context builder
+     * @return a new media context
+     */
+    static ContentEncodingContext create(Consumer<ContentEncodingContextConfig.Builder> consumer) {
+        return builder()
+                .update(consumer)
+                .build();
+    }
+
+    /**
+     * Builder to set up this encoding support context.
+     *
+     * @return a new builder
+     */
+    static ContentEncodingContextConfig.Builder builder() {
+        return ContentEncodingContextConfig.builder();
     }
 
     /**
@@ -106,101 +133,4 @@ public interface ContentEncodingContext {
      * @return content encoder to use
      */
     ContentEncoder encoder(Headers headers);
-
-    /**
-     * Builder to set up this encoding support context.
-     *
-     * @return a new builder
-     */
-    static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * Fluent API builder for {@link ContentEncodingContext}.
-     */
-    class Builder implements io.helidon.common.Builder<Builder, ContentEncodingContext> {
-
-        private static final String IDENTITY_ENCODING = "identity";
-
-        private final HelidonServiceLoader.Builder<ContentEncodingProvider> encodingProviders
-                = HelidonServiceLoader.builder(ServiceLoader.load(ContentEncodingProvider.class));
-
-        // Builder instance must be created using factory method.
-        private Builder() {
-        }
-
-        /**
-         * Update this builder from configuration.
-         * <p>
-         * Configuration:<ul>
-         *     <li><b>discover-services: false</b> - to disable content encoding support providers service loader discovery</li>
-         * </ul>
-         *
-         * @param config configuration to use
-         * @return updated builder instance
-         */
-        public Builder config(Config config) {
-            config.get("discover-services").asBoolean().ifPresent(this::discoverServices);
-            return this;
-        }
-
-        /**
-         * Whether Java Service Loader should be used to load {@link ContentEncodingProvider}.
-         *
-         * @return updated builder
-         */
-        public Builder discoverServices(boolean discoverServices) {
-            this.encodingProviders.useSystemServiceLoader(discoverServices);
-            return this;
-        }
-
-        /**
-         * Configure content encoding provider.
-         * This instance has priority over provider(s) discovered by service loader.
-         *
-         * @param encodingProvider explicit content encoding provider
-         * @return updated builder
-         */
-        public Builder addEncodingProvider(ContentEncodingProvider encodingProvider) {
-            encodingProviders.addService(encodingProvider);
-            return this;
-        }
-
-        @Override
-        public ContentEncodingContext build() {
-            List<ContentEncodingProvider> providers = encodingProviders.build().asList();
-            Map<String, ContentEncoder> encoders = new HashMap<>();
-            Map<String, ContentDecoder> decoders = new HashMap<>();
-            ContentEncoder firstEncoder = null;
-
-            for (ContentEncodingProvider provider : providers) {
-                Set<String> ids = provider.ids();
-
-                if (provider.supportsEncoding()) {
-                    for (String id : ids) {
-                        ContentEncoder encoder = provider.encoder();
-                        if (firstEncoder == null) {
-                            firstEncoder = encoder;
-                        }
-                        encoders.putIfAbsent(id, encoder);
-                    }
-                }
-
-                if (provider.supportsDecoding()) {
-                    for (String id : ids) {
-                        decoders.putIfAbsent(id, provider.decoder());
-                    }
-                }
-
-            }
-
-            encoders.put(IDENTITY_ENCODING, ContentEncoder.NO_OP);
-            decoders.put(IDENTITY_ENCODING, ContentDecoder.NO_OP);
-
-            return new ContentEncodingSupportImpl(Map.copyOf(encoders), Map.copyOf(decoders), firstEncoder);
-        }
-
-    }
-
 }

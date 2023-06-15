@@ -16,18 +16,29 @@
 
 package io.helidon.nima.webserver.http1;
 
-import io.helidon.builder.BuilderInterceptor;
+import io.helidon.builder.api.Prototype;
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 
-class Http1BuilderInterceptor implements BuilderInterceptor<Http1ConfigDefault.Builder> {
+class Http1BuilderInterceptor implements Prototype.BuilderInterceptor<Http1Config.BuilderBase<?, ?>> {
     @Override
-    public Http1ConfigDefault.Builder intercept(Http1ConfigDefault.Builder target) {
+    public Http1Config.BuilderBase<?, ?> intercept(Http1Config.BuilderBase<?, ?> target) {
         receiveListeners(target);
         sentListeners(target);
+
+        if (target.name() == null) {
+            target.name("@default");
+        }
+
+        if (target.requestedUriDiscovery() == null) {
+            target.requestedUriDiscovery(RequestedUriDiscoveryContext.builder()
+                                                 .socketId(target.name())
+                                                 .build());
+        }
 
         return target;
     }
 
-    private void sentListeners(Http1ConfigDefault.Builder target) {
+    private void sentListeners(Http1Config.BuilderBase<?, ?> target) {
         var listeners = target.sendListeners();
         if (listeners.isEmpty() && target.sendLog()) {
             target.addReceiveListener(new Http1LoggingConnectionListener("send"));
@@ -36,7 +47,7 @@ class Http1BuilderInterceptor implements BuilderInterceptor<Http1ConfigDefault.B
         target.compositeSendListener(Http1ConnectionListener.create(listeners));
     }
 
-    private void receiveListeners(Http1ConfigDefault.Builder target) {
+    private void receiveListeners(Http1Config.BuilderBase<?, ?> target) {
         var listeners = target.receiveListeners();
         if (listeners.isEmpty() && target.receiveLog()) {
             target.addReceiveListener(new Http1LoggingConnectionListener("recv"));

@@ -18,6 +18,7 @@ package io.helidon.nima.http.media.jsonp;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
@@ -54,8 +55,10 @@ public class JsonpSupport implements MediaSupport {
 
     private final JsonpReader reader = new JsonpReader(READER_FACTORY);
     private final JsonpWriter writer = new JsonpWriter(WRITER_FACTORY);
+    private final String name;
 
-    private JsonpSupport() {
+    private JsonpSupport(String name) {
+        this.name = name;
     }
 
     /**
@@ -65,7 +68,21 @@ public class JsonpSupport implements MediaSupport {
      * @return a new {@link JsonpSupport}
      */
     public static MediaSupport create(Config config) {
-        return new JsonpSupport();
+        return create(config, "jsonp");
+    }
+
+    /**
+     * Creates a new named {@link JsonpSupport}.
+     *
+     * @param config must not be {@code null}
+     * @param name name of the support
+     * @return a new {@link JsonpSupport}
+     */
+    public static MediaSupport create(Config config, String name) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+
+        return new JsonpSupport(name);
     }
 
     /**
@@ -86,6 +103,16 @@ public class JsonpSupport implements MediaSupport {
      */
     public static <T extends JsonStructure> EntityReader<T> serverRequestReader() {
         return new JsonpReader<>(READER_FACTORY);
+    }
+
+    @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
+    public String type() {
+        return "jsonp";
     }
 
     @Override

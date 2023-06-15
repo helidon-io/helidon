@@ -16,61 +16,45 @@
 
 package io.helidon.nima.webserver.http1;
 
-import java.util.List;
-import java.util.function.Function;
-
-import org.junit.jupiter.api.Test;
+import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
-import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.mock;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 
 public class ConnectionConfigTest {
 
     @Test
     void testConnectionConfig() {
         // This will pick up application.yaml from the classpath as default configuration file
+        TestConnectionSelectorProvider.reset();
+
         Config config = Config.create();
-        TestProvider provider = new TestProvider();
-        WebServer.builder().config(config.get("server")).addConnectionProvider(provider).build();
-        assertThat(provider.isConfig(), is(true));
-        Http1Config http1Config = provider.config();
+        WebServer.builder().config(config.get("server")).build();
+
+        Map<String, Http1Config> http1Configs = TestConnectionSelectorProvider.config();
+
+        assertThat(http1Configs, hasKey("@default"));
+        assertThat(http1Configs, hasKey("other"));
+        assertThat("Discover services is disabled for admin port", http1Configs, not(hasKey("admin")));
+
+        Http1Config http1Config = http1Configs.get("@default");
         assertThat(http1Config.maxPrologueLength(), is(4096));
         assertThat(http1Config.maxHeadersSize(), is(8192));
+        assertThat(http1Config.validatePath(), is(true));
+        assertThat(http1Config.validateHeaders(), is(true));
+
+        http1Config = http1Configs.get("other");
+        assertThat(http1Config.maxPrologueLength(), is(81));
+        assertThat(http1Config.maxHeadersSize(), is(42));
         assertThat(http1Config.validatePath(), is(false));
         assertThat(http1Config.validateHeaders(), is(false));
-    }
-
-    private static class TestProvider implements ServerConnectionProvider {
-
-        private Http1Config http1Config = null;
-        private Config config = null;
-
-        @Override
-        public Iterable<String> configKeys() {
-            return List.of("http_1_1");
-        }
-
-        @Override
-        public ServerConnectionSelector create(Function<String, Config> configs) {
-            config = configs.apply("http_1_1");
-            http1Config = Http1ConfigDefault.toBuilder(config).build();
-            return mock(ServerConnectionSelector.class);
-        }
-
-        private Http1Config config() {
-            return http1Config;
-        }
-
-        private boolean isConfig() {
-            return http1Config != null;
-        }
-
     }
 
 }

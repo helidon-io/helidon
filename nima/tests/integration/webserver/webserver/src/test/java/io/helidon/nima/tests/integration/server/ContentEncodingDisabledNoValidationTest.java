@@ -25,7 +25,7 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http1.Http1ConfigDefault;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,7 +49,7 @@ public class ContentEncodingDisabledNoValidationTest extends ContentEncodingDisa
 
     @SetUpServer
     static void server(WebServer.Builder server) {
-        ServerConnectionProvider http1 = Http1ConnectionProvider.builder()
+        ServerConnectionSelectorProvider http1 = Http1ConnectionProvider.builder()
                 // Headers validation is disabled
                 .http1Config(Http1ConfigDefault.builder().validateHeaders(false).build())
                 .build();

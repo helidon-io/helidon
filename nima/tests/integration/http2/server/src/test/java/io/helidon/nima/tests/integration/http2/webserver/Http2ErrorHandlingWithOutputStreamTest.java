@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.Optional;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -73,7 +73,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
 
     @SetUpServer
     static void setUpServer(WebServer.Builder serverBuilder) {
-        KeyConfig privateKeyConfig = KeyConfig.keystoreBuilder()
+        Keys privateKeyConfig = Keys.keystoreBuilder()
                 .keystore(Resource.create("certificate.p12"))
                 .keystorePassphrase("helidon")
                 .build();

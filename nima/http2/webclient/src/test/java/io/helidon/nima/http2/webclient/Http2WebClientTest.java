@@ -30,13 +30,14 @@ import java.util.stream.Stream;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
-import io.helidon.nima.http2.webserver.Http2ConfigDefault;
-import io.helidon.nima.http2.webserver.Http2ConnectionProvider;
+import io.helidon.nima.http2.webserver.Http2Config;
+import io.helidon.nima.http2.webserver.Http2ConnectionSelector;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http1.Http1Route;
 
@@ -84,13 +85,13 @@ class Http2WebClientTest {
     }
 
     @SetUpServer
-    static void setUpServer(WebServer.Builder serverBuilder) {
+    static void setUpServer(ServerConfig.Builder serverBuilder) {
         executorService = Executors.newFixedThreadPool(5);
 
-        KeyConfig privateKeyConfig =
-                KeyConfig.keystoreBuilder()
-                        .keystore(Resource.create("certificate.p12"))
-                        .keystorePassphrase("helidon")
+        Keys privateKeyConfig =
+                Keys.builder()
+                        .keystore(keystore -> keystore.keystore(Resource.create("certificate.p12"))
+                                .passphrase("helidon"))
                         .build();
 
         Tls tls = Tls.builder()
@@ -99,19 +100,17 @@ class Http2WebClientTest {
                 .build();
 
         serverBuilder
-                .defaultSocket(builder -> builder.port(-1)
-                        .host("localhost")
-                )
-                .addConnectionProvider(Http2ConnectionProvider.builder()
-                                               .http2Config(Http2ConfigDefault.builder()
+                .port(-1)
+                .host("localhost")
+                .addConnectionSelector(Http2ConnectionSelector.builder()
+                                               .http2Config(Http2Config.builder()
                                                                     .initialWindowSize(10))
                                                .build())
-                .socket("https",
-                        builder -> builder.port(-1)
-                                .host("localhost")
-                                .tls(tls)
-                                .receiveBufferSize(4096)
-                                .backlog(8192)
+                .putSocket("https", builder -> builder.port(-1)
+                        .host("localhost")
+                        .tls(tls)
+                        .receiveBufferSize(4096)
+                        .backlog(8192)
                 )
                 .routing(router -> router
                         .get("/", (req, res) -> res.send("Hello world!"))

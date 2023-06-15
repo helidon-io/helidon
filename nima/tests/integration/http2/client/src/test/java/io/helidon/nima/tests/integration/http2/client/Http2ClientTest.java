@@ -20,7 +20,7 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.webclient.Http2;
 import io.helidon.nima.http2.webclient.Http2Client;
@@ -70,7 +70,7 @@ class Http2ClientTest {
 
     @SetUpServer
     static void setUpServer(WebServer.Builder serverBuilder) {
-        KeyConfig privateKeyConfig = KeyConfig.keystoreBuilder()
+        Keys privateKeyConfig = Keys.keystoreBuilder()
                 .keystore(Resource.create("certificate.p12"))
                 .keystorePassphrase("helidon")
                 .build();

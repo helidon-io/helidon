@@ -17,14 +17,16 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.webserver.http.spi.SinkProvider;
+import io.helidon.nima.webserver.spi.ProtocolConfigProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider;
 import io.helidon.pico.api.ModuleComponent;
 
 /**
  * Loom based WebServer.
  */
 @Feature(value = "WebServer",
-        description = "Nima Web Server",
-        invalidIn = HelidonFlavor.SE
+         description = "Nima Web Server",
+         invalidIn = HelidonFlavor.SE
 )
 module io.helidon.nima.webserver {
     requires transitive io.helidon.common.buffers;
@@ -36,8 +38,7 @@ module io.helidon.nima.webserver {
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.common.security;
     requires io.helidon.logging.common;
-    requires io.helidon.builder;
-    requires io.helidon.builder.config;
+    requires io.helidon.builder.api;
     requires io.helidon.common.features.api;
     requires io.helidon.common.features;
     requires io.helidon.common.task;
@@ -52,6 +53,8 @@ module io.helidon.nima.webserver {
     requires static io.helidon.config.metadata;
     requires static io.helidon.pico.configdriven.runtime;
     requires static jakarta.inject;
+    // to compile @Generated
+    requires static java.compiler;
 
     // needed to compile pico generated classes
     requires io.helidon.pico.api;
@@ -69,9 +72,12 @@ module io.helidon.nima.webserver {
     exports io.helidon.nima.webserver.http1.spi;
 
     uses io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
-    uses io.helidon.nima.webserver.spi.ServerConnectionProvider;
+    uses ServerConnectionSelectorProvider;
     uses SinkProvider;
+    uses ProtocolConfigProvider;
 
-    provides io.helidon.nima.webserver.spi.ServerConnectionProvider with io.helidon.nima.webserver.http1.Http1ConnectionProvider;
+    provides io.helidon.nima.webserver.spi.ProtocolConfigProvider
+            with io.helidon.nima.webserver.http1.Http1ProtocolConfigProvider;
+    provides ServerConnectionSelectorProvider with io.helidon.nima.webserver.http1.Http1ConnectionProvider;
     provides ModuleComponent with io.helidon.nima.webserver.Pico$$Module;
 }

@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import io.helidon.builder.api.Prototype;
 import io.helidon.common.Weights;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Http;
@@ -42,7 +43,7 @@ import io.helidon.nima.webserver.ServerLifecycle;
  * HTTP routing.
  * This routing is capable of handling any HTTP version.
  */
-public final class HttpRouting implements Routing {
+public final class HttpRouting implements Routing, Prototype {
     private static final System.Logger LOGGER = System.getLogger(HttpRouting.class.getName());
     private static final HttpRouting EMPTY = HttpRouting.builder().build();
 
@@ -78,7 +79,7 @@ public final class HttpRouting implements Routing {
     public static HttpRouting create() {
         return HttpRouting.builder()
                 .route(HttpRoute.builder()
-                               .handler((req, res) -> res.send("Níma server works!"))
+                               .handler((req, res) -> res.send("Helidon WebServer works!"))
                                .build())
                 .build();
     }

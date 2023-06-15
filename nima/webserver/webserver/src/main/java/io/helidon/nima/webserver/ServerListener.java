@@ -23,9 +23,12 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,6 +39,8 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
@@ -46,7 +51,10 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
+import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.spi.ProtocolConfig;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+import io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
@@ -57,16 +65,22 @@ class ServerListener implements ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
 
     private static final long EXECUTOR_SHUTDOWN_MILLIS = 500L;
+    @SuppressWarnings("rawtypes")
+    private static final LazyValue<List<ServerConnectionSelectorProvider>> SELECTOR_PROVIDERS = LazyValue.create(() -> {
+        return HelidonServiceLoader.create(ServiceLoader.load(ServerConnectionSelectorProvider.class))
+                .asList();
+    });
 
     private final ConnectionProviders connectionProviders;
     private final String socketName;
-    private final ListenerConfiguration listenerConfig;
+    private final ListenerConfig listenerConfig;
     private final Router router;
     private final HelidonTaskExecutor readerExecutor;
     private final ExecutorService sharedExecutor;
     private final Thread serverThread;
     private final DirectHandlers directHandlers;
     private final CompletableFuture<Void> closeFuture;
+    private final Tls tls;
     private final SocketOptions connectionOptions;
     private final InetSocketAddress configuredAddress;
 
@@ -78,21 +92,40 @@ class ServerListener implements ListenerContext {
     private volatile int connectedPort;
     private volatile ServerSocket serverSocket;
 
-    ServerListener(List<ServerConnectionSelector> connectionProviders,
-                   String socketName,
-                   ListenerConfiguration listenerConfig,
+    @SuppressWarnings("unchecked")
+    ServerListener(String socketName,
+                   ListenerConfig listenerConfig,
                    Router router,
-                   boolean inheritThreadLocals) {
+                   Context serverContext,
+                   MediaContext defaultMediaContext,
+                   ContentEncodingContext defaultContentEncodingContext,
+                   DirectHandlers defaultDirectHandlers) {
 
-        this.connectionProviders = ConnectionProviders.create(connectionProviders);
+        ProtocolConfigs protocols = ProtocolConfigs.create(listenerConfig.protocols());
+        List<ServerConnectionSelector> selectors = new ArrayList<>(listenerConfig.connectionSelectors());
+
+        // for each discovered selector provider, add a selector for each configuration of that provider
+        SELECTOR_PROVIDERS.get()
+                .forEach(provider -> {
+                    List<ProtocolConfig> configurations = protocols.config(provider.protocolType(),
+                                                                           provider.protocolConfigType());
+                    for (ProtocolConfig configuration : configurations) {
+                        selectors.add(provider.create(socketName, configuration, protocols));
+                    }
+                });
+
+        this.connectionProviders = ConnectionProviders.create(selectors);
         this.socketName = socketName;
         this.listenerConfig = listenerConfig;
-        this.router = router;
+        this.tls = listenerConfig.tls().orElseGet(() -> Tls.builder().enabled(false).build());
         this.connectionOptions = listenerConfig.connectionOptions();
-        this.directHandlers = listenerConfig.directHandlers();
-        this.mediaContext = listenerConfig.mediaContext();
-        this.contentEncodingContext = listenerConfig.contentEncodingContext();
-        this.context = listenerConfig.context();
+        this.directHandlers = listenerConfig.directHandlers().orElse(defaultDirectHandlers);
+        this.mediaContext = listenerConfig.mediaContext().orElse(defaultMediaContext);
+        this.contentEncodingContext = listenerConfig.contentEncoding().orElse(defaultContentEncodingContext);
+        this.context = listenerConfig.listenerContext().orElseGet(() -> Context.builder()
+                .id("listener-" + socketName)
+                .parent(serverContext)
+                .build());
 
         this.serverThread = Thread.ofPlatform()
                 .allowSetThreadLocals(true)
@@ -103,14 +136,12 @@ class ServerListener implements ListenerContext {
 
         // to read requests and execute tasks
         this.readerExecutor = ThreadPerTaskExecutor.create(Thread.ofVirtual()
-                                                                         .allowSetThreadLocals(true)
-                                                                         .inheritInheritableThreadLocals(inheritThreadLocals)
-                                                                         .factory());
+                                                                   .allowSetThreadLocals(true)
+                                                                   .factory());
 
         // to do anything else (writers etc.)
         this.sharedExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                                                                          .allowSetThreadLocals(true)
-                                                                         .inheritInheritableThreadLocals(inheritThreadLocals)
                                                                          .factory());
 
         this.closeFuture = new CompletableFuture<>();
@@ -120,6 +151,22 @@ class ServerListener implements ListenerContext {
             port = 0;
         }
         this.configuredAddress = new InetSocketAddress(listenerConfig.address(), port);
+
+        // for each socket name, use the default router by default, override if customized in builder
+        Optional<HttpRouting> routing = listenerConfig.routing();
+        List<Routing> routings = listenerConfig.routings();
+
+        Router.Builder routerBuilder = Router.builder();
+        routings.forEach(routerBuilder::addRouting);
+        routing.ifPresent(routerBuilder::addRouting);
+
+        if (routing.isEmpty() && routings.isEmpty()) {
+            // inherit from web server
+            this.router = router;
+        } else {
+            // customize routing
+            this.router = routerBuilder.build();
+        }
     }
 
     @Override
@@ -143,7 +190,7 @@ class ServerListener implements ListenerContext {
     }
 
     @Override
-    public ListenerConfiguration config() {
+    public ListenerConfig config() {
         return listenerConfig;
     }
 
@@ -203,13 +250,13 @@ class ServerListener implements ListenerContext {
         router.afterStop();
     }
 
+    @SuppressWarnings("resource")
     void start() {
         router.beforeStart();
 
         try {
-            Tls tls = listenerConfig.hasTls() ? listenerConfig.tls() : null;
-            SSLServerSocket sslServerSocket = listenerConfig.hasTls() ? tls.createServerSocket() : null;
-            serverSocket = listenerConfig.hasTls() ? sslServerSocket : new ServerSocket();
+            SSLServerSocket sslServerSocket = tls.enabled() ? tls.createServerSocket() : null;
+            serverSocket = tls.enabled() ? sslServerSocket : new ServerSocket();
             listenerConfig.configureSocket(serverSocket);
 
             serverSocket.bind(configuredAddress, listenerConfig.backlog());
@@ -226,7 +273,7 @@ class ServerListener implements ListenerContext {
 
         if (LOGGER.isLoggable(INFO)) {
             String format;
-            if (listenerConfig.hasTls()) {
+            if (tls.enabled()) {
                 format = "[%s] https://%s:%s bound for socket '%s'";
             } else {
                 format = "[%s] http://%s:%s bound for socket '%s'";
@@ -244,8 +291,8 @@ class ServerListener implements ListenerContext {
                     LOGGER.log(System.Logger.Level.TRACE,
                                "[" + serverChannelId + "] async writes, queue length: " + listenerConfig.writeQueueLength());
                 }
-                if (listenerConfig.hasTls()) {
-                    debugTls(serverChannelId, listenerConfig.tls());
+                if (tls.enabled()) {
+                    debugTls(serverChannelId, tls);
                 }
             }
         }
@@ -254,18 +301,18 @@ class ServerListener implements ListenerContext {
     }
 
     boolean hasTls() {
-        return listenerConfig.hasTls();
+        return tls.enabled();
     }
 
     void reloadTls(Tls tls) {
-        if (!listenerConfig.hasTls()) {
+        if (!tls.enabled()) {
             throw new IllegalArgumentException("TLS is not enabled on the socket " + socketName
-                                                            + " and therefore cannot be reloaded");
+                                                       + " and therefore cannot be reloaded");
         }
         if (!tls.enabled()) {
             throw new UnsupportedOperationException("TLS cannot be disabled by reloading on the socket " + socketName);
         }
-        listenerConfig.tls().reload(tls);
+        tls.reload(tls);
     }
 
     private void debugTls(String serverChannelId, Tls tls) {
@@ -296,7 +343,7 @@ class ServerListener implements ListenerContext {
                     connectionOptions.configureSocket(socket);
 
                     HelidonSocket helidonSocket;
-                    if (listenerConfig.hasTls()) {
+                    if (tls.enabled()) {
                         SSLSocket sslSocket = (SSLSocket) socket;
                         sslSocket.setHandshakeApplicationProtocolSelector(
                                 (sslEngine, list) -> {

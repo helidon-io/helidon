@@ -21,7 +21,8 @@ import java.net.URI;
 import io.helidon.common.context.Context;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webserver.ListenerConfiguration;
+import io.helidon.nima.webserver.ListenerConfig;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -55,20 +56,20 @@ class TestServerTest {
     }
 
     @SetUpServer
-    static void setUp(WebServer.Builder builder) {
+    static void setUp(ServerConfig.Builder builder) {
         Context serverContext = Context.create();
         serverContext.register(TestServerTest.class, "server");
 
-        builder.context(serverContext);
+        builder.serverContext(serverContext);
     }
 
     @SetUpRoute("socket")
-    static void routing(ListenerConfiguration.Builder l, HttpRouting.Builder r) {
+    static void routing(ListenerConfig.Builder l, HttpRouting.Builder r) {
         l.writeQueueLength(10);
     }
 
     @SetUpRoute("socket2")
-    static void routing2(HttpRouting.Builder r, ListenerConfiguration.Builder l) {
+    static void routing2(HttpRouting.Builder r, ListenerConfig.Builder l) {
         l.writeQueueLength(10);
     }
 

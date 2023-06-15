@@ -24,7 +24,7 @@ import java.util.List;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.common.tls.TlsClientAuth;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -51,13 +51,13 @@ class MtlsTest {
         this.server = server;
         int port = server.port();
 
-        KeyConfig privateKeyConfig = KeyConfig.keystoreBuilder()
+        Keys privateKeyConfig = Keys.keystoreBuilder()
                 .keystore(Resource.create("client.p12"))
                 .keystorePassphrase("password")
                 .build();
 
         Tls tls = Tls.builder()
-                .tlsClientAuth(TlsClientAuth.REQUIRED)
+                .clientAuth(TlsClientAuth.REQUIRED)
                 .privateKey(privateKeyConfig.privateKey().get())
                 .privateKeyCertChain(privateKeyConfig.certChain())
                 .trustAll(true) // todo need to have this from a keystore as well
@@ -86,13 +86,13 @@ class MtlsTest {
                     sendCertificateString(certs, res);
                 })
                 .get("/reload", (req, res) -> {
-                    KeyConfig privateKeyConfig = KeyConfig.keystoreBuilder()
+                    Keys privateKeyConfig = Keys.keystoreBuilder()
                             .keystore(Resource.create("second-valid/server.p12"))
                             .keystorePassphrase("password")
                             .build();
 
                     Tls tls = Tls.builder()
-                            .tlsClientAuth(TlsClientAuth.REQUIRED)
+                            .clientAuth(TlsClientAuth.REQUIRED)
                             .privateKey(privateKeyConfig.privateKey().get())
                             .privateKeyCertChain(privateKeyConfig.certChain())
                             .trustAll(true)
@@ -128,13 +128,13 @@ class MtlsTest {
 
     @SetUpServer
     static void server(WebServer.Builder builder) {
-        KeyConfig privateKeyConfig = KeyConfig.keystoreBuilder()
+        Keys privateKeyConfig = Keys.keystoreBuilder()
                 .keystore(Resource.create("server.p12"))
                 .keystorePassphrase("password")
                 .build();
 
         Tls tls = Tls.builder()
-                .tlsClientAuth(TlsClientAuth.REQUIRED)
+                .clientAuth(TlsClientAuth.REQUIRED)
                 .privateKey(privateKeyConfig.privateKey().get())
                 .privateKeyCertChain(privateKeyConfig.certChain())
                 .trustAll(true)

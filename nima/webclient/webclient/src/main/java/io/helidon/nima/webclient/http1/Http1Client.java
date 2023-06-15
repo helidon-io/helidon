@@ -28,7 +28,6 @@ import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.http.media.MediaSupport;
 import io.helidon.nima.webclient.DefaultDnsResolverProvider;
 import io.helidon.nima.webclient.DnsAddressLookup;
 import io.helidon.nima.webclient.HttpClient;
@@ -69,9 +68,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
 
         private static final SocketOptions EMPTY_OPTIONS = SocketOptions.builder().build();
 
-        private MediaContext.Builder mediaContextBuilder;
-
-        private final Http1ClientConfigDefault.Builder configBuilder = Http1ClientConfigDefault.builder()
+        private final Http1ClientConfig.Builder configBuilder = Http1ClientConfig.builder()
                 .mediaContext(MediaContext.create())
                 .dnsResolver(DEFAULT_DNS_RESOLVER.get())
                 .dnsAddressLookup(DnsAddressLookup.defaultLookup())
@@ -81,11 +78,8 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
         }
 
         @Override
-        public Http1Client doBuild() {
+        public Http1Client build() {
             configBuilder.defaultHeaders(defaultHeaders());
-            if (mediaContextBuilder != null) {
-                configBuilder.mediaContext(mediaContextBuilder.fallback(configBuilder.mediaContext()).build());
-            }
             configBuilder.socketOptions(super.channelOptions());
             return new Http1ClientImpl(configBuilder.build());
         }
@@ -196,7 +190,8 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          * @return updated builder
          */
         public Http1ClientBuilder mediaContext(MediaContext mediaContext) {
-            configBuilder.mediaContext(Objects.requireNonNull(mediaContext, "mediaContext"));
+            Objects.requireNonNull(mediaContext);
+            configBuilder.mediaContext(mediaContext);
             return this;
         }
 
@@ -211,12 +206,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          */
         public Http1ClientBuilder addMediaSupport(MediaSupport mediaSupport) {
             Objects.requireNonNull(mediaSupport);
-            if (mediaContextBuilder == null) {
-                mediaContextBuilder = MediaContext.builder()
-                        .discoverServices(false);
-            }
-
-            mediaContextBuilder.addMediaSupport(mediaSupport);
+            configBuilder.addMediaSupport(mediaSupport);
             return this;
         }
 

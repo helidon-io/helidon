@@ -16,23 +16,19 @@
 
 package io.helidon.nima.http.media;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.ServiceLoader;
+import java.util.function.Consumer;
 
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.http.media.spi.MediaSupportProvider;
 
 /**
  * Media context to obtain readers and writers of various supported content types.
  */
-public interface MediaContext {
-
+@RuntimeType.Prototype(MediaContextConfig.class)
+public interface MediaContext extends RuntimeType<MediaContextConfig> {
     /**
      * Create a new media context from {@link java.util.ServiceLoader}.
      *
@@ -50,6 +46,37 @@ public interface MediaContext {
      */
     static MediaContext create(Config config) {
         return builder().config(config).build();
+    }
+
+    /**
+     * Create media context from its prototype.
+     *
+     * @param config media context configuration
+     * @return a new media context
+     */
+    static MediaContext create(MediaContextConfig config) {
+        return new MediaContextImpl(config);
+    }
+
+    /**
+     * Create media context, customizing its configuration.
+     *
+     * @param consumer consumer of media context builder
+     * @return a new media context
+     */
+    static MediaContext create(Consumer<MediaContextConfig.Builder> consumer) {
+        var builder = MediaContextConfig.builder();
+        consumer.accept(builder);
+        return builder.build();
+    }
+
+    /**
+     * Builder to set up this media support context.
+     *
+     * @return a new builder
+     */
+    static MediaContextConfig.Builder builder() {
+        return MediaContextConfig.builder();
     }
 
     /**
@@ -98,105 +125,4 @@ public interface MediaContext {
      */
     <T> EntityWriter<T> writer(GenericType<T> type,
                                WritableHeaders<?> requestHeaders);
-
-    /**
-     * Builder to set up this media support context.
-     *
-     * @return a new builder
-     */
-    static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * Fluent API builder for {@link MediaContext}.
-     */
-    class Builder implements io.helidon.common.Builder<Builder, MediaContext> {
-
-        private final HelidonServiceLoader.Builder<MediaSupportProvider> mediaSupportProviders;
-        private final List<MediaSupport> explicitSupports = new ArrayList<>();
-        private Config providersConfig;
-        private MediaContext fallback;
-
-        // Builder instance must be created using factory method.
-        private Builder() {
-            mediaSupportProviders = HelidonServiceLoader.builder(ServiceLoader.load(MediaSupportProvider.class));
-        }
-
-        @Override
-        public MediaContext build() {
-            if (providersConfig == null) {
-                providersConfig = Config.empty();
-            }
-            // all media supports - first add all explicit, then add all loaded via service loader, finally
-            // add the built-ins
-            List<MediaSupport> supports = new ArrayList<>();
-            // most important -> explicitly configured
-            supports.addAll(explicitSupports);
-            // next -> loaded from service loader (if enabled)
-            supports.addAll(mediaSupportProviders.build()
-                                    .asList()
-                                    .stream()
-                                    .map(it -> it.create(providersConfig.get(it.configKey())))
-                                    .toList());
-            // least important - built-ins
-            supports.add(StringSupport.create());
-            supports.add(PathSupport.create());
-            supports.add(FormParamsSupport.create());
-            return new MediaContextImpl(supports, fallback);
-        }
-
-        /**
-         * Update this builder from configuration.
-         * <p>
-         * Configuration:<ul>
-         *     <li><b>discover-services: false</b> - to disable media support providers service loader discovery</li>
-         * </ul>
-         *
-         * @param config configuration to use
-         * @return updated builder instance
-         */
-        public Builder config(Config config) {
-            config.get("discover-services").asBoolean().ifPresent(this::discoverServices);
-            this.providersConfig = config.get("providers");
-            return this;
-        }
-
-        /**
-         * Whether Java Service Loader should be used to load {@link MediaSupportProvider}.
-         *
-         * @return updated builder
-         */
-        public Builder discoverServices(boolean discoverServices) {
-            this.mediaSupportProviders.useSystemServiceLoader(discoverServices);
-            return this;
-        }
-
-        /**
-         * Configure media support provider.
-         * This instance has priority over provider(s) discovered by service loader.
-         * The providers are used in order of calling this method, where the first support added is the
-         * first one to be queried for readers and writers.
-         *
-         * @param mediaSupport explicit media support provider
-         * @return updated builder
-         */
-        public Builder addMediaSupport(MediaSupport mediaSupport) {
-            explicitSupports.add(mediaSupport);
-            return this;
-        }
-
-        /**
-         * Configure an existing context as a fallback for this context.
-         *
-         * @param mediaContext media context to use if supports configured on this request cannot provide a good result
-         * @return updated builder
-         */
-        public Builder fallback(MediaContext mediaContext) {
-            Objects.requireNonNull(mediaContext);
-            this.fallback = mediaContext;
-            return this;
-        }
-    }
-
 }

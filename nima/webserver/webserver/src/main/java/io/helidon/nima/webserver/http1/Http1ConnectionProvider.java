@@ -16,30 +16,28 @@
 
 package io.helidon.nima.webserver.http1;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.config.Config;
+import io.helidon.nima.webserver.ProtocolConfigs;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.spi.ProtocolConfig;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+import io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider;
 
 /**
- * {@link io.helidon.nima.webserver.spi.ServerConnectionProvider} implementation for HTTP/1.1 server connection provider.
+ * {@link io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider} implementation for HTTP/1.1 server connection provider.
  */
-public class Http1ConnectionProvider implements ServerConnectionProvider {
+public class Http1ConnectionProvider implements ServerConnectionSelectorProvider<Http1Config> {
 
     /**
      * HTTP/1.1 server connection provider configuration node name.
      */
-    private static final String CONFIG_NAME = "http_1_1";
+    static final String CONFIG_NAME = "http_1_1";
 
     // all upgrade providers supported by HTTP/1.1
     private final List<Http1UpgradeProvider> upgradeProviders;
@@ -58,7 +56,8 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
      */
     @Deprecated
     public Http1ConnectionProvider() {
-        this(builder());
+        this.upgradeProviders = builder().upgradeProviders();
+        this.http1Config = null;
     }
 
     /**
@@ -70,33 +69,33 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
         return new Builder();
     }
 
-    // Returns all config keys of Http1UpgradeProvider instances and this provider.
-    // This method is called just once from WebServer.Builder so let's build the list on the fly.
     @Override
-    public Iterable<String> configKeys() {
-        Set<String> result = new HashSet<>();
-        result.add(CONFIG_NAME);
-
-        result.addAll(upgradeProviders.stream()
-                              .flatMap(it -> it.configKeys().stream())
-                              .collect(Collectors.toSet()));
-
-        return result;
+    public Class<Http1Config> protocolConfigType() {
+        return Http1Config.class;
     }
 
     @Override
-    public ServerConnectionSelector create(Function<String, Config> configs) {
-        Http1Config config;
-        if (http1Config == null) {
-            config = Http1ConfigDefault.toBuilder(configs.apply(CONFIG_NAME)).build();
-        } else {
-            config = http1Config;
+    public String protocolType() {
+        return CONFIG_NAME;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Override
+    public ServerConnectionSelector create(String socketName, Http1Config config, ProtocolConfigs configs) {
+        Http1Config usedConfig = this.http1Config;
+        if (usedConfig == null) {
+            usedConfig = config;
         }
 
         // now create an upgrader for each upgrade provider
-        var upgraderList = upgradeProviders.stream()
-                .map(it -> it.create(configs))
-                .toList();
+        var upgraderList = new ArrayList<Http1Upgrader>();
+        for (Http1UpgradeProvider upgradeProvider : upgradeProviders) {
+            List<ProtocolConfig> upgradeConfigs = configs.config(upgradeProvider.protocolType(),
+                                                                 upgradeProvider.protocolConfigType());
+            for (ProtocolConfig upgradeConfig : upgradeConfigs) {
+                upgraderList.add(upgradeProvider.create(upgradeConfig, configs));
+            }
+        }
 
         var upgraders = new HashMap<String, Http1Upgrader>();
         for (Http1Upgrader http1Upgrader : upgraderList) {
@@ -104,7 +103,7 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
             upgraders.putIfAbsent(http1Upgrader.supportedProtocol(), http1Upgrader);
         }
 
-        return new Http1ConnectionSelector(config, upgraders);
+        return new Http1ConnectionSelector(usedConfig, upgraders);
     }
 
     /**
@@ -141,7 +140,7 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
          * @param provider provider to add
          * @return updated builder
          */
-        public Builder addUpgradeProvider(Http1UpgradeProvider provider) {
+        public Builder addUpgradeProvider(Http1UpgradeProvider<?> provider) {
             upgradeProviderServices.addService(provider);
             return this;
         }
