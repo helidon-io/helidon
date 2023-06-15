@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,32 +35,13 @@ final class ConfiguredType {
     The type we are processing that has @Configured annotation
      */
     private final String annotatedClass;
-    private final boolean standalone;
-    private final String prefix;
-    private final String description;
-    private final List<String> provides;
     private final List<String> inherited = new LinkedList<>();
+    private final ConfiguredAnnotation configured;
 
-    ConfiguredType(String annotatedClass,
-                   String targetClass,
-                   boolean standalone,
-                   String prefix,
-                   String description,
-                   List<String> provides) {
+    ConfiguredType(ConfiguredAnnotation configured, String annotatedClass, String targetClass, boolean typeDefinition) {
         this.annotatedClass = annotatedClass;
         this.targetClass = targetClass;
-        this.standalone = standalone;
-        this.prefix = prefix;
-        this.provides = provides;
-        this.description = description;
-    }
-
-    private static String paramsToString(String[] params) {
-        String result = Arrays.toString(params);
-        if (result.startsWith("[") && result.endsWith("]")) {
-            return result.substring(1, result.length() - 1);
-        }
-        return result;
+        this.configured = configured;
     }
 
     ConfiguredType addProducer(ProducerMethod producer) {
@@ -90,14 +71,14 @@ final class ConfiguredType {
     }
 
     boolean standalone() {
-        return standalone;
+        return configured.root();
     }
 
     String prefix() {
-        return prefix;
+        return configured.prefix().orElse(null);
     }
 
-    public void write(JArray typeArray) {
+    void write(JArray typeArray) {
         JObject typeObject = new JObject();
 
         typeObject.add("type", targetClass());
@@ -105,18 +86,15 @@ final class ConfiguredType {
         if (standalone()) {
             typeObject.add("standalone", true);
         }
-        if (prefix() != null && !prefix.isBlank()) {
-            typeObject.add("prefix", prefix());
-        }
-        if (description != null && !description.isBlank()) {
-            typeObject.add("description", description);
-        }
+        configured.prefix().ifPresent(it -> typeObject.add("prefix", it));
+        configured.description().ifPresent(it -> typeObject.add("description", it));
+
         if (!inherited.isEmpty()) {
             typeObject.add("inherits", inherited);
         }
 
-        if (!provides.isEmpty()) {
-            typeObject.add("provides", provides);
+        if (!configured.provides().isEmpty()) {
+            typeObject.add("provides", configured.provides());
         }
 
         if (!producerMethods.isEmpty()) {
@@ -132,6 +110,23 @@ final class ConfiguredType {
         typeObject.add("options", options);
 
         typeArray.add(typeObject);
+    }
+
+    @Override
+    public String toString() {
+        return targetClass;
+    }
+
+    void addInherited(String classOrIface) {
+        inherited.add(classOrIface);
+    }
+
+    private static String paramsToString(String[] params) {
+        String result = Arrays.toString(params);
+        if (result.startsWith("[") && result.endsWith("]")) {
+            return result.substring(1, result.length() - 1);
+        }
+        return result;
     }
 
     private void writeProperty(JArray optionsBuilder,
@@ -201,15 +196,6 @@ final class ConfiguredType {
             return newSuffix;
         }
         return currentPrefix + "." + newSuffix;
-    }
-
-    @Override
-    public String toString() {
-        return targetClass;
-    }
-
-    void addInherited(String classOrIface) {
-        inherited.add(classOrIface);
     }
 
     static final class ProducerMethod {

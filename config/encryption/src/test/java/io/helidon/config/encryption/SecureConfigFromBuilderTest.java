@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package io.helidon.config.encryption;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -35,10 +35,10 @@ public class SecureConfigFromBuilderTest extends AbstractSecureConfigTest {
     @BeforeAll
     public static void initClass() {
         // fromConfig tests with pkcs12, so here I test with unix like private key
-        KeyConfig keyConfig = KeyConfig.keystoreBuilder()
-                .keystore(Resource.create(".ssh/keystore.p12"))
-                .keyAlias("1")
-                .keystorePassphrase("j4c".toCharArray())
+        Keys keyConfig = Keys.builder()
+                .keystore(keystoreBuilder -> keystoreBuilder.keystore(Resource.create(".ssh/keystore.p12"))
+                        .keyAlias("1")
+                        .passphrase("j4c".toCharArray()))
                 .build();
 
         config = Config.builder()
