@@ -14,13 +14,12 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-///////////////////////////////////////////////////////////////////////////////
-
+/////////////////////////////////////////////////////////////////////////////
 
 = Oracle WebLogic Server 
-:description: Helidon Oracle WebLogic Server Integration
+:description: Helidon and Oracle WebLogic Server Integration
 :keywords: wls, jms, rest, single sign-on, sso, web services
-:feature-name: Oracle WebLogic Server Integration Integration
+:feature-name: Oracle WebLogic Server Integration
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
@@ -43,7 +42,7 @@ include::{rootdir}/includes/mp.adoc[]
 :wls-thin-link: {wls-thin-url}[Weblogic thin T3 client]
 
 :wls-soap-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-web-services-helidon.html#GUID-DA893D15-13CB-49AF-AD5B-43FD716618BB
-:wls-soap-link: {wls-jms-url}[Integrating Oracle WebLogic Server Web Services with Helidon]
+:wls-soap-link: {wls-soap-url}[Integrating Oracle WebLogic Server Web Services with Helidon]
 
 :wls-sso-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-and-helidon-sso-oci.html#GUID-D54EE368-0D7F-4DBB-9279-CC5BDDB76725
 :wls-sso-link: {wls-sso-url}[Integrating Oracle WebLogic Cluster and Helidon Applications for SSO on OCI Using IDCS]
@@ -64,16 +63,17 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-The Oracle WebLogic Server and Helidon integration enables interaction between a Helidon microservice application and an application installed on Oracle WebLogic Server.
+The Oracle WebLogic Server (WebLogic Server) and Helidon integration enables interaction between a Helidon microservice application and an application installed on WebLogic Server.
+
 The following integrations are explained in this document:
 
-* The REST integration allows Oracle WebLogic Server applications and Helidon microservices to communicate through RESTful web service invocations.
-* The JMS integration allows Helidon microservices to publish and consume messages from Oracle WebLogic JMS Server.
-* The Oracle WebLogic Web Services integration allows Helidon microservices to interact with Oracle WebLogic Server applications through SOAP (Simple Object Access Protocol) web service calls from Helidon to Oracle WebLogic Server.
-* The Oracle WebLogic Server and Helidon integration allows communication between a WebLogic cluster-hosted application and a Helidon microservice application by implementing Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
+* The REST integration allows WebLogic Server applications and Helidon microservices to communicate through RESTful Web Service invocations.
+* The JMS integration allows Helidon microservices to publish and consume messages from WebLogic JMS Server.
+* The WebLogic Web Services integration allows Helidon microservices to interact with WebLogic Server applications through SOAP (Simple Object Access Protocol) Web Service calls from Helidon to WebLogic Server.
+* The WebLogic Server and Helidon integration allows communication between a WebLogic cluster-hosted application and a Helidon microservice application by implementing Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
 
-Integration between Helidon and Oracle Weblogic Server is possible over numerous protocols, most notably RESTful web services,
-SOAP web services and JMS. Both Helidon and Oracle Weblogic Server supports Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
+Integration between Helidon and WebLogic Server is possible over numerous protocols, most notably RESTful Web Services,
+SOAP Web Services, and JMS. Both Helidon and WebLogic Server support Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
 
 == REST Services Integration [[REST-Services]]
 
@@ -83,17 +83,15 @@ SOAP web services and JMS. Both Helidon and Oracle Weblogic Server supports Sing
 - <<REST-Services-References, References>>
 
 === Overview [[REST-Services-Overview]]
-The REST services integration with Helidon enables bidirectional REST calls between Helidon and Oracle WebLogic Server.
-RESTful integration between Oracle Weblogic Server and Helidon MP is easy to develop and maintain because
-both runtimes supports JAX-RS for serving and calling RESTful resources.
-Thanks to the Jakarata EE support you can create same RESTful resource or client which will work in both environments.
 
-Main difference in usage of JAX-RS between Helidon and Oracle Weblogic Server is caused by the version of the supported Jakarta specification.
-While Oracle Weblogic Server supports Jakarta EE 8, Helidon supports JAX-RS or newly Jakarta RESTful Web Services from {jakarta-version}.
-Most notable difference between those two versions of Jakarta EE is the package name change, where `javax` has been replaced with `jakarta`.
+The REST services integration with Helidon enables bidirectional REST calls between Helidon and WebLogic Server. RESTful integration between WebLogic Server and Helidon MP is easy to develop and maintain because
+both runtimes support JAX-RS for serving and calling the RESTful resources. With the Jakarta EE support, you can create the same RESTful resource or client, which will work in both environments.
+
+The main difference in the usage of JAX-RS between Helidon and WebLogic Server is the version of the supported Jakarta specification. While WebLogic Server supports Jakarta EE 8, Helidon supports JAX-RS or the new Jakarta RESTful Web Services from {jakarta-version}.
+The most notable difference between those two versions of Jakarta EE is the change in the package name, where `javax` is replaced with `jakarta`.
 
 [source, java]
-.Helidon JAX-RS imports
+.Helidon JAX-RS Imports
 ----
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -102,11 +100,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 ----
 
-While imports from `jakarta` namespace needs to be used in Helidon,
-for Oracle Weblogic Server `javax` needs to be used for the same JAX-RS code.
+While imports from the `jakarta` namespace needs to be used in Helidon, for WebLogic Server `javax` should be used for the same JAX-RS code.
 
 [source, java]
-.Oracle Weblogic Server JAX-RS imports
+.Oracle WebLogic Server JAX-RS Imports
 ----
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -116,12 +113,10 @@ import javax.ws.rs.core.MediaType;
 ----
 
 === JAX-RS Server [[REST-Server]]
-JAX-RS resource is a simple bean with annotated methods representing routes, HTTP methods under specific path.
-Annotated methods are invoked when particular REST endpoint is called. All the mapping and routing is done by
-actual implementation of JAX-RS standard according the JAX-RS annotations.
+The JAX-RS resource is a simple bean with annotated methods representing routes and HTTP methods under a specific path. Annotated methods are invoked when a particular REST endpoint is called. All the mapping and routing are done by the actual implementation of the JAX-RS standard according to the JAX-RS annotations.
 
 [source,java]
-.JAX-RS example resource
+.JAX-RS Example Resource
 ----
 @Path("/greet")//<1>
 public class GreetResource {
@@ -135,24 +130,24 @@ public class GreetResource {
     }
 }
 ----
-<1> Path of the resource
-<2> HTTP method
-<3> Expected response content type
-<4> Returning text payload with status 200
+<1> Path of the resource.
+<2> HTTP method.
+<3> Expected response content type.
+<4> Returns the text payload with status 200.
 
-JAX-RS is very powerful tool where you can register your own message body writers, readers, filters or exception mappers.
-In both, Helidon and Oracle Weblogic Server, is {jersey-link} used as an JAX-RS implementation.
+JAX-RS is a very powerful tool where you can register your message body writers, readers, filters,  or exception mappers.
+In both Helidon and WebLogic Server, {jersey-link} is used as the JAX-RS implementation.
 
-For further reading on how to create and deploy JAX-RS RESTful resources in Helidon continue to xref:../../mp/jaxrs/jaxrs-applications.adoc[JAX-RS applications.]
-For developing and deploying JAX-RS resources on Oracle Weblogic Server follow {wls-jaxrs-link} documentation.
+For information about creating and deploying the JAX-RS RESTful resources in Helidon, see  xref:../../mp/jaxrs/jaxrs-applications.adoc[JAX-RS applications.]
+
+For information about developing and deploying the JAX-RS resources on WebLogic Server, see the {wls-jaxrs-link} documentation.
 
 === JAX-RS Client [[REST-Client]]
 
-JAX-RS provides convenient client API for calling RESTful resources.
-Client allows you to prepare and execute RESTful request call with a simple builder pattern API.
+JAX-RS provides a convenient client API for calling the RESTful resources. The client enables you to prepare and execute the RESTful request call with a simple builder pattern API.
 
 [source,java]
-.JAX-RS client example
+.JAX-RS Client Example
 ----
 Client client = ClientBuilder.newClient();
 String res = client
@@ -161,22 +156,21 @@ String res = client
     .request("text/plain") // <3>
     .get(String.class); // <4> <5>
 ----
-<1> Creates new WebTarget with default root url
-<2> Prepare request to particular context path
-<3> Set expected response content type
-<4> Execute GET request and block until response is received
-<5> Parameter sets expected response payload type, available body readers are used for parsing to the correct type
+<1> Creates a new WebTarget with the default root URL.
+<2> Prepares the request to a particular context path.
+<3> Sets the expected response content type.
+<4> Executes the GET request and blocks until the response is received.
+<5> Parameter sets the expected response payload type, available body readers are used for parsing to the correct response payload type.
 
-Again you can register your own message body writers, readers, filters or exception mappers.
+Again, you can register your own message body writers, readers, filters, or exception mappers.
 
-For further reading on how to create JAX-RS clients in Helidon continue to xref:../../mp/jaxrs/jaxrs-client.adoc[JAX-RS client.]
-For developing and deploying JAX-RS clients on Oracle Weblogic Server follow {wls-jaxrs-client-link} documentation.
+For information about creating JAX-RS clients in Helidon, see  xref:../../mp/jaxrs/jaxrs-client.adoc[JAX-RS client.]
+For information about developing and deploying JAX-RS clients on WebLogic Server, see the {wls-jaxrs-client-link} documentation.
 
 === References [[REST-Services-References]]
 * xref:../../mp/introduction/microprofile.adoc[Helidon MP Tutorial]
 * xref:../../mp/guides/quickstart.adoc[Helidon MP Quickstart]
 * {wls-jaxrs-link}
-* {wls-jaxrs-client-link}
 * {jersey-link}
 
 == JMS Integration [[JMS-Integration]]
@@ -187,23 +181,19 @@ For developing and deploying JAX-RS clients on Oracle Weblogic Server follow {wl
 - <<JMS-Integration-References, References>>
 
 === Overview [[JMS-Integration-Overview]]
-Oracle Weblogic Server provides Java Message Service (JMS) and acts as a messaging broker accessible even from outside the cluster.
-To access Oracle Weblogic JMS Server from outside, client library is needed.
-Helidon JMS connector for reactive messaging can be configured to use {wls-thin-link} for either consuming or
+WebLogic Server provides Java Message Service (JMS) and acts as a messaging broker that is accessible even from outside the cluster.
+To access the WebLogic JMS Server from outside, a client library is required. The Helidon JMS connector for reactive messaging can be configured to use the {wls-thin-link} for either consuming or
 emitting messages.
 
-{wls-thin-link} can be obtained from multiple sources.
-Legacy versions of thin client can be found in server/lib directory(`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.
+You can obtain the {wls-thin-link} from multiple sources.
+Legacy versions of the thin client can be found in the server/lib directory(`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.
 
-WARNING: Helidon supports {jakarta-version} and legacy versions of `javax` based thin T3 client wouldn't work correctly when on it's classpath.
-Legacy thin T3 clients must be used with specialized xref:../../mp/reactivemessaging/weblogic.adoc[WebLogic JMS Connector] in order to work.
+WARNING: Helidon supports {jakarta-version}. Legacy versions of `javax` based thin T3 client will not work correctly when if it is on the Helidon classpath. The legacy thin T3 clients must be used with specialized xref:../../mp/reactivemessaging/weblogic.adoc[WebLogic JMS Connector] to work.
 
-Updated version of thin T3 client compatible with modern Jakarta runtimes is available at {osdc-link} as `wlthint3client.jakarta`.
-After the download, thin T3 client artefact needs to be installed in the maven repository accessible from
-your application build.
+An updated version of the thin T3 client compatible with modern Jakarta runtimes is available at {osdc-link} as `wlthint3client.jakarta`. After downloading the client, you should install the thin T3 client artifact in the Maven repository accessible from the application build.
 
 [source, shell]
-.Example of installing thin T3 client artefact to the local maven repository
+.Example of Installing the Thin T3 Client Artifact to the Local Maven Repository
 ----
 mvn install:install-file \
 -Dfile=<JAR_FILE_PATH>/wlthint3client.jakarta.jar \
@@ -214,10 +204,10 @@ mvn install:install-file \
 
 === Maven Coordinates [[JMS-Integration-Maven-Coordinates]]
 
-To enable Oracle WebLogic Server JMS  with Helidon, add the following dependencies to your project’s `pom.xml` file:
+To enable WebLogic Server JMS  with Helidon, add the following dependencies to your project’s `pom.xml` file:
 
 [source,xml]
-.Dependencies for Reactive Messaging with thin T3 client
+.Dependencies for Reactive Messaging with the Thin T3 Client
 ----
 <dependency>
    <groupId>io.helidon.microprofile.messaging</groupId>
@@ -233,21 +223,19 @@ To enable Oracle WebLogic Server JMS  with Helidon, add the following dependenci
     <version>1.0</version>
 </dependency>
 ----
-<1> Dependency for Reactive Messaging
-<2> Dependency for JMS connector
-<3> Dependency for manually installed WLS thin client
+<1> Dependency for Reactive Messaging.
+<2> Dependency for JMS connector.
+<3> Dependency for manually installed WLS thin client.
 
 
 === Usage [[JMS-Integration-Usage]]
 
-After adding the Maven dependencies,
-configure the Helidon JMS connector including the JMS environment properties and the JMS resources such as the connection factory,
-destination, and destination type.
+After adding the Maven dependencies, configure the Helidon JMS connector, including the JMS environment properties and the JMS resources, such as the connection factory, destination, and destination type.
 
 The following example shows the `helidon-jms` connector configuration in the `application.yaml` configuration file.
 
 [source, yaml]
-.Example messaging configuration with JMS connector and thin T3 client
+.Example of the Messaging Configuration with JMS Connector and the Thin T3 Client
 ----
 wls-username: weblogic
 wls-password: welcome1
@@ -278,19 +266,19 @@ mp:
         jndi.destination: queuejndi #<5>
         type: queue
 ----
-<1> Admin server t3 connection URL
-<2> Example of WLS Cluster t3 connection URL
-<3> Connection factory name
-<4> JMS environment properties to lookup resources
-<5> Destination with `jndi.` prefix is evaluated as JNDI name, simple `destination` is evaluated as a CDI syntax
+<1> Admin server t3 connection URL.
+<2> Example of the WebLogic Cluster t3 connection URL.
+<3> Connection factory name.
+<4> JMS environment properties to lookup resources.
+<5> Destination with `jndi.` prefix is evaluated as JNDI name, simple `destination` is evaluated as a CDI syntax.
 
-For more detailed reading about Reactive Messaging configuration see xref:../../mp/reactivemessaging/introduction.adoc#_configuration[Reactive Messaging Configuration].
+For information about reactive messaging configuration, see xref:../../mp/reactivemessaging/introduction.adoc#_configuration[Reactive Messaging Configuration].
 
 After you have configured the Helidon JMS connector,
 you can use xref:../../mp/reactivemessaging/introduction.adoc[Helidon Reactive Messaging] for consuming and sending messages.
 
 [source, java]
-.Consuming messages from Oracle Weblogic JMS Server
+.Consuming Messages from WebLogic JMS Server
 ----
 @Incoming("from-wls-q")
 public void receive(String msg) {
@@ -299,7 +287,7 @@ public void receive(String msg) {
 ----
 
 [source, java]
-.Producing messages to Oracle Weblogic JMS Server
+.Producing Messages to WebLogic JMS Server
 ----
 @Outgoing("to-wls-q")
 public PublisherBuilder<String> produceToJms() {
@@ -307,7 +295,7 @@ public PublisherBuilder<String> produceToJms() {
 }
 ----
 
-For more information about setting up JMS integration between Helidon and Oracle Weblogic Server, see {wls-jms-link}.
+For more information about setting up JMS integration between Helidon and WebLogic Server, see {wls-jms-link}.
 
 === References [[JMS-Integration-References]]
 
@@ -327,7 +315,7 @@ For more information about setting up JMS integration between Helidon and Oracle
 
 === Overview [[Web-Services-Integration-Overview]]
 
-Helion MP and WebLogic Server Web Services integration enables the Helidon microservice application to communicate with the WebLogic Web Service deployed in Oracle WebLogic Server.
+Helion MP and WebLogic Server Web Services integration enables the Helidon microservice application to communicate with the WebLogic Web Service deployed in WebLogic Server.
 
 === Maven Coordinates [[Web-Services-Integration-Maven-Coordinates]]
 
@@ -343,7 +331,9 @@ Add the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` client file downloa
 
 === Usage [[Web-Services-Integration-Usage]]
 
-Use the `clientgen` WebLogic web services Ant task by using the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` file, installed earlier, to generate the *jakarta* based client artifacts that client applications use to invoke the WebLogic web services. Add a call to the `clientgen` Ant task, as shown in the following example:
+Use the `clientgen` WebLogic Web Services Ant task by using the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` file, installed earlier, to generate the *jakarta* based client artifacts that client applications use to invoke the WebLogic Web Services. 
+
+Add a call to the `clientgen` Ant task, as shown in the following example:
 [source, xml]
 ----
 <target>
@@ -360,7 +350,7 @@ Use the `clientgen` WebLogic web services Ant task by using the `com.oracle.webs
 
 === Example [[Web-Services-Integration-Example]]
 
-You can create the RESTful web service to invoke the WebLogic Web Service, as shown in the example below:
+You can create the RESTful Web Service to invoke the WebLogic Web Service, as shown in the following example:
 [source, java]
 ----
 @Path("/helidonclient")
@@ -399,7 +389,7 @@ public class HelidonWSEEClient {
 
 === Overview [[SSO-Integration-Overview]]
 
-The Oracle WebLogic Server and Helidon integration on OKE enables SSO authentication to: 
+The WebLogic Server and Helidon integration on OKE enables SSO authentication to: 
 
 * Access the IDCS configured client application deployed on Oracle WebLogic cluster.
 * Access the Helidon REST endpoints configured with IDCS.
@@ -408,6 +398,7 @@ The Oracle WebLogic Server and Helidon integration on OKE enables SSO authentica
 === Maven Coordinates [[SSO-Integration-Maven-Coordinates]]
 
 To enable this integration, add the Maven dependency to the `pom.xml` file, as shown in the following example:
+
 [source, xml]
 ----
 <dependency>
@@ -422,7 +413,7 @@ To enable this integration, add the Maven dependency to the `pom.xml` file, as s
 
 === Usage [[SSO-Integration-Usage]]
 
-To set up the integration, you should integrate the WebLogic cluster applications and the Helidon 3.x application with Oracle Identity Cloud Service (IDCS). For more information about these integrations, see https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/integrating-oracle-weblogic-and-helidon-sso-oci.html#GUID-94C760CC-9874-48A7-AD59-DA3108FB36C8[Integrating Oracle WebLogic Cluster and Helidon 3.x for SSO].
+To set up the integration, you should integrate the WebLogic cluster applications and the Helidon application with Oracle Identity Cloud Service (IDCS). For more information about these integrations, see https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/integrating-oracle-weblogic-and-helidon-sso-oci.html#GUID-94C760CC-9874-48A7-AD59-DA3108FB36C8[Integrating Oracle WebLogic Cluster and Helidon 3.x for SSO].
 
 Then, access the WebLogic cluster application endpoint from the Helidon REST endpoints by adding the following snippet in the Helidon source code:
 [source, java]
