@@ -141,8 +141,9 @@ class MediaTypeTest {
     @Test
     void parseInvalidTextInStrictMode() {
         assertThrows(IllegalArgumentException.class, () -> {
-            HttpMediaType.create("text");
-        });
+                         HttpMediaType.create("text");
+                     },
+                     "Cannot parse media type: text");
     }
 
     // Calling create method with "text" argument shall return "text/plain" in relaxed mode.
