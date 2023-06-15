@@ -173,12 +173,6 @@ public interface FakeOpenApiConfig {
     default void doAllowNakedPathParameter() {
     }
 
-    enum OperationIdStrategy {
-        METHOD,
-        CLASS_METHOD,
-        PACKAGE_CLASS_METHOD
-    }
-
     default Pattern patternOf(String configValue) {
         return patternOf(configValue, null);
     }
@@ -212,5 +206,11 @@ public interface FakeOpenApiConfig {
             }
         }
         return rval;
+    }
+
+    enum OperationIdStrategy {
+        METHOD,
+        CLASS_METHOD,
+        PACKAGE_CLASS_METHOD
     }
 }

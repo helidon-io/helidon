@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,26 @@
 package io.helidon.builder.test;
 
 import java.net.URI;
-import java.util.Optional;
 
 import io.helidon.builder.test.testsubjects.ChildInterfaceIsABuilder;
-import io.helidon.builder.test.testsubjects.ChildInterfaceIsABuilderImpl;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class ParentParentChildTest {
 
     @Test
     void collapsedMiddleType() {
-        ChildInterfaceIsABuilder child = ChildInterfaceIsABuilderImpl.builder()
+        ChildInterfaceIsABuilder child = ChildInterfaceIsABuilder.builder()
                 .childLevel(100)
                 .parentLevel(99)
                 .uri(URI.create("http://localhost"))
-                .empty(Optional.empty())
                 .build();
         assertThat(new String(child.maybeOverrideMe().get()), equalTo("override"));
         assertThat(child.uri().get().toString(), equalTo("http://localhost"));
@@ -52,21 +51,35 @@ class ParentParentChildTest {
      */
     @Test
     void ensureCharArraysAreHiddenFromToStringOutput() {
-        ChildInterfaceIsABuilderImpl val = ChildInterfaceIsABuilderImpl.builder()
+        ChildInterfaceIsABuilder val = ChildInterfaceIsABuilder.builder()
                 .build();
-        assertThat(val.toString(),
-                   equalTo("ChildInterfaceIsABuilder(uri=Optional.empty, empty=Optional.empty, parentLevel=0, childLevel=0, "
-                                   + "isChildLevel=true, maybeOverrideMe=not-empty, overrideMe=not-null)"));
+
+        String toString = val.toString();
+        // in order of declaration on interface, first my type
+        assertThat(toString,
+                   startsWith(
+                           "ChildInterfaceIsABuilder{childLevel=0,isChildLevel=true,maybeOverrideMe=****,overrideMe=****,"
+                                   + "parentLevel=0}"));
+        // then parent type
+        assertThat(toString, endsWith("ParentOfParentInterfaceIsABuilder{uri=Optional.empty,empty=Optional.empty}"));
+
         assertThat(val.overrideMe(), equalTo("override2".toCharArray()));
         assertThat(val.maybeOverrideMe().orElseThrow(), equalTo("override".toCharArray()));
 
-        val = ChildInterfaceIsABuilderImpl.toBuilder(val)
-                .maybeOverrideMe(Optional.empty())
+        val = ChildInterfaceIsABuilder.builder(val)
+                .unsetMaybeOverrideMe()
                 .overrideMe("pwd")
                 .build();
-        assertThat(val.toString(),
-                   equalTo("ChildInterfaceIsABuilder(uri=Optional.empty, empty=Optional.empty, parentLevel=0, childLevel=0, "
-                                   + "isChildLevel=true, maybeOverrideMe=Optional.empty, overrideMe=not-null)"));
+
+        toString = val.toString();
+        // in order of declaration on interface, first my type
+        assertThat(toString,
+                   startsWith(
+                           "ChildInterfaceIsABuilder{childLevel=0,isChildLevel=true,maybeOverrideMe=null,overrideMe=****,"
+                                   + "parentLevel=0}"));
+        // then parent type
+        assertThat(toString, endsWith("ParentOfParentInterfaceIsABuilder{uri=Optional.empty,empty=Optional.empty}"));
+
         assertThat(val.overrideMe(), equalTo("pwd".toCharArray()));
         assertThat(val.maybeOverrideMe(), optionalEmpty());
     }

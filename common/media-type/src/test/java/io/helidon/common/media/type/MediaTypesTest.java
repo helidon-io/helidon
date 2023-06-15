@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,5 +154,12 @@ class MediaTypesTest {
 
             assertThat(detected.map(MediaType::text), optionalValue(containsString("/")));
         }
+    }
+
+    @Test
+    void testGuessedTypes() {
+        MediaType text = MediaTypes.create("text");
+        assertThat(text.type(), is("text"));
+        assertThat(text.subtype(), is("plain"));
     }
 }

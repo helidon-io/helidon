@@ -1,5 +1,15 @@
 # builder
 
+Dependency tree
+
+helidon-common (no dependencies)
+helidon-builder-api (no dependencies)
+
+helidon-common-types (helidon-common, helidon-builder-api) - cannot use `helidon-builder-processor`!
+helidon-builder-processor (helidon-common-types)
+
+
+
 The <b>Helidon Builder</b> provides compile-time code generation for fluent builders. It was inspired by [Lombok]([https://projectlombok.org/), but the implementation here in Helidon is different in a few ways:
 <ol>
     <li>The <i>Builder</i> annotation targets interface or annotation types only. Your interface effectively contains the attributes of your getter as well as serving as the contract for your getter methods.</li>

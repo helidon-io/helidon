@@ -60,6 +60,23 @@ public class Level0ManualImpl<T extends Level0ManualImpl> implements Level0, Sup
         return equals;
     }
 
+    /*
+    // builder base - nothing
+    // builder
+    Annotation.Builder{
+      typeName=io.helidon.builder.Prototype.Blueprint
+      values={builderInterceptor=....}
+    }
+    // impl
+    Annotation{
+      typeName=io.helidon.builder.Prototype.Blueprint
+      values={builderInterceptor=....}
+    }
+
+    inheritance
+    Qualifier{}Annotation{typeName=}
+     */
+
     protected CharSequence toStringInner() {
         return "level0StringAttribute=" + getLevel0StringAttribute();
     }

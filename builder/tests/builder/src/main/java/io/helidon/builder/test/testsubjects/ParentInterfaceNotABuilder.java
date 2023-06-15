@@ -18,12 +18,14 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.Optional;
 
+import io.helidon.config.metadata.ConfiguredOption;
+
 /**
  * Used for demonstrating (and testing) multi-inheritance of interfaces and the builders that are produced.
  *
  * @see ChildInterfaceIsABuilder
  */
-public interface ParentInterfaceNotABuilder extends ParentOfParentInterfaceIsABuilder {
+public interface ParentInterfaceNotABuilder extends ParentOfParentInterfaceIsABuilderBlueprint {
 
     /**
      * The Builder will ignore {@code default} and {@code static} functions.

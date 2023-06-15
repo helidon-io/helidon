@@ -23,5 +23,5 @@ module io.helidon.builder.test.builder {
     requires static io.helidon.config.metadata;
 
     requires io.helidon.common;
-    requires io.helidon.builder;
+    requires io.helidon.builder.api;
 }

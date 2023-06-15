@@ -1,0 +1,192 @@
+/*
+ * Copyright (c) 2023 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.builder.api;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigException;
+import io.helidon.common.config.ConfiguredProvider;
+import io.helidon.common.config.NamedService;
+
+final class ProvidedUtil {
+    private ProvidedUtil() {
+    }
+
+    /**
+     * Discover services from configuration.
+     *
+     * @param config               configuration located at the node of the service providers
+     *                             (either a list node, or object, where each child is one service)
+     * @param serviceLoader        helidon service loader for the expected type
+     * @param providerType         service provider interface type
+     * @param configType           configured service type
+     * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
+     *                             node
+     * @param <T>                  type of the expected service
+     * @return list of discovered services
+     */
+    static <T extends NamedService> List<T> discoverServices(Config config,
+                                                             HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
+                                                             Class<? extends ConfiguredProvider<T>> providerType,
+                                                             Class<T> configType,
+                                                             boolean allFromServiceLoader) {
+
+        boolean discoverServices = config.get("discover-services").asBoolean().orElse(allFromServiceLoader);
+        Config providersConfig = config.get("providers");
+
+        List<ConfiguredService> configuredServices = new ArrayList<>();
+
+        // all child nodes of the current node
+        List<Config> serviceConfigList = providersConfig.asNodeList()
+                .orElseGet(List::of);
+        boolean isList = providersConfig.isList();
+
+        for (Config serviceConfig : serviceConfigList) {
+            configuredServices.add(configuredService(serviceConfig, isList));
+        }
+
+        // now we have all service configurations, we can start building up instances
+        if (config.isList()) {
+            // driven by order of declaration in config
+            return servicesFromList(serviceLoader, providerType, configType, configuredServices, discoverServices);
+        } else {
+            // driven by service loader order
+            return servicesFromObject(serviceLoader, providerType, configType, configuredServices, discoverServices);
+        }
+    }
+
+    private static <T extends NamedService> List<T>
+    servicesFromObject(HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
+                       Class<? extends ConfiguredProvider<T>> providerType,
+                       Class<T> configType,
+                       List<ConfiguredService> configuredServices,
+                       boolean allFromServiceLoader) {
+        // order is determined by service loader
+        Set<String> availableProviders = new HashSet<>();
+        Map<String, ConfiguredService> allConfigs = new HashMap<>();
+        configuredServices.forEach(it -> allConfigs.put(it.type(), it));
+        Set<String> unusedConfigs = new HashSet<>(allConfigs.keySet());
+
+        List<T> result = new ArrayList<>();
+
+        serviceLoader.forEach(provider -> {
+            ConfiguredService configuredService = allConfigs.get(provider.configKey());
+            availableProviders.add(provider.configKey());
+            unusedConfigs.remove(provider.configKey());
+            if (configuredService == null) {
+                if (allFromServiceLoader) {
+                    result.add(provider.create(Config.empty(), provider.configKey()));
+                }
+            } else {
+                if (configuredService.enabled()) {
+                    result.add(provider.create(configuredService.serviceConfig(),
+                                               configuredService.name()));
+                }
+            }
+        });
+        if (!unusedConfigs.isEmpty()) {
+            throw new ConfigException("Unknown provider configured. Expected providers with types: " + unusedConfigs
+                                              + ", but only the following providers are supported: " + availableProviders
+                                              + ", provider interface: " + providerType.getName()
+                                              + ", configured service: " + configType.getName());
+        }
+        return result;
+    }
+
+    private static <T extends NamedService> List<T>
+    servicesFromList(HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
+                     Class<? extends ConfiguredProvider<T>> providerType,
+                     Class<T> configType,
+                     List<ConfiguredService> configuredServices,
+                     boolean allFromServiceLoader) {
+        Map<String, ConfiguredProvider<T>> allProvidersByType = new HashMap<>();
+        Map<String, ConfiguredProvider<T>> unusedProvidersByType = new LinkedHashMap<>();
+        serviceLoader.forEach(it -> {
+            allProvidersByType.put(it.configKey(), it);
+            unusedProvidersByType.put(it.configKey(), it);
+        });
+
+        List<T> result = new ArrayList<>();
+
+        // first add all configured
+        for (ConfiguredService service : configuredServices) {
+            ConfiguredProvider<T> provider = allProvidersByType.get(service.type());
+            if (provider == null) {
+                throw new ConfigException("Unknown provider configured. Expecting a provider with type \"" + service.type()
+                                                  + "\", but only the following providers are supported: "
+                                                  + allProvidersByType.keySet() + ", "
+                                                  + "provider interface: " + providerType.getName()
+                                                  + ", configured service: " + configType.getName());
+            }
+            unusedProvidersByType.remove(service.type());
+            if (service.enabled()) {
+                result.add(provider.create(service.serviceConfig(), service.name()));
+            }
+        }
+
+        // then (if desired) add the rest
+        if (allFromServiceLoader) {
+            unusedProvidersByType.values()
+                    .forEach(it -> result.add(it.create(Config.empty(), it.configKey())));
+        }
+
+        return result;
+    }
+
+    private static ConfiguredService configuredService(Config serviceConfig, boolean isList) {
+        if (isList) {
+            // order is significant
+            String type = serviceConfig.get("type").asString().orElse(null);
+            String name = type;
+            boolean enabled = serviceConfig.get("enabled").asBoolean().orElse(true);
+
+            Config usedConfig = serviceConfig;
+            if (type == null) {
+                // nested approach (we are on the first node of the list, we need to go deeper)
+                List<Config> configs = serviceConfig.asNodeList().orElseGet(List::of);
+                if (configs.size() != 1) {
+                    throw new ConfigException(
+                            "Service provider configuration defined as a list must have a single node that is the type, "
+                                    + "with children containing the provider configuration. Failed on: " + serviceConfig.key());
+                }
+                usedConfig = configs.get(0);
+                name = usedConfig.name();
+                type = usedConfig.get("type").asString().orElse(name);
+                enabled = usedConfig.get("enabled").asBoolean().orElse(enabled);
+            }
+            return new ConfiguredService(usedConfig, type, name, enabled);
+        }
+        // just collect each node, order will be determined by weight
+
+        String name = serviceConfig.name();
+        String type = serviceConfig.get("type").asString().orElse(name);
+        boolean enabled = serviceConfig.get("enabled").asBoolean().orElse(true);
+
+        return new ConfiguredService(serviceConfig, type, name, enabled);
+    }
+
+    private record ConfiguredService(Config serviceConfig, String type, String name, boolean enabled) {
+    }
+}
