@@ -60,6 +60,7 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessBean;
 import jakarta.enterprise.inject.spi.ProcessObserverMethod;
+import jakarta.enterprise.inject.spi.ProcessSyntheticObserverMethod;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -141,6 +142,9 @@ public class ConfigCdiExtension implements Extension {
 
     private <X> void harvestConfigPropertyInjectionPointsFromEnabledObserverMethod(@Observes ProcessObserverMethod<?, X> event,
                                                                                    BeanManager beanManager) {
+        // Synthetic events won't have an annotated method
+        if (event instanceof ProcessSyntheticObserverMethod) return;
+
         AnnotatedMethod<X> annotatedMethod = event.getAnnotatedMethod();
         List<AnnotatedParameter<X>> annotatedParameters = annotatedMethod.getParameters();
         if (annotatedParameters != null) {
