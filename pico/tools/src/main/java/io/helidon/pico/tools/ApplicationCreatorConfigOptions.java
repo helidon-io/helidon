@@ -21,6 +21,7 @@ import java.util.Set;
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration directives and options optionally provided to the {@link io.helidon.pico.tools.spi.ApplicationCreator}.
@@ -53,10 +54,16 @@ public interface ApplicationCreatorConfigOptions {
     }
 
     /**
+     * The default permitted provider type.
+     */
+    PermittedProviderType DEFAULT_PERMITTED_PROVIDER_TYPE = PermittedProviderType.ALL;
+
+    /**
      * Determines the application generator's tolerance around the usage of providers.
      *
      * @return provider generation permission type
      */
+    @ConfiguredOption("ALL")
     PermittedProviderType permittedProviderTypes();
 
     /**

@@ -68,6 +68,8 @@ import io.helidon.pico.spi.InjectionResolver;
 
 import jakarta.inject.Provider;
 
+import static io.helidon.pico.api.PicoServices.createActivationRequestDefault;
+import static io.helidon.pico.api.PicoServices.isDebugEnabled;
 import static io.helidon.pico.runtime.ServiceUtils.isQualifiedInjectionTarget;
 
 /**
@@ -325,6 +327,12 @@ public abstract class AbstractServiceProvider<T>
         return (simple) ? TypeNameDefault.createFromTypeName(name).className() : name;
     }
 
+    @Override
+    public T get() {
+        return first(PicoServices.SERVICE_QUERY_REQUIRED)
+                .orElseThrow(() -> new PicoServiceProviderException("Expected to find a match", this));
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public Optional<T> first(ContextualServiceQuery ctx) {
@@ -343,6 +351,10 @@ public abstract class AbstractServiceProvider<T>
                     }
                 } else {
                     instance = NonSingletonServiceProvider.createAndActivate(this);
+                }
+
+                if (ctx.expected() && instance == null) {
+                    throw new PicoServiceProviderException("Expected to find a match: " + ctx, this);
                 }
 
                 return Optional.ofNullable(instance);
@@ -620,7 +632,7 @@ public abstract class AbstractServiceProvider<T>
             didAcquire = activationSemaphore.tryAcquire(1, TimeUnit.MILLISECONDS);
 
             if (service != null) {
-                System.Logger.Level level = (PicoServices.isDebugEnabled())
+                System.Logger.Level level = (isDebugEnabled())
                         ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
                 logger().log(level, "Resetting " + this);
                 if (deep && service instanceof Resettable) {
@@ -852,7 +864,7 @@ public abstract class AbstractServiceProvider<T>
 
             if (serviceOrProvider == null
                     || Phase.ACTIVE != currentActivationPhase()) {
-                ActivationRequest req = PicoServices.createActivationRequestDefault();
+                ActivationRequest req = createActivationRequestDefault();
                 ActivationResult res = activate(req);
                 if (res.failure()) {
                     if (ctx.expected()) {
@@ -1103,7 +1115,7 @@ public abstract class AbstractServiceProvider<T>
         ActivationLogEntryDefault.Builder res = logEntryAndResult.logEntry;
         Throwable prev = res.error().orElse(null);
         if (prev == null || !(t instanceof InjectionException)) {
-            String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "failed to complete operation";
+            String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "Failed to complete operation";
             e = new InjectionException(msg, t, this);
             log.ifPresent(e::activationLog);
         } else {

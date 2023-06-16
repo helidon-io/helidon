@@ -43,7 +43,7 @@ public interface InjectionPointProvider<T> extends Provider<T> {
     @Override
     default T get() {
         return first(PicoServices.SERVICE_QUERY_REQUIRED)
-                .orElseThrow(() -> couldNotFindMatch());
+                .orElseThrow(this::couldNotFindMatch);
     }
 
     /**

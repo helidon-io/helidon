@@ -428,7 +428,7 @@ class DefaultInjectionPlans {
     private static InjectionException expectedToResolveCriteria(InjectionPointInfo ipInfo,
                                                                 Throwable cause,
                                                                 ServiceProvider<?> self) {
-        String msg = (cause == null) ? "expected" : "failed";
+        String msg = (cause == null) ? "Expected" : "Failed";
         return new InjectionException(msg + " to resolve a service instance appropriate for '"
                                               + ipInfo.serviceTypeName() + "." + ipInfo.elementName()
                                               + "' with criteria = '" + ipInfo.dependencyToServiceInfo(),
