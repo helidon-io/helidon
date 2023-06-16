@@ -1,11 +1,6 @@
-# pico-configdriven
+# Config-driven
 
-This is a specialization of the [Pico](../)'s that is based upon </i>Helidon's [configuration](../../config)</i> subsystem, and adds support for something called <i>config-driven</i> services using the [@ConfiguredBy](./api/src/main/java/io/helidon/pico/configdriven/api/ConfiguredBy.java) annotation. When applied to a target service interface it will allow developers to use a higher level aggregation for their application configuration, and then allow the configuration to drive activation of services in the Pico Framework.
-
-There are a few additional caveats to understand about <b>ConfiguredBy</b> and its supporting infrastructure.
-
-* [@ConfigBean Builder](../../builder/builder-config) is used to aggregate configuration attributes to this higher-level, application-centric configuration beans.
-* The Pico Framework needs to be started w/ supporting <b>configdriven</b> modules in order for configuration to drive service activation.
+This is a specialization of the [Pico](../)'s that is based upon </i>Helidon's [configuration](../../config)</i> subsystem, and adds support for something called <i>config-driven</i> services using the [@ConfigDriven](./api/src/main/java/io/helidon/pico/configdriven/api/ConfigDriven.java) annotation. When applied to a target service interface it will allow developers to use a higher level aggregation for their application configuration, and then allow the configuration to drive activation of services in the Pico Framework. The [@ConfigBean](./api/src/main/java/io/helidon/pico/configdriven/api/ConfigBean.java) annotation can be used to customize behavior of a type that acts as a config-bean. 
 
 See the user documentation for more information.
 
@@ -15,35 +10,21 @@ See the user documentation for more information.
 * [runtime](runtime) - the runtime support for config-driven services.
 * [tests](tests) - tests that can also serve as examples for usage.
 
-## Usage Example
-1. Follow the basics instructions for [using Pico](../pico/README.md).
+# What is a config-bean?
 
-2. Write your [ConfigBean](../../builder/builder-config).
+Config bean can be any type that
+- provides a public static factory method `ConfigBeanType create(io.helidon.common.Config config)`
+- is annotated with `@Configured(root = true, prefix = "some.prefix")`
 
-```java
-@ConfigBean("server")
-public interface ServerConfig {
-    @ConfiguredOption("0.0.0.0")
-    String host();
+By referencing it from `@ConfigDriven` annotation, the config-driven annotation processor would take note of the bean, and make sure we can discover it at runtime and create instances from configuration.
 
-    @ConfiguredOption("0")
-    int port();
-}
-```
+A config-bean can also have `@ConfigBean` annotation to control the way bean instances are created (if we want a default instance, if the bean must have a configured option, and if it repeatable).
 
-3. Write your [ConfiguredBy](./api/src/main/java/io/helidon/pico/configdriven/ConfiguredBy.java) service.
+The expectation is that config-beans are created using `helidon-builder-processor`, by annotating a `Blueprint` with `Configured` annotation, and optionally with the `ConfigBean` annotation.
 
-```java
-@ConfiguredBy(ServerConfig.class)
-class LoomServer implements WebServer {
-    @Inject
-    LoomServer(ServerConfig serverConfig) {
-        ...
-    }
-}
-```
+# What is a config-driven type
 
-4. Provide your configuration, build, and run.
+Any service annotated with `@ConfigBean(ConfigBean.class)` is a config-driven service.
+Such a service will be added to service registry FOR EACH config bean instance that is discovered from configuration. For repeatable types, each instance has a name obtained from configuration (either the configuration node, or a `name` property), 
+as a `Named` qualifier.
 
-## How It Works
-At Pico startup initialization, and if <i>configdriven/runtime</i> is in the runtime classpath, then the Helidon's configuration tree will be scanned for "ConfigBean eligible" instances. And when a configuration matches then the config bean instance is built and fed into a <i>ConfigBeanRegistry</i>. If the <i>ConfiguredBy</i> services is declared to be "driven" (the default value), then the server (in this example the <i>LoomServer</i>) will be automatically started. In this way, the presence of configuration drives demand for a service implicitly starting that service (or services) that are declared to be configured by that config bean (in this example <i>ServerConfig</i>).

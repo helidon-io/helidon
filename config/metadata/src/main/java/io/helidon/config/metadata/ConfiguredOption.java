@@ -145,7 +145,7 @@ public @interface ConfiguredOption {
      *
      * @return whether to discover services by default for a provider
      */
-    boolean providerDiscoverServices() default true;
+    boolean providerDiscoverServices() default true;;
 
     /**
      * For options that have a predefined set of allowed values.
