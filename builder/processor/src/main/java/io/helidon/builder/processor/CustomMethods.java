@@ -36,10 +36,15 @@ import static io.helidon.builder.processor.Types.VOID_TYPE;
 record CustomMethods(List<CustomMethod> factoryMethods,
                      List<CustomMethod> builderMethods,
                      List<CustomMethod> prototypeMethods) {
+
+    CustomMethods() {
+        this(List.of(), List.of(), List.of());
+    }
+
     static CustomMethods create(ProcessingContext ctx, TypeContext.TypeInformation typeInformation) {
         Optional<Annotation> annotation = typeInformation.blueprintType().findAnnotation(CUSTOM_METHODS_TYPE);
         if (annotation.isEmpty()) {
-            return new CustomMethods(List.of(), List.of(), List.of());
+            return new CustomMethods();
         }
         // value is mandatory for this annotation
         String customMethodType = annotation.get().value().orElseThrow();
@@ -162,7 +167,7 @@ record CustomMethods(List<CustomMethod> factoryMethods,
         // processing type may be for a generated class, which does not contain package information
         if (processingType.packageName().isEmpty()) {
             if (processingType.className().equals("<any>")) {
-                // cannot be resolved as this is part of our round, good faith it is a correct parameters
+                // cannot be resolved as this is part of our round, good faith it is a correct parameter
                 return true;
             }
             return knownType.className().equals(processingType.className())

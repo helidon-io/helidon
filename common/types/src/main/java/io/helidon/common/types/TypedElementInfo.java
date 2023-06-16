@@ -26,8 +26,6 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-@io.helidon.common.Generated(value = "io.helidon.builder.processor.BlueprintProcessor",
-                             trigger = "io.helidon.common.types.TypedElementInfoBlueprint")
 public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.builder.api.Prototype {
     /**
      * Create a new fluent API builder to customize configuration.

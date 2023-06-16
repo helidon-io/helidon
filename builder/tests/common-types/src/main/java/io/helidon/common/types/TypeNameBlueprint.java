@@ -53,7 +53,7 @@ interface TypeNameBlueprint {
      *
      * @return the package name, never null
      */
-    @ConfiguredOption("")
+    @ConfiguredOption("")  // default value is empty package
     String packageName();
 
     /**

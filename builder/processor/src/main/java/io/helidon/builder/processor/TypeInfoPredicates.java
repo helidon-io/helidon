@@ -33,18 +33,15 @@ final class TypeInfoPredicates {
     }
 
     static boolean isStatic(TypedElementInfo element) {
-        // TODO fix once TypeInfo modifier constants are valid
-        return element.modifiers().contains("static");
+        return element.modifiers().contains(TypeValues.MODIFIER_STATIC);
     }
 
     static boolean isPrivate(TypedElementInfo element) {
-        // TODO fix once TypeInfo modifier constants are valid
-        return element.modifiers().contains("private");
+        return element.modifiers().contains(TypeValues.MODIFIER_PRIVATE);
     }
 
     static boolean isDefault(TypedElementInfo element) {
-        // TODO fix once TypeInfo modifier constants are valid
-        return element.modifiers().contains("default");
+        return element.modifiers().contains(TypeValues.MODIFIER_DEFAULT);
     }
 
     static boolean hasNoArgs(TypedElementInfo element) {

@@ -25,8 +25,6 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-@io.helidon.common.Generated(value = "io.helidon.builder.processor.BlueprintProcessor",
-                             trigger = "io.helidon.common.types.AnnotationBlueprint")
 public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.Prototype, Comparable<Annotation> {
     /**
      * Create a new fluent API builder to customize configuration.

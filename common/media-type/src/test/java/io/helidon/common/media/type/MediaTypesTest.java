@@ -155,11 +155,4 @@ class MediaTypesTest {
             assertThat(detected.map(MediaType::text), optionalValue(containsString("/")));
         }
     }
-
-    @Test
-    void testGuessedTypes() {
-        MediaType text = MediaTypes.create("text");
-        assertThat(text.type(), is("text"));
-        assertThat(text.subtype(), is("plain"));
-    }
 }

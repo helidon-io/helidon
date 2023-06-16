@@ -68,14 +68,7 @@ class MapCaseTest {
                    equalTo(1));
         builder.stringToDependencies(map);
 
-        // support removed, this is too complicated use case
-        //        // allow augmentation of the collection within the maps - see how we understand the values are collections
-        //        that we add to
-        //        // instead of replace
-        //        builder.addDependency("m", Set.of(Mockito.mock(MapCase.Dependency.class)));
-        //        assertThat(builder.stringToDependencies().get("m").size(),
-        //                   equalTo(2));
-        // true singular version on the value parameter as well
+         // true singular version on the value parameter as well
         builder.addDependency("n", Mockito.mock(MapCase.Dependency.class));
         assertThat(builder.stringToDependencies().get("n").size(),
                    equalTo(1));
@@ -86,10 +79,6 @@ class MapCaseTest {
         builder.putStringToDependencyMap("p", Map.of("1", Mockito.mock(MapCase.Dependency.class)));
         assertThat(builder.stringToDependencyMap().get("p").size(),
                    equalTo(1));
-        // support removed, too complicated use case
-        //        builder.addStringToDependencyMap("p", Map.of("2", Mockito.mock(MapCase.Dependency.class)));
-        //        assertThat(builder.stringToDependencyMap().get("p").size(),
-        //                   equalTo(2));
         assertThat(builder.stringToDependencyMap().size(),
                    equalTo(1));
 

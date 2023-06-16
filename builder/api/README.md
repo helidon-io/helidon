@@ -27,8 +27,8 @@ import io.helidon.config.metadata.ConfiguredOption;
 
 @Prototype.Blueprint
 @Configured // support method config(Config) on the builder, and a static create(Config)
-intrerface KeysBlueprint{
-@ConfiguredOption(required = true)
+interface KeysBlueprint{
+    @ConfiguredOption(required = true)
     String name();
             }
 ```

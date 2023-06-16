@@ -43,8 +43,6 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-@io.helidon.common.Generated(value = "io.helidon.builder.processor.BlueprintProcessor",
-                             trigger = "io.helidon.common.types.TypeNameBlueprint")
 public interface TypeName
         extends TypeNameBlueprint, io.helidon.builder.api.Prototype, Comparable<TypeName> {
     /**

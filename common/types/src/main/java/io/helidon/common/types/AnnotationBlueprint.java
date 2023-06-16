@@ -48,7 +48,7 @@ interface AnnotationBlueprint {
     /**
      * The value property.
      *
-     * @return The string value of value property
+     * @return the string value of value property
      */
     default Optional<String> value() {
         return getValue("value");

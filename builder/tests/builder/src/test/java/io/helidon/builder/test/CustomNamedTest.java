@@ -46,12 +46,6 @@ class CustomNamedTest {
 
         CustomNamed customNamed = customNamedBuilder.build();
 
-        // no longer supported, only linked values are used (order of insertion)
-        //        assertThat("should be ordered since we are using tree and ordered/linked",
-        //                   customNamed.toString(),
-        //                   equalTo("CustomNamed(stringSet=[a, b, y], stringList=[b, a, b, y], stringToIntegerMap={a=3, b=1, "
-        //                                   + "e=2})"));
-
         assertThat("should be ordered since we are using linked types",
                    customNamed.toString(),
                    equalTo("CustomNamed{stringSet=[b, a, y],stringList=[b, a, b, y],stringToIntegerMap={b=1, e=2, a=3}}"));

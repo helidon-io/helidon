@@ -39,10 +39,15 @@ interface TypeInfoBlueprint extends Annotated {
 
     /**
      * The type element kind.
+     * <p>
+     * Such as
+     * <ul>
+     *     <li>{@value io.helidon.common.types.TypeValues#KIND_INTERFACE}</li>
+     *     <li>{@value io.helidon.common.types.TypeValues#KIND_ANNOTATION_TYPE}</li>
+     *     <li>and other constants on {@link io.helidon.common.types.TypeValues}</li>
+     * </ul>
      *
-     * @return the type element kind (e.g., "{@value io.helidon.common.types.TypeValues#KIND_INTERFACE}",
-     * "{@value io.helidon.common.types.TypeValues#KIND_ANNOTATION_TYPE}",
-     * etc.)
+     * @return the type element kind.
      * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
      */
     @ConfiguredOption(required = true)
