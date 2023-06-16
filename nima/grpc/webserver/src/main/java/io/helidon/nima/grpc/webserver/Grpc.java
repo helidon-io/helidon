@@ -106,21 +106,21 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
                                                       String serviceName,
                                                       String methodName,
                                                       ServerCallHandler<ReqT, ResT> callHandler) {
-        String path = serviceName + "/" + methodName;
-
         Descriptors.ServiceDescriptor svc = proto.findServiceByName(serviceName);
         Descriptors.MethodDescriptor mtd = svc.findMethodByName(methodName);
         String pkg = proto.getOptions().getJavaPackage();
         pkg = "".equals(pkg) ? proto.getPackage() : pkg;
         String outerClass = getOuterClass(proto);
 
+        String path = svc.getFullName() + "/" + methodName;
+
         /*
         We have to use reflection here
          - to load the class
          - to invoke a static method on it
          */
-        Class<ReqT> requestType = load(pkg + "." + outerClass + mtd.getInputType().getFullName().replace('.', '$'));
-        Class<ResT> responsetype = load(pkg + "." + outerClass + mtd.getOutputType().getFullName().replace('.', '$'));
+        Class<ReqT> requestType = load(pkg + "." + outerClass + mtd.getInputType().getName().replace('.', '$'));
+        Class<ResT> responsetype = load(pkg + "." + outerClass + mtd.getOutputType().getName().replace('.', '$'));
 
         MethodDescriptor.Marshaller<ReqT> reqMarshaller = ProtoMarshaller.get(requestType);
         MethodDescriptor.Marshaller<ResT> resMarshaller = ProtoMarshaller.get(responsetype);
