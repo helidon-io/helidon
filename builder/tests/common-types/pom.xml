@@ -33,6 +33,10 @@
     <description>This module can be used to generate sources for helidon-common-types</description>
 
     <dependencies>
+        <!--
+        This module should never have a dependency on Helidon Common Config, to make sure builder can be used without
+        it. If we decide to add support for config, we need to create a new test module.
+        -->
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
@@ -40,10 +44,6 @@
         <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-config</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
