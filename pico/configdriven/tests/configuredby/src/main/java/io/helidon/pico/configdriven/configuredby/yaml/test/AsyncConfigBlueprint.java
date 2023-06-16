@@ -20,13 +20,14 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.configdriven.api.ConfigBean;
 
 @ConfigBean(repeatable = true)
 @Configured(root = true, prefix = "ft.asyncs")
 @Prototype.Blueprint
 interface AsyncConfigBlueprint {
-    
-    Optional<String> executor();
+    @ConfiguredOption
+    String executor();
 
 }

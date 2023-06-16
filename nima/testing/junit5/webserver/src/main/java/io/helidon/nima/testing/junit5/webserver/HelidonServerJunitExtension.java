@@ -207,6 +207,8 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
         Map<String, ListenerConfig.Builder> listenerConfigs = new HashMap<>();
         Map<String, Router.Builder> routerBuilders = new HashMap<>();
 
+        listenerConfigs.put(DEFAULT_SOCKET_NAME, ListenerConfig.builder().from(builder));
+
         withStaticMethods(testClass, SetUpRoute.class, (setUpRoute, method) -> {
             // validate parameters
             String socketName = setUpRoute.value();

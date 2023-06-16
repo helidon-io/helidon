@@ -29,6 +29,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  */
 @Configured
 @Prototype.Blueprint
+@Prototype.CustomMethods(KeystoreKeysBlueprint.CustomMethods.class)
 interface KeystoreKeysBlueprint {
     /**
      * Default keystore type.
@@ -118,4 +119,22 @@ interface KeystoreKeysBlueprint {
      */
     @ConfiguredOption("false")
     boolean trustStore();
+
+    final class CustomMethods {
+        private CustomMethods() {
+        }
+
+        /**
+         * Keystore passphrase.
+         *
+         * @param builder builder to update
+         * @param passphrase new keystore passphrase
+         * @deprecated use {@link #passphrase(String)} instead
+         */
+        @Deprecated(forRemoval = true, since = "4.0.0")
+        @Prototype.BuilderMethod
+        static void keystorePassphrase(KeystoreKeys.BuilderBase<?, ?> builder, String passphrase) {
+            builder.passphrase(passphrase);
+        }
+    }
 }

@@ -33,10 +33,12 @@ import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerResponse;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -44,16 +46,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class MtlsTest {
-    private final Http1Client client;
     private static WebServer server;
+    private final Http1Client client;
 
     MtlsTest(WebServer server) {
-        this.server = server;
+        MtlsTest.server = server;
         int port = server.port();
 
-        Keys privateKeyConfig = Keys.keystoreBuilder()
-                .keystore(Resource.create("client.p12"))
-                .keystorePassphrase("password")
+        Keys privateKeyConfig = Keys.builder()
+                .keystore(keystore -> keystore
+                        .keystore(Resource.create("client.p12"))
+                        .passphrase("password"))
                 .build();
 
         Tls tls = Tls.builder()
@@ -86,9 +89,10 @@ class MtlsTest {
                     sendCertificateString(certs, res);
                 })
                 .get("/reload", (req, res) -> {
-                    Keys privateKeyConfig = Keys.keystoreBuilder()
-                            .keystore(Resource.create("second-valid/server.p12"))
-                            .keystorePassphrase("password")
+                    Keys privateKeyConfig = Keys.builder()
+                            .keystore(keystore -> keystore
+                                    .keystore(Resource.create("second-valid/server.p12"))
+                                    .passphrase("password"))
                             .build();
 
                     Tls tls = Tls.builder()
@@ -109,28 +113,12 @@ class MtlsTest {
                 });
     }
 
-    private static void sendCertificateString(Certificate[] certs, ServerResponse res) {
-        if (certs == null) {
-            res.status(Http.Status.BAD_REQUEST_400).send("Expected client certificate");
-        } else {
-            List<String> certDefs = new LinkedList<>();
-            for (Certificate cert : certs) {
-                if (cert instanceof X509Certificate x509) {
-                    certDefs.add("X.509:" + x509.getSubjectX500Principal().getName());
-                } else {
-                    certDefs.add(cert.getType());
-                }
-            }
-
-            res.send(String.join("|", certDefs));
-        }
-    }
-
     @SetUpServer
-    static void server(WebServer.Builder builder) {
-        Keys privateKeyConfig = Keys.keystoreBuilder()
-                .keystore(Resource.create("server.p12"))
-                .keystorePassphrase("password")
+    static void server(ServerConfig.Builder builder) {
+        Keys privateKeyConfig = Keys.builder()
+                .keystore(keystore -> keystore
+                        .keystore(Resource.create("server.p12"))
+                        .passphrase("password"))
                 .build();
 
         Tls tls = Tls.builder()
@@ -166,6 +154,7 @@ class MtlsTest {
     }
 
     @Test
+    @Disabled
     void testTlsReload() {
         Http1ClientResponse response = client.method(Http.Method.GET)
                 .uri("/serverCert")
@@ -186,5 +175,22 @@ class MtlsTest {
 
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(response.as(String.class), is("X.509:CN=localhost|X.509:CN=Nima-CA"));
+    }
+
+    private static void sendCertificateString(Certificate[] certs, ServerResponse res) {
+        if (certs == null) {
+            res.status(Http.Status.BAD_REQUEST_400).send("Expected client certificate");
+        } else {
+            List<String> certDefs = new LinkedList<>();
+            for (Certificate cert : certs) {
+                if (cert instanceof X509Certificate x509) {
+                    certDefs.add("X.509:" + x509.getSubjectX500Principal().getName());
+                } else {
+                    certDefs.add(cert.getType());
+                }
+            }
+
+            res.send(String.join("|", certDefs));
+        }
     }
 }

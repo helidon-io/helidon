@@ -26,13 +26,13 @@ import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.ClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.http1.Http1ConfigDefault;
-import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-import io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider;
+import io.helidon.nima.webserver.http1.Http1Config;
+import io.helidon.nima.webserver.http1.Http1ConnectionSelector;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 import org.junit.jupiter.api.Test;
 
@@ -57,15 +57,15 @@ class ConfiguredLimitsTest {
     }
 
     @SetUpServer
-    static void server(WebServer.Builder server) {
-        ServerConnectionSelectorProvider http1 = Http1ConnectionProvider.builder()
-                .http1Config(Http1ConfigDefault.builder()
-                                     .maxHeadersSize(1024)
-                                     .maxPrologueLength(512)
-                                     .build())
+    static void server(ServerConfig.Builder server) {
+        ServerConnectionSelector http1 = Http1ConnectionSelector.builder()
+                .config(Http1Config.builder()
+                                .maxHeadersSize(1024)
+                                .maxPrologueLength(512)
+                                .build())
                 .build();
 
-        server.addConnectionProvider(http1);
+        server.addConnectionSelector(http1);
     }
 
     @SetUpRoute

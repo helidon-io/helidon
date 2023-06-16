@@ -36,6 +36,7 @@ import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -69,10 +70,11 @@ class Http2ServerTest {
     }
 
     @SetUpServer
-    static void setUpServer(WebServer.Builder serverBuilder) {
-        Keys privateKeyConfig = Keys.keystoreBuilder()
-                .keystore(Resource.create("certificate.p12"))
-                .keystorePassphrase("helidon")
+    static void setUpServer(ServerConfig.Builder serverBuilder) {
+        Keys privateKeyConfig = Keys.builder()
+                .keystore(keystore -> keystore
+                        .keystore(Resource.create("certificate.p12"))
+                        .passphrase("helidon"))
                 .build();
 
         Tls tls = Tls.builder()
@@ -80,8 +82,8 @@ class Http2ServerTest {
                 .privateKeyCertChain(privateKeyConfig.certChain())
                 .build();
 
-        serverBuilder.socket("https",
-                             socketBuilder -> socketBuilder.tls(tls));
+        serverBuilder.putSocket("https",
+                                socketBuilder -> socketBuilder.tls(tls));
     }
 
     @SetUpRoute
@@ -89,10 +91,6 @@ class Http2ServerTest {
         // explicitly on HTTP/2 only, to make sure we do upgrade
         router.route(Http2Route.route(GET, "/", (req, res) -> res.header(TEST_HEADER).send(MESSAGE)))
                 .route(Http2Route.route(GET, "/query", Http2ServerTest::queryEndpoint));
-    }
-
-    private static void queryEndpoint(ServerRequest req, ServerResponse res) {
-        res.send(req.query().value("param"));
     }
 
     @Test
@@ -177,5 +175,9 @@ class Http2ServerTest {
         assertThat(response.statusCode(), is(200));
         assertThat(response.body(), is("paramValue"));
         System.clearProperty("jdk.internal.httpclient.disableHostnameVerification");
+    }
+
+    private static void queryEndpoint(ServerRequest req, ServerResponse res) {
+        res.send(req.query().value("param"));
     }
 }

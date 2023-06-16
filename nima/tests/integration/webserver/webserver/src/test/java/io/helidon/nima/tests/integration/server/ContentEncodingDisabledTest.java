@@ -15,17 +15,17 @@
  */
 package io.helidon.nima.tests.integration.server;
 
-import org.junit.jupiter.api.Test;
-
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http1.Http1ConfigDefault;
-import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-import io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider;
+import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.http1.Http1Config;
+import io.helidon.nima.webserver.http1.Http1ConnectionSelector;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,21 +48,21 @@ class ContentEncodingDisabledTest extends ContentEncodingDisabledAbstract {
     }
 
     @SetUpServer
-    static void server(WebServer.Builder server) {
-        ServerConnectionSelectorProvider http1 = Http1ConnectionProvider.builder()
+    static void server(ServerConfig.Builder server) {
+        ServerConnectionSelector http1 = Http1ConnectionSelector.builder()
                 // Headers validation is enabled by default
-                .http1Config(Http1ConfigDefault.builder().build())
+                .config(Http1Config.builder().build())
                 .build();
-        server.addConnectionProvider(http1)
+        server.addConnectionSelector(http1)
                 // Content encoding needs to be completely disabled
-                .contentEncodingContext(emptyEncodingContext());
+                .contentEncoding(emptyEncodingContext());
     }
 
     @Test
     void testContentEncodingHeader() {
         try (Http1ClientResponse response = client().method(Http.Method.POST)
-                        .header(Http.Header.CONTENT_ENCODING, "data")
-                        .submit("any")) {
+                .header(Http.Header.CONTENT_ENCODING, "data")
+                .submit("any")) {
             assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
             assertThat(response.as(String.class), is("Content-Encoding header present when content encoding is disabled"));
         }

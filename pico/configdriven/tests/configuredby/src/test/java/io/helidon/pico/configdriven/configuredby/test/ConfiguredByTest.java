@@ -20,9 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
+import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.configdriven.api.NamedInstance;
+import io.helidon.pico.configdriven.configuredby.yaml.test.Async;
 import io.helidon.pico.configdriven.runtime.ConfigBeanRegistry;
 
 import org.junit.jupiter.api.Test;
@@ -31,28 +34,31 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 /**
  * Executes the tests from the base.
  */
 class ConfiguredByTest extends AbstractConfiguredByTest {
+    @Test
+    void testRepeatableConfigBean() {
+        resetWith(Config.create());
 
-    protected MapConfigSource.Builder createNested8080TestingConfigSource() {
-        return ConfigSources.create(
-                Map.of(
-                        "nested." + FAKE_SERVER_CONFIG + ".0.name", "nested",
-                        "nested." + FAKE_SERVER_CONFIG + ".0.port", "8080",
-                        "nested." + FAKE_SERVER_CONFIG + ".0.worker-count", "1"
-                ), "config-nested-default-8080");
-    }
+        List<Async> serviceProviders = services.lookupAll(Async.class)
+                .stream()
+                .map(ServiceProvider::get)
+                .toList();
 
-    public MapConfigSource.Builder createRootPlusOneSocketTestingConfigSource() {
-        return ConfigSources.create(
-                Map.of(
-                        FAKE_SERVER_CONFIG + ".port", "8080",
-                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".0.name", "first",
-                        FAKE_SERVER_CONFIG + "." + FAKE_SOCKET_CONFIG + ".0.port", "8081"
-                ), "config-root-plus-one-socket");
+        assertThat(serviceProviders, hasSize(2));
+
+        Async async = services.lookup(Async.class, "first").get();
+        assertThat(async.config(), notNullValue());
+        assertThat(async.config().executor(), is("exec"));
+
+        async = services.lookup(Async.class, "second").get();
+        assertThat(async.config(), notNullValue());
+        assertThat(async.config().executor(), is("service"));
     }
 
     @Test
@@ -84,6 +90,15 @@ class ConfiguredByTest extends AbstractConfiguredByTest {
 
         assertThat("Names should be unique.", nameList, is(List.copyOf(nameSet)));
         assertThat(nameSet, contains(expectedNames));
+    }
+
+    protected MapConfigSource.Builder createNested8080TestingConfigSource() {
+        return ConfigSources.create(
+                Map.of(
+                        "nested." + FAKE_SERVER_CONFIG + ".0.name", "nested",
+                        "nested." + FAKE_SERVER_CONFIG + ".0.port", "8080",
+                        "nested." + FAKE_SERVER_CONFIG + ".0.worker-count", "1"
+                ), "config-nested-default-8080");
     }
 
 }

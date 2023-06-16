@@ -46,4 +46,13 @@ interface WsConfigBlueprint extends ProtocolConfig {
     default String type() {
         return WsUpgradeProvider.CONFIG_NAME;
     }
+
+    /**
+     * Name of this configuration.
+     *
+     * @return configuration name
+     */
+    @ConfiguredOption(WsUpgradeProvider.CONFIG_NAME)
+    @Override
+    String name();
 }

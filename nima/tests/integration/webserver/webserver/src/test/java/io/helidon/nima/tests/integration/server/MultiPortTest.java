@@ -23,7 +23,6 @@ import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.Handler;
-import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -71,11 +70,13 @@ class MultiPortTest {
         WebServer server1 = WebServer.builder()
                 .routing(routing -> routing.get("/", commonHandler)
                         .get("/variable", (req, res) -> res.send("Variable 1")))
+                .build()
                 .start();
 
         WebServer server2 = WebServer.builder()
                 .routing(routing -> routing.get("/", commonHandler)
                         .get("/variable", (req, res) -> res.send("Variable 2")))
+                .build()
                 .start();
 
         try {
@@ -102,12 +103,13 @@ class MultiPortTest {
                         .get("/", commonHandler)
                         .get("/variable", (req, res) -> res.send("Variable 2"))
                         .build())
-                .socket("plain", (socket, routing) -> routing.addRouting(HttpRouting.builder()
-                                                                                 .get("/overridden",
-                                                                                      (req, res) -> res.send("Overridden 1"))
-                                                                                 .get("/", commonHandler)
-                                                                                 .get("/variable",
-                                                                                      (req, res) -> res.send("Variable 1"))))
+                .putSocket("plain", listener -> listener.routing(routing -> routing
+                        .get("/overridden",
+                             (req, res) -> res.send("Overridden 1"))
+                        .get("/", commonHandler)
+                        .get("/variable",
+                             (req, res) -> res.send("Variable 1"))))
+                .build()
                 .start();
 
         assertResponse(server.port(), "/", is("Root! 1"));
@@ -126,8 +128,9 @@ class MultiPortTest {
                 .routing(routing -> routing.get("/overridden", (req, res) -> res.send("Overridden BOTH"))
                         .get("/", commonHandler)
                         .get("/variable", (req, res) -> res.send("Variable BOTH")))
-                .socket("second", builder -> {
+                .putSocket("second", builder -> {
                 })
+                .build()
                 .start();
 
         assertResponse(server.port("second"), "/", is("Root! 1"));
@@ -144,8 +147,8 @@ class MultiPortTest {
         // start all of the servers
         server = WebServer.builder()
                 .routing(routing -> routing.get("/foo", (req, res) -> res.send("Root! 1")))
-                .socket("redirect", (socket, router) -> {
-                    router.addRouting(HttpRouting.builder()
+                .putSocket("redirect", listener -> {
+                    listener.routing(routing -> routing
                                               .any((req, res) -> {
                                                   res.status(Http.Status.MOVED_PERMANENTLY_301)
                                                           .header(Header.LOCATION,
@@ -156,6 +159,7 @@ class MultiPortTest {
                                                           .send();
                                               }));
                 })
+                .build()
                 .start();
 
         assertResponse(server.port(), "/foo", is("Root! 1"));

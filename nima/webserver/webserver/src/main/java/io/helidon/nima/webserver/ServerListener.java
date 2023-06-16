@@ -305,7 +305,7 @@ class ServerListener implements ListenerContext {
     }
 
     void reloadTls(Tls tls) {
-        if (!tls.enabled()) {
+        if (!this.tls.enabled()) {
             throw new IllegalArgumentException("TLS is not enabled on the socket " + socketName
                                                        + " and therefore cannot be reloaded");
         }

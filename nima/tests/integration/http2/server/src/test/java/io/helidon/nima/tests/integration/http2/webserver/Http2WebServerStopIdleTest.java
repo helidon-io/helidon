@@ -47,16 +47,17 @@ class Http2WebServerStopIdleTest {
 
     @Test
     void stopWhenIdleExpectTimelyStopHttp2() throws IOException, InterruptedException {
-        Keys privateKeyConfig = Keys.keystoreBuilder()
+        Keys privateKeyConfig = Keys.builder()
+                .keystore(keystore -> keystore
                 .keystore(Resource.create("certificate.p12"))
-                .keystorePassphrase("helidon")
+                .keystorePassphrase("helidon"))
                 .build();
         Tls tls = Tls.builder()
                 .privateKey(privateKeyConfig.privateKey().get())
                 .privateKeyCertChain(privateKeyConfig.certChain())
                 .build();
         WebServer webServer = WebServer.builder()
-                .socket("https", socketBuilder -> socketBuilder.tls(tls))
+                .putSocket("https", socketBuilder -> socketBuilder.tls(tls))
                 .routing(router -> router.get("ok", (req, res) -> res.send("ok")))
                 .build();
         webServer.start();

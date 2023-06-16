@@ -132,9 +132,9 @@ class DirectClientConnection implements ClientConnection {
         });
     }
 
+    @SuppressWarnings("deprecation")
     private void startServer() {
-        ServerConnection connection = Http1ConnectionProvider.builder()
-                .build()
+        ServerConnection connection = new Http1ConnectionProvider()
                 .create(WebServer.DEFAULT_SOCKET_NAME, Http1Config.create(), ProtocolConfigs.create(List.of()))
                 .connection(serverContext);
 

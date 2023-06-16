@@ -14,23 +14,25 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.configdriven.configuredby.yaml.test;
+package io.helidon.nima.grpc.webserver;
 
-import io.helidon.pico.configdriven.api.ConfigDriven;
+import io.helidon.common.config.Config;
+import io.helidon.nima.webserver.spi.ProtocolConfigProvider;
 
-import jakarta.inject.Inject;
-
-@ConfigDriven(AsyncConfigBlueprint.class)
-public class Async {
-
-    final AsyncConfig cfg;
-
-    @Inject
-    Async(AsyncConfig cfg) {
-        this.cfg = cfg;
+/**
+ * Implementation of a service provider interface to create grpc protocol configuration.
+ */
+public class GrpcProtocolConfigProvider implements ProtocolConfigProvider<GrpcConfig> {
+    @Override
+    public String configKey() {
+        return GrpcProtocolProvider.CONFIG_NAME;
     }
 
-    public AsyncConfig config() {
-        return cfg;
+    @Override
+    public GrpcConfig create(Config config, String name) {
+        return GrpcConfig.builder()
+                .config(config)
+                .name(name)
+                .build();
     }
 }
