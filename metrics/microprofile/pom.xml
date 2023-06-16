@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,21 +20,19 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.metrics</groupId>
+        <artifactId>helidon-metrics-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-project</artifactId>
-    <name>Helidon Metrics Project</name>
+
+    <groupId>io.helidon.metrics.microprofile</groupId>
+    <artifactId>helidon-metrics-microprofile-project</artifactId>
+
+    <name>Helidon Metrics MicroProfile Project</name>
 
     <modules>
-        <module>metrics</module>
-        <module>prometheus</module>
-        <module>trace-exemplar</module>
-        <module>api</module>
-        <module>service-api</module>
         <module>microprofile</module>
+        <module>cdi</module>
     </modules>
 </project>
