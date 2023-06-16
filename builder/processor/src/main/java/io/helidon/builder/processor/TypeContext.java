@@ -44,7 +44,7 @@ import static io.helidon.builder.processor.Types.BUILDER_INTERCEPTOR;
 import static io.helidon.builder.processor.Types.CONFIGURED_OPTION_TYPE;
 import static io.helidon.builder.processor.Types.CONFIGURED_TYPE;
 import static io.helidon.builder.processor.Types.IMPLEMENT_TYPE;
-import static io.helidon.builder.processor.Types.OBJECT_TYPE_NAME;
+import static io.helidon.builder.processor.Types.OBJECT_TYPE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_FACTORY_TYPE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_TYPE;
 import static io.helidon.builder.processor.Types.STRING_TYPE;
@@ -59,12 +59,11 @@ record TypeContext(
 
     private static final Set<String> IGNORED_NAMES = Set.of("build",
                                                             "get",
-                                                            "buildPrototype",
-                                                            "from");
+                                                            "buildPrototype");
     private static final String BLUEPRINT = "Blueprint";
     private static final Set<MethodSignature> IGNORED_METHODS = Set.of(
             // equals, hash code and toString
-            new MethodSignature(TypeName.create(boolean.class), "equals", List.of(OBJECT_TYPE_NAME)),
+            new MethodSignature(TypeName.create(boolean.class), "equals", List.of(OBJECT_TYPE)),
             new MethodSignature(TypeName.create(int.class), "hashCode", List.of()),
             new MethodSignature(STRING_TYPE, "toString", List.of())
     );

@@ -85,7 +85,7 @@ public class BlueprintProcessor extends AbstractProcessor {
     }
 
     @Override
-    public synchronized void init(ProcessingEnvironment processingEnv) {
+    public void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
 
         this.elementUtils = processingEnv.getElementUtils();
@@ -94,6 +94,13 @@ public class BlueprintProcessor extends AbstractProcessor {
         this.runtimePrototypeAnnotationType = elementUtils.getTypeElement(RUNTIME_PROTOTYPE);
         this.filer = processingEnv.getFiler();
         this.env = processingEnv;
+
+        if (blueprintAnnotationType == null || runtimePrototypeAnnotationType == null) {
+            throw new IllegalStateException("Bug in BlueprintProcessor code, cannot find required types, probably wrong"
+                                                    + " type constants. "
+                                                    + PROTOTYPE_BLUEPRINT + " = " + blueprintAnnotationType + ", "
+                                                    + RUNTIME_PROTOTYPE + " = " + runtimePrototypeAnnotationType);
+        }
     }
 
     // we need two compiler passes - first to generate all the necessary types

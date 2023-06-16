@@ -236,7 +236,11 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                             .flatMap(Annotation::value)
                             .map(annotation -> annotation.split(","))
                             .map(List::of)
-                            .orElseGet(List::of);
+                            .orElseGet(List::of)
+                            .stream()
+                            .map(String::trim) // to remove spaces after commas when used
+                            .filter(Predicate.not(String::isBlank)) // we do not care about blank values
+                            .toList();
 
                     Method customMethod = new Method(customMethodsType.typeName(), methodName, returnType, arguments, javadoc);
 

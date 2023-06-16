@@ -25,10 +25,10 @@ import java.util.function.Consumer;
 import io.helidon.common.processor.GeneratorTools;
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.builder.processor.Types.LIST_TYPE_NAME;
-import static io.helidon.builder.processor.Types.MAP_TYPE_NAME;
-import static io.helidon.builder.processor.Types.OBJECT_TYPE_NAME;
-import static io.helidon.builder.processor.Types.SET_TYPE_NAME;
+import static io.helidon.builder.processor.Types.LIST_TYPE;
+import static io.helidon.builder.processor.Types.MAP_TYPE;
+import static io.helidon.builder.processor.Types.OBJECT_TYPE;
+import static io.helidon.builder.processor.Types.SET_TYPE;
 import static io.helidon.builder.processor.Types.STRING_TYPE;
 
 class TypeHandlerMap extends TypeHandler {
@@ -41,7 +41,7 @@ class TypeHandlerMap extends TypeHandler {
         super(name, getterName, setterName, declaredType);
         this.sameGeneric = sameGeneric;
 
-        this.implTypeName = collectionImplType(MAP_TYPE_NAME);
+        this.implTypeName = collectionImplType(MAP_TYPE);
         if (declaredType.typeArguments().size() < 2) {
             this.actualType = STRING_TYPE;
         } else {
@@ -90,7 +90,7 @@ class TypeHandlerMap extends TypeHandler {
 
     @Override
     TypeName argumentTypeName() {
-        return TypeName.builder(MAP_TYPE_NAME)
+        return TypeName.builder(MAP_TYPE)
                 .addTypeArgument(toWildcard(declaredType().typeArguments().get(0)))
                 .addTypeArgument(toWildcard(declaredType().typeArguments().get(1)))
                 .build();
@@ -280,7 +280,7 @@ class TypeHandlerMap extends TypeHandler {
             if (typeArg.wildcard()) {
                 // ?, or ? extends Something
                 if (typeArg.generic()) {
-                    genericTypeBase = OBJECT_TYPE_NAME;
+                    genericTypeBase = OBJECT_TYPE;
                 } else {
                     genericTypeBase = TypeName.builder(typeArg)
                             .wildcard(false)
@@ -477,11 +477,11 @@ class TypeHandlerMap extends TypeHandler {
 
     private String secondArgToPut(TypeName typeName, String singularName) {
         TypeName genericTypeName = typeName.genericTypeName();
-        if (genericTypeName.equals(LIST_TYPE_NAME)) {
+        if (genericTypeName.equals(LIST_TYPE)) {
             return "java.util.List.copyOf(" + singularName + ")";
-        } else if (genericTypeName.equals(SET_TYPE_NAME)) {
+        } else if (genericTypeName.equals(SET_TYPE)) {
             return "java.util.Set.copyOf(" + singularName + ")";
-        } else if (genericTypeName.equals(MAP_TYPE_NAME)) {
+        } else if (genericTypeName.equals(MAP_TYPE)) {
             return "java.util.Map.copyOf(" + singularName + ")";
         }
         return singularName;
@@ -492,10 +492,10 @@ class TypeHandlerMap extends TypeHandler {
             return false;
         }
         TypeName genericTypeName = typeName.genericTypeName();
-        if (genericTypeName.equals(LIST_TYPE_NAME)) {
+        if (genericTypeName.equals(LIST_TYPE)) {
             return true;
         }
-        if (genericTypeName.equals(SET_TYPE_NAME)) {
+        if (genericTypeName.equals(SET_TYPE)) {
             return true;
         }
         return false;

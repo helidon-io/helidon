@@ -22,21 +22,24 @@ Keys keys=Keys.builder()
 The "blueprint" of such type:
 
 ```java
+import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
 @Prototype.Blueprint
-@Configured // support method config(Config) on the builder, and a static create(Config) method if desired
+@Configured // support method config(Config) on the builder, and a static create(Config)
 intrerface KeysBlueprint{
 @ConfiguredOption(required = true)
     String name();
-}
+            }
 ```
 
 This will generate:
 
 - `Keys extends KeysBlueprint` interface
-- `Keys.Builder implements Keys, io.helidon.common.Builder<Builder, Keys>` inner class - the fluent API builder for `Keys`
-- `KeysImpl implements Keys` package local implementation of `Keys`
+- `Keys.BuilderBase implements Keys` base builder, to support extensibility of `Keys`
+- `Keys.Builder extends Keys.BuilderBase, io.helidon.common.Builder<Builder, Keys>` inner class - the fluent API builder
+  for `Keys`
+- `Keys.BuilderBase.KeysImpl implements Keys` implementation of `Keys`
 
 ### Runtime object, blueprint, builder
 
@@ -60,44 +63,54 @@ The "blueprint" of such type:
 intrerface RetryPrototypeBlueprint extends Prototype.Factory<Retry> {
 @ConfiguredOption(required = true)
     String name();
-}
+            }
 ```
 
 ## Types, interfaces
 
 Annotations:
 
-| Annotation                 | Required | Description                                                                                                                                                           |
-|----------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Prototype.@Blueprint`     | `true`   | Annotation on the blueprint interface is required to trigger annotation processing                                                                                    |
-| `Prototype.@Annotated`     | `false`  | Allows adding an annotation (or annotations) to the generated class or methods                                                                                        |
-| `Prototype.@FactoryMethod` | `false`  | Use in generated code to mark static factory methods, also can be used on blueprint factory methods to be used during code generation                                 |
-| `Prototype.@Singular`      | `false`  | Used for lists, sets, and maps to add methods `add*` in addition to the full collection setters                                                                       |     
-| `RuntimeType.@Prototype`   | `true`   | Annotation on runtime type that is created from a `Prototype`, to map it to the prototype it can be created from, used to trigger annotation processor for validation |
+| Annotation                  | Required | Description                                                                                                                                                                                                  |
+|-----------------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Prototype.Blueprint`       | `true`   | Annotation on the blueprint interface is required to trigger annotation processing                                                                                                                           |
+| `Prototype.Implement`       | `false`  | Add additional implemented types to the generated prototype                                                                                                                                                  |
+| `Prototype.Annotated`       | `false`  | Allows adding an annotation (or annotations) to the generated class or methods                                                                                                                               |
+| `Prototype.FactoryMethod`   | `false`  | Use in generated code to mark static factory methods, also can be used on blueprint factory methods to be used during code generation, and on custom methods to mark static methods to be added to prototype |
+| `Prototype.Singular`        | `false`  | Used for lists, sets, and maps to add methods `add*`/`put*` in addition to the full collection setters                                                                                                       |     
+| `Prototype.SameGeneric`     | `false`  | Use for maps, where we want a setter method to use the same generic type for key and for value (such as `Class<T> key, T valuel`)                                                                            |
+| `Prototype.Redundant`       | `false`  | A redundant option will not be part of generated `toString`, `hashCode`, and `equals` methods (allows finer grained control)                                                                                 |
+| `Prototype.Confidential`    | `false`  | A confidential option will not have value visible when `toString` is called, only if it is `null` or it has a value (`****`)                                                                                 |
+| `Prototype.CustomMethods`   | `false`  | reference a class that will contain declarations (all static) of custom methods to be added to the generated code, can add prototype, builder, and factory methods                                           |
+| `Prototype.BuilderMethod`   | `false`  | Annotation to be placed on factory methods that are to be added to builder, first parameter is the `BuilderBase<?, ?>` of the prototype                                                                      |
+| `Prototype.PrototypeMethod` | `false`  | Annotation to be placed on factory methods that are to be added to prototype, first parameter is the prototype instance                                                                                      |
+| `RuntimeType.Prototype`     | `true`   | Annotation on runtime type that is created from a `Prototype`, to map it to the prototype it can be created from, used to trigger annotation processor for validation                                        |
 
 Interfaces:
 
-| Interface                      | Generated | Description                                     |
-|--------------------------------|-----------|-------------------------------------------------|
-| `RuntimeType`                  | `false` | runtime type must implement this interface to mark which prototype is used to create it |
-| `Prototype.Factory`            | `false` | if blueprint implements factory, it means the prototype is used to create a single runtime type and will have methods `build` and `get` both on builder an on prototype interface that create a new instance of the runtime object |
-| `Prototype.BuilderInterceptor` | `false` | custom interceptor to modidfy buider before validation is done in method `build` |
-| `Prototype`                    | `true` | all prototypes implement this interface |
-| `Prototype.Builder`            | `true`    | all prototype builders implement this interface |
-
+| Interface                      | Generated | Description                                                                                                                                                                                                                        |
+|--------------------------------|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `RuntimeType`                  | `false`   | runtime type must implement this interface to mark which prototype is used to create it                                                                                                                                            |
+| `Prototype.Factory`            | `false`   | if blueprint implements factory, it means the prototype is used to create a single runtime type and will have methods `build` and `get` both on builder an on prototype interface that create a new instance of the runtime object |
+| `Prototype.BuilderInterceptor` | `false`   | custom interceptor to modidfy buider before validation is done in method `build`                                                                                                                                                   |
+| `Prototype`                    | `true`    | all prototypes implement this interface                                                                                                                                                                                            |
+| `Prototype.Builder`            | `true`    | all prototype builders implement this interface, defines method `buildPrototype`                                                                                                                                                   |
+| `Prototype.ConfiguredBuilder`  | `true`    | all prototype builders that support configuration implement this interface, defines method `config(Config)`                                                                                                                        |
 
 ## Configured providers
+
 We can define a configured option as follows:
 `@ConfiguredOption(key = "security-providers", provider = true, providerType = SecurityProviderProvider.class, providerDiscoverServices = false)`
 
 Rules:
+
 1. `providerType` MUST extend `io.helidon.common.config.ConfiguredProvider`
 2. The method MUST return a `List` of the type the provider creates, so in this case we consider the `SecurityProviderProvider`
-     to be capable of creating a `SecurityProvider` instance from configuration, so the return type would
-     be `List<SecurityProvider>`, where `SecurityProvider extends NamedService` and  
-     `SecurityProviderProvider extends ConfiguredProvider<SecurityProvider>`
+   to be capable of creating a `SecurityProvider` instance from configuration, so the return type would
+   be `List<SecurityProvider>`, where `SecurityProvider extends NamedService` and  
+   `SecurityProviderProvider extends ConfiguredProvider<SecurityProvider>`
 
 This will expect the following configuration:
+
 ```yaml
 security-providers:
   discover-services: true # optional, to override "providerDiscoverServices" option
@@ -107,22 +120,28 @@ security-providers:
       enabled: true
 ```
 
-The generated code will read all nodes under `providers` and map them to an instance.  
+The generated code will read all nodes under `providers` and map them to an instance.
 
 ## Config driven
 
 Only with Pico!!!
 
 We can use configuration to drive discovery of "beans". For such cases, we need two things:
+
 1. The prototype must be marked as `@io.helidon.pico.configdriven.ConfigBean`
 2. The implementation of a contract must be marked as `@io.helidon.prico.configdrivent.ConfigDriven(ConfigBean.class)`
 
 Now the config bean will be instantiated based on the rules of the `@Configured` and `@ConfigBean` annotations, basic rules:
-- If the configuration node (root=true, prefix=`node`) exists in configuration, a config bean will be created for it
-- If (wantDefault=`true`), a config bean will be created based on `@default` name (if present in configuration), or with all defaults, this bean will be available with qualifier `@Default`, also `@Named("@default")` (both are not required)
-- If (repeatable=`true`), a config bean will be crated for each child node of the `prefix` node, with qualifier `@Named`, where `name` is either node child `name` as a string, or the name of the config node itself
 
-And config driven bean (something that is `@ConfigDriven(SomeConfigBean.class)`) will be created for each config bean of appropriate type with matching qualifiers (esp. `@Default` and `@Named`). When an injection point exists on such a config driven bean that is of the config bean type, it will be satisfied by the config bean driving this instance 
+- If the configuration node (root=true, prefix=`node`) exists in configuration, a config bean will be created for it
+- If (wantDefault=`true`), a config bean will be created based on `@default` name (if present in configuration), or with all
+  defaults, this bean will be available with qualifier `@Default`, also `@Named("@default")` (both are not required)
+- If (repeatable=`true`), a config bean will be crated for each child node of the `prefix` node, with qualifier `@Named`,
+  where `name` is either node child `name` as a string, or the name of the config node itself
+
+And config driven bean (something that is `@ConfigDriven(SomeConfigBean.class)`) will be created for each config bean of
+appropriate type with matching qualifiers (esp. `@Default` and `@Named`). When an injection point exists on such a config driven
+bean that is of the config bean type, it will be satisfied by the config bean driving this instance
 
 A config driven type is a type that is generated from `@Prototype.Blueprint` and is `@Configured` with `root=true`.
 These types can be discovered automatically when Pico is used.
@@ -132,7 +151,7 @@ The metadata needed:
 - config key (such as `fault-tolerance.retries`, `server`)
 - if repeatable (`true` for `RetryPrototype`, `false` for `server`)
 
-How do we discover such types? 
+How do we discover such types?
 
 ```java
 // wantDefault - create default instance EVEN if configured instances exist
@@ -150,24 +169,24 @@ This would require code somewhere that would crate the instances from config:
 
 ```java
 // if "at least one"
-var builder = ServerConfig.builder();
-ServerConfig prototype = builder.config(config.get(builder.configKey()))
+var builder=ServerConfig.builder();
+        ServerConfig prototype=builder.config(config.get(builder.configKey()))
         .buildPrototype();
-// register as a config bean
-// then register LoomServer as a bean driven by ServerConfig        
+        // register as a config bean
+        // then register LoomServer as a bean driven by ServerConfig        
 
-// if not at least one
-var builder = ServerConfig.builder();
-if (config.get(builder.configKey()).exists()) {
-    builder.config(config.get(builder.configKey()));
-    var result = builder.build();
-} else {
-    // no instance created
-}
+        // if not at least one
+        var builder=ServerConfig.builder();
+        if(config.get(builder.configKey()).exists()){
+        builder.config(config.get(builder.configKey()));
+        var result=builder.build();
+        }else{
+        // no instance created
+        }
 
-// if repeatable
-var builder = RetryConfig.builder();
-config.get(builder.configKey())
+        // if repeatable
+        var builder=RetryConfig.builder();
+        config.get(builder.configKey())
         .asList(RetryConfig::create) // use .build() on each to get Retry instances
         .forEach()
 ```

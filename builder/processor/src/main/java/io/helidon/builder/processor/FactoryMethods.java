@@ -28,7 +28,7 @@ import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.processor.Types.CONFIG_TYPE;
 import static io.helidon.builder.processor.Types.FACTORY_METHOD_TYPE;
-import static io.helidon.builder.processor.Types.OBJECT_TYPE_NAME;
+import static io.helidon.builder.processor.Types.OBJECT_TYPE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_TYPE;
 import static io.helidon.builder.processor.Types.RUNTIME_OBJECT_TYPE;
 
@@ -82,7 +82,7 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                                                    TypeInfo blueprint,
                                                    TypeHandler typeHandler,
                                                    Set<TypeName> builderCandidates) {
-        if (typeHandler.actualType().equals(OBJECT_TYPE_NAME)) {
+        if (typeHandler.actualType().equals(OBJECT_TYPE)) {
             return Optional.empty();
         }
         builderCandidates.add(typeHandler.actualType());
@@ -98,7 +98,8 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
             if (typeInfo == null) {
                 if (secondary == null) {
                     // this may be part of annotation processing where type info is not available
-                    // TODO use the definition references in annotation to lookup the correct information
+                    // our assumption is that the type is code generated and is a correct builder, if this assumption
+                    // is not correct, we will need to improve this "algorithm" (please file an issue if that happens)
                     TypeName builderTypeName = TypeName.builder(builderCandidate)
                             .className("Builder")
                             .enclosingNames(List.of(builderCandidate.className()))
@@ -201,8 +202,9 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
             }
         }
 
-        // TODO when in the same module, we need to use different approach through definition
-        // for now, just guess
+        // this a best effort guess - it is a wrong type (we do not have a package)
+        // if this ever fails, please file an issue, and we will improve this "algorithm"
+        // we can actually find out if a type is not yet generated (it has Kind ERROR on its mirror)
         for (TypeName configObjectCandidate : configObjectCandidates) {
             if (configObjectCandidate.packageName().isEmpty()) {
                 // most likely a generated type that is created as part of this round, let's assume it is a config object

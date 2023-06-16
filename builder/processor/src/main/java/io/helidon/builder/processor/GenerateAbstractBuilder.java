@@ -25,13 +25,13 @@ import io.helidon.common.types.TypeName;
 
 import static io.helidon.builder.processor.Types.CHAR_ARRAY_TYPE;
 import static io.helidon.builder.processor.Types.CONFIG_TYPE;
-import static io.helidon.builder.processor.Types.LIST_TYPE_NAME;
-import static io.helidon.builder.processor.Types.MAP_TYPE_NAME;
+import static io.helidon.builder.processor.Types.LIST_TYPE;
+import static io.helidon.builder.processor.Types.MAP_TYPE;
 import static io.helidon.builder.processor.Types.OPTIONAL_TYPE;
 import static io.helidon.builder.processor.Types.OVERRIDE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_BUILDER;
 import static io.helidon.builder.processor.Types.PROTOTYPE_CONFIGURED_BUILDER;
-import static io.helidon.builder.processor.Types.SET_TYPE_NAME;
+import static io.helidon.builder.processor.Types.SET_TYPE;
 import static io.helidon.builder.processor.Types.STRING_TYPE;
 import static io.helidon.common.processor.GeneratorTools.capitalize;
 
@@ -1178,11 +1178,6 @@ final class GenerateAbstractBuilder {
             pw.println("{}\"");
         } else {
             pw.println("{\"");
-        /*
-          "typename=" + String.valueOf(someType),
-          "values=" + String.valueOf(values)
-         */
-
             pw.println(toStringFields.stream()
                                .map(it -> {
                                    boolean secret = it.confidential() || it.typeHandler().actualType().equals(CHAR_ARRAY_TYPE);
@@ -1253,15 +1248,15 @@ final class GenerateAbstractBuilder {
             pw.print("this.");
             pw.print(child.name());
             pw.print(" = ");
-            if (child.typeHandler().declaredType().genericTypeName().equals(LIST_TYPE_NAME)) {
+            if (child.typeHandler().declaredType().genericTypeName().equals(LIST_TYPE)) {
                 pw.print("java.util.List.copyOf(builder.");
                 pw.print(child.getterName());
                 pw.println("());");
-            } else if (child.typeHandler().declaredType().genericTypeName().equals(SET_TYPE_NAME)) {
+            } else if (child.typeHandler().declaredType().genericTypeName().equals(SET_TYPE)) {
                 pw.print("java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(builder.");
                 pw.print(child.getterName());
                 pw.println("()));");
-            } else if (child.typeHandler().declaredType().genericTypeName().equals(MAP_TYPE_NAME)) {
+            } else if (child.typeHandler().declaredType().genericTypeName().equals(MAP_TYPE)) {
                 pw.print("java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(builder.");
                 pw.print(child.getterName());
                 pw.println("()));");

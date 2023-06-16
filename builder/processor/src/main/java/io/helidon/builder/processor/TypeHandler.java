@@ -24,11 +24,15 @@ import java.util.function.Consumer;
 
 import io.helidon.common.types.TypeName;
 
+import static io.helidon.builder.processor.Types.ARRAY_LIST_TYPE;
 import static io.helidon.builder.processor.Types.CHAR_ARRAY_TYPE;
 import static io.helidon.builder.processor.Types.DURATION_TYPE;
-import static io.helidon.builder.processor.Types.LIST_TYPE_NAME;
-import static io.helidon.builder.processor.Types.MAP_TYPE_NAME;
+import static io.helidon.builder.processor.Types.LINKED_HASH_MAP_TYPE;
+import static io.helidon.builder.processor.Types.LINKED_HASH_SET_TYPE;
+import static io.helidon.builder.processor.Types.LIST_TYPE;
+import static io.helidon.builder.processor.Types.MAP_TYPE;
 import static io.helidon.builder.processor.Types.OPTIONAL_TYPE;
+import static io.helidon.builder.processor.Types.SET_TYPE;
 import static io.helidon.builder.processor.Types.STRING_TYPE;
 
 class TypeHandler {
@@ -49,14 +53,14 @@ class TypeHandler {
         if (OPTIONAL_TYPE.equals(returnType)) {
             return new TypeHandlerOptional(name, getterName, setterName, returnType);
         }
-        if (Types.SET_TYPE_NAME.equals(returnType)) {
+        if (SET_TYPE.equals(returnType)) {
             return new TypeHandlerSet(name, getterName, setterName, returnType);
         }
 
-        if (Types.LIST_TYPE_NAME.equals(returnType)) {
+        if (LIST_TYPE.equals(returnType)) {
             return new TypeHandlerList(name, getterName, setterName, returnType);
         }
-        if (Types.MAP_TYPE_NAME.equals(returnType)) {
+        if (MAP_TYPE.equals(returnType)) {
             return new TypeHandlerMap(name, getterName, setterName, returnType, sameGeneric);
         }
 
@@ -79,14 +83,14 @@ class TypeHandler {
 
     protected static String collectionImplType(TypeName typeName) {
         TypeName genericTypeName = typeName.genericTypeName();
-        if (genericTypeName.equals(MAP_TYPE_NAME)) {
-            return "java.util.LinkedHashMap";
+        if (genericTypeName.equals(MAP_TYPE)) {
+            return LINKED_HASH_MAP_TYPE.fqName();
         }
-        if (genericTypeName.equals(LIST_TYPE_NAME)) {
-            return "java.util.ArrayList";
+        if (genericTypeName.equals(LIST_TYPE)) {
+            return ARRAY_LIST_TYPE.fqName();
         }
 
-        return "java.util.LinkedHashSet";
+        return LINKED_HASH_SET_TYPE.fqName();
     }
 
     protected static List<String> resolveBuilderLines(TypeName typeName, String variableName) {

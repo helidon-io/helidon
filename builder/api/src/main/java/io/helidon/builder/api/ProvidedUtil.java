@@ -31,6 +31,30 @@ import io.helidon.common.config.ConfiguredProvider;
 import io.helidon.common.config.NamedService;
 
 final class ProvidedUtil {
+    /**
+     * Special configuration key that can be defined on provided options (loaded through ServiceLoader) that defines
+     * the mapping to a provider.
+     * Type of service, used to map to {@link io.helidon.common.config.ConfiguredProvider#configKey()}, which is the
+     * default "type" of a configured provider. It is then used in {@link io.helidon.common.config.NamedService#type()},
+     * to allow multiple instances of the same "type" with different "name".
+     */
+    private static final String KEY_SERVICE_TYPE = "type";
+    /**
+     * Special configuration key that can be defined on provided options (loaded through ServiceLoader) that defines
+     * the name of an instance.
+     * It is then used in {@link io.helidon.common.config.NamedService#name()}
+     * to allow multiple instances of the same "type" with different "name".
+     * In case of object type configurations, name is taken from the configuration node name.
+     */
+    private static final String KEY_SERVICE_NAME = "name";
+    /**
+     * Special configuration key that can be defined on provided options (loaded through ServiceLoader) that defines
+     * whether a service provider of the type is enabled.
+     * Each service from a {@link io.helidon.common.config.ConfiguredProvider} can be enabled/disabled through
+     * configuration. If marked as {@code enabled = false}, the service will be ignored and not added.
+     */
+    private static final String KEY_SERVICE_ENABLED = "enabled";
+
     private ProvidedUtil() {
     }
 
@@ -158,9 +182,9 @@ final class ProvidedUtil {
     private static ConfiguredService configuredService(Config serviceConfig, boolean isList) {
         if (isList) {
             // order is significant
-            String type = serviceConfig.get("type").asString().orElse(null);
-            String name = type;
-            boolean enabled = serviceConfig.get("enabled").asBoolean().orElse(true);
+            String type = serviceConfig.get(KEY_SERVICE_TYPE).asString().orElse(null);
+            String name = serviceConfig.get(KEY_SERVICE_NAME).asString().orElse(type);
+            boolean enabled = serviceConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(true);
 
             Config usedConfig = serviceConfig;
             if (type == null) {
@@ -173,16 +197,16 @@ final class ProvidedUtil {
                 }
                 usedConfig = configs.get(0);
                 name = usedConfig.name();
-                type = usedConfig.get("type").asString().orElse(name);
-                enabled = usedConfig.get("enabled").asBoolean().orElse(enabled);
+                type = usedConfig.get(KEY_SERVICE_TYPE).asString().orElse(name);
+                enabled = usedConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(enabled);
             }
             return new ConfiguredService(usedConfig, type, name, enabled);
         }
         // just collect each node, order will be determined by weight
 
-        String name = serviceConfig.name();
-        String type = serviceConfig.get("type").asString().orElse(name);
-        boolean enabled = serviceConfig.get("enabled").asBoolean().orElse(true);
+        String name = serviceConfig.name(); // name is the config node name for object types
+        String type = serviceConfig.get(KEY_SERVICE_TYPE).asString().orElse(name);
+        boolean enabled = serviceConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(true);
 
         return new ConfiguredService(serviceConfig, type, name, enabled);
     }

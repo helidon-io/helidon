@@ -29,12 +29,12 @@ import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.processor.Types.CONFIDENTIAL_TYPE;
 import static io.helidon.builder.processor.Types.CONFIGURED_OPTION_TYPE;
-import static io.helidon.builder.processor.Types.LIST_TYPE_NAME;
-import static io.helidon.builder.processor.Types.MAP_TYPE_NAME;
+import static io.helidon.builder.processor.Types.LIST_TYPE;
+import static io.helidon.builder.processor.Types.MAP_TYPE;
 import static io.helidon.builder.processor.Types.OPTIONAL_TYPE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_SAME_GENERIC_TYPE;
 import static io.helidon.builder.processor.Types.REDUNDANT_TYPE;
-import static io.helidon.builder.processor.Types.SET_TYPE_NAME;
+import static io.helidon.builder.processor.Types.SET_TYPE;
 import static io.helidon.common.processor.GeneratorTools.capitalize;
 
 // builder property
@@ -249,9 +249,9 @@ record PrototypeProperty(TypeContext.MethodSignature signature,
 
             if (!configuredOption.hasDefault() && !(
                     genericType.equals(OPTIONAL_TYPE)
-                            || genericType.equals(MAP_TYPE_NAME)
-                            || genericType.equals(SET_TYPE_NAME)
-                            || genericType.equals(LIST_TYPE_NAME))) {
+                            || genericType.equals(MAP_TYPE)
+                            || genericType.equals(SET_TYPE)
+                            || genericType.equals(LIST_TYPE))) {
                 // no default, not optional, not a collection - MUST be required
                 return configuredOption.withValidateNotNull();
             }

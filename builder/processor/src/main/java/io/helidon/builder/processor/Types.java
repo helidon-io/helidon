@@ -17,6 +17,9 @@
 package io.helidon.builder.processor;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,7 +29,6 @@ import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 
 final class Types {
-    static final TypeName BOXED_BOOLEAN_TYPE = TypeName.create(Boolean.class);
     static final String OVERRIDE = Override.class.getName();
     static final String GENERATED = Generated.class.getName();
     static final String CONFIG = "io.helidon.common.config.Config";
@@ -40,7 +42,6 @@ final class Types {
     static final String IMPLEMENT = "io.helidon.builder.api.Prototype.Implement";
     static final String CONFIDENTIAL = "io.helidon.builder.api.Prototype.Confidential";
     static final String REDUNDANT = "io.helidon.builder.api.Prototype.Redundant";
-
     static final String FACTORY_METHOD = "io.helidon.builder.api.Prototype.FactoryMethod";
     static final String PROTOTYPE_BUILDER = "io.helidon.builder.api.Prototype.Builder";
     static final String PROTOTYPE_CONFIGURED_BUILDER = "io.helidon.builder.api.Prototype.ConfiguredBuilder";
@@ -52,7 +53,8 @@ final class Types {
     static final String BUILDER_CUSTOM_METHOD = "io.helidon.builder.api.Prototype.BuilderMethod";
     static final String SINGULAR = "io.helidon.builder.api.Prototype.Singular";
 
-    static final TypeName OBJECT_TYPE_NAME = TypeName.create(Object.class);
+    static final TypeName BOXED_BOOLEAN_TYPE = TypeName.create(Boolean.class);
+    static final TypeName OBJECT_TYPE = TypeName.create(Object.class);
     static final TypeName CONFIGURED_TYPE = TypeName.create(CONFIGURED);
     static final TypeName CONFIGURED_OPTION_TYPE = TypeName.create(CONFIGURED_OPTION);
     static final TypeName CONFIG_TYPE = TypeName.create(CONFIG);
@@ -76,10 +78,14 @@ final class Types {
     static final TypeName STRING_TYPE = TypeName.create(String.class);
     static final TypeName DURATION_TYPE = TypeName.create(Duration.class);
     static final TypeName OPTIONAL_TYPE = TypeName.create(Optional.class);
-    static final TypeName SET_TYPE_NAME = TypeName.create(Set.class);
-    static final TypeName LIST_TYPE_NAME = TypeName.create(List.class);
-    static final TypeName MAP_TYPE_NAME = TypeName.create(Map.class);
+    static final TypeName SET_TYPE = TypeName.create(Set.class);
+    static final TypeName LIST_TYPE = TypeName.create(List.class);
+    static final TypeName MAP_TYPE = TypeName.create(Map.class);
     static final TypeName CHAR_ARRAY_TYPE = TypeName.create(char[].class);
+
+    static final TypeName LINKED_HASH_MAP_TYPE = TypeName.create(LinkedHashMap.class);
+    static final TypeName LINKED_HASH_SET_TYPE = TypeName.create(LinkedHashSet.class);
+    static final TypeName ARRAY_LIST_TYPE = TypeName.create(ArrayList.class);
 
     private Types() {
     }

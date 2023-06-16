@@ -28,7 +28,7 @@ import io.helidon.common.config.ConfiguredProvider;
 import io.helidon.common.config.NamedService;
 
 /**
- * Prototype is generated from prototype blueprint, as is considered the public API.
+ * Prototype is generated from a prototype blueprint, and it is expected to be part of the public API of the module.
  */
 public interface Prototype {
     /**
@@ -45,7 +45,7 @@ public interface Prototype {
          * Create an instance of the {@link Prototype}. This method is available on
          * all generated builders for {@link Prototype.Blueprint}.
          *
-         * @return an instance of the setup object created from this builder.
+         * @return an instance of the setup object created from this builder
          */
         PROTOTYPE buildPrototype();
 
@@ -61,6 +61,8 @@ public interface Prototype {
 
         /**
          * Resolve an instance to a built instance (if it is a builder).
+         * This method is used by generated code to ensure that instances passed to us have gone through
+         * builder interceptors and required validation.
          *
          * @param instance instance to check
          * @return the same instance if not a builder, or a built instance
@@ -88,6 +90,10 @@ public interface Prototype {
     interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Builder<BUILDER, PROTOTYPE> {
         /**
          * Update builder from configuration.
+         * Any configured option that is defined on this prototype will be checked in configuration, and if it exists,
+         * it will override current value for that option on this builder.
+         * Options that do not exist in the provided config will not impact current values.
+         * The config instance is kept and may be used in builder interceptor, it is not available in prototype implementation.
          *
          * @param config configuration to use
          * @return updated builder instance
@@ -149,10 +155,6 @@ public interface Prototype {
      *     <li>{@code build} - builder terminating method that builds runtime type from builder,
      *                          and creates runtime type from prototype</li>
      *     <li>{@code buildPrototype} - builder terminating method that builds prototype</li>
-     *     <li>{@code metaInf} - reserved for static method to obtain meta-information about this prototype</li>
-     *     <li>{@code config} - reserved for accessor for Helidon configuration object, if this type
-     *                          is {@code io.helidon.config.metadata.Configured} </li>
-     *     <li>{@code from} - reserved for a builder method to update it from existing prototype</li>
      *     <li>{@code get} - same as {@code build}, inherited from {@link java.util.function.Supplier}</li>
      * </ul>
      */
