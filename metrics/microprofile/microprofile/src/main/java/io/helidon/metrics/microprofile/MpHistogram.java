@@ -15,35 +15,44 @@
  */
 package io.helidon.metrics.microprofile;
 
-import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.Snapshot;
 
-/**
- * Implementation of {@link org.eclipse.microprofile.metrics.Counter}.
- */
-public class MpCounter extends MpMetric<Counter> implements org.eclipse.microprofile.metrics.Counter {
+public class MpHistogram extends MpMetric<DistributionSummary> implements Histogram {
 
     /**
      * Creates a new instance.
      *
      * @param delegate meter which actually records data
      */
-    MpCounter(Counter delegate, MeterRegistry meterRegistry) {
+    MpHistogram(DistributionSummary delegate, MeterRegistry meterRegistry) {
         super(delegate, meterRegistry);
     }
 
     @Override
-    public void inc() {
-        delegate().increment();
+    public void update(int i) {
+        delegate().record(i);
     }
 
     @Override
-    public void inc(long n) {
-        delegate().increment(n);
+    public void update(long l) {
+        delegate().record(l);
     }
 
     @Override
     public long getCount() {
-        return (long) delegate().count();
+        return delegate().count();
+    }
+
+    @Override
+    public long getSum() {
+        return (long) delegate().totalAmount();
+    }
+
+    @Override
+    public Snapshot getSnapshot() {
+        return new MpSnapshot(delegate().takeSnapshot());
     }
 }

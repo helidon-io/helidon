@@ -16,17 +16,24 @@
 package io.helidon.metrics.microprofile;
 
 import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.eclipse.microprofile.metrics.Metric;
 
-class MpMetric<M extends Meter> implements Metric {
+abstract class MpMetric<M extends Meter> implements Metric {
 
     private final M delegate;
+    private final MeterRegistry meterRegistry;
 
-    MpMetric(M delegate) {
+    MpMetric(M delegate, MeterRegistry meterRegistry) {
         this.delegate = delegate;
+        this.meterRegistry = meterRegistry;
     }
 
     M delegate() {
         return delegate;
+    }
+
+    protected MeterRegistry meterRegistry() {
+        return meterRegistry;
     }
 }

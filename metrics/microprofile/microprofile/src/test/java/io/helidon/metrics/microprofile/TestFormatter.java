@@ -28,12 +28,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.is;
 
 public class TestFormatter {
 
+    private static final String SCOPE = "formatScope";
+    private static final String COUNTER_NAME = "formatCounter";
     private static MpRegistryFactory mpRegistryFactory;
 
     @BeforeAll
@@ -43,9 +43,9 @@ public class TestFormatter {
 
     @Test
     void testSimpleCounterFormatting() {
-        MpMetricRegistry reg = (MpMetricRegistry) mpRegistryFactory.registry("scope1");
+        MpMetricRegistry reg = (MpMetricRegistry) mpRegistryFactory.registry(SCOPE);
 
-        Counter counter = reg.counter("myCounter");
+        Counter counter = reg.counter(COUNTER_NAME);
         counter.inc();
         assertThat("Updated counter", counter.getCount(), is(1L));
 
@@ -63,12 +63,15 @@ public class TestFormatter {
 
         // Want to match: any uninteresting lines, start-of-line, the meter name, the tags (capturing the scope tag value),
         // catpure the meter value, further uninteresting text.
-        Pattern expectedNameAndTagAndValue = Pattern.compile(".*?^myCounter_total\\{.*mp_scope=\"([^\"]+).*?}\\s+(\\S+).*?",
+        Pattern expectedNameAndTagAndValue = Pattern.compile(".*?^"
+                                                                     + COUNTER_NAME
+                                                                     + "_total\\{.*mp_scope=\""
+                                                                     + SCOPE
+                                                                     + "\".*?}\\s+(\\S+).*?",
                                                              Pattern.MULTILINE + Pattern.DOTALL);
         Matcher matcher = expectedNameAndTagAndValue.matcher(promFormat);
-        assertThat("Output matches expected", matcher.matches(), is(true));
-        assertThat("Output matcher groups", matcher.groupCount(), is(2));
-        assertThat("Captured mp_scope value", matcher.group(1), is("scope1"));
-        assertThat("Captured metric value as ", Double.parseDouble(matcher.group(2)), is(1.0D));
+        assertThat("Output " + System.lineSeparator() + promFormat + System.lineSeparator() + " matches expected", matcher.matches(), is(true));
+        assertThat("Output matcher groups", matcher.groupCount(), is(1));
+        assertThat("Captured metric value as ", Double.parseDouble(matcher.group(1)), is(1.0D));
     }
 }

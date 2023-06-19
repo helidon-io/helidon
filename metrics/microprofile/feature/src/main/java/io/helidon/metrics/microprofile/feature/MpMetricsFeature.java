@@ -20,7 +20,6 @@ import java.util.Optional;
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.Config;
 import io.helidon.metrics.microprofile.PrometheusFormatter;
 import io.helidon.nima.servicecommon.HelidonFeatureSupport;
 import io.helidon.nima.webserver.http.HttpRules;

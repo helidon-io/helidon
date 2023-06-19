@@ -30,7 +30,7 @@ class MpFunctionCounter extends MpMetric<FunctionCounter> implements Meter, Coun
     }
 
     private MpFunctionCounter(Builder<?> builder) {
-        super(delegate(builder));
+        super(delegate(builder), builder.mpMetricRegistry.meterRegistry());
     }
 
     @Override

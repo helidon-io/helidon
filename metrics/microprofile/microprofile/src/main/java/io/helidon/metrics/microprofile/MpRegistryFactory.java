@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.microprofile;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
@@ -31,6 +30,11 @@ public class MpRegistryFactory {
     public static final String APPLICATION_SCOPE = "application";
     public static final String BASE_SCOPE = "base";
     public static final String VENDOR_SCOPE = "vendor";
+    public static final String HISTOGRAM_PRECISION_CONFIG_KEY_SUFFIX = "helidon.distribution-summary.precision";
+    public static final String TIMER_PRECISION_CONFIG_KEY_SUFFIX = "helidon.timer.precision";
+
+    private static final int HISTOGRAM_PRECISION_DEFAULT = 3;
+    private static final int TIMER_PRECISION_DEFAULT = 3;
 
     private static MpRegistryFactory INSTANCE;
 
@@ -40,6 +44,8 @@ public class MpRegistryFactory {
     private Config mpConfig;
     private final Map<String, MpMetricRegistry> registries = new HashMap<>();
     private final PrometheusMeterRegistry prometheusMeterRegistry;
+    private final int distributionSummaryPrecision;
+    private final int timerPrecision;
 
 
     public static MpRegistryFactory create(Config mpConfig) {
@@ -73,30 +79,34 @@ public class MpRegistryFactory {
         creation = new Exception("Initial creation of " + MpRegistryFactory.class.getSimpleName());
         this.mpConfig = mpConfig;
         prometheusMeterRegistry = findOrAddPrometheusRegistry();
+        distributionSummaryPrecision = mpConfig.getOptionalValue("mp.metrics." + HISTOGRAM_PRECISION_CONFIG_KEY_SUFFIX,
+                                                                 Integer.class).orElse(HISTOGRAM_PRECISION_DEFAULT);
+        timerPrecision = mpConfig.getOptionalValue("mp.metrics." + TIMER_PRECISION_CONFIG_KEY_SUFFIX,
+                                                   Integer.class).orElse(TIMER_PRECISION_DEFAULT);
         registries.put(APPLICATION_SCOPE, MpMetricRegistry.create(APPLICATION_SCOPE, Metrics.globalRegistry));
         registries.put(BASE_SCOPE, BaseRegistry.create(Metrics.globalRegistry));
         registries.put(VENDOR_SCOPE, MpMetricRegistry.create(VENDOR_SCOPE, Metrics.globalRegistry));
+
     }
 
     public MetricRegistry registry(String scope) {
-//        if (INSTANCE == null) {
-//            throw new IllegalStateException("Attempt to use " + MpRegistryFactory.class.getName() + " before invoking create");
-//        }
         return registries.computeIfAbsent(scope,
                                                    s -> MpMetricRegistry.create(s, Metrics.globalRegistry));
     }
 
     public PrometheusMeterRegistry prometheusMeterRegistry() {
-//        if (INSTANCE == null) {
-//            throw new IllegalStateException("Attempt to use " + MpRegistryFactory.class.getName() + " before invoking create");
-//        }
         return prometheusMeterRegistry;
     }
 
+    int distributionSummaryPrecision() {
+        return distributionSummaryPrecision;
+    }
+
+    int timerPrecision() {
+        return timerPrecision;
+    }
+
     private PrometheusMeterRegistry findOrAddPrometheusRegistry() {
-//        if (INSTANCE == null) {
-//            throw new IllegalStateException("Attempt to use " + MpRegistryFactory.class.getName() + " before invoking create");
-//        }
         return Metrics.globalRegistry.getRegistries().stream()
                 .filter(PrometheusMeterRegistry.class::isInstance)
                 .map(PrometheusMeterRegistry.class::cast)
