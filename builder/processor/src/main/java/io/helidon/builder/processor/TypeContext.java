@@ -37,7 +37,6 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
-import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.processor.Types.BLUEPRINT_TYPE;
 import static io.helidon.builder.processor.Types.BUILDER_INTERCEPTOR;
@@ -342,7 +341,7 @@ record TypeContext(
                                       }
                                       return true;
                                   })
-                                  .filter(TypeInfoPredicates.notIgnoredMethod(ignoredMethods, IGNORED_NAMES))
+                                  .filter(Predicate.not(TypeInfoPredicates.ignoredMethod(ignoredMethods, IGNORED_NAMES)))
                                   .filter(it -> {
                                       // if the method is defined on a super prototype, add it to the set
                                       if (ignoreInterfaces.contains(it.enclosingType().get())) {
@@ -476,13 +475,4 @@ record TypeContext(
             List<PrototypeProperty> overridingProperties) {
     }
 
-    record MethodSignature(TypeName returnType, String name, List<TypeName> arguments) {
-        public static MethodSignature create(TypedElementInfo info) {
-            return new MethodSignature(info.typeName(),
-                                       info.elementName(),
-                                       info.parameterArguments().stream()
-                                               .map(TypedElementInfo::typeName)
-                                               .toList());
-        }
-    }
 }

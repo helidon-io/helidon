@@ -17,9 +17,11 @@
 package io.helidon.builder.processor;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
@@ -64,7 +66,7 @@ final class TypeInfoPredicates {
             }
             for (int i = 0; i < paramTypes.length; i++) {
                 TypeName paramType = paramTypes[i];
-                if (!paramType.equals(arguments.get(i))) {
+                if (!paramType.equals(arguments.get(i).typeName())) {
                     return false;
                 }
             }
@@ -73,21 +75,77 @@ final class TypeInfoPredicates {
     }
 
     /**
-     * Make sure the method should not be ignored.
+     * Predicate for methods that should be ignored.
      *
      * @param ignoredMethods ignored method signatures (such as methods that are defined as default)
      * @param ignoredNames ignored method names (equals, hashCode etc.)
      * @return a new predicate
      */
-    static Predicate<? super TypedElementInfo> notIgnoredMethod(Set<TypeContext.MethodSignature> ignoredMethods,
+    static Predicate<? super TypedElementInfo> ignoredMethod(Set<MethodSignature> ignoredMethods,
                                                                 Set<String> ignoredNames) {
         return it -> {
             // name is enough, signature is not important
             if (ignoredNames.contains(it.elementName())) {
-                return false;
+                return true;
             }
 
-            return !ignoredMethods.contains(TypeContext.MethodSignature.create(it));
+            return ignoredMethods.contains(MethodSignature.create(it));
         };
+    }
+
+    /**
+     * Find a method matching the filters from {@link TypeInfo#elementInfo()}.
+     *
+     * @param signatureFilter   expected signature
+     * @param expectedModifiers expected modifier(s), found method may have more modifiers than defined here
+     * @param typeInfo          type info to search
+     * @return found method, ord empty if method does not exist, if more than one exist, the first one is returned
+     */
+    static Optional<TypedElementInfo> findMethod(MethodSignature signatureFilter,
+                                                 Set<String> expectedModifiers,
+                                                 TypeInfo typeInfo) {
+        return typeInfo.elementInfo()
+                .stream()
+                .filter(TypeInfoPredicates::isMethod)
+                .filter(it -> {
+                    Set<String> modifiers = it.modifiers();
+                    if (expectedModifiers != null) {
+                        for (String expectedModifier : expectedModifiers) {
+                            if (!modifiers.contains(expectedModifier)) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                })
+                .filter(it -> {
+                    if (signatureFilter.returnType() != null) {
+                        if (!it.typeName().equals(signatureFilter.returnType())) {
+                            return false;
+                        }
+                    }
+                    if (signatureFilter.name() != null) {
+                        if (!it.elementName().equals(signatureFilter.name())) {
+                            return false;
+                        }
+                    }
+                    List<TypeName> expectedArguments = signatureFilter.arguments();
+                    if (expectedArguments != null) {
+                        List<TypedElementInfo> actualArguments = it.parameterArguments();
+                        if (actualArguments.size() != expectedArguments.size()) {
+                            return false;
+                        }
+                        for (int i = 0; i < expectedArguments.size(); i++) {
+                            TypeName expected = expectedArguments.get(i);
+                            TypeName actualArgument = actualArguments.get(i).typeName();
+                            if (!expected.equals(actualArgument)) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                })
+                .findFirst();
+
     }
 }

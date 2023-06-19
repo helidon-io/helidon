@@ -38,7 +38,7 @@ import static io.helidon.builder.processor.Types.SET_TYPE;
 import static io.helidon.common.processor.GeneratorTools.capitalize;
 
 // builder property
-record PrototypeProperty(TypeContext.MethodSignature signature,
+record PrototypeProperty(MethodSignature signature,
                          TypeHandler typeHandler,
                          ConfiguredOption configuredOption,
                          Singular singular,
@@ -103,7 +103,7 @@ record PrototypeProperty(TypeContext.MethodSignature signature,
                 .orElse(false);
 
         return new PrototypeProperty(
-                TypeContext.MethodSignature.create(element),
+                MethodSignature.create(element),
                 typeHandler,
                 configuredOption,
                 singular,

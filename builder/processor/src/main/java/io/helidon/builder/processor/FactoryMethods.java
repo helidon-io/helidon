@@ -24,6 +24,7 @@ import java.util.Set;
 import io.helidon.common.processor.GeneratorTools;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.processor.Types.CONFIG_TYPE;
@@ -152,7 +153,7 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
         String createMethod = "create";
 
         List<TypeInfo> candidates = configObjectCandidates.stream()
-                .map(it -> processingContext.toTypeInfo(it))
+                .map(processingContext::toTypeInfo)
                 .flatMap(Optional::stream)
                 .toList();
 
@@ -160,17 +161,14 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
             // is this a config object?
             if (doesImplement(typeInfo, PROTOTYPE_TYPE)) {
                 // it should have create(Config) with the correct typing
-                Optional<FactoryMethod> foundMethod = typeInfo
-                        .elementInfo()
-                        .stream()
-                        .filter(TypeInfoPredicates::isMethod)
-                        .filter(TypeInfoPredicates::isStatic)
-                        .filter(it -> createMethod.equals(it.elementName()))
-                        .filter(it -> it.parameterArguments().size() == 1)
-                        .filter(it -> CONFIG_TYPE.equals(it.parameterArguments().get(0).typeName()))
-                        .filter(it -> typeInfo.typeName().equals(it.typeName()))
-                        .findFirst()
-                        .map(it -> new FactoryMethod(typeInfo.typeName(), typeInfo.typeName(), createMethod, CONFIG_TYPE));
+                Optional<FactoryMethod> foundMethod = TypeInfoPredicates.findMethod(
+                                new MethodSignature(typeInfo.typeName(), createMethod, List.of(CONFIG_TYPE)),
+                                Set.of(TypeValues.MODIFIER_STATIC),
+                                typeInfo)
+                        .map(it -> new FactoryMethod(typeInfo.typeName(),
+                                typeInfo.typeName(),
+                                createMethod,
+                                CONFIG_TYPE));
                 if (foundMethod.isPresent()) {
                     return foundMethod;
                 }
@@ -185,16 +183,10 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                 // there is no config factory method available for the type that we have
                 TypeName candidateTypeName = typeInfo.typeName();
                 // we are now interested in a method with signature "static T create(Config)" where T is the type we are handling
-                Optional<FactoryMethod> foundMethod = typeInfo
-                        .elementInfo()
-                        .stream()
-                        .filter(TypeInfoPredicates::isMethod)
-                        .filter(TypeInfoPredicates::isStatic)
-                        .filter(it -> createMethod.equals(it.elementName()))
-                        .filter(it -> it.parameterArguments().size() == 1)
-                        .filter(it -> CONFIG_TYPE.equals(it.parameterArguments().get(0).typeName()))
-                        .filter(it -> candidateTypeName.equals(it.typeName()))
-                        .findFirst()
+                Optional<FactoryMethod> foundMethod = TypeInfoPredicates.findMethod(
+                                new MethodSignature(candidateTypeName, createMethod, List.of(CONFIG_TYPE)),
+                                Set.of(TypeValues.MODIFIER_STATIC),
+                                typeInfo)
                         .map(it -> new FactoryMethod(candidateTypeName, candidateTypeName, createMethod, CONFIG_TYPE));
                 if (foundMethod.isPresent()) {
                     return foundMethod;
