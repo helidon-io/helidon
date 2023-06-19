@@ -36,12 +36,4 @@ class ConfigService implements Provider<Config> {
     public Config get() {
         return config;
     }
-
-    public static void main(String[] args) {
-        Config asyncs = config.get("fault-tolerance.asyncs");
-        asyncs.asNodeList()
-                .ifPresent(beanConfigList -> {
-
-                });
-    }
 }
