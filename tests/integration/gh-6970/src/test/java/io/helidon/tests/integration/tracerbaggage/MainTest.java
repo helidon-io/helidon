@@ -38,6 +38,9 @@ class MainTest {
     public static final String KEY = "fubar";
     public static final String VALUE = "1";
 
+    public static final String ANOTHER_KEY = "another";
+    public static final String ANOTHER_VALUE = "value";
+
     @BeforeAll
     static void prepareTracer() {
         Config config = Config.create();
@@ -59,7 +62,9 @@ class MainTest {
         Span span = tracer.spanBuilder("baggageCanaryMinimal").start();
         // Set baggage and confirm that it's known in the span
         span.baggage(KEY, VALUE);
+        span.baggage(ANOTHER_KEY, ANOTHER_VALUE);
         assertThat(span.baggage(KEY).orElse(null), is(VALUE));
+        assertThat(span.baggage(ANOTHER_KEY).orElse(null), is(ANOTHER_VALUE));
 
         // Inject the span (context) into the consumer
         HeaderConsumer consumer = HeaderConsumer
@@ -70,10 +75,14 @@ class MainTest {
         List<String> result = new ArrayList<>();
         consumer.keys().forEach(result::add);
         assertThat(result, hasItem(containsString(KEY)));
+        assertThat(result, hasItem(containsString(ANOTHER_KEY)));
 
         //Check baggage value
         String fubar = result.stream().filter(e -> e.contains(KEY)).findFirst().orElseThrow();
         assertThat(consumer.get(fubar).orElseThrow(), is(VALUE));
+        //Check another baggage
+        String another = result.stream().filter(e -> e.contains(ANOTHER_KEY)).findFirst().orElseThrow();
+        assertThat(consumer.get(another).orElseThrow(), is(ANOTHER_VALUE));
         span.end();
     }
 
