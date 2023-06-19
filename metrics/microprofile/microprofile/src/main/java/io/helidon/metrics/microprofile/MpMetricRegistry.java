@@ -29,6 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -70,7 +71,7 @@ class MpMetricRegistry implements MetricRegistry {
         return new MpMetricRegistry(scope, meterRegistry);
     }
 
-    private MpMetricRegistry(String scope, MeterRegistry meterRegistry) {
+    protected MpMetricRegistry(String scope, MeterRegistry meterRegistry) {
         this.scope = scope;
         this.meterRegistry = meterRegistry;
     }
@@ -116,6 +117,10 @@ class MpMetricRegistry implements MetricRegistry {
                                          meterRegistry::counter,
                                          validatedMetadata(metadata),
                                          tags);
+    }
+
+    <T> Counter counter(Metadata metadata, T valueOrigin, ToDoubleFunction<T> fn, Tag... tags) {
+        return getOrCreateAndStoreFunctionCounter(validatedMetadata(metadata), valueOrigin, fn);
     }
 
     @Override
@@ -358,6 +363,10 @@ class MpMetricRegistry implements MetricRegistry {
         return scope;
     }
 
+    MeterRegistry meterRegistry() {
+        return meterRegistry;
+    }
+
     <M extends MpMetric<?>, T extends Meter> M getOrCreateAndStoreMetric(Meter.Type type,
                                                                          Function<T, M> metricFactory,
                                                                          BiFunction<String,
@@ -392,11 +401,10 @@ class MpMetricRegistry implements MetricRegistry {
                 return (M) result;
             }
 
-            T delegate = meterFactory.apply(mpMetricId.name(), MpTags.fromMp(mpMetricId.getTags()));
+            T delegate = meterFactory.apply(mpMetricId.name(), mpMetricId.fullTags());
 
             M newMetric = metricFactory.apply(delegate);
             storeMetadataIfAbsent(validMetadata);
-            metricsById.put(mpMetricId, newMetric);
             metricsById.put(mpMetricId, newMetric);
             metricIdsByName.computeIfAbsent(validMetadata.getName(), n -> new ArrayList<>()).add(mpMetricId);
             metricsByName.computeIfAbsent(validMetadata.getName(), n -> new ArrayList<>()).add(newMetric);
@@ -404,6 +412,35 @@ class MpMetricRegistry implements MetricRegistry {
         });
     }
 
+    <T> Counter getOrCreateAndStoreFunctionCounter(Metadata validMetadata,
+                                                                                  T valueOrigin,
+                                                                                  ToDoubleFunction<T> fn,
+                                                                                  Tag... tags) {
+
+        /*
+         * From the metadata create a candidate MpMetricID, validate it (to make sure the tag names are consistent with any
+         * previously-registered metrics with the same name and that the user did not specify any reserved tags), and then
+         * augment the inner meter ID with the scope tag and, if an app name is specified via config, the app name tag.
+         */
+        MpMetricId mpMetricId = validAugmentedMpMetricId(validMetadata, Meter.Type.COUNTER, tags);
+        return access(() -> {
+            MpMetric<?> result = metricsById.get(mpMetricId);
+            if (result != null) {
+                return (MpFunctionCounter) result;
+            }
+
+            MpFunctionCounter newMetric = MpFunctionCounter.builder(this,
+                                                                 validMetadata.getName(),
+                                                                 valueOrigin, fn)
+                    .build();
+
+            storeMetadataIfAbsent(validMetadata);
+            metricsById.put(mpMetricId, newMetric);
+            metricIdsByName.computeIfAbsent(validMetadata.getName(), n -> new ArrayList<>()).add(mpMetricId);
+            metricsByName.computeIfAbsent(validMetadata.getName(), n -> new ArrayList<>()).add(newMetric);
+            return newMetric;
+        });
+    }
     private void storeMetadataIfAbsent(Metadata validatedMetadata) {
         metadata.putIfAbsent(validatedMetadata.getName(), validatedMetadata);
     }

@@ -13,5 +13,103 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.microprofile.feature;public class MpMetricsFeature {
+package io.helidon.metrics.microprofile.feature;
+
+import java.util.Optional;
+
+import io.helidon.common.http.Http;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
+import io.helidon.metrics.microprofile.PrometheusFormatter;
+import io.helidon.nima.servicecommon.HelidonFeatureSupport;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
+
+public class MpMetricsFeature extends HelidonFeatureSupport {
+
+    private static final System.Logger LOGGER = System.getLogger(MpMetricsFeature.class.getName());
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static MpMetricsFeature create() {
+        return builder().build();
+    }
+    protected MpMetricsFeature(System.Logger logger, Builder builder, String serviceName) {
+        super(logger, builder, serviceName);
+    }
+
+    @Override
+    public Optional<HttpService> service() {
+        if (enabled()) {
+            return Optional.of(this::configureRoutes);
+        } else {
+            return Optional.of(this::configureDisabledRoutes);
+        }
+    }
+
+    private void configureRoutes(HttpRules rules) {
+        rules.get("/", this::prepareResponse);
+    }
+
+    private void configureDisabledRoutes(HttpRules rules) {
+        rules.get("/",this::prepareDisabledResponse);
+    }
+
+    private void prepareDisabledResponse(ServerRequest req, ServerResponse resp) {
+        resp.status(Http.Status.NOT_IMPLEMENTED_501)
+                .header(Http.Header.CONTENT_TYPE, MediaTypes.TEXT_PLAIN.text())
+                .send("Metrics is disabled");
+    }
+
+    private void prepareResponse(ServerRequest req, ServerResponse resp) {
+
+        Optional<MediaType> requestedMediaType = req.headers()
+                .bestAccepted(PrometheusFormatter.MEDIA_TYPE_TO_FORMAT
+                                      .keySet()
+                                      .toArray(new MediaType[0]));
+        if (requestedMediaType.isEmpty()) {
+            LOGGER.log(System.Logger.Level.TRACE,
+                       "Unable to compose Prometheus format response; request accepted types were "
+                               + req.headers().acceptedTypes());
+            resp.status(Http.Status.UNSUPPORTED_MEDIA_TYPE_415).send();
+        }
+
+        try {
+            MediaType resultMediaType = requestedMediaType.get();
+            resp.status(Http.Status.OK_200);
+            resp.headers().contentType(resultMediaType);
+            resp.send(PrometheusFormatter.filteredOutput(resultMediaType, scope(req), metricName(req)));
+        } catch (Exception ex) {
+            resp.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            resp.send("Error preparing metrics output; " + ex.getMessage());
+            logger().log(System.Logger.Level.ERROR, "Error preparing metrics output", ex);
+        }
+    }
+
+    private Optional<String> scope(ServerRequest req) {
+        return req.query().first("scope");
+    }
+
+    private Optional<String> metricName(ServerRequest req) {
+        return req.query().first("name");
+    }
+
+    public static class Builder extends HelidonFeatureSupport.Builder<Builder, MpMetricsFeature> {
+
+        private static final String DEFAULT_WEB_CONTEXT = "/metrics";
+
+        Builder() {
+            super(DEFAULT_WEB_CONTEXT);
+        }
+
+        @Override
+        public MpMetricsFeature build() {
+            return new MpMetricsFeature(LOGGER, this, "MP-metrics");
+        }
+    }
 }

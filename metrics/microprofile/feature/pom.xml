@@ -43,18 +43,24 @@
             <artifactId>helidon-microprofile-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics.microprofile</groupId>
+            <artifactId>helidon-metrics-microprofile</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.prometheus</groupId>
             <artifactId>simpleclient</artifactId>
-            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -80,6 +86,10 @@
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.service-common</groupId>
+            <artifactId>helidon-nima-service-common</artifactId>
         </dependency>
     </dependencies>
 

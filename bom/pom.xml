@@ -535,6 +535,11 @@
                 <artifactId>helidon-metrics-microprofile-cdi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics.microprofile</groupId>
+                <artifactId>helidon-metrics-microprofile-feature</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- health checks -->
             <dependency>

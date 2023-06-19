@@ -22,6 +22,13 @@ module io.helidon.metrics.microprofile {
     requires microprofile.metrics.api;
     requires microprofile.config.api;
     requires micrometer.core;
+    requires io.helidon.common;
+    requires micrometer.registry.prometheus;
+    requires java.management;
+    requires io.helidon.common.media.type;
+    requires simpleclient.common;
+
+    exports io.helidon.metrics.microprofile;
 
     //requires micrometer.registry.prometheus;
 }

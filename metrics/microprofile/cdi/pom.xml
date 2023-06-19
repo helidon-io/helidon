@@ -27,7 +27,7 @@
 
     <artifactId>helidon-metrics-microprofile-cdi</artifactId>
 
-    <name>Helidon Metrics MicroProfile CDI elements</name>
+    <name>Helidon Metrics MicroProfile CDI Component</name>
 
     <description>
         CDI elements (extension, producers, etc.) for MicroProfile Metrics support
@@ -41,6 +41,14 @@
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics.microprofile</groupId>
+            <artifactId>helidon-metrics-microprofile-feature</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.service-common</groupId>
+            <artifactId>helidon-microprofile-service-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -61,6 +69,12 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics.microprofile</groupId>
+            <artifactId>helidon-metrics-microprofile-feature</artifactId>
+            <version>4.0.0-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

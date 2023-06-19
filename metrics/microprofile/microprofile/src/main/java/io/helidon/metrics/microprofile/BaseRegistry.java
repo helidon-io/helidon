@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.metrics;
+package io.helidon.metrics.microprofile;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
@@ -26,14 +26,10 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 
-import io.helidon.metrics.api.BaseMetricsSettings;
-import io.helidon.metrics.api.MetricsSettings;
-
-import org.eclipse.microprofile.metrics.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 
@@ -49,40 +45,30 @@ import org.eclipse.microprofile.metrics.Tag;
  * (section 4.5 of the spec).</li>
  * </ul>
  *
- * Each metric can be disabled using {@link BaseMetricsSettings.Builder#enableBaseMetric(String, boolean)} or by using the
- * equivalent configuration property
- * {@code helidon.metrics.base.${metric_name}.enabled=false}. Further, to suppress
- * all base metrics use {@link BaseMetricsSettings.Builder#enabled(boolean)} or set the equivalent config property
- * {@code {{@value BaseMetricsSettings.Builder#}}metrics.base.enabled=false}.
  */
-final class BaseRegistry extends Registry {
+final class BaseRegistry extends MpMetricRegistry {
 
     private static final Tag[] NO_TAGS = new Tag[0];
 
     private static final Metadata MEMORY_USED_HEAP = Metadata.builder()
             .withName("memory.usedHeap")
-            .withDisplayName("Used Heap Memory")
             .withDescription("Displays the amount of used heap memory in bytes.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.BYTES)
             .build();
 
     private static final Metadata MEMORY_COMMITTED_HEAP = Metadata.builder()
             .withName("memory.committedHeap")
-            .withDisplayName("Committed Heap Memory")
             .withDescription(
                     "Displays the amount of memory in bytes that is "
                             + "committed for the Java virtual "
                             + "machine to use. This amount of memory is "
                             + "guaranteed for the Java virtual "
                             + "machine to use.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.BYTES)
             .build();
 
     private static final Metadata MEMORY_MAX_HEAP = Metadata.builder()
             .withName("memory.maxHeap")
-            .withDisplayName("Max Heap Memory")
             .withDescription(
                     "Displays the maximum amount of heap memory in bytes that can"
                             + " be used for "
@@ -96,92 +82,74 @@ final class BaseRegistry extends Registry {
                             + " to allocate memory "
                             + "even if the amount of used memory does not exceed "
                             + "this maximum size.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.BYTES)
             .build();
 
     private static final Metadata JVM_UPTIME = Metadata.builder()
             .withName("jvm.uptime")
-            .withDisplayName("JVM Uptime")
             .withDescription(
                     "Displays the start time of the Java virtual machine in "
                             + "milliseconds. This "
                             + "attribute displays the approximate time when the Java "
                             + "virtual machine "
                             + "started.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.MILLISECONDS)
             .build();
 
     private static final Metadata THREAD_COUNT = Metadata.builder()
             .withName("thread.count")
-            .withDisplayName("Thread Count")
             .withDescription("Displays the current number of live threads including both "
                             + "daemon and nondaemon threads")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.NONE)
             .build();
 
     private static final Metadata THREAD_DAEMON_COUNT = Metadata.builder()
             .withName("thread.daemon.count")
-            .withDisplayName("Daemon Thread Count")
             .withDescription("Displays the current number of live daemon threads.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.NONE)
             .build();
 
     private static final Metadata THREAD_MAX_COUNT = Metadata.builder()
             .withName("thread.max.count")
-            .withDisplayName("Peak Thread Count")
             .withDescription("Displays the peak live thread count since the Java "
                             + "virtual machine started or "
                             + "peak was reset. This includes daemon and "
                             + "non-daemon threads.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.NONE)
             .build();
 
     private static final Metadata CL_LOADED_COUNT = Metadata.builder()
             .withName("classloader.loadedClasses.count")
-            .withDisplayName("Current Loaded Class Count")
             .withDescription("Displays the number of classes that are currently loaded in "
                             + "the Java virtual machine.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.NONE)
             .build();
 
     private static final Metadata CL_LOADED_TOTAL = Metadata.builder()
             .withName("classloader.loadedClasses.total")
-            .withDisplayName("Total Loaded Class Count")
             .withDescription("Displays the total number of classes that have been loaded "
                             + "since the Java virtual machine has started execution.")
-            .withType(MetricType.COUNTER)
             .withUnit(MetricUnits.NONE)
             .build();
 
     private static final Metadata CL_UNLOADED_COUNT = Metadata.builder()
             .withName("classloader.unloadedClasses.total")
-            .withDisplayName("Total Unloaded Class Count")
             .withDescription("Displays the total number of classes unloaded since the Java "
                             + "virtual machine has started execution.")
-            .withType(MetricType.COUNTER)
             .withUnit(MetricUnits.NONE)
             .build();
 
     private static final Metadata OS_AVAILABLE_CPU = Metadata.builder()
             .withName("cpu.availableProcessors")
-            .withDisplayName("Available Processors")
             .withDescription("Displays the number of processors available to the Java "
                             + "virtual machine. This "
                             + "value may change during a particular invocation of"
                             + " the virtual machine.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.NONE)
             .build();
 
     private static final Metadata OS_LOAD_AVERAGE = Metadata.builder()
             .withName("cpu.systemLoadAverage")
-            .withDisplayName("System Load Average")
             .withDescription("Displays the system load average for the last minute. The "
                             + "system load average "
                             + "is the sum of the number of runnable entities "
@@ -200,24 +168,13 @@ final class BaseRegistry extends Registry {
                             + " be unavailable on some "
                             + "platforms where it is expensive to implement this "
                             + "method.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.NONE)
             .build();
 
-    private final MetricsSettings metricsSettings;
+    static MpMetricRegistry create(MeterRegistry meterRegistry) {
 
-    private BaseRegistry(MetricsSettings metricsSettings) {
-        super(Type.BASE, metricsSettings.registrySettings(Type.BASE));
-        this.metricsSettings = metricsSettings;
-    }
+        BaseRegistry result = new BaseRegistry(meterRegistry);
 
-    public static Registry create(MetricsSettings metricsSettings) {
-
-        BaseRegistry result = new BaseRegistry(metricsSettings);
-
-        if (!metricsSettings.baseMetricsSettings().isEnabled()) {
-            return result;
-        }
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
 
         // load all base metrics
@@ -235,8 +192,8 @@ final class BaseRegistry extends Registry {
 
         ClassLoadingMXBean clBean = ManagementFactory.getClassLoadingMXBean();
         register(result, CL_LOADED_COUNT, clBean, ClassLoadingMXBean::getLoadedClassCount);
-        register(result, CL_LOADED_TOTAL, (SimpleCounter) clBean::getTotalLoadedClassCount);
-        register(result, CL_UNLOADED_COUNT, (SimpleCounter) clBean::getUnloadedClassCount);
+        registerCounter(result, CL_LOADED_TOTAL, clBean, ClassLoadingMXBean::getTotalLoadedClassCount);
+        registerCounter(result, CL_UNLOADED_COUNT, clBean, ClassLoadingMXBean::getUnloadedClassCount);
 
         OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
         register(result, OS_AVAILABLE_CPU, osBean, OperatingSystemMXBean::getAvailableProcessors);
@@ -245,7 +202,7 @@ final class BaseRegistry extends Registry {
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcBean : gcBeans) {
             String poolName = gcBean.getName();
-            register(result, gcCountMeta(), (SimpleCounter) gcBean::getCollectionCount,
+            registerCounter(result, gcCountMeta(), gcBean, GarbageCollectorMXBean::getCollectionCount,
                     new Tag("name", poolName));
             register(result, gcTimeMeta(), gcBean, GarbageCollectorMXBean::getCollectionTime,
                     new Tag("name", poolName));
@@ -257,7 +214,6 @@ final class BaseRegistry extends Registry {
     private static Metadata gcTimeMeta() {
         return Metadata.builder()
                 .withName("gc.time")
-                .withDisplayName("Garbage Collection Time")
                 .withDescription(
                             "Displays the approximate accumulated collection elapsed time in milliseconds. "
                                     + "This attribute displays -1 if the collection elapsed time is undefined for this "
@@ -265,7 +221,6 @@ final class BaseRegistry extends Registry {
                                     + "timer to measure the elapsed time. This attribute may display the same value "
                                     + "even if the collection count has been incremented if the collection elapsed "
                                     + "time is very short.")
-                .withType(MetricType.GAUGE)
                 .withUnit(MetricUnits.MILLISECONDS)
                 .build();
     }
@@ -273,20 +228,11 @@ final class BaseRegistry extends Registry {
     private static Metadata gcCountMeta() {
         return Metadata.builder()
                 .withName("gc.total")
-                .withDisplayName("Garbage Collection Count")
                 .withDescription(
                             "Displays the total number of collections that have occurred. This attribute lists "
                                     + "-1 if the collection count is undefined for this collector.")
-                .withType(MetricType.COUNTER)
                 .withUnit(MetricUnits.NONE)
                 .build();
-    }
-
-    private static void register(BaseRegistry registry, Metadata meta, Metric metric, Tag... tags) {
-        if (registry.metricsSettings.baseMetricsSettings().isBaseMetricEnabled(meta.getName())
-            && registry.metricsSettings.isMetricEnabled(Type.BASE, meta.getName())) {
-            registry.register(meta, metric, tags);
-        }
     }
 
     private static <T, R extends Number>  void register(BaseRegistry registry,
@@ -294,26 +240,22 @@ final class BaseRegistry extends Registry {
                                                         T object,
                                                         Function<T, R> func,
                                                         Tag... tags) {
-        if (registry.metricsSettings.baseMetricsSettings().isBaseMetricEnabled(meta.getName())
-                && registry.metricsSettings.isMetricEnabled(Type.BASE, meta.getName())) {
-            registry.gauge(meta, object, func, tags);
-        }
+        registry.gauge(meta, object, func, tags);
+    }
+
+    private static <T, R extends Number> void registerCounter(BaseRegistry registry,
+                                                              Metadata meta,
+                                                              T object,
+                                                              ToDoubleFunction<T> func,
+                                                              Tag... tags) {
+        registry.counter(meta, object, func, tags);
     }
 
     private static <T, R extends Number>  void register(BaseRegistry registry, Metadata meta, T object, Function<T, R> func) {
         register(registry, meta, object, func, NO_TAGS);
     }
 
-        @FunctionalInterface
-    private interface SimpleCounter extends Counter {
-        @Override
-        default void inc() {
-            throw new IllegalStateException("Cannot increase a system counter");
-        }
-
-        @Override
-        default void inc(long n) {
-            throw new IllegalStateException("Cannot increase a system counter");
-        }
+    private BaseRegistry(MeterRegistry meterRegistry) {
+        super(MpRegistryFactory.BASE_SCOPE, meterRegistry);
     }
 }

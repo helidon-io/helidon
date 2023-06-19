@@ -17,6 +17,7 @@ package io.helidon.metrics.microprofile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tags;
@@ -24,9 +25,6 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Tag;
 
 public class MpMetricId extends MetricID {
-
-    // Functionally equivalent to the superclass MetricID, so we don't need equals or hashCode to account for any private
-    // fields here.
 
     private Tags fullTags = Tags.empty();
     private final Meter.Id meterId;
@@ -47,7 +45,31 @@ public class MpMetricId extends MetricID {
         return getName();
     }
 
+    public Tags fullTags() {
+        return fullTags;
+    }
+
     Meter.Id meterId() {
         return meterId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        MpMetricId that = (MpMetricId) o;
+        return fullTags.equals(that.fullTags) && meterId.equals(that.meterId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), fullTags, meterId);
     }
 }

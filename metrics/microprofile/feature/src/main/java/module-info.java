@@ -13,5 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module $MODULE_NAME$ {
+module io.helidon.metrics.microprofile.feature {
+
+    requires io.helidon.metrics.microprofile;
+    requires io.helidon.nima.servicecommon;
+    requires simpleclient.common;
+
+    exports io.helidon.metrics.microprofile.feature;
 }

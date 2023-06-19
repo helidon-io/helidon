@@ -13,5 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.microprofile.cdi;public class MetricsCdiExtension {
+package io.helidon.metrics.microprofile.cdi;
+
+import java.util.function.Function;
+
+import io.helidon.config.Config;
+import io.helidon.metrics.microprofile.feature.MpMetricsFeature;
+import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
+
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
+
+public class MetricsCdiExtension extends HelidonRestCdiExtension<MpMetricsFeature> {
+
+    private static final System.Logger LOGGER = System.getLogger(MetricsCdiExtension.class.getName());
+
+    private static final Function<Config, MpMetricsFeature> FEATURE_FACTORY =
+            (Config config) -> MpMetricsFeature.builder().config(config).build();
+
+    /**
+     * Common initialization for concrete implementations.
+     */
+    protected MetricsCdiExtension() {
+        super(LOGGER, FEATURE_FACTORY, "mp.metrics");
+    }
+
+    @Override
+    protected void processManagedBean(ProcessManagedBean<?> processManagedBean) {
+    }
 }

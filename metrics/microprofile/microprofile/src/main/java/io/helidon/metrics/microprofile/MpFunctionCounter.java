@@ -17,34 +17,58 @@ package io.helidon.metrics.microprofile;
 
 import java.util.function.ToDoubleFunction;
 
-import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.FunctionCounter;
+import io.micrometer.core.instrument.Measurement;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tags;
+import org.eclipse.microprofile.metrics.Counter;
 
-class MpFunctionalCounter extends MpCounter {
+class MpFunctionCounter extends MpMetric<FunctionCounter> implements Meter, Counter {
 
     static <T> Builder<T> builder(MpMetricRegistry mpMetricRegistry, String name, T origin, ToDoubleFunction<T> fn) {
-        return new Builder(mpMetricRegistry, name, origin, fn);
+        return new Builder<>(mpMetricRegistry, name, origin, fn);
     }
 
-    private MpFunctionalCounter(Builder builder) {
+    private MpFunctionCounter(Builder<?> builder) {
         super(delegate(builder));
     }
 
-    private static <T> Counter delegate(Builder<T> builder) {
+    @Override
+    public Id getId() {
+        return delegate().getId();
+    }
+
+    @Override
+    public Iterable<Measurement> measure() {
+        return delegate().measure();
+    }
+
+    @Override
+    public void inc() {
+        throw new UnsupportedOperationException("Not allowed on " + MpFunctionCounter.class.getName());
+    }
+
+    @Override
+    public void inc(long l) {
+        throw new UnsupportedOperationException("Not allowed on " + MpFunctionCounter.class.getName());
+    }
+
+    @Override
+    public long getCount() {
+        return (long) delegate().count();
+    }
+
+    private static <T> FunctionCounter delegate(Builder<T> builder) {
         return builder.mpMetricRegistry
                 .meterRegistry()
                 .more()
-                .counter(new Meter.Id(builder.name,
-                                      builder.tags,
-                                      builder.baseUnit,
-                                      builder.description,
-                                      Meter.Type.COUNTER),
+                .counter(builder.name,
+                         builder.tags,
                          builder.origin,
                          builder.fn);
     }
 
-    static class Builder<T> implements io.helidon.common.Builder<Builder<T>, MpFunctionalCounter> {
+    static class Builder<T> implements io.helidon.common.Builder<Builder<T>, MpFunctionCounter> {
 
         private final MpMetricRegistry mpMetricRegistry;
 
@@ -52,8 +76,6 @@ class MpFunctionalCounter extends MpCounter {
         private final ToDoubleFunction<T> fn;
         private final T origin;
         private Tags tags;
-        private String description;
-        private String baseUnit;
 
         private Builder(MpMetricRegistry mpMetricRegistry, String name, T origin, ToDoubleFunction<T> fn) {
             this.mpMetricRegistry = mpMetricRegistry;
@@ -62,26 +84,14 @@ class MpFunctionalCounter extends MpCounter {
             this.fn = fn;
         }
 
-        Builder<T> description(String description) {
-            this.description = description;
-            return this;
-        }
-
         Builder<T> tags(Tags tags) {
             this.tags = tags;
             return this;
         }
 
-        Builder<T> baseUnit(String baseUnit) {
-            this.baseUnit = baseUnit;
-            return this;
-        }
-
         @Override
-        public MpFunctionalCounter build() {
-            return new MpFunctionalCounter(this);
+        public MpFunctionCounter build() {
+            return new MpFunctionCounter(this);
         }
-
-
     }
 }

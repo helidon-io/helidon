@@ -34,5 +34,6 @@
     <modules>
         <module>microprofile</module>
         <module>cdi</module>
+        <module>feature</module>
     </modules>
 </project>

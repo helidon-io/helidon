@@ -13,5 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module $MODULE_NAME$ {
+
+/**
+ * MicroProfile metrics module
+ */
+module helidon.metrics.microprofile.cdi {
+
+    requires io.helidon.metrics.microprofile;
+    requires io.helidon.metrics.microprofile.feature;
+    requires io.helidon.microprofile.cdi;
+    requires io.helidon.microprofile.servicecommon;
+    requires jakarta.cdi;
+    requires io.helidon.config;
+    requires microprofile.config.api;
 }
