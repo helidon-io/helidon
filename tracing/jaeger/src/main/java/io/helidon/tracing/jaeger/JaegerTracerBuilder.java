@@ -37,6 +37,7 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
@@ -454,17 +455,21 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                         : Sampler.alwaysOff();
             };
 
-            Resource serviceName = Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, this.serviceName));
+            AttributesBuilder attributesBuilder = Attributes.builder();
+            attributesBuilder.put(ResourceAttributes.SERVICE_NAME, this.serviceName);
+            tags.forEach(attributesBuilder::put);
+
+            Resource serviceName = Resource.create(attributesBuilder.build());
             OpenTelemetry ot = OpenTelemetrySdk.builder()
                     .setTracerProvider(SdkTracerProvider.builder()
-                            .addSpanProcessor(SimpleSpanProcessor.create(exporter))
-                            .setSampler(sampler)
-                            .setResource(serviceName)
-                            .build())
+                                               .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                                               .setSampler(sampler)
+                                               .setResource(serviceName)
+                                               .build())
                     .setPropagators(ContextPropagators.create(TextMapPropagator.composite(createPropagators())))
                     .build();
 
-            result = HelidonOpenTelemetry.create(ot, ot.getTracer(this.serviceName), tags);
+            result = HelidonOpenTelemetry.create(ot, ot.getTracer(this.serviceName), Map.of());
 
             if (global) {
                 GlobalOpenTelemetry.set(ot);
