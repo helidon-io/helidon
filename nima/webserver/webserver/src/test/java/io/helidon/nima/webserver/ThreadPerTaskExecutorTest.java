@@ -97,7 +97,6 @@ class ThreadPerTaskExecutorTest {
 
     private static HelidonTaskExecutor newExecutor() {
         return ThreadPerTaskExecutor.create(Thread.ofVirtual()
-                .allowSetThreadLocals(true)
                 .inheritInheritableThreadLocals(false)
                 .factory());
     }

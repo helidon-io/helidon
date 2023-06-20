@@ -95,7 +95,6 @@ class ServerListener implements ListenerContext {
         this.context = listenerConfig.context();
 
         this.serverThread = Thread.ofPlatform()
-                .allowSetThreadLocals(true)
                 .inheritInheritableThreadLocals(true)
                 .daemon(false)
                 .name("server-" + socketName + "-listener")
@@ -103,13 +102,11 @@ class ServerListener implements ListenerContext {
 
         // to read requests and execute tasks
         this.readerExecutor = ThreadPerTaskExecutor.create(Thread.ofVirtual()
-                                                                         .allowSetThreadLocals(true)
                                                                          .inheritInheritableThreadLocals(inheritThreadLocals)
                                                                          .factory());
 
         // to do anything else (writers etc.)
         this.sharedExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                                         .allowSetThreadLocals(true)
                                                                          .inheritInheritableThreadLocals(inheritThreadLocals)
                                                                          .factory());
 
