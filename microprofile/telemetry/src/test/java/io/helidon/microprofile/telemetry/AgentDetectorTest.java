@@ -1,4 +1,4 @@
-/*
+package io.helidon.microprofile.telemetry;/*
  * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.tracing.opentelemetry;
-
-import java.util.Map;
-
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.tracing.opentelemetry.HelidonOpenTelemetry;
+import jakarta.enterprise.inject.spi.CDI;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,21 +32,25 @@ import static org.hamcrest.Matchers.is;
 /**
  * Check Agent Detector working correctly.
  */
+@HelidonTest(resetPerTest = true)
+@AddExtension(ServerCdiExtension.class)
 class AgentDetectorTest {
 
     public static final String OTEL_AGENT_PRESENT = "otel.agent.present";
     public static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
 
     @Test
+    @AddConfig(key = OTEL_AGENT_PRESENT, value = "true")
     void shouldBeNoOpTelemetry(){
-        Config config = Config.create(ConfigSources.create(Map.of(OTEL_AGENT_PRESENT, "true")));
+        Config config = CDI.current().select(Config.class).get();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
         assertThat(present, is(true));
     }
 
     @Test
+    @AddConfig(key = OTEL_AGENT_PRESENT, value = "false")
     void shouldNotBeNoOpTelemetry(){
-        Config config = Config.create(ConfigSources.create(Map.of(OTEL_AGENT_PRESENT, "false")));
+        Config config = CDI.current().select(Config.class).get();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
         assertThat(present, is(false));
     }
@@ -52,7 +58,7 @@ class AgentDetectorTest {
     @Test
     void checkEnvVariable(){
         System.setProperty(IO_OPENTELEMETRY_JAVAAGENT, "true");
-        Config config = Config.create();
+        Config config = CDI.current().select(Config.class).get();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
         assertThat(present, is(true));
     }

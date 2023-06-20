@@ -33,8 +33,8 @@ import static io.opentelemetry.context.Context.current;
 public final class HelidonOpenTelemetry {
 
     private static final System.Logger LOGGER = System.getLogger(HelidonOpenTelemetry.class.getName());
-    static final String OTEL_AGENT_PRESENT_PROPERTY = "otel.agent.present";
-    static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
+    private static final String OTEL_AGENT_PRESENT_PROPERTY = "otel.agent.present";
+    private static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
     private HelidonOpenTelemetry() {
     }
     /**
