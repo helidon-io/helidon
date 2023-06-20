@@ -32,8 +32,8 @@ import io.helidon.pico.api.Contract;
  * {@link BulkheadException}.
  */
 @Contract
-@RuntimeType.Prototype(BulkheadConfig.class)
-public interface Bulkhead extends FtHandler, RuntimeType<BulkheadConfig> {
+@RuntimeType.PrototypedBy(BulkheadConfig.class)
+public interface Bulkhead extends FtHandler, RuntimeType.Api<BulkheadConfig> {
     /**
      * Create {@link Bulkhead} from its configuration.
      *

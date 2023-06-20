@@ -44,8 +44,8 @@ import io.helidon.common.config.Config;
 /**
  * TLS configuration - common for server and client.
  */
-@RuntimeType.Prototype(TlsConfig.class)
-public abstract sealed class Tls implements RuntimeType<TlsConfig> permits Tls.ExplicitContextTlsConfig, Tls.TlsConfigImpl {
+@RuntimeType.PrototypedBy(TlsConfig.class)
+public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits Tls.ExplicitContextTlsConfig, Tls.TlsConfigImpl {
 
     /**
      * HTTPS endpoint identification algorithm, verifies certificate cn against host name.

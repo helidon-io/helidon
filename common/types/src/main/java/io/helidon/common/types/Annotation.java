@@ -25,7 +25,7 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.Prototype, Comparable<Annotation> {
+public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.Prototype.Api, Comparable<Annotation> {
     /**
      * Create a new fluent API builder to customize configuration.
      *
@@ -137,7 +137,7 @@ public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.
         public BUILDER from(Annotation prototype) {
             typeName(prototype.typeName());
             addValues(prototype.values());
-            return me();
+            return self();
         }
 
         /**
@@ -151,7 +151,7 @@ public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.
                 typeName(builder.typeName());
             }
             addValues(builder.values());
-            return me();
+            return self();
         }
 
         /**
@@ -184,7 +184,7 @@ public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.
          */
         public BUILDER type(java.lang.reflect.Type annoType) {
             AnnotationSupport.type(this, annoType);
-            return me();
+            return self();
         }
 
         /**
@@ -195,7 +195,7 @@ public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.
          */
         public BUILDER value(String value) {
             AnnotationSupport.value(this, value);
-            return me();
+            return self();
         }
 
         /**
@@ -208,7 +208,7 @@ public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.
         public BUILDER typeName(TypeName typeName) {
             Objects.requireNonNull(typeName);
             this.typeName = typeName;
-            return me();
+            return self();
         }
 
         /**
@@ -224,7 +224,7 @@ public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.
             var builder = TypeName.builder();
             consumer.accept(builder);
             this.typeName(builder.build());
-            return me();
+            return self();
         }
 
         /**
@@ -239,7 +239,7 @@ public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.
             Objects.requireNonNull(values);
             this.values.clear();
             this.values.putAll(values);
-            return me();
+            return self();
         }
 
         /**
@@ -253,7 +253,7 @@ public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.
         public BUILDER addValues(java.util.Map<? extends String, ? extends String> values) {
             Objects.requireNonNull(values);
             this.values.putAll(values);
-            return me();
+            return self();
         }
 
         /**
@@ -269,7 +269,7 @@ public interface Annotation extends AnnotationBlueprint, io.helidon.builder.api.
             Objects.requireNonNull(key);
             Objects.requireNonNull(value);
             this.values.put(key, value);
-            return me();
+            return self();
         }
 
         /**

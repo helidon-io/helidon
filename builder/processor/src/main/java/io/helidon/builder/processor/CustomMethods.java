@@ -151,7 +151,7 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                 + "("
                 + String.join(", ", argumentNames)
                 + ");"
-                + "  return me()";
+                + "  return self()";
 
         return new GeneratedMethod(
                 new Method(typeInformation.prototypeBuilder(),

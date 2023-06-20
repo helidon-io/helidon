@@ -35,7 +35,7 @@ interface PicoInjectionPlanBlueprint extends InjectionPlan {
      *
      * @return the unqualified services/providers for this injection point
      */
-    @Singular
+    @Prototype.Singular
     List<Object> unqualifiedProviders();
 
 }

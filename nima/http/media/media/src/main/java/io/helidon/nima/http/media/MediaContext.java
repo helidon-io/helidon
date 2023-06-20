@@ -27,8 +27,8 @@ import io.helidon.common.http.WritableHeaders;
 /**
  * Media context to obtain readers and writers of various supported content types.
  */
-@RuntimeType.Prototype(MediaContextConfig.class)
-public interface MediaContext extends RuntimeType<MediaContextConfig> {
+@RuntimeType.PrototypedBy(MediaContextConfig.class)
+public interface MediaContext extends RuntimeType.Api<MediaContextConfig> {
     /**
      * Create a new media context from {@link java.util.ServiceLoader}.
      *

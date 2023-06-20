@@ -327,7 +327,7 @@ final class GenerateAbstractBuilder {
             public BUILDER config(Config config) {
                 this.config = config;
                 config.get("server").as(String.class).ifPresent(this::server);
-                return me();
+                return self();
             }
              */
             pw.print(SOURCE_SPACING);
@@ -395,7 +395,7 @@ final class GenerateAbstractBuilder {
             pw.print(SOURCE_SPACING);
             pw.print(SOURCE_SPACING);
             pw.print(SOURCE_SPACING);
-            pw.println("return me();");
+            pw.println("return self();");
             pw.print(SOURCE_SPACING);
             pw.print(SOURCE_SPACING);
             pw.println("}");
@@ -584,7 +584,7 @@ final class GenerateAbstractBuilder {
         pw.print(SOURCE_SPACING);
         pw.print(SOURCE_SPACING);
         pw.print(SOURCE_SPACING);
-        pw.println("return me();");
+        pw.println("return self();");
         pw.print(SOURCE_SPACING);
         pw.print(SOURCE_SPACING);
         pw.println("}");
@@ -664,7 +664,7 @@ final class GenerateAbstractBuilder {
         pw.print(SOURCE_SPACING);
         pw.print(SOURCE_SPACING);
         pw.print(SOURCE_SPACING);
-        pw.println("return me();");
+        pw.println("return self();");
         pw.print(SOURCE_SPACING);
         pw.print(SOURCE_SPACING);
         pw.println("}");
@@ -1200,7 +1200,11 @@ final class GenerateAbstractBuilder {
                                .collect(Collectors.joining(" + \",\" \n")));
 
             pw.print(prefix);
-            pw.print("+ \"}\"");
+            if (hasSuper) {
+                pw.print("+ \"};\"");
+            } else {
+                pw.print("+ \"}\"");
+            }
         }
         if (hasSuper) {
             pw.println();

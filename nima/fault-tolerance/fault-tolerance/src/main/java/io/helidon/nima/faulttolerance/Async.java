@@ -28,8 +28,8 @@ import io.helidon.pico.api.Contract;
  * convenient static method to avoid creating instances of this class.
  */
 @Contract
-@RuntimeType.Prototype(AsyncConfig.class)
-public interface Async extends RuntimeType<AsyncConfig> {
+@RuntimeType.PrototypedBy(AsyncConfig.class)
+public interface Async extends RuntimeType.Api<AsyncConfig> {
 
     /**
      * Async with default executor service.

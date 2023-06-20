@@ -31,8 +31,8 @@ import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 /**
  * HTTP/1.1 server connection selector.
  */
-@RuntimeType.Prototype(Http1ConnectionSelectorConfig.class)
-public class Http1ConnectionSelector implements ServerConnectionSelector, RuntimeType<Http1ConnectionSelectorConfig> {
+@RuntimeType.PrototypedBy(Http1ConnectionSelectorConfig.class)
+public class Http1ConnectionSelector implements ServerConnectionSelector, RuntimeType.Api<Http1ConnectionSelectorConfig> {
 
     private static final String PROTOCOL = " HTTP/1.1\r";
 

@@ -119,7 +119,7 @@ class TypeHandlerMap extends TypeHandler {
             lines.add("this." + name() + ".putAll("
                               + fm.typeWithFactoryMethod().genericTypeName().fqName()
                               + "." + fm.createMethodName() + "(" + argumentName + "));");
-            lines.add("return me();");
+            lines.add("return self();");
 
             List<String> docLines = new ArrayList<>(blueprintJavadoc.lines());
             docLines.add("This method keeps existing values, then puts all new values into the map.");
@@ -198,7 +198,7 @@ class TypeHandlerMap extends TypeHandler {
             lines.add("Objects.requireNonNull(" + singularName + ");");
             lines.addAll(resolveBuilderLines(actualType(), singularName));
             lines.add("this." + name() + ".put(key, " + secondArgToPut(actualType(), singularName) + ");");
-            lines.add("return me();");
+            lines.add("return self();");
             setters.add(new GeneratedMethod(
                     Set.of(setterModifier(configured).trim()),
                     typeDeclaration,
@@ -240,7 +240,7 @@ class TypeHandlerMap extends TypeHandler {
                                   + "." + fm.createMethodName() + "();");
                 lines.add("consumer.accept(builder);");
                 lines.add("this." + methodName + "(key, builder.build());");
-                lines.add("return me();");
+                lines.add("return self();");
 
                 setters.add(new GeneratedMethod(
                         Set.of(setterModifier(configured).trim()),
@@ -350,7 +350,7 @@ class TypeHandlerMap extends TypeHandler {
                 "    v.add(" + singularName + ");",
                 "    return v;",
                 "});",
-                "return me();"
+                "return self();"
         );
 
         List<String> docLines = new ArrayList<>(blueprintJavadoc.lines());
@@ -390,7 +390,7 @@ class TypeHandlerMap extends TypeHandler {
                 "    v.addAll(" + name() + ");",
                 "    return v;",
                 "});",
-                "return me();"
+                "return self();"
         );
 
         List<String> docLines = new ArrayList<>(blueprintJavadoc.lines());
@@ -421,7 +421,7 @@ class TypeHandlerMap extends TypeHandler {
         List<String> lines = new ArrayList<>();
         lines.add("Objects.requireNonNull(" + name() + ");");
         lines.add("this." + name() + ".putAll(" + name() + ");");
-        lines.add("return me();");
+        lines.add("return self();");
 
         List<String> docLines = new ArrayList<>(blueprintJavadoc.lines());
         docLines.add("This method keeps existing values, then puts all new values into the map.");
@@ -452,7 +452,7 @@ class TypeHandlerMap extends TypeHandler {
         lines.add("Objects.requireNonNull(" + name() + ");");
         lines.add("this." + name() + ".clear();");
         lines.add("this." + name() + ".putAll(" + name() + ");");
-        lines.add("return me();");
+        lines.add("return self();");
 
         List<String> docLines = new ArrayList<>(blueprintJavadoc.lines());
         docLines.add("This method replaces all values with the new ones.");

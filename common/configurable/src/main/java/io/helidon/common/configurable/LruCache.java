@@ -34,8 +34,8 @@ import io.helidon.builder.api.RuntimeType;
  * @param <K> type of the keys of the map
  * @param <V> type of the values of the map
  */
-@RuntimeType.Prototype(LruCacheConfig.class)
-public final class LruCache<K, V> implements RuntimeType<LruCacheConfig<K, V>> {
+@RuntimeType.PrototypedBy(LruCacheConfig.class)
+public final class LruCache<K, V> implements RuntimeType.Api<LruCacheConfig<K, V>> {
     /**
      * Default capacity of the cache: {@value}.
      */

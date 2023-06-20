@@ -82,7 +82,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                  Javadoc blueprintJavadoc) {
 
         declaredSetter(setters, returnType, blueprintJavadoc);
-        unsetSetter(setters, returnType, configured);
+        clearSetter(setters, returnType, configured);
 
         // and add the setter with the actual type
         // config is special - handled directly when configuration is handled, as it also must be used when this type
@@ -93,7 +93,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
             lines.add("Objects.requireNonNull(" + name() + ");");
             lines.addAll(resolveBuilderLines(actualType(), name()));
             lines.add("this." + name() + " = " + name() + ";");
-            lines.add("return me();");
+            lines.add("return self();");
 
             Javadoc javadoc = new Javadoc(blueprintJavadoc.lines(),
                                           List.of(new Javadoc.Tag(name(), blueprintJavadoc.returns())),
@@ -130,7 +130,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
             lines.add("Objects.requireNonNull(" + argumentName + ");");
             lines.add("this." + name() + " = " + fm.typeWithFactoryMethod().genericTypeName().fqName() + "."
                               + fm.createMethodName() + "(" + argumentName + ")" + optionalSuffix + ";");
-            lines.add("return me();");
+            lines.add("return self();");
 
             setters.add(new GeneratedMethod(
                     Set.of(setterModifier(configured).trim()),
@@ -167,7 +167,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
                               + "." + fm.createMethodName() + "();");
             lines.add("consumer.accept(builder);");
             lines.add("this." + name() + "(builder.build());");
-            lines.add("return me();");
+            lines.add("return self();");
 
             TypeName argumentType = TypeName.builder()
                     .type(Consumer.class)
@@ -193,7 +193,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
         List<String> lines = new ArrayList<>();
         lines.add("Objects.requireNonNull(" + name() + ");");
         lines.add("this." + name() + " = " + name() + ".orElse(null);");
-        lines.add("return me();");
+        lines.add("return self();");
 
         Javadoc javadoc = new Javadoc(blueprintJavadoc.lines(),
                                       List.of(new Javadoc.Tag(name(), blueprintJavadoc.returns())),
@@ -211,22 +211,22 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
         ));
     }
 
-    private void unsetSetter(List<GeneratedMethod> setters,
+    private void clearSetter(List<GeneratedMethod> setters,
                              TypeName returnType,
                              PrototypeProperty.ConfiguredOption configured) {
         // declared setter - optional is package local, field is never optional in builder
         List<String> lines = new ArrayList<>();
         lines.add("this." + name() + " = null;");
-        lines.add("return me();");
+        lines.add("return self();");
 
-        Javadoc javadoc = new Javadoc(List.of("Unset existing value of this property."),
+        Javadoc javadoc = new Javadoc(List.of("Clear existing value of this property."),
                                       List.of(),
                                       List.of("updated builder instance"),
                                       List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
 
         setters.add(new GeneratedMethod(
                 Set.of(setterModifier(configured)),
-                "unset" + capitalize(name()),
+                "clear" + capitalize(name()),
                 returnType,
                 List.of(),
                 List.of(),

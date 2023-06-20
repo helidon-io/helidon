@@ -27,8 +27,8 @@ import io.helidon.pico.api.Contract;
  * Server that opens server sockets and handles requests through routing.
  */
 @Contract
-@RuntimeType.Prototype(ServerConfig.class)
-public interface WebServer extends RuntimeType<ServerConfig> {
+@RuntimeType.PrototypedBy(ServerConfig.class)
+public interface WebServer extends RuntimeType.Api<ServerConfig> {
     /**
      * The default server socket configuration name. All the default server socket
      * configuration such as {@link WebServer#port(String)}

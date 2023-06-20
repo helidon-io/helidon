@@ -22,17 +22,26 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This type is created from a specific prototype.
- *
- * @param <T> type of the prototype
+ * This class holds all types related to runtime types, configured from prototypes.
  */
-public interface RuntimeType<T extends Prototype> {
+public final class RuntimeType {
+    private RuntimeType() {
+    }
+
     /**
-     * The prototype as it was received when creating this runtime object instance.
+     * This type is created from a specific prototype.
      *
-     * @return prototype object used to create this instance
+     * @param <T> type of the prototype
      */
-    T prototype();
+    public interface Api<T extends Prototype.Api> {
+        /**
+         * The prototype as it was received when creating this runtime object instance.
+         *
+         * @return prototype object used to create this instance
+         */
+        T prototype();
+    }
+
 
     /**
      * Mark this runtime type as prototyped by a specific prototype.
@@ -43,12 +52,12 @@ public interface RuntimeType<T extends Prototype> {
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
-    @interface Prototype {
+    public @interface PrototypedBy {
         /**
          * Type of the prototype.
          *
          * @return prototype class
          */
-        Class<? extends io.helidon.builder.api.Prototype> value();
+        Class<? extends Prototype.Api> value();
     }
 }

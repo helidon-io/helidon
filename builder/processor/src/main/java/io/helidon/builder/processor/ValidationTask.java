@@ -186,7 +186,7 @@ abstract class ValidationTask {
      * Validation for blueprints that extend a factory.
      * <p>
      * If "PrototypeBlueprint" implements a Factory<RuntimeType>
-     *             - RuntimeType must implement RuntimeType<ConfigObjectType>
+     *             - RuntimeType must implement RuntimeType.Api<ConfigObjectType>
      *             - RuntimeType must have "static RuntimeType create(ConfigObject)"
      *             - RuntimeType must have "static RuntimeType create(Consumer<ConfigObject.Builder>)
      *             - RuntimeType must have "static ConfigObject.Builder builder()
@@ -300,7 +300,7 @@ abstract class ValidationTask {
                                   runtimeTypeInfo.typeName(),
                                   "create",
                                   configObjectType,
-                                  "As " + fqName + " is annotated with @RuntimeType.Prototype("
+                                  "As " + fqName + " is annotated with @RuntimeType.PrototypedBy("
                                           + configObjectType.className()
                                           + "), the type must implement the following "
                                           + "method:\n"

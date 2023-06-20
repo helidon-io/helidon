@@ -30,9 +30,9 @@ import io.helidon.pico.api.Contract;
  * After this period, attempts are made to check if the service is up again - if so, the circuit closes
  * and requests can process as usual again.
  */
-@RuntimeType.Prototype(CircuitBreakerConfig.class)
+@RuntimeType.PrototypedBy(CircuitBreakerConfig.class)
 @Contract
-public interface CircuitBreaker extends FtHandler, RuntimeType<CircuitBreakerConfig> {
+public interface CircuitBreaker extends FtHandler, RuntimeType.Api<CircuitBreakerConfig> {
     /**
      * Create a new circuit builder based on its configuration.
      *

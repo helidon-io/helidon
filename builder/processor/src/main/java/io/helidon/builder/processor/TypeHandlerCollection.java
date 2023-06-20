@@ -150,7 +150,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
 
         List<String> methodLines = List.of(
                 "this." + name() + "DiscoverServices = discoverServices;",
-                "return me();"
+                "return self();"
         );
 
         setters.add(new GeneratedMethod(Set.of(setterModifier(configured).trim()),
@@ -195,7 +195,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                               + "." + factoryMethod.createMethodName() + "();");
             lines.add("consumer.accept(builder);");
             lines.add("this." + name() + "(builder.build());");
-            lines.add("return me();");
+            lines.add("return self();");
 
             TypeName argumentType = TypeName.builder()
                     .type(Consumer.class)
@@ -227,7 +227,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                   + "." + factoryMethod.createMethodName() + "();");
                 lines.add("consumer.accept(builder);");
                 lines.add("this." + name() + ".add(builder.build());");
-                lines.add("return me();");
+                lines.add("return self();");
 
                 TypeName argumentType = TypeName.builder()
                         .type(Consumer.class)
@@ -264,7 +264,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         lines.add("Objects.requireNonNull(" + singularName + ");");
         lines.addAll(resolveBuilderLines(actualType(), singularName));
         lines.add("this." + name() + ".add(" + singularName + ");");
-        lines.add("return me();");
+        lines.add("return self();");
 
         setters.add(new GeneratedMethod(
                 Set.of(setterModifier(configured).trim()),
@@ -294,7 +294,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         lines.add("this." + name() + ".clear();");
         lines.add("this." + name() + ".addAll(" + factoryMethod.typeWithFactoryMethod().genericTypeName().fqName() + "."
                           + factoryMethod.createMethodName() + "(" + argumentName + "));");
-        lines.add("return me();");
+        lines.add("return self();");
 
         setters.add(new GeneratedMethod(
                 Set.of(setterModifier(configured).trim()),
@@ -317,7 +317,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         lines.add("Objects.requireNonNull(" + name() + ");");
         lines.add("this." + name() + ".clear();");
         lines.add("this." + name() + ".addAll(" + name() + ");");
-        lines.add("return me();");
+        lines.add("return self();");
 
         Javadoc javadoc = new Javadoc(blueprintJavadoc.lines(),
                                       List.of(new Javadoc.Tag(name(), blueprintJavadoc.returns())),
@@ -338,7 +338,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         lines = new ArrayList<>();
         lines.add("Objects.requireNonNull(" + name() + ");");
         lines.add("this." + name() + ".addAll(" + name() + ");");
-        lines.add("return me();");
+        lines.add("return self();");
 
         setters.add(new GeneratedMethod(
                 Set.of(setterModifier(configured).trim()),

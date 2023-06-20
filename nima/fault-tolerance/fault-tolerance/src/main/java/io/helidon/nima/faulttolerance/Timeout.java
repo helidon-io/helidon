@@ -26,8 +26,8 @@ import io.helidon.pico.api.Contract;
  * Timeout attempts to terminate execution after defined duration of time.
  */
 @Contract
-@RuntimeType.Prototype(TimeoutConfig.class)
-public interface Timeout extends FtHandler, RuntimeType<TimeoutConfig> {
+@RuntimeType.PrototypedBy(TimeoutConfig.class)
+public interface Timeout extends FtHandler, RuntimeType.Api<TimeoutConfig> {
     /**
      * Create a timeout based on configuration.
      *

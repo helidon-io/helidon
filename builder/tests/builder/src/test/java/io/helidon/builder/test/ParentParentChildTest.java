@@ -67,7 +67,7 @@ class ParentParentChildTest {
         assertThat(val.maybeOverrideMe().orElseThrow(), equalTo("override".toCharArray()));
 
         val = ChildInterfaceIsABuilder.builder(val)
-                .unsetMaybeOverrideMe()
+                .clearMaybeOverrideMe()
                 .overrideMe("pwd")
                 .build();
 

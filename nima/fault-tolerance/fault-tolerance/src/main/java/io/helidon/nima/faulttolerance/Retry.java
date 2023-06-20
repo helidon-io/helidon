@@ -29,8 +29,8 @@ import io.helidon.pico.api.Contract;
  * Retry supports retry policies to be applied on an execution of asynchronous tasks.
  */
 @Contract
-@RuntimeType.Prototype(RetryConfig.class)
-public interface Retry extends FtHandler, RuntimeType<RetryConfig> {
+@RuntimeType.PrototypedBy(RetryConfig.class)
+public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
     /**
      * Create a new retry from its configuration.
      *

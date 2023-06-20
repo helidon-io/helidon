@@ -29,18 +29,28 @@ import io.helidon.common.config.NamedService;
 
 /**
  * Prototype is generated from a prototype blueprint, and it is expected to be part of the public API of the module.
+ * This class holds all types related to generating prototypes form a blueprint.
  */
-public interface Prototype {
+public final class Prototype {
+    private Prototype() {
+    }
+
+    /**
+     * Marker interface for the prototype API, usually a generated interface.
+     */
+    public interface Api {
+    }
+
     /**
      * Terminating method of this builder that creates a prototype instance.
      * If the object is a factory, it has a further method {@code build}, that produces the target runtime instance
      * created from this builder or setup object instance.
      *
-     * @param <BUILDER>   type of the builder. see {@link #me()}
+     * @param <BUILDER>   type of the builder. see {@link #self()}
      * @param <PROTOTYPE> type of the prototype to be built
      * @see Prototype.Factory#build()
      */
-    interface Builder<BUILDER, PROTOTYPE> {
+    public interface Builder<BUILDER, PROTOTYPE> {
         /**
          * Create an instance of the {@link Prototype}. This method is available on
          * all generated builders for {@link Prototype.Blueprint}.
@@ -55,7 +65,7 @@ public interface Prototype {
          * @return this instance typed to correct type
          */
         @SuppressWarnings("unchecked")
-        default BUILDER me() {
+        default BUILDER self() {
             return (BUILDER) this;
         }
 
@@ -87,7 +97,7 @@ public interface Prototype {
      * @param <BUILDER>   type of the builder
      * @param <PROTOTYPE> type of the prototype to be built
      */
-    interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Builder<BUILDER, PROTOTYPE> {
+    public interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Builder<BUILDER, PROTOTYPE> {
         /**
          * Update builder from configuration.
          * Any configured option that is defined on this prototype will be checked in configuration, and if it exists,
@@ -133,7 +143,7 @@ public interface Prototype {
      *
      * @param <T> type of the runtime object (such as {@code Retry} in the description above)
      */
-    interface Factory<T> {
+    public interface Factory<T> {
         /**
          * Create a new instance of the runtime type from this config object.
          *
@@ -161,7 +171,7 @@ public interface Prototype {
     @Target(ElementType.TYPE)
     // note: class retention needed for cases when derived builders are inherited across modules
     @Retention(RetentionPolicy.CLASS)
-    @interface Blueprint {
+    public @interface Blueprint {
         /**
          * The generated interface is public by default. We can switch it to package local
          * by setting this property to {@code false}-
@@ -225,7 +235,7 @@ public interface Prototype {
      * @see Prototype.Blueprint#builderInterceptor()
      */
     @FunctionalInterface
-    interface BuilderInterceptor<T> {
+    public interface BuilderInterceptor<T> {
         /**
          * Provides the ability to intercept (i.e., including decoration or mutation) the target.
          *
@@ -241,7 +251,7 @@ public interface Prototype {
      */
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.CLASS)
-    @interface Annotated {
+    public @interface Annotated {
 
         /**
          * The annotation(s) to add to the generated methods and field names on the generated class w/ builder.
@@ -275,7 +285,7 @@ public interface Prototype {
      */
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.CLASS)
-    @interface FactoryMethod {
+    public @interface FactoryMethod {
     }
 
     /**
@@ -285,7 +295,7 @@ public interface Prototype {
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.CLASS)
-    @interface Singular {
+    public @interface Singular {
 
         /**
          * The optional value specified here will determine the singular form of the method name.
@@ -320,7 +330,7 @@ public interface Prototype {
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.CLASS)
-    @interface SameGeneric {
+    public @interface SameGeneric {
     }
 
     /**
@@ -338,7 +348,7 @@ public interface Prototype {
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
-    @interface CustomMethods {
+    public @interface CustomMethods {
         /**
          * Type that implements static methods to be available on the prototype.
          *
@@ -353,7 +363,7 @@ public interface Prototype {
      */
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.CLASS)
-    @interface BuilderMethod {
+    public @interface BuilderMethod {
     }
 
     /**
@@ -362,13 +372,13 @@ public interface Prototype {
      */
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.CLASS)
-    @interface PrototypeMethod {
+    public @interface PrototypeMethod {
     }
 
     /**
      * Add additional interfaces to implement by the prototype. Provide correct types (fully qualified) for generics.
      */
-    @interface Implement {
+    public @interface Implement {
         /**
          * Interfaces to implement, such as {@code java.lang.Comparable<io.helidon.common.types.TypeName>}.
          *
@@ -387,7 +397,7 @@ public interface Prototype {
     @Target(ElementType.METHOD)
     // note: class retention needed for cases when derived builders are inherited across modules
     @Retention(RetentionPolicy.CLASS)
-    @interface Redundant {
+    public @interface Redundant {
         /**
          * Set to {@code false} to mark this NOT redundant for equals and hashcode.
          *
@@ -410,7 +420,7 @@ public interface Prototype {
     @Target(ElementType.METHOD)
     // note: class retention needed for cases when derived builders are inherited across modules
     @Retention(RetentionPolicy.CLASS)
-    @interface Confidential {
+    public @interface Confidential {
     }
 }
 

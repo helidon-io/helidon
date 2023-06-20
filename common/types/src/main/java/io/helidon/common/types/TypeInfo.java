@@ -19,6 +19,7 @@ package io.helidon.common.types;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
 
 /**
@@ -26,7 +27,7 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prototype {
+public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
     /**
      * Create a new fluent API builder to customize configuration.
      *
@@ -90,7 +91,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             addInterfaceTypeInfo(prototype.interfaceTypeInfo());
             addModifiers(prototype.modifiers());
             addAnnotations(prototype.annotations());
-            return me();
+            return self();
         }
 
         /**
@@ -114,7 +115,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             addInterfaceTypeInfo(builder.interfaceTypeInfo());
             addModifiers(builder.modifiers());
             addAnnotations(builder.annotations());
-            return me();
+            return self();
         }
 
         /**
@@ -147,7 +148,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER typeName(TypeName typeName) {
             Objects.requireNonNull(typeName);
             this.typeName = typeName;
-            return me();
+            return self();
         }
 
         /**
@@ -163,7 +164,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             var builder = TypeName.builder();
             consumer.accept(builder);
             this.typeName(builder.build());
-            return me();
+            return self();
         }
 
         /**
@@ -178,7 +179,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER typeKind(String typeKind) {
             Objects.requireNonNull(typeKind);
             this.typeKind = typeKind;
-            return me();
+            return self();
         }
 
         /**
@@ -192,7 +193,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             Objects.requireNonNull(elementInfo);
             this.elementInfo.clear();
             this.elementInfo.addAll(elementInfo);
-            return me();
+            return self();
         }
 
         /**
@@ -205,7 +206,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER addElementInfo(java.util.List<? extends TypedElementInfo> elementInfo) {
             Objects.requireNonNull(elementInfo);
             this.elementInfo.addAll(elementInfo);
-            return me();
+            return self();
         }
 
         /**
@@ -218,7 +219,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER addElementInfo(TypedElementInfo elementInfo) {
             Objects.requireNonNull(elementInfo);
             this.elementInfo.add(elementInfo);
-            return me();
+            return self();
         }
 
         /**
@@ -233,7 +234,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             var builder = TypedElementInfo.builder();
             consumer.accept(builder);
             this.elementInfo.add(builder.build());
-            return me();
+            return self();
         }
 
         /**
@@ -248,7 +249,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             Objects.requireNonNull(otherElementInfo);
             this.otherElementInfo.clear();
             this.otherElementInfo.addAll(otherElementInfo);
-            return me();
+            return self();
         }
 
         /**
@@ -262,7 +263,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER addOtherElementInfo(java.util.List<? extends TypedElementInfo> otherElementInfo) {
             Objects.requireNonNull(otherElementInfo);
             this.otherElementInfo.addAll(otherElementInfo);
-            return me();
+            return self();
         }
 
         /**
@@ -276,7 +277,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER addOtherElementInfo(TypedElementInfo otherElementInfo) {
             Objects.requireNonNull(otherElementInfo);
             this.otherElementInfo.add(otherElementInfo);
-            return me();
+            return self();
         }
 
         /**
@@ -292,7 +293,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             var builder = TypedElementInfo.builder();
             consumer.accept(builder);
             this.otherElementInfo.add(builder.build());
-            return me();
+            return self();
         }
 
         /**
@@ -310,7 +311,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             Objects.requireNonNull(referencedTypeNamesToAnnotations);
             this.referencedTypeNamesToAnnotations.clear();
             this.referencedTypeNamesToAnnotations.putAll(referencedTypeNamesToAnnotations);
-            return me();
+            return self();
         }
 
         /**
@@ -327,7 +328,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
                 ? extends java.util.List<Annotation>> referencedTypeNamesToAnnotations) {
             Objects.requireNonNull(referencedTypeNamesToAnnotations);
             this.referencedTypeNamesToAnnotations.putAll(referencedTypeNamesToAnnotations);
-            return me();
+            return self();
         }
 
         /**
@@ -349,7 +350,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
                 v.add(referencedTypeNamesToAnnotation);
                 return v;
             });
-            return me();
+            return self();
         }
 
         /**
@@ -372,7 +373,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
                 v.addAll(referencedTypeNamesToAnnotations);
                 return v;
             });
-            return me();
+            return self();
         }
 
         /**
@@ -391,7 +392,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             Objects.requireNonNull(key);
             Objects.requireNonNull(referencedTypeNamesToAnnotation);
             this.referencedTypeNamesToAnnotations.put(key, java.util.List.copyOf(referencedTypeNamesToAnnotation));
-            return me();
+            return self();
         }
 
         /**
@@ -406,7 +407,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             Objects.requireNonNull(referencedModuleNames);
             this.referencedModuleNames.clear();
             this.referencedModuleNames.putAll(referencedModuleNames);
-            return me();
+            return self();
         }
 
         /**
@@ -420,7 +421,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER addReferencedModuleNames(java.util.Map<? extends TypeName, ? extends String> referencedModuleNames) {
             Objects.requireNonNull(referencedModuleNames);
             this.referencedModuleNames.putAll(referencedModuleNames);
-            return me();
+            return self();
         }
 
         /**
@@ -436,7 +437,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             Objects.requireNonNull(key);
             Objects.requireNonNull(referencedModuleName);
             this.referencedModuleNames.put(key, referencedModuleName);
-            return me();
+            return self();
         }
 
         /**
@@ -449,17 +450,17 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         BUILDER superTypeInfo(Optional<? extends TypeInfo> superTypeInfo) {
             Objects.requireNonNull(superTypeInfo);
             this.superTypeInfo = superTypeInfo.orElse(null);
-            return me();
+            return self();
         }
 
         /**
-         * Unset existing value of this property.
+         * Clear existing value of this property.
          * @return updated builder instance
          * @see #superTypeInfo()
          */
-        public BUILDER unsetSuperTypeInfo() {
+        public BUILDER clearSuperTypeInfo() {
             this.superTypeInfo = null;
-            return me();
+            return self();
         }
 
         /**
@@ -472,7 +473,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER superTypeInfo(TypeInfo superTypeInfo) {
             Objects.requireNonNull(superTypeInfo);
             this.superTypeInfo = superTypeInfo;
-            return me();
+            return self();
         }
 
         /**
@@ -487,7 +488,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             var builder = TypeInfo.builder();
             consumer.accept(builder);
             this.superTypeInfo(builder.build());
-            return me();
+            return self();
         }
 
         /**
@@ -501,7 +502,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             Objects.requireNonNull(interfaceTypeInfo);
             this.interfaceTypeInfo.clear();
             this.interfaceTypeInfo.addAll(interfaceTypeInfo);
-            return me();
+            return self();
         }
 
         /**
@@ -514,7 +515,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER addInterfaceTypeInfo(java.util.List<? extends TypeInfo> interfaceTypeInfo) {
             Objects.requireNonNull(interfaceTypeInfo);
             this.interfaceTypeInfo.addAll(interfaceTypeInfo);
-            return me();
+            return self();
         }
 
         /**
@@ -527,7 +528,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER addInterfaceTypeInfo(TypeInfo interfaceTypeInfo) {
             Objects.requireNonNull(interfaceTypeInfo);
             this.interfaceTypeInfo.add(interfaceTypeInfo);
-            return me();
+            return self();
         }
 
         /**
@@ -542,7 +543,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             var builder = TypeInfo.builder();
             consumer.accept(builder);
             this.interfaceTypeInfo.add(builder.build());
-            return me();
+            return self();
         }
 
         /**
@@ -556,7 +557,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             Objects.requireNonNull(modifiers);
             this.modifiers.clear();
             this.modifiers.addAll(modifiers);
-            return me();
+            return self();
         }
 
         /**
@@ -569,7 +570,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER addModifiers(java.util.Set<? extends String> modifiers) {
             Objects.requireNonNull(modifiers);
             this.modifiers.addAll(modifiers);
-            return me();
+            return self();
         }
 
         /**
@@ -582,7 +583,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER addModifier(String modifier) {
             Objects.requireNonNull(modifier);
             this.modifiers.add(modifier);
-            return me();
+            return self();
         }
 
         /**
@@ -597,7 +598,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             Objects.requireNonNull(annotations);
             this.annotations.clear();
             this.annotations.addAll(annotations);
-            return me();
+            return self();
         }
 
         /**
@@ -611,7 +612,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER addAnnotations(java.util.List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
             this.annotations.addAll(annotations);
-            return me();
+            return self();
         }
 
         /**
@@ -625,7 +626,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
         public BUILDER addAnnotation(Annotation annotation) {
             Objects.requireNonNull(annotation);
             this.annotations.add(annotation);
-            return me();
+            return self();
         }
 
         /**
@@ -641,7 +642,7 @@ public interface TypeInfo extends TypeInfoBlueprint, io.helidon.builder.api.Prot
             var builder = Annotation.builder();
             consumer.accept(builder);
             this.annotations.add(builder.build());
-            return me();
+            return self();
         }
 
         /**

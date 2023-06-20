@@ -34,9 +34,9 @@ final class Types {
     static final String CONFIG = "io.helidon.common.config.Config";
     static final String CONFIGURED = "io.helidon.config.metadata.Configured";
     static final String CONFIGURED_OPTION = "io.helidon.config.metadata.ConfiguredOption";
-    static final String RUNTIME_OBJECT = "io.helidon.builder.api.RuntimeType";
-    static final String RUNTIME_PROTOTYPE = "io.helidon.builder.api.RuntimeType.Prototype";
-    static final String PROTOTYPE = "io.helidon.builder.api.Prototype";
+    static final String RUNTIME_OBJECT = "io.helidon.builder.api.RuntimeType.Api";
+    static final String RUNTIME_PROTOTYPE = "io.helidon.builder.api.RuntimeType.PrototypedBy";
+    static final String PROTOTYPE = "io.helidon.builder.api.Prototype.Api";
     static final String PROTOTYPE_SAME_GENERIC = "io.helidon.builder.api.Prototype.SameGeneric";
     static final String BUILDER_INTERCEPTOR = "io.helidon.builder.api.Prototype.BuilderInterceptor";
     static final String IMPLEMENT = "io.helidon.builder.api.Prototype.Implement";

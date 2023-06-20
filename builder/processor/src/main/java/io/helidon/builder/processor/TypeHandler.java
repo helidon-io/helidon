@@ -248,7 +248,7 @@ class TypeHandler {
         List<String> lines = new ArrayList<>();
         lines.add("Objects.requireNonNull(" + name() + ");");
         lines.add("this." + name() + " = " + name() + ".toCharArray();");
-        lines.add("return me();");
+        lines.add("return self();");
 
         Javadoc javadoc = new Javadoc(blueprintJavadoc.lines(),
                                       List.of(new Javadoc.Tag(name(), blueprintJavadoc.returns())),
@@ -277,7 +277,7 @@ class TypeHandler {
         }
         lines.addAll(resolveBuilderLines(actualType(), name()));
         lines.add("this." + name() + " = " + name() + ";");
-        lines.add("return me();");
+        lines.add("return self();");
 
         Javadoc javadoc = new Javadoc(blueprintJavadoc.lines(),
                                       List.of(new Javadoc.Tag(name(), blueprintJavadoc.returns())),
@@ -325,7 +325,7 @@ class TypeHandler {
                           + "." + factoryMethod.createMethodName() + "();");
         lines.add("consumer.accept(builder);");
         lines.add("this." + name() + "(builder.build());");
-        lines.add("return me();");
+        lines.add("return self();");
 
         TypeName argumentType = TypeName.builder()
                 .type(Consumer.class)
@@ -359,7 +359,7 @@ class TypeHandler {
         lines.add("Objects.requireNonNull(" + argumentName + ");");
         lines.add("this." + name() + " = " + factoryMethod.typeWithFactoryMethod().genericTypeName().fqName()
                           + "." + factoryMethod.createMethodName() + "(" + argumentName + ");");
-        lines.add("return me();");
+        lines.add("return self();");
         setters.add(new GeneratedMethod(
                 Set.of(setterModifier(configured).trim()),
                 setterName(),

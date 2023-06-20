@@ -19,6 +19,7 @@ package io.helidon.common.types;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
 
 /**
@@ -26,7 +27,7 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.builder.api.Prototype {
+public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.Api {
     /**
      * Create a new fluent API builder to customize configuration.
      *
@@ -98,7 +99,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
             enclosingType(prototype.enclosingType());
             addParameterArguments(prototype.parameterArguments());
             addAnnotations(prototype.annotations());
-            return me();
+            return self();
         }
 
         /**
@@ -125,7 +126,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
             enclosingType(builder.enclosingType());
             addParameterArguments(builder.parameterArguments());
             addAnnotations(builder.annotations());
-            return me();
+            return self();
         }
 
         /**
@@ -176,17 +177,17 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         BUILDER description(Optional<? extends String> description) {
             Objects.requireNonNull(description);
             this.description = description.orElse(null);
-            return me();
+            return self();
         }
 
         /**
-         * Unset existing value of this property.
+         * Clear existing value of this property.
          * @return updated builder instance
          * @see #description()
          */
-        public BUILDER unsetDescription() {
+        public BUILDER clearDescription() {
             this.description = null;
-            return me();
+            return self();
         }
 
         /**
@@ -199,7 +200,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER description(String description) {
             Objects.requireNonNull(description);
             this.description = description;
-            return me();
+            return self();
         }
 
         /**
@@ -213,7 +214,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER typeName(TypeName typeName) {
             Objects.requireNonNull(typeName);
             this.typeName = typeName;
-            return me();
+            return self();
         }
 
         /**
@@ -230,7 +231,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
             var builder = TypeName.builder();
             consumer.accept(builder);
             this.typeName(builder.build());
-            return me();
+            return self();
         }
 
         /**
@@ -243,7 +244,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER elementName(String elementName) {
             Objects.requireNonNull(elementName);
             this.elementName = elementName;
-            return me();
+            return self();
         }
 
         /**
@@ -256,7 +257,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER elementTypeKind(String elementTypeKind) {
             Objects.requireNonNull(elementTypeKind);
             this.elementTypeKind = elementTypeKind;
-            return me();
+            return self();
         }
 
         /**
@@ -269,17 +270,17 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         BUILDER defaultValue(Optional<? extends String> defaultValue) {
             Objects.requireNonNull(defaultValue);
             this.defaultValue = defaultValue.orElse(null);
-            return me();
+            return self();
         }
 
         /**
-         * Unset existing value of this property.
+         * Clear existing value of this property.
          * @return updated builder instance
          * @see #defaultValue()
          */
-        public BUILDER unsetDefaultValue() {
+        public BUILDER clearDefaultValue() {
             this.defaultValue = null;
-            return me();
+            return self();
         }
 
         /**
@@ -292,7 +293,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER defaultValue(String defaultValue) {
             Objects.requireNonNull(defaultValue);
             this.defaultValue = defaultValue;
-            return me();
+            return self();
         }
 
         /**
@@ -306,7 +307,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
             Objects.requireNonNull(elementTypeAnnotations);
             this.elementTypeAnnotations.clear();
             this.elementTypeAnnotations.addAll(elementTypeAnnotations);
-            return me();
+            return self();
         }
 
         /**
@@ -319,7 +320,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER addElementTypeAnnotations(java.util.List<? extends Annotation> elementTypeAnnotations) {
             Objects.requireNonNull(elementTypeAnnotations);
             this.elementTypeAnnotations.addAll(elementTypeAnnotations);
-            return me();
+            return self();
         }
 
         /**
@@ -333,7 +334,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
             Objects.requireNonNull(componentTypes);
             this.componentTypes.clear();
             this.componentTypes.addAll(componentTypes);
-            return me();
+            return self();
         }
 
         /**
@@ -346,7 +347,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER addComponentTypes(java.util.List<? extends TypeName> componentTypes) {
             Objects.requireNonNull(componentTypes);
             this.componentTypes.addAll(componentTypes);
-            return me();
+            return self();
         }
 
         /**
@@ -360,7 +361,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
             Objects.requireNonNull(modifiers);
             this.modifiers.clear();
             this.modifiers.addAll(modifiers);
-            return me();
+            return self();
         }
 
         /**
@@ -373,7 +374,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER addModifiers(java.util.Set<? extends String> modifiers) {
             Objects.requireNonNull(modifiers);
             this.modifiers.addAll(modifiers);
-            return me();
+            return self();
         }
 
         /**
@@ -386,7 +387,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER addModifier(String modifier) {
             Objects.requireNonNull(modifier);
             this.modifiers.add(modifier);
-            return me();
+            return self();
         }
 
         /**
@@ -401,17 +402,17 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         BUILDER enclosingType(Optional<? extends TypeName> enclosingType) {
             Objects.requireNonNull(enclosingType);
             this.enclosingType = enclosingType.orElse(null);
-            return me();
+            return self();
         }
 
         /**
-         * Unset existing value of this property.
+         * Clear existing value of this property.
          * @return updated builder instance
          * @see #enclosingType()
          */
-        public BUILDER unsetEnclosingType() {
+        public BUILDER clearEnclosingType() {
             this.enclosingType = null;
-            return me();
+            return self();
         }
 
         /**
@@ -426,7 +427,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER enclosingType(TypeName enclosingType) {
             Objects.requireNonNull(enclosingType);
             this.enclosingType = enclosingType;
-            return me();
+            return self();
         }
 
         /**
@@ -443,7 +444,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
             var builder = TypeName.builder();
             consumer.accept(builder);
             this.enclosingType(builder.build());
-            return me();
+            return self();
         }
 
         /**
@@ -459,7 +460,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
             Objects.requireNonNull(parameterArguments);
             this.parameterArguments.clear();
             this.parameterArguments.addAll(parameterArguments);
-            return me();
+            return self();
         }
 
         /**
@@ -474,7 +475,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER addParameterArguments(java.util.List<? extends TypedElementInfo> parameterArguments) {
             Objects.requireNonNull(parameterArguments);
             this.parameterArguments.addAll(parameterArguments);
-            return me();
+            return self();
         }
 
         /**
@@ -489,7 +490,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER addParameterArgument(TypedElementInfo parameterArgument) {
             Objects.requireNonNull(parameterArgument);
             this.parameterArguments.add(parameterArgument);
-            return me();
+            return self();
         }
 
         /**
@@ -506,7 +507,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
             var builder = TypedElementInfo.builder();
             consumer.accept(builder);
             this.parameterArguments.add(builder.build());
-            return me();
+            return self();
         }
 
         /**
@@ -521,7 +522,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
             Objects.requireNonNull(annotations);
             this.annotations.clear();
             this.annotations.addAll(annotations);
-            return me();
+            return self();
         }
 
         /**
@@ -535,7 +536,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER addAnnotations(java.util.List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
             this.annotations.addAll(annotations);
-            return me();
+            return self();
         }
 
         /**
@@ -549,7 +550,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
         public BUILDER addAnnotation(Annotation annotation) {
             Objects.requireNonNull(annotation);
             this.annotations.add(annotation);
-            return me();
+            return self();
         }
 
         /**
@@ -565,7 +566,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, io.helidon.
             var builder = Annotation.builder();
             consumer.accept(builder);
             this.annotations.add(builder.build());
-            return me();
+            return self();
         }
 
         /**

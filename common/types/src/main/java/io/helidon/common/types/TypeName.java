@@ -18,6 +18,7 @@ package io.helidon.common.types;
 
 import java.util.Objects;
 
+import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
 
 /**
@@ -44,7 +45,7 @@ import io.helidon.common.Errors;
  * @see #builder()
  */
 public interface TypeName
-        extends TypeNameBlueprint, io.helidon.builder.api.Prototype, Comparable<TypeName> {
+        extends TypeNameBlueprint, Prototype.Api, Comparable<TypeName> {
     /**
      * Create a new fluent API builder to customize configuration.
      *
@@ -149,7 +150,7 @@ public interface TypeName
             generic(prototype.generic());
             wildcard(prototype.wildcard());
             addTypeArguments(prototype.typeArguments());
-            return me();
+            return self();
         }
 
         /**
@@ -171,7 +172,7 @@ public interface TypeName
             generic(builder.generic());
             wildcard(builder.wildcard());
             addTypeArguments(builder.typeArguments());
-            return me();
+            return self();
         }
 
         /**
@@ -241,7 +242,7 @@ public interface TypeName
          */
         public BUILDER type(java.lang.reflect.Type type) {
             TypeNameSupport.type(this, type);
-            return me();
+            return self();
         }
 
         /**
@@ -254,7 +255,7 @@ public interface TypeName
         public BUILDER packageName(String packageName) {
             Objects.requireNonNull(packageName);
             this.packageName = packageName;
-            return me();
+            return self();
         }
 
         /**
@@ -267,7 +268,7 @@ public interface TypeName
         public BUILDER className(String className) {
             Objects.requireNonNull(className);
             this.className = className;
-            return me();
+            return self();
         }
 
         /**
@@ -283,7 +284,7 @@ public interface TypeName
             Objects.requireNonNull(enclosingNames);
             this.enclosingNames.clear();
             this.enclosingNames.addAll(enclosingNames);
-            return me();
+            return self();
         }
 
         /**
@@ -298,7 +299,7 @@ public interface TypeName
         public BUILDER addEnclosingNames(java.util.List<? extends String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
             this.enclosingNames.addAll(enclosingNames);
-            return me();
+            return self();
         }
 
         /**
@@ -313,7 +314,7 @@ public interface TypeName
         public BUILDER addEnclosingName(String enclosingName) {
             Objects.requireNonNull(enclosingName);
             this.enclosingNames.add(enclosingName);
-            return me();
+            return self();
         }
 
         /**
@@ -325,7 +326,7 @@ public interface TypeName
          */
         public BUILDER primitive(boolean primitive) {
             this.primitive = primitive;
-            return me();
+            return self();
         }
 
         /**
@@ -337,7 +338,7 @@ public interface TypeName
          */
         public BUILDER array(boolean array) {
             this.array = array;
-            return me();
+            return self();
         }
 
         /**
@@ -349,7 +350,7 @@ public interface TypeName
          */
         public BUILDER generic(boolean generic) {
             this.generic = generic;
-            return me();
+            return self();
         }
 
         /**
@@ -361,7 +362,7 @@ public interface TypeName
          */
         public BUILDER wildcard(boolean wildcard) {
             this.wildcard = wildcard;
-            return me();
+            return self();
         }
 
         /**
@@ -375,7 +376,7 @@ public interface TypeName
             Objects.requireNonNull(typeArguments);
             this.typeArguments.clear();
             this.typeArguments.addAll(typeArguments);
-            return me();
+            return self();
         }
 
         /**
@@ -388,7 +389,7 @@ public interface TypeName
         public BUILDER addTypeArguments(java.util.List<? extends TypeName> typeArguments) {
             Objects.requireNonNull(typeArguments);
             this.typeArguments.addAll(typeArguments);
-            return me();
+            return self();
         }
 
         /**
@@ -401,7 +402,7 @@ public interface TypeName
         public BUILDER addTypeArgument(TypeName typeArgument) {
             Objects.requireNonNull(typeArgument);
             this.typeArguments.add(typeArgument);
-            return me();
+            return self();
         }
 
         /**
@@ -416,7 +417,7 @@ public interface TypeName
             var builder = TypeName.builder();
             consumer.accept(builder);
             this.typeArguments.add(builder.build());
-            return me();
+            return self();
         }
 
         /**

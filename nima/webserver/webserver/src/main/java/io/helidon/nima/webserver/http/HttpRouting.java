@@ -43,7 +43,7 @@ import io.helidon.nima.webserver.ServerLifecycle;
  * HTTP routing.
  * This routing is capable of handling any HTTP version.
  */
-public final class HttpRouting implements Routing, Prototype {
+public final class HttpRouting implements Routing, Prototype.Api {
     private static final System.Logger LOGGER = System.getLogger(HttpRouting.class.getName());
     private static final HttpRouting EMPTY = HttpRouting.builder().build();
 
