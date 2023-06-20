@@ -45,19 +45,20 @@ public class EchoClient {
 
         Http1ClientRequest request = client.get("http://localhost:8080/echo;param={param}/{name}");
 
-
-        Http1ClientResponse response = request.pathParam("name", "param-placeholder")
+        try (Http1ClientResponse response = request.pathParam("name", "param-placeholder")
                 .pathParam("param", "path-param-placeholder")
                 .queryParam("query-param", "single_value")
                 .queryParam("query-params", "a", "b", "c")
                 .header(HEADER)
                 .header(HEADERS)
-                .request();
+                .request()) {
 
-        Headers headers = response.headers();
-        for (HeaderValue header : headers) {
-            System.out.println("Header: " + header.name() + "=" + header.value());
+            Headers headers = response.headers();
+            for (HeaderValue header : headers) {
+                System.out.println("Header: " + header.name() + "=" + header.value());
+            }
+            System.out.println("Entity:");
+            System.out.println(response.as(String.class));
         }
-        String entity = response.as(String.class);
     }
 }
