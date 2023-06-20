@@ -341,33 +341,33 @@ Helion MP and WebLogic Server Web Services integration enables the Helidon micro
 
 === Maven Coordinates [[Web-Services-Integration-Maven-Coordinates]]
 
-An updated client compatible with modern Jakarta runtimes is available at {osdc-link} as `com.oracle.webservices.wls.jaxws-wlswss-client.jar`.
+An updated client compatible with modern Jakarta runtimes is available at {osdc-link} as `com.oracle.webservices.wls.jaxws-wlswss-client.jakarta.jar`.
 After downloading the client, you should install the client artifact in the Maven repository accessible from the application build.
 
 [source, shell]
 .Example of Installing the Client Artifact to the Local Maven Repository
 ----
 mvn install:install-file \
--Dfile=<JAR_FILE_PATH>/com.oracle.webservices.wls.jaxws-wlswss-client.jar \
--DgroupId=com.oracle.webservices.wls.jaxws-wlswss-client \
--DartifactId=com.oracle.webservices.wls.jaxws-wlswss-client \
+-Dfile=<JAR_FILE_PATH>/com.oracle.webservices.wls.jaxws-wlswss-client.jakarta.jar \
+-DgroupId=com.oracle.webservices.wls.jaxws-wlswss-client.jakarta \
+-DartifactId=com.oracle.webservices.wls.jaxws-wlswss-client.jakarta \
 -Dversion=1.0
 ----
 
 
-Add the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` client file downloaded from {osdc-link}, as part of the Maven dependencies:
+Add the `com.oracle.webservices.wls.jaxws-wlswss-client.jakarta.jar` client file downloaded from {osdc-link}, as part of the Maven dependencies:
 [source, xml]
 ----
 <dependency>
-    <groupId>com.oracle.webservices.wls.jaxws-wlswss-client</groupId>
-    <artifactId>com.oracle.webservices.wls.jaxws-wlswss-client</artifactId>
+    <groupId>com.oracle.webservices.wls.jaxws-wlswss-client.jakarta</groupId>
+    <artifactId>com.oracle.webservices.wls.jaxws-wlswss-client.jakarta</artifactId>
     <version>1.0</version>
 </dependency>
 ----
 
 === Usage [[Web-Services-Integration-Usage]]
 
-Use the `clientgen` WebLogic Web Services Ant task from the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` file, installed earlier,
+Use the `clientgen` WebLogic Web Services Ant task from the `com.oracle.webservices.wls.jaxws-wlswss-client.jakarta.jar` file, installed earlier,
 to generate the *jakarta* based client artifacts that client applications use to invoke the WebLogic Web Services to `target/generated-sources`.
 
 Add a `maven-antrun-plugin` to execute the `clientgen` Ant task during `generate-sources` build phase:
