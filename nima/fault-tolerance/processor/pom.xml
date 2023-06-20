@@ -30,10 +30,6 @@
     <artifactId>helidon-nima-fault-tolerance-processor</artifactId>
     <name>Helidon Nima Fault Tolerance Annotation Processor</name>
 
-    <properties>
-        <javadoc.skip>true</javadoc.skip>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.pico</groupId>
