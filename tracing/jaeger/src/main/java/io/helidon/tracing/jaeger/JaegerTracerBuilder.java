@@ -462,10 +462,10 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
             Resource serviceName = Resource.create(attributesBuilder.build());
             OpenTelemetry ot = OpenTelemetrySdk.builder()
                     .setTracerProvider(SdkTracerProvider.builder()
-                                               .addSpanProcessor(SimpleSpanProcessor.create(exporter))
-                                               .setSampler(sampler)
-                                               .setResource(serviceName)
-                                               .build())
+                            .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                            .setSampler(sampler)
+                            .setResource(serviceName)
+                            .build())
                     .setPropagators(ContextPropagators.create(TextMapPropagator.composite(createPropagators())))
                     .build();
 
