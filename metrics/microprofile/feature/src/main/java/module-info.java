@@ -1,3 +1,6 @@
+import io.helidon.metrics.microprofile.feature.MetricsObserveProvider;
+import io.helidon.nima.observe.spi.ObserveProvider;
+
 /*
  * Copyright (c) 2023 Oracle and/or its affiliates.
  *
@@ -16,8 +19,11 @@
 module io.helidon.metrics.microprofile.feature {
 
     requires io.helidon.metrics.microprofile;
+    requires io.helidon.nima.observe;
     requires io.helidon.nima.servicecommon;
     requires simpleclient.common;
 
     exports io.helidon.metrics.microprofile.feature;
+
+    provides ObserveProvider with MetricsObserveProvider;
 }

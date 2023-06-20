@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+import io.helidon.metrics.microprofile.cdi.MetricsCdiExtension;
+
+import jakarta.enterprise.inject.spi.Extension;
+
 /**
  * MicroProfile metrics module
  */
@@ -26,4 +30,6 @@ module helidon.metrics.microprofile.cdi {
     requires jakarta.cdi;
     requires io.helidon.config;
     requires microprofile.config.api;
+
+    provides Extension with MetricsCdiExtension;
 }

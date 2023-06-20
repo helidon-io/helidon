@@ -49,7 +49,7 @@ class TestCounters {
         };
 
         prometheusMeterRegistry = new PrometheusMeterRegistry(config);
-        meterRegistry = Metrics.globalRegistry.add(prometheusMeterRegistry);
+        meterRegistry = Metrics.globalRegistry;
 
         mpMetricRegistry = MpMetricRegistry.create("myscope", meterRegistry);
     }

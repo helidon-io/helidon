@@ -51,6 +51,10 @@ public class MpMetricsFeature extends HelidonFeatureSupport {
         }
     }
 
+    protected void context(String componentPath) {
+        super.context(componentPath);
+    }
+
     private void configureRoutes(HttpRules rules) {
         rules.get("/", this::prepareResponse);
     }
@@ -78,11 +82,15 @@ public class MpMetricsFeature extends HelidonFeatureSupport {
             resp.status(Http.Status.UNSUPPORTED_MEDIA_TYPE_415).send();
         }
 
+        PrometheusFormatter.Builder formatterBuilder = PrometheusFormatter.builder().resultMediaType(requestedMediaType.get());
+        scope(req).ifPresent(formatterBuilder::scope);
+        metricName(req).ifPresent(formatterBuilder::meterName);
+
         try {
             MediaType resultMediaType = requestedMediaType.get();
             resp.status(Http.Status.OK_200);
             resp.headers().contentType(resultMediaType);
-            resp.send(PrometheusFormatter.filteredOutput(resultMediaType, scope(req), metricName(req)));
+            resp.send(formatterBuilder.build().filteredOutput());
         } catch (Exception ex) {
             resp.status(Http.Status.INTERNAL_SERVER_ERROR_500);
             resp.send("Error preparing metrics output; " + ex.getMessage());

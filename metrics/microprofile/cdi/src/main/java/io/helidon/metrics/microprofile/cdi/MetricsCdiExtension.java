@@ -28,12 +28,12 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MpMetricsFeatur
     private static final System.Logger LOGGER = System.getLogger(MetricsCdiExtension.class.getName());
 
     private static final Function<Config, MpMetricsFeature> FEATURE_FACTORY =
-            (Config config) -> MpMetricsFeature.builder().config(config).build();
+            (Config helidonConfig) -> MpMetricsFeature.builder().config(helidonConfig).build();
 
     /**
      * Common initialization for concrete implementations.
      */
-    protected MetricsCdiExtension() {
+    public MetricsCdiExtension() {
         super(LOGGER, FEATURE_FACTORY, "mp.metrics");
     }
 
