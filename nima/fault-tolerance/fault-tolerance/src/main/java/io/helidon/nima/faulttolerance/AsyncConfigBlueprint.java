@@ -40,7 +40,7 @@ interface AsyncConfigBlueprint extends Prototype.Factory<Async> {
     /**
      * Name of an executor service. This is only honored when service registry is used.
      *
-     * @return name fo the {@link java.util.concurrent.ExecutorService} to lookup.
+     * @return name fo the {@link java.util.concurrent.ExecutorService} to lookup
      * @see #executor()
      */
     @ConfiguredOption
@@ -53,5 +53,10 @@ interface AsyncConfigBlueprint extends Prototype.Factory<Async> {
      */
     Optional<ExecutorService> executor();
 
+    /**
+     * A future that is completed when execution of the asynchronous task starts.
+     *
+     * @return future that will be completed by the asynchronous processing
+     */
     Optional<CompletableFuture<Async>> onStart();
 }
