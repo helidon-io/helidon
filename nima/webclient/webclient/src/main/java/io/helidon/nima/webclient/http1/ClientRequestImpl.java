@@ -333,7 +333,7 @@ class ClientRequestImpl implements Http1ClientRequest {
                                                                         query,
                                                                         UriFragment.empty(),
                                                                         headers,
-                                                                        Contexts.context().orElse(Context.create()),
+                                                                        Contexts.context().orElseGet(Context::create),
                                                                         requestId,
                                                                         whenComplete,
                                                                         whenSent,
