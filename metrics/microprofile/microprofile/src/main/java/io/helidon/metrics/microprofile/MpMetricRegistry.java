@@ -344,12 +344,12 @@ class MpMetricRegistry implements MetricRegistry {
 
     @Override
     public SortedMap<MetricID, Gauge> getGauges() {
-        return null;
+        return getGauges(MetricFilter.ALL);
     }
 
     @Override
     public SortedMap<MetricID, Gauge> getGauges(MetricFilter metricFilter) {
-        return null;
+        return getMetrics(Gauge.class, metricFilter);
     }
 
     @Override
@@ -364,27 +364,31 @@ class MpMetricRegistry implements MetricRegistry {
 
     @Override
     public SortedMap<MetricID, Histogram> getHistograms() {
-        return null;
+        return getHistograms(MetricFilter.ALL);
     }
 
     @Override
     public SortedMap<MetricID, Histogram> getHistograms(MetricFilter metricFilter) {
-        return null;
+        return getMetrics(Histogram.class, metricFilter);
     }
 
     @Override
     public SortedMap<MetricID, Timer> getTimers() {
-        return null;
+        return getTimers(MetricFilter.ALL);
     }
 
     @Override
     public SortedMap<MetricID, Timer> getTimers(MetricFilter metricFilter) {
-        return null;
+        return getMetrics(Timer.class, metricFilter);
     }
 
     @Override
     public SortedMap<MetricID, Metric> getMetrics(MetricFilter metricFilter) {
-        return null;
+        return metricsById.entrySet().stream()
+                .filter(e -> metricFilter.matches(e.getKey(), e.getValue()))
+                .collect(TreeMap::new,
+                         (map, e) -> map.put(e.getKey(), e.getValue()),
+                         TreeMap::putAll);
     }
 
     @Override
@@ -564,18 +568,6 @@ class MpMetricRegistry implements MetricRegistry {
      */
     boolean isConsistentMetadata(Metadata a, Metadata b) {
         return a.equals(b);
-    }
-
-    MpMetricId consistentMpMetricId(Metadata metadata, Meter.Type type, Tag... tags) {
-        MpTags.checkForReservedTags(tags);
-        MpMetricId id = new MpMetricId(metadata.getName(),
-                       tags,
-                       automaticTags(),
-                       metadata.getUnit(),
-                       metadata.getDescription(),
-                       type);
-        MpTags.checkTagNameSetConsistency(id, metricIdsByName.get(metadata.getName()));
-        return id;
     }
 
     /**

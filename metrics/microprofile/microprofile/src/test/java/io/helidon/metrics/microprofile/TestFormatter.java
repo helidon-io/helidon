@@ -50,17 +50,15 @@ public class TestFormatter {
         counter.inc();
         assertThat("Updated counter", counter.getCount(), is(1L));
 
-        PrometheusMeterRegistry promReg = ((CompositeMeterRegistry) reg.meterRegistry()).getRegistries()
+        ((CompositeMeterRegistry) reg.meterRegistry()).getRegistries()
                 .stream()
                 .filter(PrometheusMeterRegistry.class::isInstance)
                 .map(PrometheusMeterRegistry.class::cast)
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Cannot find Prometheus registry"));
 
-        String promFormat = PrometheusFormatter.formattedOutput(promReg,
-                                                                MediaTypes.TEXT_PLAIN,
-                                                                null,
-                                                                null);
+        PrometheusFormatter formatter = PrometheusFormatter.builder().build();
+        String promFormat = formatter.filteredOutput();
 
         // Want to match: any uninteresting lines, start-of-line, the meter name, the tags (capturing the scope tag value),
         // capture the meter value, further uninteresting text.
@@ -95,7 +93,7 @@ public class TestFormatter {
         Counter otherCounter = otherRegistry.counter(counterName);
         otherCounter.inc(2L);
 
-        PrometheusMeterRegistry promReg = ((CompositeMeterRegistry) reg.meterRegistry()).getRegistries()
+        ((CompositeMeterRegistry) reg.meterRegistry()).getRegistries()
                 .stream()
                 .filter(PrometheusMeterRegistry.class::isInstance)
                 .map(PrometheusMeterRegistry.class::cast)
@@ -151,7 +149,7 @@ public class TestFormatter {
         Counter otherCounter = reg.counter(otherCounterName);
         otherCounter.inc(3L);
 
-        PrometheusMeterRegistry promReg = ((CompositeMeterRegistry) reg.meterRegistry()).getRegistries()
+        ((CompositeMeterRegistry) reg.meterRegistry()).getRegistries()
                 .stream()
                 .filter(PrometheusMeterRegistry.class::isInstance)
                 .map(PrometheusMeterRegistry.class::cast)
