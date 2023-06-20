@@ -99,8 +99,9 @@ interface TypedElementInfoBlueprint extends Annotated {
 
     /**
      * The enclosing type name for this typed element. Applicable when this instance represents a
-     * {@link io.helidon.common.types.TypeValues#KIND_FIELD} or
-     * {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
+     * {@link io.helidon.common.types.TypeValues#KIND_FIELD}, or
+     * {@link io.helidon.common.types.TypeValues#KIND_METHOD}, or
+     * {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}
      *
      * @return the enclosing type element
      */

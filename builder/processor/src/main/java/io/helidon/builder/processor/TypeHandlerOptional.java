@@ -25,8 +25,8 @@ import io.helidon.common.types.TypeName;
 
 import static io.helidon.builder.processor.Types.CHAR_ARRAY_TYPE;
 import static io.helidon.builder.processor.Types.CONFIG_TYPE;
-import static io.helidon.builder.processor.Types.OPTIONAL_TYPE;
 import static io.helidon.common.processor.GeneratorTools.capitalize;
+import static io.helidon.common.types.TypeNames.OPTIONAL;
 
 // declaration in builder is always non-generic, so no need to modify default values
 class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
@@ -69,7 +69,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
 
     @Override
     TypeName argumentTypeName() {
-        return TypeName.builder(OPTIONAL_TYPE)
+        return TypeName.builder(OPTIONAL)
                 .addTypeArgument(toWildcard(actualType()));
     }
 
@@ -236,7 +236,7 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
     }
 
     private String optionalSuffix(TypeName typeName) {
-        if (OPTIONAL_TYPE.equals(typeName.genericTypeName())) {
+        if (OPTIONAL.equals(typeName.genericTypeName())) {
             return ".orElse(null)";
         }
         return "";

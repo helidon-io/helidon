@@ -20,11 +20,11 @@ import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.builder.processor.Types.LIST_TYPE;
+import static io.helidon.common.types.TypeNames.LIST;
 
 class TypeHandlerList extends TypeHandlerCollection {
 
     TypeHandlerList(String name, String getterName, String setterName, TypeName declaredType) {
-        super(name, getterName, setterName, declaredType, LIST_TYPE, "toList()", Optional.empty());
+        super(name, getterName, setterName, declaredType, LIST, "toList()", Optional.empty());
     }
 }

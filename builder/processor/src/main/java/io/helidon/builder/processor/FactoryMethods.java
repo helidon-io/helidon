@@ -29,9 +29,9 @@ import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.processor.Types.CONFIG_TYPE;
 import static io.helidon.builder.processor.Types.FACTORY_METHOD_TYPE;
-import static io.helidon.builder.processor.Types.OBJECT_TYPE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_TYPE;
 import static io.helidon.builder.processor.Types.RUNTIME_OBJECT_TYPE;
+import static io.helidon.common.types.TypeNames.OBJECT;
 
 /*
  We need the following factory methods:
@@ -83,7 +83,7 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                                                    TypeInfo blueprint,
                                                    TypeHandler typeHandler,
                                                    Set<TypeName> builderCandidates) {
-        if (typeHandler.actualType().equals(OBJECT_TYPE)) {
+        if (typeHandler.actualType().equals(OBJECT)) {
             return Optional.empty();
         }
         builderCandidates.add(typeHandler.actualType());

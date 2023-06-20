@@ -23,16 +23,13 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 import static io.helidon.builder.processor.Types.ARRAY_LIST_TYPE;
 import static io.helidon.builder.processor.Types.CHAR_ARRAY_TYPE;
 import static io.helidon.builder.processor.Types.DURATION_TYPE;
 import static io.helidon.builder.processor.Types.LINKED_HASH_MAP_TYPE;
 import static io.helidon.builder.processor.Types.LINKED_HASH_SET_TYPE;
-import static io.helidon.builder.processor.Types.LIST_TYPE;
-import static io.helidon.builder.processor.Types.MAP_TYPE;
-import static io.helidon.builder.processor.Types.OPTIONAL_TYPE;
-import static io.helidon.builder.processor.Types.SET_TYPE;
 import static io.helidon.builder.processor.Types.STRING_TYPE;
 
 class TypeHandler {
@@ -50,17 +47,17 @@ class TypeHandler {
     }
 
     static TypeHandler create(String name, String getterName, String setterName, TypeName returnType, boolean sameGeneric) {
-        if (OPTIONAL_TYPE.equals(returnType)) {
+        if (TypeNames.OPTIONAL.equals(returnType)) {
             return new TypeHandlerOptional(name, getterName, setterName, returnType);
         }
-        if (SET_TYPE.equals(returnType)) {
+        if (TypeNames.SET.equals(returnType)) {
             return new TypeHandlerSet(name, getterName, setterName, returnType);
         }
 
-        if (LIST_TYPE.equals(returnType)) {
+        if (TypeNames.LIST.equals(returnType)) {
             return new TypeHandlerList(name, getterName, setterName, returnType);
         }
-        if (MAP_TYPE.equals(returnType)) {
+        if (TypeNames.MAP.equals(returnType)) {
             return new TypeHandlerMap(name, getterName, setterName, returnType, sameGeneric);
         }
 
@@ -83,10 +80,10 @@ class TypeHandler {
 
     protected static String collectionImplType(TypeName typeName) {
         TypeName genericTypeName = typeName.genericTypeName();
-        if (genericTypeName.equals(MAP_TYPE)) {
+        if (genericTypeName.equals(TypeNames.MAP)) {
             return LINKED_HASH_MAP_TYPE.fqName();
         }
-        if (genericTypeName.equals(LIST_TYPE)) {
+        if (genericTypeName.equals(TypeNames.LIST)) {
             return ARRAY_LIST_TYPE.fqName();
         }
 

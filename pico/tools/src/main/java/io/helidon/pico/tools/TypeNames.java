@@ -285,15 +285,7 @@ public final class TypeNames {
      * Jakarta legacy {@value} annotation.
      */
     public static final String JAVAX_SINGLETON = "javax.inject.Singleton";
-    /**
-     * Type name of {@link java.util.Optional}.
-     */
-    public static final TypeName OPTIONAL_TYPE = TypeName.create(Optional.class);
-    /**
-     * Type name of {@link java.util.List}.
-     */
-    public static final TypeName LIST_TYPE = TypeName.create(List.class);
-    static final String PICO_ABSTRACT_SERVICE_PROVIDER = AbstractServiceProvider.class.getName();
+
 
     private TypeNames() {
     }

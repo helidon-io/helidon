@@ -54,7 +54,6 @@ final class Types {
     static final String SINGULAR = "io.helidon.builder.api.Prototype.Singular";
 
     static final TypeName BOXED_BOOLEAN_TYPE = TypeName.create(Boolean.class);
-    static final TypeName OBJECT_TYPE = TypeName.create(Object.class);
     static final TypeName CONFIGURED_TYPE = TypeName.create(CONFIGURED);
     static final TypeName CONFIGURED_OPTION_TYPE = TypeName.create(CONFIGURED_OPTION);
     static final TypeName CONFIG_TYPE = TypeName.create(CONFIG);
@@ -73,14 +72,9 @@ final class Types {
     static final TypeName FACTORY_METHOD_TYPE = TypeName.create(FACTORY_METHOD);
     static final TypeName PROTOTYPE_CUSTOM_METHOD_TYPE = TypeName.create(PROTOTYPE_CUSTOM_METHOD);
     static final TypeName BUILDER_CUSTOM_METHOD_TYPE = TypeName.create(BUILDER_CUSTOM_METHOD);
-
     static final TypeName VOID_TYPE = TypeName.create(void.class);
     static final TypeName STRING_TYPE = TypeName.create(String.class);
     static final TypeName DURATION_TYPE = TypeName.create(Duration.class);
-    static final TypeName OPTIONAL_TYPE = TypeName.create(Optional.class);
-    static final TypeName SET_TYPE = TypeName.create(Set.class);
-    static final TypeName LIST_TYPE = TypeName.create(List.class);
-    static final TypeName MAP_TYPE = TypeName.create(Map.class);
     static final TypeName CHAR_ARRAY_TYPE = TypeName.create(char[].class);
 
     static final TypeName LINKED_HASH_MAP_TYPE = TypeName.create(LinkedHashMap.class);

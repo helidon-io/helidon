@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.builder.processor.Types.SET_TYPE;
+import static io.helidon.common.types.TypeNames.SET;
 
 class TypeHandlerSet extends TypeHandlerCollection {
 
@@ -29,7 +29,7 @@ class TypeHandlerSet extends TypeHandlerCollection {
               getterName,
               setterName,
               declaredType,
-              SET_TYPE,
+              SET,
               "collect(java.util.stream.Collectors.toSet())",
               Optional.of(".map(java.util.Set::copyOf)"));
     }

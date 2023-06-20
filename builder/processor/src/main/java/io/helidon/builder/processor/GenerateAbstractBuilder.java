@@ -25,15 +25,15 @@ import io.helidon.common.types.TypeName;
 
 import static io.helidon.builder.processor.Types.CHAR_ARRAY_TYPE;
 import static io.helidon.builder.processor.Types.CONFIG_TYPE;
-import static io.helidon.builder.processor.Types.LIST_TYPE;
-import static io.helidon.builder.processor.Types.MAP_TYPE;
-import static io.helidon.builder.processor.Types.OPTIONAL_TYPE;
 import static io.helidon.builder.processor.Types.OVERRIDE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_BUILDER;
 import static io.helidon.builder.processor.Types.PROTOTYPE_CONFIGURED_BUILDER;
-import static io.helidon.builder.processor.Types.SET_TYPE;
 import static io.helidon.builder.processor.Types.STRING_TYPE;
 import static io.helidon.common.processor.GeneratorTools.capitalize;
+import static io.helidon.common.types.TypeNames.LIST;
+import static io.helidon.common.types.TypeNames.MAP;
+import static io.helidon.common.types.TypeNames.OPTIONAL;
+import static io.helidon.common.types.TypeNames.SET;
 
 final class GenerateAbstractBuilder {
     private static final String SOURCE_SPACING = "    ";
@@ -1188,7 +1188,7 @@ final class GenerateAbstractBuilder {
                                            return prefix + " + \"" + name + "=****\"";
                                        }
                                        // builder stores fields without optional wrapper
-                                       if (!isBuilder && it.typeName().genericTypeName().equals(OPTIONAL_TYPE)) {
+                                       if (!isBuilder && it.typeName().genericTypeName().equals(OPTIONAL)) {
                                            return prefix + " + \"" + name + "=\" + (" + name + ".isPresent() ? \"****\" : "
                                                    + "\"null\")";
                                        }
@@ -1248,15 +1248,15 @@ final class GenerateAbstractBuilder {
             pw.print("this.");
             pw.print(child.name());
             pw.print(" = ");
-            if (child.typeHandler().declaredType().genericTypeName().equals(LIST_TYPE)) {
+            if (child.typeHandler().declaredType().genericTypeName().equals(LIST)) {
                 pw.print("java.util.List.copyOf(builder.");
                 pw.print(child.getterName());
                 pw.println("());");
-            } else if (child.typeHandler().declaredType().genericTypeName().equals(SET_TYPE)) {
+            } else if (child.typeHandler().declaredType().genericTypeName().equals(SET)) {
                 pw.print("java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(builder.");
                 pw.print(child.getterName());
                 pw.println("()));");
-            } else if (child.typeHandler().declaredType().genericTypeName().equals(MAP_TYPE)) {
+            } else if (child.typeHandler().declaredType().genericTypeName().equals(MAP)) {
                 pw.print("java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(builder.");
                 pw.print(child.getterName());
                 pw.println("()));");

@@ -96,8 +96,8 @@ final class TypeNameSupport {
     }
 
     /**
-     * The base generic type name, stripped of any {@link io.helidon.common.types.TypeName#typeArguments()}.
-     * This is equivalent to the type name represented by {@link io.helidon.common.types.TypeName#name()}.
+     * The base generic type name, stripped of any {@link TypeName#typeArguments()}.
+     * This is equivalent to the type name represented by {@link TypeName#name()}.
      *
      * @param instance the instance
      * @return based generic type name
@@ -205,7 +205,6 @@ final class TypeNameSupport {
         if (primitive != null) {
             return primitive;
         }
-
 
         TypeName.Builder builder = TypeName.builder();
         // we are expecting something like `java.lang.Consumer<java.lang.String>`

@@ -53,7 +53,7 @@ interface TypeNameBlueprint {
      *
      * @return the package name, never null
      */
-    @ConfiguredOption("")  // default value is empty package
+    @ConfiguredOption("") // default value is empty package
     String packageName();
 
     /**
@@ -136,7 +136,7 @@ interface TypeNameBlueprint {
      * @return if this is a list
      */
     default boolean isList() {
-        return "java.util.List".equals(name());
+        return TypeNames.LIST.name().equals(name());
     }
 
     /**
@@ -145,7 +145,7 @@ interface TypeNameBlueprint {
      * @return if this is a set
      */
     default boolean isSet() {
-        return "java.util.Set".equals(name());
+        return TypeNames.SET.name().equals(name());
     }
 
     /**
@@ -154,7 +154,7 @@ interface TypeNameBlueprint {
      * @return if this is a map
      */
     default boolean isMap() {
-        return "java.util.Map".equals(name());
+        return TypeNames.MAP.name().equals(name());
     }
 
     /**
@@ -163,7 +163,7 @@ interface TypeNameBlueprint {
      * @return if this is an optional
      */
     default boolean isOptional() {
-        return "java.util.Optional".equals(name());
+        return TypeNames.OPTIONAL.name().equals(name());
     }
 
     /**

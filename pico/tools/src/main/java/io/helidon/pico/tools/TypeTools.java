@@ -76,6 +76,8 @@ import io.github.classgraph.TypeArgument;
 import io.github.classgraph.TypeSignature;
 import jakarta.inject.Singleton;
 
+import static io.helidon.common.types.TypeNames.LIST;
+import static io.helidon.common.types.TypeNames.OPTIONAL;
 import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
 
@@ -1195,7 +1197,7 @@ public final class TypeTools {
      * @return true if {@link java.util.Optional}
      */
     static boolean isOptionalType(String typeName) {
-        return TypeNames.OPTIONAL_TYPE.equals(componentTypeNameOf(typeName));
+        return OPTIONAL.equals(componentTypeNameOf(typeName));
     }
 
     /**
@@ -1215,7 +1217,7 @@ public final class TypeTools {
      * @return true if {@link java.util.List}
      */
     static boolean isListType(String typeName) {
-        return TypeNames.LIST_TYPE.equals(componentTypeNameOf(typeName));
+        return LIST.equals(componentTypeNameOf(typeName));
     }
 
     /**

@@ -43,11 +43,12 @@ import static io.helidon.builder.processor.Types.BUILDER_INTERCEPTOR;
 import static io.helidon.builder.processor.Types.CONFIGURED_OPTION_TYPE;
 import static io.helidon.builder.processor.Types.CONFIGURED_TYPE;
 import static io.helidon.builder.processor.Types.IMPLEMENT_TYPE;
-import static io.helidon.builder.processor.Types.OBJECT_TYPE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_FACTORY_TYPE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_TYPE;
 import static io.helidon.builder.processor.Types.STRING_TYPE;
 import static io.helidon.builder.processor.Types.VOID_TYPE;
+import static io.helidon.common.types.TypeNames.OBJECT;
+import static io.helidon.common.types.TypeNames.OPTIONAL;
 
 record TypeContext(
         TypeInformation typeInfo,
@@ -62,7 +63,7 @@ record TypeContext(
     private static final String BLUEPRINT = "Blueprint";
     private static final Set<MethodSignature> IGNORED_METHODS = Set.of(
             // equals, hash code and toString
-            new MethodSignature(TypeName.create(boolean.class), "equals", List.of(OBJECT_TYPE)),
+            new MethodSignature(TypeName.create(boolean.class), "equals", List.of(OBJECT)),
             new MethodSignature(TypeName.create(int.class), "hashCode", List.of()),
             new MethodSignature(STRING_TYPE, "toString", List.of())
     );
@@ -164,7 +165,7 @@ record TypeContext(
 
         boolean hasOptional = propertyMethods.stream()
                 .map(PrototypeProperty::typeHandler)
-                .anyMatch(it -> it.declaredType().genericTypeName().equals(Types.OPTIONAL_TYPE));
+                .anyMatch(it -> it.declaredType().genericTypeName().equals(OPTIONAL));
         boolean hasRequired = propertyMethods.stream()
                 .map(PrototypeProperty::configuredOption)
                 .anyMatch(PrototypeProperty.ConfiguredOption::required);
