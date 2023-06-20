@@ -54,6 +54,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private final String requestId;
     private final Http1ClientConfig clientConfig;
     private final MediaContext mediaContext;
+    private final Map<String, String> properties;
 
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private boolean followRedirects;
@@ -67,9 +68,11 @@ class ClientRequestImpl implements Http1ClientRequest {
     ClientRequestImpl(Http1ClientConfig clientConfig,
                       Http.Method method,
                       UriHelper helper,
-                      UriQueryWriteable query) {
+                      UriQueryWriteable query,
+                      Map<String, String> properties) {
         this.method = method;
         this.uri = helper;
+        this.properties = properties;
 
         this.clientConfig = clientConfig;
         this.mediaContext = clientConfig.mediaContext();
@@ -86,8 +89,9 @@ class ClientRequestImpl implements Http1ClientRequest {
     private ClientRequestImpl(ClientRequestImpl request,
                               Http.Method method,
                               UriHelper helper,
-                              UriQueryWriteable query) {
-        this(request.clientConfig, method, helper, query);
+                              UriQueryWriteable query,
+                              Map<String, String> properties) {
+        this(request.clientConfig, method, helper, query, properties);
         this.followRedirects = request.followRedirects;
         this.maxRedirects = request.maxRedirects;
         this.tls = request.tls;
@@ -224,6 +228,12 @@ class ClientRequestImpl implements Http1ClientRequest {
         return this;
     }
 
+    @Override
+    public Http1ClientRequest property(String propertyName, String propertyValue) {
+        this.properties.put(propertyName, propertyValue);
+        return this;
+    }
+
     Http1ClientConfig clientConfig() {
         return clientConfig;
     }
@@ -271,11 +281,11 @@ class ClientRequestImpl implements Http1ClientRequest {
             //Method and entity is required to be the same as with original request with 307 and 308 requests
             if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
                     || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
-                clientRequest = new ClientRequestImpl(this, method, redirectUri, newQuery);
+                clientRequest = new ClientRequestImpl(this, method, redirectUri, newQuery, properties);
             } else {
                 //It is possible to change to GET and send no entity with all other redirect codes
                 entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
-                clientRequest = new ClientRequestImpl(this, Http.Method.GET, redirectUri, newQuery);
+                clientRequest = new ClientRequestImpl(this, Http.Method.GET, redirectUri, newQuery, properties);
             }
         }
         throw new IllegalStateException("Maximum number of request redirections ("
@@ -323,8 +333,6 @@ class ClientRequestImpl implements Http1ClientRequest {
         }
 
         ClientRequestHeaders headers = ClientRequestHeaders.create(explicitHeaders);
-
-        Map<String, String> properties = new HashMap<>();
 
         WebClientServiceRequest serviceRequest = new ServiceRequestImpl(uri,
                                                                         method,

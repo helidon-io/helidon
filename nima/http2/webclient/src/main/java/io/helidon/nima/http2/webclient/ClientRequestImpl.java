@@ -56,6 +56,7 @@ class ClientRequestImpl implements Http2ClientRequest {
     private final int maxFrameSize;
     private final long maxHeaderListSize;
     private final int connectionPrefetch;
+    private final Map<String, String> properties;
 
     private WritableHeaders<?> explicitHeaders;
     private Tls tls;
@@ -84,6 +85,7 @@ class ClientRequestImpl implements Http2ClientRequest {
         this.maxFrameSize = client.maxFrameSize();
         this.maxHeaderListSize = client.maxHeaderListSize();
         this.connectionPrefetch = client.prefetch();
+        this.properties = client.properties();
         this.tls = tls == null || !tls.enabled() ? null : tls;
         this.query = query;
         this.followRedirects = client.followRedirects();
@@ -201,6 +203,12 @@ class ClientRequestImpl implements Http2ClientRequest {
     @Override
     public Http2ClientRequest skipUriEncoding() {
         this.uri.skipUriEncoding(true);
+        return this;
+    }
+
+    @Override
+    public Http2ClientRequest property(String propertyName, String propertyValue) {
+        properties.put(propertyName, propertyValue);
         return this;
     }
 

@@ -17,6 +17,7 @@
 package io.helidon.nima.webclient;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -47,6 +48,7 @@ public class LoomClient implements WebClient {
     private final boolean followRedirects;
     private final Headers defaultHeaders;
     private final ParserMode mediaTypeParserMode;
+    private final Map<String, String> properties;
 
     /**
      * Construct this instance from a subclass of builder.
@@ -63,6 +65,7 @@ public class LoomClient implements WebClient {
         this.followRedirects = builder.followRedirect();
         this.defaultHeaders = builder.defaultHeaders();
         this.mediaTypeParserMode = builder.mediaTypeParserMode();
+        this.properties = builder.properties();
     }
 
     /**
@@ -144,6 +147,15 @@ public class LoomClient implements WebClient {
      */
     public Headers defaultHeaders() {
         return defaultHeaders;
+    }
+
+    /**
+     * Properties configured for this client.
+     *
+     * @return properties
+     */
+    public Map<String, String> properties() {
+        return properties;
     }
 
     /**

@@ -172,5 +172,10 @@ class HttpClientTest {
         public FakeHttpClientRequest skipUriEncoding() {
             return null;
         }
+
+        @Override
+        public FakeHttpClientRequest property(String propertyName, String propertyValue) {
+            return null;
+        }
     }
 }

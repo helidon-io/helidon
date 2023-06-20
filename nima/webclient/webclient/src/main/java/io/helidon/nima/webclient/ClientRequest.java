@@ -197,6 +197,15 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
     B skipUriEncoding();
 
     /**
+     * Add a property to be used by this request.
+     *
+     * @param propertyName  property name
+     * @param propertyValue property value
+     * @return updated builder instance
+     */
+    B property(String propertyName, String propertyValue);
+
+    /**
      * Handle output stream.
      */
     interface OutputStreamHandler {
