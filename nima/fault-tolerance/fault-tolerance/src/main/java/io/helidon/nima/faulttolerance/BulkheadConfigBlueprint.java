@@ -29,7 +29,7 @@ import io.helidon.pico.configdriven.api.ConfigBean;
  */
 @ConfigBean(repeatable = true)
 @Configured(root = true, prefix = "fault-tolerance.bulkheads")
-@Prototype.Blueprint(builderInterceptor = BulkheadConfigInterceptor.class)
+@Prototype.Blueprint(builderInterceptor = BulkheadConfigBlueprint.BuilderInterceptor.class)
 interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
     /**
      * Default limit.
@@ -77,4 +77,15 @@ interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
      * @return name of this bulkhead
      */
     Optional<String> name();
+
+    class BuilderInterceptor implements Prototype.BuilderInterceptor<BulkheadConfig.BuilderBase<?, ?>> {
+        @Override
+        public BulkheadConfig.BuilderBase<?, ?> intercept(BulkheadConfig.BuilderBase<?, ?> target) {
+            if (target.name().isEmpty()) {
+                target.config()
+                        .ifPresent(cfg -> target.name(cfg.name()));
+            }
+            return target;
+        }
+    }
 }

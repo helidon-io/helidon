@@ -28,7 +28,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * {@link Retry} configuration bean.
  */
 // @ConfigBean(value = "fault-tolerance.retries", repeatable = true, wantDefaultConfigBean = true)
-@Prototype.Blueprint(builderInterceptor = RetryConfigInterceptor.class)
+@Prototype.Blueprint(builderInterceptor = RetryConfigBlueprint.BuilderInterceptor.class)
 @Configured(root = true, prefix = "fault-tolerance.retries")
 interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     /**
@@ -124,4 +124,48 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      * @return retry policy
      */
     Optional<Retry.RetryPolicy> retryPolicy();
+
+    class BuilderInterceptor implements Prototype.BuilderInterceptor<RetryConfig.BuilderBase<?, ?>> {
+        @Override
+        public RetryConfig.BuilderBase<?, ?> intercept(RetryConfig.BuilderBase<?, ?> target) {
+            if (target.name().isEmpty()) {
+                target.config()
+                        .ifPresent(cfg -> target.name(cfg.name()));
+            }
+            if (target.retryPolicy().isEmpty()) {
+                target.retryPolicy(retryPolicy(target));
+            }
+            return target;
+        }
+
+        /**
+         * Retry policy created from this configuration.
+         *
+         * @return retry policy to use
+         */
+        private Retry.RetryPolicy retryPolicy(RetryConfig.BuilderBase<?, ?> target) {
+            if (target.jitter().toSeconds() == -1) {
+                Retry.DelayingRetryPolicy.Builder delayBuilder = Retry.DelayingRetryPolicy.builder()
+                        .calls(target.calls())
+                        .delay(target.delay());
+
+                if (target.delayFactor() != -1) {
+                    delayBuilder.delayFactor(target.delayFactor());
+                }
+                return delayBuilder.build();
+            }
+            if (target.delayFactor() != -1) {
+                return Retry.DelayingRetryPolicy.builder()
+                        .calls(target.calls())
+                        .delayFactor(target.delayFactor())
+                        .delay(target.delay())
+                        .build();
+            }
+            return Retry.JitterRetryPolicy.builder()
+                    .calls(target.calls())
+                    .delay(target.delay())
+                    .jitter(target.jitter())
+                    .build();
+        }
+    }
 }

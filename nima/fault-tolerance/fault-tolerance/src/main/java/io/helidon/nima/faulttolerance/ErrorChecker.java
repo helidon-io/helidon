@@ -19,7 +19,7 @@ package io.helidon.nima.faulttolerance;
 import java.util.Set;
 
 /**
- * Support for checking "skipOn" and "applyOn" sets of throwables.
+ * Support for checking {@code skipOn} and {@code applyOn} sets of throwables.
  */
 @FunctionalInterface
 public interface ErrorChecker {

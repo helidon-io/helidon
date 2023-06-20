@@ -377,7 +377,7 @@ public final class FaultTolerance {
     /**
      * The annotated method (or all methods on annotated type) will be retried according to the configuration.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Documented
     @InterceptedTrigger
     public @interface Retry {
@@ -466,7 +466,7 @@ public final class FaultTolerance {
      * <p>
      * Fault tolerance will add all intermediate exceptions as {@link Throwable#addSuppressed(Throwable)}.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Documented
     @InterceptedTrigger
     @Target(ElementType.METHOD)
@@ -498,7 +498,7 @@ public final class FaultTolerance {
     /**
      * Runs the annotated method asynchronously.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Documented
     @InterceptedTrigger
     @Target(ElementType.METHOD)
@@ -523,7 +523,7 @@ public final class FaultTolerance {
     /**
      * The annotated method (or all methods on annotated type) will time out according to the configuration.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Documented
     @InterceptedTrigger
     public @interface Timeout {
@@ -569,7 +569,7 @@ public final class FaultTolerance {
      * <p>
      * Fault tolerance will add all intermediate exceptions as {@link Throwable#addSuppressed(Throwable)}.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Documented
     @InterceptedTrigger
     @Target(ElementType.METHOD)
@@ -602,7 +602,7 @@ public final class FaultTolerance {
     /**
      * The annotated method (or all methods on annotated type) will have circuit breaker according to the configuration.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Documented
     @InterceptedTrigger
     public @interface CircuitBreaker {

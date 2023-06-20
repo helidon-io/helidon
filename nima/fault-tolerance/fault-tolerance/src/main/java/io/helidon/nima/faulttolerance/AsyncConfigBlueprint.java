@@ -27,7 +27,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * {@link io.helidon.nima.faulttolerance.Async} configuration bean.
  */
-@Prototype.Blueprint(builderInterceptor = AsyncConfigInterceptor.class)
+@Prototype.Blueprint(builderInterceptor = AsyncConfigBlueprint.BuilderInterceptor.class)
 @Configured
 interface AsyncConfigBlueprint extends Prototype.Factory<Async> {
     /**
@@ -59,4 +59,16 @@ interface AsyncConfigBlueprint extends Prototype.Factory<Async> {
      * @return future that will be completed by the asynchronous processing
      */
     Optional<CompletableFuture<Async>> onStart();
+
+    class BuilderInterceptor implements Prototype.BuilderInterceptor<AsyncConfig.BuilderBase<?, ?>> {
+        @Override
+        public AsyncConfig.BuilderBase<?, ?> intercept(AsyncConfig.BuilderBase<?, ?> target) {
+            if (target.name().isEmpty()) {
+                target.config()
+                        .ifPresent(cfg -> target.name(cfg.name()));
+            }
+
+            return target;
+        }
+    }
 }

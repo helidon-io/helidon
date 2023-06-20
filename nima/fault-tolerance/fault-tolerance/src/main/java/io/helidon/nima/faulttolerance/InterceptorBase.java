@@ -69,7 +69,9 @@ abstract class InterceptorBase<T> implements Interceptor {
         } else if (ftHandler instanceof FtHandlerTyped typed) {
             return (V) typed.invoke(() -> chain.proceed(args));
         }
-        throw new IllegalStateException("Invalid use of InterceptorBase, type can only be FtHandler or FtHandlerTyped");
+        throw new IllegalStateException("Invalid use of " + getClass().getSimpleName()
+                                                + ", handler type can only be " + FtHandler.class.getName()
+                                                + ", or " + FtHandlerTyped.class.getName());
     }
 
     // caching is done by this abstract class

@@ -20,10 +20,12 @@ import java.time.Duration;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.pico.api.Contract;
 
 /**
  * Timeout attempts to terminate execution after defined duration of time.
  */
+@Contract
 @RuntimeType.Prototype(TimeoutConfig.class)
 public interface Timeout extends FtHandler, RuntimeType<TimeoutConfig> {
     /**
