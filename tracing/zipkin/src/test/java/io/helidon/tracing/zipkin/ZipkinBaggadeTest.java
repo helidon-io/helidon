@@ -20,6 +20,8 @@ import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
+import io.helidon.tracing.opentracing.OpenTracing;
+import io.helidon.tracing.spi.TracerProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -37,22 +39,18 @@ class ZipkinBaggadeTest {
     public static final String KEY = "fubar";
     public static final String VALUE = "1";
 
-    @BeforeAll
-    static void startTheServer() {
-        Config config = Config.create();
-        ZipkinTracerBuilder.create(config.get("tracing"))
-                .baggage(List.of(KEY))
-                .serviceName("helidon-service")
-                .registerGlobal(true)
-                .build();
-    }
-
     /**
-     * Test for: https://github.com/helidon-io/helidon/issues/6970
+     * Additional Zipkin test for: https://github.com/helidon-io/helidon/issues/6970
      */
     @Test
     void baggageCanaryMinimal() {
-        Tracer tracer = Tracer.global();
+        Config config = Config.create();
+        io.opentracing.Tracer zipkinTracer = ZipkinTracerBuilder.create(config.get("tracing"))
+                .baggage(List.of(KEY))
+                .serviceName("helidon-service")
+                .build();
+
+        Tracer tracer = OpenTracing.create(zipkinTracer);
         Span span = tracer.spanBuilder("baggageCanaryMinimal").start();
         // Set baggage and confirm that it's known in the span
         span.baggage(KEY, VALUE);
