@@ -16,10 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.nima.webserver.http.spi.SinkProvider;
-import io.helidon.nima.webserver.spi.ProtocolConfigProvider;
-import io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider;
-import io.helidon.pico.api.ModuleComponent;
 
 /**
  * Loom based WebServer.
@@ -72,12 +68,12 @@ module io.helidon.nima.webserver {
     exports io.helidon.nima.webserver.http1.spi;
 
     uses io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
-    uses ServerConnectionSelectorProvider;
-    uses SinkProvider;
-    uses ProtocolConfigProvider;
+    uses io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider;
+    uses io.helidon.nima.webserver.http.spi.SinkProvider;
+    uses io.helidon.nima.webserver.spi.ProtocolConfigProvider;
 
     provides io.helidon.nima.webserver.spi.ProtocolConfigProvider
             with io.helidon.nima.webserver.http1.Http1ProtocolConfigProvider;
-    provides ServerConnectionSelectorProvider with io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-    provides ModuleComponent with io.helidon.nima.webserver.Pico$$Module;
+    provides io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider with io.helidon.nima.webserver.http1.Http1ConnectionProvider;
+    provides io.helidon.pico.api.ModuleComponent with io.helidon.nima.webserver.Pico$$Module;
 }
