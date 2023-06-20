@@ -41,12 +41,9 @@ module io.helidon.nima.faulttolerance {
     requires static io.helidon.pico.configdriven.runtime;
     requires static io.helidon.pico.runtime;
 
-    // for generated types
-    //    requires static io.helidon.pico.runtime;
-    //    requires static io.helidon.pico.configdriven.runtime;
 
     exports io.helidon.nima.faulttolerance;
 
     // pico module
-    //provides io.helidon.pico.api.ModuleComponent with io.helidon.nima.faulttolerance.Pico$$Module;
+    provides io.helidon.pico.api.ModuleComponent with io.helidon.nima.faulttolerance.Pico$$Module;
 }
