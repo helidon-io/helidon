@@ -341,6 +341,20 @@ Helion MP and WebLogic Server Web Services integration enables the Helidon micro
 
 === Maven Coordinates [[Web-Services-Integration-Maven-Coordinates]]
 
+An updated client compatible with modern Jakarta runtimes is available at {osdc-link} as `com.oracle.webservices.wls.jaxws-wlswss-client.jar`.
+After downloading the client, you should install the client artifact in the Maven repository accessible from the application build.
+
+[source, shell]
+.Example of Installing the Client Artifact to the Local Maven Repository
+----
+mvn install:install-file \
+-Dfile=<JAR_FILE_PATH>/com.oracle.webservices.wls.jaxws-wlswss-client.jar \
+-DgroupId=com.oracle.webservices.wls.jaxws-wlswss-client \
+-DartifactId=com.oracle.webservices.wls.jaxws-wlswss-client \
+-Dversion=1.0
+----
+
+
 Add the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` client file downloaded from {osdc-link}, as part of the Maven dependencies:
 [source, xml]
 ----
@@ -353,50 +367,109 @@ Add the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` client file downloa
 
 === Usage [[Web-Services-Integration-Usage]]
 
-Use the `clientgen` WebLogic Web Services Ant task by using the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` file, installed earlier, to generate the *jakarta* based client artifacts that client applications use to invoke the WebLogic Web Services. 
+Use the `clientgen` WebLogic Web Services Ant task from the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` file, installed earlier,
+to generate the *jakarta* based client artifacts that client applications use to invoke the WebLogic Web Services to `target/generated-sources`.
 
-Add a call to the `clientgen` Ant task, as shown in the following example:
+Add a `maven-antrun-plugin` to execute the `clientgen` Ant task during `generate-sources` build phase:
 [source, xml]
 ----
-<target>
-    <path id="lib.clientgen.id">  
-        <pathelement path="${jaxws.client.jar}"/>  
-    </path> 
- 
-    <taskdef name="clientgen" classname="weblogic.wsee.tools.anttasks.ClientGenTask" classpathref="lib.clientgen.id"/>
-    <clientgen wsdl="${remote.wsdl.location}" wsdlLocation="${remote.wsdl.location}"
-       destDir="${project.basedir}/target/classes" packageName="examples.webservices.simple_client"
-       type="JAXWS" copyWsdl="true" />
-</target>
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-antrun-plugin</artifactId>
+    <version>3.1.0</version>
+    <executions>
+        <execution>
+            <id>ws-client-gen</id>
+            <phase>generate-sources</phase>
+            <goals>
+                <goal>run</goal>
+            </goals>
+            <configuration>
+                <target>
+                    <property name="wsdl-file">file://${basedir}/DynamicWSImplService.wsdl</property>
+                    <property name="compile_classpath"
+                              refid="maven.compile.classpath"/> <1>
+                    <taskdef name="clientgen"
+                             classname="weblogic.wsee.tools.anttasks.ClientGenTask"
+                             classpath="${compile_classpath}"/>
+                    <clientgen wsdl="${wsdl-file}"
+                               wsdlLocation="${wsdl-file}"
+                               destDir="${project.build.directory}/generated-sources" <2>
+                               packageName="com.example.wlssoap" <3>
+                               generateRuntimeCatalog="false"
+                               type="JAXWS"
+                               copyWsdl="false"/>
+                </target>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
 ----
+<1> Look for the `weblogic.wsee.tools.anttasks.ClientGenTask` on the project compile path.
+<2> Folder for generated client classes, needs to be added as a source folder.
+<3> Package name for new client classes.
+
+Use `build-helper-maven-plugin` to add `/target/generated-sources` with generated client classes as additional directory with sources.
+[source, xml]
+----
+
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>build-helper-maven-plugin</artifactId>
+    <version>3.3.0</version>
+    <executions>
+        <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+                <goal>add-source</goal>
+            </goals>
+            <configuration>
+                <sources>
+                    <source>${pom.basedir}/target/generated-sources</source>
+                </sources>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+As we are generating client classes to the folder recognized by maven as additional sources, client classes can
+be used directly from our business code.
 
 === Example [[Web-Services-Integration-Example]]
 
-You can create the RESTful Web Service to invoke the WebLogic Web Service, as shown in the following example:
+You can create the RESTful Web Service to invoke the WebLogic Web Service with generated client classes,
+as shown in the following example:
 [source, java]
 ----
-@Path("/helidonclient")
+@Path("/helidon-client")
 @ApplicationScoped
 public class HelidonWSEEClient {
- 
-    private JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
- 
+
+    @Inject
+    @ConfigProperty(name = "remote.wsdl.location")
+    private String remoteWsdlLocation;
+
     @GET
     @Path("/getWLSWebserviceResult/subtract/{y}/from/{x}")
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject invokeWLSWebservice(@PathParam("x") int x, @PathParam("y") int y) {
- 
-        String wsdlLocation = System.getProperty("remote.wsdl.location");
-        DynamicWSImplService testService = new DynamicWSImplService();
+    public JsonObject invokeWLSWebservice(@PathParam("x") int x,
+                                          @PathParam("y") int y) {
+        DynamicWSImplService testService = new DynamicWSImplService(); //<1>
         DynamicWSImpl testPort = testService.getDynamicWSImplPort();
-        BindingProvider binding = (BindingProvider) testPort;
-        binding.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, wsdlLocation);
-        int response = testPort.subtract(x,y);
- 
-        return JSON.createObjectBuilder().add("wsresponse", response).build();
-   }
+        ((BindingProvider) testPort).getRequestContext()
+                .put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, remoteWsdlLocation); //<2>
+
+        int response = testPort.subtract(x,y);//<3>
+
+        return Json.createObjectBuilder().add("ws-response", response).build();
+    }
 }
 ----
+<1> Generated client classes used from business code.
+<2> Override JAX-WS url from WSDL document used for generating client classes.
+<3> Call actual JAX-WS operation.
 
 === References [[Web-Services-Integration-References]]
 
@@ -411,7 +484,7 @@ public class HelidonWSEEClient {
 
 === Overview [[SSO-Integration-Overview]]
 
-The WebLogic Server and Helidon integration on OKE enables SSO authentication to: 
+The WebLogic Server and Helidon integration on OKE enables SSO authentication to:
 
 * Access the IDCS configured client application deployed on Oracle WebLogic cluster.
 * Access the Helidon REST endpoints configured with IDCS.
