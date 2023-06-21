@@ -24,8 +24,8 @@ version = '1.0-SNAPSHOT'
 
 description = """helidon-quickstart-se"""
 
-sourceCompatibility = 17
-targetCompatibility = 17
+sourceCompatibility = 20
+targetCompatibility = 20
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
@@ -47,16 +47,16 @@ repositories {
 dependencies {
     // import Helidon BOM
     implementation enforcedPlatform("io.helidon:helidon-dependencies:${project.helidonversion}")
-    implementation 'io.helidon.reactive.webserver:helidon-reactive-webserver'
-    implementation 'io.helidon.reactive.media:helidon-reactive-media-jsonp'
+    implementation 'io.helidon.nima.webserver:helidon-nima-webserver'
+    implementation 'io.helidon.nima.http.media:helidon-nima-http-media-jsonp'
+    implementation 'io.helidon.nima.observe:helidon-nima-observe-health'
     implementation 'io.helidon.config:helidon-config-yaml'
-    implementation 'io.helidon.reactive.health:helidon-reactive-health'
     implementation 'io.helidon.health:helidon-health-checks'
-    implementation 'io.helidon.metrics:helidon-metrics'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api'
-    testImplementation 'io.helidon.reactive.webclient:helidon-reactive-webclient'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testImplementation 'io.helidon.nima.testing.junit5:helidon-nima-testing-junit5-webserver'
+    testImplementation 'io.helidon.nima.webclient:helidon-nima-webclient'
+    testImplementation 'org.hamcrest:hamcrest-all'
 }
 
 // define a custom task to copy all dependencies in the runtime classpath

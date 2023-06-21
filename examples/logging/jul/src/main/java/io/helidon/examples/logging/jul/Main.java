@@ -25,6 +25,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.HelidonMdc;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -53,6 +54,7 @@ public final class Main {
         WebServer server = WebServer.builder()
                 .port(8080)
                 .routing(Main::routing)
+                .build()
                 .start();
     }
 

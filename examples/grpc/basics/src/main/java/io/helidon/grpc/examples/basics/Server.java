@@ -69,6 +69,7 @@ public class Server {
 
         WebServer server = WebServer.builder()
                 .routing(Server::routing)
+                .build()
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port());
