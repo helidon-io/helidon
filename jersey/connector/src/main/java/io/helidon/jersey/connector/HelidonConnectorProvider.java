@@ -35,7 +35,6 @@ import org.glassfish.jersey.client.spi.ConnectorProvider;
  * <li>{@link org.glassfish.jersey.client.ClientProperties#PROXY_USERNAME}</li>
  * <li>{@link org.glassfish.jersey.client.ClientProperties#PROXY_PASSWORD}</li>
  * <li>{@link org.glassfish.jersey.client.ClientProperties#READ_TIMEOUT}</li>
- * <li>{@link HelidonProperties#CONFIG}</li>
  * </ul>
  * <p>
  * If a {@link org.glassfish.jersey.client.ClientResponse} is obtained and an
