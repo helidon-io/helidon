@@ -33,6 +33,10 @@ abstract class MpMetric<M extends Meter> implements Metric {
         return delegate;
     }
 
+    /**
+     * Returns the meter registry associated with this metric.
+     * @return the meter registry
+     */
     protected MeterRegistry meterRegistry() {
         return meterRegistry;
     }

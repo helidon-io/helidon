@@ -15,6 +15,6 @@
  */
 
 /**
- * MicroProfile metrics web feature.
+ * Implementation of MicroProfile Metrics interfaces.
  */
-package io.helidon.metrics.microprofile.feature;
+package io.helidon.metrics.microprofile;

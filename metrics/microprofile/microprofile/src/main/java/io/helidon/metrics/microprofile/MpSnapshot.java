@@ -17,6 +17,7 @@ package io.helidon.metrics.microprofile;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 
 import io.micrometer.core.instrument.distribution.HistogramSnapshot;
@@ -62,6 +63,6 @@ public class MpSnapshot extends Snapshot {
 
     @Override
     public void dump(OutputStream outputStream) {
-        delegate.outputSummary(new PrintStream(outputStream), 1);
+        delegate.outputSummary(new PrintStream(outputStream, false, Charset.defaultCharset()), 1);
     }
 }

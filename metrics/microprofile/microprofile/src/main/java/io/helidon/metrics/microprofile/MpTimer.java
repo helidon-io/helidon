@@ -23,6 +23,9 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.eclipse.microprofile.metrics.Snapshot;
 
+/**
+ * Implementation of MicroProfile metrics {@link org.eclipse.microprofile.metrics.Timer}.
+ */
 public class MpTimer extends MpMetric<Timer> implements org.eclipse.microprofile.metrics.Timer {
 
     /**
@@ -69,7 +72,16 @@ public class MpTimer extends MpMetric<Timer> implements org.eclipse.microprofile
         return new MpSnapshot(delegate().takeSnapshot());
     }
 
+    /**
+     * Implementation of MicroProfile Metrics {@link org.eclipse.microprofile.metrics.Timer.Context}.
+     */
     public class Context implements org.eclipse.microprofile.metrics.Timer.Context {
+
+        /**
+         * Used only internally.
+         */
+        private Context() {
+        }
 
         private final Timer.Sample sample = Timer.start(meterRegistry());
 

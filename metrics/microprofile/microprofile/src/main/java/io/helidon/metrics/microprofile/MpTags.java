@@ -27,6 +27,9 @@ import org.eclipse.microprofile.config.ConfigValue;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Tag;
 
+/**
+ * Tags utility class.
+ */
 class MpTags {
 
     private static final Set<String> RESERVED_TAG_NAMES = new HashSet<>();
@@ -37,10 +40,26 @@ class MpTags {
         RESERVED_TAG_NAMES.add(MpMetricRegistry.MP_SCOPE_TAG_NAME);
     }
 
+    /**
+     * Hidden constructor for utility class.
+     */
+    private MpTags() {
+    }
+
+    /**
+     * Returns the "app" value.
+     *
+     * @return the app value
+     */
     static String mpAppValue() {
         return mpAppValue;
     }
 
+    /**
+     * Returns the configuration used to prepare tags for metric IDs.
+     *
+     * @param config config used in setting tags in the IDs
+     */
     static void config(Config config) {
         ConfigValue configValue = config.getConfigValue(MpMetricRegistry.MP_APPLICATION_TAG_NAME);
         if (configValue.getValue() != null) {
@@ -48,22 +67,46 @@ class MpTags {
         }
     }
 
+    /**
+     * Converts MicroProfile tags to the underlying implementation {@link io.micrometer.core.instrument.Tags} abstraction.
+     *
+     * @param tags MicroProfile tags to convert
+     * @return underlying implementation tags abstraction
+     */
     static Tags fromMp(List<Tag> tags) {
         return Tags.of(tags.stream()
                                .map(MpTags::fromMp)
                                .toList());
     }
 
+    /**
+     * Converts MicroProfile tags to the underlying implementation {@link io.micrometer.core.instrument.Tags} abstraction.
+     *
+     * @param tags MicroProfile tags to convert
+     * @return underlying implementation tags abstraction
+     */
     static Tags fromMp(Tag... tags) {
         return Tags.of(Arrays.stream(tags).map(MpTags::fromMp).toList());
     }
 
+    /**
+     * Converts MicroProfile tags to the underlying implementation {@link io.micrometer.core.instrument.Tags} abstraction.
+     *
+     * @param tags MicroProfile tags to convert
+     * @return underlying implementation tags abstraction
+     */
     static Tags fromMp(Map<String, String> tags) {
         return tags.entrySet().stream().collect(Tags::empty,
                                          (meterTags, entry) -> meterTags.and(entry.getKey(), entry.getValue()),
                                          Tags::and);
     }
 
+    /**
+     * Converts a MicroProfile tag to the underlying implementation {@link Tags} abstraction.
+     *
+     * @param tag MicroProfile tag to convert
+     * @return underlying implementation tags abstraction
+     */
     static io.micrometer.core.instrument.Tag fromMp(Tag tag) {
         return io.micrometer.core.instrument.Tag.of(tag.getTagName(), tag.getTagValue());
     }
@@ -92,6 +135,15 @@ class MpTags {
         }
     }
 
+    /**
+     * Verifies that the candidate tag names are consistent with the specified groups of tags (typically tags previously recorded
+     * for meters with the same name).
+     *
+     * @param metricName name of the meter ID being checked (for error reporting)
+     * @param candidateTags candidate tags
+     * @param establishedTagGroups groups of tags previously established against which to check the candidates
+     * @throws java.lang.IllegalArgumentException if the candidate tags are not consistent with the established tag groups
+     */
     static void checkTagNameSetConsistency(String metricName, Set<Tag> candidateTags, Iterable<Set<Tag>> establishedTagGroups) {
         for (Set<Tag> establishedTags : establishedTagGroups) {
             if (!candidateTags.equals(establishedTags)) {
@@ -116,6 +168,12 @@ class MpTags {
         return a.getTags().keySet().equals(b.getTags().keySet());
     }
 
+    /**
+     * Checks to make sure the specified tags do not include any reserved tag names.
+     *
+     * @param tags tags to check
+     * @throws java.lang.IllegalArgumentException if any of names of the specified tags are reserved
+     */
     static void checkForReservedTags(Tag... tags) {
         if (tags != null) {
             Set<String> offendingReservedTags = null;
@@ -133,6 +191,12 @@ class MpTags {
         }
     }
 
+    /**
+     * Checks to make sure the specified tags do not include any reserved tag names.
+     *
+     * @param tagNames tag names to check
+     * @throws java.lang.IllegalArgumentException if any of names of the specified tags are reserved
+     */
     static void checkForReservedTags(Set<String> tagNames) {
         if (tagNames != null) {
             Set<String> offendingReservedTags = null;
@@ -149,5 +213,4 @@ class MpTags {
             }
         }
     }
-
 }

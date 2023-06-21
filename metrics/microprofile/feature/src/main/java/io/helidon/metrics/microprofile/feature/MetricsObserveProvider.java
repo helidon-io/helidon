@@ -20,6 +20,9 @@ import io.helidon.config.Config;
 import io.helidon.nima.observe.spi.ObserveProvider;
 import io.helidon.nima.webserver.http.HttpRouting;
 
+/**
+ * Observe provider for MP metrics.
+ */
 public class MetricsObserveProvider implements ObserveProvider {
 
     private final MpMetricsFeature feature;
@@ -38,10 +41,21 @@ public class MetricsObserveProvider implements ObserveProvider {
         this.feature = feature;
     }
 
+    /**
+     * Creates a new provider instance, also creating a new feature instance to use.
+     *
+     * @return new provider
+     */
     public static ObserveProvider create() {
         return create(MpMetricsFeature.create());
     }
 
+    /**
+     * Creates a new provider instance using an existing feature instance.
+     *
+     * @param feature feature instance the provider uses
+     * @return new provider
+     */
     public static ObserveProvider create(MpMetricsFeature feature) {
         return new MetricsObserveProvider(feature);
     }

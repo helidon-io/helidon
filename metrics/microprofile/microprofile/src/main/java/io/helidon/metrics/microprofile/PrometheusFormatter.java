@@ -37,11 +37,19 @@ import io.prometheus.client.exporter.common.TextFormat;
  * </p>
  */
 public class PrometheusFormatter {
+    /**
+     * Mapping from supported media types to the corresponding Prometheus registry content types.
+     */
     public static final Map<MediaType, String> MEDIA_TYPE_TO_FORMAT = Map.of(MediaTypes.TEXT_PLAIN,
                                                                              TextFormat.CONTENT_TYPE_004,
                                                                              MediaTypes.APPLICATION_OPENMETRICS_TEXT,
                                                                              TextFormat.CONTENT_TYPE_OPENMETRICS_100);
 
+    /**
+     * Returns a new builder for constructing a formatter.
+     *
+     * @return new builder
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -59,6 +67,12 @@ public class PrometheusFormatter {
         resultMediaType = builder.resultMediaType;
     }
 
+    /**
+     * Returns the Prometheus output governed by the previously-specified media type, optionally filtered
+     * by the previously-specified scope and meter name.
+     *
+     * @return filtered Prometheus output
+     */
     public String filteredOutput() {
         return formattedOutput(MpRegistryFactory.get().prometheusMeterRegistry(),
                                resultMediaType,
@@ -66,7 +80,17 @@ public class PrometheusFormatter {
                                meterSelection);
     }
 
-    static String formattedOutput(PrometheusMeterRegistry prometheusMeterRegistry,
+    /**
+     * Retrieves the Prometheus-format report from the specified registry, according to the specified media type,
+     * filtered by the specified scope and meter name, and returns the filtered Prometheus-format output.
+     *
+     * @param prometheusMeterRegistry registry to query
+     * @param resultMediaType media type which controls the exact output format
+     * @param scopeSelection scope to select; null if no scope selection required
+     * @param meterNameSelection meter name to select; null if no meter name selection required
+     * @return filtered output
+     */
+    String formattedOutput(PrometheusMeterRegistry prometheusMeterRegistry,
                                   MediaType resultMediaType,
                                   String scopeSelection,
                                   String meterNameSelection) {
@@ -74,11 +98,21 @@ public class PrometheusFormatter {
                 .scrape(PrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(resultMediaType),
                         meterNamesOfInterest(prometheusMeterRegistry, meterNameSelection));
 
-        return filter(rawPrometheusOutput, scopeSelection, meterNameSelection);
-
+        return filter(rawPrometheusOutput, scopeSelection);
     }
 
-    static String filter(String output, String scope, String meterName) {
+    /**
+     * Filter the Prometheus-format report by the specified scope.
+     *
+     * @param output Prometheus-format report
+     * @param scope scope to filter; null means no filtering by scope
+     * @return output filtered by scope (if specified)
+     */
+    static String filter(String output, String scope) {
+        if (scope == null) {
+            return output;
+        }
+
         /*
          * Output looks like repeating sections of this:
          *
@@ -93,9 +127,7 @@ public class PrometheusFormatter {
          * Then, once we have the line containing the actual meter ID, if that line matches the selection
          * add the previously-gathered help and type and the meter line to the output.
          */
-        Pattern scopePattern = scope != null
-                ? Pattern.compile(".*?\\{.*?mp_scope=\"" + scope + "\".*?}.*?")
-                : null;
+        Pattern scopePattern = Pattern.compile(".*?\\{.*?mp_scope=\"" + scope + "\".*?}.*?");
 
         StringBuilder allOutput = new StringBuilder();
         StringBuilder typeAndHelpOutputForCurrentMeter = new StringBuilder();
@@ -112,7 +144,7 @@ public class PrometheusFormatter {
             } else if (line.startsWith(PROMETHEUS_TYPE_PREFIX)) {
                 typeAndHelpOutputForCurrentMeter.append(line)
                         .append(System.lineSeparator());
-            } else if (scopePattern == null || scopePattern.matcher(line).matches()) {
+            } else if (scopePattern.matcher(line).matches()) {
                 meterOutputForCurrentMeter.append(line)
                         .append(System.lineSeparator());
             }
@@ -120,7 +152,6 @@ public class PrometheusFormatter {
         return allOutput.append(flushForMeterAndClear(typeAndHelpOutputForCurrentMeter, meterOutputForCurrentMeter))
                 .toString()
                 .replaceFirst("# EOF\r?\n?", "");
-
     }
 
     private static String flushForMeterAndClear(StringBuilder helpAndType, StringBuilder metricData) {
@@ -134,6 +165,14 @@ public class PrometheusFormatter {
         return result.toString();
     }
 
+    /**
+     * Prepares a set containing the names of meters from the specified Prometheus meter registry which match
+     * the specified meter name selection.
+     *
+     * @param prometheusMeterRegistry Prometheus meter registry to query
+     * @param meterNameSelection meter name to select
+     * @return set of matching meter names
+     */
     static Set<String> meterNamesOfInterest(PrometheusMeterRegistry prometheusMeterRegistry,
                                             String meterNameSelection) {
         if (meterNameSelection == null || meterNameSelection.isEmpty()) {
@@ -163,6 +202,12 @@ public class PrometheusFormatter {
         return result;
     }
 
+    /**
+     * Returns the Prometheus-format meter name suffixes for the given meter type.
+     *
+     * @param meterType {@link io.micrometer.core.instrument.Meter.Type} of interest
+     * @return suffixes used in reporting the corresponding meter's value(s)
+     */
     static Set<String> meterNameSuffixes(Meter.Type meterType) {
         return switch (meterType) {
             case COUNTER -> Set.of("_total");
@@ -194,27 +239,54 @@ public class PrometheusFormatter {
         return result;
     }
 
+    /**
+     * Builder for creating a tailored Prometheus formatter.
+     */
     public static class Builder implements io.helidon.common.Builder<Builder, PrometheusFormatter> {
 
         private String meterNameSelection;
         private String scopeSelection;
         private MediaType resultMediaType = MediaTypes.TEXT_PLAIN;
 
+        /**
+         * Used only internally.
+         */
+        private Builder() {
+        }
+
         @Override
         public PrometheusFormatter build() {
             return new PrometheusFormatter(this);
         }
 
-        public Builder meterName(String filter) {
-            meterNameSelection = filter;
+        /**
+         * Sets the meter name with which to filter the output.
+         *
+         * @param meterName meter name to select
+         * @return updated builder
+         */
+        public Builder meterName(String meterName) {
+            meterNameSelection = meterName;
             return identity();
         }
 
-        public Builder scope(String filter) {
-            scopeSelection = filter;
+        /**
+         * Sets the scope value with which to filter the output.
+         *
+         * @param scope scope to select
+         * @return updated builder
+         */
+        public Builder scope(String scope) {
+            scopeSelection = scope;
             return identity();
         }
 
+        /**
+         * Sets the {@link io.helidon.common.media.type.MediaType} which controls the formatting of the resulting output.
+         *
+         * @param resultMediaType media type
+         * @return updated builder
+         */
         public Builder resultMediaType(MediaType resultMediaType) {
             this.resultMediaType = resultMediaType;
             return identity();

@@ -20,6 +20,9 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Snapshot;
 
+/**
+ * Implementation of the MicroProfile Metrics {@link org.eclipse.microprofile.metrics.Histogram}.
+ */
 public class MpHistogram extends MpMetric<DistributionSummary> implements Histogram {
 
     /**

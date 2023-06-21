@@ -27,17 +27,38 @@ import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
+/**
+ * MP metrics feature implementation.
+ */
 public class MpMetricsFeature extends HelidonFeatureSupport {
 
     private static final System.Logger LOGGER = System.getLogger(MpMetricsFeature.class.getName());
 
+    /**
+     * Creates a new builder for the MP metrics feature.
+     *
+     * @return new builder
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Creates a new default MP metrics feature.
+     *
+     * @return newly-created feature
+     */
     public static MpMetricsFeature create() {
         return builder().build();
     }
+
+    /**
+     * Create a new instance.
+     *
+     * @param logger logger for the feature
+     * @param builder builder to use
+     * @param serviceName name of the service
+     */
     protected MpMetricsFeature(System.Logger logger, Builder builder, String serviceName) {
         super(logger, builder, serviceName);
     }
@@ -60,7 +81,7 @@ public class MpMetricsFeature extends HelidonFeatureSupport {
     }
 
     private void configureDisabledRoutes(HttpRules rules) {
-        rules.get("/",this::prepareDisabledResponse);
+        rules.get("/", this::prepareDisabledResponse);
     }
 
     private void prepareDisabledResponse(ServerRequest req, ServerResponse resp) {
@@ -106,6 +127,9 @@ public class MpMetricsFeature extends HelidonFeatureSupport {
         return req.query().first("name");
     }
 
+    /**
+     * Builder for the MP metrics feature.
+     */
     public static class Builder extends HelidonFeatureSupport.Builder<Builder, MpMetricsFeature> {
 
         private static final String DEFAULT_WEB_CONTEXT = "/metrics";

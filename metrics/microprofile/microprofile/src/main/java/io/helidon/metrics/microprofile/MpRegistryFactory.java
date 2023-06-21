@@ -25,20 +25,42 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
+/**
+ * Factory class for finding existing or creating new metric registries.
+ */
 public class MpRegistryFactory {
 
+    /**
+     * Scope name for the application metric registry.
+     */
     public static final String APPLICATION_SCOPE = "application";
+
+    /**
+     * Scope name for the base metric registry.
+     */
     public static final String BASE_SCOPE = "base";
+
+    /**
+     * Scope name for the vendor metric registry.
+     */
     public static final String VENDOR_SCOPE = "vendor";
+
+    /**
+     * Config key suffix for distribution summary (histogram) precision.
+     */
     public static final String HISTOGRAM_PRECISION_CONFIG_KEY_SUFFIX = "helidon.distribution-summary.precision";
+
+    /**
+     * Config key suffix for timer precision.
+     */
     public static final String TIMER_PRECISION_CONFIG_KEY_SUFFIX = "helidon.timer.precision";
 
     private static final int HISTOGRAM_PRECISION_DEFAULT = 3;
     private static final int TIMER_PRECISION_DEFAULT = 3;
 
-    private static MpRegistryFactory INSTANCE;
+    private static MpRegistryFactory instance;
 
-    private static final ReentrantLock lock = new ReentrantLock();
+    private static final ReentrantLock LOCK = new ReentrantLock();
     private final Exception creation;
 
     private Config mpConfig;
@@ -47,32 +69,81 @@ public class MpRegistryFactory {
     private final int distributionSummaryPrecision;
     private final int timerPrecision;
 
-
+    /**
+     * Creates a new registry factory using the specified MicroProfile configuration.
+     *
+     * @param mpConfig the MicroProfile config to use in preparing the registry factory
+     * @return registry factory
+     */
     public static MpRegistryFactory create(Config mpConfig) {
-        lock.lock();
+        LOCK.lock();
         try {
-            if (INSTANCE == null) {
-                INSTANCE = new MpRegistryFactory(mpConfig);
-                return INSTANCE;
+            if (instance == null) {
+                instance = new MpRegistryFactory(mpConfig);
+                return instance;
             } else {
-                throw new IllegalStateException("Attempt to set up MpRegistryFactory multiple times; previous invocation follows: ",
-                                                INSTANCE.creation);
+                throw new IllegalStateException(
+                        "Attempt to set up MpRegistryFactory multiple times; previous invocation follows: ",
+                        instance.creation);
             }
         } finally {
-            lock.unlock();
+            LOCK.unlock();
         }
     }
 
+    /**
+     * Returns the singleton registry factory, creating it if needed.
+     *
+     * @return the registry factory
+     */
     public static MpRegistryFactory get() {
-        lock.lock();
+        LOCK.lock();
         try {
-            if (INSTANCE == null) {
-                INSTANCE = new MpRegistryFactory(ConfigProvider.getConfig());
+            if (instance == null) {
+                instance = new MpRegistryFactory(ConfigProvider.getConfig());
             }
-            return INSTANCE;
+            return instance;
         } finally {
-            lock.unlock();
+            LOCK.unlock();
         }
+    }
+
+    /**
+     * Returns the {@link org.eclipse.microprofile.metrics.MetricRegistry} for the specified scope.
+     *
+     * @param scope scope for the meter registry to get or create
+     * @return previously-existing or newly-created {@code MeterRegistry} for the specified scope
+     */
+    public MetricRegistry registry(String scope) {
+        return registries.computeIfAbsent(scope,
+                                                   s -> MpMetricRegistry.create(s, Metrics.globalRegistry));
+    }
+
+    /**
+     * Returns the Prometheus meter registry known to the registry factory.
+     *
+     * @return Prometheus meter registry
+     */
+    public PrometheusMeterRegistry prometheusMeterRegistry() {
+        return prometheusMeterRegistry;
+    }
+
+    /**
+     * Returns the precision for use with distribution summaries.
+     *
+     * @return distribution summary precision
+     */
+    int distributionSummaryPrecision() {
+        return distributionSummaryPrecision;
+    }
+
+    /**
+     * Returns the precision for use with timers.
+     *
+     * @return timer precision
+     */
+    int timerPrecision() {
+        return timerPrecision;
     }
 
     private MpRegistryFactory(Config mpConfig) {
@@ -87,23 +158,6 @@ public class MpRegistryFactory {
         registries.put(BASE_SCOPE, BaseRegistry.create(Metrics.globalRegistry));
         registries.put(VENDOR_SCOPE, MpMetricRegistry.create(VENDOR_SCOPE, Metrics.globalRegistry));
 
-    }
-
-    public MetricRegistry registry(String scope) {
-        return registries.computeIfAbsent(scope,
-                                                   s -> MpMetricRegistry.create(s, Metrics.globalRegistry));
-    }
-
-    public PrometheusMeterRegistry prometheusMeterRegistry() {
-        return prometheusMeterRegistry;
-    }
-
-    int distributionSummaryPrecision() {
-        return distributionSummaryPrecision;
-    }
-
-    int timerPrecision() {
-        return timerPrecision;
     }
 
     private PrometheusMeterRegistry findOrAddPrometheusRegistry() {

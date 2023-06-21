@@ -53,7 +53,7 @@ abstract class MpGauge<N extends Number> extends MpMetric<Gauge> implements org.
     static <N extends Number> SupplierBased<N> create(Supplier<N> supplier,
                                                             Gauge delegate,
                                                             MeterRegistry meterRegistry) {
-        return new SupplierBased<>(supplier,delegate,meterRegistry);
+        return new SupplierBased<>(supplier, delegate, meterRegistry);
     }
 
     static class FunctionBased<N extends Number, T> extends MpGauge<N> {
