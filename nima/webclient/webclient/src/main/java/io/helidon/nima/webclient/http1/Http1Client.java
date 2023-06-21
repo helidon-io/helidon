@@ -81,11 +81,12 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
         }
 
         @Override
-        public Http1Client build() {
+        public Http1Client doBuild() {
             configBuilder.defaultHeaders(defaultHeaders());
             if (mediaContextBuilder != null) {
                 configBuilder.mediaContext(mediaContextBuilder.fallback(configBuilder.mediaContext()).build());
             }
+            configBuilder.socketOptions(super.channelOptions());
             return new Http1ClientImpl(configBuilder.build());
         }
 

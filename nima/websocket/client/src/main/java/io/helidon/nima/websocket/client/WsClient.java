@@ -82,7 +82,7 @@ public interface WsClient extends WebClient {
         }
 
         @Override
-        public WsClient build() {
+        public WsClient doBuild() {
             // these headers cannot be modified by user
             header(HEADER_UPGRADE_WS);
             header(HEADER_WS_VERSION);
