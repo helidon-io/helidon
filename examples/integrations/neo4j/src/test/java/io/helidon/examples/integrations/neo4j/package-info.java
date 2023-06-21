@@ -14,27 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
-import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
-
 /**
- * Neo4j support module.
+ * Tests for Helidon Integrations Neo4j Example.
  */
-@Preview
-@Feature(value = "Neo4j integration",
-         description = "Integration with Neo4j driver",
-         in = {HelidonFlavor.MP, HelidonFlavor.NIMA},
-         invalidIn = HelidonFlavor.SE,
-         path = "Neo4j"
-)
-module io.helidon.integrations.neo4j {
-    requires java.logging;
-
-    requires static io.helidon.common.features.api;
-    requires static io.helidon.config;
-
-    requires org.neo4j.driver;
-
-    exports io.helidon.integrations.neo4j;
-}
+package io.helidon.examples.integrations.neo4j;

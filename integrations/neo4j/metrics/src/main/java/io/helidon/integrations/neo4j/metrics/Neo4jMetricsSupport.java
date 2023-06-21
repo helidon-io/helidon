@@ -54,6 +54,7 @@ public class Neo4jMetricsSupport {
     private final LazyValue<MetricRegistry> metricRegistry;
     private final Driver driver;
 
+    @SuppressWarnings("removal")
     private Neo4jMetricsSupport(Builder builder) {
         this.driver = builder.driver;
         // Assuming for the moment that VENDOR is the correct registry to use.
