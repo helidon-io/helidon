@@ -36,6 +36,7 @@ import com.github.tomakehurst.wiremock.extension.ResponseTransformer;
 import com.github.tomakehurst.wiremock.http.HttpHeader;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.matching.EqualToPattern;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -52,74 +53,73 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.JerseyCompletionStageRxInvoker;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 
 public class BasicRequestTest extends AbstractTest {
-    private static BasicResource basicResource = new BasicResource();
+
+    private static final BasicResource basicResource = new BasicResource();
 
     @BeforeAll
     public static void setup() {
-        AbstractTest.extensions.set(new Extension[] {
+        Extension[] extensions = new Extension[]{
                 new HeadersSetter(), new ContentLengthSetter()
-        });
-
-        AbstractTest.rules.set(() -> {
-            wireMock.stubFor(
+        };
+        Rules rules = () -> {
+            wireMockServer.stubFor(
                     WireMock.get(WireMock.urlEqualTo("/basic/get")).willReturn(
                             WireMock.ok(basicResource.get())
                     )
             );
 
-            wireMock.stubFor(
+            wireMockServer.stubFor(
                     WireMock.get(WireMock.urlEqualTo("/basic/getquery?first=hello&second=world"))
                             .willReturn(WireMock.ok(basicResource.getQuery("hello", "world")))
             );
 
-            wireMock.stubFor(
+            wireMockServer.stubFor(
                     WireMock.post(WireMock.urlEqualTo("/basic/post"))
                             .withRequestBody(new EqualToPattern("ok"))
                             .willReturn(WireMock.ok(basicResource.post("ok")))
             );
 
-            wireMock.stubFor(
+            wireMockServer.stubFor(
                     WireMock.post(WireMock.urlEqualTo("/basic/post"))
                             .withRequestBody(new EqualToPattern("ok"))
                             .willReturn(WireMock.ok(basicResource.post("ok")))
             );
 
-            wireMock.stubFor(
+            wireMockServer.stubFor(
                     WireMock.get(WireMock.urlEqualTo("/basic/headers")).willReturn(
                             WireMock.ok().withTransformers("response-headers-setter")
                     )
             );
 
-            wireMock.stubFor(
+            wireMockServer.stubFor(
                     WireMock.put(WireMock.urlEqualTo("/basic/produces/consumes"))
                             .withHeader(HttpHeaders.ACCEPT, new EqualToPattern("test/z-test"))
                             .willReturn(WireMock.status(406))
             );
 
-            wireMock.stubFor(
+            wireMockServer.stubFor(
                     WireMock.put(WireMock.urlEqualTo("/basic/produces/consumes"))
                             .withHeader(HttpHeaders.CONTENT_TYPE, new EqualToPattern("test/z-test"))
                             .willReturn(WireMock.status(415))
             );
 
-            wireMock.stubFor(
+            wireMockServer.stubFor(
                     WireMock.put(WireMock.urlEqualTo("/basic/produces/consumes"))
                             .withHeader(HttpHeaders.CONTENT_TYPE, new EqualToPattern("test/x-test"))
                             .withHeader(HttpHeaders.ACCEPT, new EqualToPattern("test/y-test"))
                             .willReturn(WireMock.ok(basicResource.putConsumesProduces("ok"))
                                     .withHeader(HttpHeaders.CONTENT_TYPE, "test/y-test"))
             );
-        });
-
-        AbstractTest.setup();
+        };
+        setup(rules, extensions);
     }
 
     @Path("basic")
@@ -163,26 +163,26 @@ public class BasicRequestTest extends AbstractTest {
         }
     }
 
-    @ParamTest
-    public void testBasicGet(String entityType) {
-        try (Response response = target("basic", entityType).path("get").request().get()) {
+    @Test
+    public void testBasicGet() {
+        try (Response response = target("basic").path("get").request().get()) {
             assertThat(response.getStatus(), is(200));
             assertThat(response.readEntity(String.class), is("ok"));
         }
     }
 
-    @ParamTest
-    public void testBasicPost(String entityType) {
-        try (Response response = target("basic", entityType).path("post").request()
+    @Test
+    public void testBasicPost() {
+        try (Response response = target("basic").path("post").request()
                 .buildPost(Entity.entity("ok", MediaType.TEXT_PLAIN_TYPE)).invoke()) {
             assertThat(response.getStatus(), is(200));
             assertThat(response.readEntity(String.class), is("okok"));
         }
     }
 
-    @ParamTest
-    public void queryGetTest(String entityType) {
-        try (Response response = target("basic", entityType).path("getquery")
+    @Test
+    public void queryGetTest() {
+        try (Response response = target("basic").path("getquery")
                 .queryParam("first", "hello")
                 .queryParam("second", "world")
                 .request().get()) {
@@ -191,12 +191,12 @@ public class BasicRequestTest extends AbstractTest {
         }
     }
 
-    @ParamTest
-    public void testHeaders(String entityType) {
+    @Test
+    public void testHeaders() {
         String[][] headers = new String[][]{{"X-TEST-ONE", "ONE"}, {"X-TEST-TWO", "TWO"}, {"X-TEST-THREE", "THREE"}};
         MultivaluedHashMap<String, Object> map = new MultivaluedHashMap<>();
         Arrays.stream(headers).forEach(a -> map.add(a[0], a[1]));
-        try (Response response = target("basic", entityType).path("headers").request().headers(map).get()) {
+        try (Response response = target("basic").path("headers").request().headers(map).get()) {
             assertThat(response.getStatus(), is(200));
             assertThat(response.readEntity(String.class), is("ok"));
             for (int i = 0; i != headers.length; i++) {
@@ -206,14 +206,14 @@ public class BasicRequestTest extends AbstractTest {
         }
     }
 
-    @ParamTest
-    public void testProduces(String entityType) {
-        try (Response response = target("basic", entityType).path("produces/consumes").request("test/z-test")
+    @Test
+    public void testProduces() {
+        try (Response response = target("basic").path("produces/consumes").request("test/z-test")
                 .put(Entity.entity("ok", new MediaType("test", "x-test")))) {
             assertThat(response.getStatus(), is(406));
         }
 
-        try (Response response = target("basic", entityType).path("produces/consumes").request("test/y-test")
+        try (Response response = target("basic").path("produces/consumes").request("test/y-test")
                 .put(Entity.entity("ok", new MediaType("test", "x-test")))) {
             assertThat(response.getStatus(), is(200));
             assertThat(response.readEntity(String.class), is("okok"));
@@ -221,23 +221,23 @@ public class BasicRequestTest extends AbstractTest {
         }
     }
 
-    @ParamTest
-    public void testAsyncGet(String entityType) throws ExecutionException, InterruptedException {
-        Future<Response> futureResponse = target("basic", entityType).path("get").request().async().get();
+    @Test
+    public void testAsyncGet() throws ExecutionException, InterruptedException {
+        Future<Response> futureResponse = target("basic").path("get").request().async().get();
         try (Response response = futureResponse.get()) {
             assertThat(response.getStatus(), is(200));
             assertThat(response.readEntity(String.class), is("ok"));
         }
     }
 
-    @ParamTest
-    public void testConsumes(String entityType) {
-        try (Response response = target("basic", entityType).path("produces/consumes").request("test/y-test")
+    @Test
+    public void testConsumes() {
+        try (Response response = target("basic").path("produces/consumes").request("test/y-test")
                 .put(Entity.entity("ok", new MediaType("test", "z-test")))) {
             assertThat(response.getStatus(), is(415));
         }
 
-        try (Response response = target("basic", entityType).path("produces/consumes").request("test/y-test")
+        try (Response response = target("basic").path("produces/consumes").request("test/y-test")
                 .put(Entity.entity("ok", new MediaType("test", "x-test")))) {
             assertThat(response.getStatus(), is(200));
             assertThat(response.readEntity(String.class), is("okok"));
@@ -245,11 +245,10 @@ public class BasicRequestTest extends AbstractTest {
         }
     }
 
-    @ParamTest
-    public void testRxGet(String entityType) throws ExecutionException, InterruptedException {
-        @SuppressWarnings("unchecked")
-        final CompletableFuture<Response> futureResponse =
-                target("basic", entityType).path("get").request().rx(JerseyCompletionStageRxInvoker.class).get();
+    @Test
+    public void testRxGet() throws ExecutionException, InterruptedException {
+        @SuppressWarnings("unchecked") final CompletableFuture<Response> futureResponse =
+                target("basic").path("get").request().rx(JerseyCompletionStageRxInvoker.class).get();
 
         try (Response response = futureResponse.get()) {
             assertThat(response.getStatus(), is(200));
@@ -257,13 +256,13 @@ public class BasicRequestTest extends AbstractTest {
         }
     }
 
-    @ParamTest
-    public void testInputStreamEntity(String entityType) throws IOException {
-        try (Response response = target("basic", entityType).path("get").request().get()) {
+    @Test
+    public void testInputStreamEntity() throws IOException {
+        try (Response response = target("basic").path("get").request().get()) {
             assertThat(response.getStatus(), is(200));
             final InputStream is = response.readEntity(InputStream.class);
-            assertThat(is.read(), is((int)('o')));
-            assertThat(is.read(), is((int)('k')));
+            assertThat(is.read(), is((int) ('o')));
+            assertThat(is.read(), is((int) ('k')));
             is.close();
         }
     }
@@ -302,7 +301,7 @@ public class BasicRequestTest extends AbstractTest {
                 @Override
                 public List<MediaType> getAcceptableMediaTypes() {
                     String accept = request.getHeader(HttpHeaders.ACCEPT);
-                    String [] splitAccept = accept.split("/");
+                    String[] splitAccept = accept.split("/");
                     return Collections.singletonList(new MediaType(splitAccept[0], splitAccept[1]));
                 }
 
@@ -315,7 +314,7 @@ public class BasicRequestTest extends AbstractTest {
                 @Override
                 public MediaType getMediaType() {
                     String content = request.getHeader(HttpHeaders.CONTENT_TYPE);
-                    String [] splitContent = content.split("/");
+                    String[] splitContent = content.split("/");
                     return new MediaType(splitContent[0], splitContent[1]);
                 }
 

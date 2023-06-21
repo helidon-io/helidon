@@ -31,13 +31,15 @@ import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AsyncRequestTest extends AbstractTest {
 
-    private static AsyncResource asyncResource = new AsyncResource();
+    private static final AsyncResource asyncResource = new AsyncResource();
 
     @Path("async")
     public static class AsyncResource {
@@ -71,38 +73,35 @@ public class AsyncRequestTest extends AbstractTest {
 
     @BeforeAll
     public static void setup() {
-        final UncachedStringMethodExecutor executor = new UncachedStringMethodExecutor(asyncResource::longGet);
+        UncachedStringMethodExecutor executor = new UncachedStringMethodExecutor(asyncResource::longGet);
 
-        AbstractTest.extensions.set(new Extension[] {
+        Extension[] extensions = new Extension[]{
                 executor,
                 new ContentLengthSetter()
-        });
-
-        AbstractTest.rules.set(
-                () -> {
-                    wireMock.stubFor(
+        };
+        Rules rules = () -> {
+                    wireMockServer.stubFor(
                             WireMock.get(WireMock.urlEqualTo("/async/reset")).willReturn(
                                     WireMock.ok(asyncResource.reset()).withStatus(204)
                             )
                     );
-                    wireMock.stubFor(
+                    wireMockServer.stubFor(
                             WireMock.get(WireMock.urlEqualTo("/async/short")).willReturn(
                                     WireMock.ok(asyncResource.shortGet())
                             )
                     );
-                    wireMock.stubFor(
+                    wireMockServer.stubFor(
                             WireMock.get(WireMock.urlEqualTo("/async/long")).willReturn(
                                     WireMock.ok().withTransformers(executor.getName())
                             )
                     );
-                });
-
-        AbstractTest.setup();
+                };
+        setup(rules, extensions);
     }
 
-    @ParamTest
-    public void testTwoClientsAsync(String entityType) throws ExecutionException, InterruptedException {
-        try (Response resetResponse = target("async", entityType).path("reset").request().get()) {
+    @Test
+    public void testTwoClientsAsync() throws ExecutionException, InterruptedException {
+        try (Response resetResponse = target("async").path("reset").request().get()) {
             assertThat(resetResponse.getStatus(), is(204));
         }
 

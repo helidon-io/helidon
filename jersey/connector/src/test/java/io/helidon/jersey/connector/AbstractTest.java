@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.jersey.connector;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -31,34 +29,25 @@ import com.github.tomakehurst.wiremock.extension.ResponseTransformer;
 import com.github.tomakehurst.wiremock.http.HttpHeader;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.Response;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
+
 import org.glassfish.jersey.client.ClientConfig;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 public abstract class AbstractTest {
 
-    protected static WireMockServer wireMock;
-    protected static ThreadLocal<Rules> rules = new ThreadLocal<>();
-    protected static ThreadLocal<Extension []> extensions = new ThreadLocal<>();
+    protected static WireMockServer wireMockServer;
 
     // The port to match wiremock port in MP Rest Client TCK
     protected static final int PORT = 8765;
 
     protected WebTarget target(String uri) {
-        return target(uri, null);
-    }
-
-    protected WebTarget target(String uri, String entityType) {
         final ClientConfig config = new ClientConfig();
         config.connectorProvider(new HelidonConnectorProvider());
-        if (entityType != null) {
-            config.property(HelidonConnector.INTERNAL_ENTITY_TYPE, entityType);
-        }
         final Client client = ClientBuilder.newClient(config);
         return client.target(getBaseUri()).path(uri);
     }
@@ -67,23 +56,22 @@ public abstract class AbstractTest {
         return "http://localhost:" + PORT;
     }
 
-    public static void setup() {
-        wireMock = new WireMockServer(
+    protected static void setup(Rules rules, Extension[] extensions) {
+        wireMockServer = new WireMockServer(
                             WireMockConfiguration.options()
-                                .extensions(extensions.get())
+                                .extensions(extensions)
                                 // debug logging
                                 // .notifier(new ConsoleNotifier(true))
                                 .port(PORT)
         );
-        rules.get().addRules();
-
-        wireMock.start();
+        rules.addRules();
+        wireMockServer.start();
     }
 
     @AfterAll
     public static void tearDown() {
-        wireMock.shutdown();
-        while(wireMock.isRunning()) {
+        wireMockServer.shutdown();
+        while (wireMockServer.isRunning()) {
             try {
                 Thread.sleep(100L);
             } catch (InterruptedException e) {
@@ -92,15 +80,9 @@ public abstract class AbstractTest {
         }
     }
 
-    @Retention(RetentionPolicy.RUNTIME)
-    @ParameterizedTest
-    @ValueSource(strings = { "BYTE_ARRAY_OUTPUT_STREAM", "READABLE_BYTE_CHANNEL", "OUTPUT_STREAM_MULTI" })
-    @interface ParamTest { }
-
     protected interface Rules {
         void addRules();
     }
-
 
     protected static class ContentLengthSetter extends ResponseTransformer {
         @Override
@@ -152,7 +134,8 @@ public abstract class AbstractTest {
                 builder = builder.body(String.valueOf(original.getEntity()));
             }
 
-            com.github.tomakehurst.wiremock.http.HttpHeaders newHeaders = com.github.tomakehurst.wiremock.http.HttpHeaders.noHeaders();
+            com.github.tomakehurst.wiremock.http.HttpHeaders newHeaders =
+                    com.github.tomakehurst.wiremock.http.HttpHeaders.noHeaders();
             for (Map.Entry<String, List<String>> entry : original.getStringHeaders().entrySet()) {
                 if (jakarta.ws.rs.core.HttpHeaders.LOCATION.equals(entry.getKey())) {
                     newHeaders = newHeaders.plus(
@@ -160,7 +143,7 @@ public abstract class AbstractTest {
                     );
                 } else {
                     newHeaders = newHeaders.plus(
-                            HttpHeader.httpHeader(entry.getKey(), entry.getValue().toArray(new String[entry.getValue().size()]))
+                            HttpHeader.httpHeader(entry.getKey(), entry.getValue().toArray(new String[0]))
                     );
                 }
             }

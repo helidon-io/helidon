@@ -66,38 +66,29 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class LargeDataTest extends AbstractTest {
 
-    private static final String ENTITY_NAME = HelidonEntity.HelidonEntityType.READABLE_BYTE_CHANNEL.name();
-
     private static final int LONG_DATA_SIZE = 100_000;  // for large set around 5GB, try e.g.: 536_870_912;
     private static volatile Throwable exception;
-    private static LongDataReceiver receiver = new LongDataReceiver();
+    private static final LongDataReceiver receiver = new LongDataReceiver();
 
     @BeforeAll
     public static void setup() {
-        AbstractTest.extensions.set(new Extension[] {
+        Extension[] extensions = new Extension[] {
                 receiver, new ContentLengthSetter()
-        });
-
-        AbstractTest.rules.set(
-                () -> wireMock.stubFor(
+        };
+        Rules rules = () -> wireMockServer.stubFor(
                         WireMock.any(WireMock.anyUrl()).willReturn(
-                                WireMock.ok()
-                        )
-                )
-        );
-
-        AbstractTest.setup();
+                                WireMock.ok()));
+        setup(rules, extensions);
     }
 
     @AfterAll
     public static void tearDown() {
         receiver.close();
-
         AbstractTest.tearDown();
     }
 
-    protected WebTarget target(String uri, String entityType) {
-        WebTarget target = super.target(uri, entityType);
+    protected WebTarget target(String uri) {
+        WebTarget target = super.target(uri);
         target.property(ClientProperties.READ_TIMEOUT, (int) TimeUnit.MINUTES.toMillis(1L));
         return target;
     }
@@ -105,11 +96,10 @@ public class LargeDataTest extends AbstractTest {
     @Test
     public void postWithLargeData() throws Throwable {
         long milis = System.currentTimeMillis();
-        WebTarget webTarget = target("test", ENTITY_NAME);
+        WebTarget webTarget = target("test");
 
-        Response response = webTarget.request().post(Entity.entity(longData(LONG_DATA_SIZE), MediaType.TEXT_PLAIN_TYPE));
-
-        try {
+        try (Response response = webTarget.request().post(Entity.entity(longData(LONG_DATA_SIZE),
+                MediaType.TEXT_PLAIN_TYPE))) {
             if (exception != null) {
 
                 // the reason to throw the exception is that IntelliJ gives you an option to compare the expected with the actual
@@ -119,9 +109,7 @@ public class LargeDataTest extends AbstractTest {
             assertThat("Unexpected error: " + response.getStatus(),
                     response.getStatusInfo().getFamily(),
                     is(Response.Status.Family.SUCCESSFUL)
-                    );
-        } finally {
-            response.close();
+            );
         }
         if (LONG_DATA_SIZE > 9_999) {
             System.out.println("Large Data Test took " + (System.currentTimeMillis() - milis) + "milis");
@@ -162,9 +150,6 @@ public class LargeDataTest extends AbstractTest {
                 try {
                     longData(LONG_DATA_SIZE).write(new OutputStream() {
 
-                        private long position = 0;
-                        //                    private long mbRead = 0;
-
                         @Override
                         public void write(final int generated) throws IOException {
                             int received = 0;
@@ -175,17 +160,11 @@ public class LargeDataTest extends AbstractTest {
                             }
 
                             if (received != generated) {
+                                long position = 0;
                                 throw new IOException("Bytes don't match at position " + position
                                         + ": received=" + received
                                         + ", generated=" + generated);
                             }
-
-                            //                        position++;
-                            //                        System.out.println("position" + position);
-                            //                        if (position % (1024 * 1024) == 0) {
-                            //                            mbRead++;
-                            //                            System.out.println("MB read: " + mbRead);
-                            //                        }
                         }
                     });
 
