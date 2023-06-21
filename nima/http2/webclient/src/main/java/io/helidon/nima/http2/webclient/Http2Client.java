@@ -129,7 +129,7 @@ public interface Http2Client extends HttpClient<Http2ClientRequest, Http2ClientR
         }
 
         @Override
-        public Http2Client build() {
+        public Http2Client doBuild() {
             return new Http2ClientImpl(this);
         }
 
