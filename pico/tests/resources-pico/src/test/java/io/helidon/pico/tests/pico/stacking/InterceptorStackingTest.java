@@ -74,7 +74,7 @@ class InterceptorStackingTest {
                 })
                 .toList();
         // order matters here
-        // TODO this is currently broken
+        // this is currently broken, a follow-up issue was created as part of epic #7023
         /*
         assertThat(injections,
                    contains("MostOuterInterceptedImpl injected with OuterInterceptedImpl",

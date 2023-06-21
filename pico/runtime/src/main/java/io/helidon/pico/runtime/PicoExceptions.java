@@ -16,6 +16,8 @@
 
 package io.helidon.pico.runtime;
 
+import java.util.Objects;
+
 import io.helidon.pico.api.CallingContext;
 
 import static io.helidon.pico.api.PicoServicesHolder.DEBUG_HINT;
@@ -35,20 +37,24 @@ public final class PicoExceptions {
      * @param msg            the base message to display
      * @return the message appropriate for any exception being thrown
      */
-    public static String toErrorMessage(CallingContext callingContext,
-                                 String msg) {
+    public static String toErrorMessage(CallingContext callingContext, String msg) {
+        Objects.requireNonNull(callingContext);
+        Objects.requireNonNull(msg);
+
         return msg + " - previous calling context: " + callingContext;
     }
 
     /**
      * Convenience method for producing an error message that may involve advising the user to apply a debug mode. Use
-     * {@link #toErrorMessage(io.helidon.pico.api.CallingContext, String)} iinstead f a calling context is available.
+     * {@link #toErrorMessage(io.helidon.pico.api.CallingContext, String)} instead f a calling context is available.
      *
      * @param msg the base message to display
      * @return the message appropriate for any exception being thrown
      * @see #toErrorMessage(io.helidon.pico.api.CallingContext, String)
      */
     public static String toErrorMessage(String msg) {
+        Objects.requireNonNull(msg);
+
         return msg + " - " + DEBUG_HINT;
     }
 }

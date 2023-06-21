@@ -23,6 +23,9 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
 
+import static io.helidon.common.types.TypeNames.PRIMITIVE_LONG;
+import static io.helidon.common.types.TypeNames.STRING;
+
 @SuppressWarnings({"ALL", "unchecked"})
 public class TestNamedInterceptor implements Interceptor {
     public static final AtomicInteger ctorCount = new AtomicInteger();
@@ -38,12 +41,12 @@ public class TestNamedInterceptor implements Interceptor {
         assert (ctx != null);
 
         TypedElementInfo methodInfo = ctx.elementInfo();
-        if (methodInfo != null && methodInfo.typeName().equals(TypeName.create(long.class))) {
+        if (methodInfo != null && methodInfo.typeName().equals(PRIMITIVE_LONG)) {
             V result = chain.proceed(args);
             long longResult = (Long) result;
             Object interceptedResult = (longResult * 2);
             return (V) interceptedResult;
-        } else if (methodInfo != null && methodInfo.typeName().name().equals(String.class.getName())) {
+        } else if (methodInfo != null && methodInfo.typeName().equals(STRING)) {
             V result = chain.proceed(args);
             return (V) ("intercepted:" + result);
         } else {

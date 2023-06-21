@@ -19,8 +19,6 @@ package io.helidon.pico.configdriven.runtime;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.configdriven.api.NamedInstance;
 
 /**
@@ -36,24 +34,6 @@ public interface ConfigBeanRegistry {
     static ConfigBeanRegistry instance() {
         return ConfigBeanRegistryImpl.CONFIG_BEAN_REGISTRY.get();
     }
-
-    /**
-     * Binds a {@link ConfiguredServiceProvider} to the
-     * {@link io.helidon.pico.configdriven.api.ConfigBean} annotation it is configured by.
-     *
-     * @param configuredServiceProvider the configured service provider
-     * @param configuredByQualifier the qualifier associated with the {@link io.helidon.pico.configdriven.api.ConfigBean}
-     * @throws io.helidon.config.ConfigException if the bind operation encountered an error
-     */
-    void bind(ConfiguredServiceProvider<?, ?> configuredServiceProvider, Qualifier configuredByQualifier);
-
-    /**
-     * The first call to this initialize the bean registry, by loading all the backing configuration from the config
-     * subsystem.
-     *
-     * @param picoServices the pico services instance
-     */
-    void initialize(PicoServices picoServices);
 
     /**
      * The config bean registry is initialized as part of Pico's initialization, which happens when the service registry

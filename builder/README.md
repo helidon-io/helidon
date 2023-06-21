@@ -1,6 +1,6 @@
-# Helidon Builders
+# Helidon Builder
 
-This modules is used by Helidon to generate types with builders (Prototypes) to be used in API of modules from a blueprint interface.
+This module is used by Helidon to generate types with builders (Prototypes) to be used in API of modules from a blueprint interface.
 
 There are two modules that are used:
 - `helidon-builder-api` - module required in `compile` scope, contains annotations and APIs needed to write blueprints, and to build the generated code

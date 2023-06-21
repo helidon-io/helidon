@@ -44,7 +44,7 @@ import io.helidon.pico.configdriven.api.NamedInstance;
  */
 @SuppressWarnings("unchecked")
 class ConfigBeanRegistryImpl implements ConfigBeanRegistry, Resettable {
-    static final LazyValue<ConfigBeanRegistry> CONFIG_BEAN_REGISTRY = LazyValue.create(ConfigBeanRegistryImpl::new);
+    static final LazyValue<ConfigBeanRegistryImpl> CONFIG_BEAN_REGISTRY = LazyValue.create(ConfigBeanRegistryImpl::new);
 
     private static final System.Logger LOGGER = System.getLogger(ConfigBeanRegistryImpl.class.getName());
 
@@ -86,8 +86,20 @@ class ConfigBeanRegistryImpl implements ConfigBeanRegistry, Resettable {
     }
 
     @Override
-    public void bind(ConfiguredServiceProvider<?, ?> configuredServiceProvider,
-                     Qualifier configuredByQualifier) {
+    public boolean ready() {
+        return isInitialized();
+    }
+
+    /**
+     * Binds a {@link ConfiguredServiceProvider} to the
+     * {@link io.helidon.pico.configdriven.api.ConfigBean} annotation it is configured by.
+     *
+     * @param configuredServiceProvider the configured service provider
+     * @param configuredByQualifier the qualifier associated with the {@link io.helidon.pico.configdriven.api.ConfigBean}
+     * @throws io.helidon.config.ConfigException if the bind operation encountered an error
+     */
+    void bind(ConfiguredServiceProvider<?, ?> configuredServiceProvider,
+              Qualifier configuredByQualifier) {
         Objects.requireNonNull(configuredServiceProvider);
         Objects.requireNonNull(configuredByQualifier);
 
@@ -112,8 +124,11 @@ class ConfigBeanRegistryImpl implements ConfigBeanRegistry, Resettable {
         configBeanFactories.put(configBeanType, configuredServiceProvider);
     }
 
-    @Override
-    public void initialize(PicoServices ignoredPicoServices) {
+    /**
+     * The first call to this initialize the bean registry, by loading all the backing configuration from the config
+     * subsystem.
+     */
+    void initialize() {
         if (registeredForReset.compareAndSet(false, true)) {
             ResettableHandler.addRegistry(this);
         }
@@ -143,11 +158,6 @@ class ConfigBeanRegistryImpl implements ConfigBeanRegistry, Resettable {
             reset(true);
             throw e;
         }
-    }
-
-    @Override
-    public boolean ready() {
-        return isInitialized();
     }
 
     protected boolean isInitialized() {

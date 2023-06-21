@@ -154,7 +154,7 @@ public abstract class ConfigDrivenServiceProviderBase<T, CB> extends AbstractSer
             }
 
             // bind to the config bean registry ...  but, don't yet resolve!
-            ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
+            ConfigBeanRegistryImpl cbr = ConfigBeanRegistryImpl.CONFIG_BEAN_REGISTRY.get();
             if (cbr != null) {
                 Optional<Qualifier> configuredByQualifier = serviceInfo.qualifiers().stream()
                         .filter(q -> q.typeName().name().equals(ConfigDriven.class.getName()))
@@ -180,9 +180,9 @@ public abstract class ConfigDrivenServiceProviderBase<T, CB> extends AbstractSer
             }
 
             // one of the configured services need to "tickle" the bean registry to initialize
-            ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
+            ConfigBeanRegistryImpl cbr = ConfigBeanRegistryImpl.CONFIG_BEAN_REGISTRY.get();
             if (cbr != null) {
-                cbr.initialize(picoServices);
+                cbr.initialize();
 
                 // pre-initialize ourselves
                 if (isRootProvider()) {

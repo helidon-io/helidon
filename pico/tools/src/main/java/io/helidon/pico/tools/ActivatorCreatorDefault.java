@@ -579,18 +579,6 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         }
 
         return parentTypeName.fqName();
-        //        String result;
-        //        if (parentTypeName == null || Object.class.getName().equals(parentTypeName.name())) {
-        //            result = AbstractServiceProvider.class.getName() + "<" + activatorTypeName.className() + ">";
-        //        } else if (parentTypeName.typeArguments() == null || parentTypeName.typeArguments().isEmpty()) {
-        //            result = parentTypeName.packageName()
-        //                    + (parentTypeName.packageName() == null ? "" : ".")
-        //                    + parentTypeName.className().replace(".", "$")
-        //                    + INNER_ACTIVATOR_CLASS_NAME;
-        //        } else {
-        //            result = parentTypeName.fqName();
-        //        }
-        //        return result;
     }
 
     List<String> toCodegenDependencies(DependenciesInfo dependencies) {
@@ -747,7 +735,6 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                     String cn = dep2.ipType().fqName(); // fully qualified type of the injection point, as we are assigning to it
                     String argName = dep2.ipName();
                     String id = dep2.id();
-                    //String id = dep2.baseIdentity() + "(" + count.get() + ")";
                     String argBuilder = cn + " "
                             + argName + " = (" + cn + ") "
                             + "get(deps, \"" + id + "\");";

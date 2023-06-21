@@ -20,38 +20,14 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import io.helidon.builder.api.Prototype;
 
+import static io.helidon.common.types.TypeNames.PRIMITIVES;
+
 final class TypeNameSupport {
-    private static final Map<String, TypeName> PRIMITIVES = Map.of(
-            "boolean", create(boolean.class),
-            "byte", create(byte.class),
-            "short", create(short.class),
-            "int", create(int.class),
-            "long", create(long.class),
-            "char", create(char.class),
-            "float", create(float.class),
-            "double", create(double.class),
-            "void", create(void.class)
-    );
-
-    private static final Map<TypeName, TypeName> BOXED_TYPES = Map.of(
-            create(boolean.class), create(Boolean.class),
-            create(byte.class), create(Byte.class),
-            create(short.class), create(Short.class),
-            create(int.class), create(Integer.class),
-            create(long.class), create(Long.class),
-            create(char.class), create(Character.class),
-            create(float.class), create(Float.class),
-            create(double.class), create(Double.class),
-            create(void.class), create(Void.class)
-    );
-
     private TypeNameSupport() {
     }
 
@@ -79,8 +55,7 @@ final class TypeNameSupport {
      */
     @Prototype.PrototypeMethod
     static TypeName boxed(TypeName original) {
-        return Optional.ofNullable(BOXED_TYPES.get(original))
-                .orElse(original);
+        return TypeNames.boxed(original);
     }
 
     @Prototype.PrototypeMethod

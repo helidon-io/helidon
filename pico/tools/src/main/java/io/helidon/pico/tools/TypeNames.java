@@ -16,9 +16,6 @@
 
 package io.helidon.pico.tools;
 
-import java.util.List;
-import java.util.Optional;
-
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.runtime.AbstractServiceProvider;
 

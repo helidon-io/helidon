@@ -34,62 +34,64 @@ import static io.helidon.pico.runtime.Invocation.mergeAndCollapse;
 @io.helidon.pico.api.Intercepted(io.helidon.pico.tests.pico.interceptor.YImpl.class)
 @Singleton
 @SuppressWarnings("ALL")
-@jakarta.annotation.Generated(value = "io.helidon.pico.tools.InterceptorCreatorDefault", comments = "version=1")
+@io.helidon.common.Generated(value = "io.helidon.pico.tools.InterceptorCreatorDefault", trigger = "io.helidon.pico.tests.pico.interceptor.YImpl")
 public class YImpl$$Pico$$Interceptor /* extends io.helidon.pico.tests.pico.interceptor.YImpl */ implements io.helidon.pico.tests.plain.interceptor.IB, java.io.Closeable, java.lang.AutoCloseable {
     private static final List<Annotation> __serviceLevelAnnotations = List.of(
-            AnnotationDefault.create(jakarta.inject.Singleton.class),
-            AnnotationDefault.create(jakarta.inject.Named.class, Map.of("value", "ClassY")),
-            AnnotationDefault.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")),
-            AnnotationDefault.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")));
+            Annotation.create(jakarta.inject.Singleton.class),
+            Annotation.create(jakarta.inject.Named.class, Map.of("value", "ClassY")),
+            Annotation.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")),
+            Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")));
 
     private static final TypedElementInfo __ctor = TypedElementInfo.builder()
             .typeName(create(void.class))
+            .elementTypeKind(TypeValues.KIND_CONSTRUCTOR)
 			.elementName(io.helidon.pico.api.ElementInfo.CONSTRUCTOR)
-			.addAnnotation(AnnotationDefault.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
-			.addAnnotation(AnnotationDefault.create(jakarta.inject.Inject.class))
-			.addAnnotation(AnnotationDefault.create(jakarta.inject.Named.class, Map.of("value", "ClassY")))
-			.addAnnotation(AnnotationDefault.create(jakarta.inject.Singleton.class))
-			.addAnnotation(AnnotationDefault.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(jakarta.inject.Inject.class))
+			.addAnnotation(Annotation.create(jakarta.inject.Named.class, Map.of("value", "ClassY")))
+			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
             .build();
     private static final TypedElementInfo __methodIB = TypedElementInfo.builder()
             .typeName(create(void.class))
+            .elementTypeKind(TypeValues.KIND_METHOD)
 			.elementName("methodIB")
-			.addAnnotation(AnnotationDefault.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
-			.addAnnotation(AnnotationDefault.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IBSubAnno")))
-			.addAnnotation(AnnotationDefault.create(jakarta.inject.Named.class, Map.of("value", "methodIB")))
-			.addAnnotation(AnnotationDefault.create(jakarta.inject.Singleton.class))
-			.addAnnotation(AnnotationDefault.create(java.lang.Override.class))
-			.addAnnotation(AnnotationDefault.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IBSubAnno")))
+			.addAnnotation(Annotation.create(jakarta.inject.Named.class, Map.of("value", "methodIB")))
+			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
+			.addAnnotation(Annotation.create(java.lang.Override.class))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
             .build();
     private static final TypedElementInfo __methodIB__p1 = TypedElementInfo.builder()
             .typeName(create(java.lang.String.class))
 			.elementName("p1")
-			.addAnnotation(AnnotationDefault.create(jakarta.inject.Named.class, Map.of("value", "arg1")))
+			.addAnnotation(Annotation.create(jakarta.inject.Named.class, Map.of("value", "arg1")))
             .build();
     private static final TypedElementInfo __methodIB2 = TypedElementInfo.builder()
             .typeName(create(java.lang.String.class))
 			.elementName("methodIB2")
-			.addAnnotation(AnnotationDefault.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
-			.addAnnotation(AnnotationDefault.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IBSubAnno")))
-			.addAnnotation(AnnotationDefault.create(jakarta.inject.Named.class, Map.of("value", "methodIB2")))
-			.addAnnotation(AnnotationDefault.create(jakarta.inject.Singleton.class))
-			.addAnnotation(AnnotationDefault.create(java.lang.Override.class))
-			.addAnnotation(AnnotationDefault.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IBSubAnno")))
+			.addAnnotation(Annotation.create(jakarta.inject.Named.class, Map.of("value", "methodIB2")))
+			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
+			.addAnnotation(Annotation.create(java.lang.Override.class))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
             .build();
     private static final TypedElementInfo __methodIB2__p1 = TypedElementInfo.builder()
             .typeName(create(java.lang.String.class)    )
 			.elementName("p1")
-			.addAnnotation(AnnotationDefault.create(jakarta.inject.Named.class, Map.of("value", "arg1")))
+			.addAnnotation(Annotation.create(jakarta.inject.Named.class, Map.of("value", "arg1")))
             .build();
     private static final TypedElementInfo __close = TypedElementInfo.builder()
             .typeName(create(void.class))
 			.elementName("close")
-			.addAnnotation(AnnotationDefault.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
-			.addAnnotation(AnnotationDefault.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class))
-			.addAnnotation(AnnotationDefault.create(jakarta.inject.Named.class, Map.of("value", "ClassY")))
-			.addAnnotation(AnnotationDefault.create(jakarta.inject.Singleton.class))
-			.addAnnotation(AnnotationDefault.create(java.lang.Override.class))
-			.addAnnotation(AnnotationDefault.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
+			.addAnnotation(Annotation.create(io.helidon.pico.api.ExternalContracts.class, Map.of("moduleNames", "test1, test2", "value", "java.io.Closeable")))
+			.addAnnotation(Annotation.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class))
+			.addAnnotation(Annotation.create(jakarta.inject.Named.class, Map.of("value", "ClassY")))
+			.addAnnotation(Annotation.create(jakarta.inject.Singleton.class))
+			.addAnnotation(Annotation.create(java.lang.Override.class))
+			.addAnnotation(Annotation.create(java.lang.SuppressWarnings.class, Map.of("value", "unused")))
             .build();
 
     private static final TypeName __serviceTypeName = TypeName.create(io.helidon.pico.tests.pico.interceptor.YImpl.class);
@@ -118,7 +120,7 @@ public class YImpl$$Pico$$Interceptor /* extends io.helidon.pico.tests.pico.inte
 
         Function<Object[], io.helidon.pico.tests.pico.interceptor.YImpl> call = args -> __provider.get();
         io.helidon.pico.tests.pico.interceptor.YImpl result = createInvokeAndSupply(
-                InvocationContextDefault.builder()
+                InvocationContext.builder()
                     .serviceProvider(__sp)
                     .serviceTypeName(__serviceTypeName)
                     .classAnnotations(__serviceLevelAnnotations)
@@ -131,7 +133,7 @@ public class YImpl$$Pico$$Interceptor /* extends io.helidon.pico.tests.pico.inte
 
         this.__methodIB__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.YImpl, java.lang.Void>(
                 __impl, __sp, __serviceTypeName, __serviceLevelAnnotations, __methodIB__interceptors, __methodIB,
-				new TypedElementInfo[] {__methodIB__p1}) {
+				List.of(__methodIB__p1)) {
             @Override
             public java.lang.Void invoke(Object... args) throws Throwable {
                 impl().methodIB((java.lang.String) args[0]);
@@ -141,7 +143,7 @@ public class YImpl$$Pico$$Interceptor /* extends io.helidon.pico.tests.pico.inte
 
         this.__methodIB2__call = new InterceptedMethod<io.helidon.pico.tests.pico.interceptor.YImpl, java.lang.String>(
                 __impl, __sp, __serviceTypeName, __serviceLevelAnnotations, __methodIB2__interceptors, __methodIB2,
-				new TypedElementInfo[] {__methodIB2__p1}) {
+				List.of(__methodIB2__p1)) {
             @Override
             public java.lang.String invoke(Object... args) throws Throwable {
                 return impl().methodIB2((java.lang.String) args[0]);

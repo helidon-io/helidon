@@ -76,6 +76,7 @@ import io.github.classgraph.TypeArgument;
 import io.github.classgraph.TypeSignature;
 import jakarta.inject.Singleton;
 
+import static io.helidon.common.types.TypeNames.COLLECTION;
 import static io.helidon.common.types.TypeNames.LIST;
 import static io.helidon.common.types.TypeNames.OPTIONAL;
 import static io.helidon.pico.tools.CommonUtils.first;
@@ -84,7 +85,6 @@ import static io.helidon.pico.tools.CommonUtils.hasValue;
 /**
  * Generically handles Pico generated artifact creation via APT.
  */
-@SuppressWarnings("deprecation")
 public final class TypeTools {
     private TypeTools() {
     }
@@ -156,6 +156,7 @@ public final class TypeTools {
      * @return the new instance
      * @deprecated switch to use pure annotation processing instead of reflection
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     public static List<Annotation> createAnnotationListFromAnnotations(java.lang.annotation.Annotation[] annotations) {
         if (annotations == null || annotations.length <= 0) {
@@ -523,7 +524,7 @@ public final class TypeTools {
     }
 
     /**
-     * Extracts all of the scope type names from the provided type.
+     * Extracts all the scope type names from the provided type.
      *
      * @param processingEnv annotation processing environment
      * @param type the type to analyze
@@ -1025,12 +1026,12 @@ public final class TypeTools {
                 varTypeName = typeArgSig.toString();
                 handled = typeArgSig.getTypeArguments().isEmpty();
                 if (!handled) {
-                    String typeArgClassName = typeArgSig.getClassInfo().getName();
-                    if (isOptionalType(typeArgClassName)
-                            || isListType(typeArgClassName)
-                            || typeArgClassName.equals(Collections.class.getName())) {
+                    TypeName typeArgType = TypeName.create(typeArgSig.getClassInfo().getName());
+                    if (typeArgType.isOptional()
+                            || typeArgType.isList()
+                            || typeArgType.equals(COLLECTION)) {
                         // not handled
-                    } else if (isProviderType(TypeName.create(typeArgClassName))) {
+                    } else if (isProviderType(typeArgType)) {
                         isProvider = true;
                         varTypeName = toClassRefSignature(typeArgSig.getTypeArguments().get(0), enclosingElem).toString();
                         handled = true;
