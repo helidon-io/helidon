@@ -9,7 +9,7 @@ This section only applies for **Helidon SE** type applications. If you are using
 
 The **Helidon Injection Framework** offers two modules for integrating with the **OCI SDK API** - the _processor_ module and the _runtime_ module.
 
-1. The [processor](./processor) module is required to be on your compiler / annotation processor [APT] classpath. It is not needed at runtime, however. When used on the compiler / APT classpath, it will observe cases where you're application uses the _@Inject_ annotation on API services from the **OCI SDK**.  When it finds such cases, source code (i.e., an _Activator_) is generated to represent those injected API services you are injecting. These source-code generated activators will then be consumed by the **Helidon Injection Framework** at runtime.
+1. The [processor](./processor) module is required to be on your compiler / annotation processor [APT] classpath. It is not needed at runtime, however. When used on the compiler / APT classpath, it will observe cases where your application uses the _@Inject_ annotation on API services from the **OCI SDK**.  When it finds such cases, source code (i.e., an _Activator_) is generated to represent those injected API services you are injecting. These source-code generated _activators_ will then be consumed by the **Helidon Injection Framework** at runtime.
 
 2. The [runtime](./runtime) module is required to be on your runtime classpath, but is not needed at compile time. This module supplies the default implementation for OCI's authentication providers, as well as other OCI extensibility classes (see the [javadoc](./runtime/src/main/java/io/helidon/integrations/oci/sdk/runtime/package-info.java) for details).
 
