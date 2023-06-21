@@ -25,6 +25,8 @@ import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 
 import io.opentelemetry.api.baggage.Baggage;
+import io.opentelemetry.api.baggage.BaggageBuilder;
+import io.opentelemetry.api.baggage.BaggageEntry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.StatusCode;
@@ -101,7 +103,13 @@ class OpenTelemetrySpan implements Span {
         Objects.requireNonNull(key, "Baggage Key cannot be null");
         Objects.requireNonNull(value, "Baggage Value cannot be null");
 
-        Baggage.builder()
+        BaggageBuilder baggageBuilder = Baggage.builder();
+
+        //Check for previously added baggage items
+        Map<String, BaggageEntry> baggageEntryMap = Baggage.fromContext(getContext()).asMap();
+        baggageEntryMap.forEach((k, v) -> baggageBuilder.put(k, v.getValue()));
+
+        baggageBuilder
                 .put(key, value)
                 .build()
                 .storeInContext(getContext()

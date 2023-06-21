@@ -15,6 +15,15 @@
 #
 
 tracing:
-  service: "helidon-service"
-  protocol: "https"
-  host: "jaeger"
+  enabled: true
+  global: true
+  service: "example"
+  log-spans: false
+  protocol: "http"
+  host: "localhost"
+  port: 14250
+  path: "/api/traces"
+  propagation: "w3c"
+  sampler-type: "const"
+  sampler-param: 1
+  expand-exception-logs: true
