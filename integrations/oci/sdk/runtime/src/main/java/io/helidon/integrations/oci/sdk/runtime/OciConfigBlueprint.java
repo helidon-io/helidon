@@ -197,6 +197,7 @@ interface OciConfigBlueprint {
      *
      * @return the OCI authentication private key
      */
+    // See https://github.com/helidon-io/helidon/issues/6908
     @ConfiguredOption(key = "auth.private-key")
     @Prototype.Confidential
     Optional<char[]> authPrivateKey();
@@ -277,12 +278,12 @@ interface OciConfigBlueprint {
     Duration imdsTimeout();
 
     /**
-     * The list of {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy} names
-     * (excluding {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy#AUTO}) that
-     * are potentially applicable for use. Here, "potentially applicable or use" means that it is set explicitly by
-     * {@link #authStrategy()}, or else explicitly or implicitly by {@link #authStrategies()}.
+     * The list of {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy} names (excluding {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy#AUTO}) that
+     * are potentially applicable for use. Here, "potentially applicable or use" means that it is set using the
+     * {@link #authStrategy()} attribute on this config bean. If not present then the fall-back looks to use the values
+     * explicitly or implicitly set by {@link #authStrategies()}.
      *
-     * @return the list of potential auth strategies that are applicable
+     * @return the list of potential auth strategies that are applicable for use
      */
     default List<String> potentialAuthStrategies() {
         String authStrategy = authStrategy().orElse(null);
@@ -314,8 +315,8 @@ interface OciConfigBlueprint {
     }
 
     /**
-     * Determines whether there is sufficient configuration defined in this bean to be used for file-based authentication. This
-     * matches to the {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy#CONFIG_FILE}.
+     * Determines whether sufficient configuration is present on this bean to be used for OCI's "file-based" authentication
+     * provider. This matches to the {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy#CONFIG_FILE}.
      *
      * @return true if there is sufficient attributes defined for file-based OCI authentication provider applicability
      * @see OciAuthenticationDetailsProvider
@@ -328,8 +329,8 @@ interface OciConfigBlueprint {
     }
 
     /**
-     * Determines whether there is sufficient configuration defined in this bean to be used for simple authentication. This
-     * matches to the {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy#CONFIG}.
+     * Determines whether sufficient configuration is present on this bean to be used for OCI's "simple" authentication provider.
+     * This matches to the {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy#CONFIG}.
      *
      * @return true if there is sufficient attributes defined for simple OCI authentication provider applicability
      * @see OciAuthenticationDetailsProvider
