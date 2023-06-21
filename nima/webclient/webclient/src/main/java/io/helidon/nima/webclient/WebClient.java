@@ -18,7 +18,9 @@ package io.helidon.nima.webclient;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -78,6 +80,7 @@ public interface WebClient {
         private int maxRedirect;
         private WritableHeaders<?> defaultHeaders = WritableHeaders.create();
         private ParserMode mediaTypeParserMode = ParserMode.STRICT;
+        private Map<String, String> properties = new HashMap<>();
 
         /**
          * Common builder base for all the client builder.
@@ -299,6 +302,18 @@ public interface WebClient {
         }
 
         /**
+         * Properties configured by user when creating this client.
+         *
+         * @param properties that were configured (mutable)
+         * @return updated builder instance
+         */
+        public B properties(Map<String, String> properties) {
+            Objects.requireNonNull(properties);
+            this.properties = properties;
+            return identity();
+        }
+
+        /**
          * Remove header with the selected name from the default headers.
          *
          * @param name header name
@@ -372,5 +387,8 @@ public interface WebClient {
             return maxRedirect;
         }
 
+        Map<String, String> properties() {
+            return properties;
+        }
     }
 }
