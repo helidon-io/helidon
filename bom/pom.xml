@@ -1424,32 +1424,7 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-processor-spi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-processor-tools</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
                 <artifactId>helidon-builder-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-config</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-config-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-testing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

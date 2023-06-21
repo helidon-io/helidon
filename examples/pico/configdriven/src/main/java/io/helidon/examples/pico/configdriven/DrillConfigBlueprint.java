@@ -16,11 +16,16 @@
 
 package io.helidon.examples.pico.configdriven;
 
-import io.helidon.builder.config.ConfigBean;
+import io.helidon.builder.api.Prototype;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.pico.configdriven.api.ConfigBean;
 
 @ConfigBean(repeatable = true)
-public interface DrillConfig {
-
+@Prototype.Blueprint
+@Configured(root = true, prefix = "drill")
+interface DrillConfigBlueprint {
+    @ConfiguredOption
     String name();
 
 }
