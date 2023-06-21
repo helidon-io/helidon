@@ -28,10 +28,6 @@
     <artifactId>helidon-jersey-connector</artifactId>
     <name>Helidon WebClient Jersey Connector</name>
 
-    <properties>
-        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8 --enable-preview</surefire.argLine>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
