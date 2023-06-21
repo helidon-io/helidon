@@ -20,6 +20,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -77,13 +78,26 @@ public interface WebClient {
         private int maxRedirect;
         private WritableHeaders<?> defaultHeaders = WritableHeaders.create();
         private ParserMode mediaTypeParserMode = ParserMode.STRICT;
-        private Duration connectTimeout;
-        private Duration readTimeout;
 
         /**
          * Common builder base for all the client builder.
          */
         protected Builder() {
+        }
+
+        /**
+         * Actual {@link #build()} implementation for {@link WebClient} subclasses.
+         *
+         * @return new client
+         */
+        protected abstract C doBuild();
+
+        @Override
+        public C build() {
+            if (channelOptions == null) {
+                channelOptions = channelOptionsBuilder.build();
+            }
+            return doBuild();
         }
 
         /**
@@ -135,17 +149,31 @@ public interface WebClient {
 
         /**
          * Socket options for connections opened by this client.
+         * Note that using this method will trump the default {@link SocketOptions.Builder}.
+         * Thus, all methods that operate on the default {@link SocketOptions.Builder} are ineffective:
+         * <ul>
+         *     <li>{@link #channelOptions(Consumer)} </li>
+         *     <li>{@link #readTimeout(Duration)}</li>
+         *     <li>{@link #connectTimeout(Duration)} (Duration)}</li>
+         *     <li>{@link #keepAlive(boolean)}</li>
+         * </ul>
          *
          * @param channelOptions options
          * @return updated builder
-         * @see #readTimeout(Duration)
-         * @see #connectTimeout(Duration)
-         * @see #keepAlive(boolean)
          */
         public B channelOptions(SocketOptions channelOptions) {
             this.channelOptions = channelOptions;
-            this.readTimeout = channelOptions.readTimeout();
-            this.connectTimeout = channelOptions.connectTimeout();
+            return identity();
+        }
+
+        /**
+         * Configure the socket options for connections opened by this client.
+         *
+         * @param consumer {@link SocketOptions.Builder} consumer
+         * @return updated builder
+         */
+        public B channelOptions(Consumer<SocketOptions.Builder> consumer) {
+            consumer.accept(channelOptionsBuilder);
             return identity();
         }
 
@@ -195,34 +223,39 @@ public interface WebClient {
         }
 
         /**
-         * Sets new connection timeout.
+         * Connect timeout.
+         * This method operates on the default socket options builder and provides a shortcut for
+         * {@link SocketOptions.Builder#connectTimeout(Duration)}.
          *
-         * @param timeout amount of time
+         * @param connectTimeout connect timeout
          * @return updated builder
          */
-        public B connectTimeout(Duration timeout) {
-            this.connectTimeout = timeout;
+        public B connectTimeout(Duration connectTimeout) {
+            channelOptionsBuilder.connectTimeout(connectTimeout);
             return identity();
         }
 
         /**
-         * Sets new read timeout.
+         * Sets the socket read timeout.
+         * This method operates on the default socket options builder and provides a shortcut for
+         * {@link SocketOptions.Builder#readTimeout(Duration)}.
          *
-         * @param timeout amount of time
+         * @param readTimeout read timeout
          * @return updated builder
          */
-        public B readTimeout(Duration timeout) {
-            this.readTimeout = timeout;
+        public B readTimeout(Duration readTimeout) {
+            channelOptionsBuilder.readTimeout(readTimeout);
             return identity();
         }
 
         /**
-         * Whether connection should be kept alive after request.
-         * <p>Operates on the default {@link SocketOptions.Builder}.
-         * Using of {@link #channelOptions(SocketOptions)} will discard changes made to the default {@link SocketOptions.Builder}.
+         * Configure socket keep alive.
+         * This method operates on the default socket options builder and provides a shortcut for
+         * {@link SocketOptions.Builder#socketKeepAlive(boolean)}.
          *
          * @param keepAlive keep alive
          * @return updated builder
+         * @see java.net.StandardSocketOptions#SO_KEEPALIVE
          */
         public B keepAlive(boolean keepAlive) {
             channelOptionsBuilder.socketKeepAlive(keepAlive);
@@ -244,7 +277,7 @@ public interface WebClient {
         /**
          * Set header with multiple values. Some headers cannot be modified.
          *
-         * @param name header name
+         * @param name   header name
          * @param values header values
          * @return updated builder instance
          */
@@ -293,24 +326,32 @@ public interface WebClient {
          *
          * @return socket options
          */
-        SocketOptions channelOptions() {
+        protected SocketOptions channelOptions() {
             return channelOptions;
         }
 
         /**
-         * Configured TLS.
+         * Default headers to be used in every request.
          *
-         * @return TLS if configured, null otherwise
+         * @return default headers
          */
+        protected WritableHeaders<?> defaultHeaders() {
+            return defaultHeaders;
+        }
+
+        /**
+         * Media type parsing mode for HTTP {@code Content-Type} header.
+         *
+         * @return media type parsing mode
+         */
+        protected ParserMode mediaTypeParserMode() {
+            return this.mediaTypeParserMode;
+        }
+
         Tls tls() {
             return tls;
         }
 
-        /**
-         * Base request uri.
-         *
-         * @return client request base uri
-         */
         URI baseUri() {
             return baseUri;
         }
@@ -329,32 +370,6 @@ public interface WebClient {
 
         int maxRedirect() {
             return maxRedirect;
-        }
-
-        /**
-         * Connection timeout.
-         *
-         * @return connection timeout
-         */
-        Duration connectTimeout() {
-            return channelOptions == null ? null : channelOptions.connectTimeout();
-        }
-
-        /**
-         * Read timeout.
-         *
-         * @return Read timeout.
-         */
-        Duration readTimeout() {
-            return channelOptions == null ? null : channelOptions.readTimeout();
-        }
-
-        protected WritableHeaders<?> defaultHeaders() {
-            return defaultHeaders;
-        }
-
-        protected ParserMode mediaTypeParserMode() {
-            return this.mediaTypeParserMode;
         }
 
     }
