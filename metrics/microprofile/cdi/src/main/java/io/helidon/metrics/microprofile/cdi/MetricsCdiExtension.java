@@ -23,6 +23,9 @@ import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
 
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 
+/**
+ * MP Metrics CDI extension.
+ */
 public class MetricsCdiExtension extends HelidonRestCdiExtension<MpMetricsFeature> {
 
     private static final System.Logger LOGGER = System.getLogger(MetricsCdiExtension.class.getName());
