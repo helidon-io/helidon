@@ -74,6 +74,7 @@ import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.ProcessBeanAttributes;
 import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedFieldConfigurator;
@@ -296,6 +297,23 @@ public final class PersistenceExtension implements Extension {
             return;
         }
         event.addQualifier(PersistenceProperty.class);
+    }
+
+    /**
+     * {@linkplain ProcessBeanAttributes#veto() Vetoes} any bean whose bean types includes the deprecated {@link
+     * JtaDataSourceProvider} class, since it is replaced by {@link JtaAdaptingDataSourceProvider}.
+     *
+     * @param event the {@link ProcessBeanAttributes} event in question; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code event} is {@code null}
+     *
+     * @see JtaAdaptingDataSourceProvider
+     */
+    private void vetoDeprecatedJtaDataSourceProvider(@Observes ProcessBeanAttributes<JtaDataSourceProvider> event) {
+        if (!this.enabled) {
+            return;
+        }
+        event.veto();
     }
 
     private <T> void rewriteJpaAnnotations(@Observes
