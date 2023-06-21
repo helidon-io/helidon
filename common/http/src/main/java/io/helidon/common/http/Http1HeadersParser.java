@@ -34,6 +34,9 @@ public final class Http1HeadersParser {
 
     private static final byte[] HD_USER_AGENT =
             (HeaderEnum.USER_AGENT.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
+    // Instantiates LazyString.Validator and overrides validate() to call Http.HeaderValue.validate(value) which will then be
+    // triggered when the Header value is retrieved.
+    private static final LazyString.Validator HTTP_LAZY_STRING_VALIDATOR = Http.HeaderValue::validate;
 
     private Http1HeadersParser() {
     }
@@ -62,8 +65,13 @@ public final class Http1HeadersParser {
             if (eol == maxLength) {
                 throw new IllegalStateException("Header size exceeded");
             }
-            // we do not need the string until somebody asks for this header (unless validation is on)
+            // we do not need the string until somebody asks for this header
             LazyString value = reader.readLazyString(StandardCharsets.US_ASCII, eol);
+            if (validate) {
+                // if validation is on, use the default http value validator which will only be triggered when the string
+                // value is retrieved
+                value.setValidator(HTTP_LAZY_STRING_VALIDATOR);
+            }
             reader.skip(2);
             maxLength -= eol + 1;
 

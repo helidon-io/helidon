@@ -47,8 +47,11 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
         this.tls = tls;
     }
 
-    static void writeHeaders(Headers headers, BufferData bufferData) {
+    static void writeHeaders(Headers headers, BufferData bufferData, boolean validate) {
         for (Http.HeaderValue header : headers) {
+            if (validate) {
+                header.validate();
+            }
             header.writeHttp1Header(bufferData);
         }
         bufferData.write(Bytes.CR_BYTE);

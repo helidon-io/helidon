@@ -238,7 +238,6 @@ public final class Http {
             return method;
         }
 
-
         /**
          * Create a predicate for the provided methods.
          *
@@ -957,6 +956,54 @@ public final class Http {
                 for (String value : allValues()) {
                     writeHeader(buffer, nameBytes, value.getBytes(StandardCharsets.US_ASCII));
                 }
+            }
+        }
+
+        // validate header value based on https://www.rfc-editor.org/rfc/rfc7230#section-3.2 and returns the error message if
+        // invalid or null if otherwise.
+        private static String validateValueErrorMessage(String value) {
+            char[] vChars = value.toCharArray();
+            int vLength = vChars.length;
+            for (int i = 0; i < vLength; i++) {
+                char vChar = vChars[i];
+                if (i == 0) {
+                    if (vChar < '!' || vChar == '\u007f') {
+                        return "First character of the header value is invalid";
+                    }
+                } else {
+                    if (vChar < ' ' && vChar != '\t' || vChar == '\u007f') {
+                        return "Character at position " + (i + 1) + " of the header value is invalid";
+                    }
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Check validity of a header value.
+         *
+         * @param value header value
+         * @throws IllegalArgumentException in case the HeaderValue is not valid
+         */
+        static void validate(String value) {
+            String errorMessage = validateValueErrorMessage(value);
+            if (errorMessage != null) {
+                throw new IllegalArgumentException(errorMessage);
+            }
+        }
+
+        /**
+         * Check validity of header name and values.
+         *
+         * @throws IllegalArgumentException in case the HeaderValue is not valid
+         */
+        default void validate() throws IllegalArgumentException {
+            String name = name();
+            // validate that header name only contains valid characters
+            HttpToken.validate(name);
+            String errorMessage = validateValueErrorMessage(values());
+            if (errorMessage != null) {
+                throw new IllegalArgumentException(errorMessage + " for header '" + name + "'");
             }
         }
 

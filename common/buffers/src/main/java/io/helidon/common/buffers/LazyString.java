@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ public class LazyString {
 
     private String stringValue;
     private String owsLessValue;
+    private Validator validator;
 
     /**
      * New instance.
@@ -56,6 +57,15 @@ public class LazyString {
         this.offset = 0;
         this.length = buffer.length;
         this.charset = charset;
+    }
+
+    /**
+     * Sets a custom validator for the LazyString Value when retrieved.
+     *
+     * @param validator custom validator implementation
+     */
+    public void setValidator(Validator validator) {
+        this.validator = validator;
     }
 
     /**
@@ -87,6 +97,7 @@ public class LazyString {
             }
             newLength = Math.max(newLength, 0);
             owsLessValue = new String(buffer, newOffset, newLength, charset);
+            validate(owsLessValue);
         }
 
         return owsLessValue;
@@ -96,6 +107,7 @@ public class LazyString {
     public String toString() {
         if (stringValue == null) {
             stringValue = new String(buffer, offset, length, charset);
+            validate(stringValue);
         }
         return stringValue;
     }
@@ -105,5 +117,24 @@ public class LazyString {
             case Bytes.SPACE_BYTE, Bytes.TAB_BYTE -> true;
             default -> false;
         };
+    }
+
+    // Trigger validator only if it is set
+    private void validate(String value) {
+        if (validator != null) {
+            validator.validate(value);
+        }
+    }
+
+    /**
+     * Allows custom validator to be created.
+     */
+    public interface Validator {
+        /**
+         * Validate the value and if it fails, then an implementation specific runtime exception may be thrown.
+         *
+         * @param value The value to validate.
+         */
+        void validate(String value);
     }
 }
