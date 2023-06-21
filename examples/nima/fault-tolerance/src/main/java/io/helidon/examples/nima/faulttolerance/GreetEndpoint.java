@@ -22,8 +22,6 @@ import io.helidon.common.http.Endpoint;
 import io.helidon.common.http.Http;
 import io.helidon.nima.faulttolerance.FaultTolerance;
 import io.helidon.pico.api.PicoException;
-import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.Services;
 
 import jakarta.inject.Singleton;
 

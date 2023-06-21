@@ -25,7 +25,15 @@ import io.helidon.nima.webserver.http.HttpRouting;
 /**
  * Main class of this example, starts the server.
  */
-public class ImperativeMain {
+public final class ImperativeMain {
+    private ImperativeMain() {
+    }
+
+    /**
+     * Start the example.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         Config config = Nima.config();
 

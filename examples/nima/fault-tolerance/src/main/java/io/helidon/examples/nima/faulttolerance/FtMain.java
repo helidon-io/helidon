@@ -22,7 +22,13 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.PicoServices;
 
-public class FtMain {
+/**
+ * Main class of the example, starts Helidon with injection support.
+ */
+public final class FtMain {
+    private FtMain() {
+    }
+
     /**
      * Start the example.
      *
