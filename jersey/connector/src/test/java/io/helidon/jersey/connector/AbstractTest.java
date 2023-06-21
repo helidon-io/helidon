@@ -46,9 +46,9 @@ public abstract class AbstractTest {
     protected static final int PORT = 8765;
 
     protected WebTarget target(String uri) {
-        final ClientConfig config = new ClientConfig();
+        ClientConfig config = new ClientConfig();
         config.connectorProvider(new HelidonConnectorProvider());
-        final Client client = ClientBuilder.newClient(config);
+        Client client = ClientBuilder.newClient(config);
         return client.target(getBaseUri()).path(uri);
     }
 
@@ -91,7 +91,7 @@ public abstract class AbstractTest {
                 com.github.tomakehurst.wiremock.http.Response response,
                 FileSource files,
                 Parameters parameters) {
-            final String content = response.getBodyAsString();
+            String content = response.getBodyAsString();
             com.github.tomakehurst.wiremock.http.Response.Builder builder =
                     com.github.tomakehurst.wiremock.http.Response.response();
             if (content != null && content.length() != 0) {
