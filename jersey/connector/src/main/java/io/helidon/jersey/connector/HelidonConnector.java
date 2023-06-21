@@ -21,12 +21,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import javax.net.ssl.SSLContext;
+
 import io.helidon.common.LazyValue;
 import io.helidon.common.Version;
 import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.http1.Http1;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
@@ -34,6 +38,7 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Configuration;
 import jakarta.ws.rs.core.Response;
+import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.ClientRequest;
 import org.glassfish.jersey.client.ClientResponse;
 import org.glassfish.jersey.client.spi.AsyncConnectorCallback;
@@ -55,7 +60,7 @@ class HelidonConnector implements Connector {
     HelidonConnector(Client client, Configuration config) {
         this.client = client;
         this.config = config;
-        this.http1Client = WebClient.builder().build();
+        this.http1Client = WebClient.builder(Http1.PROTOCOL).build();       // todo HTTP/2
     }
 
     /**
@@ -66,7 +71,7 @@ class HelidonConnector implements Connector {
      */
     private Http1ClientRequest mapRequest(ClientRequest request) {
         URI uri = request.getUri();
-        Http1ClientRequest http1Request = http1Client
+        Http1ClientRequest httpRequest = http1Client
                 .method(Http.Method.create(request.getMethod()))
                 .uri(uri);
 
@@ -77,34 +82,38 @@ class HelidonConnector implements Connector {
             query.fromQueryString(queryString);
             query.names().forEach(name -> {
                 String[] values = query.all(name).toArray(new String[0]);
-                http1Request.queryParam(name, values);
+                httpRequest.queryParam(name, values);
             });
         }
 
         // map request headers
         request.getRequestHeaders().forEach((key, value) -> {
             String[] values = value.toArray(new String[0]);
-            http1Request.header(Http.Header.create(key), values);
+            httpRequest.header(Http.Header.create(key), values);
         });
 
-        // TODO copy over properties
-        // TODO timeouts redirects etc
+        // SSL context
+        SSLContext sslContext = client.getSslContext();
+        httpRequest.tls(Tls.builder().sslContext(sslContext).build());
 
-        return http1Request;
+        // redirects
+        httpRequest.followRedirects(request.resolveProperty(ClientProperties.FOLLOW_REDIRECTS, true));
+
+        return httpRequest;
     }
 
     /**
      * Map a Helidon HTTP/1.1 response to a Jersey response.
      *
-     * @param http1Response the response to map
+     * @param httpResponse the response to map
      * @param request the request
      * @return the mapped response
      */
-    private ClientResponse mapResponse(Http1ClientResponse http1Response, ClientRequest request) {
+    private ClientResponse mapResponse(Http1ClientResponse httpResponse, ClientRequest request) {
         ClientResponse response = new ClientResponse(new Response.StatusType() {
             @Override
             public int getStatusCode() {
-                return http1Response.status().code();
+                return httpResponse.status().code();
             }
 
             @Override
@@ -114,19 +123,21 @@ class HelidonConnector implements Connector {
 
             @Override
             public String getReasonPhrase() {
-                return http1Response.status().reasonPhrase();
+                return httpResponse.status().reasonPhrase();
             }
         }, request);
 
-        for (Http.HeaderValue header : http1Response.headers()) {
+        // responseContext.setResolvedRequestUri(webClientResponse.lastEndpointURI());
+        // response.setResolvedRequestUri(httpResponse);
+
+
+        for (Http.HeaderValue header : httpResponse.headers()) {
             for (String v : header.allValues()) {
                 response.getHeaders().add(header.name(), v);
             }
         }
 
-        // TODO set URL of last redirection
-
-        ReadableEntity entity = http1Response.entity();
+        ReadableEntity entity = httpResponse.entity();
         if (entity.hasEntity()) {
             response.setEntityStream(entity.inputStream());
         }
@@ -141,19 +152,19 @@ class HelidonConnector implements Connector {
      */
     @Override
     public ClientResponse apply(ClientRequest request) {
-        Http1ClientResponse http1Response;
-        Http1ClientRequest http1Request = mapRequest(request);
+        Http1ClientResponse httpResponse;
+        Http1ClientRequest httpRequest = mapRequest(request);
 
         if (request.hasEntity()) {
-            http1Response = http1Request.outputStream(os -> {
+            httpResponse = httpRequest.outputStream(os -> {
                 request.setStreamProvider(length -> os);
                 request.writeEntity();      // ask Jersey to write entity to WebClient stream
             });
         } else {
-            http1Response = http1Request.request();
+            httpResponse = httpRequest.request();
         }
 
-        return mapResponse(http1Response, request);
+        return mapResponse(httpResponse, request);
     }
 
     /**

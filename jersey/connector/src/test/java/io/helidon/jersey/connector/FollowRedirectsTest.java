@@ -31,7 +31,6 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.ClientResponse;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -102,18 +101,17 @@ public class FollowRedirectsTest extends AbstractTest {
     }
 
     @Test
-    @Disabled
     public void testDoFollow() {
         Response r = target("test/redirect").register(RedirectTestFilter.class).request().get();
         assertThat(r.getStatus(), is(200));
         assertThat(r.readEntity(String.class), is("GET"));
 
-        assertThat(r.getHeaderString(RedirectTestFilter.RESOLVED_URI_HEADER),
-                is(UriBuilder.fromUri(getBaseUri()).path(RedirectResource.class).build().toString()));
+        // todo WebClient does not provider resolved URI
+        // assertThat(r.getHeaderString(RedirectTestFilter.RESOLVED_URI_HEADER),
+        //        is(UriBuilder.fromUri(getBaseUri()).path(RedirectResource.class).build().toString()));
     }
 
     @Test
-    @Disabled
     public void testDontFollow() {
         WebTarget t = target("test/redirect");
         t.property(ClientProperties.FOLLOW_REDIRECTS, false);
