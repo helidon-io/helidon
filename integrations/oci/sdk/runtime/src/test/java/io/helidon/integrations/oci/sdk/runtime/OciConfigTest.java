@@ -22,66 +22,64 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
-import io.helidon.pico.api.PicoServicesConfig;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class OciConfigBeanTest {
+class OciConfigTest {
 
     @Test
     void potentialAuthStrategies() {
         Config config = createTestConfig(ociAuthConfigStrategies(null))
-                .get(OciConfigBean.NAME);
-        OciConfigBean cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        OciConfig cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
                    contains("config", "config-file", "instance-principals", "resource-principals"));
 
         config = createTestConfig(ociAuthConfigStrategies("auto"))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
                    contains("config", "config-file", "instance-principals", "resource-principals"));
 
         config = createTestConfig(ociAuthConfigStrategies(null, "instance-principals", "auto"))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
                    contains("config", "config-file", "instance-principals", "resource-principals"));
 
         config = createTestConfig(ociAuthConfigStrategies(null, "instance-principals", "resource-principals"))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
                    contains("instance-principals", "resource-principals"));
 
         config = createTestConfig(ociAuthConfigStrategies("config", "auto"))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
                    contains("config"));
 
         config = createTestConfig(ociAuthConfigStrategies("config", "config", "config-file"))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
                    contains("config"));
 
         config = createTestConfig(ociAuthConfigStrategies("auto", "config", "config-file"))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
                    contains("config", "config-file"));
 
         config = createTestConfig(ociAuthConfigStrategies("", ""))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
                    contains("config", "config-file", "instance-principals", "resource-principals"));
     }
@@ -89,15 +87,15 @@ class OciConfigBeanTest {
     @Test
     void bogusAuthStrategyAttempted() {
         Config config = createTestConfig(ociAuthConfigStrategies("bogus"))
-                .get(OciConfigBean.NAME);
-        OciConfigBean cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        OciConfig cfg = OciConfig.create(config);
         IllegalStateException e = assertThrows(IllegalStateException.class, cfg::potentialAuthStrategies);
         assertThat(e.getMessage(),
                    equalTo("Unknown auth strategy: bogus"));
 
         config = createTestConfig(ociAuthConfigStrategies(null, "config", "bogus"))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         e = assertThrows(IllegalStateException.class, cfg::potentialAuthStrategies);
         assertThat(e.getMessage(),
                    equalTo("Unknown auth strategy: bogus"));
@@ -106,29 +104,29 @@ class OciConfigBeanTest {
     @Test
     void fileConfigIsPresent() {
         Config config = createTestConfig(ociAuthConfigFile("path", "profile"))
-                .get(OciConfigBean.NAME);
-        OciConfigBean cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        OciConfig cfg = OciConfig.create(config);
         assertThat(cfg.fileConfigIsPresent(),
                    is(true));
         assertThat(cfg.configProfile().orElseThrow(),
                    equalTo("profile"));
 
         config = createTestConfig(ociAuthConfigFile("path", null))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.fileConfigIsPresent(), is(true));
         assertThat(cfg.configProfile().orElseThrow(),
                    equalTo("DEFAULT"));
 
         config = createTestConfig(ociAuthConfigFile("", ""))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.fileConfigIsPresent(),
                    is(false));
 
         config = createTestConfig(ociAuthConfigFile(null, null))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.fileConfigIsPresent(),
                    is(false));
         assertThat(cfg.configProfile().orElseThrow(),
@@ -138,68 +136,68 @@ class OciConfigBeanTest {
     @Test
     void simpleConfigIsPresent() {
         Config config = createTestConfig(ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", "pkp", "region"))
-                .get(OciConfigBean.NAME);
-        OciConfigBean cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        OciConfig cfg = OciConfig.create(config);
         assertThat(cfg.simpleConfigIsPresent(),
                    is(true));
 
         config = createTestConfig(ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", "pkp", null))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.simpleConfigIsPresent(),
                    is(true));
 
         config = createTestConfig(ociAuthSimpleConfig(null, "user", "phrase", "fp", "pk", "pkp", null))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.simpleConfigIsPresent(),
                    is(false));
 
         config = createTestConfig(ociAuthSimpleConfig("tenant", null, "phrase", "fp", "pk", "pkp", null))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.simpleConfigIsPresent(),
                    is(false));
 
         config = createTestConfig(ociAuthSimpleConfig("tenant", "user", null, "fp", "pk", "pkp", null))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.simpleConfigIsPresent(),
                    is(false));
 
         config = createTestConfig(ociAuthSimpleConfig("tenant", "user", "phrase", null, "pk", "pkp", null))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.simpleConfigIsPresent(),
                    is(false));
 
         config = createTestConfig(ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, "pkp", null))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.simpleConfigIsPresent(),
                    is(true));
 
         config = createTestConfig(ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", null, "region"))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.simpleConfigIsPresent(),
                    is(true));
 
         config = createTestConfig(ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(cfg.simpleConfigIsPresent(),
                    is(false));
     }
 
     @Test
-    void defaultOciConfigBeanAttributes() {
+    void defaultOciConfigAttributes() {
         assertThat(OciExtension.ociConfig().authKeyFile(),
-                   optionalValue(equalTo("oci_api_key.pem")));
+                   equalTo("oci_api_key.pem"));
         assertThat(OciExtension.ociConfig().imdsHostName(),
-                   equalTo(OciConfigBean.IMDS_HOSTNAME));
-        assertThat(OciExtension.ociConfig().imdsTimeoutMilliseconds(),
-                   equalTo(100));
+                   equalTo(OciConfig.IMDS_HOSTNAME));
+        assertThat(OciExtension.ociConfig().imdsTimeout().toMillis(),
+                   equalTo(100L));
     }
 
     static Config createTestConfig(MapConfigSource.Builder... builders) {
@@ -211,9 +209,8 @@ class OciConfigBeanTest {
 
     static MapConfigSource.Builder basicTestingConfigSource() {
         return ConfigSources.create(
-                Map.of(
-                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
-                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_ACTIVATION_LOGS, "true"
+                Map.of("pico.permits-dynamic", "true",
+                       "pico.activation-logs", "true"
                 ), "config-basic");
     }
 
@@ -221,10 +218,10 @@ class OciConfigBeanTest {
                                                            String... strategies) {
         Map<String, String> map = new HashMap<>();
         if (strategy != null) {
-            map.put(OciConfigBean.NAME + ".auth-strategy", strategy);
+            map.put(OciConfig.CONFIG_KEY + ".auth-strategy", strategy);
         }
         if (strategies != null) {
-            map.put(OciConfigBean.NAME + ".auth-strategies", String.join(",", strategies));
+            map.put(OciConfig.CONFIG_KEY + ".auth-strategies", String.join(",", strategies));
         }
         return ConfigSources.create(map, "config-oci-auth-strategies");
     }
@@ -233,10 +230,10 @@ class OciConfigBeanTest {
                                                      String profile) {
         Map<String, String> map = new HashMap<>();
         if (configPath != null) {
-            map.put(OciConfigBean.NAME + ".config.path", configPath);
+            map.put(OciConfig.CONFIG_KEY + ".config.path", configPath);
         }
         if (profile != null) {
-            map.put(OciConfigBean.NAME + ".config.profile", String.join(",", profile));
+            map.put(OciConfig.CONFIG_KEY + ".config.profile", String.join(",", profile));
         }
         return ConfigSources.create(map, "config-oci-auth-config");
     }
@@ -250,25 +247,25 @@ class OciConfigBeanTest {
                                                        String region) {
         Map<String, String> map = new HashMap<>();
         if (tenantId != null) {
-            map.put(OciConfigBean.NAME + ".auth.tenant-id", tenantId);
+            map.put(OciConfig.CONFIG_KEY + ".auth.tenant-id", tenantId);
         }
         if (userId != null) {
-            map.put(OciConfigBean.NAME + ".auth.user-id", userId);
+            map.put(OciConfig.CONFIG_KEY + ".auth.user-id", userId);
         }
         if (passPhrase != null) {
-            map.put(OciConfigBean.NAME + ".auth.passphrase", passPhrase);
+            map.put(OciConfig.CONFIG_KEY + ".auth.passphrase", passPhrase);
         }
         if (fingerPrint != null) {
-            map.put(OciConfigBean.NAME + ".auth.fingerprint", fingerPrint);
+            map.put(OciConfig.CONFIG_KEY + ".auth.fingerprint", fingerPrint);
         }
         if (privateKey != null) {
-            map.put(OciConfigBean.NAME + ".auth.private-key", privateKey);
+            map.put(OciConfig.CONFIG_KEY + ".auth.private-key", privateKey);
         }
         if (privateKeyPath != null) {
-            map.put(OciConfigBean.NAME + ".auth.private-key-path", privateKeyPath);
+            map.put(OciConfig.CONFIG_KEY + ".auth.private-key-path", privateKeyPath);
         }
         if (region != null) {
-            map.put(OciConfigBean.NAME + ".auth.region", region);
+            map.put(OciConfig.CONFIG_KEY + ".auth.region", region);
         }
         return ConfigSources.create(map, "config-oci-auth-simple");
     }

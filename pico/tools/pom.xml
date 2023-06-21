@@ -74,8 +74,8 @@
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-processor</artifactId>
+            <groupId>io.helidon.common.processor</groupId>
+            <artifactId>helidon-common-processor</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>

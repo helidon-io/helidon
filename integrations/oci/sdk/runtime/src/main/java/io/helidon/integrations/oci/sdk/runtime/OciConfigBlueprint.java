@@ -16,19 +16,18 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import io.helidon.builder.config.ConfigBean;
+import io.helidon.builder.api.Prototype;
+import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.metadata.ConfiguredValue;
 
-import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
-
 import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.ALL_STRATEGIES;
-import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy;
 import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.TAG_AUTO;
 import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.TAG_CONFIG;
 import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.TAG_CONFIG_FILE;
@@ -41,21 +40,21 @@ import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsPr
  * @see OciExtension
  */
 // note: this is intended to be a replica to the properties carried from the cdi integrations previously done for MP
-@ConfigBean(OciConfigBean.NAME)
-public interface OciConfigBean {
-
+@Prototype.Blueprint
+@Configured(root = true, prefix = OciConfigBlueprint.CONFIG_KEY)
+interface OciConfigBlueprint {
     /**
-     * The config is expected to be under this key.
+     * Config key of this config.
      */
-    String NAME = "oci";
-
-    /** primary hostname of metadata service. */
+    String CONFIG_KEY = "oci";
+    /**
+     * Primary hostname of metadata service.
+     */
     String IMDS_HOSTNAME = "169.254.169.254";
-    /** primary base url of metadata service. */
-    String PRIMARY_IMDS_URL = "http://" + IMDS_HOSTNAME + "/opc/v2/";
-
-    /** fallback base url of metadata service. */
-    String FALLBACK_IMDS_URL = "http://" + IMDS_HOSTNAME + "/opc/v1/";
+    /**
+     * Redefine the constant, as it is private in BMC.
+     */
+    String DEFAULT_PROFILE_NAME = "DEFAULT";
 
     /**
      * The singular authentication strategy to apply. This will be preferred over {@link #authStrategies()} if both are
@@ -103,7 +102,7 @@ public interface OciConfigBean {
      * be used and all others will be ignored.
      *
      * @return the list of authentication strategies that will be applied, defaulting to {@code auto}
-     * @see AuthStrategy
+     * @see io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy
      */
     @ConfiguredOption(allowedValues = {
             @ConfiguredValue(value = TAG_AUTO, description = "auto select first applicable"),
@@ -134,12 +133,12 @@ public interface OciConfigBean {
      * <p>
      * This configuration property has an effect only when {@code config-file} is, explicitly or implicitly,
      * present in the value for the {@link #authStrategies()}. This is also known as {@link #fileConfigIsPresent()}.
-     * When it is present, this property may also be optionally provided in order to override the default {@link
-     * com.oracle.bmc.ConfigFileReader#DEFAULT_PROFILE_NAME}.
+     * When it is present, this property may also be optionally provided in order to override the default
+     * {@value #DEFAULT_PROFILE_NAME}.
      *
      * @return the optional OCI configuration/auth profile name
      */
-    @ConfiguredOption(value = "DEFAULT", key = "config.profile")
+    @ConfiguredOption(value = DEFAULT_PROFILE_NAME, key = "config.profile")
     Optional<String> configProfile();
 
     /**
@@ -169,7 +168,7 @@ public interface OciConfigBean {
      * @return the OCI authentication key file
      */
     @ConfiguredOption(value = "oci_api_key.pem", key = "auth.keyFile")
-    Optional<String> authKeyFile();
+    String authKeyFile();
 
     /**
      * The OCI authentication key file path.
@@ -198,7 +197,8 @@ public interface OciConfigBean {
      *
      * @return the OCI authentication private key
      */
-    @ConfiguredOption(key = "auth.private-key"/* securitySensitive = true*/)
+    @ConfiguredOption(key = "auth.private-key")
+    @Prototype.Confidential
     Optional<char[]> authPrivateKey();
 
     /**
@@ -212,7 +212,8 @@ public interface OciConfigBean {
      * @return the OCI authentication passphrase
      */
     // See https://github.com/helidon-io/helidon/issues/6908
-    @ConfiguredOption(key = "auth.passphrase"/* securitySensitive = true*/)
+    @ConfiguredOption(key = "auth.passphrase")
+    @Prototype.Confidential
     Optional<char[]> authPassphrase();
 
     /**
@@ -221,7 +222,7 @@ public interface OciConfigBean {
      * This configuration property has an effect only when {@code config} is, explicitly or implicitly,
      * present in the value for the {@link #authStrategies()}. This is also known as {@link #simpleConfigIsPresent()}.
      * When it is present, either this property or {@link com.oracle.bmc.auth.RegionProvider} must be provide a value in order
-     * to set the {@linkplain ConfigFileAuthenticationDetailsProvider#getRegion()}.
+     * to set the {@linkplain com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider#getRegion()}.
      *
      * @return the OCI region
      */
@@ -234,7 +235,7 @@ public interface OciConfigBean {
      * This configuration property has an effect only when {@code config} is, explicitly or implicitly,
      * present in the value for the {@link #authStrategies()}. This is also known as {@link #simpleConfigIsPresent()}.
      * When it is present, this property must be provided in order to set the
-     * {@linkplain ConfigFileAuthenticationDetailsProvider#getTenantId()}.
+     * {@linkplain com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider#getTenantId()}.
      *
      * @return the OCI tenant id
      */
@@ -247,7 +248,7 @@ public interface OciConfigBean {
      * This configuration property has an effect only when {@code config} is, explicitly or implicitly,
      * present in the value for the {@link #authStrategies()}.
      * When it is present, this property must be provided in order to set the
-     * {@linkplain ConfigFileAuthenticationDetailsProvider#getUserId()}.
+     * {@linkplain com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider#getUserId()}.
      *
      * @return the OCI user id
      */
@@ -265,19 +266,19 @@ public interface OciConfigBean {
     String imdsHostName();
 
     /**
-     * The OCI IMDS connection timeout in millis. This is used to auto-detect availability.
+     * The OCI IMDS connection timeout. This is used to auto-detect availability.
      * <p>
      * This configuration property is used when attempting to connect to the metadata service.
      *
-     * @return the OCI IMDS connection timeout in millis
+     * @return the OCI IMDS connection timeout
      * @see OciAvailability
      */
-    @ConfiguredOption(value = "100", key = "imds.timeout.milliseconds")
-    int imdsTimeoutMilliseconds();
+    @ConfiguredOption(value = "PT0.1S", key = "imds.timeout.milliseconds")
+    Duration imdsTimeout();
 
     /**
-     * The list of {@link AuthStrategy} names
-     * (excluding {@link AuthStrategy#AUTO}) that
+     * The list of {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy} names
+     * (excluding {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy#AUTO}) that
      * are potentially applicable for use. Here, "potentially applicable or use" means that it is set explicitly by
      * {@link #authStrategy()}, or else explicitly or implicitly by {@link #authStrategies()}.
      *
@@ -314,7 +315,7 @@ public interface OciConfigBean {
 
     /**
      * Determines whether there is sufficient configuration defined in this bean to be used for file-based authentication. This
-     * matches to the {@link AuthStrategy#CONFIG_FILE}.
+     * matches to the {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy#CONFIG_FILE}.
      *
      * @return true if there is sufficient attributes defined for file-based OCI authentication provider applicability
      * @see OciAuthenticationDetailsProvider
@@ -328,7 +329,7 @@ public interface OciConfigBean {
 
     /**
      * Determines whether there is sufficient configuration defined in this bean to be used for simple authentication. This
-     * matches to the {@link AuthStrategy#CONFIG}.
+     * matches to the {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy#CONFIG}.
      *
      * @return true if there is sufficient attributes defined for simple OCI authentication provider applicability
      * @see OciAuthenticationDetailsProvider
@@ -339,9 +340,10 @@ public interface OciConfigBean {
                 && authPassphrase().isPresent()
                 && authFingerprint().isPresent()
                 // don't test region since it can alternatively come from the region provider
-//                && authRegion().isPresent()
-                && (authPrivateKey().isPresent()
-                    || authPrivateKeyPath().isPresent());
+                //                && authRegion().isPresent()
+                && (
+                authPrivateKey().isPresent()
+                        || authPrivateKeyPath().isPresent());
     }
 
 }

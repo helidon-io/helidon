@@ -16,8 +16,8 @@
 
 package io.helidon.pico.tools;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
@@ -31,11 +31,11 @@ import io.helidon.common.types.TypeName;
 interface ModuleDetailBlueprint {
 
     /**
-     * name of the service provider activators for this module.
+     *Names of the service provider activators for this module.
      *
      * @return name of the service provider activators for this module
      */
-    List<TypeName> serviceProviderActivatorTypeNames();
+    Set<TypeName> serviceProviderActivatorTypeNames();
 
     /**
      * The name of this module.

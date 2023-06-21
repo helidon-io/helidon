@@ -20,14 +20,11 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.Annotation;
@@ -42,9 +39,6 @@ import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.TypeNames;
 import io.helidon.pico.tools.TypeTools;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 
 /**
  * Carries static methods that are agnostic to the active processing environment.
@@ -66,57 +60,6 @@ public final class GeneralProcessorUtils {
             t = t.getCause();
         }
         return t.getStackTrace()[0];
-    }
-
-    /**
-     * Converts a collection to a comma delimited string.
-     *
-     * @param coll the collection
-     * @return the concatenated, delimited string value
-     */
-    static String toString(Collection<?> coll) {
-        return toString(coll, null, null);
-    }
-
-    /**
-     * Provides specialization in concatenation, allowing for a function to be called for each element as well as to
-     * use special separators.
-     *
-     * @param coll      the collection
-     * @param fnc       the optional function to translate the collection item to a string
-     * @param separator the optional separator
-     * @param <T> the type held by the collection
-     * @return the concatenated, delimited string value
-     */
-    static <T> String toString(Collection<T> coll,
-                               Function<T, String> fnc,
-                               String separator) {
-        Function<T, String> fn = (fnc == null) ? String::valueOf : fnc;
-        separator = (separator == null) ? ", " : separator;
-        return coll.stream().map(fn).collect(Collectors.joining(separator));
-    }
-
-    /**
-     * Splits given using a comma-delimiter, and returns a trimmed list of string for each item.
-     *
-     * @param str the string to split
-     * @return the list of string values
-     */
-    static List<String> toList(String str) {
-        return toList(str, ",");
-    }
-
-    /**
-     * Splits a string given a delimiter, and returns a trimmed list of string for each item.
-     *
-     * @param str the string to split
-     * @param delim the delimiter
-     * @return the list of string values
-     */
-    static List<String> toList(String str,
-                               String delim) {
-        String[] split = str.split(delim);
-        return Arrays.stream(split).map(String::trim).collect(Collectors.toList());
     }
 
     /**
@@ -146,9 +89,6 @@ public final class GeneralProcessorUtils {
         }
 
         // RunLevel is not inheritable - we will therefore not search up the hierarchy
-//        if (service.superTypeInfo().isPresent()) {
-//            return toRunLevel(service.superTypeInfo().get());
-//        }
 
         return Optional.empty();
     }
@@ -167,69 +107,57 @@ public final class GeneralProcessorUtils {
         }
 
         // Weight is not inheritable - we will therefore not search up the hierarchy
-//        if (service.superTypeInfo().isPresent()) {
-//            return toWeight(service.superTypeInfo().get());
-//        }
 
         return Optional.empty();
     }
 
     /**
-     * Attempts to resolve the {@link PostConstruct} method name assigned to the provided service.
+     * Attempts to resolve the {@code PostConstruct} method name assigned to the provided service.
      *
      * @param service the service
      * @return the post construct method if available
      */
     static Optional<String> toPostConstructMethod(TypeInfo service) {
         List<String> postConstructs = service.elementInfo().stream()
-                .filter(it -> {
-                    Annotation anno = findFirst(PostConstruct.class, it.annotations()).orElse(null);
-                    return (anno != null);
-                })
+                .filter(it -> it.hasAnnotation(TypeNames.JAKARTA_POST_CONSTRUCT_TYPE))
                 .map(TypedElementInfo::elementName)
                 .toList();
         if (postConstructs.size() == 1) {
             return Optional.of(postConstructs.get(0));
         } else if (postConstructs.size() > 1) {
             throw new IllegalStateException("There can be at most one "
-                                                    + PostConstruct.class.getName()
+                                                    + TypeNames.JAKARTA_POST_CONSTRUCT
                                                     + " annotated method per type: " + service.typeName());
         }
 
         // PostConstruct is not inheritable - we will therefore not search up the hierarchy
-//        if (service.superTypeInfo().isPresent()) {
-//            return toPostConstructMethod(service.superTypeInfo().get());
-//        }
 
         return Optional.empty();
     }
 
     /**
-     * Attempts to resolve the {@link PreDestroy} method name assigned to the provided service.
+     * Attempts to resolve the {@code PreDestroy} method name assigned to the provided service.
      *
      * @param service the service
      * @return the pre destroy method if available
      */
     static Optional<String> toPreDestroyMethod(TypeInfo service) {
         List<String> preDestroys = service.elementInfo().stream()
-                .filter(it -> {
-                    Annotation anno = findFirst(PreDestroy.class, it.annotations()).orElse(null);
-                    return (anno != null);
-                })
+                .filter(it -> it.hasAnnotation(TypeNames.JAKARTA_PRE_DESTROY_TYPE))
                 .map(TypedElementInfo::elementName)
                 .toList();
         if (preDestroys.size() == 1) {
             return Optional.of(preDestroys.get(0));
         } else if (preDestroys.size() > 1) {
             throw new IllegalStateException("There can be at most one "
-                                                    + PreDestroy.class.getName()
+                                                    + TypeNames.JAKARTA_PRE_DESTROY
                                                     + " annotated method per type: " + service.typeName());
         }
 
         // PreDestroy is not inheritable - we will therefore not search up the hierarchy
-//        if (service.superTypeInfo().isPresent()) {
-//            return toPreDestroyMethod(service.superTypeInfo().get());
-//        }
+        //        if (service.superTypeInfo().isPresent()) {
+        //            return toPreDestroyMethod(service.superTypeInfo().get());
+        //        }
 
         return Optional.empty();
     }
@@ -253,7 +181,7 @@ public final class GeneralProcessorUtils {
                 });
 
         if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
-            boolean hasApplicationScope = findFirst(TypeNames.JAKARTA_APPLICATION_SCOPED, service.annotations()).isPresent();
+            boolean hasApplicationScope = service.hasAnnotation(TypeNames.JAKARTA_APPLICATION_SCOPED_TYPE);
             if (hasApplicationScope) {
                 scopeAnnotations.add(TypeNames.JAKARTA_SINGLETON_TYPE);
                 scopeAnnotations.add(TypeNames.JAKARTA_APPLICATION_SCOPED_TYPE);
@@ -287,7 +215,7 @@ public final class GeneralProcessorUtils {
 
         for (Annotation anno : service.annotations()) {
             List<Annotation> metaAnnotations = service.referencedTypeNamesToAnnotations().get(anno.typeName());
-            Optional<? extends Annotation> qual = findFirst(jakarta.inject.Qualifier.class, metaAnnotations);
+            Optional<? extends Annotation> qual = findFirst(TypeNames.JAKARTA_QUALIFIER, metaAnnotations);
             if (qual.isPresent()) {
                 result.add(Qualifier.create(anno));
             }
@@ -308,13 +236,13 @@ public final class GeneralProcessorUtils {
      * @return the qualifiers associated with the provided element
      */
     static Set<Qualifier> toQualifiers(TypedElementInfo element,
-                                               TypeInfo service) {
+                                       TypeInfo service) {
         Set<Qualifier> result = new LinkedHashSet<>();
 
         for (Annotation anno : element.annotations()) {
             List<Annotation> metaAnnotations = service.referencedTypeNamesToAnnotations().get(anno.typeName());
             Optional<? extends Annotation> qual = (metaAnnotations == null)
-                    ? Optional.empty() : findFirst(jakarta.inject.Qualifier.class, metaAnnotations);
+                    ? Optional.empty() : findFirst(TypeNames.JAKARTA_QUALIFIER, metaAnnotations);
             if (qual.isPresent()) {
                 result.add(Qualifier.create(anno));
             }
@@ -331,9 +259,10 @@ public final class GeneralProcessorUtils {
      * @param typeName the type name to check
      * @return true if the provided type is a provider type.
      */
-    static boolean isProviderType(TypeName typeName) {
+    public static boolean isProviderType(TypeName typeName) {
         String name = typeName.name();
-        return (name.equals(TypeNames.JAKARTA_PROVIDER)
+        return (
+                name.equals(TypeNames.JAKARTA_PROVIDER)
                         || name.equals(TypeNames.JAVAX_PROVIDER)
                         || name.equals(TypeNames.PICO_INJECTION_POINT_PROVIDER)
                         || TypeNames.PICO_SERVICE_PROVIDER.equals(name));
@@ -356,23 +285,18 @@ public final class GeneralProcessorUtils {
      * @param annotations the set of annotations to look in
      * @return the optional annotation if there is a match
      */
-    static Optional<? extends Annotation> findFirst(Class<? extends java.lang.annotation.Annotation> annoType,
-                                                            Collection<? extends Annotation> annotations) {
-        return findFirst(annoType.getName(), annotations);
-    }
-
-    static Optional<? extends Annotation> findFirst(String annoTypeName,
-                                                            Collection<? extends Annotation> annotations) {
+    static Optional<? extends Annotation> findFirst(String annoType,
+                                                    Collection<? extends Annotation> annotations) {
         if (annotations == null) {
             return Optional.empty();
         }
 
-        Optional<? extends Annotation> anno = Annotations.findFirst(annoTypeName, annotations);
+        Optional<? extends Annotation> anno = Annotations.findFirst(annoType, annotations);
         if (anno.isPresent()) {
             return anno;
         }
 
-        return Annotations.findFirst(TypeTools.oppositeOf(annoTypeName), annotations);
+        return Annotations.findFirst(TypeTools.oppositeOf(annoType), annotations);
     }
 
     static ServiceInfoBasics toBasicServiceInfo(TypeInfo service) {

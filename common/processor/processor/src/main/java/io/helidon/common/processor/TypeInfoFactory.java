@@ -171,6 +171,16 @@ public final class TypeInfoFactory {
         return Optional.of(builder.build());
     }
 
+    /**
+     * Check if the provided type is either a primitive type, or is from the {@code java} package namespace.
+     *
+     * @param type type to check
+     * @return {@code true} if the type is a primitive type, or its package starts with {@code java.}
+     */
+    public static boolean isBuiltInJavaType(TypeName type) {
+        return type.primitive() || type.packageName().startsWith("java.");
+    }
+
     private static Optional<TypeInfo> create(ProcessingEnvironment processingEnv,
                                              TypeElement typeElement,
                                              Predicate<TypedElementInfo> elementPredicate,
@@ -398,10 +408,6 @@ public final class TypeInfoFactory {
      */
     private static boolean hasValue(String val) {
         return (val != null && !val.isBlank());
-    }
-
-    private static boolean isBuiltInJavaType(TypeName type) {
-        return type.primitive() || type.packageName().startsWith("java.");
     }
 
     private static final class AllPredicate implements Predicate<TypedElementInfo> {

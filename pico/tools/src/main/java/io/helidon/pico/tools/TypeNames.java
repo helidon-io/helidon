@@ -111,9 +111,17 @@ public final class TypeNames {
      */
     public static final String JAKARTA_POST_CONSTRUCT = "jakarta.annotation.PostConstruct";
     /**
+     * Jakarta {@value #JAKARTA_POST_CONSTRUCT} annotation type.
+     */
+    public static final TypeName JAKARTA_POST_CONSTRUCT_TYPE = TypeName.create(JAKARTA_POST_CONSTRUCT);
+    /**
      * Jakarta {@value} annotation.
      */
     public static final String JAKARTA_PRE_DESTROY = "jakarta.annotation.PreDestroy";
+    /**
+     * Jakarta {@value #JAKARTA_PRE_DESTROY} annotation type.
+     */
+    public static final TypeName JAKARTA_PRE_DESTROY_TYPE = TypeName.create(JAKARTA_PRE_DESTROY);
     /**
      * Jakarta {@value} annotation.
      */
@@ -282,7 +290,6 @@ public final class TypeNames {
      * Jakarta legacy {@value} annotation.
      */
     public static final String JAVAX_SINGLETON = "javax.inject.Singleton";
-
 
     private TypeNames() {
     }

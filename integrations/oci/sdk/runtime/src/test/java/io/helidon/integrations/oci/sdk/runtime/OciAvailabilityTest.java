@@ -27,7 +27,7 @@ class OciAvailabilityTest {
 
     @Test
     void isRunningOnOci() {
-        OciConfigBean ociConfigBean = Objects.requireNonNull(OciExtension.ociConfig());
+        OciConfig ociConfigBean = Objects.requireNonNull(OciExtension.ociConfig());
         assertThat(OciAvailabilityDefault.runningOnOci(ociConfigBean),
                                  is(false));
     }

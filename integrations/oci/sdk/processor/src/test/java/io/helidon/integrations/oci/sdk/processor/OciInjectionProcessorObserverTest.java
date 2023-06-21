@@ -30,92 +30,90 @@ import com.oracle.bmc.streaming.StreamAsync;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.types.TypeNameDefault.create;
-import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
-class InjectionProcessorObserverForOCITest {
+class OciInjectionProcessorObserverTest {
 
     @Test
     void generatedPicoArtifactsForTypicalOciServices() {
-        TypeName ociServiceType = create(ObjectStorage.class);
+        TypeName ociServiceType = TypeName.create(ObjectStorage.class);
 
-        TypeName generatedOciServiceClientTypeName = InjectionProcessorObserverForOCI.toGeneratedServiceClientTypeName(ociServiceType);
+        TypeName generatedOciServiceClientTypeName = OciInjectionProcessorObserver.toGeneratedServiceClientTypeName(ociServiceType);
         assertThat(generatedOciServiceClientTypeName.name(),
                    equalTo("io.helidon.integrations.generated." + ociServiceType.name() + "$$Oci$$Client"));
 
-        String serviceClientBody = InjectionProcessorObserverForOCI.toBody(InjectionProcessorObserverForOCI.TAG_TEMPLATE_SERVICE_CLIENT_PROVIDER_NAME,
-                                                                           ociServiceType,
-                                                                           generatedOciServiceClientTypeName);
+        String serviceClientBody = OciInjectionProcessorObserver.toBody(OciInjectionProcessorObserver.TAG_TEMPLATE_SERVICE_CLIENT_PROVIDER_NAME,
+                                                                        ociServiceType,
+                                                                        generatedOciServiceClientTypeName);
         assertThat(serviceClientBody,
                    equalTo(loadStringFromResource("expected/objectstorage$$Oci$$Client._java_")));
 
-        TypeName generatedOciServiceClientBuilderTypeName = InjectionProcessorObserverForOCI.toGeneratedServiceClientBuilderTypeName(ociServiceType);
+        TypeName generatedOciServiceClientBuilderTypeName = OciInjectionProcessorObserver.toGeneratedServiceClientBuilderTypeName(ociServiceType);
         assertThat(generatedOciServiceClientBuilderTypeName.name(),
                    equalTo("io.helidon.integrations.generated." + ociServiceType.name() + "$$Oci$$ClientBuilder"));
 
-        String serviceClientBuilderBody = InjectionProcessorObserverForOCI.toBody(InjectionProcessorObserverForOCI.TAG_TEMPLATE_SERVICE_CLIENT_BUILDER_PROVIDER_NAME,
-                                                                                  ociServiceType,
-                                                                                  generatedOciServiceClientTypeName);
+        String serviceClientBuilderBody = OciInjectionProcessorObserver.toBody(OciInjectionProcessorObserver.TAG_TEMPLATE_SERVICE_CLIENT_BUILDER_PROVIDER_NAME,
+                                                                               ociServiceType,
+                                                                               generatedOciServiceClientTypeName);
         assertThat(serviceClientBuilderBody,
                    equalTo(loadStringFromResource("expected/objectstorage$$Oci$$ClientBuilder._java_")));
     }
 
     @Test
     void oddballServiceTypeNames() {
-        TypeName ociServiceType = create(Stream.class);
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.maybeDot(ociServiceType),
+        TypeName ociServiceType = TypeName.create(Stream.class);
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.maybeDot(ociServiceType),
                                  equalTo(""));
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.usesRegion(ociServiceType),
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.usesRegion(ociServiceType),
                                  equalTo(false));
 
-        ociServiceType = create(StreamAsync.class);
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.maybeDot(ociServiceType),
+        ociServiceType = TypeName.create(StreamAsync.class);
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.maybeDot(ociServiceType),
                                  equalTo(""));
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.usesRegion(ociServiceType),
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.usesRegion(ociServiceType),
                                  equalTo(false));
 
-        ociServiceType = create(StreamAdmin.class);
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.maybeDot(ociServiceType),
+        ociServiceType = TypeName.create(StreamAdmin.class);
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.maybeDot(ociServiceType),
                                  equalTo("."));
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.usesRegion(ociServiceType),
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.usesRegion(ociServiceType),
                                  equalTo(true));
     }
 
     @Test
     void testShouldProcess() {
-        TypeName typeName = create(ObjectStorage.class);
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.shouldProcess(typeName, null),
+        TypeName typeName = TypeName.create(ObjectStorage.class);
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.shouldProcess(typeName, null),
                                  is(true));
 
-        typeName = createFromTypeName("com.oracle.bmc.circuitbreaker.OciCircuitBreaker");
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.shouldProcess(typeName, null),
+        typeName = TypeName.create("com.oracle.bmc.circuitbreaker.OciCircuitBreaker");
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.shouldProcess(typeName, null),
                                  is(false));
 
-        typeName = createFromTypeName("com.oracle.another.Service");
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.shouldProcess(typeName, null),
+        typeName = TypeName.create("com.oracle.another.Service");
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.shouldProcess(typeName, null),
                                  is(false));
 
-        typeName = createFromTypeName("com.oracle.bmc.Service");
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.shouldProcess(typeName, null),
+        typeName = TypeName.create("com.oracle.bmc.Service");
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.shouldProcess(typeName, null),
                                  is(true));
 
-        typeName = createFromTypeName("com.oracle.bmc.ServiceClient");
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.shouldProcess(typeName, null),
+        typeName = TypeName.create("com.oracle.bmc.ServiceClient");
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.shouldProcess(typeName, null),
                                  is(false));
 
-        typeName = createFromTypeName("com.oracle.bmc.ServiceClientBuilder");
-        MatcherAssert.assertThat(InjectionProcessorObserverForOCI.shouldProcess(typeName, null),
+        typeName = TypeName.create("com.oracle.bmc.ServiceClientBuilder");
+        MatcherAssert.assertThat(OciInjectionProcessorObserver.shouldProcess(typeName, null),
                                  is(false));
     }
 
     @Test
     void loadTypeNameExceptions() {
-        Set<String> set = InjectionProcessorObserverForOCI.TYPENAME_EXCEPTIONS.get();
-        set.addAll(InjectionProcessorObserverForOCI.splitToSet(" M1,  M2,,, "));
+        Set<String> set = OciInjectionProcessorObserver.TYPENAME_EXCEPTIONS.get();
+        set.addAll(OciInjectionProcessorObserver.splitToSet(" M1,  M2,,, "));
         assertThat(set,
                    containsInAnyOrder("M1",
                                       "M2",
@@ -128,8 +126,8 @@ class InjectionProcessorObserverForOCITest {
 
     @Test
     void loadNoDotExceptions() {
-        Set<String> set = InjectionProcessorObserverForOCI.NO_DOT_EXCEPTIONS.get();
-        set.addAll(InjectionProcessorObserverForOCI.splitToSet("Manual1, Manual2 "));
+        Set<String> set = OciInjectionProcessorObserver.NO_DOT_EXCEPTIONS.get();
+        set.addAll(OciInjectionProcessorObserver.splitToSet("Manual1, Manual2 "));
         assertThat(set,
                    containsInAnyOrder("Manual1",
                                       "Manual2",
@@ -141,7 +139,7 @@ class InjectionProcessorObserverForOCITest {
 
     static String loadStringFromResource(String resourceNamePath) {
         try {
-            try (InputStream in = InjectionProcessorObserverForOCITest.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
+            try (InputStream in = OciInjectionProcessorObserverTest.class.getClassLoader().getResourceAsStream(resourceNamePath)) {
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
             }
         } catch (Exception e) {

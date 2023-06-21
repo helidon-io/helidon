@@ -1411,7 +1411,8 @@ public final class TypeTools {
         return !(
                 packageName.startsWith("java.")
                         || packageName.startsWith("sun.")
-                        || packageName.toLowerCase().endsWith(".impl"));
+                        || packageName.toLowerCase().endsWith(".impl")
+                        || packageName.equals("io.helidon.pico.api"));
     }
 
     /**

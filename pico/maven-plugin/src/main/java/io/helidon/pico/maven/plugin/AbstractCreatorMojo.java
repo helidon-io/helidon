@@ -281,7 +281,11 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
             if (moduleSp != null) {
                 packageName = moduleSp.serviceInfo().serviceTypeName().packageName();
             } else {
-                packageName = toSuggestedGeneratedPackageName(descriptor, typeNames, "pico");
+                if (descriptor == null) {
+                    packageName = toSuggestedGeneratedPackageName(typeNames, "pico");
+                } else {
+                    packageName = toSuggestedGeneratedPackageName(typeNames, "pico", descriptor);
+                }
             }
         }
 

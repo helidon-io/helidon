@@ -190,7 +190,8 @@ interface ActivatorCreatorCodeGenBlueprint {
     String classPrefixName();
 
     /**
-     * Used in conjunction with {@link ActivatorCreatorConfigOptions#isModuleCreated()}. If a module is created and this set is
+     * Used in conjunction with {@link io.helidon.pico.tools.ActivatorCreatorConfigOptions#moduleCreated()}.
+     * If a module is created and this set is
      * populated then this set will be used to represent all {@link io.helidon.pico.api.Activator} type names that should be code
      * generated for this {@link io.helidon.pico.api.ModuleComponent}.
      *

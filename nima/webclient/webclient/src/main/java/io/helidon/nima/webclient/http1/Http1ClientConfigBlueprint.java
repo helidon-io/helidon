@@ -70,7 +70,6 @@ interface Http1ClientConfigBlueprint extends ClientConfig {
     @ConfiguredOption("true")
     boolean relativeUris();
 
-    @Singular
     @Prototype.Singular
     List<WebClientService> services();
 }

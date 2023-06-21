@@ -18,16 +18,12 @@
  * Pico Annotation Processor module.
  */
 module io.helidon.pico.processor {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
-    requires static jdk.jfr;
-
-    requires java.compiler;
+    requires transitive java.compiler;
 
     requires io.helidon.common;
     requires io.helidon.common.processor;
     requires transitive io.helidon.pico.tools;
-    requires io.helidon.builder.processor;
+    requires io.helidon.builder.api;
 
     exports io.helidon.pico.processor;
     exports io.helidon.pico.processor.spi;

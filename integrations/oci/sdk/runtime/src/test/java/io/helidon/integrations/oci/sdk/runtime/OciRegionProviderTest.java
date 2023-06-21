@@ -16,14 +16,16 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
+import io.helidon.pico.api.AccessModifier;
 import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.ElementInfo;
-import io.helidon.pico.api.InjectionPointInfoDefault;
+import io.helidon.pico.api.ElementKind;
+import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.PicoServiceProviderException;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.QualifierAndValueDefault;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
+import io.helidon.pico.api.Qualifier;
+import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 
@@ -55,10 +57,10 @@ class OciRegionProviderTest {
 
     @Test
     void regionProviderService() {
-        Config config = OciConfigBeanTest.createTestConfig(
-                OciConfigBeanTest.basicTestingConfigSource(),
-                OciConfigBeanTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.TAG_AUTO),
-                OciConfigBeanTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
+        Config config = OciConfigTest.createTestConfig(
+                OciConfigTest.basicTestingConfigSource(),
+                OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.TAG_AUTO),
+                OciConfigTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
         resetWith(config);
 
         ServiceProvider<Region> regionProvider = PicoServices.realizedServices()
@@ -66,22 +68,26 @@ class OciRegionProviderTest {
         assertThrows(PicoServiceProviderException.class,
                      regionProvider::get);
 
+        TypeName regionType = TypeName.create(Region.class);
+
         ContextualServiceQuery query = ContextualServiceQuery.create(
-                InjectionPointInfoDefault.builder()
-                        .serviceTypeName("whatever")
-                        .elementKind(ElementInfo.ElementKind.METHOD)
+                InjectionPointInfo.builder()
+                        .ipType(regionType)
+                        .ipName("region")
+                        .serviceTypeName(TypeName.create("io.helidon.Whatever"))
+                        .elementKind(ElementKind.METHOD)
                         .elementName("m")
-                        .elementTypeName(Region.class.getName())
+                        .elementTypeName(regionType)
                         .baseIdentity("m")
                         .id("m1")
-                        .access(ElementInfo.Access.PUBLIC)
-                        .addQualifier(QualifierAndValueDefault.createNamed("us-phoenix-1"))
-                        .dependencyToServiceInfo(ServiceInfoCriteriaDefault.builder()
-                                                         .addContractImplemented(Region.class.getName())
-                                                         .addQualifier(QualifierAndValueDefault.createNamed("us-phoenix-1"))
+                        .access(AccessModifier.PUBLIC)
+                        .addQualifier(Qualifier.createNamed("us-phoenix-1"))
+                        .dependencyToServiceInfo(ServiceInfoCriteria.builder()
+                                                         .addContractImplemented(regionType)
+                                                         .addQualifier(Qualifier.createNamed("us-phoenix-1"))
                                                          .build())
                         .build(),
-                false);
+                                         false);
         assertThat(regionProvider.first(query),
                    optionalValue(equalTo(Region.US_PHOENIX_1)));
     }

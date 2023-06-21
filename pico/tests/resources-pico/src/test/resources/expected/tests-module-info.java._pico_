@@ -3,14 +3,11 @@ module io.helidon.pico.tests.pico/test {
     exports io.helidon.pico.tests.pico;
     // Pico module - @io.helidon.common.Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", trigger = "io.helidon.pico.tools.ActivatorCreatorDefault")
     provides io.helidon.pico.api.ModuleComponent with io.helidon.pico.tests.pico.Pico$$TestModule;
-    // Pico application - @io.helidon.common.Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", trigger = "io.helidon.pico.tools.ActivatorCreatorDefault")
-    provides io.helidon.pico.api.Application with io.helidon.pico.tests.pico.Pico$$TestApplication;
     // Pico external contract usage - @io.helidon.common.Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", trigger = "io.helidon.pico.tools.ActivatorCreatorDefault")
-    uses io.helidon.pico.api.Resettable;
     uses io.helidon.pico.tests.pico.stacking.Intercepted;
     uses io.helidon.pico.tests.pico.stacking.InterceptedImpl;
     // Pico services - @io.helidon.common.Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", trigger = "io.helidon.pico.tools.ActivatorCreatorDefault")
     requires transitive io.helidon.pico.runtime;
-    // pico application - Generated(value = "io.helidon.pico.tools.ApplicationCreatorDefault", comments = "version=1")
+    // Pico application - @io.helidon.common.Generated(value = "io.helidon.pico.tools.ApplicationCreatorDefault", trigger = "io.helidon.pico.tools.ApplicationCreatorDefault")
     provides io.helidon.pico.api.Application with io.helidon.pico.tests.pico.Pico$$TestApplication;
 }

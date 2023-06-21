@@ -28,6 +28,8 @@ import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.MediaContextConfig;
+import io.helidon.nima.http.media.MediaSupport;
 import io.helidon.nima.webclient.DefaultDnsResolverProvider;
 import io.helidon.nima.webclient.DnsAddressLookup;
 import io.helidon.nima.webclient.HttpClient;
@@ -74,13 +76,21 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
                 .dnsAddressLookup(DnsAddressLookup.defaultLookup())
                 .socketOptions(EMPTY_OPTIONS);
 
+        private MediaContextConfig.Builder mediaContextBuilder;
+
         private Http1ClientBuilder() {
         }
 
         @Override
-        public Http1Client build() {
+        public Http1Client doBuild() {
             configBuilder.defaultHeaders(defaultHeaders());
             configBuilder.socketOptions(super.channelOptions());
+
+            if (mediaContextBuilder != null) {
+                configBuilder.mediaContext(mediaContextBuilder.fallback(configBuilder.mediaContext())
+                                                   .build());
+            }
+
             return new Http1ClientImpl(configBuilder.build());
         }
 
@@ -206,7 +216,11 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
          */
         public Http1ClientBuilder addMediaSupport(MediaSupport mediaSupport) {
             Objects.requireNonNull(mediaSupport);
-            configBuilder.addMediaSupport(mediaSupport);
+            if (mediaContextBuilder == null) {
+                mediaContextBuilder = MediaContext.builder()
+                        .mediaSupportsDiscoverServices(false);
+            }
+            mediaContextBuilder.addMediaSupport(mediaSupport);
             return this;
         }
 

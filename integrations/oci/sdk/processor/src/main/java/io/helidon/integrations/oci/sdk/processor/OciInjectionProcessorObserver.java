@@ -39,18 +39,15 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.pico.processor.ProcessingEvent;
 import io.helidon.pico.processor.spi.PicoAnnotationProcessorObserver;
-import io.helidon.pico.processor.spi.ProcessingEvent;
 import io.helidon.pico.tools.TemplateHelper;
 import io.helidon.pico.tools.ToolsException;
+import io.helidon.pico.tools.TypeNames;
 
-import jakarta.inject.Inject;
-
-import static io.helidon.common.types.TypeNameDefault.create;
-import static io.helidon.pico.processor.GeneralProcessorUtils.findFirst;
 import static io.helidon.pico.processor.GeneralProcessorUtils.isProviderType;
 import static java.util.function.Predicate.not;
 
@@ -87,7 +84,7 @@ import static java.util.function.Predicate.not;
  *     not be processed.</li>
  * </ul>
  */
-public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessorObserver {
+public class OciInjectionProcessorObserver implements PicoAnnotationProcessorObserver {
     static final String OCI_ROOT_PACKAGE_NAME_PREFIX = "com.oracle.bmc.";
 
     // all generated sources will have this package prefix
@@ -106,9 +103,11 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
     static final String TAG_NO_DOT_EXCEPTIONS = "builder-name-exceptions";
 
     static final LazyValue<Set<String>> TYPENAME_EXCEPTIONS = LazyValue
-            .create(InjectionProcessorObserverForOCI::loadTypeNameExceptions);
+            .create(OciInjectionProcessorObserver::loadTypeNameExceptions);
     static final LazyValue<Set<String>> NO_DOT_EXCEPTIONS = LazyValue
-            .create(InjectionProcessorObserverForOCI::loadNoDotExceptions);
+            .create(OciInjectionProcessorObserver::loadNoDotExceptions);
+
+    private static final TypeName PROCESSOR_TYPE = TypeName.create(OciInjectionProcessorObserver.class);
 
     /**
      * Service loader based constructor.
@@ -116,7 +115,7 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
      * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
     @Deprecated
-    public InjectionProcessorObserverForOCI() {
+    public OciInjectionProcessorObserver() {
     }
 
     @Override
@@ -130,10 +129,10 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
 
     private void process(TypedElementInfo element,
                          ProcessingEnvironment processingEnv) {
-        if (TypeInfo.KIND_FIELD.equalsIgnoreCase(element.elementTypeKind())) {
+        if (TypeValues.KIND_FIELD.equalsIgnoreCase(element.elementTypeKind())) {
             process(element.typeName(), processingEnv);
-        } else if (TypeInfo.KIND_METHOD.equalsIgnoreCase(element.elementTypeKind())
-                || TypeInfo.KIND_CONSTRUCTOR.equalsIgnoreCase(element.elementTypeKind())) {
+        } else if (TypeValues.KIND_METHOD.equalsIgnoreCase(element.elementTypeKind())
+                || TypeValues.KIND_CONSTRUCTOR.equalsIgnoreCase(element.elementTypeKind())) {
             element.parameterArguments().stream()
                     .filter(it -> shouldProcess(it.typeName(), processingEnv))
                     .forEach(it -> process(it.typeName(), processingEnv));
@@ -180,13 +179,17 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
     }
 
     static TypeName toGeneratedServiceClientTypeName(TypeName typeName) {
-        return create(GENERATED_PREFIX + typeName.packageName(),
-                      typeName.className() + GENERATED_CLIENT_SUFFIX);
+        return TypeName.builder()
+                .packageName(GENERATED_PREFIX + typeName.packageName())
+                .className(typeName.className() + GENERATED_CLIENT_SUFFIX)
+                .build();
     }
 
     static TypeName toGeneratedServiceClientBuilderTypeName(TypeName typeName) {
-        return create(GENERATED_PREFIX + typeName.packageName(),
-                      typeName.className() + GENERATED_CLIENT_BUILDER_SUFFIX);
+        return TypeName.builder()
+                .packageName(GENERATED_PREFIX + typeName.packageName())
+                .className(typeName.className() + GENERATED_CLIENT_BUILDER_SUFFIX)
+                .build();
     }
 
     static String toBody(String templateName,
@@ -195,10 +198,12 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
         TemplateHelper templateHelper = TemplateHelper.create();
         String template = loadTemplate(templateName);
         Map<String, Object> subst = new HashMap<>();
-        subst.put("classname", ociServiceTypeName.name());
+        subst.put("classname", ociServiceTypeName.fqName());
         subst.put("simpleclassname", ociServiceTypeName.className());
         subst.put("packagename", generatedOciActivatorTypeName.packageName());
-        subst.put("generatedanno", templateHelper.generatedStickerFor(PicoAnnotationProcessorObserver.class.getName()));
+        subst.put("generatedanno", templateHelper.generatedStickerFor(PROCESSOR_TYPE,
+                                                                      ociServiceTypeName,
+                                                                      generatedOciActivatorTypeName));
         subst.put("dot", maybeDot(ociServiceTypeName));
         subst.put("usesRegion", usesRegion(ociServiceTypeName));
         return templateHelper.applySubstitutions(template, subst, true).trim();
@@ -216,7 +221,7 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
     static String loadTemplate(String name) {
         String path = "io/helidon/integrations/oci/sdk/processor/templates/" + name;
         try {
-            InputStream in = InjectionProcessorObserverForOCI.class.getClassLoader().getResourceAsStream(path);
+            InputStream in = OciInjectionProcessorObserver.class.getClassLoader().getResourceAsStream(path);
             if (in == null) {
                 throw new IOException("Could not find template " + path + " on classpath.");
             }
@@ -258,9 +263,9 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
         // note that we need to keep this mutable for later when we process the env options passed manually in
         Set<String> result = new LinkedHashSet<>();
 
-        name = InjectionProcessorObserverForOCI.class.getPackageName().replace(".", "/") + "/" + name + ".txt";
+        name = OciInjectionProcessorObserver.class.getPackageName().replace(".", "/") + "/" + name + ".txt";
         try {
-            Enumeration<URL> resources = InjectionProcessorObserverForOCI.class.getClassLoader().getResources(name);
+            Enumeration<URL> resources = OciInjectionProcessorObserver.class.getClassLoader().getResources(name);
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 try (
@@ -283,14 +288,14 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
 
     static boolean shouldProcess(TypedElementInfo element,
                                  ProcessingEnvironment processingEnv) {
-        if (findFirst(Inject.class, element.annotations()).isEmpty()) {
+        if (!element.hasAnnotation(TypeNames.JAKARTA_INJECT_TYPE)) {
             return false;
         }
 
-        if (TypeInfo.KIND_FIELD.equalsIgnoreCase(element.elementTypeKind())) {
+        if (TypeValues.KIND_FIELD.equalsIgnoreCase(element.elementTypeKind())) {
             return shouldProcess(element.typeName(), processingEnv);
-        } else if (TypeInfo.KIND_METHOD.equalsIgnoreCase(element.elementTypeKind())
-                || TypeInfo.KIND_CONSTRUCTOR.equalsIgnoreCase(element.elementTypeKind())) {
+        } else if (TypeValues.KIND_METHOD.equalsIgnoreCase(element.elementTypeKind())
+                || TypeValues.KIND_CONSTRUCTOR.equalsIgnoreCase(element.elementTypeKind())) {
             return element.parameterArguments().stream()
                     .anyMatch(it -> shouldProcess(it.typeName(), processingEnv));
         }
@@ -300,12 +305,12 @@ public class InjectionProcessorObserverForOCI implements PicoAnnotationProcessor
 
     static boolean shouldProcess(TypeName typeName,
                                  ProcessingEnvironment processingEnv) {
-        if ((typeName.typeArguments().size() > 0)
-                && (isProviderType(typeName) || typeName.isOptional())) {
+        if (!typeName.typeArguments().isEmpty()
+                && isProviderType(typeName) || typeName.isOptional()) {
             typeName = typeName.typeArguments().get(0);
         }
 
-        String name = typeName.name();
+        String name = typeName.fqName();
         if (!name.startsWith(OCI_ROOT_PACKAGE_NAME_PREFIX)
                 || name.endsWith(".Builder")
                 || name.endsWith("Client")

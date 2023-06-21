@@ -37,12 +37,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.lang.model.element.TypeElement;
 
-import io.helidon.common.processor.TypeFactory;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.processor.TypeFactory;
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.ModuleComponent;
-import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.tools.spi.ModuleComponentNamer;
 
 import static io.helidon.pico.tools.CommonUtils.first;
@@ -78,14 +77,14 @@ public class ModuleUtils {
     /**
      * Returns the suggested package name to use.
      *
-     * @param descriptor         the module-info descriptor
      * @param typeNames          the set of types that are being codegen'ed
      * @param defaultPackageName the default package name to use if all options are exhausted
+     * @param descriptor         the module-info descriptor
      * @return the suggested package name
      */
-    public static String toSuggestedGeneratedPackageName(ModuleInfoDescriptor descriptor,
-                                                         Collection<TypeName> typeNames,
-                                                         String defaultPackageName) {
+    public static String toSuggestedGeneratedPackageName(Collection<TypeName> typeNames,
+                                                         String defaultPackageName,
+                                                         ModuleInfoDescriptor descriptor) {
         Objects.requireNonNull(descriptor);
         return innerToSuggestedGeneratedPackageName(descriptor, typeNames, defaultPackageName);
     }

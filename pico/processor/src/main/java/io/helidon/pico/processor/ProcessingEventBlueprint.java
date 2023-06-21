@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.processor.spi;
+package io.helidon.pico.processor;
 
 import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
-import io.helidon.builder.Builder;
+import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypedElementInfo;
 
 /**
- * Attributes that can be observed via {@link PicoAnnotationProcessorObserver}.
+ * Attributes that can be observed via {@link io.helidon.pico.processor.spi.PicoAnnotationProcessorObserver}.
  */
-@Builder
-public interface ProcessingEvent {
+@Prototype.Blueprint
+interface ProcessingEventBlueprint {
 
     /**
-     * Optionally, the active {@link ProcessingEnvironment} if it is available.
+     * Optionally, the active {@link javax.annotation.processing.ProcessingEnvironment} if it is available.
      *
      * @return the processing environment if it is available
      */
     Optional<ProcessingEnvironment> processingEnvironment();
 
     /**
-     * The {@link jakarta.inject.Inject}'able type elements, and possibly any other elements that are found to be of interest for
+     * The {@code jakarta.inject.Inject}'able type elements, and possibly any other elements that are found to be of interest for
      * processing. The set of processed elements are subject to change in the future. The implementor is therefore encouraged
      * to not make assumptions about the set of elements that are in this set.
      *

@@ -27,7 +27,7 @@ import static java.util.function.Predicate.not;
 /**
  * Avoids using any OCI SDK package name(s) as the {@link io.helidon.pico.api.ModuleComponent} name that is code-generated.
  */
-public class ModuleComponentNamerDefault implements ModuleComponentNamer {
+public class OciModuleComponentNamer implements ModuleComponentNamer {
 
     /**
      * Service loader based constructor.
@@ -35,15 +35,15 @@ public class ModuleComponentNamerDefault implements ModuleComponentNamer {
      * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
      */
     @Deprecated
-    public ModuleComponentNamerDefault() {
+    public OciModuleComponentNamer() {
     }
 
     @Override
     public Optional<String> suggestedPackageName(Collection<TypeName> typeNames) {
         String suggested = typeNames.stream()
                 .sorted()
-                .filter(not(it -> it.name().startsWith(InjectionProcessorObserverForOCI.GENERATED_OCI_ROOT_PACKAGE_NAME_PREFIX)))
-                .filter(not(it -> it.name().startsWith(InjectionProcessorObserverForOCI.OCI_ROOT_PACKAGE_NAME_PREFIX)))
+                .filter(not(it -> it.name().startsWith(OciInjectionProcessorObserver.GENERATED_OCI_ROOT_PACKAGE_NAME_PREFIX)))
+                .filter(not(it -> it.name().startsWith(OciInjectionProcessorObserver.OCI_ROOT_PACKAGE_NAME_PREFIX)))
                 .map(TypeName::packageName)
                 .findFirst().orElse(null);
         return Optional.ofNullable(suggested);

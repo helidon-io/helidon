@@ -1101,7 +1101,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
     }
 
     private ModuleDetail toModuleDetail(ActivatorCreatorRequest req,
-                                        List<TypeName> activatorTypeNamesPutInModule,
+                                        Set<TypeName> activatorTypeNamesPutInModule,
                                         TypeName moduleTypeName,
                                         TypeName applicationTypeName,
                                         boolean isApplicationCreated,

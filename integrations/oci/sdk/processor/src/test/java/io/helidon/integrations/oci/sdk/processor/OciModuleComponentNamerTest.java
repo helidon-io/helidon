@@ -18,27 +18,28 @@ package io.helidon.integrations.oci.sdk.processor;
 
 import java.util.Set;
 
+import io.helidon.common.types.TypeName;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
-import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class ModuleComponentNamerDefaultTest {
+class OciModuleComponentNamerTest {
 
     @Test
     void suggestedPackageName() {
-        ModuleComponentNamerDefault namer = new ModuleComponentNamerDefault();
+        OciModuleComponentNamer namer = new OciModuleComponentNamer();
         assertThat(namer.suggestedPackageName(Set.of()),
                    optionalEmpty());
-        assertThat(namer.suggestedPackageName(Set.of(createFromTypeName("com.oracle.bmc.whatever.Service"))),
+        assertThat(namer.suggestedPackageName(Set.of(TypeName.create("com.oracle.bmc.whatever.Service"))),
                    optionalEmpty());
-        assertThat(namer.suggestedPackageName(Set.of(createFromTypeName("com.oracle.another.whatever.Service"))),
+        assertThat(namer.suggestedPackageName(Set.of(TypeName.create("com.oracle.another.whatever.Service"))),
                    optionalValue(equalTo("com.oracle.another.whatever")));
-        assertThat(namer.suggestedPackageName(Set.of(createFromTypeName("com.oracle.bmc.Service"),
-                                                     createFromTypeName("com.oracle.another.whatever.Service"))),
+        assertThat(namer.suggestedPackageName(Set.of(TypeName.create("com.oracle.bmc.Service"),
+                                                     TypeName.create("com.oracle.another.whatever.Service"))),
                    optionalValue(equalTo("com.oracle.another.whatever")));
     }
 

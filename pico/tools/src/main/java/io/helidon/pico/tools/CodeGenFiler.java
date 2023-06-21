@@ -116,6 +116,46 @@ public class CodeGenFiler {
         return prev;
     }
 
+    /**
+     * Returns the path to the target scratch directory for Pico.
+     *
+     * @param targetOutputPath the target class output path
+     * @return the pico target scratch path
+     */
+    public static Path scratchClassOutputPath(Path targetOutputPath) {
+        Path fileName = targetOutputPath.getFileName();
+        Path parent = targetOutputPath.getParent();
+        if (fileName == null || parent == null) {
+            throw new IllegalStateException(targetOutputPath.toString());
+        }
+        String name = fileName.toString();
+        return parent.resolve("pico").resolve(name);
+    }
+
+    /**
+     * Returns the target class output directory.
+     *
+     * @param filer the filer
+     * @return the path to the target class output directory
+     */
+    public static Path targetClassOutputPath(Filer filer) {
+        if (filer instanceof AbstractFilerMessager.DirectFilerMessager) {
+            CodeGenPaths paths = ((AbstractFilerMessager.DirectFilerMessager) filer).codeGenPaths();
+            return Path.of(paths.outputPath().orElseThrow());
+        }
+
+        try {
+            FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", "___");
+            Path path = Path.of(f.toUri());
+            if (path.getParent() == null) {
+                throw new IllegalStateException(path.toString());
+            }
+            return path.getParent();
+        } catch (Exception e) {
+            throw new ToolsException("Unable to determine output path", e);
+        }
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "(outputPath=" + targetClassOutputPath + ")";
@@ -424,34 +464,6 @@ public class CodeGenFiler {
 
         messager().log(CodeGenFiler.class.getSimpleName() + ": unable to determine source location for: " + name);
         return Optional.empty();
-    }
-
-    private static Path targetClassOutputPath(Filer filer) {
-        if (filer instanceof AbstractFilerMessager.DirectFilerMessager) {
-            CodeGenPaths paths = ((AbstractFilerMessager.DirectFilerMessager) filer).codeGenPaths();
-            return Path.of(paths.outputPath().orElseThrow());
-        }
-
-        try {
-            FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", "___");
-            Path path = Path.of(f.toUri());
-            if (path.getParent() == null) {
-                throw new IllegalStateException(path.toString());
-            }
-            return path.getParent();
-        } catch (Exception e) {
-            throw new ToolsException("Unable to determine output path", e);
-        }
-    }
-
-    private static Path scratchClassOutputPath(Path targetOutputPath) {
-        Path fileName = targetOutputPath.getFileName();
-        Path parent = targetOutputPath.getParent();
-        if (fileName == null || parent == null) {
-            throw new IllegalStateException(targetOutputPath.toString());
-        }
-        String name = fileName.toString();
-        return parent.resolve("pico").resolve(name);
     }
 
     private Filer scratchFiler() throws IOException {

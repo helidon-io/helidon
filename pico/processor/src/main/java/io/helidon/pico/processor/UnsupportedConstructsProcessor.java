@@ -33,9 +33,9 @@ import io.helidon.pico.tools.TypeNames;
  * When used will recognize constructs that are explicitly known to be unsupported in Pico's reference implementation.
  * Examples include:
  * <ul>
- *  <li>{@link jakarta.annotation.ManagedBean} and "javax.annotation.ManagedBean"
- *  <li>{@link jakarta.annotation.Resource} and "javax...."
- *  <li>{@link jakarta.annotation.Resources} and "javax...."
+ *  <li>{@code jakarta.annotation.ManagedBean} and "javax.annotation.ManagedBean"
+ *  <li>{@code jakarta.annotation.Resource} and "javax...."
+ *  <li>{@code jakarta.annotation.Resources} and "javax...."
  *  <li>Any scopes from jakarta.enterprise api module(s) other than ApplicationScoped, which can optionally be mapped to
  *      Singleton scope.
  * </ul>

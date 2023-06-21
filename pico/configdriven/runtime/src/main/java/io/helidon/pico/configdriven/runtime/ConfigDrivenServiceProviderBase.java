@@ -172,7 +172,6 @@ public abstract class ConfigDrivenServiceProviderBase<T, CB> extends AbstractSer
                              Phase phase) {
         if (phase == Phase.POST_BIND_ALL_MODULES) {
             assertIsInitializing();
-            PicoServices picoServices = picoServices().orElseThrow();
 
             if (Phase.INIT == currentActivationPhase()) {
                 LogEntryAndResult logEntryAndResult = createLogEntryAndResult(Phase.PENDING);
