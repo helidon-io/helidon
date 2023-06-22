@@ -29,6 +29,10 @@
     <artifactId>helidon-webserver-websocket</artifactId>
     <name>Helidon WebServer WebSocket</name>
 
+    <properties>
+        <surefire.argLine>-Dio.netty.leakDetectionLevel=paranoid</surefire.argLine>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
