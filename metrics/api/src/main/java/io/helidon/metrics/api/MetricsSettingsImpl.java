@@ -39,8 +39,10 @@ class MetricsSettingsImpl implements MetricsSettings {
     private final Map<String, RegistrySettings> registrySettings;
     private final Map<String, String> globalTags;
     private final String appTagValue;
+    private final Config metricsSettingsConfig;
 
     private MetricsSettingsImpl(MetricsSettingsImpl.Builder builder) {
+        metricsSettingsConfig = builder.metricsSettingsConfig;
         isEnabled = builder.isEnabled;
         kpiMetricsSettings = builder.kpiMetricsSettingsBuilder.build();
         baseMetricsSettings = builder.baseMetricsSettingsBuilder.build();
@@ -88,6 +90,11 @@ class MetricsSettingsImpl implements MetricsSettings {
         return appTagValue;
     }
 
+    @Override
+    public String value(String key) {
+        return metricsSettingsConfig != null ? metricsSettingsConfig.get(key).asString().orElse(null) : null;
+    }
+
     // For testing and within-package use only
     Map<String, RegistrySettings> registrySettings() {
         return registrySettings;
@@ -102,6 +109,7 @@ class MetricsSettingsImpl implements MetricsSettings {
         private final Map<String, RegistrySettings> registrySettings = prepareRegistrySettings();
         private Map<String, String> globalTags = Collections.emptyMap();
         private String appTagValue;
+        private Config metricsSettingsConfig;
 
         private static Map<String, RegistrySettings> prepareRegistrySettings() {
             Map<String, RegistrySettings> result = new HashMap<>();
@@ -142,6 +150,7 @@ class MetricsSettingsImpl implements MetricsSettings {
 
         @Override
         public Builder config(Config metricsSettingsConfig) {
+            this.metricsSettingsConfig = metricsSettingsConfig;
             baseMetricsSettingsBuilder.config(metricsSettingsConfig.get(BaseMetricsSettings.Builder.BASE_METRICS_CONFIG_KEY));
             kpiMetricsSettingsBuilder.config(metricsSettingsConfig
                                                      .get(KeyPerformanceIndicatorMetricsSettings.Builder

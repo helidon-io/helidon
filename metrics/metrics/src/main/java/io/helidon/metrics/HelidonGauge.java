@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -46,7 +47,24 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
      *
      * This way the typing works out (with the expected unchecked cast).
      */
+
+
+
     static <T, N extends Number> FunctionBased<N, T> create(String scope,
+                                                            Metadata metadata,
+                                                            T target,
+                                                            Function<T, N> function,
+                                                            Tag... tags) {
+        return create(Metrics.globalRegistry,
+                      scope,
+                      metadata,
+                      target,
+                      function,
+                      tags);
+    }
+
+    static <T, N extends Number> FunctionBased<N, T> create(MeterRegistry meterRegistry,
+                                                            String scope,
                                                             Metadata metadata,
                                                             T target,
                                                             Function<T, N> function,
@@ -60,10 +78,22 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                                            .description(metadata.getDescription())
                                            .tags(tags(tags))
                                            .strongReference(true)
-                                           .register(Metrics.globalRegistry));
+                                           .register(meterRegistry));
     }
 
     static <N extends Number> SupplierBased<N> create(String scope,
+                                                      Metadata metadata,
+                                                      Supplier<N> supplier,
+                                                      Tag... tags) {
+        return create(Metrics.globalRegistry,
+                      scope,
+                      metadata,
+                      supplier,
+                      tags);
+
+    }
+    static <N extends Number> SupplierBased<N> create(MeterRegistry meterRegistry,
+                                                      String scope,
                                                       Metadata metadata,
                                                       Supplier<N> supplier,
                                                       Tag... tags) {
@@ -76,25 +106,39 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                                            .description(metadata.getDescription())
                                            .strongReference(true)
                                            .tags(tags(tags))
-                                           .register(Metrics.globalRegistry));
+                                           .register(meterRegistry));
     }
 
     static <T> DoubleFunctionBased<T> create(String scope,
-                                         Metadata metadata,
-                                         T target,
-                                         ToDoubleFunction<T> fn,
-                                         Tag... tags) {
+                                             Metadata metadata,
+                                             T target,
+                                             ToDoubleFunction<T> fn,
+                                             Tag... tags) {
+        return create(Metrics.globalRegistry,
+                      scope,
+                      metadata,
+                      target,
+                      fn,
+                      tags);
+    }
+
+    static <T> DoubleFunctionBased<T> create(MeterRegistry meterRegistry,
+                                             String scope,
+                                             Metadata metadata,
+                                             T target,
+                                             ToDoubleFunction<T> fn,
+                                             Tag... tags) {
         return new DoubleFunctionBased<>(scope,
-                                       metadata,
-                                       target,
-                                       fn,
-                                       io.micrometer.core.instrument.Gauge
-                                               .builder(metadata.getName(), target, fn)
-                                               .description(metadata.getDescription())
-                                               .baseUnit(metadata.getUnit())
-                                               .tags(tags(tags))
-                                               .strongReference(true)
-                                               .register(Metrics.globalRegistry));
+                                         metadata,
+                                         target,
+                                         fn,
+                                         io.micrometer.core.instrument.Gauge
+                                                 .builder(metadata.getName(), target, fn)
+                                                 .description(metadata.getDescription())
+                                                 .baseUnit(metadata.getUnit())
+                                                 .tags(tags(tags))
+                                                 .strongReference(true)
+                                                 .register(meterRegistry));
 
     }
 

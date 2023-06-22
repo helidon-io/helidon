@@ -51,6 +51,7 @@ public class RegistryTest {
     private static Registry registry;
 
     private final static Tag tag1 = new Tag("name1", "value1");
+    private final static Tag tag1v2 = new Tag("name1", "value2");
     private final static Tag tag2 = new Tag("name2", "value2");
 
     @BeforeAll
@@ -68,7 +69,7 @@ public class RegistryTest {
     @Test
     void testSameIDDifferentType() {
         registry.counter("counter1", tag1);
-        assertThrows(IllegalArgumentException.class, () -> registry.meter("counter1", tag1));
+        assertThrows(IllegalArgumentException.class, () -> registry.timer("counter1", tag1));
     }
 
     @Test
@@ -82,7 +83,7 @@ public class RegistryTest {
         registry.counter(metadata1, tag1);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> registry.timer(metadata2, tag2));
-        assertThat(ex.getMessage(), containsString("conflicts"));
+        assertThat(ex.getMessage(), containsString("Inconsistent"));
     }
 
     @Test
@@ -109,8 +110,8 @@ public class RegistryTest {
         Metadata metadata = Metadata.builder()
                 .withName("counter6")
                 .build();
-        registry.counter(metadata);
         registry.counter(metadata, tag1);
+        registry.counter(metadata, tag1v2);
         // Removing by name should remove all metrics with that name, regardless of tags.
         boolean result = registry.remove(metadata.getName());
         assertThat(result, is(true));
@@ -124,8 +125,8 @@ public class RegistryTest {
                 .withName("counter7")
                 .build();
 
-        registry.counter(metadata);
         registry.counter(metadata, tag1);
+        registry.counter(metadata, tag1v2);
         MetricID metricID = new MetricID(metadata.getName(), tag1);
         // Removing by MetricID should leave other like-named metrics intact.
         boolean result = registry.remove(metricID);
@@ -164,7 +165,7 @@ public class RegistryTest {
 
     @Test
     void testGetType() {
-        assertThat("Registry type", registry.getScope(), is(MetricRegistry.Type.BASE));
+        assertThat("Registry type", registry.getScope(), is(MetricRegistry.BASE_SCOPE));
 
         MetricRegistry vendorRegistry = io.helidon.metrics.api.RegistryFactory.getInstance()
                 .getRegistry(MetricRegistry.VENDOR_SCOPE);

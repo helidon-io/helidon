@@ -17,11 +17,10 @@
 package io.helidon.metrics;
 
 import java.util.Objects;
-import java.util.Optional;
 
-import io.helidon.metrics.api.Sample;
 import io.helidon.metrics.api.SampledMetric;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -39,11 +38,15 @@ final class HelidonCounter extends MetricImpl implements Counter, SampledMetric 
     }
 
     static HelidonCounter create(String registryType, Metadata metadata, Tag... tags) {
+        return create(Metrics.globalRegistry, registryType, metadata, tags);
+    }
+
+    static HelidonCounter create(MeterRegistry meterRegistry, String registryType, Metadata metadata, Tag... tags) {
         return new HelidonCounter(registryType, metadata, io.micrometer.core.instrument.Counter.builder(metadata.getName())
                 .baseUnit(metadata.getUnit())
                 .description(metadata.getDescription())
                 .tags(tags(tags))
-                .register(Metrics.globalRegistry));
+                .register(meterRegistry));
     }
 
     @Override
@@ -83,42 +86,4 @@ final class HelidonCounter extends MetricImpl implements Counter, SampledMetric 
         return ", counter='" + getCount() + '\'';
     }
 
-//    private static class CounterImpl implements Counter {
-//        private final LongAdder adder = new LongAdder();
-//
-//        private Sample.Labeled sample = null;
-//
-//        @Override
-//        public void inc() {
-//            inc(1);
-//        }
-//
-//        @Override
-//        public void inc(long n) {
-//            adder.add(n);
-//            sample = Sample.labeled(n);
-//        }
-//
-//        @Override
-//        public long getCount() {
-//            return adder.sum();
-//        }
-//
-//        @Override
-//        public int hashCode() {
-//            return Objects.hash(super.hashCode(), getCount());
-//        }
-//
-//        @Override
-//        public boolean equals(Object o) {
-//            if (this == o) {
-//                return true;
-//            }
-//            if (o == null || getClass() != o.getClass()) {
-//                return false;
-//            }
-//            CounterImpl that = (CounterImpl) o;
-//            return getCount() == that.getCount();
-//        }
-//    }
 }

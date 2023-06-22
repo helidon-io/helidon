@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,13 +38,13 @@ public class TestDisabled {
                 .build();
 
         MetricsSettings metricsSettings = MetricsSettings.builder()
-                .registrySettings(MetricRegistry.Type.APPLICATION, settings)
+                .registrySettings(MetricRegistry.APPLICATION_SCOPE, settings)
                 .build();
 
         io.helidon.metrics.api.RegistryFactory registryFactory = io.helidon.metrics.api.RegistryFactory
                 .create(metricsSettings);
 
-        MetricRegistry registry = registryFactory.getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry registry = registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE);
 
         Counter activeCounter = registry.counter("activeCounter");
         activeCounter.inc();
@@ -63,13 +63,13 @@ public class TestDisabled {
                 .build();
 
         MetricsSettings metricsSettings = MetricsSettings.builder()
-                .registrySettings(MetricRegistry.Type.APPLICATION, settings)
+                .registrySettings(MetricRegistry.APPLICATION_SCOPE, settings)
                 .build();
 
         io.helidon.metrics.api.RegistryFactory registryFactory = io.helidon.metrics.api.RegistryFactory
                 .create(metricsSettings);
 
-        MetricRegistry registry = registryFactory.getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry registry = registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE);
 
         Counter activeCounter = registry.counter("activeCounter");
         long original = activeCounter.getCount();

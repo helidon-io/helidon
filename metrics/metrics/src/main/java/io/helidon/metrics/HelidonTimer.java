@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.metrics.api.LabeledSnapshot;
 import io.helidon.metrics.api.SnapshotMetric;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -36,23 +37,31 @@ import org.eclipse.microprofile.metrics.Timer;
 final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
 
     private final io.micrometer.core.instrument.Timer delegate;
+    private final MeterRegistry meterRegistry;
 
-    private HelidonTimer(String type,
+    private HelidonTimer(MeterRegistry meterRegistry,
+                         String type,
                          Metadata metadata,
                          io.micrometer.core.instrument.Timer delegate) {
         super(type, metadata);
         this.delegate = delegate;
+        this.meterRegistry = meterRegistry;
     }
 
     static HelidonTimer create(String repoType, Metadata metadata, Tag... tags) {
-        return new HelidonTimer(repoType,
+        return create(Metrics.globalRegistry, repoType, metadata, tags);
+    }
+
+    static HelidonTimer create(MeterRegistry meterRegistry, String repoType, Metadata metadata, Tag... tags) {
+        return new HelidonTimer(meterRegistry,
+                                repoType,
                                 metadata,
                                 io.micrometer.core.instrument.Timer.builder(metadata.getName())
                                         .description(metadata.getDescription())
                                         .tags(tags(tags))
                                         .publishPercentiles(DEFAULT_PERCENTILES)
                                         .percentilePrecision(DEFAULT_PERCENTILE_PRECISION)
-                                        .register(Metrics.globalRegistry));
+                                        .register(meterRegistry));
     }
 
     @Override
@@ -77,7 +86,7 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
 
     @Override
     public Context time() {
-        return new ContextImpl(io.micrometer.core.instrument.Timer.start(Metrics.globalRegistry));
+        return new ContextImpl(io.micrometer.core.instrument.Timer.start(meterRegistry));
     }
 
     @Override

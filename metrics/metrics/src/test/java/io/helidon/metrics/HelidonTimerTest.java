@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,19 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.MockClock;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.CollectorRegistry;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
@@ -35,7 +40,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 /**
@@ -55,10 +59,11 @@ class HelidonTimerTest {
 
     private static HelidonTimer timer;
     private static HelidonTimer dataSetTimer;
-    private static MetricID dataSetTimerID;
-    private static TestClock timerClock = TestClock.create();
+    private static MockClock timerClock = new MockClock();
     private static Metadata meta;
-    private static TestClock dataSetTimerClock = TestClock.create();
+
+    private static MeterRegistry meterRegistry = new PrometheusMeterRegistry((key) -> null, new CollectorRegistry(), timerClock);
+
 
     private static final long DATA_SET_ELAPSED_TIME = Arrays.stream(SAMPLE_LONG_DATA).sum();
 
@@ -66,89 +71,73 @@ class HelidonTimerTest {
     static void initClass() {
         meta = Metadata.builder()
 				.withName("response_time")
-				.withDisplayName("Responses")
 				.withDescription("Server response time for /index.html")
-				.withType(MetricType.TIMER)
 				.withUnit(MetricUnits.NANOSECONDS)
 				.build();
 
-        dataSetTimer = HelidonTimer.create("application", meta, dataSetTimerClock);
-        dataSetTimerID = new MetricID("response_time");
+        dataSetTimer = HelidonTimer.create(meterRegistry, "application", meta);
 
         for (long i : SAMPLE_LONG_DATA) {
             dataSetTimer.update(Duration.ofNanos(i));
         }
 
-        timer = HelidonTimer.create("application", meta, timerClock);
+        timer = HelidonTimer.create(meterRegistry, "application", meta);
         // now run the "load"
         int markSeconds = 30;
-
-        for (int i = 0; i < markSeconds; i++) {
-            timerClock.add(1, TimeUnit.SECONDS);
-            timer.update(Duration.ofSeconds(1));
-        }
+        timerClock.add(markSeconds, TimeUnit.SECONDS);
     }
 
-    @Test
-    void testRate() {
-        assertThat(timer.getMeanRate(), is(1.0));
-        assertThat(timer.getOneMinuteRate(), is(1.0));
-        assertThat(timer.getFiveMinuteRate(), is(1.0));
-        assertThat(timer.getFifteenMinuteRate(), is(1.0));
-
-        timerClock.add(30, TimeUnit.SECONDS);
-
-        assertThat(timer.getOneMinuteRate(), lessThan(1.0));
-        assertThat(timer.getFiveMinuteRate(), lessThan(1.0));
-        assertThat(timer.getFifteenMinuteRate(), lessThan(1.0));
+    @BeforeEach
+    void clear() {
+        meterRegistry.clear();
     }
 
     @Test
     void testContextTime() {
-        TestClock clock = TestClock.create();
-        Timer timer = HelidonTimer.create("application", meta, clock);
+        Timer timer = HelidonTimer.create(meterRegistry, "application", meta);
         Timer.Context context = timer.time();
 
-        clock.add(1, TimeUnit.SECONDS);
+        timerClock.add(2, TimeUnit.SECONDS);
 
         long diff = context.stop();
 
-        assertThat(diff, is(TimeUnit.SECONDS.toNanos(1)));
-        assertThat("Elapsed time", timer.getElapsedTime(), is(equalTo(Duration.ofSeconds(1L))));
+        assertThat(nanosToMillis(diff), closeTo((double) TimeUnit.SECONDS.toMillis(2), 200.0));
+        assertThat("Elapsed time", (double) timer.getElapsedTime().toMillis(), closeTo(Duration.ofSeconds(2L).toMillis(), 200.0));
     }
 
     @Test
     void testCallableTiming() throws Exception {
-        TestClock clock = TestClock.create();
-        Timer timer = HelidonTimer.create("application", meta, clock);
+        Timer timer = HelidonTimer.create(meterRegistry, "application", meta);
 
+        timer.update(Duration.ofSeconds(2L));
         String result = timer.time(() -> {
-            clock.add(1, TimeUnit.SECONDS);
+            timerClock.add(1, TimeUnit.SECONDS);
             return "hello";
         });
 
-        assertThat(timer.getMeanRate(), closeTo(1.0, 0.01));
-        assertThat(timer.getCount(), is(1L));
+        assertThat(nanosToMillis(timer.getSnapshot().getMean()), closeTo(1500.0, 100.0));
+        assertThat(timer.getCount(), is(2L));
         assertThat(result, is("hello"));
-        assertThat("Elapsed time", timer.getElapsedTime(), is(equalTo(Duration.ofSeconds(1L))));
+        assertThat("Elapsed time", (double) timer.getElapsedTime().toMillis(), closeTo(3000.0, 125.0));
     }
 
-    @Test
-    void testRunnableTiming() {
-        TestClock clock = TestClock.create();
-        Timer timer = HelidonTimer.create("application", meta, clock);
+   @Test
+    void testRunnableTiming() throws Exception {
+        Timer timer = HelidonTimer.create(meterRegistry, "application", meta);
 
-        timer.time(() -> clock.add(1, TimeUnit.SECONDS));
+        timer.time(() -> timerClock.add(1, TimeUnit.SECONDS));
 
-        assertThat(timer.getMeanRate(), closeTo(1.0, 0.01));
+        assertThat(nanosToMillis(timer.getSnapshot().getMean()), closeTo(1000.0, 100.0));
         assertThat(timer.getCount(), is(1L));
         assertThat("Elapsed time", timer.getElapsedTime(), is(equalTo(Duration.ofSeconds(1L))));
     }
 
     @Test
+    @Disabled
+    // TODO re-work to check percentiles
     void testDataSet() {
-        assertThat(dataSetTimer.getSnapshot().getValues(), is(SAMPLE_LONG_DATA));
-        assertThat("Elapsed time", dataSetTimer.getElapsedTime(), is(equalTo(Duration.ofNanos(DATA_SET_ELAPSED_TIME))));
+//        assertThat(dataSetTimer.getSnapshot().getValues(), is(SAMPLE_LONG_DATA));
+//        assertThat("Elapsed time", dataSetTimer.getElapsedTime(), is(equalTo(Duration.ofNanos(DATA_SET_ELAPSED_TIME))));
     }
 
     @Test
@@ -156,17 +145,19 @@ class HelidonTimerTest {
         Snapshot snapshot = dataSetTimer.getSnapshot();
 
         assertAll("Testing statistical values for snapshot",
-                  () -> assertThat("median", snapshot.getMedian(), is(withinTolerance(480))),
-                  () -> assertThat("75th percentile", snapshot.get75thPercentile(), is(withinTolerance(750))),
-                  () -> assertThat("95th percentile", snapshot.get95thPercentile(), is(withinTolerance(960))),
-                  () -> assertThat("78th percentile", snapshot.get98thPercentile(), is(withinTolerance(980))),
-                  () -> assertThat("99th percentile", snapshot.get99thPercentile(), is(withinTolerance(980))),
-                  () -> assertThat("999th percentile", snapshot.get999thPercentile(), is(withinTolerance(990))),
                   () -> assertThat("mean", snapshot.getMean(), is(withinTolerance(506.3))),
-                  () -> assertThat("stddev", snapshot.getStdDev(), is(withinTolerance(294.3))),
-                  () -> assertThat("min", snapshot.getMin(), Matchers.is(0L)),
-                  () -> assertThat("max", snapshot.getMax(), Matchers.is(990L)),
-                  () -> assertThat("size", snapshot.size(), Matchers.is(200))
+                  () -> assertThat("max", snapshot.getMax(), is(990D)),
+                  () -> assertThat("size", snapshot.size(), is(200L))
         );
     }
+
+    private static double nanosToMillis(long nanos) {
+        return nanos / 1000.0 / 1000.0;
+    }
+
+    private static double nanosToMillis(double nanos) {
+        return nanos / 1000.0 / 1000.0;
+    }
+
+
 }

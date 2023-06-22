@@ -23,6 +23,10 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.spi.MetricFactory;
+
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 
 /**
  * Access point to all registries.
@@ -45,7 +49,9 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
     private final Map<String, Registry> registries = new HashMap<>();
     private final Lock metricsSettingsAccess = new ReentrantLock(true);
+    private final HelidonPrometheusConfig prometheusConfig;
     private MetricsSettings metricsSettings;
+    private MetricFactory metricFactory;
 
     /**
      * Create a new instance.
@@ -56,6 +62,8 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      */
     protected RegistryFactory(MetricsSettings metricsSettings, Registry appRegistry, Registry vendorRegistry) {
         this.metricsSettings = metricsSettings;
+        prometheusConfig = new HelidonPrometheusConfig(metricsSettings);
+        metricFactory = HelidonMetricFactory.create(Metrics.globalRegistry.add(new PrometheusMeterRegistry(prometheusConfig)));
         registries.put(Registry.APPLICATION_SCOPE, appRegistry);
         registries.put(Registry.VENDOR_SCOPE, vendorRegistry);
     }
@@ -158,6 +166,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     public void update(MetricsSettings metricsSettings) {
         accessMetricsSettings(() -> {
             this.metricsSettings = metricsSettings;
+            prometheusConfig.update(metricsSettings);
             registries.forEach((key, value) -> value.update(metricsSettings.registrySettings(key)));
         });
     }

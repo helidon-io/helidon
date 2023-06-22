@@ -28,7 +28,7 @@ class WrappedSnapshot implements LabeledSnapshot {
 
     private final Labeled max;
     private final Derived mean;
-    private final long size;
+    private final Snapshot delegate;
 
     static WrappedSnapshot create(Snapshot delegate) {
         return new WrappedSnapshot(delegate);
@@ -36,13 +36,23 @@ class WrappedSnapshot implements LabeledSnapshot {
 
     private WrappedSnapshot(Snapshot delegate) {
 
-        Snapshot.PercentileValue[] percentileValues = delegate.percentileValues();
+        this.delegate = delegate;
 
         // We cannot access the weight of each sample to create a faithful array of WeightedSamples for each original sample,
         // so we pre-store the typical calculations.
         max = labeled(delegate.getMax());
         mean = derived(delegate.getMean());
-        size = percentileValues.length;
+
+    }
+
+    @Override
+    public Derived value(double quantile) {
+        for (Snapshot.PercentileValue pv : delegate.percentileValues()) {
+            if (pv.getPercentile() >= quantile) {
+                return derived(pv.getValue());
+            }
+        }
+        return derived(delegate.percentileValues()[delegate.percentileValues().length - 1].getValue());
     }
 
     @Override
@@ -57,6 +67,6 @@ class WrappedSnapshot implements LabeledSnapshot {
 
     @Override
     public long size() {
-        return size;
+        return delegate.percentileValues().length;
     }
 }

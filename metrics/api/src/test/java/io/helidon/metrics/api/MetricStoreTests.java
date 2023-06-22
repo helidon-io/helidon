@@ -23,6 +23,7 @@ import org.eclipse.microprofile.metrics.Timer;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
@@ -104,8 +105,9 @@ class MetricStoreTests {
                                                new NoOpMetricFactory(),
                                                MetricRegistry.APPLICATION_SCOPE);
 
-        Counter counter1 = store.getOrRegisterMetric(metadata, Counter.class, tags1);
-        Counter counter2 = store.getOrRegisterMetric(metadata, Counter.class, tags2);
-        assertThat("Counters with overlapping but different tags", counter1, not(is(counter2)));
+        store.getOrRegisterMetric(metadata, Counter.class, tags1);
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                                                   () ->store.getOrRegisterMetric(metadata, Counter.class, tags2));
+        assertThat("Exception due to inconsistent tag sets", ex.getMessage(), containsString("Inconsistent"));
     }
 }

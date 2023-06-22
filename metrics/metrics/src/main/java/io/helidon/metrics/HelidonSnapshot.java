@@ -39,7 +39,7 @@ public class HelidonSnapshot extends Snapshot {
     }
 
     private final HistogramSnapshot delegate;
-    
+
     private HelidonSnapshot(HistogramSnapshot histogramSnapshot) {
         delegate = histogramSnapshot;
     }

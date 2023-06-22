@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class TestSettingsAndConfig {
                 .build();
 
         RegistryFactory registryFactory = RegistryFactory.create(metricsSettings);
-        MetricRegistry metricRegistry = registryFactory.getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry metricRegistry = registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE);
         checkCounterValueAfterInc(metricRegistry, "counter-disabled-via-settings", 0L);
     }
 
@@ -56,14 +56,14 @@ public class TestSettingsAndConfig {
     void checkRegistryWithEnabledConfig() {
         Config metricsConfig = Config.just(ConfigSources.create(METRICS_ENABLED_SETTINGS)).get("metrics");
         RegistryFactory registryFactory = RegistryFactory.create(metricsConfig);
-        MetricRegistry metricRegistry = registryFactory.getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry metricRegistry = registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE);
         checkCounterValueAfterInc(metricRegistry, "counter-enabled-via-config", 1L);
     }
 
     @Test
     void checkRegistryWithDisabledConfig() {
         Config metricsConfig = Config.just(ConfigSources.create(METRICS_DISABLED_SETTINGS)).get("metrics");
-        MetricRegistry metricRegistry = RegistryFactory.create(metricsConfig).getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry metricRegistry = RegistryFactory.create(metricsConfig).getRegistry(MetricRegistry.APPLICATION_SCOPE);
         checkCounterValueAfterInc(metricRegistry, "counter-disabled-via-config", 0L);
     }
 

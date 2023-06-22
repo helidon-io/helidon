@@ -120,6 +120,14 @@ public interface MetricsSettings {
     String appTagValue();
 
     /**
+     * Returns an arbitrary String config value for the given key.
+     *
+     * @param key the key to look up
+     * @return String value of the setting
+     */
+    String value(String key);
+
+    /**
      * Builder for {@code MetricsSettings}.
      */
     @Configured(prefix = Builder.METRICS_CONFIG_KEY)

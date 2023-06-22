@@ -25,8 +25,10 @@ class RegistrySettingsImpl implements RegistrySettings {
 
     private final boolean isEnabled;
     private final RegistryFilterSettings registryFilterSettings;
+    private final Config config;
 
     protected RegistrySettingsImpl(Builder builder) {
+        config = builder.config;
         isEnabled = builder.isEnabled;
         registryFilterSettings = builder.registryFilterSettingsBuilder.build();
     }
@@ -41,9 +43,17 @@ class RegistrySettingsImpl implements RegistrySettings {
         return isEnabled && registryFilterSettings.passes(dottedName);
     }
 
+    @Override
+    public String value(String key) {
+        return config != null ? config.get(key).asString().orElse(null)
+                : null;
+    }
+
     static class Builder implements RegistrySettings.Builder {
 
         private boolean isEnabled = true;
+        private Config config;
+
         private RegistryFilterSettings.Builder registryFilterSettingsBuilder = RegistryFilterSettings.builder();
 
         @Override
@@ -64,12 +74,13 @@ class RegistrySettingsImpl implements RegistrySettings {
         }
 
         @Override
-        public RegistrySettings.Builder config(Config registrySettings) {
-            registrySettings.get(Builder.ENABLED_CONFIG_KEY)
+        public RegistrySettings.Builder config(Config config) {
+            this.config = config;
+            config.get(Builder.ENABLED_CONFIG_KEY)
                     .asBoolean()
                     .ifPresent(this::enabled);
 
-            registrySettings.get(Builder.FILTER_CONFIG_KEY)
+            config.get(Builder.FILTER_CONFIG_KEY)
                     .as(RegistryFilterSettings.Builder::create)
                     .ifPresent(this::filterSettings);
             return this;

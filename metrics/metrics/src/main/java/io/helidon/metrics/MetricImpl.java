@@ -16,8 +16,6 @@
 
 package io.helidon.metrics;
 
-import java.util.Arrays;
-
 import io.helidon.metrics.api.AbstractMetric;
 
 import io.micrometer.core.instrument.Tags;

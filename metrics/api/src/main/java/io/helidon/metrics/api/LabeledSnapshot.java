@@ -24,6 +24,14 @@ import io.helidon.metrics.api.Sample.Labeled;
  */
 public interface LabeledSnapshot {
     /**
+     * Value of a specific quantile.
+     *
+     * @param quantile quantile to get value for
+     * @return derived value of the quantile
+     */
+    Derived value(double quantile);
+
+    /**
      * Maximal value.
      *
      * @return max

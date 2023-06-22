@@ -22,6 +22,7 @@ import io.helidon.metrics.api.LabeledSnapshot;
 import io.helidon.metrics.api.SnapshotMetric;
 
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -40,12 +41,17 @@ final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMe
     }
 
     static HelidonHistogram create(String type, Metadata metadata, Tag... tags) {
+        return create(Metrics.globalRegistry, type, metadata, tags);
+    }
+
+    static HelidonHistogram create(MeterRegistry meterRegistry, String type, Metadata metadata, Tag... tags) {
         return new HelidonHistogram(type, metadata, io.micrometer.core.instrument.DistributionSummary.builder(metadata.getName())
                 .description(metadata.getDescription())
                 .baseUnit(metadata.getUnit())
                 .publishPercentiles(DEFAULT_PERCENTILES)
                 .percentilePrecision(DEFAULT_PERCENTILE_PRECISION)
-                .register(Metrics.globalRegistry));
+                .tags(tags(tags))
+                .register(meterRegistry));
     }
 
     @Override

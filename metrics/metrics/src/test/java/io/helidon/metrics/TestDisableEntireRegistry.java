@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,11 @@ public class TestDisableEntireRegistry {
     void testApplicationRegistryDisabled() {
         MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
         assertThat("Application registry is enabled",
-                   metricsSettings.registrySettings(MetricRegistry.Type.APPLICATION).isEnabled(),
+                   metricsSettings.registrySettings(MetricRegistry.APPLICATION_SCOPE).isEnabled(),
                    is(false));
 
         io.helidon.metrics.api.RegistryFactory registryFactory = io.helidon.metrics.api.RegistryFactory.create(metricsSettings);
-        MetricRegistry appRegistry = registryFactory.getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry appRegistry = registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE);
         Counter appCounter = appRegistry.counter("shouldNotUpdate");
         appCounter.inc();
         assertThat("Counter in disabled app registry", appCounter.getCount(), is(0L));
@@ -54,11 +54,11 @@ public class TestDisableEntireRegistry {
     void testVendorRegistryEnabled() {
         MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
         assertThat("Vendor registry is enabled",
-                   metricsSettings.registrySettings(MetricRegistry.Type.VENDOR).isEnabled(),
+                   metricsSettings.registrySettings(MetricRegistry.VENDOR_SCOPE).isEnabled(),
                    is(true));
 
         io.helidon.metrics.api.RegistryFactory registryFactory = RegistryFactory.create(metricsSettings);
-        MetricRegistry vendorRegistry = registryFactory.getRegistry(MetricRegistry.Type.VENDOR);
+        MetricRegistry vendorRegistry = registryFactory.getRegistry(MetricRegistry.VENDOR_SCOPE);
         Counter vendorCounter = vendorRegistry.counter("shouldUpdate");
         vendorCounter.inc();
         assertThat("Counter in enabled vendor registry", vendorCounter.getCount(), is(1L));

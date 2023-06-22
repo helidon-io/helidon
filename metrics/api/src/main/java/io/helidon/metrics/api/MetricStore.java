@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -113,16 +114,26 @@ class MetricStore {
         return writeAccess(() -> {
             HelidonMetric metric = getMetricLocked(newMetadata.getName(), tags);
             if (metric == null) {
-                metric = registerMetricLocked(new MetricID(newMetadata.getName(), tags),
-                                              createEnabledAwareMetric(clazz, newMetadata));
-            } else {
-                if (!baseMetricClass(metric.getClass()).isAssignableFrom(newBaseType)) {
-                    throw new IllegalArgumentException("Attempt to register new metric of type " + clazz.getName()
-                    + " when previously-registered metric " + newMetadata.getName() + Arrays.asList(tags)
-                    + " is of incompatible type " + metric.getClass());
+                // See if there is a matching metric using only the name; if so, make sure
+                // the tag names for the two metric IDs are the same. We
+                // only need to check the first same-named metric because
+                // any others would have already passed this check before being added.
+                MetricID newMetricID = new MetricID(newMetadata.getName(), tags);
+                List<MetricID> sameNamedMetricIDs = allMetricIDsByName.get(newMetadata.getName());
+                if (sameNamedMetricIDs != null && !sameNamedMetricIDs.isEmpty()) {
+                    ensureTagNamesConsistent(sameNamedMetricIDs.get(0), newMetricID);
                 }
-                enforceConsistentMetadata(metric.metadata(), newMetadata);
+                getConsistentMetadataLocked(newMetadata);
+                metric = registerMetricLocked(newMetricID,
+                                              createEnabledAwareMetric(clazz, newMetadata));
+                return clazz.cast(metric);
             }
+            if (!baseMetricClass(metric.getClass()).isAssignableFrom(newBaseType)) {
+                throw new IllegalArgumentException("Attempt to register new metric of type " + clazz.getName()
+                + " when previously-registered metric " + newMetadata.getName() + Arrays.asList(tags)
+                + " is of incompatible type " + metric.getClass());
+            }
+            enforceConsistentMetadata(metric.metadata(), newMetadata);
             return clazz.cast(metric);
         });
     }
@@ -361,6 +372,7 @@ class MetricStore {
                                                      Supplier<HelidonMetric> metricFactory,
                                                      Supplier<MetricID> metricIDFactory,
                                                      Supplier<Metadata> metadataFactory) {
+        Class<? extends Metric> newBaseType = baseMetricClass(clazz);
         return writeAccess(() -> {
             HelidonMetric metric = metricFactory.get();
             if (metric == null) {
@@ -373,6 +385,21 @@ class MetricStore {
                                                   createEnabledAwareMetric(clazz, metadata));
                 } catch (Exception e) {
                     throw new RuntimeException("Error attempting to register new metric " + metricIDFactory.get(), e);
+                }
+            } else {
+                if (!baseMetricClass(metric.getClass()).isAssignableFrom(newBaseType)) {
+                    MetricID tempID = metricIDFactory.get();
+                    throw new IllegalArgumentException(
+                            "Attempt to register new metric of type " + clazz.getName()
+                             + " when previously-registered metric "
+                             + metricName
+                             + Arrays.asList(tempID.getTagsAsArray())
+                             + " is of incompatible type " + metric.getClass());
+                }
+                Metadata existingMetadata = metadataFactory.get();
+                if (existingMetadata == null) {
+                    throw new IllegalStateException("Could not find existing metadata under name "
+                    + metricName + " for existing metric " + metricIDFactory.get());
                 }
             }
             return clazz.cast(metric);
@@ -428,6 +455,16 @@ class MetricStore {
     private Metadata registerMetadataLocked(Metadata metadata) {
         allMetadata.put(metadata.getName(), metadata);
         return metadata;
+    }
+
+    private void ensureTagNamesConsistent(MetricID existingID, MetricID newID) {
+        Set<String> existingTagNames = existingID.getTags().keySet();
+        Set<String> newTagNames = newID.getTags().keySet();
+        if (!existingTagNames.equals(newTagNames)) {
+            throw new IllegalArgumentException("Inconsistent tag names between two metrics with the same name '"
+                                                       + existingID.getName() + "'; previously-registered tag names: "
+                                               + existingTagNames + ", proposed tag names: " + newTagNames);
+        }
     }
 
     private <U extends Metric> HelidonMetric createEnabledAwareMetric(Class<U> clazz, Metadata metadata) {

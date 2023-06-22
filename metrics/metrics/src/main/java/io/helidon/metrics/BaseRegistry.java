@@ -30,9 +30,7 @@ import java.util.function.ToDoubleFunction;
 
 import io.helidon.metrics.api.BaseMetricsSettings;
 import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.RegistryFactory;
 
-import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;

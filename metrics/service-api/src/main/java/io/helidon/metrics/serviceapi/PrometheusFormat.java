@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -42,15 +43,12 @@ import io.helidon.metrics.api.SampledMetric;
 import io.helidon.metrics.api.SnapshotMetric;
 import io.helidon.metrics.api.SystemTagsManager;
 
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Timer;
 
 import static java.lang.System.Logger.Level.WARNING;
@@ -59,6 +57,16 @@ import static java.lang.System.Logger.Level.WARNING;
  * Support for creating Prometheus responses for metrics endpoints.
  */
 public final class PrometheusFormat {
+
+    record PercentileOutput(String promText, String jText, double value) {}
+
+    static final List<PercentileOutput> DEFAULT_PERCENTILES =
+            List.of(new PercentileOutput("0.5", "p50", 0.5),
+                    new PercentileOutput("0.75", "p75", 0.75),
+                    new PercentileOutput("0.95", "p95", 0.95),
+                    new PercentileOutput("0.98", "p98", 0.98),
+                    new PercentileOutput("0.99", "p99", 0.99),
+                    new PercentileOutput("0.999", "p999", 0.999));
     private static final System.Logger LOGGER = System.getLogger(PrometheusFormat.class.getName());
 
     private static final Pattern DOUBLE_UNDERSCORE = Pattern.compile("__");
@@ -157,17 +165,16 @@ public final class PrometheusFormat {
     @SuppressWarnings("unchecked")
     private static void prometheusData(StringBuilder sb, MetricID key, HelidonMetric value, boolean withHelpType) {
         Metadata metadata = value.metadata();
-        switch (metadata.getTypeRaw()) {
-        case CONCURRENT_GAUGE -> concurrentGauge(sb, key, metadata, value, (ConcurrentGauge) value, withHelpType);
-        case COUNTER -> counter(sb, key, metadata, value, (Counter) value, withHelpType);
-        case GAUGE -> gauge(sb, key, metadata, value, (Gauge<? extends Number>) value, withHelpType);
-        case METERED -> meter(sb, key, metadata, value, (Meter) value, withHelpType);
-        case HISTOGRAM -> histogram(sb, key, metadata, value, (Histogram) value, withHelpType);
-        case TIMER -> timer(sb, key, metadata, value, (Timer) value, withHelpType);
-        case SIMPLE_TIMER -> simpleTimer(sb, key, metadata, value, (SimpleTimer) value, withHelpType);
-        case INVALID -> throw new IllegalArgumentException("Invalid metric encountered: " + key);
-        default -> throw new IllegalArgumentException("Invalid metric type encountered: " + metadata.getTypeRaw()
-                                                              + ", key: " + key);
+        if (value instanceof Counter counter) {
+            counter(sb, key, metadata, value, counter, withHelpType);
+        } else if (value instanceof Gauge<?> gauge) {
+            gauge(sb, key, metadata, value, gauge, withHelpType);
+        } else if (value instanceof Histogram histogram) {
+            histogram(sb, key, metadata, value, histogram, withHelpType);
+        } else if (value instanceof Timer timer) {
+            timer(sb, key, metadata, value, timer, withHelpType);
+        } else {
+            throw new IllegalArgumentException("Unexpected metric type " + value.getClass().getName() + " encountered: " + key);
         }
     }
 
@@ -208,53 +215,6 @@ public final class PrometheusFormat {
         return builder.toString();
     }
 
-    private static void simpleTimer(StringBuilder sb,
-                                    MetricID metricId,
-                                    Metadata metadata,
-                                    HelidonMetric helidonMetric,
-                                    SimpleTimer value,
-                                    boolean withHelpType) {
-        String tags = tags(metricId.getTags());
-        String baseName = prometheusName(helidonMetric.registryType(), metricId.getName());
-        String name = baseName + "_total";
-        help(sb, metadata, name, "counter", withHelpType);
-        sb.append(name).append(tags).append(" ").append(value.getCount());
-
-        Sample.Labeled sample = null;
-        if (helidonMetric instanceof Sample.Labeled labeled) {
-            sample = labeled;
-            sb.append(prometheusExemplar(TimeUnit.NANOSECONDS.toSeconds(labeled.value()), labeled));
-        }
-        sb.append("\n");
-
-        name = baseName + "_elapsedTime_" + MetricUnits.SECONDS;
-        if (withHelpType) {
-            prometheusType(sb, name, "gauge");
-        }
-        sb.append(name).append(tags).append(" ").append(value.getElapsedTime().toSeconds()).append(exemplarForElapsedTime(sample))
-                .append("\n");
-
-        name = baseName + "_maxTimeDuration_" + MetricUnits.SECONDS;
-        if (withHelpType) {
-            prometheusType(sb, name, "gauge");
-        }
-        sb.append(name).append(tags).append(" ").append(durationPrometheusOutput(value.getMaxTimeDuration()))
-                // todo Níma
-                //                .append(exemplarForElapsedTime(value.getMaxTimeDuration(),
-                //                                               simpleTimerImpl == null ? null : simpleTimerImpl.lastMaxSample))
-                .append("\n");
-
-        name = baseName + "_minTimeDuration_" + MetricUnits.SECONDS;
-        if (withHelpType) {
-            prometheusType(sb, name, "gauge");
-        }
-        sb.append(name).append(tags).append(" ").append(durationPrometheusOutput(value.getMinTimeDuration()))
-                // TOOD Níma
-                //                .append(exemplarForElapsedTime(getMinTimeDuration(),
-                //                                               simpleTimerImpl == null ? null : simpleTimerImpl.lastMinSample))
-                .append("\n");
-    }
-
     private static void timer(StringBuilder sb,
                               MetricID metricId,
                               Metadata metadata,
@@ -273,15 +233,7 @@ public final class PrometheusFormat {
                                                     TimeUnits.PROMETHEUS_TIMER_CONVERSION_TIME_UNITS,
                                                     baseName);
 
-        appendPrometheusTimerStatElement(sb, name, "rate_per_second", withHelpType, "gauge", value.getMeanRate());
-        appendPrometheusTimerStatElement(sb, name, "one_min_rate_per_second", withHelpType, "gauge", value.getOneMinuteRate());
-        appendPrometheusTimerStatElement(sb, name, "five_min_rate_per_second", withHelpType, "gauge", value.getFiveMinuteRate());
-        appendPrometheusTimerStatElement(sb,
-                                         name,
-                                         "fifteen_min_rate_per_second",
-                                         withHelpType,
-                                         "gauge",
-                                         value.getFifteenMinuteRate());
+        appendPrometheusTimerStatElement(sb, name, "rate_per_second", withHelpType, "gauge", value.getSnapshot().getMean());
 
         LabeledSnapshot snap = snapshotable.snapshot();
         histogram(sb,
@@ -334,38 +286,28 @@ public final class PrometheusFormat {
                                   long count,
                                   long sum,
                                   boolean withHelpType) {
-        // # TYPE application:file_sizes_mean_bytes gauge
-        // application:file_sizes_mean_bytes 4738.231
-        appendPrometheusElement(sb, name, "mean", withHelpType, "gauge", snap.mean());
 
-        // # TYPE application:file_sizes_max_bytes gauge
-        // application:file_sizes_max_bytes 31716
+        // # HELP file_sizes_bytes_max Users file size
+        // # TYPE file_sizes_bytes_max gauge
+        // file_sizes_bytes_max{mp_scope="application"} 31716
         appendPrometheusElement(sb, name, "max", withHelpType, "gauge", snap.max());
 
-        // # TYPE application:file_sizes_min_bytes gauge
-        // application:file_sizes_min_bytes 180
-        appendPrometheusElement(sb, name, "min", withHelpType, "gauge", snap.min());
-
-        // # TYPE application:file_sizes_stddev_bytes gauge
-        // application:file_sizes_stddev_bytes 1054.7343037063602
-        appendPrometheusElement(sb, name, "stddev", withHelpType, "gauge", snap.stdDev());
-
-        // # TYPE application:file_sizes_bytes summary
-        // # HELP application:file_sizes_bytes Users file size
-        // application:file_sizes_bytes_count 2037
-
+        // # HELP file_sizes_bytes Users file size
+        // # TYPE file_sizes_bytes summary
+        // file_sizes_bytes{mp_scope="application",quantile="0.5} 4201
+        // for each supported quantile
         help(sb, metadata, name.nameUnits(), "summary", withHelpType);
+
+        for (PercentileOutput po : DEFAULT_PERCENTILES) {
+            prometheusQuantile(sb, name, units, po.promText, snap.value(po.value));
+        }
+
+        // file_sizes_bytes_count{mp_scope="application"} 2037
+        // file_sizes_bytes_sum{mp_scope="application"} 514657
+
 
         sb.append(name.nameUnitsSuffixTags("count")).append(" ").append(count).append('\n');
         sb.append(name.nameUnitsSuffixTags("sum")).append(" ").append(sum).append('\n');
-        // application:file_sizes_bytes{quantile="0.5"} 4201
-        // for each supported quantile
-        prometheusQuantile(sb, name, units, "0.5", snap.median());
-        prometheusQuantile(sb, name, units, "0.75", snap.sample75thPercentile());
-        prometheusQuantile(sb, name, units, "0.95", snap.sample95thPercentile());
-        prometheusQuantile(sb, name, units, "0.98", snap.sample98thPercentile());
-        prometheusQuantile(sb, name, units, "0.99", snap.sample99thPercentile());
-        prometheusQuantile(sb, name, units, "0.999", snap.sample999thPercentile());
     }
 
     private static void prometheusQuantile(StringBuilder sb,
@@ -426,64 +368,6 @@ public final class PrometheusFormat {
                 .append(prometheusExemplar(name.units(), sample)).append("\n");
     }
 
-    private static void meter(StringBuilder sb,
-                              MetricID metricId,
-                              Metadata metadata,
-                              HelidonMetric helidonMetric,
-                              Meter value,
-                              boolean withHelpType) {
-         /*
-            From spec:
-            # TYPE application:requests_total counter
-            # HELP application:requests_total Tracks the number of requests to the server
-            application:requests_total 29382
-            # TYPE application:requests_rate_per_second gauge
-            application:requests_rate_per_second 12.223
-            # TYPE application:requests_one_min_rate_per_second gauge
-            application:requests_one_min_rate_per_second 12.563
-            # TYPE application:requests_five_min_rate_per_second gauge
-            application:requests_five_min_rate_per_second 12.364
-            # TYPE application:requests_fifteen_min_rate_per_second gauge
-            application:requests_fifteen_min_rate_per_second 12.126
-         */
-
-        String name = metricId.getName();
-        String baseName = prometheusClean(name, helidonMetric.registryType() + "_");
-        String tags = tags(metricId.getTags());
-        String nameUnits = baseName + "_total";
-
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "counter");
-            prometheusHelp(sb, metadata, nameUnits);
-        }
-        sb.append(nameUnits).append(tags).append(" ").append(value.getCount()).append("\n");
-
-        nameUnits = baseName + "_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits).append(tags).append(" ").append(value.getMeanRate()).append("\n");
-
-        nameUnits = baseName + "_one_min_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits).append(tags).append(" ").append(value.getOneMinuteRate()).append("\n");
-
-        nameUnits = baseName + "_five_min_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits).append(tags).append(" ").append(value.getFiveMinuteRate()).append("\n");
-
-        nameUnits = baseName + "_fifteen_min_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits).append(tags).append(" ").append(value.getFifteenMinuteRate()).append("\n");
-
-    }
-
     private static void gauge(StringBuilder sb,
                               MetricID metricId,
                               Metadata metadata,
@@ -491,7 +375,7 @@ public final class PrometheusFormat {
                               Gauge<? extends Number> value,
                               boolean withHelpType) {
         String name = nameWithUnits(helidonMetric.registryType(), metadata, metricId);
-        help(sb, metadata, name, metadata.getType(), withHelpType);
+        help(sb, metadata, name, "gauge", withHelpType);
         sb.append(name).append(tags(metricId.getTags())).append(" ").append(units(metadata).convert(value.getValue()))
                 .append('\n');
     }
@@ -505,7 +389,7 @@ public final class PrometheusFormat {
         String name = prometheusName(helidonMetric.registryType(), metricId.getName());
         name = name.endsWith("total") ? name : name + "_total";
 
-        help(sb, metadata, name, metadata.getType(), withHelpType);
+        help(sb, metadata, name, "counter", withHelpType);
 
         sb.append(name).append(tags(metricId.getTags())).append(" ").append(value.getCount());
 
@@ -513,29 +397,6 @@ public final class PrometheusFormat {
             sampled.sample().ifPresent(it -> sb.append(prometheusExemplar(units(metadata), it)));
         }
         sb.append('\n');
-    }
-
-    private static void concurrentGauge(StringBuilder sb,
-                                        MetricID metricId,
-                                        Metadata metadata,
-                                        HelidonMetric helidonMetric,
-                                        ConcurrentGauge value,
-                                        boolean withHelpType) {
-        String name = nameWithUnits(helidonMetric.registryType(), metadata, metricId);
-        String nameCurrent = name + "_current";
-        help(sb, metadata, nameCurrent, "gauge", withHelpType);
-
-        sb.append(nameCurrent).append(tags(metricId.getTags())).append(" ").append(value.getCount()).append('\n');
-        String nameMin = name + "_min";
-        if (withHelpType) {
-            prometheusType(sb, nameMin, "gauge");
-        }
-        sb.append(nameMin).append(tags(metricId.getTags())).append(" ").append(value.getMin()).append('\n');
-        String nameMax = name + "_max";
-        if (withHelpType) {
-            prometheusType(sb, nameMax, "gauge");
-        }
-        sb.append(nameMax).append(tags(metricId.getTags())).append(" ").append(value.getMax()).append('\n');
     }
 
     private static void help(StringBuilder sb, Metadata metadata, String name, String type, boolean withHelpType) {

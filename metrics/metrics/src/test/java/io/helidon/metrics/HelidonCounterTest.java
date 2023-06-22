@@ -16,6 +16,8 @@
 
 package io.helidon.metrics;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,6 +32,7 @@ import static org.hamcrest.core.Is.is;
  */
 class HelidonCounterTest {
     private static Metadata meta;
+    private final static MeterRegistry meterRegistry = new PrometheusMeterRegistry((key) -> null);
     private HelidonCounter counter;
 
     @BeforeAll
@@ -43,7 +46,8 @@ class HelidonCounterTest {
 
     @BeforeEach
     void resetCounter() {
-        counter = HelidonCounter.create("base", meta);
+        meterRegistry.clear();
+        counter = HelidonCounter.create(meterRegistry, "base", meta);
     }
 
     @Test

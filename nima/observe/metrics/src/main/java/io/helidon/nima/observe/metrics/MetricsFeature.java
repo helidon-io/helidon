@@ -29,7 +29,6 @@ import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.api.SystemTagsManager;
-import io.helidon.metrics.serviceapi.JsonFormat;
 import io.helidon.metrics.serviceapi.PrometheusFormat;
 import io.helidon.nima.servicecommon.HelidonFeatureSupport;
 import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;

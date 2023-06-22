@@ -39,6 +39,7 @@ module io.helidon.metrics {
     requires jakarta.json;
     requires io.helidon.common.configurable;
     requires transitive micrometer.core;
+    requires micrometer.registry.prometheus;
 
     exports io.helidon.metrics;
 

@@ -77,6 +77,14 @@ public interface RegistrySettings {
     boolean isMetricEnabled(String dottedName);
 
     /**
+     * Returns an arbitrary config value from the config used to create this {@code RegistrySettings} instance, if any.
+     *
+     * @param key config key
+     * @return String value
+     */
+    String value(String key);
+
+    /**
      * Builder for {@code RegistrySettings}.
      */
     @Configured(prefix = MetricsSettings.Builder.METRICS_CONFIG_KEY + "." + "<metric-type>")
