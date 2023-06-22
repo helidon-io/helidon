@@ -115,9 +115,12 @@ public interface WebClient {
             this.config = config;
             // set options from config
             config.get("uri").asString().ifPresent(baseUri -> baseUri(URI.create(baseUri)));
+            config.get("connect-timeout-millis").asLong().ifPresent(timeout -> connectTimeout(Duration.ofMillis(timeout)));
+            config.get("read-timeout-millis").asLong().ifPresent(timeout -> readTimeout(Duration.ofMillis(timeout)));
             config.get("follow-redirects").asBoolean().ifPresent(this::followRedirect);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
-            //config.get("headers").asList(Http.Header.class).ifPresent(list -> list.forEach(header -> this.header(header.)));
+            config.get("keep-alive").asBoolean().ifPresent(this::keepAlive);
+            config.get("headers").asList(Http.HeaderValue.class).ifPresent(list -> list.forEach(headerValue -> this.header(headerValue)));
             config.get("tls")
                     .map(tlsConfig ->Tls.create(tlsConfig))
                     .ifPresent(this::tls);
