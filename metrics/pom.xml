@@ -35,6 +35,5 @@
         <module>trace-exemplar</module>
         <module>api</module>
         <module>service-api</module>
-        <module>microprofile</module>
     </modules>
 </project>

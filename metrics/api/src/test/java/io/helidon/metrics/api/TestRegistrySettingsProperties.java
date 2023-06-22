@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.metrics.api;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +37,7 @@ public class TestRegistrySettingsProperties {
     void testInclude() {
         MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
         assertThat("'pass.me' metric is enabled",
-                   metricsSettings.registrySettings(MetricRegistry.Type.VENDOR).isMetricEnabled("pass.me"),
+                   metricsSettings.registrySettings(Registry.VENDOR_SCOPE).isMetricEnabled("pass.me"),
                    is(true));
     }
 
@@ -46,7 +45,7 @@ public class TestRegistrySettingsProperties {
     void testExclude() {
         MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
         assertThat("'ignore.me' metric is enabled",
-                   metricsSettings.registrySettings(MetricRegistry.Type.VENDOR).isMetricEnabled("ignore.me"),
+                   metricsSettings.registrySettings(Registry.VENDOR_SCOPE).isMetricEnabled("ignore.me"),
                    is(false));
     }
 }

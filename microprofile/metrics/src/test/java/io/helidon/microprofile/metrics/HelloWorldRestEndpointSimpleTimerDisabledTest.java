@@ -47,7 +47,7 @@ public class HelloWorldRestEndpointSimpleTimerDisabledTest {
 
     boolean isSyntheticSimpleTimerPresent() {
         return !syntheticSimpleTimerRegistry.getSimpleTimers((metricID, metric) ->
-                metricID.getName().equals(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME))
+                metricID.getName().equals(MetricsCdiExtension.SYNTHETIC_TIMER_METRIC_NAME))
                 .isEmpty();
     }
 

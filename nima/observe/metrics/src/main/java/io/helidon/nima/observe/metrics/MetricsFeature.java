@@ -239,7 +239,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
         // routing to each scope
         Stream.of(app, base, vendor)
                 .forEach(registry -> {
-                    String type = registry.type();
+                    String type = registry.scope();
 
                     rules.get("/" + type, (req, res) -> getAll(req, res, registry))
                             .get("/" + type + "/{metric}", (req, res) -> getByName(req, res, registry))

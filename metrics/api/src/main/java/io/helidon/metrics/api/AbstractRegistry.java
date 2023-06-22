@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,23 +22,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
+import io.helidon.metrics.api.spi.MetricFactory;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -53,27 +49,24 @@ public abstract class AbstractRegistry implements Registry {
 
     private static final Tag[] NO_TAGS = new Tag[0];
 
-    private final MetricRegistry.Type type;
-
-    private final Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories = prepareMetricFactories();
+    private final String scope;
 
     private final MetricStore metricStore;
+    private final MetricFactory metricFactory;
 
     /**
      * Create a registry of a certain type.
      *
-     * @param type Registry type.
+     * @param scope Registry type.
      * @param registrySettings registry settings which influence this registry
+     * @param metricFactory metric factory to use in creating new metrics
      */
-    protected AbstractRegistry(Type type,
-                               RegistrySettings registrySettings) {
-        this.type = type;
-        this.metricStore = MetricStore.create(registrySettings,
-                                              prepareMetricFactories(),
-                                              this::createGauge,
-                                              this::createGauge,
-                                              type,
-                                              this::toImpl);
+    protected AbstractRegistry(String scope,
+                               RegistrySettings registrySettings,
+                               MetricFactory metricFactory) {
+        this.scope = scope;
+        this.metricStore = MetricStore.create(registrySettings, metricFactory, scope);
+        this.metricFactory = metricFactory;
     }
 
     /**
@@ -85,21 +78,6 @@ public abstract class AbstractRegistry implements Registry {
     public static boolean isMarkedAsDeleted(Metric metric) {
         return (metric instanceof HelidonMetric)
                 && ((HelidonMetric) metric).isDeleted();
-    }
-
-    @Override
-    public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
-        return metricStore.register(name, metric);
-    }
-
-    @Override
-    public <T extends Metric> T register(Metadata metadata, T metric) throws IllegalArgumentException {
-        return register(metadata, metric, NO_TAGS);
-    }
-
-    @Override
-    public <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
-        return metricStore.register(metadata, metric, tags);
     }
 
     @Override
@@ -182,37 +160,7 @@ public abstract class AbstractRegistry implements Registry {
         return getMetric(metricID, Histogram.class);
     }
 
-    @Override
-    public Meter meter(String name) {
-        return meter(name, NO_TAGS);
-    }
-
-    @Override
-    public Meter meter(Metadata metadata) {
-        return meter(metadata, NO_TAGS);
-    }
-
-    @Override
-    public Meter meter(String name, Tag... tags) {
-        return metricStore.getOrRegisterMetric(name, Meter.class, tags);
-    }
-
-    @Override
-    public Meter meter(Metadata metadata, Tag... tags) {
-        return metricStore.getOrRegisterMetric(metadata, Meter.class, tags);
-    }
-
-    @Override
-    public Meter meter(MetricID metricID) {
-        return metricStore.getOrRegisterMetric(metricID, Meter.class);
-    }
-
-    @Override
-    public Meter getMeter(MetricID metricID) {
-        return getMetric(metricID, Meter.class);
-    }
-
-    @Override
+   @Override
     public Timer timer(String name) {
         return timer(name, NO_TAGS);
     }
@@ -240,66 +188,6 @@ public abstract class AbstractRegistry implements Registry {
     @Override
     public Timer getTimer(MetricID metricID) {
         return getMetric(metricID, Timer.class);
-    }
-
-    @Override
-    public ConcurrentGauge concurrentGauge(String name) {
-        return concurrentGauge(name, NO_TAGS);
-    }
-
-    @Override
-    public ConcurrentGauge concurrentGauge(Metadata metadata) {
-        return concurrentGauge(metadata, NO_TAGS);
-    }
-
-    @Override
-    public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
-        return metricStore.getOrRegisterMetric(name, ConcurrentGauge.class, tags);
-    }
-
-    @Override
-    public ConcurrentGauge concurrentGauge(Metadata metadata, Tag... tags) {
-        return metricStore.getOrRegisterMetric(metadata, ConcurrentGauge.class, tags);
-    }
-
-    @Override
-    public ConcurrentGauge concurrentGauge(MetricID metricID) {
-        return metricStore.getOrRegisterMetric(metricID, ConcurrentGauge.class);
-    }
-
-    @Override
-    public ConcurrentGauge getConcurrentGauge(MetricID metricID) {
-        return getMetric(metricID, ConcurrentGauge.class);
-    }
-
-    @Override
-    public SimpleTimer simpleTimer(String name) {
-        return simpleTimer(name, NO_TAGS);
-    }
-
-    @Override
-    public SimpleTimer simpleTimer(Metadata metadata) {
-        return simpleTimer(metadata, NO_TAGS);
-    }
-
-    @Override
-    public SimpleTimer simpleTimer(String name, Tag... tags) {
-        return metricStore.getOrRegisterMetric(name, SimpleTimer.class, tags);
-    }
-
-    @Override
-    public SimpleTimer simpleTimer(Metadata metadata, Tag... tags) {
-        return metricStore.getOrRegisterMetric(metadata, SimpleTimer.class, tags);
-    }
-
-    @Override
-    public SimpleTimer getSimpleTimer(MetricID metricID) {
-        return getMetric(metricID, SimpleTimer.class);
-    }
-
-    @Override
-    public SimpleTimer simpleTimer(MetricID metricID) {
-        return metricStore.getOrRegisterMetric(metricID, SimpleTimer.class);
     }
 
     @Override
@@ -405,16 +293,6 @@ public abstract class AbstractRegistry implements Registry {
     }
 
     @Override
-    public SortedMap<MetricID, Meter> getMeters() {
-        return getMeters(MetricFilter.ALL);
-    }
-
-    @Override
-    public SortedMap<MetricID, Meter> getMeters(MetricFilter filter) {
-        return metricStore.getSortedMetrics(filter, Meter.class);
-    }
-
-    @Override
     public SortedMap<MetricID, Timer> getTimers() {
         return getTimers(MetricFilter.ALL);
     }
@@ -422,26 +300,6 @@ public abstract class AbstractRegistry implements Registry {
     @Override
     public SortedMap<MetricID, Timer> getTimers(MetricFilter filter) {
         return metricStore.getSortedMetrics(filter, Timer.class);
-    }
-
-    @Override
-    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges() {
-        return getConcurrentGauges(MetricFilter.ALL);
-    }
-
-    @Override
-    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges(MetricFilter filter) {
-        return metricStore.getSortedMetrics(filter, ConcurrentGauge.class);
-    }
-
-    @Override
-    public SortedMap<MetricID, SimpleTimer> getSimpleTimers() {
-        return getSimpleTimers(MetricFilter.ALL);
-    }
-
-    @Override
-    public SortedMap<MetricID, SimpleTimer> getSimpleTimers(MetricFilter filter) {
-        return metricStore.getSortedMetrics(filter, SimpleTimer.class);
     }
 
     @Override
@@ -494,13 +352,13 @@ public abstract class AbstractRegistry implements Registry {
      *
      * @return The type.
      */
-    public String type() {
-        return type.getName();
+    public String scope() {
+        return scope;
     }
 
     @Override
-    public Type getType() {
-        return type;
+    public String getScope() {
+        return scope;
     }
 
     /**
@@ -514,7 +372,7 @@ public abstract class AbstractRegistry implements Registry {
 
     @Override
     public String toString() {
-        return type() + ": " + metricStore.metrics().size() + " metrics";
+        return scope() + ": " + metricStore.metrics().size() + " metrics";
     }
 
     /**
@@ -525,23 +383,6 @@ public abstract class AbstractRegistry implements Registry {
     public Stream<MetricInstance> stream() {
         return metricStore.stream();
     }
-
-    /**
-     * Creates a new instance of an implementation wrapper around the indicated metric.
-     *
-     * @param metadata {@code Metadata} for the metric
-     * @param metric the existing metric to be wrapped by the impl
-     * @return new wrapper implementation around the specified metric instance
-     */
-    protected abstract HelidonMetric toImpl(Metadata metadata, Metric metric);
-
-    /**
-     * Provides a map from MicroProfile metric type to a factory which creates a concrete metric instance of the MP metric type
-     * which also extends the implementation metric base class for the concrete implementation (e.g., no-op or full-featured).
-     *
-     * @return map from each MicroProfile metric type to the correspondingfactory method
-     */
-    protected abstract Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> prepareMetricFactories();
 
     // -- Package private -----------------------------------------------------
     /**
@@ -588,39 +429,35 @@ public abstract class AbstractRegistry implements Registry {
 
     // -- Private methods -----------------------------------------------------
 
-    private static boolean enforceConsistentMetadataType(Metadata existingMetadata, MetricType newType, Tag... tags) {
-        if (!existingMetadata.getTypeRaw().equals(newType)) {
-            throw new IllegalArgumentException("Attempting to register a new metric "
-                                                       + new MetricID(existingMetadata.getName(), tags)
-                                                       + " of type "
-                                                       + newType.toString()
-                                                       + " found pre-existing metadata with conflicting type "
-                                                       + existingMetadata.getTypeRaw().toString());
-        }
-        return true;
-    }
+//    private static boolean enforceConsistentMetadataType(Metadata existingMetadata, MetricType newType, Tag... tags) {
+//        if (!existingMetadata.getTypeRaw().equals(newType)) {
+//            throw new IllegalArgumentException("Attempting to register a new metric "
+//                                                       + new MetricID(existingMetadata.getName(), tags)
+//                                                       + " of type "
+//                                                       + newType.toString()
+//                                                       + " found pre-existing metadata with conflicting type "
+//                                                       + existingMetadata.getTypeRaw().toString());
+//        }
+//        return true;
+//    }
 
     /**
-     * Infers the {@link MetricType} from a provided candidate type and a metric instance.
+     * Infers the specific subtype of {@link Metric} from a provided metric instance.
      *
-     * @param candidateType type of metric to use if not invalid; typically computed from an existing metric
      * @param metric the metric for which to derive the metric type
-     * @return the {@code MetricType} of the metric
+     * @return the specific subtype of {@code Metric} of the provided metric instance
      */
-    protected static MetricType deriveType(MetricType candidateType, Metric metric) {
-        if (candidateType != MetricType.INVALID) {
-            return candidateType;
-        }
+    protected static Class<? extends Metric> deriveType(Metric metric) {
         /*
          * A metric could be passed as a lambda, in which case neither
          * MetricType.from() nor, for example, Counter.class.isAssignableFrom,
          * works. Check each specific metric class using instanceof.
          */
-        return Stream.of(Counter.class, Gauge.class, Histogram.class, Meter.class, Timer.class, ConcurrentGauge.class)
+        return (RegistryFactory.METRIC_TYPES).stream()
                 .filter(clazz -> clazz.isInstance(metric))
-                .map(MetricType::from)
                 .findFirst()
-                .orElse(MetricType.INVALID);
+                .orElseThrow(() -> new IllegalArgumentException("Cannot map metric of type " + metric.getClass().getName()
+                + " to one of " + RegistryFactory.METRIC_TYPES));
     }
 
     /**
@@ -628,16 +465,16 @@ public abstract class AbstractRegistry implements Registry {
      *
      * @return map from MicroProfile metric type to factory functions.
      */
-    protected Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories() {
-        return metricFactories;
+    protected MetricFactory metricFactory() {
+        return metricFactory;
     }
 
-    /**
-     * Prepares the map from Java types of implementation metrics to the corresponding {@link MetricType}.
-     *
-     * @return prepared map for a given metrics implementation
-     */
-    protected abstract Map<Class<? extends HelidonMetric>, MetricType> prepareMetricToTypeMap();
+//    /**
+//     * Prepares the map from Java types of implementation metrics to the corresponding {@link MetricType}.
+//     *
+//     * @return prepared map for a given metrics implementation
+//     */
+//    protected abstract Map<Class<? extends HelidonMetric>, MetricType> prepareMetricToTypeMap();
 
     /**
      * Gauge factories based on either functions or suppliers.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,26 @@ package io.helidon.metrics.api;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 class MetricsSettingsImpl implements MetricsSettings {
 
     private static final RegistrySettings DEFAULT_REGISTRY_SETTINGS = RegistrySettings.create();
 
+    private static final Set<String> PREDEFINED_SCOPES = Set.of(Registry.APPLICATION_SCOPE,
+                                                                Registry.BASE_SCOPE,
+                                                                Registry.VENDOR_SCOPE);
+
     private final boolean isEnabled;
     private final KeyPerformanceIndicatorMetricsSettings kpiMetricsSettings;
     private final BaseMetricsSettings baseMetricsSettings;
-    private final EnumMap<MetricRegistry.Type, RegistrySettings> registrySettings;
+    private final Map<String, RegistrySettings> registrySettings;
     private final Map<String, String> globalTags;
     private final String appTagValue;
 
@@ -64,17 +65,17 @@ class MetricsSettingsImpl implements MetricsSettings {
     }
 
     @Override
-    public boolean isMetricEnabled(MetricRegistry.Type registryType, String metricName) {
+    public boolean isMetricEnabled(String scope, String metricName) {
         if (!isEnabled) {
             return false;
         }
-        RegistrySettings registrySettings = this.registrySettings.get(registryType);
+        RegistrySettings registrySettings = this.registrySettings.get(scope);
         return registrySettings == null || registrySettings.isMetricEnabled(metricName);
     }
 
     @Override
-    public RegistrySettings registrySettings(MetricRegistry.Type registryType) {
-        return registrySettings.getOrDefault(registryType, DEFAULT_REGISTRY_SETTINGS);
+    public RegistrySettings registrySettings(String scope) {
+        return registrySettings.getOrDefault(scope, DEFAULT_REGISTRY_SETTINGS);
     }
 
     @Override
@@ -88,7 +89,7 @@ class MetricsSettingsImpl implements MetricsSettings {
     }
 
     // For testing and within-package use only
-    Map<MetricRegistry.Type, RegistrySettings> registrySettings() {
+    Map<String, RegistrySettings> registrySettings() {
         return registrySettings;
     }
 
@@ -98,14 +99,14 @@ class MetricsSettingsImpl implements MetricsSettings {
         private KeyPerformanceIndicatorMetricsSettings.Builder kpiMetricsSettingsBuilder =
                 KeyPerformanceIndicatorMetricsSettings.builder();
         private BaseMetricsSettings.Builder baseMetricsSettingsBuilder = BaseMetricsSettings.builder();
-        private final EnumMap<MetricRegistry.Type, RegistrySettings> registrySettings = prepareRegistrySettings();
+        private final Map<String, RegistrySettings> registrySettings = prepareRegistrySettings();
         private Map<String, String> globalTags = Collections.emptyMap();
         private String appTagValue;
 
-        private static EnumMap<MetricRegistry.Type, RegistrySettings> prepareRegistrySettings() {
-            EnumMap<MetricRegistry.Type, RegistrySettings> result = new EnumMap<>(MetricRegistry.Type.class);
-            for (MetricRegistry.Type type : MetricRegistry.Type.values()) {
-                result.put(type, RegistrySettings.create());
+        private static Map<String, RegistrySettings> prepareRegistrySettings() {
+            Map<String, RegistrySettings> result = new HashMap<>();
+            for (String predefinedScope : PREDEFINED_SCOPES) {
+                result.put(predefinedScope, RegistrySettings.create());
             }
             return result;
         }
@@ -119,10 +120,7 @@ class MetricsSettingsImpl implements MetricsSettings {
                     serviceSettings.keyPerformanceIndicatorSettings());
             baseMetricsSettingsBuilder = BaseMetricsSettings.builder(serviceSettings.baseMetricsSettings());
 
-            for (MetricRegistry.Type metricRegistryType : MetricRegistry.Type.values()) {
-                registrySettings.put(metricRegistryType,
-                                     ((MetricsSettingsImpl) serviceSettings).registrySettings().get(metricRegistryType));
-            }
+            registrySettings.putAll(((MetricsSettingsImpl) serviceSettings).registrySettings());
         }
 
         @Override
@@ -153,7 +151,7 @@ class MetricsSettingsImpl implements MetricsSettings {
                     .ifPresent(this::enabled);
 
             metricsSettingsConfig.get(REGISTRIES_CONFIG_KEY)
-                    .asList(TypedRegistrySettingsImpl::create)
+                    .asList(ScopedRegistrySettingsImpl::create)
                     .ifPresent(this::addAllTypedRegistrySettings);
 
             metricsSettingsConfig.get(GLOBAL_TAGS_CONFIG_KEY)
@@ -174,8 +172,8 @@ class MetricsSettingsImpl implements MetricsSettings {
         }
 
         @Override
-        public MetricsSettings.Builder registrySettings(MetricRegistry.Type registryType, RegistrySettings registrySettings) {
-            this.registrySettings.put(registryType, registrySettings);
+        public MetricsSettings.Builder registrySettings(String scope, RegistrySettings registrySettings) {
+            this.registrySettings.put(scope, registrySettings);
             return this;
         }
 
@@ -191,10 +189,8 @@ class MetricsSettingsImpl implements MetricsSettings {
             return this;
         }
 
-        private void addAllTypedRegistrySettings(List<TypedRegistrySettingsImpl> typedRegistrySettingsList) {
-            for (TypedRegistrySettingsImpl typedRegistrySettings : typedRegistrySettingsList) {
-                registrySettings.put(typedRegistrySettings.registryType, typedRegistrySettings);
-            }
+        private void addAllTypedRegistrySettings(List<ScopedRegistrySettingsImpl> typedRegistrySettingsList) {
+            typedRegistrySettingsList.forEach(settings -> registrySettings.put(settings.scope, settings));
         }
 
         private Map<String, String> globalTagsExpressionToMap(Config globalTagExpression) {
@@ -221,30 +217,28 @@ class MetricsSettingsImpl implements MetricsSettings {
             return result;
         }
 
-        private static class TypedRegistrySettingsImpl extends RegistrySettingsImpl {
+        private static class ScopedRegistrySettingsImpl extends RegistrySettingsImpl {
 
-            static TypedRegistrySettingsImpl create(Config registrySettingsConfig) {
+            static ScopedRegistrySettingsImpl create(Config registrySettingsConfig) {
 
                 RegistrySettingsImpl.Builder builder = RegistrySettingsImpl.builder();
                 builder.config(registrySettingsConfig);
 
-                ConfigValue<String> typeNameValue = registrySettingsConfig.get(RegistrySettings.Builder.TYPE_CONFIG_KEY)
+                ConfigValue<String> scopeValue = registrySettingsConfig.get(RegistrySettings.Builder.SCOPE_CONFIG_KEY)
                         .asString();
-                if (!typeNameValue.isPresent()) {
-                    throw new IllegalArgumentException("Missing metric registry type in registry settings: "
+                if (!scopeValue.isPresent()) {
+                    throw new IllegalArgumentException("Missing metric registry scope in registry settings: "
                                                                + registrySettingsConfig);
                 }
-                MetricRegistry.Type type = MetricRegistry.Type.valueOf(typeNameValue.get().toUpperCase(Locale.ROOT));
-                return new TypedRegistrySettingsImpl(type, builder);
+                return new ScopedRegistrySettingsImpl(scopeValue.get(), builder);
             }
 
-            private final MetricRegistry.Type registryType;
+            private final String scope;
 
-            private TypedRegistrySettingsImpl(MetricRegistry.Type registryType, RegistrySettingsImpl.Builder builder) {
+            private ScopedRegistrySettingsImpl(String scope, RegistrySettingsImpl.Builder builder) {
                 super(builder);
-                this.registryType = registryType;
+                this.scope = scope;
             }
-
         }
     }
 }

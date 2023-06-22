@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ public interface RegistrySettings {
         /**
          * Config key within the registry's config section identifying which registry type the settings apply to.
          */
-        String TYPE_CONFIG_KEY = "type";
+        String SCOPE_CONFIG_KEY = "scope";
 
         /**
          * Sets whether the metric type should be enabled.

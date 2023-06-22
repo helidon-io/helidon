@@ -213,7 +213,7 @@ class HelloWorldTest {
     }
 
     SimpleTimer getSyntheticSimpleTimer(Method method) {
-            return getSyntheticSimpleTimer(MetricsCdiExtension.restEndpointSimpleTimerMetricID(method));
+            return getSyntheticSimpleTimer(MetricsCdiExtension.restEndpointTimerMetricID(method));
     }
 
     SimpleTimer getSyntheticSimpleTimer(MetricID metricID) {

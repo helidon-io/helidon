@@ -72,8 +72,8 @@ final class InterceptorSyntheticRestRequest extends HelidonInterceptor.Base<Synt
 
     @Override
     public void preInvocation(InvocationContext context, SyntheticRestRequestWorkItem workItem) {
-        MetricsInterceptorBase.verifyMetric(workItem.successfulSimpleTimerMetricID(),
-                                            workItem.successfulSimpleTimer());
+        MetricsInterceptorBase.verifyMetric(workItem.successfulTimerMetricID(),
+                                            workItem.successfulTimer());
         MetricsInterceptorBase.verifyMetric(workItem.unmappedExceptionCounterMetricID(),
                                             workItem.unmappedExceptionCounter());
         if (LOGGER.isLoggable(Level.TRACE)) {
@@ -104,7 +104,7 @@ final class InterceptorSyntheticRestRequest extends HelidonInterceptor.Base<Synt
                 // Because our SimpleTimer implementation does not update the metric if the elapsed time is 0, make sure to record
                 // a duration of at least 1 nanosecond.
                 long elapsedNanos = endNanos > startNanos ? endNanos - startNanos : 1;
-                workItem.successfulSimpleTimer().update(Duration.ofNanos(elapsedNanos));
+                workItem.successfulTimer().update(Duration.ofNanos(elapsedNanos));
             } else {
                 workItem.unmappedExceptionCounter().inc();
             }

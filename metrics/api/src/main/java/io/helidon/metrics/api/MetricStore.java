@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,21 +31,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.metrics.api.spi.MetricFactory;
+
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * Abstracts the multiple data stores used for holding metrics information and the various ways of accessing and updating them.
@@ -64,39 +67,25 @@ class MetricStore {
     private final Map<String, Metadata> allMetadata = new ConcurrentHashMap<>(); // metric name -> metadata
 
     private volatile RegistrySettings registrySettings;
-    private final Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories;
-    private final AbstractRegistry.GaugeFactory.SupplierBased supplierBasedGaugeFactory;
-    private final AbstractRegistry.GaugeFactory.FunctionBased functionBasedGaugeFactory;
-    private final MetricRegistry.Type registryType;
-    private final BiFunction<Metadata, Metric, HelidonMetric> toImpl;
+    private final MetricFactory metricFactory;
+    private final MetricFactory noOpMetricFactory = new NoOpMetricFactory();
+    private final String scope;
 
     static MetricStore create(RegistrySettings registrySettings,
-                               Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories,
-                               AbstractRegistry.GaugeFactory.SupplierBased supplierBasedGaugeFactory,
-                               AbstractRegistry.GaugeFactory.FunctionBased functionBasedGaugeFactory,
-                               MetricRegistry.Type registryType,
-                               BiFunction<Metadata, Metric, HelidonMetric> toImpl) {
+                              MetricFactory metricFactory,
+                              String scope) {
         return new MetricStore(registrySettings,
-                                 metricFactories,
-                                 supplierBasedGaugeFactory,
-                                 functionBasedGaugeFactory,
-                                 registryType,
-                                 toImpl);
+                               metricFactory,
+                               scope);
 
     }
 
     private MetricStore(RegistrySettings registrySettings,
-                        Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories,
-                        AbstractRegistry.GaugeFactory.SupplierBased supplierBasedGaugeFactory,
-                        AbstractRegistry.GaugeFactory.FunctionBased functionBasedGaugeFactory,
-                        MetricRegistry.Type registryType,
-                        BiFunction<Metadata, Metric, HelidonMetric> toImpl) {
+                        MetricFactory metricFactory,
+                        String scope) {
         this.registrySettings = registrySettings;
-        this.metricFactories = metricFactories;
-        this.supplierBasedGaugeFactory = supplierBasedGaugeFactory;
-        this.functionBasedGaugeFactory = functionBasedGaugeFactory;
-        this.registryType = registryType;
-        this.toImpl = toImpl;
+        this.metricFactory = metricFactory;
+        this.scope = scope;
     }
 
     void update(RegistrySettings registrySettings) {
@@ -108,7 +97,7 @@ class MetricStore {
                                    clazz,
                                    () -> allMetrics.get(metricID),
                                    () -> metricID,
-                                   () -> getConsistentMetadataLocked(metricID.getName(), MetricType.from(clazz)));
+                                   () -> getConsistentMetadataLocked(metricID.getName()));
     }
 
     <U extends Metric> U getOrRegisterMetric(String metricName, Class<U> clazz, Tag... tags) {
@@ -116,41 +105,40 @@ class MetricStore {
                                    clazz,
                                    () -> getMetricLocked(metricName, tags),
                                    () -> new MetricID(metricName, tags),
-                                   () -> getConsistentMetadataLocked(metricName, MetricType.from(clazz)));
+                                   () -> getConsistentMetadataLocked(metricName));
     }
 
     <U extends Metric> U getOrRegisterMetric(Metadata newMetadata, Class<U> clazz, Tag... tags) {
+        Class<? extends Metric> newBaseType = baseMetricClass(clazz);
         return writeAccess(() -> {
             HelidonMetric metric = getMetricLocked(newMetadata.getName(), tags);
             if (metric == null) {
-                Metadata metadataToUse = newMetadata.getTypeRaw().equals(MetricType.INVALID)
-                        ? Metadata.builder(newMetadata).withType(MetricType.from(clazz)).build()
-                        : newMetadata;
-                Metadata metadata = getConsistentMetadataLocked(metadataToUse);
-                metric = registerMetricLocked(new MetricID(metadata.getName(), tags),
-                                              createEnabledAwareMetric(clazz, metadata));
+                metric = registerMetricLocked(new MetricID(newMetadata.getName(), tags),
+                                              createEnabledAwareMetric(clazz, newMetadata));
             } else {
+                if (!baseMetricClass(metric.getClass()).isAssignableFrom(newBaseType)) {
+                    throw new IllegalArgumentException("Attempt to register new metric of type " + clazz.getName()
+                    + " when previously-registered metric " + newMetadata.getName() + Arrays.asList(tags)
+                    + " is of incompatible type " + metric.getClass());
+                }
                 enforceConsistentMetadata(metric.metadata(), newMetadata);
             }
-            return toType(metric, clazz);
+            return clazz.cast(metric);
         });
     }
 
     <T, R extends Number> Gauge<R> getOrRegisterGauge(String name, T object, Function<T, R> func, Tag... tags) {
         return getOrRegisterGauge(() -> getMetricLocked(name, tags),
-                                  () -> getConsistentMetadataLocked(name, MetricType.GAUGE),
+                                  () -> getConsistentMetadataLocked(name),
                                   () -> new MetricID(name, tags),
-                                  (Metadata metadata) -> functionBasedGaugeFactory.createGauge(metadata,
-                                                                                    object,
-                                                                                    func));
+                                  (Metadata metadata) -> metricFactory.gauge(scope, metadata, object, func, tags));
     }
 
     <R extends Number> Gauge<R> getOrRegisterGauge(String name, Supplier<R> valueSupplier, Tag... tags) {
         return getOrRegisterGauge(() -> getMetricLocked(name, tags),
-                                  () -> getConsistentMetadataLocked(name, MetricType.GAUGE),
+                                  () -> getConsistentMetadataLocked(name),
                                   () -> new MetricID(name, tags),
-                                  (Metadata metadata) -> supplierBasedGaugeFactory.createGauge(metadata,
-                                                                                    valueSupplier));
+                                  (Metadata metadata) -> metricFactory.gauge(scope, metadata, valueSupplier, tags));
     }
 
     <T, R extends Number> Gauge<R> getOrRegisterGauge(Metadata newMetadata,
@@ -160,9 +148,7 @@ class MetricStore {
         return getOrRegisterGauge(() -> getMetricLocked(newMetadata.getName(), tags),
                                   () -> getConsistentMetadataLocked(newMetadata),
                                   () -> new MetricID(newMetadata.getName(), tags),
-                                  (Metadata metadata) -> functionBasedGaugeFactory.createGauge(metadata,
-                                                                                    object,
-                                                                                    valueFunction));
+                                  (Metadata metadata) -> metricFactory.gauge(scope, newMetadata, object, valueFunction, tags));
     }
 
     <R extends Number> Gauge<R> getOrRegisterGauge(Metadata newMetadata,
@@ -172,25 +158,34 @@ class MetricStore {
         return getOrRegisterGauge(() -> getMetricLocked(metricName, tags),
                                   () -> getConsistentMetadataLocked(newMetadata),
                                   () -> new MetricID(metricName, tags),
-                                  (Metadata metadata) -> supplierBasedGaugeFactory.createGauge(metadata,
-                                                                                               valueSupplier));
+                                  (Metadata metadata) -> metricFactory.gauge(scope, newMetadata, valueSupplier, tags));
     }
 
     <T, R extends Number> Gauge<R> getOrRegisterGauge(MetricID metricID, T object, Function<T, R> valueFunction) {
         return getOrRegisterGauge(() -> allMetrics.get(metricID),
                                   () -> allMetadata.get(metricID.getName()),
                                   () -> metricID,
-                                  (Metadata metadata) -> functionBasedGaugeFactory.createGauge(metadata,
-                                                                                               object,
-                                                                                               valueFunction));
+                                  (Metadata metadata) -> metricFactory.gauge(scope, metadata, object, valueFunction));
     }
 
     <R extends Number> Gauge<R> getOrRegisterGauge(MetricID metricID, Supplier<R> valueSupplier) {
         return getOrRegisterGauge(() -> allMetrics.get(metricID),
                                   () -> allMetadata.get(metricID.getName()),
                                   () -> metricID,
-                                  (Metadata metadata) -> supplierBasedGaugeFactory.createGauge(metadata,
-                                                                                               valueSupplier));
+                                  (Metadata metadata) -> metricFactory.gauge(scope, metadata, valueSupplier));
+    }
+
+    private static Class<? extends Metric> baseMetricClass(Class<?> clazz) {
+
+        for (Class<? extends Metric> baseClass : RegistryFactory.METRIC_TYPES) {
+            if (baseClass.isAssignableFrom(clazz)) {
+                return baseClass;
+            }
+        }
+        throw new IllegalArgumentException("Unable to map metric type "
+                                                   + clazz.getName()
+                                                   + " to one of "
+                                                   + RegistryFactory.METRIC_TYPES);
     }
 
     private <R extends Number> Gauge<R> getOrRegisterGauge(Supplier<HelidonMetric> metricFinder,
@@ -205,23 +200,6 @@ class MetricStore {
                                               createEnabledAwareGauge(metadata, gaugeFactory));
             }
             return (Gauge<R>) metric;
-        });
-    }
-
-    <U extends Metric> U register(Metadata metadata, U metric, Tag... tags) {
-        return writeAccess(() -> {
-            final String metricName = metadata.getName();
-            getConsistentMetadataLocked(metadata);
-            registerMetricLocked(new MetricID(metricName, tags), toImpl.apply(metadata, metric));
-            return metric;
-        });
-    }
-
-    <U extends Metric> U register(String name, U metric) {
-        return writeAccess(() -> {
-            Metadata metadata = getConsistentMetadataLocked(name, toType(metric));
-            registerMetricLocked(new MetricID(name), toImpl.apply(metadata, metric));
-            return metric;
         });
     }
 
@@ -387,10 +365,9 @@ class MetricStore {
             HelidonMetric metric = metricFactory.get();
             if (metric == null) {
                 try {
-                    MetricType metricType = MetricType.from(clazz);
                     Metadata metadata = metadataFactory.get();
                     if (metadata == null) {
-                        metadata = registerMetadataLocked(metricName, metricType);
+                        metadata = registerMetadataLocked(metricName);
                     }
                     metric = registerMetricLocked(metricIDFactory.get(),
                                                   createEnabledAwareMetric(clazz, metadata));
@@ -398,7 +375,7 @@ class MetricStore {
                     throw new RuntimeException("Error attempting to register new metric " + metricIDFactory.get(), e);
                 }
             }
-            return toType(metric, clazz);
+            return clazz.cast(metric);
         });
     }
 
@@ -423,18 +400,10 @@ class MetricStore {
         return metric;
     }
 
-    private Metadata getConsistentMetadataLocked(String metricName, MetricType metricType) {
+    private Metadata getConsistentMetadataLocked(String metricName) {
         Metadata result = allMetadata.get(metricName);
-        if (result != null) {
-            if (result.getTypeRaw() != metricType) {
-                throw new IllegalArgumentException("Existing metadata has type "
-                                                           + result.getType()
-                                                           + " but "
-                                                           + metricType
-                                                           + " was requested");
-            }
-        } else {
-            result = registerMetadataLocked(metricName, metricType);
+        if (result == null) {
+            result = registerMetadataLocked(metricName);
         }
         return result;
     }
@@ -449,10 +418,9 @@ class MetricStore {
         return newMetadata;
     }
 
-    private Metadata registerMetadataLocked(String metricName, MetricType metricType) {
+    private Metadata registerMetadataLocked(String metricName) {
         return registerMetadataLocked(Metadata.builder()
                 .withName(metricName)
-                .withType(metricType)
                 .withUnit(MetricUnits.NONE)
                 .build());
     }
@@ -464,34 +432,43 @@ class MetricStore {
 
     private <U extends Metric> HelidonMetric createEnabledAwareMetric(Class<U> clazz, Metadata metadata) {
         String metricName = metadata.getName();
-        MetricType metricType = MetricType.from(clazz);
-        return registrySettings.isMetricEnabled(metricName)
-                ? metricFactories.get(MetricType.from(clazz)).apply(registryType.getName(), metadata)
-                : NoOpMetricRegistry.noOpMetricFactories().get(metricType).apply(metricName, metadata);
+        Class<? extends Metric> baseClass = baseMetricClass(clazz);
+        Metric result;
+        MetricFactory factoryToUse = registrySettings.isMetricEnabled(metricName) ? metricFactory : noOpMetricFactory;
+        if (baseClass.isAssignableFrom(Counter.class)) {
+            result = factoryToUse.counter(scope, metadata);
+        } else if (baseClass.isAssignableFrom(Histogram.class)) {
+            result = factoryToUse.summary(scope, metadata);
+        } else if (baseClass.isAssignableFrom(Timer.class)) {
+            result = factoryToUse.timer(scope, metadata);
+        } else {
+            throw new IllegalArgumentException("Cannot identify correct metric type for " + clazz.getName());
+        }
+        return (HelidonMetric) result;
     }
 
     private <R extends Number> HelidonMetric createEnabledAwareGauge(Metadata metadata,
                                                                      Function<Metadata, Gauge<R>> gaugeFactory) {
         String metricName = metadata.getName();
-        return registrySettings.isMetricEnabled(metricName)
-                ? (HelidonMetric) gaugeFactory.apply(metadata)
-                : NoOpMetricRegistry.noOpMetricFactories().get(MetricType.GAUGE).apply(metricName, metadata);
+        return (HelidonMetric) (registrySettings.isMetricEnabled(metricName)
+                ? gaugeFactory.apply(metadata)
+                : noOpMetricFactory.gauge(scope, metadata, null));
     }
 
-    private <T extends HelidonMetric, U extends Metric> U toType(T m1, Class<U> clazz) {
-        MetricType type1 = toType(m1);
-        MetricType type2 = MetricType.from(clazz);
-        if (type1 == type2) {
-            return clazz.cast(m1);
-        }
-        throw new IllegalArgumentException("Metric types " + type1.toString()
-                                                   + " and " + type2.toString() + " do not match");
-    }
-
-    private MetricType toType(Metric metric) {
-        Class<? extends Metric> clazz = toMetricClass(metric);
-        return MetricType.from(clazz == null ? metric.getClass() : clazz);
-    }
+//    private <T extends HelidonMetric, U extends Metric> U toType(T m1, Class<U> clazz) {
+//        MetricType type1 = toType(m1);
+//        MetricType type2 = MetricType.from(clazz);
+//        if (type1 == type2) {
+//            return clazz.cast(m1);
+//        }
+//        throw new IllegalArgumentException("Metric types " + type1.toString()
+//                                                   + " and " + type2.toString() + " do not match");
+//    }
+//
+//    private MetricType toType(Metric metric) {
+//        Class<? extends Metric> clazz = toMetricClass(metric);
+//        return MetricType.from(clazz == null ? metric.getClass() : clazz);
+//    }
 
     private static <T extends Metric> Class<? extends Metric> toMetricClass(T metric) {
         // Find subtype of Metric, needed for user-defined metrics
@@ -555,8 +532,6 @@ class MetricStore {
             return false;
         }
         return a.getName().equals(b.getName())
-                && a.getTypeRaw().equals(b.getTypeRaw())
-                && a.getDisplayName().equals(b.getDisplayName())
                 && Objects.equals(a.getDescription(), b.getDescription())
                 && Objects.equals(a.getUnit(), b.getUnit());
     }

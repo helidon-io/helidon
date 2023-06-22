@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import static io.helidon.metrics.api.Sample.derived;
 /**
  * A statistical snapshot of a {@link WeightedSnapshot}.
  */
-class WeightedSnapshot extends Snapshot implements LabeledSnapshot {
+class WeightedSnapshot extends HelidonSnapshot implements LabeledSnapshot {
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
     private final WeightedSample[] copy;
@@ -83,22 +83,22 @@ class WeightedSnapshot extends Snapshot implements LabeledSnapshot {
         }
     }
 
-    /**
-     * Returns the value at the given quantile.
-     *
-     * @param quantile a given quantile, in {@code [0..1]}
-     * @return the value in the distribution at {@code quantile}
-     */
-    @Override
-    public double getValue(double quantile) {
-        return value(quantile).value();
-    }
-
-    @Override
-    public Derived value(double quantile) {
-        int posx = slot(quantile);
-        return posx == -1 ? Derived.ZERO : derived(copy[posx].value(), copy[posx]);
-    }
+//    /**
+//     * Returns the value at the given quantile.
+//     *
+//     * @param quantile a given quantile, in {@code [0..1]}
+//     * @return the value in the distribution at {@code quantile}
+//     */
+//    @Override
+//    public double getValue(double quantile) {
+//        return value(quantile).value();
+//    }
+//
+//    @Override
+//    public Derived value(double quantile) {
+//        int posx = slot(quantile);
+//        return posx == -1 ? Derived.ZERO : derived(copy[posx].value(), copy[posx]);
+//    }
 
     int slot(double quantile) {
         if ((quantile < 0.0) || (quantile > 1.0) || Double.isNaN(quantile)) {
@@ -131,7 +131,7 @@ class WeightedSnapshot extends Snapshot implements LabeledSnapshot {
      * @return the number of values
      */
     @Override
-    public int size() {
+    public long size() {
         return copy.length;
     }
 
@@ -154,37 +154,6 @@ class WeightedSnapshot extends Snapshot implements LabeledSnapshot {
         }
         return values;
     }
-
-    @Override
-    public Derived median() {
-        return value(0.5);
-    }
-
-    @Override
-    public Derived sample75thPercentile() {
-        return value(0.75);
-    }
-
-    @Override
-    public Derived sample95thPercentile() {
-        return value(0.95);
-    }
-
-    @Override
-    public Derived sample98thPercentile() {
-        return value(0.98);
-    }
-
-    @Override
-    public Derived sample99thPercentile() {
-        return value(0.99);
-    }
-
-    @Override
-    public Derived sample999thPercentile() {
-        return value(0.999);
-    }
-
 
     /**
      * Returns the highest value in the snapshot.
@@ -275,35 +244,7 @@ class WeightedSnapshot extends Snapshot implements LabeledSnapshot {
                 : higherSlot - 1;
     }
 
-    /**
-     * Returns the weighted standard deviation of the values in the snapshot.
-     *
-     * @return the weighted standard deviation value
-     */
-    @Override
-    public double getStdDev() {
-        return stdDev().value();
-    }
 
-    @Override
-    public Derived stdDev() {
-        // two-pass algorithm for variance, avoids numeric overflow
-
-        if (copy.length <= 1) {
-            return Derived.ZERO;
-        }
-
-
-        final double mean = mean().value();
-        double variance = 0;
-
-        for (int i = 0; i < copy.length; i++) {
-            final double diff = copy[i].value() - mean;
-            variance += normWeights[i] * diff * diff;
-        }
-
-        return derived(Math.sqrt(variance));
-    }
 
     /**
      * Writes the values of the snapshot to the given stream.
@@ -347,7 +288,7 @@ class WeightedSnapshot extends Snapshot implements LabeledSnapshot {
             this(value, 1.0, 0, "");
         }
 
-        long getValue() {
+        double getValue() {
             return value();
         }
 

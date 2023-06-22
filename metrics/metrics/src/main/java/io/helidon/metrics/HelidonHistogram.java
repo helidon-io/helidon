@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@
 package io.helidon.metrics;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.LongAdder;
 
 import io.helidon.metrics.api.LabeledSnapshot;
-import io.helidon.metrics.api.SnapshotMetric;
 
+import io.micrometer.core.instrument.DistributionSummary;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -29,8 +28,8 @@ import org.eclipse.microprofile.metrics.Snapshot;
 /**
  * Implementation of {@link Histogram}.
  */
-final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMetric {
-    private final Histogram delegate;
+final class HelidonHistogram extends MetricImpl implements Histogram {
+    private final DistributionSummary delegate;
 
     private HelidonHistogram(String type, Metadata metadata, Histogram delegate) {
         super(type, metadata);
@@ -92,68 +91,6 @@ final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMe
                 : null;
     }
 
-    static final class HistogramImpl implements Histogram {
-        private final LongAdder counter = new LongAdder();
-        private final LongAdder sum = new LongAdder();
-        private final ExponentiallyDecayingReservoir reservoir;
-
-        private HistogramImpl(Clock clock) {
-            this.reservoir = new ExponentiallyDecayingReservoir(clock);
-        }
-
-        public void update(int value) {
-            update((long) value);
-        }
-
-        @Override
-        public long getSum() {
-            return sum.sum();
-        }
-
-        @Override
-        public void update(long value) {
-            counter.increment();
-            sum.add(value);
-            reservoir.update(value, ExemplarServiceManager.exemplarLabel());
-        }
-
-        public void update(long value, long timestamp) {
-            counter.increment();
-            sum.add(value);
-            reservoir.update(value, timestamp, ExemplarServiceManager.exemplarLabel());
-        }
-
-        @Override
-        public long getCount() {
-            return counter.sum();
-        }
-
-        @Override
-        public Snapshot getSnapshot() {
-            return reservoir.getSnapshot();
-        }
-
-        WeightedSnapshot snapshot() {
-            return reservoir.getSnapshot();
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), getCount());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            HistogramImpl that = (HistogramImpl) o;
-            return getCount() == that.getCount();
-        }
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -178,16 +115,8 @@ final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMe
         StringBuilder sb = new StringBuilder();
         sb.append(", count='").append(getCount()).append('\'');
         if (null != snapshot) {
-            sb.append(", min='").append(snapshot.getMin()).append('\'');
             sb.append(", max='").append(snapshot.getMax()).append('\'');
             sb.append(", mean='").append(snapshot.getMean()).append('\'');
-            sb.append(", stddev='").append(snapshot.getStdDev()).append('\'');
-            sb.append(", p50='").append(snapshot.getMedian()).append('\'');
-            sb.append(", p75='").append(snapshot.get75thPercentile()).append('\'');
-            sb.append(", p95='").append(snapshot.get95thPercentile()).append('\'');
-            sb.append(", p98='").append(snapshot.get98thPercentile()).append('\'');
-            sb.append(", p99='").append(snapshot.get99thPercentile()).append('\'');
-            sb.append(", p999='").append(snapshot.get999thPercentile()).append('\'');
         }
         return sb.toString();
     }

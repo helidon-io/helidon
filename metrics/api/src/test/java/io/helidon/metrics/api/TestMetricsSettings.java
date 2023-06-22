@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,10 +99,10 @@ public class TestMetricsSettings {
     @Test
     void testNoRegistrySettings() {
         MetricsSettingsImpl metricsSettings = (MetricsSettingsImpl) MetricsSettings.builder().config(withRESTSettings).build();
-        for (MetricRegistry.Type registryType : MetricRegistry.Type.values()) {
-            assertThat("Registry settings with no config for " + registryType,
+        for (String scope : Registry.BUILT_IN_SCOPES) {
+            assertThat("Registry settings with no config for " + scope,
                        metricsSettings.registrySettings().keySet(),
-                       not(contains(registryType)));
+                       not(contains(scope)));
         }
     }
 
@@ -110,14 +110,14 @@ public class TestMetricsSettings {
     void testOneRegistrySettings() {
         MetricsSettingsImpl metricsSettings = (MetricsSettingsImpl) MetricsSettings.builder().config(withOneRegistrySettings)
                 .build();
-        for (MetricRegistry.Type type : Set.of(MetricRegistry.Type.VENDOR, MetricRegistry.Type.BASE)) {
-            assertThat("Registry settings lacking config for " + type,
+        for (String scope : Set.of(Registry.VENDOR_SCOPE, Registry.BASE_SCOPE)) {
+            assertThat("Registry settings lacking config for " + scope,
                        metricsSettings.registrySettings().keySet(),
-                       not(contains(type)));
+                       not(contains(scope)));
         }
-        RegistrySettings registrySettings = metricsSettings.registrySettings().get(MetricRegistry.Type.APPLICATION);
+        RegistrySettings registrySettings = metricsSettings.registrySettings().get(Registry.APPLICATION_SCOPE);
 
-        assertThat("Registry settings for " + MetricRegistry.Type.APPLICATION,
+        assertThat("Registry settings for " + Registry.APPLICATION_SCOPE,
                    registrySettings,
                    notNullValue());
 
@@ -128,7 +128,7 @@ public class TestMetricsSettings {
                    registrySettings.isMetricEnabled("anything"),
                    is(false));
         assertThat("Metrics enabled for any name via metrics settings",
-                   metricsSettings.isMetricEnabled(MetricRegistry.Type.APPLICATION, "anything"),
+                   metricsSettings.isMetricEnabled(Registry.APPLICATION_SCOPE, "anything"),
                    is(false));
     }
 
@@ -138,9 +138,9 @@ public class TestMetricsSettings {
                 .build();
         assertThat("Registry settings lacking config for 'application'",
                    metricsSettings.registrySettings().keySet(),
-                   not(contains(MetricRegistry.Type.APPLICATION)));
+                   not(contains(Registry.APPLICATION_SCOPE)));
 
-        RegistrySettings vendorSettings = metricsSettings.registrySettings().get(MetricRegistry.Type.VENDOR);
+        RegistrySettings vendorSettings = metricsSettings.registrySettings().get(Registry.VENDOR_SCOPE);
         assertThat("Vendor settings", vendorSettings, notNullValue());
         assertThat("Vendor enabled", vendorSettings.isEnabled(), is(true));
         assertThat("Rejectable name vendor.nogood.here accepted",
@@ -150,10 +150,10 @@ public class TestMetricsSettings {
                    vendorSettings.isMetricEnabled("vendor.ok"),
                    is(true));
         assertThat("Acceptable name vendor.ok via metrics settings",
-                   metricsSettings.isMetricEnabled(MetricRegistry.Type.VENDOR, "vendor.ok"),
+                   metricsSettings.isMetricEnabled(Registry.VENDOR_SCOPE, "vendor.ok"),
                    is(false));
 
-        RegistrySettings baseSettings = metricsSettings.registrySettings().get(MetricRegistry.Type.BASE);
+        RegistrySettings baseSettings = metricsSettings.registrySettings().get(Registry.BASE_SCOPE);
         assertThat("Base settings", baseSettings, notNullValue());
         assertThat("Base enabled", baseSettings.isEnabled(), is(false));
 
@@ -175,10 +175,10 @@ public class TestMetricsSettings {
         MetricsSettingsImpl metricsSettings = (MetricsSettingsImpl) MetricsSettings.builder().config(withSimpleFilter).build();
 
         assertThat("Approvable name app.ok.go",
-                   metricsSettings.isMetricEnabled(MetricRegistry.Type.APPLICATION, "app.ok.go"),
+                   metricsSettings.isMetricEnabled(Registry.APPLICATION_SCOPE, "app.ok.go"),
                    is(true));
         assertThat("Rejectable name app.no.please",
-                   metricsSettings.isMetricEnabled(MetricRegistry.Type.APPLICATION, "app.no.please"),
+                   metricsSettings.isMetricEnabled(Registry.APPLICATION_SCOPE, "app.no.please"),
                    is(false));
     }
 }

@@ -43,7 +43,7 @@ public class MetricsMpServiceTest {
 
     static MetricRegistry cleanUpSyntheticSimpleTimerRegistry() {
         MetricRegistry result = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.BASE);
-        result.remove(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
+        result.remove(MetricsCdiExtension.SYNTHETIC_TIMER_METRIC_NAME);
         return result;
     }
 
@@ -54,7 +54,7 @@ public class MetricsMpServiceTest {
     @RegistryType(type = MetricRegistry.Type.BASE)
     private MetricRegistry baseRegistry;
 
-    MetricRegistry syntheticSimpleTimerRegistry() {
+    MetricRegistry syntheticTimerTimerRegistry() {
         return baseRegistry;
     }
 

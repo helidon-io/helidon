@@ -30,16 +30,18 @@ import org.eclipse.microprofile.metrics.Metadata;
  * Implementation of {@link Counter}.
  */
 final class HelidonCounter extends MetricImpl implements Counter, SampledMetric {
-    private final Counter delegate;
+    private final io.micrometer.core.instrument.Counter delegate;
 
-    private HelidonCounter(String registryType, Metadata metadata, Counter delegate) {
+    private HelidonCounter(String registryType, Metadata metadata, io.micrometer.core.instrument.Counter delegate) {
         super(registryType, metadata);
-
         this.delegate = delegate;
     }
 
     static HelidonCounter create(String registryType, Metadata metadata) {
-        return create(registryType, metadata, new CounterImpl());
+        return create(registryType, metadata, io.micrometer.core.instrument.Counter.builder(metadata.getName())
+                .baseUnit(metadata.getUnit())
+                .description(metadata.getDescription())
+                .);
     }
 
     static HelidonCounter create(String registryType, Metadata metadata, Counter metric) {

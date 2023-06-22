@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package io.helidon.metrics;
 
-import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsSettings;
-
-import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 
 /**
  * Access point to all registries.
@@ -32,7 +31,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
  * <ol>
  *     <li>A singleton instance, obtained through {@link #getInstance()} or {@link #getInstance(io.helidon.config.Config)}.
  *     This instance is lazily initialized - the latest call that provides a config instance before a
- *     {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#BASE} registry is obtained would be used to configure
+ *     {@link org.eclipse.microprofile.metrics.MetricRegistry#BASE_SCOPE} registry is obtained would be used to configure
  *     the base registry (as that is the only configurable registry in current implementation)
  *     </li>
  *     <li>A custom instance, obtained through {@link #create(Config)} or {@link #create()}. This would create a
@@ -44,7 +43,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 // see Github issue #360
 public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
-    private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
+    private final Map<String, Registry> registries = new HashMap<>();
     private final Lock metricsSettingsAccess = new ReentrantLock(true);
     private MetricsSettings metricsSettings;
 
@@ -57,14 +56,14 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      */
     protected RegistryFactory(MetricsSettings metricsSettings, Registry appRegistry, Registry vendorRegistry) {
         this.metricsSettings = metricsSettings;
-        registries.put(Type.APPLICATION, appRegistry);
-        registries.put(Type.VENDOR, vendorRegistry);
+        registries.put(Registry.APPLICATION_SCOPE, appRegistry);
+        registries.put(Registry.VENDOR_SCOPE, vendorRegistry);
     }
 
     private RegistryFactory(MetricsSettings metricsSettings) {
         this(metricsSettings,
-             Registry.create(Type.APPLICATION, metricsSettings.registrySettings(Type.APPLICATION)),
-             Registry.create(Type.VENDOR, metricsSettings.registrySettings(Type.VENDOR)));
+             Registry.create(Registry.APPLICATION_SCOPE, metricsSettings.registrySettings(Registry.APPLICATION_SCOPE)),
+             Registry.create(Registry.VENDOR_SCOPE, metricsSettings.registrySettings(Registry.VENDOR_SCOPE)));
     }
 
     private void accessMetricsSettings(Runnable operation) {
@@ -132,27 +131,27 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.getInstance(config));
     }
 
-    Registry getARegistry(Type type) {
-        if (type == Type.BASE) {
+    Registry getARegistry(String scope) {
+        if (Registry.BASE_SCOPE.equals(scope)) {
             ensureBase();
         }
-        return registries.get(type);
+        return registries.get(scope);
     }
 
     /**
      * Get a registry based on its type.
-     * For {@link Type#APPLICATION} and {@link Type#VENDOR} returns a modifiable registry,
-     * for {@link Type#BASE} returns a final registry (cannot register new metrics).
+     * For {@value Registry#APPLICATION_SCOPE} and {@value Registry#VENDOR_SCOPE} returns a modifiable registry,
+     * for {@value Registry#BASE_SCOPE} returns a final registry (cannot register new metrics).
      *
-     * @param type type of registry
+     * @param scope type of registry
      * @return MetricRegistry for the type defined.
      */
     @Override
-    public Registry getRegistry(Type type) {
-        if (type == Type.BASE) {
+    public Registry getRegistry(String scope) {
+        if (Registry.BASE_SCOPE.equals(scope)) {
             ensureBase();
         }
-        return registries.get(type);
+        return registries.get(scope);
     }
 
     @Override
@@ -179,10 +178,10 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     }
 
     private void ensureBase() {
-        if (null == registries.get(Type.BASE)) {
+        if (null == registries.get(Registry.BASE_SCOPE)) {
             accessMetricsSettings(() -> {
                 Registry registry = BaseRegistry.create(metricsSettings);
-                registries.put(Type.BASE, registry);
+                registries.put(Registry.BASE_SCOPE, registry);
             });
         }
     }

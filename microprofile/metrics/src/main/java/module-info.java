@@ -37,13 +37,28 @@ module io.helidon.microprofile.metrics {
     requires io.helidon.microprofile.servicecommon;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.config;
+
     requires transitive io.helidon.metrics.api;
-    requires transitive io.helidon.metrics.serviceapi;
+
+    // TODO The following line(s) are temporarily commented while MP binds directly to Micrometer and provides the /metrics
+    // feature itself. Later MP metrics will bind instead to the neutral Helidon metrics API and these lines or equivalent ones
+    // will return then.
+//    requires transitive io.helidon.metrics.serviceapi;
+
     requires io.helidon.nima.observe.metrics;
 
     requires transitive microprofile.config.api;
     requires microprofile.metrics.api;
     requires io.helidon.config.mp;
+    
+    // TODO - The following lines are temporary while the MP metrics implementation binds directly to Micrometer and provides the
+    // full metrics implementation (including the feature supporting /metrics). Later when MP metrics binds to the neutral
+    // Helidon metrics API these two lines will disappear from here.
+    requires io.helidon.nima.servicecommon; // because this component temporarily provides its own /metrics feature.
+    requires java.management; // Because the base registry which uses JMX beans is temporarily in this component.
+    requires micrometer.core;
+
+    // TODO end of temp lines
 
     exports io.helidon.microprofile.metrics;
     exports io.helidon.microprofile.metrics.spi;

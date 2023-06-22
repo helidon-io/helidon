@@ -60,10 +60,26 @@
             <groupId>io.helidon.nima.observe</groupId>
             <artifactId>helidon-nima-observe-metrics</artifactId>
         </dependency>
+
+        <!--
+            The following temporary removal is because the /metrics feature is temporarily embedded in this artifact
+            and the implementations of the MP metrics types use Micrometer directly, not the neutral API that
+            helidon-metrics will eventually define.
+        -->
         <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
         </dependency>
+
+<!--
+    The following dependency is temporary while the MP implementation directly binds to Micrometer. Later it will bind instead
+    to the neutral Helidon API instead.
+-->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>

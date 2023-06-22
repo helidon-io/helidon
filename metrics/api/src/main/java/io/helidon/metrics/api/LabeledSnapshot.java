@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,33 +24,11 @@ import io.helidon.metrics.api.Sample.Labeled;
  */
 public interface LabeledSnapshot {
     /**
-     * Value of a specific quantile.
-     *
-     * @param quantile quantile to get value for
-     * @return derived value of the quantile
-     */
-    Derived value(double quantile);
-
-    /**
-     * Median value.
-     *
-     * @return median
-     */
-    Derived median();
-
-    /**
      * Maximal value.
      *
      * @return max
      */
     Labeled max();
-
-    /**
-     * Minimal value.
-     *
-     * @return min
-     */
-    Labeled min();
 
     /**
      * Mean value.
@@ -60,44 +38,9 @@ public interface LabeledSnapshot {
     Derived mean();
 
     /**
-     * Standard deviation.
+     * Number of values represented by the snapshot.
      *
-     * @return standard deviation
+     * @return number of values
      */
-    Derived stdDev();
-
-    /**
-     * 75th percentile value.
-     *
-     * @return 75th percentile value
-     */
-    Derived sample75thPercentile();
-
-    /**
-     * 95th percentile value.
-     *
-     * @return 95th percentile value
-     */
-    Derived sample95thPercentile();
-
-    /**
-     * 98th percentile value.
-     *
-     * @return 98th percentile value
-     */
-    Derived sample98thPercentile();
-
-    /**
-     * 99th percentile value.
-     *
-     * @return 99th percentile value
-     */
-    Derived sample99thPercentile();
-
-    /**
-     * 99.9 percentile value.
-     *
-     * @return 99.9 percentile value
-     */
-    Derived sample999thPercentile();
+    long size();
 }

@@ -62,15 +62,15 @@ public class RegistryFactoryTest {
                 .build();
         configured = RegistryFactory.create(config);
 
-        baseUn = unconfigured.getRegistry(MetricRegistry.Type.BASE);
-        appUn = unconfigured.getRegistry(MetricRegistry.Type.APPLICATION);
-        vendorUn = unconfigured.getRegistry(MetricRegistry.Type.VENDOR);
+        baseUn = unconfigured.getRegistry(Registry.BASE_SCOPE);
+        appUn = unconfigured.getRegistry(Registry.APPLICATION_SCOPE);
+        vendorUn = unconfigured.getRegistry(Registry.VENDOR_SCOPE);
 
-        base = configured.getRegistry(MetricRegistry.Type.BASE);
-        app = configured.getRegistry(MetricRegistry.Type.APPLICATION);
-        vendor = configured.getRegistry(MetricRegistry.Type.VENDOR);
+        base = configured.getRegistry(Registry.BASE_SCOPE);
+        app = configured.getRegistry(Registry.APPLICATION_SCOPE);
+        vendor = configured.getRegistry(Registry.VENDOR_SCOPE);
 
-        vendorMod = ((io.helidon.metrics.RegistryFactory) configured).getARegistry(MetricRegistry.Type.VENDOR);
+        vendorMod = ((io.helidon.metrics.RegistryFactory) configured).getARegistry(Registry.VENDOR_SCOPE);
     }
 
     @Test

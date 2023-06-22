@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import io.helidon.metrics.api.LabeledSnapshot;
 import io.helidon.metrics.api.SnapshotMetric;
 
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -84,26 +82,6 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
     }
 
     @Override
-    public double getFifteenMinuteRate() {
-        return delegate.getFifteenMinuteRate();
-    }
-
-    @Override
-    public double getFiveMinuteRate() {
-        return delegate.getFiveMinuteRate();
-    }
-
-    @Override
-    public double getMeanRate() {
-        return delegate.getMeanRate();
-    }
-
-    @Override
-    public double getOneMinuteRate() {
-        return delegate.getOneMinuteRate();
-    }
-
-    @Override
     public Snapshot getSnapshot() {
         return delegate.getSnapshot();
     }
@@ -145,19 +123,13 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
     }
 
     private static class TimerImpl implements Timer {
-        private final Meter meter;
         private final HelidonHistogram histogram;
         private final Clock clock;
         private long elapsedTimeNanos;
 
         TimerImpl(String repoType, String name, Clock clock) {
-            this.meter = HelidonMeter.create(repoType, Metadata.builder()
-                    .withName(name)
-                    .withType(MetricType.METERED)
-                    .build(), clock);
             this.histogram = HelidonHistogram.create(repoType, Metadata.builder()
                     .withName(name)
-                    .withType(MetricType.HISTOGRAM)
                     .build(), clock);
             this.clock = clock;
         }
@@ -205,26 +177,6 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
         }
 
         @Override
-        public double getFifteenMinuteRate() {
-            return meter.getFifteenMinuteRate();
-        }
-
-        @Override
-        public double getFiveMinuteRate() {
-            return meter.getFiveMinuteRate();
-        }
-
-        @Override
-        public double getMeanRate() {
-            return meter.getMeanRate();
-        }
-
-        @Override
-        public double getOneMinuteRate() {
-            return meter.getOneMinuteRate();
-        }
-
-        @Override
         public Snapshot getSnapshot() {
             return histogram.getSnapshot();
         }
@@ -232,14 +184,13 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
         private void update(long nanos) {
             if (nanos >= 0) {
                 histogram.update(nanos);
-                meter.mark();
                 elapsedTimeNanos += nanos;
             }
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(super.hashCode(), meter, histogram, elapsedTimeNanos);
+            return Objects.hash(super.hashCode(), histogram, elapsedTimeNanos);
         }
 
         @Override
@@ -251,7 +202,7 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
                 return false;
             }
             TimerImpl that = (TimerImpl) o;
-            return meter.equals(that.meter) && histogram.equals(that.histogram) && elapsedTimeNanos == that.elapsedTimeNanos;
+            return histogram.equals(that.histogram) && elapsedTimeNanos == that.elapsedTimeNanos;
         }
     }
 
@@ -277,9 +228,6 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
         StringBuilder sb = new StringBuilder();
         sb.append(", count='").append(getCount()).append('\'');
         sb.append(", elapsedTime='").append(getElapsedTime()).append('\'');
-        sb.append(", fifteenMinuteRate='").append(getFifteenMinuteRate()).append('\'');
-        sb.append(", fiveMinuteRate='").append(getFiveMinuteRate()).append('\'');
-        sb.append(", meanRate='").append(getMeanRate()).append('\'');
         return sb.toString();
     }
 }

@@ -77,9 +77,9 @@ public class HelloWorldAsyncResponseTest {
     @Test
     public void test() throws Exception {
         MetricID metricID = MetricsCdiExtension
-                .restEndpointSimpleTimerMetricID(HelloWorldResource.class.getMethod("slowMessage",
-                                                                                    AsyncResponse.class,
-                                                                                    ServerResponse.class));
+                .restEndpointTimerMetricID(HelloWorldResource.class.getMethod("slowMessage",
+                                                                              AsyncResponse.class,
+                                                                              ServerResponse.class));
 
         SortedMap<MetricID, SimpleTimer> simpleTimers = registry.getSimpleTimers();
 
@@ -149,7 +149,7 @@ public class HelloWorldAsyncResponseTest {
     SimpleTimer getSyntheticSimpleTimer() {
         MetricID metricID = null;
         try {
-            metricID = MetricsCdiExtension.restEndpointSimpleTimerMetricID(
+            metricID = MetricsCdiExtension.restEndpointTimerMetricID(
                     HelloWorldResource.class.getMethod("slowMessageWithArg",
                     String.class, AsyncResponse.class));
         } catch (NoSuchMethodException e) {
@@ -160,7 +160,7 @@ public class HelloWorldAsyncResponseTest {
         SimpleTimer syntheticSimpleTimer = simpleTimers.get(metricID);
         // We should not need to retry here. Annotation processing creates the synthetic simple timers long before tests run.
         assertThat("Synthetic simple timer "
-                        + MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME,
+                        + MetricsCdiExtension.SYNTHETIC_TIMER_METRIC_NAME,
                 syntheticSimpleTimer, is(notNullValue()));
         return syntheticSimpleTimer;
     }

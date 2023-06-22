@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,15 @@ package io.helidon.metrics.api;
 import java.io.OutputStream;
 import java.time.Duration;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Snapshot;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -41,11 +40,7 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
 
     static class NoOpCounterImpl extends NoOpMetricImpl implements Counter {
 
-        static NoOpCounterImpl create(String registryType, Metadata metadata) {
-            return new NoOpCounterImpl(registryType, metadata);
-        }
-
-        static NoOpCounterImpl create(String registryType, Metadata metadata, Counter counter) {
+        static NoOpCounterImpl create(String registryType, Metadata metadata, Tag... tags) {
             return new NoOpCounterImpl(registryType, metadata);
         }
 
@@ -67,69 +62,52 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
         }
     }
 
-    static class NoOpConcurrentGaugeImpl extends NoOpMetricImpl implements ConcurrentGauge {
+    static class NoOpGaugeImpl<N extends Number, T> extends NoOpMetricImpl implements Gauge<N> {
 
-        static NoOpConcurrentGaugeImpl create(String registryType, Metadata metadata) {
-            return new NoOpConcurrentGaugeImpl(registryType, metadata);
+        private final Supplier<N> supplier;
+        private final T target;
+        private final Function<T, N> fn;
+
+        static <N extends Number> NoOpGaugeImpl<N, ?> create(String registryType,
+                                                             Metadata metadata,
+                                                             Supplier<N> supplier,
+                                                             Tag... tags) {
+            return new NoOpGaugeImpl<>(registryType, metadata, supplier);
         }
 
-        private NoOpConcurrentGaugeImpl(String registryType, Metadata metadata) {
+        static <N extends Number, T> NoOpGaugeImpl<N, T> create(String registryType,
+                                                             Metadata metadata,
+                                                             T target,
+                                                             Function<T, N> fn,
+                                                             Tag... tags) {
+            return new NoOpGaugeImpl<>(registryType, metadata, target, fn);
+        }
+
+        private NoOpGaugeImpl(String registryType, Metadata metadata, Supplier<N> supplier) {
             super(registryType, metadata);
+            this.supplier = supplier;
+            target = null;
+            fn = null;
         }
 
-        @Override
-        public long getCount() {
-            return 0;
-        }
-
-        @Override
-        public long getMax() {
-            return 0;
-        }
-
-        @Override
-        public long getMin() {
-            return 0;
-        }
-
-        @Override
-        public void inc() {
-        }
-
-        @Override
-        public void dec() {
-        }
-    }
-
-    static class NoOpGaugeImpl<T /* extends Number */> extends NoOpMetricImpl implements Gauge<T> {
-        // TODO uncomment above once MP metrics enforces the Number restriction
-
-        private final Supplier<T> value;
-
-        static <S /* extends Number */> NoOpGaugeImpl<S> create(String registryType, Metadata metadata, Gauge<S> metric) {
-            // TODO uncomment above once MP metrics enforces the Number restriction
-            return new NoOpGaugeImpl<>(registryType, metadata, metric);
-        }
-
-        static <S /* extends Number */> NoOpGaugeImpl<S> create(String registryType, Metadata metadata) {
-            // TODO uncomment above once MP metrics enforces the Number restriction
-            return new NoOpGaugeImpl<>(registryType, metadata, () -> null);
-        }
-
-        private NoOpGaugeImpl(String registryType, Metadata metadata, Gauge<T> metric) {
+        private NoOpGaugeImpl(String registryType, Metadata metadata, T target, Function<T, N> fn) {
             super(registryType, metadata);
-            value = metric::getValue;
+            this.target = target;
+            this.fn = fn;
+            supplier = null;
         }
 
         @Override
-        public T getValue() {
-            return value.get();
+        public N getValue() {
+            return supplier != null ? supplier.get() : fn.apply(target);
         }
+
+
     }
 
     static class NoOpHistogramImpl extends NoOpMetricImpl implements Histogram {
 
-        static NoOpHistogramImpl create(String registryType, Metadata metadata) {
+        static NoOpHistogramImpl create(String registryType, Metadata metadata, Tag... tags) {
             return new NoOpHistogramImpl(registryType, metadata);
         }
 
@@ -162,23 +140,14 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
     }
 
     static class NoOpSnapshot extends Snapshot {
+
         @Override
-        public double getValue(double quantile) {
+        public long size() {
             return 0;
         }
 
         @Override
-        public long[] getValues() {
-            return new long[0];
-        }
-
-        @Override
-        public int size() {
-            return 0;
-        }
-
-        @Override
-        public long getMax() {
+        public double getMax() {
             return 0;
         }
 
@@ -188,13 +157,8 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
         }
 
         @Override
-        public long getMin() {
-            return 0;
-        }
-
-        @Override
-        public double getStdDev() {
-            return 0;
+        public PercentileValue[] percentileValues() {
+            return new PercentileValue[0];
         }
 
         @Override
@@ -204,50 +168,6 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
 
     static Snapshot snapshot() {
         return new NoOpSnapshot();
-    }
-
-    static class NoOpMeterImpl extends NoOpMetricImpl implements Meter {
-
-        static NoOpMeterImpl create(String registryType, Metadata metadata) {
-            return new NoOpMeterImpl(registryType, metadata);
-        }
-
-        private NoOpMeterImpl(String registryType, Metadata metadata) {
-            super(registryType, metadata);
-        }
-
-        @Override
-        public void mark() {
-        }
-
-        @Override
-        public void mark(long n) {
-        }
-
-        @Override
-        public long getCount() {
-            return 0;
-        }
-
-        @Override
-        public double getFifteenMinuteRate() {
-            return 0;
-        }
-
-        @Override
-        public double getFiveMinuteRate() {
-            return 0;
-        }
-
-        @Override
-        public double getMeanRate() {
-            return 0;
-        }
-
-        @Override
-        public double getOneMinuteRate() {
-            return 0;
-        }
     }
 
     static class NoOpTimerImpl extends NoOpMetricImpl implements Timer {
@@ -263,7 +183,7 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
             }
         }
 
-        static NoOpTimerImpl create(String registryType, Metadata metadata) {
+        static NoOpTimerImpl create(String registryType, Metadata metadata, Tag... tags) {
             return new NoOpTimerImpl(registryType, metadata);
         }
 
@@ -301,26 +221,6 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
         }
 
         @Override
-        public double getFifteenMinuteRate() {
-            return 0;
-        }
-
-        @Override
-        public double getFiveMinuteRate() {
-            return 0;
-        }
-
-        @Override
-        public double getMeanRate() {
-            return 0;
-        }
-
-        @Override
-        public double getOneMinuteRate() {
-            return 0;
-        }
-
-        @Override
         public Snapshot getSnapshot() {
             return snapshot();
         }
@@ -329,70 +229,5 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
     private static Timer.Context timerContext() {
         return new NoOpTimerImpl.Context() {
         };
-    }
-
-    static class NoOpSimpleTimerImpl extends NoOpMetricImpl implements SimpleTimer {
-
-        static class Context implements SimpleTimer.Context {
-            @Override
-            public long stop() {
-                return 0;
-            }
-
-            @Override
-            public void close() {
-            }
-        }
-
-        static NoOpSimpleTimerImpl create(String registryType, Metadata metadata) {
-            return new NoOpSimpleTimerImpl(registryType, metadata);
-        }
-
-        private NoOpSimpleTimerImpl(String registryType, Metadata metadata) {
-            super(registryType, metadata);
-        }
-
-        @Override
-        public void update(Duration duration) {
-        }
-
-        @Override
-        public Duration getMaxTimeDuration() {
-            return Duration.ZERO;
-        }
-
-        @Override
-        public Duration getMinTimeDuration() {
-            return Duration.ZERO;
-        }
-
-        @Override
-        public <T> T time(Callable<T> event) throws Exception {
-            return event.call();
-        }
-
-        @Override
-        public void time(Runnable event) {
-            event.run();
-        }
-
-        @Override
-        public SimpleTimer.Context time() {
-            return simpleTimerContext();
-        }
-
-        @Override
-        public Duration getElapsedTime() {
-            return null;
-        }
-
-        @Override
-        public long getCount() {
-            return 0;
-        }
-    }
-
-    private static SimpleTimer.Context simpleTimerContext() {
-        return new NoOpSimpleTimerImpl.Context();
     }
 }

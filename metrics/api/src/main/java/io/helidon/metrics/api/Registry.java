@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.metrics.api;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.metrics.MetricID;
@@ -27,6 +28,12 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  * Helidon Metric registry.
  */
 public interface Registry extends MetricRegistry {
+
+    /**
+     * Built-in scope names.
+     */
+    Set<String> BUILT_IN_SCOPES = Set.of(BASE_SCOPE, VENDOR_SCOPE, APPLICATION_SCOPE);
+
     /**
      * Whether a metric is enabled. Metrics can be disabled by name (disables all IDs associated with that name).
      *
@@ -74,7 +81,7 @@ public interface Registry extends MetricRegistry {
      *
      * @return type
      */
-    String type();
+    String scope();
 
     /**
      * Get all metric IDs for a specified name.

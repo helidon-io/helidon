@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ package io.helidon.metrics.api;
  * Base implementation of {@link Sample.Labeled}.
  */
 public class LabeledSample implements Sample.Labeled {
-    private final long value;
+    private final double value;
     private final String label;
     private final long timestamp;
 
@@ -31,14 +31,14 @@ public class LabeledSample implements Sample.Labeled {
      * @param label label
      * @param timestamp timestamp
      */
-    protected LabeledSample(long value, String label, long timestamp) {
+    protected LabeledSample(double value, String label, long timestamp) {
         this.value = value;
         this.label = label;
         this.timestamp = timestamp;
     }
 
     @Override
-    public long value() {
+    public double value() {
         return value;
     }
 
