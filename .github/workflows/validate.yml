@@ -17,6 +17,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  java21:
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04 ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3.6.0
+        with:
+          distribution: "temurin"
+          java-version: "21-ea"
+          cache: maven
+      - name: Maven build
+        run: etc/scripts/github-build.sh
   copyright:
     timeout-minutes: 10
     runs-on: ubuntu-20.04
