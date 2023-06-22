@@ -37,7 +37,9 @@ public interface HelidonMetric extends Metric {
     }
 
     /**
-     * @return the metadata for the metric
+     * Returns the metadata for the metric.
+     *
+     * @return metadata
      */
     Metadata metadata();
 
@@ -47,12 +49,16 @@ public interface HelidonMetric extends Metric {
     void markAsDeleted();
 
     /**
+     * Indicates if the metrics has been removed from its registry.
+     *
      * @return true if the metric has been removed from its registry; false if it is still registered
      */
     boolean isDeleted();
 
     /**
-     * @return the name of the registry type in which the metric was registered
+     * Returns the scope of the registry in which the metric was registered.
+     *
+     * @return scope
      */
     String registryType();
 }

@@ -59,6 +59,7 @@ public interface ComponentMetricsSettings {
     }
 
     /**
+     * Returns whether the component settings indicate that metrics are enabled for the component.
      *
      * @return whether metrics are enabled for the component according to the settings
      */

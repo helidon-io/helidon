@@ -76,12 +76,13 @@ public interface BaseMetricsSettings {
     }
 
     /**
-     *
-     * @return whether base metrics are enabled in the settings.
+     * Returns whether base metrics are enabled.
+     * @return true if enabled; false otherwise
      */
     boolean isEnabled();
 
     /**
+     * Returns whether the specified metric is enabled.
      *
      * @param dottedName dotted name (e.g., {@code memory.usedHeap}) for the base metric of interest
      * @return whether that metric is enabled or not
@@ -89,6 +90,7 @@ public interface BaseMetricsSettings {
     boolean isBaseMetricEnabled(String dottedName);
 
     /**
+     * Returns the settings for which base metrics are enabled.
      *
      * @return {@code Map} from base metric names to explicit enabled/disabled settings
      */
@@ -151,8 +153,9 @@ public interface BaseMetricsSettings {
         Builder enableBaseMetric(String dottedName, boolean value);
 
         /**
+         * Returns the builder's setting for whether base metrics are to be used.
          *
-         * @return builder's current setting for whether base metrics are to be used
+         * @return true if base metrics are on; false otherwise
          */
         boolean isEnabled();
     }

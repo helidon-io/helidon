@@ -329,20 +329,20 @@ public final class PrometheusFormat {
         sb.append("\n");
     }
 
-    private static void appendPrometheusElement(StringBuilder sb,
-                                                PrometheusName name,
-                                                String statName,
-                                                boolean withHelpType,
-                                                String typeName,
-                                                Sample.Derived derived) {
-        appendPrometheusElement(sb,
-                                name,
-                                () -> name.nameStatUnits(statName),
-                                withHelpType,
-                                typeName,
-                                derived.value(),
-                                derived.sample());
-    }
+//    private static void appendPrometheusElement(StringBuilder sb,
+//                                                PrometheusName name,
+//                                                String statName,
+//                                                boolean withHelpType,
+//                                                String typeName,
+//                                                Sample.Derived derived) {
+//        appendPrometheusElement(sb,
+//                                name,
+//                                () -> name.nameStatUnits(statName),
+//                                withHelpType,
+//                                typeName,
+//                                derived.value(),
+//                                derived.sample());
+//    }
 
     private static void appendPrometheusElement(StringBuilder sb,
                                                 PrometheusName name,
