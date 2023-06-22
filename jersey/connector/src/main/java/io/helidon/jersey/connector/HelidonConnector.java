@@ -49,7 +49,7 @@ class HelidonConnector implements Connector {
     private static final String HELIDON_VERSION = "Helidon/" + Version.VERSION + " (java "
             + PropertiesHelper.getSystemProperty("java.runtime.version") + ")";
 
-    private static LazyValue<ExecutorService> executorService =
+    private static final LazyValue<ExecutorService> EXECUTOR_SERVICE =
             LazyValue.create(() -> Executors.newThreadPerTaskExecutor(
                     Thread.ofVirtual().name("helidon-connector-", 0).factory()));
 
@@ -99,6 +99,20 @@ class HelidonConnector implements Connector {
         // redirects
         httpRequest.followRedirects(request.resolveProperty(ClientProperties.FOLLOW_REDIRECTS, true));
 
+        // copy properties
+        for (String name : request.getConfiguration().getPropertyNames()) {
+            Object value = request.getConfiguration().getProperty(name);
+            if (!name.startsWith("jersey") && value instanceof String stringValue) {
+                httpRequest.property(name, stringValue);
+            }
+        }
+        for (String propertyName : request.getPropertyNames()) {
+            Object value = request.resolveProperty(propertyName, Object.class);
+            if (!propertyName.startsWith("jersey") && value instanceof String stringValue) {
+                httpRequest.property(propertyName, stringValue);
+            }
+        }
+
         return httpRequest;
     }
 
@@ -126,10 +140,6 @@ class HelidonConnector implements Connector {
                 return httpResponse.status().reasonPhrase();
             }
         }, request);
-
-        // responseContext.setResolvedRequestUri(webClientResponse.lastEndpointURI());
-        // response.setResolvedRequestUri(httpResponse);
-
 
         for (Http.HeaderValue header : httpResponse.headers()) {
             for (String v : header.allValues()) {
@@ -175,7 +185,7 @@ class HelidonConnector implements Connector {
      */
     @Override
     public Future<?> apply(ClientRequest request, AsyncConnectorCallback callback) {
-        return executorService.get().submit(() -> {
+        return EXECUTOR_SERVICE.get().submit(() -> {
             try {
                 ClientResponse response = apply(request);
                 callback.response(response);
