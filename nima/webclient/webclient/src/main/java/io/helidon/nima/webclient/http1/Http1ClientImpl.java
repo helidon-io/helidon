@@ -55,7 +55,7 @@ class Http1ClientImpl extends LoomClient implements Http1Client {
         UriQueryWriteable query = UriQueryWriteable.create();
         UriHelper helper = (uri() == null) ? UriHelper.create() : UriHelper.create(uri(), query);
 
-        return new ClientRequestImpl(clientConfig, method, helper, query);
+        return new ClientRequestImpl(clientConfig, method, helper, query, properties());
     }
 
     Http1ClientConfig clientConfig() {
