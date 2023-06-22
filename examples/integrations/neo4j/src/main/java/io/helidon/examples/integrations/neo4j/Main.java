@@ -25,7 +25,6 @@ import io.helidon.integrations.neo4j.Neo4j;
 import io.helidon.integrations.neo4j.health.Neo4jHealthCheck;
 import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.observe.ObserveFeature;
 import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.observe.health.HealthObserveProvider;
