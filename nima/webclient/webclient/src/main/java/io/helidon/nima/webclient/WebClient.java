@@ -120,9 +120,10 @@ public interface WebClient {
             config.get("follow-redirects").asBoolean().ifPresent(this::followRedirect);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("keep-alive").asBoolean().ifPresent(this::keepAlive);
-            config.get("headers").asList(Http.HeaderValue.class).ifPresent(list -> list.forEach(headerValue -> this.header(headerValue)));
+            config.get("headers").asList(Http.HeaderValue.class)
+                    .ifPresent(list -> list.forEach(headerValue -> this.header(headerValue)));
             config.get("tls")
-                    .map(tlsConfig ->Tls.create(tlsConfig))
+                    .map(tlsConfig -> Tls.create(tlsConfig))
                     .ifPresent(this::tls);
             return identity();
         }
