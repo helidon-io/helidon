@@ -279,11 +279,11 @@ interface OciConfigBlueprint {
 
     /**
      * The list of {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy} names (excluding {@link io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy#AUTO}) that
-     * are potentially applicable for use. Here, "potentially applicable or use" means that it is set using the
+     * are potentially applicable for use. Here, "potentially applicable for use" means that it is set using the
      * {@link #authStrategy()} attribute on this config bean. If not present then the fall-back looks to use the values
      * explicitly or implicitly set by {@link #authStrategies()}.
      *
-     * @return the list of potential auth strategies that are applicable for use
+     * @return the list of potential auth strategies that are applicable
      */
     default List<String> potentialAuthStrategies() {
         String authStrategy = authStrategy().orElse(null);
