@@ -17,6 +17,7 @@ package io.helidon.metrics;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
 import io.helidon.metrics.api.spi.MetricFactory;
 
@@ -33,26 +34,31 @@ import org.eclipse.microprofile.metrics.Timer;
 class HelidonMetricFactory implements MetricFactory {
     @Override
     public Counter counter(String scope, Metadata metadata, Tag... tags) {
-        return HelidonCounter.create(scope, metadata);
+        return HelidonCounter.create(scope, metadata, tags);
     }
 
     @Override
     public Timer timer(String scope, Metadata metadata, Tag... tags) {
-        return HelidonTimer.create(scope, metadata);
+        return HelidonTimer.create(scope, metadata, tags);
     }
 
     @Override
     public Histogram summary(String scope, Metadata metadata, Tag... tags) {
-        return HelidonHistogram.create(scope, metadata);
+        return HelidonHistogram.create(scope, metadata, tags);
     }
 
     @Override
     public <N extends Number> Gauge<N> gauge(String scope, Metadata metadata, Supplier<N> supplier, Tag... tags) {
-        return HelidonGauge.create(scope, metadata, supplier);
+        return HelidonGauge.create(scope, metadata, supplier, tags);
     }
 
     @Override
     public <N extends Number, T> Gauge<N> gauge(String scope, Metadata metadata, T target, Function<T, N> fn, Tag... tags) {
-        return HelidonGauge.create(scope, metadata, target, fn);
+        return HelidonGauge.create(scope, metadata, target, fn, tags);
+    }
+
+    @Override
+    public <T> Gauge<Double> gauge(String scope, Metadata metadata, T target, ToDoubleFunction<T> fn, Tag... tags) {
+        return HelidonGauge.create(scope, metadata, target, fn, tags);
     }
 }

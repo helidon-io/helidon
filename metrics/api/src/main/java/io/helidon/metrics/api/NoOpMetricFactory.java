@@ -17,6 +17,7 @@ package io.helidon.metrics.api;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
 import io.helidon.metrics.api.spi.MetricFactory;
 
@@ -50,6 +51,11 @@ class NoOpMetricFactory implements MetricFactory {
 
     @Override
     public <N extends Number, T> Gauge<N> gauge(String scope, Metadata metadata, T target, Function<T, N> fn, Tag... tags) {
+        return NoOpMetricImpl.NoOpGaugeImpl.create(scope, metadata, target, fn, tags);
+    }
+
+    @Override
+    public <T> Gauge<Double> gauge(String scope, Metadata metadata, T target, ToDoubleFunction<T> fn, Tag... tags) {
         return NoOpMetricImpl.NoOpGaugeImpl.create(scope, metadata, target, fn, tags);
     }
 }

@@ -19,65 +19,63 @@ package io.helidon.metrics;
 import java.util.Objects;
 
 import io.helidon.metrics.api.LabeledSnapshot;
+import io.helidon.metrics.api.SnapshotMetric;
 
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Snapshot;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Implementation of {@link Histogram}.
  */
-final class HelidonHistogram extends MetricImpl implements Histogram {
+final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMetric {
     private final DistributionSummary delegate;
 
-    private HelidonHistogram(String type, Metadata metadata, Histogram delegate) {
+    private HelidonHistogram(String type, Metadata metadata, io.micrometer.core.instrument.DistributionSummary delegate) {
         super(type, metadata);
         this.delegate = delegate;
     }
 
-    static HelidonHistogram create(String type, Metadata metadata) {
-        return create(type, metadata, Clock.system());
-    }
-
-    static HelidonHistogram create(String type, Metadata metadata, Clock clock) {
-        return new HelidonHistogram(type, metadata, new HistogramImpl(clock));
-    }
-
-    static HelidonHistogram create(String type, Metadata metadata, Histogram delegate) {
-        return new HelidonHistogram(type, metadata, delegate);
+    static HelidonHistogram create(String type, Metadata metadata, Tag... tags) {
+        return new HelidonHistogram(type, metadata, io.micrometer.core.instrument.DistributionSummary.builder(metadata.getName())
+                .description(metadata.getDescription())
+                .baseUnit(metadata.getUnit())
+                .publishPercentiles(DEFAULT_PERCENTILES)
+                .percentilePrecision(DEFAULT_PERCENTILE_PRECISION)
+                .register(Metrics.globalRegistry));
     }
 
     @Override
     public long getSum() {
-        return delegate.getSum();
+        return (long) delegate.totalAmount();
     }
 
     @Override
     public void update(int value) {
-        delegate.update(value);
+        delegate.record(value);
     }
 
     @Override
     public void update(long value) {
-        delegate.update(value);
+        delegate.record(value);
     }
 
     @Override
     public long getCount() {
-        return delegate.getCount();
+        return delegate.count();
     }
 
     @Override
     public Snapshot getSnapshot() {
-        return delegate.getSnapshot();
+        return HelidonSnapshot.create(delegate.takeSnapshot());
     }
 
     @Override
     public LabeledSnapshot snapshot() {
-        return (delegate instanceof HistogramImpl)
-                ? ((HistogramImpl) delegate).snapshot()
-                : WrappedSnapshot.create(delegate.getSnapshot());
+        return WrappedSnapshot.create(getSnapshot());
     }
 
     /**
@@ -85,10 +83,8 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
      *
      * @return Underlying delegate.
      */
-    HistogramImpl getDelegate() {
-        return delegate instanceof HistogramImpl ? (HistogramImpl) delegate
-                : delegate instanceof HelidonHistogram ? ((HelidonHistogram) delegate).getDelegate()
-                : null;
+    io.micrometer.core.instrument.DistributionSummary getDelegate() {
+        return delegate;
     }
 
 

@@ -25,5 +25,7 @@ public interface SampledMetric {
      * Sample (if available).
      * @return sample
      */
-    Optional<Sample.Labeled> sample();
+    default Optional<Sample.Labeled> sample() {
+        return Optional.empty();
+    }
 }

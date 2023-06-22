@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -83,11 +84,19 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
             return new NoOpGaugeImpl<>(registryType, metadata, target, fn);
         }
 
+        static <T> NoOpGaugeImplToDoubleFn<T> create(String registryType,
+                                                   Metadata metadata,
+                                                   T target,
+                                                   ToDoubleFunction<T> fn,
+                                                   Tag... tags) {
+            return new NoOpGaugeImplToDoubleFn<T>(registryType, metadata, target, fn, tags);
+        }
+
         private NoOpGaugeImpl(String registryType, Metadata metadata, Supplier<N> supplier) {
             super(registryType, metadata);
             this.supplier = supplier;
             target = null;
-            fn = null;
+            this.fn = null;
         }
 
         private NoOpGaugeImpl(String registryType, Metadata metadata, T target, Function<T, N> fn) {
@@ -97,12 +106,34 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
             supplier = null;
         }
 
+
+
         @Override
         public N getValue() {
-            return supplier != null ? supplier.get() : fn.apply(target);
+            return supplier != null
+                    ? supplier.get()
+                    : fn.apply(target);
         }
+    }
 
+    static class NoOpGaugeImplToDoubleFn<T> extends NoOpMetricImpl implements Gauge<Double> {
 
+        private final T target;
+        private final ToDoubleFunction<T> fn;
+
+        private NoOpGaugeImplToDoubleFn(String registryType,
+                              Metadata metadata,
+                              T target,
+                              ToDoubleFunction<T> fn,
+                              Tag... tags) {
+            super(registryType, metadata);
+            this.target = target;
+            this.fn = fn;
+        }
+        @Override
+        public Double getValue() {
+            return fn.applyAsDouble(target);
+        }
     }
 
     static class NoOpHistogramImpl extends NoOpMetricImpl implements Histogram {

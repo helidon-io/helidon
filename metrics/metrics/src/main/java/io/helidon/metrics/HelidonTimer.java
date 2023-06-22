@@ -19,101 +19,92 @@ package io.helidon.metrics;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.LabeledSnapshot;
 import io.helidon.metrics.api.SnapshotMetric;
 
+import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Snapshot;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * Implementation of {@link Timer}.
  */
 final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
-    private final Timer delegate;
 
-    private HelidonTimer(String type, Metadata metadata, Timer delegate) {
+    private final io.micrometer.core.instrument.Timer delegate;
+
+    private HelidonTimer(String type,
+                         Metadata metadata,
+                         io.micrometer.core.instrument.Timer delegate) {
         super(type, metadata);
         this.delegate = delegate;
     }
 
-    static HelidonTimer create(String repoType, Metadata metadata) {
-        return create(repoType, metadata, Clock.system());
-    }
-
-    static HelidonTimer create(String repoType, Metadata metadata, Clock clock) {
-        return create(repoType, metadata, new TimerImpl(repoType, metadata.getName(), clock));
-    }
-
-    static HelidonTimer create(String repoType, Metadata metadata, Timer metric) {
-        return new HelidonTimer(repoType, metadata, metric);
+    static HelidonTimer create(String repoType, Metadata metadata, Tag... tags) {
+        return new HelidonTimer(repoType,
+                                metadata,
+                                io.micrometer.core.instrument.Timer.builder(metadata.getName())
+                                        .description(metadata.getDescription())
+                                        .tags(tags(tags))
+                                        .publishPercentiles(DEFAULT_PERCENTILES)
+                                        .percentilePrecision(DEFAULT_PERCENTILE_PRECISION)
+                                        .register(Metrics.globalRegistry));
     }
 
     @Override
     public void update(Duration duration) {
-        delegate.update(duration);
+        delegate.record(duration);
     }
 
     @Override
     public Duration getElapsedTime() {
-        return delegate.getElapsedTime();
+        return Duration.ofNanos((long) delegate.totalTime(TimeUnit.NANOSECONDS));
     }
 
     @Override
     public <T> T time(Callable<T> event) throws Exception {
-        return delegate.time(event);
+        return delegate.recordCallable(event);
     }
 
     @Override
     public void time(Runnable event) {
-        delegate.time(event);
+        delegate.record(event);
     }
 
     @Override
     public Context time() {
-        return delegate.time();
+        return new ContextImpl(io.micrometer.core.instrument.Timer.start(Metrics.globalRegistry));
     }
 
     @Override
     public long getCount() {
-        return delegate.getCount();
+        return delegate.count();
     }
 
     @Override
     public Snapshot getSnapshot() {
-        return delegate.getSnapshot();
+        return HelidonSnapshot.create(delegate.takeSnapshot());
     }
 
     @Override
-    public LabeledSnapshot snapshot(){
-        return (delegate instanceof TimerImpl)
-                ? ((TimerImpl) delegate).histogram.snapshot()
-                : WrappedSnapshot.create(delegate.getSnapshot());
+    public LabeledSnapshot snapshot() {
+        return WrappedSnapshot.create(getSnapshot());
     }
 
-    private static final class ContextImpl implements Context {
-        private final TimerImpl theTimer;
-        private final long startTime;
-        private final Clock clock;
-        private final AtomicBoolean running = new AtomicBoolean(true);
-        private long elapsed;
+    private final class ContextImpl implements Context {
+        private final io.micrometer.core.instrument.Timer.Sample delegate;
 
-        private ContextImpl(TimerImpl theTimer, Clock clock) {
-            this.theTimer = theTimer;
-            this.startTime = clock.nanoTick();
-            this.clock = clock;
+        private ContextImpl(io.micrometer.core.instrument.Timer.Sample delegate) {
+            this.delegate = delegate;
         }
 
         @Override
         public long stop() {
-            if (running.compareAndSet(true, false)) {
-                elapsed = clock.nanoTick() - startTime;
-                theTimer.update(elapsed);
-            }
-
-            return elapsed;
+            return delegate.stop(HelidonTimer.this.delegate);
         }
 
         @Override
@@ -122,89 +113,6 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
         }
     }
 
-    private static class TimerImpl implements Timer {
-        private final HelidonHistogram histogram;
-        private final Clock clock;
-        private long elapsedTimeNanos;
-
-        TimerImpl(String repoType, String name, Clock clock) {
-            this.histogram = HelidonHistogram.create(repoType, Metadata.builder()
-                    .withName(name)
-                    .build(), clock);
-            this.clock = clock;
-        }
-
-        @Override
-        public void update(Duration duration) {
-            update(duration.toNanos());
-        }
-
-        @Override
-        public Duration getElapsedTime() {
-            return Duration.ofNanos(elapsedTimeNanos);
-        }
-
-        @Override
-        public <T> T time(Callable<T> event) throws Exception {
-            long t = clock.nanoTick();
-
-            try {
-                return event.call();
-            } finally {
-                update(clock.nanoTick() - t);
-            }
-        }
-
-        @Override
-        public void time(Runnable event) {
-            long t = clock.nanoTick();
-
-            try {
-                event.run();
-            } finally {
-                update(clock.nanoTick() - t);
-            }
-        }
-
-        @Override
-        public Context time() {
-            return new ContextImpl(this, clock);
-        }
-
-        @Override
-        public long getCount() {
-            return histogram.getCount();
-        }
-
-        @Override
-        public Snapshot getSnapshot() {
-            return histogram.getSnapshot();
-        }
-
-        private void update(long nanos) {
-            if (nanos >= 0) {
-                histogram.update(nanos);
-                elapsedTimeNanos += nanos;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), histogram, elapsedTimeNanos);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            TimerImpl that = (TimerImpl) o;
-            return histogram.equals(that.histogram) && elapsedTimeNanos == that.elapsedTimeNanos;
-        }
-    }
 
     @Override
     public boolean equals(Object o) {

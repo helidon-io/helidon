@@ -18,13 +18,14 @@ package io.helidon.metrics;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.LongAdder;
 
 import io.helidon.metrics.api.Sample;
 import io.helidon.metrics.api.SampledMetric;
 
+import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Implementation of {@link Counter}.
@@ -37,38 +38,27 @@ final class HelidonCounter extends MetricImpl implements Counter, SampledMetric 
         this.delegate = delegate;
     }
 
-    static HelidonCounter create(String registryType, Metadata metadata) {
-        return create(registryType, metadata, io.micrometer.core.instrument.Counter.builder(metadata.getName())
+    static HelidonCounter create(String registryType, Metadata metadata, Tag... tags) {
+        return new HelidonCounter(registryType, metadata, io.micrometer.core.instrument.Counter.builder(metadata.getName())
                 .baseUnit(metadata.getUnit())
                 .description(metadata.getDescription())
-                .);
-    }
-
-    static HelidonCounter create(String registryType, Metadata metadata, Counter metric) {
-        return new HelidonCounter(registryType, metadata, metric);
+                .tags(tags(tags))
+                .register(Metrics.globalRegistry));
     }
 
     @Override
     public void inc() {
-        delegate.inc();
+        delegate.increment();
     }
 
     @Override
     public void inc(long n) {
-        delegate.inc(n);
+        delegate.increment(n);
     }
 
     @Override
     public long getCount() {
-        return delegate.getCount();
-    }
-
-    @Override
-    public Optional<Sample.Labeled> sample() {
-        if (delegate instanceof CounterImpl ci) {
-            return Optional.ofNullable(ci.sample);
-        }
-        return Optional.empty();
+        return (long) delegate.count();
     }
 
     @Override
@@ -93,42 +83,42 @@ final class HelidonCounter extends MetricImpl implements Counter, SampledMetric 
         return ", counter='" + getCount() + '\'';
     }
 
-    private static class CounterImpl implements Counter {
-        private final LongAdder adder = new LongAdder();
-
-        private Sample.Labeled sample = null;
-
-        @Override
-        public void inc() {
-            inc(1);
-        }
-
-        @Override
-        public void inc(long n) {
-            adder.add(n);
-            sample = Sample.labeled(n);
-        }
-
-        @Override
-        public long getCount() {
-            return adder.sum();
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), getCount());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            CounterImpl that = (CounterImpl) o;
-            return getCount() == that.getCount();
-        }
-    }
+//    private static class CounterImpl implements Counter {
+//        private final LongAdder adder = new LongAdder();
+//
+//        private Sample.Labeled sample = null;
+//
+//        @Override
+//        public void inc() {
+//            inc(1);
+//        }
+//
+//        @Override
+//        public void inc(long n) {
+//            adder.add(n);
+//            sample = Sample.labeled(n);
+//        }
+//
+//        @Override
+//        public long getCount() {
+//            return adder.sum();
+//        }
+//
+//        @Override
+//        public int hashCode() {
+//            return Objects.hash(super.hashCode(), getCount());
+//        }
+//
+//        @Override
+//        public boolean equals(Object o) {
+//            if (this == o) {
+//                return true;
+//            }
+//            if (o == null || getClass() != o.getClass()) {
+//                return false;
+//            }
+//            CounterImpl that = (CounterImpl) o;
+//            return getCount() == that.getCount();
+//        }
+//    }
 }

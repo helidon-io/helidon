@@ -17,6 +17,7 @@ package io.helidon.metrics.api.spi;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -80,7 +81,7 @@ public interface MetricFactory {
      * @param target object which dispenses the gauge value
      * @param fn function which, when applied to the target, reveals the gauge value
      * @param tags tags further identifying the gauge
-     * @return new counter
+     * @return new gauge
      * @param <N> gauge's value type
      * @param <T> type of the target which reveals the value
      */
@@ -89,4 +90,22 @@ public interface MetricFactory {
                                          T target,
                                          Function<T, N> fn,
                                          Tag... tags);
+
+    /**
+     * Creates a gauge.
+     *
+     * @param scope registry scope
+     * @param metadata metadata describing the gauge
+     * @param target object which dispenses the gauge value
+     * @param fn function which, when applied to the target, reveals the gauge value as a double
+     * @param tags tags further identifying the gauge
+     * @return new gauge
+     * @param <T> type of the target which reveals the value
+
+     */
+    <T> Gauge<Double> gauge(String scope,
+                            Metadata metadata,
+                            T target,
+                            ToDoubleFunction<T> fn,
+                            Tag... tags);
 }

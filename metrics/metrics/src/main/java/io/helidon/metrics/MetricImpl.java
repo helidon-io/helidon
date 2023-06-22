@@ -16,14 +16,21 @@
 
 package io.helidon.metrics;
 
+import java.util.Arrays;
+
 import io.helidon.metrics.api.AbstractMetric;
 
+import io.micrometer.core.instrument.Tags;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Base for our implementations of various metrics.
  */
 abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
+    static final double[] DEFAULT_PERCENTILES = {0.5, 0.75, 0.95, 0.98, 0.99, 0.999};
+    static final int DEFAULT_PERCENTILE_PRECISION = 3;
+
     MetricImpl(String registryType, Metadata metadata) {
         super(registryType, metadata);
     }
@@ -50,6 +57,14 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
 
     protected String toStringDetails() {
         return "";
+    }
+
+    protected static Tags tags(Tag... tags) {
+        Tags result = Tags.empty();
+        for (Tag tag : tags) {
+            result = result.and(tag.getTagName(), tag.getTagValue());
+        }
+        return result;
     }
 
 }

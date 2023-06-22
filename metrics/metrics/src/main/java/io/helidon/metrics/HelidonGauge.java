@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,42 +19,147 @@ package io.helidon.metrics;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
+import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Gauge implementation.
  */
-final class HelidonGauge<T extends Number> extends MetricImpl implements Gauge<T> {
-    private final Supplier<T> value;
-
-    private HelidonGauge(String registryType, Metadata metadata, Gauge<T> metric) {
-        super(registryType, metadata);
-
-        value = metric::getValue;
+abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gauge<N> {
+    /*
+     * The MicroProfile metrics API parameterizes its gauge type as Gauge<N extends Number> which is the type of
+     * value the gauge reports via its getValue() method. To register a gauge, the developer passes us a function-plus-target or
+     * a supplier with the return value from the function or supplier similarly parameterized with the subtype of Number.
+     *
+     * On the other hand, each Micrometer gauge is not parameterized and reports a double value.
+     *
+     * As a result, we do not have what we need to (easily) instantiate the correct subtype of Number, set its value based on
+     * the Micrometer delegate's value() result, and return the correctly-typed and -assigned value from our getValue() method.
+     *
+     * To work around this, we keep track ourselves of the function and target or supplier which report the gauge value.
+     * Then our getValue() implementation simply invokes the function on the target or the supplier rather than delegating to
+     * the Micrometer gauge value() method (which would do exactly the same thing anyway).
+     *
+     * This way the typing works out (with the expected unchecked cast).
+     */
+    static <T, N extends Number> FunctionBased<N, T> create(String scope,
+                                                            Metadata metadata,
+                                                            T target,
+                                                            Function<T, N> function,
+                                                            Tag... tags) {
+        return new FunctionBased<>(scope,
+                                   metadata,
+                                   target,
+                                   function,
+                                   io.micrometer.core.instrument.Gauge
+                                           .builder(metadata.getName(), target, t -> function.apply(t).doubleValue())
+                                           .description(metadata.getDescription())
+                                           .tags(tags(tags))
+                                           .strongReference(true)
+                                           .register(Metrics.globalRegistry));
     }
 
-    static <S extends Number> HelidonGauge<S> create(String registryType, Metadata metadata,
-            Gauge<S> metric) {
-        return new HelidonGauge<>(registryType, metadata, metric);
+    static <N extends Number> SupplierBased<N> create(String scope,
+                                                      Metadata metadata,
+                                                      Supplier<N> supplier,
+                                                      Tag... tags) {
+        return new SupplierBased<>(scope,
+                                   metadata,
+                                   supplier,
+                                   io.micrometer.core.instrument.Gauge
+                                           .builder(metadata.getName(), (Supplier<Number>) supplier)
+                                           .baseUnit(metadata.getUnit())
+                                           .description(metadata.getDescription())
+                                           .strongReference(true)
+                                           .tags(tags(tags))
+                                           .register(Metrics.globalRegistry));
     }
 
-    static <T, S extends Number> HelidonGauge<S> create(String registryType, Metadata metadata,
-                                                        T object,
-                                                        Function<T, S> func) {
-        return new HelidonGauge<>(registryType, metadata, () -> func.apply(object));
+    static <T> DoubleFunctionBased<T> create(String scope,
+                                         Metadata metadata,
+                                         T target,
+                                         ToDoubleFunction<T> fn,
+                                         Tag... tags) {
+        return new DoubleFunctionBased<>(scope,
+                                       metadata,
+                                       target,
+                                       fn,
+                                       io.micrometer.core.instrument.Gauge
+                                               .builder(metadata.getName(), target, fn)
+                                               .description(metadata.getDescription())
+                                               .baseUnit(metadata.getUnit())
+                                               .tags(tags(tags))
+                                               .strongReference(true)
+                                               .register(Metrics.globalRegistry));
+
     }
 
-    static <T, S extends Number> HelidonGauge<S> create(String registryType,
-                                                         Metadata metadata,
-                                                         Supplier<S> valueSupplier) {
-        return new HelidonGauge<>(registryType, metadata, valueSupplier::get);
+    protected HelidonGauge(String scope, Metadata metadata) {
+        super(scope, metadata);
     }
 
-    @Override
-    public T getValue() {
-        return value.get();
+    static class FunctionBased<N extends Number, T> extends HelidonGauge<N> {
+
+        private final T target;
+        private final Function<T, N> function;
+
+        private FunctionBased(String scope,
+                              Metadata metadata,
+                              T target,
+                              Function<T, N> function,
+                              io.micrometer.core.instrument.Gauge delegate) {
+            super(scope, metadata);
+            this.target = target;
+            this.function = function;
+        }
+
+        @Override
+        public N getValue() {
+            return (N) function.apply(target);
+        }
+    }
+
+    static class DoubleFunctionBased<T> extends HelidonGauge<Double> {
+
+        private final T target;
+        private final ToDoubleFunction<T> fn;
+
+        protected DoubleFunctionBased(String scope,
+                                      Metadata metadata,
+                                      T target,
+                                      ToDoubleFunction<T> fn,
+                                      io.micrometer.core.instrument.Gauge delegate) {
+            super(scope, metadata);
+            this.target = target;
+            this.fn = fn;
+        }
+
+        @Override
+        public Double getValue() {
+            return fn.applyAsDouble(target);
+        }
+    }
+
+    static class SupplierBased<N extends Number> extends HelidonGauge<N> {
+
+        private final Supplier<N> supplier;
+
+        private SupplierBased(String scope,
+                              Metadata metadata,
+                              Supplier<N> supplier,
+                              io.micrometer.core.instrument.Gauge delegate) {
+            super(scope, metadata);
+            this.supplier = supplier;
+        }
+
+        @Override
+        public N getValue() {
+            return supplier.get();
+        }
     }
 
     @Override
