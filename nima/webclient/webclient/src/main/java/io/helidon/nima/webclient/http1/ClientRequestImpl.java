@@ -27,6 +27,7 @@ import java.util.function.Function;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValue;
@@ -340,7 +341,7 @@ class ClientRequestImpl implements Http1ClientRequest {
                                                                         query,
                                                                         UriFragment.empty(),
                                                                         headers,
-                                                                        Context.create(),
+                                                                        Contexts.context().orElseGet(Context::create),
                                                                         requestId,
                                                                         whenComplete,
                                                                         whenSent,
