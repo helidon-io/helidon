@@ -59,10 +59,9 @@ public class Main {
 
     static void startServer() {
 
-        Config config = Config.create();
         WebServer server = WebServer.builder()
-                .addMediaSupport(JsonpSupport.create(config))
                 .routing(Main::routing)
+                .build()
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/api/movies");
