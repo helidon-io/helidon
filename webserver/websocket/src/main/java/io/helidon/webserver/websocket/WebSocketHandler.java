@@ -235,7 +235,7 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
                     .onError(this::logError);
         }
 
-
+        ctx.channel().config().setAutoRead(true);
     }
 
     private void logError(Throwable throwable){
