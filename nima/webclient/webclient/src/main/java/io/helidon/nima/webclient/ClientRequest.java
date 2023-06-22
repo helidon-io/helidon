@@ -23,6 +23,7 @@ import java.util.function.Function;
 
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.nima.common.tls.Tls;
@@ -97,6 +98,32 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
      * @return updated request
      */
     B headers(Function<ClientRequestHeaders, WritableHeaders<?>> headersConsumer);
+
+    /**
+     * Accepted media types. Supports quality factor and wildcards.
+     *
+     * @param accepted media types to accept
+     * @return updated request
+     */
+    default B accept(HttpMediaType... accepted) {
+        return headers(it -> {
+            it.accept(accepted);
+            return it;
+        });
+    }
+
+    /**
+     * Sets the content type of the request.
+     *
+     * @param contentType content type of the request.
+     * @return updated request
+     */
+    default B contentType(HttpMediaType contentType) {
+        return headers(it -> {
+            it.contentType(contentType);
+            return it;
+        });
+    }
 
     /**
      * Replace a placeholder in URI with an actual value.

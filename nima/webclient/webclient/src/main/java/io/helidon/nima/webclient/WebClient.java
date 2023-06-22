@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.WritableHeaders;
@@ -81,6 +82,7 @@ public interface WebClient {
         private WritableHeaders<?> defaultHeaders = WritableHeaders.create();
         private ParserMode mediaTypeParserMode = ParserMode.STRICT;
         private Map<String, String> properties = new HashMap<>();
+        private Config config;
 
         /**
          * Common builder base for all the client builder.
@@ -101,6 +103,25 @@ public interface WebClient {
                 channelOptions = channelOptionsBuilder.build();
             }
             return doBuild();
+        }
+
+        /**
+         * Config of this client.
+         *
+         * @param config client config
+         * @return updated builder instance
+         */
+        public B config(Config config) {
+            this.config = config;
+            // set options from config
+            config.get("uri").asString().ifPresent(baseUri -> baseUri(URI.create(baseUri)));
+            config.get("follow-redirects").asBoolean().ifPresent(this::followRedirect);
+            config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
+            //config.get("headers").asList(Http.Header.class).ifPresent(list -> list.forEach(header -> this.header(header.)));
+            config.get("tls")
+                    .map(tlsConfig ->Tls.create(tlsConfig))
+                    .ifPresent(this::tls);
+            return identity();
         }
 
         /**
@@ -291,6 +312,19 @@ public interface WebClient {
         }
 
         /**
+         * Set a header with value. Some headers cannot be modified.
+         *
+         * @param name header name
+         * @param values header values
+         * @return updated builder instance
+         */
+        public B header(Http.HeaderName name, String... values) {
+            Objects.requireNonNull(name);
+            this.defaultHeaders.set(name, values);
+            return identity();
+        }
+
+        /**
          * Update headers.
          *
          * @param headersConsumer consumer of client headers
@@ -369,6 +403,10 @@ public interface WebClient {
 
         URI baseUri() {
             return baseUri;
+        }
+
+        Config config() {
+            return config;
         }
 
         DnsResolver dnsResolver() {
