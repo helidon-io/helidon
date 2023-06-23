@@ -28,14 +28,12 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.RegistryFactory;
 
-import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.neo4j.driver.ConnectionPoolMetrics;
 import org.neo4j.driver.Driver;
 
@@ -47,6 +45,7 @@ import static java.util.Map.entry;
 public class Neo4jMetricsSupport {
 
     private static final String NEO4J_METRIC_NAME_PREFIX = "neo4j";
+    private static final String VENDOR_SCOPE = "vendor";
 
     private final AtomicReference<Collection<ConnectionPoolMetrics>> lastPoolMetrics = new AtomicReference<>();
     private final AtomicReference<ScheduledFuture<?>> reinitFuture = new AtomicReference<>();
@@ -58,7 +57,7 @@ public class Neo4jMetricsSupport {
     private Neo4jMetricsSupport(Builder builder) {
         this.driver = builder.driver;
         // Assuming for the moment that VENDOR is the correct registry to use.
-        metricRegistry = LazyValue.create(() -> RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR));
+        metricRegistry = LazyValue.create(() -> RegistryFactory.getInstance().getRegistry(VENDOR_SCOPE));
     }
 
     /**
@@ -135,10 +134,8 @@ public class Neo4jMetricsSupport {
         if (metricRegistry.getCounters().get(new MetricID(counterName)) == null) {
             Metadata metadata = Metadata.builder()
                     .withName(counterName)
-                    .withType(MetricType.COUNTER)
                     .build();
-            Neo4JCounterWrapper wrapper = new Neo4JCounterWrapper(() -> fn.apply(cpm));
-            metricRegistry.register(metadata, wrapper);
+            metricRegistry.gauge(metadata, cpm, fn);
         }
     }
 
@@ -152,11 +149,8 @@ public class Neo4jMetricsSupport {
         if (metricRegistry.getGauges().get(new MetricID(gaugeName)) == null) {
             Metadata metadata = Metadata.builder()
                     .withName(poolPrefix + name)
-                    .withType(MetricType.GAUGE)
                     .build();
-            Neo4JGaugeWrapper<Integer> wrapper =
-                    new Neo4JGaugeWrapper<>(() -> fn.apply(cpm));
-            metricRegistry.register(metadata, wrapper);
+            metricRegistry.gauge(metadata, cpm, fn);
         }
     }
 
@@ -192,31 +186,7 @@ public class Neo4jMetricsSupport {
         }
     }
 
-    private static class Neo4JCounterWrapper implements Counter {
-
-        private final Supplier<Long> fn;
-
-        private Neo4JCounterWrapper(Supplier<Long> fn) {
-            this.fn = fn;
-        }
-
-        @Override
-        public void inc() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void inc(long n) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long getCount() {
-            return fn.get();
-        }
-    }
-
-    private static class Neo4JGaugeWrapper<T> implements Gauge<T> {
+    private static class Neo4JGaugeWrapper<T extends Number> implements Gauge<T> {
 
         private final Supplier<T> supplier;
 

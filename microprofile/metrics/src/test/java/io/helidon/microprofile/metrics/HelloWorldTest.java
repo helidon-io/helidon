@@ -61,7 +61,7 @@ class HelloWorldTest {
     MetricRegistry registry;
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.BASE)
+    @RegistryType(type = Registry.BASE_SCOPE)
     MetricRegistry restRequestMetricsRegistry;
 
     @BeforeAll

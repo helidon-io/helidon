@@ -63,7 +63,7 @@ public class TestBean {
     private MetricRegistry metricRegistry;
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.BASE)
+    @RegistryType(type = Registry.BASE_SCOPE)
     private MetricRegistry baseRegistry;
 
     private final AtomicInteger retries = new AtomicInteger();

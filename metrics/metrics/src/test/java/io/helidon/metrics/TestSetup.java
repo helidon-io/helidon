@@ -28,7 +28,7 @@ public class TestSetup {
     void testMetricToTypeMapForCompleteness() {
         // Attempts to detect if a new metric type has been added but we haven't fully implemented it.
 //        Registry registry = (Registry)
-//                io.helidon.metrics.api.RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+//                io.helidon.metrics.api.RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
 //        for (MetricType mt : MetricType.values()) {
 //            if (!registry.metricFactories().containsKey(mt) && mt != MetricType.INVALID && mt != MetricType.GAUGE) {
 //                Assertions.fail("MetricType " + mt.name() + " is not represented in Registry metricFactories map");

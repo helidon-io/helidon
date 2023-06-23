@@ -77,7 +77,7 @@ class MicrostreamMetricsTest {
     }
 
     private Gauge<?> findFirstGauge(String name) {
-        MetricRegistry metricsRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
+        MetricRegistry metricsRegistry = RegistryFactory.getInstance().getRegistry(Registry.VENDOR_SCOPE);
         MetricID id = metricsRegistry.getGauges(new MetricNameFilter(name)).firstKey();
         return metricsRegistry.getGauges().get(id);
     }

@@ -24,7 +24,6 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.AfterAll;
@@ -42,7 +41,7 @@ public class MetricsMpServiceTest {
     }
 
     static MetricRegistry cleanUpSyntheticSimpleTimerRegistry() {
-        MetricRegistry result = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.BASE);
+        MetricRegistry result = RegistryFactory.getInstance().getRegistry(Registry.BASE_SCOPE);
         result.remove(MetricsCdiExtension.SYNTHETIC_TIMER_METRIC_NAME);
         return result;
     }
@@ -51,7 +50,7 @@ public class MetricsMpServiceTest {
     private MetricRegistry registry;
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.BASE)
+    @RegistryType(type = Registry.BASE_SCOPE)
     private MetricRegistry baseRegistry;
 
     MetricRegistry syntheticTimerTimerRegistry() {

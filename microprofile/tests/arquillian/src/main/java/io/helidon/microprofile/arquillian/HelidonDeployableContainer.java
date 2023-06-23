@@ -119,7 +119,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
         @Override
         public MetricRegistry.Type type() {
-            return MetricRegistry.Type.BASE;
+            return Registry.BASE_SCOPE;
         }
     }
 

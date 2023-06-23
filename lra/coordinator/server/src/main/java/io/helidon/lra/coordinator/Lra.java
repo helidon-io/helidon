@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.LazyValue;
 import io.helidon.common.http.Headers;
 import io.helidon.config.Config;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.webclient.WebClientRequestHeaders;
 
@@ -70,7 +71,7 @@ class Lra {
     private long whenReadyToDelete = 0;
 
     private final MetricRegistry registry = RegistryFactory.getInstance()
-            .getRegistry(MetricRegistry.Type.APPLICATION);
+            .getRegistry(Registry.APPLICATION_SCOPE);
     private final Counter lraCtr = registry.counter("lractr");
     private final Timer.Context lraLifeSpanTmr = registry.timer("lralifespantmr").time();
 

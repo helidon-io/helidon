@@ -34,7 +34,6 @@ import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
@@ -82,7 +81,7 @@ public final class TodosHandler implements Service {
      * @param bsc the {@code BackendServiceClient} to use
      */
     public TodosHandler(BackendServiceClient bsc) {
-        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
 
         this.bsc = bsc;
         this.createCounter = registry.counter("created");

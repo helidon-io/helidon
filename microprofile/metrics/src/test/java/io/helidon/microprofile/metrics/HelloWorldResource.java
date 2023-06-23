@@ -103,7 +103,7 @@ public class HelloWorldResource {
     MetricRegistry metricRegistry;
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.VENDOR)
+    @RegistryType(type = Registry.VENDOR_SCOPE)
     private MetricRegistry vendorRegistry;
 
     public HelloWorldResource() {

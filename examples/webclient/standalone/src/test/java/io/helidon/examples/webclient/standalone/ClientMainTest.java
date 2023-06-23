@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class ClientMainTest {
 
     private static final MetricRegistry METRIC_REGISTRY = RegistryFactory.getInstance()
-            .getRegistry(MetricRegistry.Type.APPLICATION);
+            .getRegistry(Registry.APPLICATION_SCOPE);
 
     private WebClient webClient;
     private Path testFile;

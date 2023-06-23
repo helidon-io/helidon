@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,23 +27,17 @@ import java.util.function.Supplier;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.InjectionPoint;
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Metric;
-import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
@@ -52,42 +46,23 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 @ApplicationScoped
 class MetricProducer {
 
-    private static Metadata newMetadata(InjectionPoint ip, Metric metric, MetricType metricType) {
+    private static Metadata newMetadata(InjectionPoint ip,
+                                        Metric metric,
+                                        Class<? extends org.eclipse.microprofile.metrics.Metric> metricType) {
         return metric == null ? Metadata.builder()
-                    .withName(getName(ip))
-                    .withDisplayName("")
-                    .withDescription("")
-                    .withType(metricType)
-                    .withUnit(chooseDefaultUnit(metricType))
-                    .build()
+                .withName(getName(ip))
+                .withDescription("")
+                .withUnit(chooseDefaultUnit(metricType))
+                .build()
                 : Metadata.builder()
-                    .withName(getName(metric, ip))
-                    .withDisplayName(metric.displayName())
-                    .withDescription(metric.description())
-                    .withType(metricType)
-                    .withUnit(metric.unit())
-                    .build();
+                        .withName(getName(metric, ip))
+                        .withDescription(metric.description())
+                        .withUnit(metric.unit())
+                        .build();
     }
 
-    private static String chooseDefaultUnit(MetricType metricType) {
-        String result;
-        switch (metricType) {
-            case METERED:
-                result = MetricUnits.PER_SECOND;
-                break;
-
-            case TIMER:
-                result = MetricUnits.NANOSECONDS;
-                break;
-
-            case SIMPLE_TIMER:
-                result = MetricUnits.SECONDS;
-                break;
-
-            default:
-                result = MetricUnits.NONE;
-        }
-        return result;
+    private static String chooseDefaultUnit(Class<? extends org.eclipse.microprofile.metrics.Metric> metricType) {
+        return Timer.class.isAssignableFrom(metricType) ? MetricUnits.NANOSECONDS : MetricUnits.NONE;
     }
 
     private static Tag[] tags(Metric metric) {
@@ -133,32 +108,14 @@ class MetricProducer {
     }
 
     @Produces
-    private Meter produceMeter(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, Metered.class, registry::getMeters,
-                registry::meter, Meter.class);
-    }
-
-    @Produces
     private Timer produceTimer(MetricRegistry registry, InjectionPoint ip) {
         return produceMetric(registry, ip, Timed.class, registry::getTimers, registry::timer, Timer.class);
-    }
-
-    @Produces
-    private SimpleTimer produceSimpleTimer(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, SimplyTimed.class, registry::getSimpleTimers, registry::simpleTimer,
-                SimpleTimer.class);
     }
 
     @Produces
     private Histogram produceHistogram(MetricRegistry registry, InjectionPoint ip) {
         return produceMetric(registry, ip, null, registry::getHistograms,
                 registry::histogram, Histogram.class);
-    }
-
-    @Produces
-    private ConcurrentGauge produceConcurrentGauge(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, org.eclipse.microprofile.metrics.annotation.ConcurrentGauge.class,
-                registry::getConcurrentGauges, registry::concurrentGauge, ConcurrentGauge.class);
     }
 
     /**
@@ -213,7 +170,7 @@ class MetricProducer {
             }
 
         } else {
-            final Metadata newMetadata = newMetadata(ip, metricAnno, MetricType.from(clazz));
+            final Metadata newMetadata = newMetadata(ip, metricAnno, clazz);
             result = registerFn.apply(newMetadata, tags);
         }
         return result;

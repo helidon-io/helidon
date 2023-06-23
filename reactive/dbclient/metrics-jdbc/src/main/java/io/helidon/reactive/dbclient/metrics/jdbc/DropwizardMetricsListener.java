@@ -42,7 +42,7 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
     private final String prefix;
     // Helidon metrics registry
     private final LazyValue<MetricRegistry> registry = LazyValue.create(
-            () -> RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR));
+            () -> RegistryFactory.getInstance().getRegistry(Registry.VENDOR_SCOPE));
 
     private DropwizardMetricsListener(String prefix) {
         this.prefix = prefix;

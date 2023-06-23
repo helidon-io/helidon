@@ -66,11 +66,11 @@ public class HelloWorldAsyncResponseTest {
     MetricRegistry registry;
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.BASE)
+    @RegistryType(type = Registry.BASE_SCOPE)
     private MetricRegistry syntheticSimpleTimerRegistry;
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.VENDOR)
+    @RegistryType(type = Registry.VENDOR_SCOPE)
     private MetricRegistry vendorRegistry;
 
     @Disabled

@@ -41,7 +41,7 @@ class MainTest {
     private WebTarget target;
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.BASE)
+    @RegistryType(type = Registry.BASE_SCOPE)
     private MetricRegistry registry;
 
     @Test

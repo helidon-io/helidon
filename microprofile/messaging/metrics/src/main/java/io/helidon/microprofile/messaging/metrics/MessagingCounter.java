@@ -33,7 +33,7 @@ public class MessagingCounter implements MessagingChannelProcessor {
     private final MetricRegistry metricsRegistry;
 
     @Inject
-    MessagingCounter(@RegistryType(type = MetricRegistry.Type.BASE) MetricRegistry metricsRegistry) {
+    MessagingCounter(@RegistryType(type = Registry.BASE_SCOPE) MetricRegistry metricsRegistry) {
         this.metricsRegistry = metricsRegistry;
     }
 

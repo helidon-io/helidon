@@ -36,7 +36,6 @@ import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -81,7 +80,7 @@ public class GreetService implements Service {
         this.config = config;
         this.appRegistry = appRegistry;
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
-        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
         Metadata metadata = Metadata.builder()
                 .withName(TIMER_FOR_GETS)
                 .withUnit(MetricUnits.NANOSECONDS)

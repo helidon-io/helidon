@@ -45,7 +45,7 @@ public class SimpleGreetService implements Service {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private final MetricRegistry registry = RegistryFactory.getInstance()
-            .getRegistry(MetricRegistry.Type.APPLICATION);
+            .getRegistry(Registry.APPLICATION_SCOPE);
     private final Counter accessCtr = registry.counter("accessctr");
 
     private final String greeting;

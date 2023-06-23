@@ -35,7 +35,7 @@ class MicroProfileMetricsTrackerFactory implements MetricsTrackerFactory {
     }
 
     @Inject
-    MicroProfileMetricsTrackerFactory(@RegistryType(type = MetricRegistry.Type.VENDOR) final MetricRegistry registry) {
+    MicroProfileMetricsTrackerFactory(@RegistryType(type = Registry.VENDOR_SCOPE) final MetricRegistry registry) {
         super();
         this.registry = registry;
     }

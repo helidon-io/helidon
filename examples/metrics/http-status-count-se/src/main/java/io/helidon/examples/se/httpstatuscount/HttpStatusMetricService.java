@@ -26,7 +26,6 @@ import io.helidon.reactive.webserver.Service;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 
@@ -54,7 +53,7 @@ public class HttpStatusMetricService implements Service {
     }
 
     private HttpStatusMetricService() {
-        MetricRegistry appRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry appRegistry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
         Metadata metadata = Metadata.builder()
                 .withName(STATUS_COUNTER_NAME)
                 .withDisplayName("HTTP response values")

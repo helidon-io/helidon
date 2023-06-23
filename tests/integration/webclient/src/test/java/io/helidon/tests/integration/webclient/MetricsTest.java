@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class MetricsTest extends TestParent {
 
-    private static final MetricRegistry FACTORY = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+    private static final MetricRegistry FACTORY = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
 
     @Test
     public void testCounter() {

@@ -49,7 +49,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 public class ClientMain {
 
     private static final MetricRegistry METRIC_REGISTRY = RegistryFactory.getInstance()
-            .getRegistry(MetricRegistry.Type.APPLICATION);
+            .getRegistry(Registry.APPLICATION_SCOPE);
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonObject JSON_NEW_GREETING;
 

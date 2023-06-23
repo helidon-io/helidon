@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.is;
 
 public class MainTest {
 
-    private static final MetricRegistry.Type KPI_REGISTRY_TYPE = MetricRegistry.Type.VENDOR;
+    private static final MetricRegistry.Type KPI_REGISTRY_TYPE = Registry.VENDOR_SCOPE;
     private static WebServer webServer;
     private static WebClient webClient;
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());

@@ -69,7 +69,7 @@ public final class Main {
                 .filterSettings(registryFilterSettingsBuilder);
 
         MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder()
-                .registrySettings(MetricRegistry.Type.APPLICATION, registrySettingsBuilder.build());
+                .registrySettings(Registry.APPLICATION_SCOPE, registrySettingsBuilder.build());
 
         WebServer server = WebServer.builder()
                 .routing(createRouting(config, metricsSettingsBuilder))
@@ -104,7 +104,7 @@ public final class Main {
                 .metricsSettings(metricsSettingsBuilder)
                 .build();
         MetricRegistry appRegistry = RegistryFactory.getInstance(metricsSettingsBuilder.build())
-                .getRegistry(MetricRegistry.Type.APPLICATION);
+                .getRegistry(Registry.APPLICATION_SCOPE);
 
         GreetService greetService = new GreetService(config, appRegistry);
 

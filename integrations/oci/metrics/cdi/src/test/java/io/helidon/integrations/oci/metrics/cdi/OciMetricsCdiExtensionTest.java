@@ -98,9 +98,9 @@ class OciMetricsCdiExtensionTest {
     private static PostMetricDataDetails postMetricDataDetails;
     private static boolean activateOciMetricsSupportIsInvoked;
     private final RegistryFactory rf = RegistryFactory.getInstance();
-    private final MetricRegistry appMetricRegistry = rf.getRegistry(MetricRegistry.Type.APPLICATION);
-    private final MetricRegistry baseMetricRegistry = rf.getRegistry(MetricRegistry.Type.BASE);
-    private final MetricRegistry vendorMetricRegistry = rf.getRegistry(MetricRegistry.Type.VENDOR);
+    private final MetricRegistry appMetricRegistry = rf.getRegistry(Registry.APPLICATION_SCOPE);
+    private final MetricRegistry baseMetricRegistry = rf.getRegistry(Registry.BASE_SCOPE);
+    private final MetricRegistry vendorMetricRegistry = rf.getRegistry(Registry.VENDOR_SCOPE);
 
     @AfterEach
     void resetState() {

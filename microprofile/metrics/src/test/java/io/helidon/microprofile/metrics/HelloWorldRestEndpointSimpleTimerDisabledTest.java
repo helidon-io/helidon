@@ -42,7 +42,7 @@ public class HelloWorldRestEndpointSimpleTimerDisabledTest {
     }
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.BASE)
+    @RegistryType(type = Registry.BASE_SCOPE)
     MetricRegistry syntheticSimpleTimerRegistry;
 
     boolean isSyntheticSimpleTimerPresent() {
