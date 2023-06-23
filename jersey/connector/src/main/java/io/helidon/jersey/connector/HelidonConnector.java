@@ -17,6 +17,8 @@
 package io.helidon.jersey.connector;
 
 import java.net.URI;
+import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -54,13 +56,19 @@ class HelidonConnector implements Connector {
                     Thread.ofVirtual().name("helidon-connector-", 0).factory()));
 
     private final Client client;
-    private final Configuration config;
-    private final Http1Client http1Client;
+    private final Http1Client httpClient;
 
     HelidonConnector(Client client, Configuration config) {
         this.client = client;
-        this.config = config;
-        this.http1Client = WebClient.builder(Http1.PROTOCOL).build();       // todo HTTP/2
+        Map<String, Object> properties = config.getProperties();
+        httpClient = WebClient.builder(Http1.PROTOCOL)
+                .connectTimeout(Duration.ofMillis(
+                        ClientProperties.getValue(properties, ClientProperties.CONNECT_TIMEOUT, 10000)))
+                .readTimeout(Duration.ofMillis(
+                        ClientProperties.getValue(properties, ClientProperties.READ_TIMEOUT, 10000)))
+                .followRedirect(
+                        ClientProperties.getValue(properties, ClientProperties.FOLLOW_REDIRECTS, true))
+                .build();
     }
 
     /**
@@ -71,7 +79,7 @@ class HelidonConnector implements Connector {
      */
     private Http1ClientRequest mapRequest(ClientRequest request) {
         URI uri = request.getUri();
-        Http1ClientRequest httpRequest = http1Client
+        Http1ClientRequest httpRequest = httpClient
                 .method(Http.Method.create(request.getMethod()))
                 .uri(uri);
 
