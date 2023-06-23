@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.nima.tests.integration.server;
 
+import java.io.OutputStream;
+
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
@@ -23,15 +25,17 @@ import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.MediaContextConfig;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.*;
+import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.http.HttpRules;
+
 import org.junit.jupiter.api.Test;
-import java.io.OutputStream;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -46,7 +50,7 @@ class MediaContextTest {
     }
 
     @SetUpServer
-    static void server(WebServer.Builder server) {
+    static void server(ServerConfig.Builder server) {
         server.mediaContext(new CustomizedMediaContext());
     }
 
@@ -67,6 +71,11 @@ class MediaContextTest {
 
     private static class CustomizedMediaContext implements MediaContext {
         private MediaContext delegated = MediaContext.create();
+
+        @Override
+        public MediaContextConfig prototype() {
+            return delegated.prototype();
+        }
 
         @Override
         public <T> EntityReader<T> reader(GenericType<T> type, Headers headers) {

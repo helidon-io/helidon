@@ -22,10 +22,11 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import io.helidon.common.types.TypedElementInfoDefault;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeValues;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
-import io.helidon.pico.api.InvocationContextDefault;
 import io.helidon.pico.api.InvocationException;
 
 import jakarta.inject.Provider;
@@ -41,8 +42,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class InvocationTest {
     TestInterceptor first = new TestInterceptor("first");
     TestInterceptor second = new TestInterceptor("second");
-    InvocationContext dummyCtx = InvocationContextDefault.builder()
-            .elementInfo(TypedElementInfoDefault.builder().elementName("test").typeName(InvocationTest.class).build())
+    InvocationContext dummyCtx = InvocationContext.builder()
+            .elementInfo(TypedElementInfo.builder()
+                                 .elementName("test")
+                                 .elementTypeKind(TypeValues.KIND_METHOD)
+                                 .typeName(TypeName.create(InvocationTest.class))
+                                 .build())
             .interceptors(List.of(first.provider, second.provider));
     ArrayList<Object[]> calls = new ArrayList<>();
 
@@ -62,8 +67,12 @@ class InvocationTest {
 
     @Test
     void normalCaseWithNoInterceptors() {
-        InvocationContext dummyCtx = InvocationContextDefault.builder()
-                .elementInfo(TypedElementInfoDefault.builder().elementName("test").typeName(InvocationTest.class).build())
+        InvocationContext dummyCtx = InvocationContext.builder()
+                .elementInfo(TypedElementInfo.builder()
+                                     .elementName("test")
+                                     .elementTypeKind(TypeValues.KIND_METHOD)
+                                     .typeName(TypeName.create(InvocationTest.class))
+                                     .build())
                 .interceptors(List.of());
 
         Object[] args = new Object[] {};
@@ -79,7 +88,9 @@ class InvocationTest {
 
         calls.clear();
         RuntimeException re = new RuntimeException("forced");
-        Function<Object[], Object> fnc = (arguments) -> { throw re; };
+        Function<Object[], Object> fnc = (arguments) -> {
+            throw re;
+        };
         InvocationException e = assertThrows(InvocationException.class,
                                              () -> Invocation.createInvokeAndSupply(dummyCtx, fnc, args));
         assertThat(e.getMessage(), equalTo("Error in interceptor chain processing"));
@@ -133,7 +144,7 @@ class InvocationTest {
         Object[] args = new Object[] {};
         Function<Object[], Boolean> fnc = (arguments) -> calls.add(arguments);
         InvocationException e = assertThrows(InvocationException.class,
-                                          () -> Invocation.createInvokeAndSupply(dummyCtx, fnc, args));
+                                             () -> Invocation.createInvokeAndSupply(dummyCtx, fnc, args));
         assertThat(e.targetWasCalled(), is(true));
         assertThat(first.callCount.get(), equalTo(1));
         assertThat(first.proceedCount.get(), equalTo(2));
@@ -266,13 +277,12 @@ class InvocationTest {
         }
     }
 
-
     static class TestInterceptor {
         final String name;
         AtomicInteger callCount = new AtomicInteger();
         AtomicInteger proceedCount = new AtomicInteger();
         AtomicInteger downstreamExceptionCount = new AtomicInteger();
-        ControlDefault.Builder control = ControlDefault.builder();
+        Control.Builder control = Control.builder();
         ConcreteProvider<Interceptor> provider = new ConcreteProvider<>(new Interceptor() {
             @Override
             public <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args) {

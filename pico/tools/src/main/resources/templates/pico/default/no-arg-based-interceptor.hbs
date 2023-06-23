@@ -21,14 +21,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-import io.helidon.common.types.AnnotationAndValue;
-import io.helidon.common.types.AnnotationAndValueDefault;
-import io.helidon.common.types.TypeNameDefault;
-import io.helidon.common.types.TypedElementInfoDefault;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementInfo;
+import io.helidon.common.types.TypeValues;
 import io.helidon.pico.api.ClassNamed;
-import io.helidon.pico.api.InvocationContextDefault;
+import io.helidon.pico.api.InvocationContext;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationException;
 import io.helidon.pico.api.ServiceProvider;
@@ -39,7 +39,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-import static io.helidon.common.types.TypeNameDefault.create;
+import static io.helidon.common.types.TypeName.create;
 import static io.helidon.pico.runtime.Invocation.createInvokeAndSupply;
 import static io.helidon.pico.runtime.Invocation.mergeAndCollapse;
 
@@ -51,16 +51,16 @@ import static io.helidon.pico.runtime.Invocation.mergeAndCollapse;
 @io.helidon.pico.api.Intercepted({{parent}}.class)
 @Singleton
 @SuppressWarnings("ALL")
-@jakarta.annotation.Generated({{{generatedanno}}})
+{{{generatedanno}}}
 public class {{className}} extends {{parent}} {
-    private static final List<AnnotationAndValue> __serviceLevelAnnotations = List.of({{#servicelevelannotations}}
+    private static final List<Annotation> __serviceLevelAnnotations = List.of({{#servicelevelannotations}}
             {{{.}}}{{#unless @last}},{{/unless}}{{/servicelevelannotations}});
 {{#interceptedmethoddecls}}
-    private static final TypedElementInfo __{{id}} = TypedElementInfoDefault.builder()
+    private static final TypedElementInfo __{{id}} = TypedElementInfo.builder()
             {{{.}}}
             .build();{{/interceptedmethoddecls}}
 
-    private static final TypeName __serviceTypeName = TypeNameDefault.create({{parent}}.class);
+    private static final TypeName __serviceTypeName = TypeName.create({{parent}}.class);
 
     private final Provider<{{parent}}> __provider;
     private final ServiceProvider<{{parent}}> __sp;
@@ -80,7 +80,7 @@ public class {{className}} extends {{parent}} {
 
         Function<Object[], {{parent}}> call = args -> __provider.get();
         {{parent}} result = createInvokeAndSupply(
-                InvocationContextDefault.builder()
+                InvocationContext.builder()
                     .serviceProvider(__sp)
                     .serviceTypeName(__serviceTypeName)
                     .classAnnotations(__serviceLevelAnnotations)

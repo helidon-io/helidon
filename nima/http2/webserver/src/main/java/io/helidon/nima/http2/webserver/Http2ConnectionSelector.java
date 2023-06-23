@@ -16,6 +16,7 @@
 
 package io.helidon.nima.http2.webserver;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -40,6 +41,15 @@ public class Http2ConnectionSelector implements ServerConnectionSelector {
     Http2ConnectionSelector(Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
         this.http2Config = http2Config;
         this.subProviders = subProviders;
+    }
+
+    /**
+     * Builder to set up this provider.
+     *
+     * @return a new builder
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -74,4 +84,44 @@ public class Http2ConnectionSelector implements ServerConnectionSelector {
         return result;
     }
 
+    /**
+     * Fluent API builder for {@link Http2ConnectionProvider}.
+     */
+    public static class Builder implements io.helidon.common.Builder<Builder, Http2ConnectionSelector> {
+        private final List<Http2SubProtocolSelector> subProtocolSelectors = new ArrayList<>();
+
+        private Http2Config http2Config;
+
+        private Builder() {
+        }
+
+        @Override
+        public Http2ConnectionSelector build() {
+            return new Http2ConnectionSelector(http2Config, subProtocolSelectors);
+        }
+
+        /**
+         * Custom configuration of HTTP/2 connection provider.
+         * If not defined, it will be configured from config, or defaults would be used.
+         *
+         * @param http2Config HTTP/2 configuration
+         * @return updated builder
+         */
+        public Builder http2Config(Http2Config http2Config) {
+            this.http2Config = http2Config;
+            return this;
+        }
+
+        /**
+         * Add a configured sub-protocol provider. This will replace the instance discovered through service loader (if one
+         * exists).
+         *
+         * @param selector provider to add
+         * @return updated builer
+         */
+        public Builder addSubProtocolSelector(Http2SubProtocolSelector selector) {
+            subProtocolSelectors.add(selector);
+            return this;
+        }
+    }
 }

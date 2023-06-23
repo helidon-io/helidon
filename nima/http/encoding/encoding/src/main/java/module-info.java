@@ -21,15 +21,19 @@ import io.helidon.common.features.api.HelidonFlavor;
  * Content encoding support.
  */
 @Feature(value = "Encoding",
-        description = "Content encoding support",
-        in = HelidonFlavor.NIMA,
-        invalidIn = HelidonFlavor.SE,
-        path = "Encoding"
+         description = "Content encoding support",
+         in = HelidonFlavor.NIMA,
+         invalidIn = HelidonFlavor.SE,
+         path = "Encoding"
 )
 module io.helidon.nima.http.encoding {
     requires static io.helidon.common.features.api;
+    requires io.helidon.builder.api;
+    requires static io.helidon.config.metadata;
+    requires static jakarta.annotation;
 
     requires io.helidon.common;
+
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.http;
 

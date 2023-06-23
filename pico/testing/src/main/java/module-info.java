@@ -18,9 +18,10 @@
  * Pico Testing Support Module.
  */
 module io.helidon.pico.testing {
-    requires io.helidon.builder.config;
+    requires io.helidon.builder.api;
     requires io.helidon.config;
     requires transitive io.helidon.pico.runtime;
+    requires io.helidon.common.types;
 
     exports io.helidon.pico.testing;
 }

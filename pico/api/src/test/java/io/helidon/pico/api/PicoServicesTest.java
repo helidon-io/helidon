@@ -47,7 +47,7 @@ class PicoServicesTest {
     @Test
     void testGetPicoServices() {
         assertThat(PicoServices.globalBootstrap(), optionalEmpty());
-        Bootstrap bootstrap = BootstrapDefault.builder().build();
+        Bootstrap bootstrap = Bootstrap.builder().build();
         PicoServices.globalBootstrap(bootstrap);
         assertThat(PicoServices.globalBootstrap().orElseThrow(), sameInstance(bootstrap));
 

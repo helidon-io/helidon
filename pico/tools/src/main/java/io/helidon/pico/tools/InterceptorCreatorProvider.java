@@ -46,7 +46,8 @@ public class InterceptorCreatorProvider implements Provider<InterceptorCreator> 
                         ServiceLoader.load(InterceptorCreator.class, InterceptorCreator.class.getClassLoader()))
                 .asList()
                 .stream()
-                .findFirst().orElseThrow();
+                .findFirst()
+                .orElseThrow();
     }
 
     // note that this is guaranteed to succeed since the default implementation is in this module

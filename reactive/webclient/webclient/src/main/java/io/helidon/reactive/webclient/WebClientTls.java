@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -212,7 +212,7 @@ public class WebClientTls {
         @ConfiguredOption(key = "server.truststore",
                           description = "Trust store which contains trusted certificates. "
                                   + "If set, replaces those present by default")
-        public Builder certificateTrustStore(KeyConfig keyStore) {
+        public Builder certificateTrustStore(Keys keyStore) {
             Objects.requireNonNull(keyStore);
             certificates = keyStore.certs();
             return this;
@@ -226,7 +226,7 @@ public class WebClientTls {
          */
         @ConfiguredOption(key = "client.keystore",
                           description = "Client key store which contains client private key and certificate")
-        public Builder clientKeyStore(KeyConfig keyConfig) {
+        public Builder clientKeyStore(Keys keyConfig) {
             Objects.requireNonNull(keyConfig);
             keyConfig.privateKey().ifPresent(privateKey -> clientPrivateKey = privateKey);
             clientCertificateChain = keyConfig.certChain();
@@ -307,10 +307,10 @@ public class WebClientTls {
             Config serverConfig = config.get("server");
             serverConfig.get("disable-hostname-verification").asBoolean().ifPresent(this::disableHostnameVerification);
             serverConfig.get("trust-all").asBoolean().ifPresent(this::trustAll);
-            serverConfig.as(KeyConfig::create).ifPresent(this::certificateTrustStore);
+            serverConfig.as(Keys::create).ifPresent(this::certificateTrustStore);
             serverConfig.get("cipher-suite").asList(String.class).ifPresent(this::allowedCipherSuite);
 
-            config.get("client").as(KeyConfig::create).ifPresent(this::clientKeyStore);
+            config.get("client").as(Keys::create).ifPresent(this::clientKeyStore);
             return this;
         }
 

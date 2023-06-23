@@ -16,7 +16,10 @@
 
 package io.helidon.common.types;
 
-import java.util.List;
+import java.util.Objects;
+
+import io.helidon.builder.api.Prototype;
+import io.helidon.common.Errors;
 
 /**
  * TypeName is similar to {@link java.lang.reflect.Type} in its most basic use case. The {@link #name()} returns the package +
@@ -38,123 +41,605 @@ import java.util.List;
  * <ul>
  * <li>{@link #declaredName()} and {@link #fqName()}.</li>
  * </ul>
+ *
+ * @see #builder()
  */
-public interface TypeName extends Comparable<TypeName> {
-
+public interface TypeName
+        extends TypeNameBlueprint, Prototype.Api, Comparable<TypeName> {
     /**
-     * Functions the same as {@link Class#getPackageName()}.
+     * Create a new fluent API builder to customize configuration.
      *
-     * @return the package name, never null
+     * @return a new builder
      */
-    String packageName();
-
-    /**
-     * Functions the same as {@link Class#getSimpleName()}.
-     *
-     * @return the simple class name
-     */
-    String className();
-
-    /**
-     * Functions the same as {@link Class#isPrimitive()}.
-     *
-     * @return true if this type represents a primitive type
-     */
-    boolean primitive();
-
-    /**
-     * Functions the same as {@link Class#isArray()}.
-     *
-     * @return true if this type represents a primitive array []
-     */
-    boolean array();
-
-    /**
-     * Indicates whether this type is using generics.
-     *
-     * @return used to represent a generic (e.g., "Optional&lt;CB&gt;")
-     */
-    boolean generic();
-
-    /**
-     * Indicates whether this type is using wildcard generics.
-     *
-     * @return used to represent a wildcard (e.g., "? extends SomeType")
-     */
-    boolean wildcard();
-
-    /**
-     * Indicates whether this type is a {@code java.util.List}.
-     *
-     * @return if this is a list
-     */
-    default boolean isList() {
-        return "java.util.List".equals(name());
+    static Builder builder() {
+        return new Builder();
     }
 
     /**
-     * Indicates whether this type is a {@code java.util.Set}.
+     * Create a new fluent API builder from an existing instance.
      *
-     * @return if this is a set
+     * @param instance an existing instance used as a base for the builder
+     * @return a builder based on an instance
      */
-    default boolean isSet() {
-        return "java.util.Set".equals(name());
+    static Builder builder(TypeName instance) {
+        return TypeName.builder().from(instance);
     }
 
     /**
-     * Indicates whether this type is a {@code java.util.Map}.
+     *Create a type name from a type (such as class).
      *
-     * @return if this is a map
+     * @param type the type
+     * @return type name for the provided type
      */
-    default boolean isMap() {
-        return "java.util.Map".equals(name());
+    static TypeName create(java.lang.reflect.Type type) {
+        return TypeNameSupport.create(type);
     }
 
     /**
-     * Indicates whether this type is a {@code java.util.Optional}.
+     *Creates a type name from a fully qualified class name.
      *
-     * @return if this is an optional
+     * @param typeName the FQN of the class type
+     * @return the TypeName for the provided type name
      */
-    default boolean isOptional() {
-        return "java.util.Optional".equals(name());
+    static TypeName create(String typeName) {
+        return TypeNameSupport.create(typeName);
     }
 
     /**
-     * Returns the list of generic type parameters, or an empty list if no generics are in use.
+     *Creates a type name from a generic alias type name.
      *
-     * @return the type arguments of this type, if this type supports generics/parameterized type
+     * @param genericAliasTypeName the generic alias type name
+     * @return the TypeName for the provided type name
      */
-    List<TypeName> typeArguments();
+    static TypeName createFromGenericDeclaration(String genericAliasTypeName) {
+        return TypeNameSupport.createFromGenericDeclaration(genericAliasTypeName);
+    }
 
     /**
-     * The base generic type name, stripped of any {@link #typeArguments()}. This is equivalent to the type name
-     * represented by {@link #name()}.
+     *Return the boxed equivalent of this type.
+     *If this is not a primitive type, returns this instance.
      *
-     * @return based generic type name
+     *@return boxed type for this type, or this type if not primitive
+     */
+    TypeName boxed();
+
+    /**
+     *The base generic type name, stripped of any {@link TypeName#typeArguments()}.
+     *This is equivalent to the type name represented by {@link TypeName#name()}.
+     *
+     *@return based generic type name
      */
     TypeName genericTypeName();
 
     /**
-     * Typically used as part of code-gen, when ".class" is tacked onto the suffix of what this returns.
+     * Fluent API builder base for {@link io.helidon.common.types.TypeName}.
      *
-     * @return same as getName() unless the type is an array, and then will add "[]" to the return
+     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    String declaredName();
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeName>
+            implements io.helidon.builder.api.Prototype.Builder<BUILDER, PROTOTYPE>, TypeName {
+        private final java.util.List<String> enclosingNames = new java.util.ArrayList<>();
+        private final java.util.List<TypeName> typeArguments = new java.util.ArrayList<>();
+        private String packageName = "";
+        private String className;
+        private boolean primitive = false;
+        private boolean array = false;
+        private boolean generic = false;
+        private boolean wildcard = false;
+
+        /**
+         * Protected to support extensibility.
+         *
+         */
+        protected BuilderBase() {
+        }
+
+        /**
+         * Update this builder from an existing prototype instance.
+         *
+         * @param prototype existing prototype to update this builder from
+         * @return updated builder instance
+         */
+        public BUILDER from(TypeName prototype) {
+            packageName(prototype.packageName());
+            className(prototype.className());
+            addEnclosingNames(prototype.enclosingNames());
+            primitive(prototype.primitive());
+            array(prototype.array());
+            generic(prototype.generic());
+            wildcard(prototype.wildcard());
+            addTypeArguments(prototype.typeArguments());
+            return self();
+        }
+
+        /**
+         * Update this builder from an existing prototype builder instance.
+         *
+         * @param builder existing builder prototype to update this builder from
+         * @return updated builder instance
+         */
+        public BUILDER from(BuilderBase<?, ?> builder) {
+            if (builder.packageName() != null) {
+                packageName(builder.packageName());
+            }
+            if (builder.className() != null) {
+                className(builder.className());
+            }
+            addEnclosingNames(builder.enclosingNames());
+            primitive(builder.primitive());
+            array(builder.array());
+            generic(builder.generic());
+            wildcard(builder.wildcard());
+            addTypeArguments(builder.typeArguments());
+            return self();
+        }
+
+        /**
+         * Handles providers and interceptors.
+         */
+        protected void preBuildPrototype() {
+        }
+
+        /**
+         * Validates required properties.
+         */
+        protected void validatePrototype() {
+            Errors.Collector collector = Errors.collector();
+            if (className == null) {
+                collector.fatal(getClass(), "Property \"class-name\" is required, but not set");
+            }
+            collector.collect().checkValid();
+        }
+
+        @Override
+        public int compareTo(TypeName o) {
+            return TypeNameSupport.compareTo(this, o);
+        }
+
+        /**
+         *Return the boxed equivalent of this type.
+         *If this is not a primitive type, returns this instance.
+         *
+         *@return boxed type for this type, or this type if not primitive
+         */
+        @Override
+        public TypeName boxed() {
+            return TypeNameSupport.boxed(this);
+        }
+
+        @Override
+        public String toString() {
+            return TypeNameSupport.toString(this);
+        }
+
+        @Override
+        public String name() {
+            return TypeNameSupport.name(this);
+        }
+
+        /**
+         *The base generic type name, stripped of any {@link TypeName#typeArguments()}.
+         *This is equivalent to the type name represented by {@link TypeName#name()}.
+         *
+         *@return based generic type name
+         */
+        @Override
+        public TypeName genericTypeName() {
+            return TypeNameSupport.genericTypeName(this);
+        }
+
+        @Override
+        public String fqName() {
+            return TypeNameSupport.fqName(this);
+        }
+
+        /**
+         *Update builder from the provided type.
+         *
+         *@param type type to get information (package name, class name, primitive, array)
+         *@return updated builder instance
+         */
+        public BUILDER type(java.lang.reflect.Type type) {
+            TypeNameSupport.type(this, type);
+            return self();
+        }
+
+        /**
+         * Functions the same as {@link Class#getPackageName()}.
+         *
+         * @param packageName the package name, never null
+         * @return updated builder instance
+         * @see #packageName()
+         */
+        public BUILDER packageName(String packageName) {
+            Objects.requireNonNull(packageName);
+            this.packageName = packageName;
+            return self();
+        }
+
+        /**
+         * Functions the same as {@link Class#getSimpleName()}.
+         *
+         * @param className the simple class name
+         * @return updated builder instance
+         * @see #className()
+         */
+        public BUILDER className(String className) {
+            Objects.requireNonNull(className);
+            this.className = className;
+            return self();
+        }
+
+        /**
+         * Simple names of enclosing classes (if any exist).
+         * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
+         * a list of {@code Type, NestOne}.
+         *
+         * @param enclosingNames enclosing classes simple names
+         * @return updated builder instance
+         * @see #enclosingNames()
+         */
+        public BUILDER enclosingNames(java.util.List<? extends String> enclosingNames) {
+            Objects.requireNonNull(enclosingNames);
+            this.enclosingNames.clear();
+            this.enclosingNames.addAll(enclosingNames);
+            return self();
+        }
+
+        /**
+         * Simple names of enclosing classes (if any exist).
+         * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
+         * a list of {@code Type, NestOne}.
+         *
+         * @param enclosingNames enclosing classes simple names
+         * @return updated builder instance
+         * @see #enclosingNames()
+         */
+        public BUILDER addEnclosingNames(java.util.List<? extends String> enclosingNames) {
+            Objects.requireNonNull(enclosingNames);
+            this.enclosingNames.addAll(enclosingNames);
+            return self();
+        }
+
+        /**
+         * Simple names of enclosing classes (if any exist).
+         * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
+         * a list of {@code Type, NestOne}.
+         *
+         * @param enclosingName enclosing classes simple names
+         * @return updated builder instance
+         * @see #enclosingNames()
+         */
+        public BUILDER addEnclosingName(String enclosingName) {
+            Objects.requireNonNull(enclosingName);
+            this.enclosingNames.add(enclosingName);
+            return self();
+        }
+
+        /**
+         * Functions the same as {@link Class#isPrimitive()}.
+         *
+         * @param primitive true if this type represents a primitive type
+         * @return updated builder instance
+         * @see #primitive()
+         */
+        public BUILDER primitive(boolean primitive) {
+            this.primitive = primitive;
+            return self();
+        }
+
+        /**
+         * Functions the same as {@link Class#isArray()}.
+         *
+         * @param array true if this type represents a primitive array []
+         * @return updated builder instance
+         * @see #array()
+         */
+        public BUILDER array(boolean array) {
+            this.array = array;
+            return self();
+        }
+
+        /**
+         * Indicates whether this type is using generics.
+         *
+         * @param generic used to represent a generic (e.g., "Optional&lt;CB&gt;")
+         * @return updated builder instance
+         * @see #generic()
+         */
+        public BUILDER generic(boolean generic) {
+            this.generic = generic;
+            return self();
+        }
+
+        /**
+         * Indicates whether this type is using wildcard generics.
+         *
+         * @param wildcard used to represent a wildcard (e.g., "? extends SomeType")
+         * @return updated builder instance
+         * @see #wildcard()
+         */
+        public BUILDER wildcard(boolean wildcard) {
+            this.wildcard = wildcard;
+            return self();
+        }
+
+        /**
+         * Returns the list of generic type parameters, or an empty list if no generics are in use.
+         *
+         * @param typeArguments the type arguments of this type, if this type supports generics/parameterized type
+         * @return updated builder instance
+         * @see #typeArguments()
+         */
+        public BUILDER typeArguments(java.util.List<? extends TypeName> typeArguments) {
+            Objects.requireNonNull(typeArguments);
+            this.typeArguments.clear();
+            this.typeArguments.addAll(typeArguments);
+            return self();
+        }
+
+        /**
+         * Returns the list of generic type parameters, or an empty list if no generics are in use.
+         *
+         * @param typeArguments the type arguments of this type, if this type supports generics/parameterized type
+         * @return updated builder instance
+         * @see #typeArguments()
+         */
+        public BUILDER addTypeArguments(java.util.List<? extends TypeName> typeArguments) {
+            Objects.requireNonNull(typeArguments);
+            this.typeArguments.addAll(typeArguments);
+            return self();
+        }
+
+        /**
+         * Returns the list of generic type parameters, or an empty list if no generics are in use.
+         *
+         * @param typeArgument the type arguments of this type, if this type supports generics/parameterized type
+         * @return updated builder instance
+         * @see #typeArguments()
+         */
+        public BUILDER addTypeArgument(TypeName typeArgument) {
+            Objects.requireNonNull(typeArgument);
+            this.typeArguments.add(typeArgument);
+            return self();
+        }
+
+        /**
+         * Returns the list of generic type parameters, or an empty list if no generics are in use.
+         *
+         * @param consumer the type arguments of this type, if this type supports generics/parameterized type
+         * @return updated builder instance
+         * @see #typeArguments()
+         */
+        public BUILDER addTypeArgument(java.util.function.Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.typeArguments.add(builder.build());
+            return self();
+        }
+
+        /**
+         * Functions the same as {@link Class#getPackageName()}.
+         *
+         * @return the package name
+         */
+        @Override
+        public String packageName() {
+            return packageName;
+        }
+
+        /**
+         * Functions the same as {@link Class#getSimpleName()}.
+         *
+         * @return the class name
+         */
+        @Override
+        public String className() {
+            return className;
+        }
+
+        /**
+         * Simple names of enclosing classes (if any exist).
+         * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
+         * a list of {@code Type, NestOne}.
+         *
+         * @return the enclosing names
+         */
+        @Override
+        public java.util.List<String> enclosingNames() {
+            return enclosingNames;
+        }
+
+        /**
+         * Functions the same as {@link Class#isPrimitive()}.
+         *
+         * @return the primitive
+         */
+        @Override
+        public boolean primitive() {
+            return primitive;
+        }
+
+        /**
+         * Functions the same as {@link Class#isArray()}.
+         *
+         * @return the array
+         */
+        @Override
+        public boolean array() {
+            return array;
+        }
+
+        /**
+         * Indicates whether this type is using generics.
+         *
+         * @return the generic
+         */
+        @Override
+        public boolean generic() {
+            return generic;
+        }
+
+        /**
+         * Indicates whether this type is using wildcard generics.
+         *
+         * @return the wildcard
+         */
+        @Override
+        public boolean wildcard() {
+            return wildcard;
+        }
+
+        /**
+         * Returns the list of generic type parameters, or an empty list if no generics are in use.
+         *
+         * @return the type arguments
+         */
+        @Override
+        public java.util.List<TypeName> typeArguments() {
+            return typeArguments;
+        }
+
+        /**
+         * Generated implementation of the prototype, can be extended by descendant prototype implementations.
+         */
+        protected static class TypeNameImpl implements TypeName {
+            private final String packageName;
+            private final String className;
+            private final java.util.List<String> enclosingNames;
+            private final boolean primitive;
+            private final boolean array;
+            private final boolean generic;
+            private final boolean wildcard;
+            private final java.util.List<TypeName> typeArguments;
+
+            /**
+             * Create an instance providing a builder.
+             * @param builder extending builder base of this prototype
+             */
+            protected TypeNameImpl(BuilderBase<?, ?> builder) {
+                this.packageName = builder.packageName();
+                this.className = builder.className();
+                this.enclosingNames = java.util.List.copyOf(builder.enclosingNames());
+                this.primitive = builder.primitive();
+                this.array = builder.array();
+                this.generic = builder.generic();
+                this.wildcard = builder.wildcard();
+                this.typeArguments = java.util.List.copyOf(builder.typeArguments());
+            }
+
+            @Override
+            public int compareTo(TypeName o) {
+                return TypeNameSupport.compareTo(this, o);
+            }
+
+            @Override
+            public TypeName boxed() {
+                return TypeNameSupport.boxed(this);
+            }
+
+            @Override
+            public String toString() {
+                return TypeNameSupport.toString(this);
+            }
+
+            @Override
+            public String name() {
+                return TypeNameSupport.name(this);
+            }
+
+            @Override
+            public TypeName genericTypeName() {
+                return TypeNameSupport.genericTypeName(this);
+            }
+
+            @Override
+            public String fqName() {
+                return TypeNameSupport.fqName(this);
+            }
+
+            @Override
+            public String packageName() {
+                return packageName;
+            }
+
+            @Override
+            public String className() {
+                return className;
+            }
+
+            @Override
+            public java.util.List<String> enclosingNames() {
+                return enclosingNames;
+            }
+
+            @Override
+            public boolean primitive() {
+                return primitive;
+            }
+
+            @Override
+            public boolean array() {
+                return array;
+            }
+
+            @Override
+            public boolean generic() {
+                return generic;
+            }
+
+            @Override
+            public boolean wildcard() {
+                return wildcard;
+            }
+
+            @Override
+            public java.util.List<TypeName> typeArguments() {
+                return typeArguments;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (o == this) {
+                    return true;
+                }
+                if (!(o instanceof TypeName other)) {
+                    return false;
+                }
+                return Objects.equals(packageName, other.packageName())
+                        && Objects.equals(className, other.className())
+                        && Objects.equals(enclosingNames, other.enclosingNames())
+                        && primitive == other.primitive()
+                        && array == other.array();
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(packageName, className, enclosingNames, primitive, array);
+            }
+        }
+    }
 
     /**
-     * The fully qualified type name. This will include the generic portion of the declaration, as well as any array
-     * declaration, etc.
-     *
-     * @return the fully qualified name which includes the use of generics/parameterized types, arrays, etc.
+     * Fluent API builder for {@link io.helidon.common.types.TypeName}.
      */
-    String fqName();
+    class Builder extends BuilderBase<Builder, TypeName> implements io.helidon.common.Builder<Builder, TypeName> {
+        private Builder() {
+        }
 
-    /**
-     * The base name that includes the package name concatenated with the class name. Similar to
-     * {@link java.lang.reflect.Type#getTypeName()}.
-     *
-     * @return the base type name given the set package and class name, but not including the generics/parameterized types
-     */
-    String name();
+        @Override
+        public TypeName buildPrototype() {
+            preBuildPrototype();
+            validatePrototype();
+            return new TypeNameImpl(this);
+        }
 
+        @Override
+        public TypeName build() {
+            return buildPrototype();
+        }
+
+    }
 }

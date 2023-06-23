@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.Comparator;
 
 import io.helidon.common.Weights;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceProvider;
 
@@ -69,8 +70,8 @@ public class ServiceProviderComparator implements Comparator<Provider<?>>, Seria
                 return -1 * comp;
             }
             // secondary ordering based upon its name...
-            String name1 = info1.serviceTypeName();
-            String name2 = info2.serviceTypeName();
+            TypeName name1 = info1.serviceTypeName();
+            TypeName name2 = info2.serviceTypeName();
             comp = name2.compareTo(name1);
             return -1 * comp;
         } else {

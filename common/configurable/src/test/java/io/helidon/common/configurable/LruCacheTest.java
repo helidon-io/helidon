@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ class LruCacheTest {
 
     @Test
     void testLruBehavior() {
-        LruCache<Integer, Integer> theCache =  LruCache.<Integer, Integer>builder().capacity(10).build();
+        LruCache<Integer, Integer> theCache = LruCache.<Integer, Integer>builder().capacity(10).build();
         for (int i = 0; i < 10; i++) {
             // insert all
             theCache.put(i, i);

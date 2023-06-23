@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientException;
 import io.helidon.reactive.webclient.WebClientTls;
@@ -50,14 +50,14 @@ public class TlsTest {
                         Routing.builder()
                                 .any((req, res) -> res.send("It works!")))
                 .tls(WebServerTls.builder()
-                             .privateKey(KeyConfig.keystoreBuilder()
-                                                 .keystorePassphrase("password")
-                                                 .keystore(Resource.create("server.p12"))
+                             .privateKey(Keys.builder()
+                                                 .keystore(keystore -> keystore
+                                                         .passphrase("password")
+                                                         .keystore(Resource.create("server.p12")))
                                                  .build()))
                 .build()
                 .start()
                 .await(10, TimeUnit.SECONDS);
-
 
         webClient = WebClient.builder()
                 .baseUri("https://localhost:" + webServer.port())
@@ -89,6 +89,5 @@ public class TlsTest {
         assertThat(exception.getCause(), instanceOf(WebClientException.class));
         assertThat(exception.getCause().getMessage(), is("Connection reset by the host"));
     }
-
 
 }

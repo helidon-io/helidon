@@ -39,8 +39,15 @@ import io.helidon.common.media.type.MediaTypes;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class PathSupport implements MediaSupport {
     private static final EntityWriter WRITER = new PathWriter();
+    private final String name;
 
-    private PathSupport() {
+    /**
+     * Create a named instance.
+     *
+     * @param name name of this instance
+     */
+    protected PathSupport(String name) {
+        this.name = name;
     }
 
     /**
@@ -49,7 +56,17 @@ public class PathSupport implements MediaSupport {
      * @return a new media support
      */
     public static MediaSupport create() {
-        return new PathSupport();
+        return new PathSupport("path");
+    }
+
+    @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
+    public String type() {
+        return "path";
     }
 
     @Override

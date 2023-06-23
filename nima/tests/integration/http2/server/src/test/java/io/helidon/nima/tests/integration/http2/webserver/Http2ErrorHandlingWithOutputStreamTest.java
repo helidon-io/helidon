@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,13 @@ import java.util.Optional;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.ErrorHandler;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -72,19 +73,20 @@ class Http2ErrorHandlingWithOutputStreamTest {
     }
 
     @SetUpServer
-    static void setUpServer(WebServer.Builder serverBuilder) {
-        KeyConfig privateKeyConfig = KeyConfig.keystoreBuilder()
-                .keystore(Resource.create("certificate.p12"))
-                .keystorePassphrase("helidon")
-                .build();
+    static void setUpServer(ServerConfig.Builder serverBuilder) {
+        Keys privateKeyConfig = Keys.builder()
+                .keystore(keystore -> keystore
+                        .keystore(Resource.create("certificate.p12"))
+                        .keystorePassphrase("helidon"))
+                        .build();
 
         Tls tls = Tls.builder()
                 .privateKey(privateKeyConfig.privateKey().get())
                 .privateKeyCertChain(privateKeyConfig.certChain())
                 .build();
 
-        serverBuilder.socket("https",
-                             socketBuilder -> socketBuilder.tls(tls));
+        serverBuilder.putSocket("https",
+                                socketBuilder -> socketBuilder.tls(tls));
         httpClient = http2Client();
     }
 

@@ -20,8 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.ServiceInfoDefault;
+import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceProvider;
 
 import jakarta.inject.Singleton;
@@ -34,17 +35,17 @@ class VoidServiceProvider extends AbstractServiceProvider<Void> {
     static final List<ServiceProvider<?>> LIST_INSTANCE = List.of(INSTANCE);
 
     private VoidServiceProvider() {
-        serviceInfo(ServiceInfoDefault.builder()
-                .serviceTypeName(serviceTypeName())
-                .addContractsImplemented(serviceTypeName())
-                .activatorTypeName(VoidServiceProvider.class.getName())
-                .addScopeTypeName(Singleton.class.getName())
+        serviceInfo(ServiceInfo.builder()
+                .serviceTypeName(Void.class)
+                .addContractImplemented(serviceTypeName())
+                .activatorTypeName(VoidServiceProvider.class)
+                .addScopeTypeName(Singleton.class)
                 .declaredWeight(DEFAULT_WEIGHT)
                 .build());
     }
 
-    public static String serviceTypeName() {
-        return Void.class.getName();
+    public static TypeName serviceTypeName() {
+        return TypeName.create(Void.class);
     }
 
     @Override
@@ -58,4 +59,8 @@ class VoidServiceProvider extends AbstractServiceProvider<Void> {
         return Optional.empty();
     }
 
+    @Override
+    public Class<?> serviceType() {
+        return Void.class;
+    }
 }

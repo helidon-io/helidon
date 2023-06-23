@@ -26,7 +26,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
-import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.TypeNames;
 
@@ -34,9 +33,9 @@ import io.helidon.pico.tools.TypeNames;
  * When used will recognize constructs that are explicitly known to be unsupported in Pico's reference implementation.
  * Examples include:
  * <ul>
- *  <li>{@link jakarta.annotation.ManagedBean} and "javax.annotation.ManagedBean"
- *  <li>{@link jakarta.annotation.Resource} and "javax...."
- *  <li>{@link jakarta.annotation.Resources} and "javax...."
+ *  <li>{@code jakarta.annotation.ManagedBean} and "javax.annotation.ManagedBean"
+ *  <li>{@code jakarta.annotation.Resource} and "javax...."
+ *  <li>{@code jakarta.annotation.Resources} and "javax...."
  *  <li>Any scopes from jakarta.enterprise api module(s) other than ApplicationScoped, which can optionally be mapped to
  *      Singleton scope.
  * </ul>
@@ -116,7 +115,7 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
                     return false;
                 }
 
-                String msg = "This module contains unsupported annotations for " + PicoServicesConfig.NAME
+                String msg = "This module contains unsupported annotations for Pico "
                                 + " to process: " + annotationTypeNames + ".\n";
                 if (annotationTypeNames.contains(TypeNames.JAKARTA_APPLICATION_SCOPED)
                         || annotationTypeNames.contains(TypeNames.JAVAX_APPLICATION_SCOPED)) {

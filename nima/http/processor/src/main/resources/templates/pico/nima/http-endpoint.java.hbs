@@ -25,18 +25,15 @@ import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 
-import io.helidon.pico.api.ExternalContracts;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-@jakarta.annotation.Generated({{{generatedSticker}}})
 @Singleton
 @Named("{{enclosingClassTypeName.name}}")
 @Weight({{weight}})
-@ExternalContracts(HttpFeature.class)
+{{{generatedSticker}}}
 class {{className}} implements HttpFeature {
     private final List<GeneratedHandler> myMethods;
     private final String path = "{{http.path}}";
@@ -53,5 +50,16 @@ class {{className}} implements HttpFeature {
                 rules.route(handler.method(), handler.path(), (Handler) handler);
             }
         });
+    }{{#if http.hasListener}}
+
+    @Override
+    public String socket() {
+        return "{{http.listenerValue}}";
     }
+
+    @Override
+    public boolean socketRequired() {
+        return {{http.listenerRequired}};
+    }
+    {{/if}}
 }

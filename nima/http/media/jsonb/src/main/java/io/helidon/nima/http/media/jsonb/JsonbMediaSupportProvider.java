@@ -40,8 +40,8 @@ public class JsonbMediaSupportProvider implements MediaSupportProvider, Weighted
     }
 
     @Override
-    public MediaSupport create(Config config) {
-        return JsonbSupport.create(config);
+    public MediaSupport create(Config config, String name) {
+        return JsonbSupport.create(config, name);
     }
 
     @Override

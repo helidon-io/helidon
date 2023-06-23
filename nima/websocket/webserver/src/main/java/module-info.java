@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,19 @@ import io.helidon.common.features.api.HelidonFlavor;
  * WebSocket server support.
  */
 @Feature(value = "WebSocket",
-        description = "WebSocket server support",
-        in = HelidonFlavor.NIMA,
-        invalidIn = HelidonFlavor.SE,
-        path = {"WebSocket", "WebServer"}
+         description = "WebSocket server support",
+         in = HelidonFlavor.NIMA,
+         invalidIn = HelidonFlavor.SE,
+         path = {"WebSocket", "WebServer"}
 )
 module io.helidon.nima.websocket.webserver {
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires io.helidon.common;
     requires io.helidon.common.http;
     requires io.helidon.common.socket;
+    requires io.helidon.builder.api;
     requires transitive io.helidon.nima.websocket;
     requires transitive io.helidon.nima.webserver;
 
@@ -39,4 +41,6 @@ module io.helidon.nima.websocket.webserver {
 
     provides io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider
             with io.helidon.nima.websocket.webserver.WsUpgradeProvider;
+    provides io.helidon.nima.webserver.spi.ProtocolConfigProvider
+            with io.helidon.nima.websocket.webserver.WsProtocolConfigProvider;
 }

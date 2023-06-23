@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.integration.webserver.upgrade.Main;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientResponse;
@@ -71,12 +71,13 @@ class UpgradeCodecsCompositionTest {
         httpClient = HttpClient.newBuilder().sslContext(insecureContext()).build();
         webClient = WebClient.builder()
                 .tls(WebClientTls.builder()
-                        .sslContext(insecureContext())
-                        .certificateTrustStore(KeyConfig.keystoreBuilder()
-                                .keystorePassphrase("password")
-                                .keystore(Resource.create("server.p12"))
-                                .build())
-                        .build())
+                             .sslContext(insecureContext())
+                             .certificateTrustStore(Keys.builder()
+                                                            .keystore(keystore -> keystore
+                                                                    .passphrase("password")
+                                                                    .keystore(Resource.create("server.p12")))
+                                                            .build())
+                             .build())
                 .build();
     }
 

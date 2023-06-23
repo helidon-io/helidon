@@ -24,8 +24,9 @@ import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.testing.junit5.webserver.spi.ServerJunitExtension;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webserver.ListenerConfiguration;
+import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.Router;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpRules;
@@ -89,7 +90,7 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
     @Override
     public Optional<ParamHandler<?>> setUpRouteParamHandler(Class<?> type) {
 
-        if (ListenerConfiguration.Builder.class.equals(type)) {
+        if (ListenerConfig.Builder.class.equals(type)) {
             return Optional.of(new ListenerConfigurationParamHandler());
         } else if (Router.RouterBuilder.class.equals(type)) {
             return Optional.of(new RouterParamHandler());
@@ -113,16 +114,16 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
     private static class RoutingParamHandler implements ParamHandler<HttpRouting.Builder> {
         @Override
         public HttpRouting.Builder get(String socketName,
-                                       WebServer.Builder serverBuilder,
-                                       ListenerConfiguration.Builder listenerBuilder,
+                                       ServerConfig.Builder serverBuilder,
+                                       ListenerConfig.Builder listenerBuilder,
                                        Router.RouterBuilder<?> routerBuilder) {
             return HttpRouting.builder();
         }
 
         @Override
         public void handle(String socketName,
-                           WebServer.Builder serverBuilder,
-                           ListenerConfiguration.Builder listenerBuilder,
+                           ServerConfig.Builder serverBuilder,
+                           ListenerConfig.Builder listenerBuilder,
                            Router.RouterBuilder<?> routerBuilder,
                            HttpRouting.Builder value) {
 
@@ -133,19 +134,19 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
     private static class RouterParamHandler implements ParamHandler<Router.RouterBuilder<?>> {
         @Override
         public Router.RouterBuilder<?> get(String socketName,
-                                           WebServer.Builder serverBuilder,
-                                           ListenerConfiguration.Builder listenerBuilder,
+                                           ServerConfig.Builder serverBuilder,
+                                           ListenerConfig.Builder listenerBuilder,
                                            Router.RouterBuilder<?> routerBuilder) {
             return routerBuilder;
         }
     }
 
-    private static class ListenerConfigurationParamHandler implements ParamHandler<ListenerConfiguration.Builder> {
+    private static class ListenerConfigurationParamHandler implements ParamHandler<ListenerConfig.Builder> {
         @Override
-        public ListenerConfiguration.Builder get(String socketName,
-                                                 WebServer.Builder serverBuilder,
-                                                 ListenerConfiguration.Builder listenerBuilder,
-                                                 Router.RouterBuilder<?> routerBuilder) {
+        public ListenerConfig.Builder get(String socketName,
+                                          ServerConfig.Builder serverBuilder,
+                                          ListenerConfig.Builder listenerBuilder,
+                                          Router.RouterBuilder<?> routerBuilder) {
             return listenerBuilder;
         }
     }

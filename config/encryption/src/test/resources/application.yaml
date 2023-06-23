@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2017, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,18 +29,6 @@ security.config:
       key.alias: "1"
       # Password of keystore
       passphrase: "j4c"
-
-rsa-legacy:
-  # Public key encrypted secret (can only be decrypted by private key)
-  pwd3: "${RSA=aGr3sFCMQznixrgbIk9qNfoLnO1cdi3H86qweCNjxFvH4dYg5IQM1EuoyTjJaXcSCG5MBskpeA3bjnWYrzeAFFlZHuYSPsb+wJVzGLrfUColTn+BPJjpJ3rmEd3AVkJl1ASfBBMh3q3deC+rvUdhfoTGBO8sC0teUATklCQSxfHOnIxswxqrplnoGXToGiTIfehiN2IZNulRKeoDQ0AeoKREmq5au4L8OOmS+D9BqnlKMc0F1tULZ7+h3Cxla4lXC5WRPoPfHBU4vzRZOGzeDvLkRgrD60caw/wKn5M0Wy1A1cKR8E46ceBXCjJ2eWIcLyhZSAZWDe3ceNrawHZtCg==}"
-  # empty string
-  pwd5: "${RSA=vjjRO06oe/odWcPiJ9SpFkzjGmb4wLs8gRWTI4zJibi9Sa33nz9OMgDJrmeXv2/zKZGzvK4ihnyA4L70mu/nHnSFQ1ryTDJvrjsj0+Tt00bp1tk5h5xqYKVX54jmmC4jPe5qXcNrfIh9zVTBuVKWzv8dlE08zo/b0Qs/YaEin79ACQ645Fib0xolWeVIWwcMotRIVuez9yVYHSbC8Esc8qMVLTzXOswe0Sx9L/KwIScSw18ef/w98IGD0dfSD+xuMs/T2gYJDqyEHOPfF6t9d26851g/+a3WhZgglV7iQzg30e55v3uEF+GmsxMKLD38FAQRnQj2QYlDvCzOuRcA4Q==}"
-  # wrong encryption
-  pwd10: "${RSA=not really encrypted}"
-
-  passwords: [
-    "${RSA=aGr3sFCMQznixrgbIk9qNfoLnO1cdi3H86qweCNjxFvH4dYg5IQM1EuoyTjJaXcSCG5MBskpeA3bjnWYrzeAFFlZHuYSPsb+wJVzGLrfUColTn+BPJjpJ3rmEd3AVkJl1ASfBBMh3q3deC+rvUdhfoTGBO8sC0teUATklCQSxfHOnIxswxqrplnoGXToGiTIfehiN2IZNulRKeoDQ0AeoKREmq5au4L8OOmS+D9BqnlKMc0F1tULZ7+h3Cxla4lXC5WRPoPfHBU4vzRZOGzeDvLkRgrD60caw/wKn5M0Wy1A1cKR8E46ceBXCjJ2eWIcLyhZSAZWDe3ceNrawHZtCg==}"
-  ]
 
 rsa-current:
   # Public key encrypted secret (can only be decrypted by private key)

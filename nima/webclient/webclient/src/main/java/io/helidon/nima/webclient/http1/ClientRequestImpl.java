@@ -27,7 +27,9 @@ import java.util.function.Function;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.ClientRequestHeaders;
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.WritableHeaders;
@@ -129,6 +131,14 @@ class ClientRequestImpl implements Http1ClientRequest {
     @Override
     public Http1ClientRequest header(HeaderValue header) {
         this.explicitHeaders.set(header);
+        return this;
+    }
+
+    @Override
+    public Http1ClientRequest headers(Headers headers) {
+        for (HeaderValue header : headers) {
+            this.explicitHeaders.add(header);
+        }
         return this;
     }
 
@@ -242,7 +252,8 @@ class ClientRequestImpl implements Http1ClientRequest {
         return uri;
     }
 
-    ClientRequestHeaders headers() {
+    @Override
+    public ClientRequestHeaders headers() {
         return ClientRequestHeaders.create(explicitHeaders);
     }
 
@@ -306,17 +317,17 @@ class ClientRequestImpl implements Http1ClientRequest {
     }
 
     @Override
-    public Http.Method httpMethod(){
+    public Http.Method httpMethod() {
         return method;
     }
 
     @Override
-    public UriPath uriPath(){
+    public UriPath uriPath() {
         return UriPath.create(uri.path());
     }
 
     @Override
-    public UriQuery uriQuery(){
+    public UriQuery uriQuery() {
         return UriQuery.create(resolvedUri());
     }
 
@@ -340,7 +351,7 @@ class ClientRequestImpl implements Http1ClientRequest {
                                                                         query,
                                                                         UriFragment.empty(),
                                                                         headers,
-                                                                        Context.create(),
+                                                                        Contexts.context().orElseGet(Context::create),
                                                                         requestId,
                                                                         whenComplete,
                                                                         whenSent,

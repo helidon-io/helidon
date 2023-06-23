@@ -16,16 +16,15 @@
 
 package io.helidon.pico.runtime;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
-import io.helidon.pico.api.InvocationContextDefault;
 import io.helidon.pico.api.InvocationException;
 import io.helidon.pico.api.ServiceProvider;
 
@@ -56,12 +55,12 @@ public abstract class InterceptedMethod<I, V> implements Function<Object[], V> {
     protected InterceptedMethod(I interceptedImpl,
                                 ServiceProvider<?> serviceProvider,
                                 TypeName serviceTypeName,
-                                Collection<AnnotationAndValue> serviceLevelAnnotations,
-                                Collection<Provider<Interceptor>> interceptors,
+                                List<Annotation> serviceLevelAnnotations,
+                                List<Provider<Interceptor>> interceptors,
                                 TypedElementInfo methodInfo,
-                                TypedElementInfo[] methodArgInfo) {
+                                List<TypedElementInfo> methodArgInfo) {
         this.impl = Objects.requireNonNull(interceptedImpl);
-        this.ctx =  InvocationContextDefault.builder()
+        this.ctx =  InvocationContext.builder()
                 .serviceProvider(serviceProvider)
                 .serviceTypeName(serviceTypeName)
                 .classAnnotations(serviceLevelAnnotations)
@@ -84,11 +83,11 @@ public abstract class InterceptedMethod<I, V> implements Function<Object[], V> {
     protected InterceptedMethod(I interceptedImpl,
                                 ServiceProvider<?> serviceProvider,
                                 TypeName serviceTypeName,
-                                Collection<AnnotationAndValue> serviceLevelAnnotations,
-                                Collection<Provider<Interceptor>> interceptors,
+                                List<Annotation> serviceLevelAnnotations,
+                                List<Provider<Interceptor>> interceptors,
                                 TypedElementInfo methodInfo) {
         this.impl = Objects.requireNonNull(interceptedImpl);
-        this.ctx =  InvocationContextDefault.builder()
+        this.ctx =  InvocationContext.builder()
                 .serviceProvider(serviceProvider)
                 .serviceTypeName(serviceTypeName)
                 .classAnnotations(serviceLevelAnnotations)

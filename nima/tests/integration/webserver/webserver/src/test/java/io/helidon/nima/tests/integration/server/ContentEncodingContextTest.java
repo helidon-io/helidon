@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,24 @@
 
 package io.helidon.nima.tests.integration.server;
 
+import java.util.NoSuchElementException;
+
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.nima.http.encoding.ContentEncodingContextConfig;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.*;
+import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.http.HttpRules;
+
 import org.junit.jupiter.api.Test;
-import java.util.NoSuchElementException;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -46,8 +50,8 @@ class ContentEncodingContextTest {
     }
 
     @SetUpServer
-    static void server(WebServer.Builder server) {
-        server.contentEncodingContext(encodingContext);
+    static void server(ServerConfig.Builder server) {
+        server.contentEncoding(encodingContext);
     }
 
     @SetUpRoute
@@ -72,8 +76,13 @@ class ContentEncodingContextTest {
         ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         @Override
+        public ContentEncodingContextConfig prototype() {
+            return contentEncodingContext.prototype();
+        }
+
+        @Override
         public boolean contentEncodingEnabled() {
-            return contentEncodingContext.contentEncodingEnabled();
+            return true;
         }
 
         @Override

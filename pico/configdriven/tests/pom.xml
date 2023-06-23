@@ -43,6 +43,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>config</module>
         <module>configuredby</module>
         <module>configuredby-application</module>
     </modules>

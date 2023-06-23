@@ -30,6 +30,15 @@ public class GeneralInterceptor {
     private static final List<Builder> INTERCEPT_CALLS = new ArrayList<>();
 
     /**
+     * Gets all interceptor calls ever made.
+     *
+     * @return all interceptor calls
+     */
+    public static List<Builder> getInterceptCalls() {
+        return INTERCEPT_CALLS;
+    }
+
+    /**
      * Generic interceptor.
      *
      * @param builder generic builder
@@ -38,15 +47,6 @@ public class GeneralInterceptor {
     public Object intercept(Builder builder) {
         INTERCEPT_CALLS.add(builder);
         return builder;
-    }
-
-    /**
-     * Gets all interceptor calls ever made.
-     *
-     * @return all interceptor calls
-     */
-    public static List<Builder> getInterceptCalls() {
-        return INTERCEPT_CALLS;
     }
 
 }

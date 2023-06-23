@@ -22,14 +22,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.pico.api.ActivationResult;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.api.RunLevel;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
+import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.testing.PicoTestingSupport;
@@ -241,7 +242,7 @@ class ToolBoxTest {
                    picoServices.metrics().orElseThrow().lookupCount().orElseThrow(),
                    equalTo(2));
         List<ServiceProvider<?>> runLevelServices = services
-                .lookupAll(ServiceInfoCriteriaDefault.builder().runLevel(RunLevel.STARTUP).build(), true);
+                .lookupAll(ServiceInfoCriteria.builder().runLevel(RunLevel.STARTUP).build(), true);
         List<String> desc = runLevelServices.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat(desc,
                    contains("TestingSingleton:INIT"));
@@ -261,7 +262,7 @@ class ToolBoxTest {
     @Test
     void noServiceActivationRequiresLookupWhenApplicationIsPresent() {
         List<ServiceProvider<?>> allServices = services
-                .lookupAll(ServiceInfoCriteriaDefault.builder().build(), true);
+                .lookupAll(ServiceInfoCriteria.builder().build(), true);
         allServices.stream()
                 .filter(sp -> !(sp instanceof Provider))
                 .forEach(sp -> {
@@ -281,25 +282,26 @@ class ToolBoxTest {
         assertThat(allInterceptedBefore.size(), greaterThan(0));
         assertThat(TestingSingleton.postConstructCount(), equalTo(0));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(0));
+        allInterceptedBefore.forEach(ServiceProvider::get);
 
-        TestingSingleton testingSingletonFromLookup = picoServices.services().lookup(TestingSingleton.class).get();
+        TestingSingleton testingSingletonFromLookup = services.lookup(TestingSingleton.class).get();
         assertThat(testingSingletonFromLookup, notNullValue());
         assertThat(TestingSingleton.postConstructCount(), equalTo(1));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(0));
 
-        Map<String, ActivationResult> map = picoServices.shutdown().orElseThrow();
-        Map<String, String> report = map.entrySet().stream()
+        Map<TypeName, ActivationResult> map = picoServices.shutdown().orElseThrow();
+        Map<TypeName, String> report = map.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
                                           e -> e.getValue().startingActivationPhase().toString()
                                                   + "->" + e.getValue().finishingActivationPhase()));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.Pico$$Application", "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.Pico$$Module", "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.Pico$$TestApplication", "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.Pico$$TestModule", "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.stacking.MostOuterInterceptedImpl", "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.stacking.OuterInterceptedImpl", "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.stacking.InterceptedImpl", "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry("io.helidon.pico.tests.pico.TestingSingleton", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry(TypeName.create("io.helidon.pico.tests.pico.Pico$$Application"), "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry(TypeName.create("io.helidon.pico.tests.pico.Pico$$Module"), "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry(TypeName.create("io.helidon.pico.tests.pico.Pico$$TestApplication"), "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry(TypeName.create("io.helidon.pico.tests.pico.Pico$$TestModule"), "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry(TypeName.create("io.helidon.pico.tests.pico.stacking.MostOuterInterceptedImpl"), "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry(TypeName.create("io.helidon.pico.tests.pico.stacking.OuterInterceptedImpl"), "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry(TypeName.create("io.helidon.pico.tests.pico.stacking.InterceptedImpl"), "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry(TypeName.create("io.helidon.pico.tests.pico.TestingSingleton"), "ACTIVE->DESTROYED"));
         assertThat(report + " : expected 8 services to be present", report.size(), equalTo(8));
 
         assertThat(TestingSingleton.postConstructCount(), equalTo(1));
@@ -320,7 +322,7 @@ class ToolBoxTest {
                 .collect(Collectors.toMap(Map.Entry::getKey,
                                           e2 -> e2.getValue().startingActivationPhase().toString()
                                                   + "->" + e2.getValue().finishingActivationPhase()));
-        assertThat(report.toString(), report.size(), is(8));
+        assertThat(report.toString(), report.size(), is(5));
 
         tearDown();
         map = picoServices.shutdown().orElseThrow();
@@ -330,7 +332,7 @@ class ToolBoxTest {
     @Test
     void knownProviders() {
         List<ServiceProvider<?>> providers = services.lookupAll(
-                ServiceInfoCriteriaDefault.builder().addContractImplemented(Provider.class.getName()).build());
+                ServiceInfoCriteria.builder().addContractImplemented(Provider.class).build());
         List<String> desc = providers.stream().map(ServiceProvider::description).collect(Collectors.toList());
         // note that order matters here (weight ranked)
         assertThat(desc,
@@ -343,8 +345,8 @@ class ToolBoxTest {
     @Test
     void classNamed() {
         List<ServiceProvider<?>> providers = services.lookupAll(
-                ServiceInfoCriteriaDefault.builder()
-                        .addQualifier(QualifierAndValueDefault.createClassNamed(ClassNamedY.class))
+                ServiceInfoCriteria.builder()
+                        .addQualifier(Qualifier.createNamed(ClassNamedY.class))
                         .build());
         List<String> desc = providers.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat(desc,
@@ -352,8 +354,8 @@ class ToolBoxTest {
                             "BladeProvider:INIT"));
 
         providers = services.lookupAll(
-                ServiceInfoCriteriaDefault.builder()
-                        .addQualifier(QualifierAndValueDefault.createNamed(ClassNamedY.class.getName()))
+                ServiceInfoCriteria.builder()
+                        .addQualifier(Qualifier.createNamed(ClassNamedY.class.getName()))
                         .build());
         List<String> desc2 = providers.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat(desc2,

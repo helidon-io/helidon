@@ -16,60 +16,21 @@
 
 package io.helidon.nima.http.encoding.deflate;
 
-import java.io.OutputStream;
-import java.util.Set;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.InflaterInputStream;
-
-import io.helidon.common.http.Http;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.http.encoding.ContentDecoder;
-import io.helidon.nima.http.encoding.ContentEncoder;
+import io.helidon.common.config.Config;
+import io.helidon.nima.http.encoding.ContentEncoding;
 import io.helidon.nima.http.encoding.spi.ContentEncodingProvider;
 
 /**
  * Support for {@code deflate} content encoding.
  */
 public class DeflateEncodingProvider implements ContentEncodingProvider {
-    private static final Http.HeaderValue CONTENT_ENCODING_DEFLATE =
-            Http.Header.createCached(Http.Header.CONTENT_ENCODING,
-                                     false,
-                                     false,
-                                     "deflate");
-
     @Override
-    public Set<String> ids() {
-        return Set.of("deflate");
+    public String configKey() {
+        return "deflate";
     }
 
     @Override
-    public boolean supportsEncoding() {
-        return true;
-    }
-
-    @Override
-    public boolean supportsDecoding() {
-        return true;
-    }
-
-    @Override
-    public ContentDecoder decoder() {
-        return InflaterInputStream::new;
-    }
-
-    @Override
-    public ContentEncoder encoder() {
-        return new ContentEncoder() {
-            @Override
-            public OutputStream encode(OutputStream network) {
-                return new DeflaterOutputStream(network);
-            }
-
-            @Override
-            public void headers(WritableHeaders<?> headers) {
-                headers.add(CONTENT_ENCODING_DEFLATE);
-                headers.remove(Http.Header.CONTENT_LENGTH);
-            }
-        };
+    public ContentEncoding create(Config config, String name) {
+        return new DeflateEncoding(name);
     }
 }

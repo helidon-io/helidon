@@ -31,7 +31,6 @@ import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
-import io.helidon.nima.webclient.WebClientServiceResponseDefault;
 
 class HttpCallEntityChain extends HttpCallChainBase {
 
@@ -81,7 +80,7 @@ class HttpCallEntityChain extends HttpCallChainBase {
         Http.Status responseStatus = Http1StatusParser.readStatus(reader, clientConfig.maxStatusLineLength());
         ClientResponseHeaders responseHeaders = readHeaders(reader);
 
-        return WebClientServiceResponseDefault.builder()
+        return WebClientServiceResponse.builder()
                 .connection(connection)
                 .reader(reader)
                 .headers(responseHeaders)

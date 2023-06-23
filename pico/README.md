@@ -94,7 +94,7 @@ Compile-time dependency:
 
 ```
       List<ServiceProvider<Object>> startupServices = services
-              .lookup(ServiceInfoCriteriaDefault.builder().runLevel(RunLevel.STARTUP).build());
+              .lookup(ServiceInfoCriteria.builder().runLevel(RunLevel.STARTUP).build());
       startupServices.stream().forEach(ServiceProvider::get);
 ```
 
@@ -170,13 +170,13 @@ And just randomly taking one of the generated <i>Activators</i>:
 @Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", comments = "version=1")
 public class SmsCommunicationMode$$Pico$$Activator
             extends io.helidon.pico.runtime.AbstractServiceProvider<SmsCommunicationMode> {
-    private static final ServiceInfoDefault serviceInfo =
-        ServiceInfoDefault.builder()
+    private static final ServiceInfo serviceInfo =
+        ServiceInfo.builder()
             .serviceTypeName(io.helidon.examples.pico.logger.common.SmsCommunicationMode.class.getName())
             .addExternalContractsImplemented(io.helidon.examples.pico.logger.common.CommunicationMode.class.getName())
             .activatorTypeName(SmsCommunicationMode$$Pico$$Activator.class.getName())
             .addScopeTypeName(jakarta.inject.Singleton.class.getName())
-            .addQualifier(io.helidon.pico.DefaultQualifierAndValue.create(jakarta.inject.Named.class, "sms"))
+            .addQualifier(io.helidon.pico.DefaultQualifier.create(jakarta.inject.Named.class, "sms"))
             .build();
 
     /**

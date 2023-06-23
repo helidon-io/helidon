@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.types.TypeName;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -85,7 +87,9 @@ class TemplateHelperTest {
         subst.put("description", List.of("Description 1.", "Description 2."));
         subst.put("hasdescription", true);
         subst.put("header", "/*\n  Header Line 1\n  Header Line 2\n */\n");
-        subst.put("generatedanno", helper.generatedStickerFor("generator"));
+        TypeName typeName = TypeName.create("generator");
+        TypeName trigger = TypeName.create("trigger");
+        subst.put("generatedanno", helper.generatedStickerFor(typeName, trigger, trigger));
         codegen = helper.applySubstitutions(template, subst, true);
         assertThat(codegen,
                    equalTo("/*\n"
@@ -96,7 +100,7 @@ class TemplateHelperTest {
                                    + " * Description 1.\n"
                                    + " * Description 2.\n"
                                    + " */\n"
-                                   + "// @Generated(value = \"generator\", comments = \"version=1\")\n"
+                                   + "// @io.helidon.common.Generated(value = \"generator\", trigger = \"trigger\")\n"
                                    + "module my-module-name { \n"
                                    + "}\n"));
     }

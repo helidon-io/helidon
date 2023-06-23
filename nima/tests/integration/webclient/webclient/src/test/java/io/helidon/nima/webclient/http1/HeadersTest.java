@@ -47,6 +47,7 @@ class HeadersTest {
     static void beforeAll() {
         server = WebServer.builder()
                 .routing(routing -> routing.register("/test", new TestService()).build())
+                .build()
                 .start();
     }
 
@@ -55,7 +56,7 @@ class HeadersTest {
         server.stop();
     }
 
-    // Verify that invalid content type is present in response headers and is accesible
+    // Verify that invalid content type is present in response headers and is accessible
     @Test
     public void testInvalidContentType() {
         HttpClient<Http1ClientRequest, Http1ClientResponse> client = WebClient.builder()

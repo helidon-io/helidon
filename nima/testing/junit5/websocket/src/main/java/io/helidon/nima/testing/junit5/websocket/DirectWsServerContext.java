@@ -26,7 +26,7 @@ import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.ListenerConfiguration;
+import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.ListenerContext;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.http.DirectHandlers;
@@ -37,7 +37,7 @@ class DirectWsServerContext implements ConnectionContext, ListenerContext {
     private final HelidonSocket socket;
     private final DataWriter dataWriter;
     private final DataReader dataReader;
-    private final ListenerConfiguration listenerConfiguration;
+    private final ListenerConfig listenerConfiguration;
 
     DirectWsServerContext(ExecutorService executor,
                           Router router,
@@ -51,9 +51,14 @@ class DirectWsServerContext implements ConnectionContext, ListenerContext {
         this.dataReader = dataReader;
 
         PeerInfo peerInfo = socket.localPeer();
-        this.listenerConfiguration = ListenerConfiguration.builder("@default")
+        this.listenerConfiguration = ListenerConfig.builder()
+                .name("@default")
                 .host(peerInfo.host())
                 .port(peerInfo.port())
+                .listenerContext(Context.builder().id("test-ws-direct-listener").build())
+                .mediaContext(MediaContext.create())
+                .contentEncoding(ContentEncodingContext.create())
+                .directHandlers(DirectHandlers.create())
                 .build();
     }
 
@@ -109,26 +114,26 @@ class DirectWsServerContext implements ConnectionContext, ListenerContext {
 
     @Override
     public Context context() {
-        return listenerConfiguration.context();
+        return listenerConfiguration.listenerContext().get();
     }
 
     @Override
     public MediaContext mediaContext() {
-        return listenerConfiguration.mediaContext();
+        return listenerConfiguration.mediaContext().get();
     }
 
     @Override
     public ContentEncodingContext contentEncodingContext() {
-        return listenerConfiguration.contentEncodingContext();
+        return listenerConfiguration.contentEncoding().get();
     }
 
     @Override
     public DirectHandlers directHandlers() {
-        return listenerConfiguration.directHandlers();
+        return listenerConfiguration.directHandlers().get();
     }
 
     @Override
-    public ListenerConfiguration config() {
+    public ListenerConfig config() {
         return listenerConfiguration;
     }
 }

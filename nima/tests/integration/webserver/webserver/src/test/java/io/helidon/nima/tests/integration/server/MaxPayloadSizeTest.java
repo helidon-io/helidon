@@ -22,14 +22,13 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.Test;
@@ -54,12 +53,12 @@ class MaxPayloadSizeTest {
     }
 
     @SetUpServer
-    static void setupServer(WebServer.Builder builder) {
-        builder.defaultSocket(socket -> socket.maxPayloadSize(MAX_PAYLOAD_SIZE));
+    static void setupServer(ServerConfig.Builder builder) {
+        builder.maxPayloadSize(MAX_PAYLOAD_SIZE);
     }
 
     @SetUpRoute
-    static void startServer(HttpRules rules) {
+    static void setupRoute(HttpRules rules) {
         rules.post("/maxpayload", (req, res) -> {
             try (InputStream in = req.content().inputStream()) {
                 byte[] content = in.readAllBytes();

@@ -95,11 +95,11 @@
         <version.plugin.archetype>3.1.2</version.plugin.archetype>
         <version.plugin.build-helper>1.12</version.plugin.build-helper>
         <version.plugin.checkstyle>3.1.2</version.plugin.checkstyle>
-        <version.plugin.compiler>3.10.1</version.plugin.compiler>
+        <version.plugin.compiler>3.11.0</version.plugin.compiler>
         <version.plugin.dependency>3.6.0</version.plugin.dependency>
         <version.plugin.directory>1.0</version.plugin.directory>
         <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
-        <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
+        <version.plugin.enforcer>3.3.0</version.plugin.enforcer>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
@@ -114,17 +114,17 @@
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.project-info-reports>3.0.0</version.plugin.project-info-reports>
         <version.plugin.protobuf>0.6.1</version.plugin.protobuf>
-        <version.plugin.resources>2.7</version.plugin.resources>
+        <version.plugin.resources>3.3.1</version.plugin.resources>
         <version.plugin.scm-publish-plugin>3.0.0</version.plugin.scm-publish-plugin>
         <version.plugin.shade>3.0.0</version.plugin.shade>
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.3.2</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.12.0</version.plugin.findsecbugs>
         <version.plugin.dependency-check>8.2.1</version.plugin.dependency-check>
-        <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
+        <version.plugin.surefire>3.1.0</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
-        <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
+        <version.plugin.buildnumber>3.1.0</version.plugin.buildnumber>
         <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
 
         <version.helidon-cli>3.0.0</version.helidon-cli>

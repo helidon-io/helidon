@@ -36,7 +36,6 @@ public class AccessLogCdiExtension implements Extension {
         Config alConfig = config.get("server.access-log");
 
         beanManager.getExtension(ServerCdiExtension.class)
-                .serverRoutingBuilder()
-                .addFeature(AccessLogFeature.create(alConfig));
+                .serverRoutingBuilder().addFeature(AccessLogFeature.create(alConfig));
     }
 }

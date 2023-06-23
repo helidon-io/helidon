@@ -58,9 +58,7 @@ public class MyConfigBeanManualImpl implements MyConfigBean {
 
     @Override
     public int hashCode() {
-        int hashCode = 1;	// super.hashCode();
-        hashCode = 31 * hashCode + Objects.hash(getName(), isEnabled(), getPort());
-        return hashCode;
+        return Objects.hash(name, enabled, port);
     }
 
     @Override

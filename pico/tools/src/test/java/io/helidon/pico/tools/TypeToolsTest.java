@@ -21,6 +21,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.types.TypeName;
+
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.FieldInfo;
 import io.github.classgraph.MethodParameterInfo;
@@ -29,7 +31,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.types.TypeNameDefault.create;
+import static io.helidon.common.types.TypeName.create;
 import static io.helidon.pico.tools.TypeTools.extractInjectionPointTypeInfo;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -53,9 +55,9 @@ public class TypeToolsTest {
     ClassInfo ignoredInjectionPointProviderOfTypeDirectClassInfo = Objects.requireNonNull(
             scan.getClassInfo(InjectionPointProviderOfTypeDirect.class.getName()));
 
-    String typeToolsTestTypeName = create(TypeToolsTest.class).name();
-    String stringTypeName = create(String.class).name();
-    String booleanTypeName = create(Boolean.class).name();
+    TypeName typeToolsTestTypeName = create(TypeToolsTest.class);
+    TypeName stringTypeName = create(String.class);
+    TypeName booleanTypeName = create(Boolean.class);
 
     @Test
     void optionalsProvidersAndListsOfFieldInfo() {
@@ -130,7 +132,7 @@ public class TypeToolsTest {
                                            .get(0).getParameterInfo()[0]);
     }
 
-    private void optionalsProvidersAndLists(String expectedType,
+    private void optionalsProvidersAndLists(TypeName expectedType,
                                             boolean expectedProvider,
                                             boolean expectedList,
                                             boolean expectedOptional,
@@ -155,7 +157,7 @@ public class TypeToolsTest {
         assertThat(fld.toString(), te.getMessage(), equalTo(exceptedException));
     }
 
-    private void optionalsProvidersAndLists(String expectedType,
+    private void optionalsProvidersAndLists(TypeName expectedType,
                                             boolean expectedProvider,
                                             boolean expectedList,
                                             boolean expectedOptional,

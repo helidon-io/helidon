@@ -24,9 +24,8 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.ModuleComponent;
-import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.tools.AbstractCreator;
 import io.helidon.pico.tools.Messager;
@@ -59,14 +58,14 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     /**
      * Tag controlling whether we fail on error.
      */
-    static final String TAG_FAIL_ON_ERROR = PicoServicesConfig.NAME + ".failOnError";
+    static final String TAG_FAIL_ON_ERROR = "pico.failOnError";
 
     /**
      * Tag controlling whether we fail on warnings.
      */
-    static final String TAG_FAIL_ON_WARNING = PicoServicesConfig.NAME + ".failOnWarning";
+    static final String TAG_FAIL_ON_WARNING = "pico.failOnWarning";
 
-    static final String TAG_PACKAGE_NAME = PicoServicesConfig.NAME + ".package.name";
+    static final String TAG_PACKAGE_NAME = "pico.package.name";
 
     /**
      * The file name written to ./target/pico/ to track the last package name generated for this application.
@@ -158,9 +157,9 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
 
     /**
      * Sets the debug flag.
-     * See {@link io.helidon.pico.api.PicoServicesConfig#TAG_DEBUG}.
+     * See {@link io.helidon.pico.api.PicoServices#TAG_DEBUG}.
      */
-    @Parameter(property = PicoServicesConfig.TAG_DEBUG, readonly = true)
+    @Parameter(property = PicoServices.TAG_DEBUG, readonly = true)
     private boolean isDebugEnabled;
 
     /**
@@ -193,7 +192,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
      * @return the scratch directory
      */
     protected File getPicoScratchDir() {
-        return new File(getProjectBuildTargetDir(), PicoServicesConfig.NAME);
+        return new File(getProjectBuildTargetDir(), "pico");
     }
 
     /**
@@ -249,7 +248,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
             getLog().info("Finishing " + getClass().getName() + " for " + getProject());
             MavenPluginUtils.resetAll();
         } catch (Throwable t) {
-            MojoExecutionException me = new MojoExecutionException(PicoServicesConfig.NAME + " Maven plugin execution failed", t);
+            MojoExecutionException me = new MojoExecutionException("Pico Maven plugin execution failed", t);
             getLog().error(me.getMessage(), t);
             throw me;
         } finally {
@@ -260,16 +259,16 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     /**
      * Determines the primary package name (which also typically doubles as the application name).
      *
-     * @param optModuleSp    the module service provider
-     * @param typeNames      the type names
-     * @param optDescriptor  the descriptor
-     * @param persistIt      pass true to write it to scratch, so that we can use it in the future for this module
+     * @param optModuleSp the module service provider
+     * @param typeNames   the type names
+     * @param descriptor  the descriptor
+     * @param persistIt   pass true to write it to scratch, so that we can use it in the future for this module
      * @return the package name (which also typically doubles as the application name)
      */
-    String determinePackageName(Optional<ServiceProvider<ModuleComponent>> optModuleSp,
-                                Collection<TypeName> typeNames,
-                                Optional<ModuleInfoDescriptor> optDescriptor,
-                                boolean persistIt) {
+    protected String determinePackageName(Optional<ServiceProvider<ModuleComponent>> optModuleSp,
+                                          Collection<TypeName> typeNames,
+                                          ModuleInfoDescriptor descriptor,
+                                          boolean persistIt) {
         String packageName = getPackageName();
         if (packageName == null) {
             // check for the existence of the file
@@ -280,15 +279,17 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
 
             ServiceProvider<ModuleComponent> moduleSp = optModuleSp.orElse(null);
             if (moduleSp != null) {
-                packageName = TypeNameDefault.createFromTypeName(moduleSp.serviceInfo().serviceTypeName()).packageName();
-            } else if (optDescriptor.isPresent()) {
-                packageName = toSuggestedGeneratedPackageName(optDescriptor.get(), typeNames, PicoServicesConfig.NAME);
+                packageName = moduleSp.serviceInfo().serviceTypeName().packageName();
             } else {
-                packageName = toSuggestedGeneratedPackageName(typeNames, PicoServicesConfig.NAME);
+                if (descriptor == null) {
+                    packageName = toSuggestedGeneratedPackageName(typeNames, "pico");
+                } else {
+                    packageName = toSuggestedGeneratedPackageName(typeNames, "pico", descriptor);
+                }
             }
         }
 
-        if (packageName == null) {
+        if (packageName == null || packageName.isBlank()) {
             throw new ToolsException("Unable to determine the package name. The package name can be set using "
                                              + TAG_PACKAGE_NAME);
         }

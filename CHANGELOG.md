@@ -11,6 +11,13 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.0-M1]
+
+### CHANGES
+
+- grpc module has fewer features (temporary)
+- MicroProfile grpc module is removed from Helidon (temporary)
+
 ## [4.0.0-ALPHA3]
 
 This is the third Alpha build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.

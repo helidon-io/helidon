@@ -139,52 +139,7 @@
             <!-- gRPC -->
             <dependency>
                 <groupId>io.helidon.grpc</groupId>
-                <artifactId>helidon-grpc-client</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.grpc</groupId>
                 <artifactId>io.grpc</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.grpc</groupId>
-                <artifactId>helidon-grpc-core</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.grpc</groupId>
-                <artifactId>helidon-grpc-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.grpc</groupId>
-                <artifactId>helidon-grpc-metrics</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-core</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-metrics</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-client</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile</groupId>
-                <artifactId>helidon-microprofile-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- graphQL -->
@@ -385,11 +340,6 @@
             <dependency>
                 <groupId>io.helidon.security.integration</groupId>
                 <artifactId>helidon-security-integration-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.security.integration</groupId>
-                <artifactId>helidon-security-integration-grpc</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -679,6 +629,16 @@
             <dependency>
                 <groupId>io.helidon.common</groupId>
                 <artifactId>helidon-common-types</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.processor</groupId>
+                <artifactId>helidon-common-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.processor</groupId>
+                <artifactId>helidon-common-processor-helidon-copyright</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1092,6 +1052,11 @@
                 <artifactId>helidon-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-cors</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Messaging -->
             <dependency>
                 <groupId>io.helidon.messaging</groupId>
@@ -1396,6 +1361,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.nima.fault-tolerance</groupId>
+                <artifactId>helidon-nima-fault-tolerance-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.nima.openapi</groupId>
                 <artifactId>helidon-nima-openapi</artifactId>
                 <version>${helidon.version}</version>
@@ -1404,37 +1374,12 @@
             <!-- Builder -->
             <dependency>
                 <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-processor-spi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-processor-tools</artifactId>
+                <artifactId>helidon-builder-api</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.builder</groupId>
                 <artifactId>helidon-builder-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-config</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-config-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-testing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

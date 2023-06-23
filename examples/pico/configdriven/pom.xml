@@ -53,6 +53,11 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <scope>provided</scope>
@@ -76,7 +81,7 @@
                         <!-- this is also using the ConfigBean builder processor -->
                         <path>
                             <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-config-processor</artifactId>
+                            <artifactId>helidon-builder-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>

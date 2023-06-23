@@ -18,7 +18,9 @@ package io.helidon.nima.webserver.http1;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.nima.webserver.ConnectionContext;
@@ -29,17 +31,50 @@ import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 /**
  * HTTP/1.1 server connection selector.
  */
-public class Http1ConnectionSelector implements ServerConnectionSelector {
+@RuntimeType.PrototypedBy(Http1ConnectionSelectorConfig.class)
+public class Http1ConnectionSelector implements ServerConnectionSelector, RuntimeType.Api<Http1ConnectionSelectorConfig> {
+
     private static final String PROTOCOL = " HTTP/1.1\r";
 
     // HTTP/1.1 connection upgrade providers
-    private final Http1Config config;
+    private final Http1ConnectionSelectorConfig config;
     private final Map<String, Http1Upgrader> upgradeProviderMap;
 
     // Creates an instance of HTTP/1.1 server connection selector.
-    Http1ConnectionSelector(Http1Config config, Map<String, Http1Upgrader> upgradeProviderMap) {
+    Http1ConnectionSelector(Http1ConnectionSelectorConfig config) {
         this.config = config;
-        this.upgradeProviderMap = upgradeProviderMap;
+        this.upgradeProviderMap = config.upgraders();
+    }
+
+    /**
+     * HTTP/1 connection selector builder.
+     *
+     * @return a new fluent API builder
+     */
+    public static Http1ConnectionSelectorConfig.Builder builder() {
+        return Http1ConnectionSelectorConfig.builder();
+    }
+
+    /**
+     * Create HTTP/1 connection selector from its configuration.
+     *
+     * @param config configuration
+     * @return a new selector
+     */
+    static Http1ConnectionSelector create(Http1ConnectionSelectorConfig config) {
+        return new Http1ConnectionSelector(config);
+    }
+
+    /**
+     * Create HTTP/1 connection selector updating its configuration.
+     *
+     * @param consumer configuration consumer
+     * @return a new selector
+     */
+    static Http1ConnectionSelector create(Consumer<Http1ConnectionSelectorConfig.Builder> consumer) {
+        return Http1ConnectionSelector.builder()
+                .update(consumer)
+                .build();
     }
 
     @Override
@@ -64,7 +99,7 @@ public class Http1ConnectionSelector implements ServerConnectionSelector {
             // in case we have reached the max prologue length, we just consider this to be HTTP/1.1 so we can send
             // proper error. This means that maxPrologueLength should always be higher than any protocol requirements to
             // identify a connection (e.g. this is the fallback protocol)
-            return (request.available() <= config.maxPrologueLength()) ? Support.SUPPORTED : Support.UNSUPPORTED;
+            return (request.available() <= config.config().maxPrologueLength()) ? Support.SUPPORTED : Support.UNSUPPORTED;
         } else {
             return request.readString(lf).endsWith(PROTOCOL) ? Support.SUPPORTED : Support.UNSUPPORTED;
         }
@@ -77,7 +112,11 @@ public class Http1ConnectionSelector implements ServerConnectionSelector {
 
     @Override
     public ServerConnection connection(ConnectionContext ctx) {
-        return new Http1Connection(ctx, config, upgradeProviderMap);
+        return new Http1Connection(ctx, config.config(), upgradeProviderMap);
     }
 
+    @Override
+    public Http1ConnectionSelectorConfig prototype() {
+        return config;
+    }
 }

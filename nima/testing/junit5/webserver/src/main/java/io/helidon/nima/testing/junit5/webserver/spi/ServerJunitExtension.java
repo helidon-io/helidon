@@ -18,8 +18,9 @@ package io.helidon.nima.testing.junit5.webserver.spi;
 
 import java.util.Optional;
 
-import io.helidon.nima.webserver.ListenerConfiguration;
+import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.Router;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -36,7 +37,7 @@ public interface ServerJunitExtension extends HelidonJunitExtension {
      *
      * @param builder builder to update, will be used to build server instance
      */
-    default void updateServerBuilder(WebServer.Builder builder) {
+    default void updateServerBuilder(ServerConfig.Builder builder) {
     }
 
     /**
@@ -47,7 +48,7 @@ public interface ServerJunitExtension extends HelidonJunitExtension {
      * @param routerBuilder   router builder
      */
     default void updateListenerBuilder(String socketName,
-                                       ListenerConfiguration.Builder listenerBuilder,
+                                       ListenerConfig.Builder listenerBuilder,
                                        Router.RouterBuilder<?> routerBuilder) {
     }
 
@@ -96,8 +97,8 @@ public interface ServerJunitExtension extends HelidonJunitExtension {
          * @return a new instance to inject as a parameter to the method
          */
         T get(String socketName,
-              WebServer.Builder serverBuilder,
-              ListenerConfiguration.Builder listenerBuilder,
+              ServerConfig.Builder serverBuilder,
+              ListenerConfig.Builder listenerBuilder,
               Router.RouterBuilder<?> routerBuilder);
 
         /**
@@ -108,13 +109,13 @@ public interface ServerJunitExtension extends HelidonJunitExtension {
          * @param listenerBuilder builder of the listener
          * @param routerBuilder   router builder
          * @param value           the value we provided with
-         *                        {@link #get(String, io.helidon.nima.webserver.WebServer.Builder,
-         *                        io.helidon.nima.webserver.ListenerConfiguration.Builder,
+         *                        {@link #get(String, io.helidon.nima.webserver.ServerConfig.Builder,
+         *                        io.helidon.nima.webserver.ListenerConfig.Builder,
          *                        io.helidon.nima.webserver.Router.RouterBuilder)}
          */
         default void handle(String socketName,
-                            WebServer.Builder serverBuilder,
-                            ListenerConfiguration.Builder listenerBuilder,
+                            ServerConfig.Builder serverBuilder,
+                            ListenerConfig.Builder listenerBuilder,
                             Router.RouterBuilder<?> routerBuilder,
                             T value) {
         }

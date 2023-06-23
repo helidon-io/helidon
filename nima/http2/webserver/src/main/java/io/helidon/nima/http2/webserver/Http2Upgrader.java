@@ -56,6 +56,16 @@ public class Http2Upgrader implements Http1Upgrader {
         this.subProtocolProviders = subProtocolProviders;
     }
 
+    /**
+     * Create a new HTTP2 upgrader.
+     *
+     * @param config HTTP/2 protocol configuration
+     * @return a new upgrader
+     */
+    public static Http2Upgrader create(Http2Config config) {
+        return new Http2Upgrader(config, List.of());
+    }
+
     @Override
     public String supportedProtocol() {
         return "h2c";

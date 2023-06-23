@@ -20,7 +20,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
+
+import io.helidon.common.types.TypeName;
 
 /**
  * Abstract factory for all services provided by a single Helidon Pico provider implementation.
@@ -32,19 +33,38 @@ import java.util.function.Supplier;
  * the bootstrap has been set it cannot be changed for the lifespan of the JVM.
  */
 public interface PicoServices {
+    /**
+     * Tag for putting Pico tooling, processing, and runtime into debug mode.
+     * @see io.helidon.pico.api.PicoServices#config()
+     * @see io.helidon.pico.api.PicoServicesConfig#shouldDebug()
+     */
+    String TAG_DEBUG = "pico.debug";
+
 
     /**
      * Empty criteria will match anything and everything.
      */
-    ServiceInfoCriteria EMPTY_CRITERIA = ServiceInfoCriteriaDefault.builder().build();
+    ServiceInfoCriteria EMPTY_CRITERIA = ServiceInfoCriteria.builder().build();
 
     /**
      * Denotes a match to any (default) service, but required to be matched to at least one.
      */
-    ContextualServiceQuery SERVICE_QUERY_REQUIRED = ContextualServiceQueryDefault.builder()
+    ContextualServiceQuery SERVICE_QUERY_REQUIRED = ContextualServiceQuery.builder()
             .serviceInfoCriteria(EMPTY_CRITERIA)
             .expected(true)
             .build();
+
+    /**
+     * Whether debug is enabled.
+     *
+     * @return whether to debug
+     */
+    static boolean isDebugEnabled() {
+        return picoServices()
+                .map(PicoServices::config)
+                .map(PicoServicesConfig::shouldDebug)
+                .orElseGet(() -> Boolean.getBoolean(PicoServices.TAG_DEBUG));
+    }
 
     /**
      * Returns the {@link io.helidon.pico.api.Bootstrap} configuration instance that was used to initialize this instance.
@@ -52,28 +72,6 @@ public interface PicoServices {
      * @return the bootstrap configuration instance
      */
     Bootstrap bootstrap();
-
-    /**
-     * Returns true if debugging is enabled.
-     *
-     * @return true if debugging is enabled
-     * @see io.helidon.pico.api.PicoServicesConfig#TAG_DEBUG
-     */
-    // Note that here in Pico at this level we don't have much access to information.
-    // <ul>
-    //      <li>we don't have access to full config, just common config - so no config sources from system properties, etc.</li>
-    //      <li>we don't have access to annotation processing options that may be passed</li>
-    // </ul>
-    static boolean isDebugEnabled() {
-        Supplier<Boolean> lastResortSupplier = () -> Boolean.getBoolean(PicoServicesConfig.TAG_DEBUG);
-        Optional<Bootstrap> bootstrap = globalBootstrap();
-        if (bootstrap.isPresent()) {
-            return PicoServicesConfig.asBoolean(PicoServicesConfig.TAG_DEBUG, lastResortSupplier);
-        } else {
-            // last resort
-            return lastResortSupplier.get();
-        }
-    }
 
     /**
      * Retrieves any primordial bootstrap configuration that previously set.
@@ -142,14 +140,9 @@ public interface PicoServices {
      *
      * @return the services instance if it has already been activated and initialized, empty otherwise
      */
-    @SuppressWarnings("unchecked")
     static Optional<Services> unrealizedServices() {
-        PicoServices picoServices = picoServices().orElse(null);
-        if (picoServices == null) {
-            return Optional.empty();
-        }
-
-        return (Optional<Services>) picoServices.services(false);
+        return picoServices()
+                .flatMap(it -> it.services(false));
     }
 
     /**
@@ -204,7 +197,7 @@ public interface PicoServices {
      *
      * @return a map of all managed service types deactivated to results of deactivation, or empty if shutdown is not supported
      */
-    Optional<Map<String, ActivationResult>> shutdown();
+    Optional<Map<TypeName, ActivationResult>> shutdown();
 
     /**
      * Optionally, the service provider activation log.
@@ -235,7 +228,7 @@ public interface PicoServices {
      * @return the activation request
      */
     static ActivationRequest createActivationRequestDefault() {
-        return ActivationRequestDefault.builder().targetPhase(terminalActivationPhase()).build();
+        return ActivationRequest.builder().targetPhase(terminalActivationPhase()).build();
     }
 
     /**

@@ -40,7 +40,6 @@
     <modules>
         <module>tools</module>
         <module>zipkin-mp-2.2</module>
-        <module>mp-grpc</module>
         <module>mp-graphql</module>
         <module>mp-security-client</module>
         <module>health</module>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.reactive.webserver.examples.tls;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Routing;
@@ -61,9 +61,11 @@ public final class Main {
                 .routing(routing())
                 // now let's configure TLS
                 .tls(WebServerTls.builder()
-                        .privateKey(KeyConfig.keystoreBuilder()
-                        .keystore(Resource.create("certificate.p12"))
-                        .keystorePassphrase("helidon")))
+                             .privateKey(Keys.builder()
+                                                 .keystore(keystore -> keystore
+                                                         .keystore(Resource.create("certificate.p12"))
+                                                         .passphrase("helidon"))
+                                                 .build()))
                 .build()
                 .start();
     }

@@ -17,6 +17,7 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.util.Arrays;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import io.helidon.nima.faulttolerance.RetryTimeoutException;
@@ -67,9 +68,9 @@ class ThrowableMapper {
      * @param types array of {@code Throwable}'s type to map.
      * @return mapped array.
      */
-    static Class<? extends Throwable>[] mapTypes(Class<? extends Throwable>[] types) {
+    static Set<Class<? extends Throwable>> mapTypes(Class<? extends Throwable>[] types) {
         if (types.length == 0) {
-            return types;
+            return Set.of();
         }
         Class<? extends Throwable>[] result = Arrays.copyOf(types, types.length);
         for (int i = 0; i < types.length; i++) {
@@ -84,6 +85,6 @@ class ThrowableMapper {
                 result[i] = t;
             }
         }
-        return result;
+        return Set.of(result);
     }
 }

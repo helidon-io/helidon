@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.reactive.webserver;
 import java.time.Duration;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientTls;
 
@@ -52,9 +52,10 @@ public class Pkcs12StoreSslTest {
                 WebServer.builder()
                         .defaultSocket(s -> s
                                 .tls(WebServerTls.builder()
-                                        .privateKey(KeyConfig.keystoreBuilder()
-                                                .keystore(Resource.create("ssl/certificate.p12"))
-                                                .keystorePassphrase(new char[] {'h', 'e', 'l', 'i', 'd', 'o', 'n'})
+                                        .privateKey(Keys.builder()
+                                                            .keystore(keystoreConfig ->
+                                                                              keystoreConfig.keystore(Resource.create("ssl/certificate.p12"))
+                                                .passphrase(new char[] {'h', 'e', 'l', 'i', 'd', 'o', 'n'}))
                                                 .build()))
                         )
                         .routing(r -> r.any((req, res) -> res.send("It works!")).build())

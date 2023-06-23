@@ -28,19 +28,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.Weight;
-import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.processor.CopyrightHandler;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.CommonQualifiers;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.runtime.AbstractServiceProvider;
@@ -51,8 +48,6 @@ import io.helidon.pico.tools.spi.ApplicationCreator;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-import static io.helidon.common.types.TypeNameDefault.create;
-import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 import static io.helidon.pico.runtime.ServiceUtils.isQualifiedInjectionTarget;
 
@@ -83,6 +78,7 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
             = "service-provider-application-empty-servicetypebinding.hbs";
     static final String SERVICE_PROVIDER_APPLICATION_HBS
             = "service-provider-application.hbs";
+    private static final TypeName CREATOR = TypeName.create(ApplicationCreatorDefault.class);
 
     /**
      * Service loader based constructor.
@@ -94,6 +90,94 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         super(TemplateHelper.DEFAULT_TEMPLATE_NAME);
     }
 
+    static boolean isAllowListedProviderName(ApplicationCreatorConfigOptions configOptions,
+                                             TypeName typeName) {
+        PermittedProviderType opt = configOptions.permittedProviderTypes();
+        if (PermittedProviderType.ALL == opt) {
+            return true;
+        } else if (PermittedProviderType.NONE == opt) {
+            return false;
+        } else {
+            return configOptions.permittedProviderNames().contains(typeName.name());
+        }
+    }
+
+    static ServiceInfoCriteria toServiceInfoCriteria(TypeName typeName) {
+        return ServiceInfoCriteria.builder()
+                .serviceTypeName(typeName)
+                .includeIntercepted(true)
+                .build();
+    }
+
+    static ServiceProvider<?> toServiceProvider(TypeName typeName,
+                                                Services services) {
+        return services.lookupFirst(toServiceInfoCriteria(typeName), true).orElseThrow();
+    }
+
+    static boolean isProvider(TypeName typeName,
+                              Services services) {
+        ServiceProvider<?> sp = toServiceProvider(typeName, services);
+        return sp.isProvider();
+    }
+
+    static boolean isAllowListedProviderQualifierTypeName(ApplicationCreatorConfigOptions configOptions,
+                                                          TypeName typeName,
+                                                          Services services) {
+        Set<TypeName> permittedTypeNames = configOptions.permittedProviderQualifierTypeNames();
+        if (permittedTypeNames.isEmpty()) {
+            return false;
+        }
+
+        ServiceProvider<?> sp = toServiceProvider(typeName, services);
+        Set<TypeName> spQualifierTypeNames = sp.serviceInfo().qualifiers().stream()
+                .map(Annotation::typeName)
+                .collect(Collectors.toSet());
+        spQualifierTypeNames.retainAll(permittedTypeNames);
+        return !spQualifierTypeNames.isEmpty();
+    }
+
+    /**
+     * Will uppercase the first letter of the provided name.
+     *
+     * @param name the name
+     * @return the mame with the first letter capitalized
+     */
+    public static String upperFirstChar(String name) {
+        if (name.isEmpty()) {
+            return name;
+        }
+        return name.substring(0, 1).toUpperCase() + name.substring(1);
+    }
+
+    static TypeName toApplicationTypeName(ApplicationCreatorRequest req) {
+        ApplicationCreatorCodeGen codeGen = Objects.requireNonNull(req.codeGen());
+        String packageName = codeGen.packageName().orElse(null);
+        if (packageName == null) {
+            packageName = "pico";
+        }
+        String className = Objects.requireNonNull(codeGen.className().orElse(null));
+        return TypeName.builder()
+                .packageName(packageName)
+                .className(className)
+                .build();
+    }
+
+    static String toModuleName(ApplicationCreatorRequest req) {
+        return req.moduleName().orElse(ModuleInfoDescriptor.DEFAULT_MODULE_NAME);
+    }
+
+    static Optional<TypeName> moduleServiceTypeOf(PicoServices picoServices,
+                                                  String moduleName) {
+        Services services = picoServices.services();
+        ServiceProvider<?> serviceProvider;
+        try {
+            serviceProvider = services.lookup(ModuleComponent.class, moduleName);
+        } catch (PicoException e) {
+            return Optional.empty();
+        }
+        return Optional.of(serviceProvider.serviceInfo().serviceTypeName());
+    }
+
     /**
      * Generates the source and class file for {@link io.helidon.pico.api.Application} using the current classpath.
      *
@@ -102,7 +186,7 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
      */
     @Override
     public ApplicationCreatorResponse createApplication(ApplicationCreatorRequest req) {
-        ApplicationCreatorResponseDefault.Builder builder = ApplicationCreatorResponseDefault.builder();
+        ApplicationCreatorResponse.Builder builder = ApplicationCreatorResponse.builder();
 
         if (req.serviceTypeNames() == null) {
             return handleError(req, new ToolsException("ServiceTypeNames is required to be passed"), builder);
@@ -115,10 +199,10 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         List<TypeName> providersInUseThatAreAllowed = providersNotAllowed(req);
         if (!providersInUseThatAreAllowed.isEmpty()) {
             return handleError(req,
-                   new ToolsException("There are dynamic " + Provider.class.getSimpleName()
-                                              + "s being used that are not allow-listed: "
-                                              + providersInUseThatAreAllowed
-                                              + "; see the documentation for examples of allow-listing."), builder);
+                               new ToolsException("There are dynamic " + Provider.class.getSimpleName()
+                                                          + "s being used that are not allow-listed: "
+                                                          + providersInUseThatAreAllowed
+                                                          + "; see the documentation for examples of allow-listing."), builder);
         }
 
         try {
@@ -153,66 +237,8 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         return providersInUseThatAreNotAllowed;
     }
 
-    static boolean isAllowListedProviderName(ApplicationCreatorConfigOptions configOptions,
-                                             TypeName typeName) {
-        ApplicationCreatorConfigOptions.PermittedProviderType opt = configOptions.permittedProviderTypes();
-        if (ApplicationCreatorConfigOptions.PermittedProviderType.ALL == opt) {
-            return true;
-        } else if (ApplicationCreatorConfigOptions.PermittedProviderType.NONE == opt) {
-            return false;
-        } else {
-            if (configOptions.permittedProviderNames().contains(typeName.name())) {
-                return true;
-            }
-
-            return anyWildcardMatches(typeName, configOptions.permittedProviderNames());
-        }
-    }
-
-    static boolean anyWildcardMatches(TypeName typeName,
-                                      Set<String> permittedProviderTypeNames) {
-        return permittedProviderTypeNames.stream()
-                .filter(it -> it.endsWith(CommonQualifiers.WILDCARD))
-                .map(it -> it.substring(0, it.length() - 1))
-                .anyMatch(it -> typeName.name().startsWith(it));
-    }
-
-    static ServiceInfoCriteria toServiceInfoCriteria(TypeName typeName) {
-        return ServiceInfoCriteriaDefault.builder()
-                .serviceTypeName(typeName.name())
-                .includeIntercepted(true)
-                .build();
-    }
-
-    static ServiceProvider<?> toServiceProvider(TypeName typeName,
-                                                Services services) {
-        return services.lookupFirst(toServiceInfoCriteria(typeName), true).orElseThrow();
-    }
-
-    static boolean isProvider(TypeName typeName,
-                              Services services) {
-        ServiceProvider<?> sp = toServiceProvider(typeName, services);
-        return sp.isProvider();
-    }
-
-    static boolean isAllowListedProviderQualifierTypeName(ApplicationCreatorConfigOptions configOptions,
-                                                          TypeName typeName,
-                                                          Services services) {
-        Set<TypeName> permittedTypeNames = configOptions.permittedProviderQualifierTypeNames();
-        if (permittedTypeNames.isEmpty()) {
-            return false;
-        }
-
-        ServiceProvider<?> sp = toServiceProvider(typeName, services);
-        Set<TypeName> spQualifierTypeNames = sp.serviceInfo().qualifiers().stream()
-                .map(AnnotationAndValue::typeName)
-                .collect(Collectors.toSet());
-        spQualifierTypeNames.retainAll(permittedTypeNames);
-        return !spQualifierTypeNames.isEmpty();
-    }
-
     ApplicationCreatorResponse codegen(ApplicationCreatorRequest req,
-                                       ApplicationCreatorResponseDefault.Builder builder) {
+                                       ApplicationCreatorResponse.Builder builder) {
         PicoServices picoServices = PicoServices.picoServices().orElseThrow();
 
         String serviceTypeBindingTemplate = templateHelper()
@@ -244,9 +270,13 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         Map<String, Object> subst = new HashMap<>();
         subst.put("classname", application.className());
         subst.put("packagename", application.packageName());
-        subst.put("description", application + " - Generated " + PicoServicesConfig.NAME + " Application.");
-        subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
-        subst.put("generatedanno", toGeneratedSticker(req));
+        subst.put("description", application + " - Generated Pico Application.");
+        subst.put("header", CopyrightHandler.copyright(CREATOR,
+                                                       CREATOR,
+                                                       application));
+        subst.put("generatedanno", toGeneratedSticker(CREATOR,
+                                                      CREATOR, // there is no specific type trigger for application
+                                                      application));
         subst.put("modulename", moduleName);
         subst.put("servicetypebindings", serviceTypeBindings);
 
@@ -258,11 +288,11 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
             codegen(picoServices, req, application, body);
         }
 
-        GeneralCodeGenDetail codeGenDetail = GeneralCodeGenDetailDefault.builder()
+        GeneralCodeGenDetail codeGenDetail = GeneralCodeGenDetail.builder()
                 .serviceTypeName(application)
                 .body(body)
                 .build();
-        ApplicationCreatorCodeGen codeGenResponse = ApplicationCreatorCodeGenDefault.builder()
+        ApplicationCreatorCodeGen codeGenResponse = ApplicationCreatorCodeGen.builder()
                 .packageName(application.packageName())
                 .className(application.className())
                 .classPrefixName(req.codeGen().classPrefixName())
@@ -270,42 +300,10 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         return builder
                 .applicationCodeGen(codeGenResponse)
                 .serviceTypeNames(serviceTypeNames)
-                .addServiceTypeDetail(application, codeGenDetail)
+                .putServiceTypeDetail(application, codeGenDetail)
                 .templateName(req.templateName())
                 .moduleName(req.moduleName())
                 .build();
-    }
-
-    static String toApplicationClassName(String modulePrefix) {
-        modulePrefix = (modulePrefix == null) ? ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME : modulePrefix;
-        return NAME_PREFIX + upperFirstChar(modulePrefix) + APPLICATION_NAME_SUFFIX;
-    }
-
-    /**
-     * Will uppercase the first letter of the provided name.
-     *
-     * @param name the name
-     * @return the mame with the first letter capitalized
-     */
-    public static String upperFirstChar(String name) {
-        if (name.isEmpty()) {
-            return name;
-        }
-        return name.substring(0, 1).toUpperCase() + name.substring(1);
-    }
-
-    static TypeName toApplicationTypeName(ApplicationCreatorRequest req) {
-        ApplicationCreatorCodeGen codeGen = Objects.requireNonNull(req.codeGen());
-        String packageName = codeGen.packageName().orElse(null);
-        if (packageName == null) {
-            packageName = PicoServicesConfig.NAME;
-        }
-        String className = Objects.requireNonNull(codeGen.className().orElse(null));
-        return create(packageName, className);
-    }
-
-    static String toModuleName(ApplicationCreatorRequest req) {
-        return req.moduleName().orElse(ModuleInfoDescriptor.DEFAULT_MODULE_NAME);
     }
 
     String toServiceTypeInjectionPlan(PicoServices picoServices,
@@ -441,18 +439,6 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         }
     }
 
-    static Optional<TypeName> moduleServiceTypeOf(PicoServices picoServices,
-                                                  String moduleName) {
-        Services services = picoServices.services();
-        ServiceProvider<?> serviceProvider;
-        try {
-            serviceProvider = services.lookup(ModuleComponent.class, moduleName);
-        } catch (PicoException e) {
-            return Optional.empty();
-        }
-        return Optional.of(createFromTypeName(serviceProvider.serviceInfo().serviceTypeName()));
-    }
-
     void codegenModuleInfoDescriptor(CodeGenFiler filer,
                                      PicoServices picoServices,
                                      ApplicationCreatorRequest req,
@@ -469,7 +455,7 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
             TypeName moduleTypeName = moduleServiceTypeOf(picoServices, moduleName).orElse(null);
             if (moduleTypeName != null) {
                 String typePrefix = req.codeGen().classPrefixName();
-                ModuleInfoCreatorRequest moduleBuilderRequest = ModuleInfoCreatorRequestDefault.builder()
+                ModuleInfoCreatorRequest moduleBuilderRequest = ModuleInfoCreatorRequest.builder()
                         .name(moduleName)
                         .moduleTypeName(moduleTypeName)
                         .applicationTypeName(applicationTypeName)
@@ -487,7 +473,7 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         Path realModuleInfoPath = filer.toSourceLocation(ModuleUtils.REAL_MODULE_INFO_JAVA_NAME).orElse(null);
         if (realModuleInfoPath != null && !realModuleInfoPath.toFile().exists()) {
             throw new ToolsException("Expected to find " + realModuleInfoPath
-                                             + ". Did the " + PicoServicesConfig.NAME + " APT run?");
+                                             + ". Did the Pico APT run?");
         }
     }
 
@@ -499,7 +485,7 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
 
     ApplicationCreatorResponse handleError(ApplicationCreatorRequest request,
                                            ToolsException e,
-                                           ApplicationCreatorResponseDefault.Builder builder) {
+                                           ApplicationCreatorResponse.Builder builder) {
         if (request.throwIfError()) {
             throw e;
         }

@@ -41,11 +41,13 @@ class MediaContextImpl implements MediaContext {
 
     private final List<MediaSupport> supports;
     private final MediaContext fallback;
+    private final MediaContextConfig prototype;
 
-    MediaContextImpl(List<MediaSupport> supports, MediaContext fallback) {
-        this.supports = supports;
+    MediaContextImpl(MediaContextConfig prototype) {
+        this.supports = prototype.mediaSupports();
         this.supports.forEach(it -> it.init(this));
-        this.fallback = fallback;
+        this.fallback = prototype.fallback().orElse(null);
+        this.prototype = prototype;
     }
 
     @Override
@@ -140,6 +142,11 @@ class MediaContextImpl implements MediaContext {
             }
         }
         return entityWriter(compatible);
+    }
+
+    @Override
+    public MediaContextConfig prototype() {
+        return prototype;
     }
 
     private <T> EntityWriter<T> entityWriter(WriterResponse<T> response) {
