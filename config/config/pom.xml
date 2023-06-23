@@ -59,14 +59,18 @@
             <artifactId>helidon-logging-jul</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common.features</groupId>
-            <artifactId>helidon-common-features-api</artifactId>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-api</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <!-- this is required to add the processor to reactor at the right time -->
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-runtime</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
-            <artifactId>helidon-common-features-processor</artifactId>
+            <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -104,10 +108,52 @@
             <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <!-- this is required to add the processor to reactor at the right time -->
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <!-- this is required to add the processor to reactor at the right time -->
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <!-- this is required to add the processor to reactor at the right time -->
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>io.helidon.common.features</groupId>
+                            <artifactId>helidon-common-features-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.pico</groupId>
+                            <artifactId>helidon-pico-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

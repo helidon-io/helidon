@@ -157,6 +157,8 @@ final class ModuleInfoDescriptorSupport {
                         }
                     }
                     descriptor.addItem(provides.build());
+                } else if (line.startsWith("opens ")) {
+                    // follow up issue
                 } else if (line.equals("}")) {
                     break;
                 } else {

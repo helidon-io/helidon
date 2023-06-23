@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
+package io.helidon.common.config.spi;
+
+import io.helidon.common.config.Config;
+
 /**
- * Helidon Common Config Library.
+ * Service loader provider interface to discover config implementation that would be used to
+ * obtain a default configuration instance.
  */
-module io.helidon.common.config {
-    requires io.helidon.common;
-
-    exports io.helidon.common.config;
-    exports io.helidon.common.config.spi;
-
-    uses io.helidon.common.config.spi.ConfigProvider;
+public interface ConfigProvider {
+    /**
+     * Create the default configuration instance.
+     *
+     * @return a new configuration
+     */
+    Config create();
 }
