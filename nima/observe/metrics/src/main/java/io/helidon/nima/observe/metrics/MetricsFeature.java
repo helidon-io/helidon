@@ -42,9 +42,6 @@ import io.helidon.nima.webserver.http.ServerResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -200,9 +197,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
         MediaType mediaType = bestAccepted(req);
 
-        if (mediaType == MediaTypes.APPLICATION_JSON) {
-            sendJson(res, JsonFormat.jsonData(registry));
-        } else if (mediaType == MediaTypes.TEXT_PLAIN) {
+        if (mediaType == MediaTypes.TEXT_PLAIN) {
             res.send(PrometheusFormat.prometheusData(registry));
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -227,9 +222,9 @@ public class MetricsFeature extends HelidonFeatureSupport {
     }
 
     private void setUpEndpoints(HttpRules rules) {
-        Registry base = registryFactory.getRegistry(MetricRegistry.Type.BASE);
-        Registry vendor = registryFactory.getRegistry(MetricRegistry.Type.VENDOR);
-        Registry app = registryFactory.getRegistry(MetricRegistry.Type.APPLICATION);
+        Registry base = registryFactory.getRegistry(Registry.BASE_SCOPE);
+        Registry vendor = registryFactory.getRegistry(Registry.VENDOR_SCOPE);
+        Registry app = registryFactory.getRegistry(Registry.APPLICATION_SCOPE);
 
         // routing to root of metrics
         rules.get("/", (req, res) -> getMultiple(req, res, base, app, vendor))
@@ -254,9 +249,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
         registry.find(metricName)
                 .ifPresentOrElse(entry -> {
                     MediaType mediaType = bestAccepted(req);
-                    if (mediaType == MediaTypes.APPLICATION_JSON) {
-                        sendJson(res, JsonFormat.jsonDataByName(registry, metricName));
-                    } else if (mediaType == MediaTypes.TEXT_PLAIN) {
+                    if (mediaType == MediaTypes.TEXT_PLAIN) {
                         res.send(PrometheusFormat.prometheusDataByName(registry, metricName));
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -275,13 +268,9 @@ public class MetricsFeature extends HelidonFeatureSupport {
             return;
         }
 
-        // Options returns only the metadata, so it's OK to allow caching.
-        if (req.headers().isAccepted(MediaTypes.APPLICATION_JSON)) {
-            sendJson(res, JsonFormat.jsonMeta(registry));
-        } else {
-            res.status(Http.Status.NOT_ACCEPTABLE_406);
-            res.send();
-        }
+        // Options used to provide metadata for JSON output, but it's not used for Prometheus.
+        res.status(Http.Status.NOT_ACCEPTABLE_406);
+        res.send();
 
     }
 
@@ -297,9 +286,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
         MediaType mediaType = bestAccepted(req);
         res.header(Http.HeaderValues.CACHE_NO_CACHE);
-        if (mediaType == MediaTypes.APPLICATION_JSON) {
-            sendJson(res, JsonFormat.jsonData(registries));
-        } else if (mediaType == MediaTypes.TEXT_PLAIN) {
+        if (mediaType == MediaTypes.TEXT_PLAIN) {
             res.send(PrometheusFormat.prometheusData(registries));
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -308,13 +295,9 @@ public class MetricsFeature extends HelidonFeatureSupport {
     }
 
     private void optionsMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
-        // Options returns metadata only, so do not discourage caching.
-        if (req.headers().isAccepted(MediaTypes.APPLICATION_JSON)) {
-            sendJson(res, JsonFormat.jsonMeta(registries));
-        } else {
-            res.status(Http.Status.NOT_ACCEPTABLE_406);
-            res.send();
-        }
+        // Options used to return metadata but it's no longer supported unless we restore JSON support.
+        res.status(Http.Status.NOT_ACCEPTABLE_406);
+        res.send();
     }
 
     private void optionsOne(ServerRequest req, ServerResponse res, Registry registry) {
@@ -322,17 +305,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
         registry.metricsByName(metricName)
                 .ifPresentOrElse(entry -> {
-                    // Options returns only metadata, so do not discourage caching.
-                    if (req.headers().isAccepted(MediaTypes.APPLICATION_JSON)) {
-                        JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        // The returned list of metric IDs is guaranteed to have at least one element at this point.
-                        // Use the first to find a metric which will know how to create the metadata output.
-                        MetricID metricId = entry.metricIds().get(0);
-                        JsonFormat.jsonMeta(builder, registry.getMetric(metricId), entry.metricIds());
-                        sendJson(res, builder.build());
-                    } else {
-                        res.status(Http.Status.NOT_ACCEPTABLE_406).send();
-                    }
+                    res.status(Http.Status.NOT_ACCEPTABLE_406).send();
                 }, () -> res.status(Http.Status.NOT_FOUND_404).send()); // metric not found
     }
 

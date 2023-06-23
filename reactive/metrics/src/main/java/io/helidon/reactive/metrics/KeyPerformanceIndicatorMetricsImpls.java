@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.webserver.KeyPerformanceIndicatorSupport;
 
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
 class KeyPerformanceIndicatorMetricsImpls {
@@ -67,7 +66,7 @@ class KeyPerformanceIndicatorMetricsImpls {
      */
     public static final String DEFERRED_NAME = "deferred";
 
-    static final MetricRegistry.Type KPI_METRICS_REGISTRY_TYPE = MetricRegistry.Type.VENDOR;
+    static final String KPI_METRICS_REGISTRY_TYPE = Registry.VENDOR_SCOPE;
 
     private static final Map<String, KeyPerformanceIndicatorSupport.Metrics> KPI_METRICS = new HashMap<>();
 
@@ -97,24 +96,13 @@ class KeyPerformanceIndicatorMetricsImpls {
         private final MetricRegistry kpiMetricRegistry;
 
         private final Counter totalCount;
-        private final Meter totalMeter;
 
         protected Basic(String metricsNamePrefix) {
             kpiMetricRegistry = RegistryFactory.getInstance()
                     .getRegistry(KPI_METRICS_REGISTRY_TYPE);
             totalCount = kpiMetricRegistry().counter(Metadata.builder()
                     .withName(metricsNamePrefix + REQUESTS_COUNT_NAME)
-                    .withDisplayName("Total number of HTTP requests")
                     .withDescription("Each request (regardless of HTTP method) will increase this counter")
-                    .withType(MetricType.COUNTER)
-                    .withUnit(MetricUnits.NONE)
-                    .build());
-
-            totalMeter = kpiMetricRegistry().meter(Metadata.builder()
-                    .withName(metricsNamePrefix + REQUESTS_METER_NAME)
-                    .withDisplayName("Meter for overall HTTP requests")
-                    .withDescription("Each request will mark the meter to see overall throughput")
-                    .withType(MetricType.METERED)
                     .withUnit(MetricUnits.NONE)
                     .build());
         }
@@ -122,15 +110,14 @@ class KeyPerformanceIndicatorMetricsImpls {
         @Override
         public void onRequestReceived() {
             totalCount.inc();
-            totalMeter.mark();
         }
 
         protected MetricRegistry kpiMetricRegistry() {
             return kpiMetricRegistry;
         }
 
-        protected Meter totalMeter() {
-            return totalMeter;
+        protected Counter totalCount() {
+            return totalCount;
         }
     }
 
@@ -139,12 +126,15 @@ class KeyPerformanceIndicatorMetricsImpls {
      */
     private static class Extended extends Basic {
 
-        private final ConcurrentGauge inflightRequests;
-        private final Meter longRunningRequests;
-        private final Meter load;
+        private final Gauge<Integer> inflightRequests;
+        private final DeferredRequests deferredRequests;
+        private final Counter longRunningRequests;
+        private final Counter load;
         private final long longRunningRequestThresdholdMs;
         // The deferred-requests metric is derived from load and totalMeter, so no need to have a reference to update
         // it directly.
+
+        private int inflightRequestsCount;
 
         protected static final String LOAD_DISPLAY_NAME = "Requests load";
         protected static final String LOAD_DESCRIPTION =
@@ -154,100 +144,88 @@ class KeyPerformanceIndicatorMetricsImpls {
             super(metricsNamePrefix);
             longRunningRequestThresdholdMs = kpiConfig.longRunningRequestThresholdMs();
 
-            inflightRequests = kpiMetricRegistry().concurrentGauge(Metadata.builder()
-                    .withName(metricsNamePrefix + INFLIGHT_REQUESTS_NAME)
-                    .withDisplayName("Current number of in-flight requests")
-                    .withDescription("Measures the number of currently in-flight requests")
-                    .withType(MetricType.CONCURRENT_GAUGE)
-                    .withUnit(MetricUnits.NONE)
-                    .build());
+            inflightRequests = kpiMetricRegistry().gauge(Metadata.builder()
+                                                                 .withName(metricsNamePrefix + INFLIGHT_REQUESTS_NAME)
+                                                                 .withDescription(
+                                                                         "Measures the number of currently in-flight requests")
+                                                                 .withUnit(MetricUnits.NONE)
+                                                                 .build(),
+                                                         () -> inflightRequestsCount);
 
-            longRunningRequests = kpiMetricRegistry().meter(Metadata.builder()
+            longRunningRequests = kpiMetricRegistry().counter(Metadata.builder()
                     .withName(metricsNamePrefix + LONG_RUNNING_REQUESTS_NAME)
-                    .withDisplayName("Long-running requests")
                     .withDescription("Measures the total number of long-running requests and rates at which they occur")
-                    .withType(MetricType.METERED)
                     .withUnit(MetricUnits.NONE)
                     .build());
 
-            load = kpiMetricRegistry().meter(Metadata.builder()
+            load = kpiMetricRegistry().counter(Metadata.builder()
                     .withName(metricsNamePrefix + LOAD_NAME)
-                    .withDisplayName(LOAD_DISPLAY_NAME)
                     .withDescription(LOAD_DESCRIPTION)
-                    .withType(MetricType.METERED)
                     .withUnit(MetricUnits.NONE)
                     .build());
 
-            kpiMetricRegistry().register(Metadata.builder()
-                    .withName(metricsNamePrefix + DEFERRED_NAME)
-                    .withDisplayName("Deferred requests")
-                    .withDescription("Measures deferred requests")
-                    .withType(MetricType.METERED)
-                    .withUnit(MetricUnits.NONE)
-                    .build(), new DeferredRequestsMeter(totalMeter(), load));
+            deferredRequests = new DeferredRequests();
+            kpiMetricRegistry().gauge(Metadata.builder()
+                                              .withName(metricsNamePrefix + DEFERRED_NAME)
+                                              .withDescription("Measures deferred requests")
+                                              .withUnit(MetricUnits.NONE)
+                                              .build(),
+                                      deferredRequests,
+                                      DeferredRequests::getValue);
+        }
+
+        @Override
+        public void onRequestReceived() {
+            super.onRequestReceived();
+            deferredRequests.deferRequest();
         }
 
         @Override
         public void onRequestStarted() {
             super.onRequestStarted();
-            inflightRequests.inc();
-            load.mark();
+            inflightRequestsCount++;
+            load.inc();
+            deferredRequests.startRequest();
         }
 
         @Override
         public void onRequestCompleted(boolean isSuccessful, long processingTimeMs) {
             super.onRequestCompleted(isSuccessful, processingTimeMs);
-            inflightRequests.dec();
+            inflightRequestsCount--;
             if (processingTimeMs >= longRunningRequestThresdholdMs) {
-                longRunningRequests.mark();
+                longRunningRequests.inc();
             }
+            deferredRequests.completeRequest();
         }
 
         /**
          * {@code Meter} which exposes the number of deferred requests as derived from the hit meter (arrivals) - load meter
          * (processing).
          */
-        private static class DeferredRequestsMeter implements Meter {
+        private static class DeferredRequests implements Gauge<Long> {
 
-            private final Meter hitRate;
-            private final Meter load;
+            private long hits;
+            private long load;
 
-            private DeferredRequestsMeter(Meter hitRate, Meter load) {
-                this.hitRate = hitRate;
-                this.load = load;
+            private DeferredRequests() {
+            }
+
+            void deferRequest() {
+                hits++;
+            }
+
+            void startRequest() {
+                load++;
+            }
+
+            void completeRequest() {
+                hits--;
+                load--;
             }
 
             @Override
-            public void mark() {
-            }
-
-            @Override
-            public void mark(long n) {
-            }
-
-            @Override
-            public long getCount() {
-                return hitRate.getCount() - load.getCount();
-            }
-
-            @Override
-            public double getFifteenMinuteRate() {
-                return Double.max(0, hitRate.getFifteenMinuteRate() - load.getFifteenMinuteRate());
-            }
-
-            @Override
-            public double getFiveMinuteRate() {
-                return Double.max(0, hitRate.getFiveMinuteRate() - load.getFiveMinuteRate());
-            }
-
-            @Override
-            public double getMeanRate() {
-                return Double.max(0, hitRate.getMeanRate() - load.getMeanRate());
-            }
-
-            @Override
-            public double getOneMinuteRate() {
-                return Double.max(0, hitRate.getOneMinuteRate() - load.getOneMinuteRate());
+            public Long getValue() {
+                return hits - load;
             }
         }
     }
