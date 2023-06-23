@@ -36,20 +36,20 @@ import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
 import io.helidon.nima.http2.WindowSize;
 import io.helidon.nima.http2.webclient.Http2Client;
-import io.helidon.nima.http2.webserver.Http2ConfigDefault;
-import io.helidon.nima.http2.webserver.Http2ConnectionProvider;
+import io.helidon.nima.http2.webserver.Http2Config;
+import io.helidon.nima.http2.webserver.Http2ConnectionSelector;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
-import static java.lang.System.Logger.Level.DEBUG;
-
 import static io.helidon.common.http.Http.Method.GET;
 import static io.helidon.common.http.Http.Method.PUT;
+import static java.lang.System.Logger.Level.DEBUG;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
@@ -73,16 +73,14 @@ class FlowControlTest {
     }
 
     @SetUpServer
-    static void setUpServer(WebServer.Builder serverBuilder) {
+    static void setUpServer(ServerConfig.Builder serverBuilder) {
         serverBuilder
-                .addConnectionProvider(Http2ConnectionProvider.builder()
-                                               .http2Config(Http2ConfigDefault.builder()
+                .addConnectionSelector(Http2ConnectionSelector.builder()
+                                               .http2Config(Http2Config.builder()
                                                                     .initialWindowSize(WindowSize.DEFAULT_WIN_SIZE)
                                                )
                                                .build())
-                .defaultSocket(builder -> builder
-                        .host("localhost")
-                )
+                .host("localhost")
                 .routing(router -> router
                         .route(Http2Route.route(GET, "/", (req, res) -> res.send("OK")))
                         .route(Http2Route.route(PUT, "/flow-control", (req, res) -> {

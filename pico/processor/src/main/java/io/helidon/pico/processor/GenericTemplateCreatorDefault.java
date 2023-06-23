@@ -21,11 +21,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.processor.TypeFactory;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.CustomAnnotationTemplateResponseDefault;
 import io.helidon.pico.tools.GenericTemplateCreator;
 import io.helidon.pico.tools.GenericTemplateCreatorRequest;
 import io.helidon.pico.tools.Messager;
@@ -63,7 +62,7 @@ class GenericTemplateCreatorDefault implements GenericTemplateCreator {
     @Override
     public Optional<CustomAnnotationTemplateResponse> create(GenericTemplateCreatorRequest req) {
         Objects.requireNonNull(req);
-        if (!TypeNameDefault.isFQN(req.generatedTypeName())) {
+        if (!TypeFactory.isFqn(req.generatedTypeName())) {
             messager.debug("skipping custom template production for: " + req.generatedTypeName() + " = " + req);
             return Optional.empty();
         }
@@ -71,9 +70,9 @@ class GenericTemplateCreatorDefault implements GenericTemplateCreator {
         TemplateHelper templateHelper = TemplateHelper.create();
         Map<String, Object> substitutions = gatherSubstitutions(req, templateHelper);
         String javaBody = templateHelper.applySubstitutions(req.template(), substitutions, true);
-        return Optional.of(CustomAnnotationTemplateResponseDefault.builder()
+        return Optional.of(CustomAnnotationTemplateResponse.builder()
                                    .request(req.customAnnotationTemplateRequest())
-                                   .addGeneratedSourceCode(req.generatedTypeName(), javaBody)
+                                   .putGeneratedSourceCode(req.generatedTypeName(), javaBody)
                                    .build());
     }
 
@@ -104,7 +103,10 @@ class GenericTemplateCreatorDefault implements GenericTemplateCreator {
         CustomAnnotationTemplateRequest req = genericRequest.customAnnotationTemplateRequest();
         TypeName generatedTypeName = genericRequest.generatedTypeName();
         Map<String, Object> substitutions = new HashMap<>();
-        substitutions.put("generatedSticker", templateHelper.generatedStickerFor(generator.getName()));
+
+        TypeName generatorType = TypeName.create(generator);
+        TypeName serviceType = req.serviceInfo().serviceTypeName();
+        substitutions.put("generatedSticker", templateHelper.generatedStickerFor(generatorType, serviceType, generatedTypeName));
         substitutions.put("annoTypeName", req.annoTypeName());
         substitutions.put("generatedTypeName", generatedTypeName);
         substitutions.put("packageName", generatedTypeName.packageName());

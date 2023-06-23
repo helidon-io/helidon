@@ -39,6 +39,7 @@ public class OffendingExtension implements Extension {
         // start a local server and connect to it (random port)
         WebServer ws = WebServer.builder()
                 .routing(it -> it.get("/", (req, res) -> res.send("Hello")))
+                .build()
                 .start();
 
         WebClient wc = WebClient.builder()

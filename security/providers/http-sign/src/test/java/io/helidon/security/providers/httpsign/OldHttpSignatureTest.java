@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.security.SecurityEnvironment;
 
 import org.junit.jupiter.api.Assertions;
@@ -106,7 +106,7 @@ class OldHttpSignatureTest {
         Optional<String> validate = httpSignature.validate();
 
         validate.ifPresentOrElse(msg -> assertThat(msg, containsString("signature is a mandatory")),
-                                                      () -> fail("Should have failed validation"));
+                                 () -> fail("Should have failed validation"));
     }
 
     @Test
@@ -117,7 +117,7 @@ class OldHttpSignatureTest {
         Optional<String> validate = httpSignature.validate();
 
         validate.ifPresentOrElse(msg -> assertThat(msg, containsString("keyId is a mandatory")),
-                                                      () -> fail("Should have failed validation"));
+                                 () -> fail("Should have failed validation"));
     }
 
     @Test
@@ -129,18 +129,20 @@ class OldHttpSignatureTest {
 
         SecurityEnvironment env = buildSecurityEnv("/my/resource", headers);
         OutboundTargetDefinition outboundDef = OutboundTargetDefinition.builder("rsa-key-12345")
-                .privateKeyConfig(KeyConfig.keystoreBuilder()
-                                          .keystore(Resource.create(Paths.get("src/test/resources/keystore.p12")))
-                                          .keystorePassphrase("password".toCharArray())
-                                          .keyAlias("myPrivateKey")
+                .privateKeyConfig(Keys.builder()
+                                          .keystore(keystore ->
+                                                            keystore.keystore(Resource.create(Paths.get(
+                                                                            "src/test/resources/keystore.p12")))
+                                                                    .passphrase("password")
+                                                                    .keyAlias("myPrivateKey"))
                                           .build())
                 .signedHeaders(SignedHeadersConfig.builder()
                                        .defaultConfig(SignedHeadersConfig
                                                               .HeadersConfig
                                                               .create(List.of("date",
-                                                                                               "host",
-                                                                                               "(request-target)",
-                                                                                               "authorization")))
+                                                                              "host",
+                                                                              "(request-target)",
+                                                                              "authorization")))
                                        .build())
                 .build();
 
@@ -167,9 +169,9 @@ class OldHttpSignatureTest {
                                        .defaultConfig(SignedHeadersConfig
                                                               .HeadersConfig
                                                               .create(List.of("date",
-                                                                                               "host",
-                                                                                               "(request-target)",
-                                                                                               "authorization")))
+                                                                              "host",
+                                                                              "(request-target)",
+                                                                              "authorization")))
                                        .build())
                 .build();
 
@@ -190,19 +192,12 @@ class OldHttpSignatureTest {
                                        .defaultConfig(SignedHeadersConfig
                                                               .HeadersConfig
                                                               .create(List.of("date",
-                                                                                               "host")))
+                                                                              "host")))
                                        .build())
                 .build();
 
         // just make sure this does not throw an exception for missing headers
         HttpSignature.sign(env, outboundDef, new HashMap<>(), true);
-    }
-
-    private SecurityEnvironment buildSecurityEnv(String path, Map<String, List<String>> headers) {
-        return SecurityEnvironment.builder()
-                .path(path)
-                .headers(headers)
-                .build();
     }
 
     @Test
@@ -225,10 +220,12 @@ class OldHttpSignatureTest {
 
         InboundClientDefinition inboundClientDef = InboundClientDefinition.builder("rsa-key-12345")
                 .principalName("theService")
-                .publicKeyConfig(KeyConfig.keystoreBuilder()
-                                         .keystore(Resource.create(Paths.get("src/test/resources/keystore.p12")))
-                                         .keystorePassphrase("password".toCharArray())
-                                         .certAlias("service_cert")
+                .publicKeyConfig(Keys.builder()
+                                         .keystore(keystore ->
+                                                           keystore.keystore(Resource.create(Paths.get(
+                                                                           "src/test/resources/keystore.p12")))
+                                                                   .passphrase("password")
+                                                                   .certAlias("service_cert"))
                                          .build())
                 .build();
 
@@ -261,6 +258,13 @@ class OldHttpSignatureTest {
                            inboundClientDef,
                            List.of("date"))
                 .ifPresent(Assertions::fail);
+    }
+
+    private SecurityEnvironment buildSecurityEnv(String path, Map<String, List<String>> headers) {
+        return SecurityEnvironment.builder()
+                .path(path)
+                .headers(headers)
+                .build();
     }
 
     private void testValid(String validSignature) {

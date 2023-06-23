@@ -26,8 +26,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.types.TypeName;
+import io.helidon.pico.api.AccessModifier;
 import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.ContextualServiceQueryDefault;
 import io.helidon.pico.api.DependenciesInfo;
 import io.helidon.pico.api.DependencyInfo;
 import io.helidon.pico.api.InjectionException;
@@ -39,7 +40,6 @@ import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.ServiceProviderBindable;
 import io.helidon.pico.api.ServiceProviderProvider;
@@ -47,6 +47,9 @@ import io.helidon.pico.api.Services;
 import io.helidon.pico.spi.InjectionResolver;
 
 class DefaultInjectionPlans {
+    private static final TypeName INTERCEPTOR = TypeName.create(Interceptor.class);
+    private static final TypeName IP_PROVIDER = TypeName.create(InjectionPointProvider.class);
+    private static final TypeName VOID = TypeName.create(Void.class);
 
     private DefaultInjectionPlans() {
     }
@@ -83,106 +86,6 @@ class DefaultInjectionPlans {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
-    private static void accumulate(DependencyInfo dep,
-                                   Map<String, PicoInjectionPlan> result,
-                                   PicoServices picoServices,
-                                   ServiceProvider<?> self,
-                                   boolean resolveIps,
-                                   System.Logger logger) {
-        ServiceInfo selfInfo = self.serviceInfo();
-        ServiceInfoCriteria depTo = toCriteria(dep, self, selfInfo);
-        Services services = picoServices.services();
-        PicoServicesConfig cfg = picoServices.config();
-        boolean isPrivateSupported = cfg.supportsJsr330Privates();
-        boolean isStaticSupported = cfg.supportsJsr330Statics();
-
-        if (self instanceof InjectionResolver) {
-            dep.injectionPointDependencies()
-                    .stream()
-                    .filter(ipInfo -> (isPrivateSupported || ipInfo.access() != InjectionPointInfo.Access.PRIVATE)
-                            && (isStaticSupported || !ipInfo.staticDeclaration()))
-                    .forEach(ipInfo -> {
-                        String id = ipInfo.id();
-                        if (!result.containsKey(id)) {
-                            Object resolved = ((InjectionResolver) self)
-                                    .resolve(ipInfo, picoServices, self, resolveIps)
-                                    .orElse(null);
-                            Object target = (resolved instanceof Optional)
-                                    ? ((Optional<?>) resolved).orElse(null) : resolved;
-                            if (target != null) {
-                                PicoInjectionPlanDefault.Builder planBuilder = PicoInjectionPlanDefault.builder()
-                                        .serviceProvider(self)
-                                        .injectionPointInfo(ipInfo)
-                                        .injectionPointQualifiedServiceProviders(toIpQualified(target))
-                                        .unqualifiedProviders(toIpUnqualified(target))
-                                        .wasResolved(resolved != null);
-
-                                if (ipInfo.optionalWrapped()) {
-                                    planBuilder.resolved((target instanceof Optional && ((Optional<?>) target).isEmpty())
-                                                                 ? Optional.empty() : Optional.of(target));
-                                } else {
-                                    if (target instanceof Optional) {
-                                        target = ((Optional<Object>) target).orElse(null);
-                                    }
-                                    planBuilder.resolved(target);
-                                }
-
-                                PicoInjectionPlan plan = planBuilder.build();
-                                Object prev = result.put(id, plan);
-                                assert (prev == null) : ipInfo;
-                            }
-                        }
-                    });
-        }
-
-        List<ServiceProvider<?>> tmpServiceProviders = services.lookupAll(depTo, false);
-        if (tmpServiceProviders.isEmpty()) {
-            if (VoidServiceProvider.INSTANCE.serviceInfo().matches(depTo)) {
-                tmpServiceProviders = VoidServiceProvider.LIST_INSTANCE;
-            } else {
-                tmpServiceProviders = injectionPointProvidersFor(services, depTo);
-            }
-        }
-
-        // filter down the selections to not include self
-        List<ServiceProvider<?>> serviceProviders =
-                (!tmpServiceProviders.isEmpty())
-                        ? tmpServiceProviders.stream()
-                                .filter(sp -> !isSelf(self, sp))
-                                .collect(Collectors.toList())
-                        : tmpServiceProviders;
-
-        dep.injectionPointDependencies()
-                .stream()
-                .filter(ipInfo ->
-                                (isPrivateSupported || ipInfo.access() != InjectionPointInfo.Access.PRIVATE)
-                                        && (isStaticSupported || !ipInfo.staticDeclaration()))
-                .forEach(ipInfo -> {
-                    String id = ipInfo.id();
-                    if (!result.containsKey(id)) {
-                        Object resolved = (resolveIps)
-                                ? resolve(self, ipInfo, serviceProviders, logger) : null;
-                        if (!resolveIps && !ipInfo.optionalWrapped()
-                                && (serviceProviders == null || serviceProviders.isEmpty())
-                                && !allowNullableInjectionPoint(ipInfo)) {
-                            throw DefaultServices.resolutionBasedInjectionError(
-                                    ipInfo.dependencyToServiceInfo());
-                        }
-                        PicoInjectionPlan plan = PicoInjectionPlanDefault.builder()
-                                .injectionPointInfo(ipInfo)
-                                .injectionPointQualifiedServiceProviders(serviceProviders)
-                                .serviceProvider(self)
-                                .wasResolved(resolveIps)
-                                .resolved((resolved instanceof Optional<?> && ((Optional<?>) resolved).isEmpty())
-                                                ? Optional.empty() : Optional.ofNullable(resolved))
-                                .build();
-                        Object prev = result.put(id, plan);
-                        assert (prev == null) : ipInfo;
-                    }
-                });
-    }
-
     /**
      * Special case where we have qualifiers on the criteria, but we should still allow any
      * {@link io.helidon.pico.api.InjectionPointProvider} match regardless, since it will be the ultimate determining agent
@@ -202,13 +105,13 @@ class DefaultInjectionPlans {
             return List.of();
         }
 
-        ServiceInfoCriteria modifiedDepTo = ServiceInfoCriteriaDefault.toBuilder(depTo)
-                .qualifiers(List.of())
+        ServiceInfoCriteria modifiedDepTo = ServiceInfoCriteria.builder(depTo)
+                .qualifiers(Set.of())
                 .build();
 
         List<ServiceProvider<?>> providers = services.lookupAll(modifiedDepTo);
         return providers.stream()
-                .filter(it -> it.serviceInfo().contractsImplemented().contains(InjectionPointProvider.class.getName()))
+                .filter(it -> it.serviceInfo().contractsImplemented().contains(IP_PROVIDER))
                 .toList();
     }
 
@@ -224,18 +127,18 @@ class DefaultInjectionPlans {
                                           ServiceProvider<?> self,
                                           ServiceInfo selfInfo) {
         ServiceInfoCriteria criteria = dep.dependencyTo();
-        ServiceInfoCriteriaDefault.Builder builder = null;
+        ServiceInfoCriteria.Builder builder = null;
         if (selfInfo.declaredWeight().isPresent()
                 && selfInfo.contractsImplemented().containsAll(criteria.contractsImplemented())) {
             // if we have a weight on ourselves, and we inject an interface that we actually offer, then
             // be sure to use it to get lower weighted injection points
-            builder = ServiceInfoCriteriaDefault.toBuilder(criteria)
+            builder = ServiceInfoCriteria.builder(criteria)
                     .weight(selfInfo.declaredWeight().get());
         }
 
         if ((self instanceof ServiceProviderBindable) && ((ServiceProviderBindable<?>) self).isInterceptor()) {
             if (builder == null) {
-                builder = ServiceInfoCriteriaDefault.toBuilder(criteria);
+                builder = ServiceInfoCriteria.builder(criteria);
             }
             builder = builder.includeIntercepted(true);
         }
@@ -260,12 +163,12 @@ class DefaultInjectionPlans {
         if (ipInfo.staticDeclaration()) {
             throw new InjectionException(ipInfo + ": static is not supported", null, self);
         }
-        if (ipInfo.access() == InjectionPointInfo.Access.PRIVATE) {
+        if (ipInfo.access() == AccessModifier.PRIVATE) {
             throw new InjectionException(ipInfo + ": private is not supported", null, self);
         }
 
         try {
-            if (Void.class.getName().equals(ipInfo.serviceTypeName())) {
+            if (VOID.equals(ipInfo.serviceTypeName())) {
                 return null;
             }
 
@@ -349,6 +252,115 @@ class DefaultInjectionPlans {
         throw expectedToResolveCriteria(ipInfo, null, self);
     }
 
+    @SuppressWarnings("unchecked")
+    private static void accumulate(DependencyInfo dep,
+                                   Map<String, PicoInjectionPlan> result,
+                                   PicoServices picoServices,
+                                   ServiceProvider<?> self,
+                                   boolean resolveIps,
+                                   System.Logger logger) {
+        ServiceInfo selfInfo = self.serviceInfo();
+        ServiceInfoCriteria depTo = toCriteria(dep, self, selfInfo);
+        Services services = picoServices.services();
+        PicoServicesConfig cfg = picoServices.config();
+        boolean isPrivateSupported = cfg.supportsJsr330Privates();
+        boolean isStaticSupported = cfg.supportsJsr330Statics();
+
+        if (self instanceof InjectionResolver) {
+            dep.injectionPointDependencies()
+                    .stream()
+                    .filter(ipInfo -> (isPrivateSupported || ipInfo.access() != AccessModifier.PRIVATE)
+                            && (isStaticSupported || !ipInfo.staticDeclaration()))
+                    .forEach(ipInfo -> {
+                        String id = ipInfo.id();
+                        if (!result.containsKey(id)) {
+                            Object resolved = ((InjectionResolver) self)
+                                    .resolve(ipInfo, picoServices, self, resolveIps)
+                                    .orElse(null);
+                            Object target = (resolved instanceof Optional)
+                                    ? ((Optional<?>) resolved).orElse(null) : resolved;
+                            if (target != null) {
+                                PicoInjectionPlan.Builder planBuilder = PicoInjectionPlan.builder()
+                                        .serviceProvider(self)
+                                        .injectionPointInfo(ipInfo)
+                                        .injectionPointQualifiedServiceProviders(toIpQualified(target))
+                                        .unqualifiedProviders(toIpUnqualified(target))
+                                        .wasResolved(resolved != null);
+
+                                if (ipInfo.optionalWrapped()) {
+                                    planBuilder.resolved((target instanceof Optional && ((Optional<?>) target).isEmpty())
+                                                                 ? Optional.empty() : Optional.of(target));
+                                } else {
+                                    if (target instanceof Optional) {
+                                        target = ((Optional<Object>) target).orElse(null);
+                                    }
+                                    if (target != null) {
+                                        planBuilder.resolved(target);
+                                    }
+                                }
+
+                                PicoInjectionPlan plan = planBuilder.build();
+                                Object prev = result.put(id, plan);
+                                assert (prev == null) : ipInfo;
+                            }
+                        }
+                    });
+        }
+
+        List<ServiceProvider<?>> tmpServiceProviders = services.lookupAll(depTo, false);
+        if (tmpServiceProviders.isEmpty()) {
+            if (VoidServiceProvider.INSTANCE.serviceInfo().matches(depTo)) {
+                tmpServiceProviders = VoidServiceProvider.LIST_INSTANCE;
+            } else {
+                tmpServiceProviders = injectionPointProvidersFor(services, depTo);
+            }
+        }
+
+        // filter down the selections to not include self
+        List<ServiceProvider<?>> serviceProviders =
+                (!tmpServiceProviders.isEmpty())
+                        ? tmpServiceProviders.stream()
+                        .filter(sp -> !isSelf(self, sp))
+                        .collect(Collectors.toList())
+                        : tmpServiceProviders;
+
+        dep.injectionPointDependencies()
+                .stream()
+                .filter(ipInfo ->
+                                (isPrivateSupported || ipInfo.access() != AccessModifier.PRIVATE)
+                                        && (isStaticSupported || !ipInfo.staticDeclaration()))
+                .forEach(ipInfo -> {
+                    String id = ipInfo.id();
+                    if (!result.containsKey(id)) {
+                        Object resolved = (resolveIps)
+                                ? resolve(self, ipInfo, serviceProviders, logger) : null;
+                        if (!resolveIps && !ipInfo.optionalWrapped()
+                                && serviceProviders.isEmpty()
+                                && !allowNullableInjectionPoint(ipInfo)) {
+                            throw DefaultServices.resolutionBasedInjectionError(
+                                    ipInfo.dependencyToServiceInfo());
+                        }
+                        PicoInjectionPlan plan = PicoInjectionPlan.builder()
+                                .injectionPointInfo(ipInfo)
+                                .injectionPointQualifiedServiceProviders(serviceProviders)
+                                .serviceProvider(self)
+                                .wasResolved(resolveIps)
+                                .update(builder -> {
+                                    if (resolved instanceof Optional<?> opt) {
+                                        opt.ifPresent(builder::resolved);
+                                    } else {
+                                        if (resolved != null) {
+                                            builder.resolved(resolved);
+                                        }
+                                    }
+                                })
+                                .build();
+                        Object prev = result.put(id, plan);
+                        assert (prev == null) : ipInfo;
+                    }
+                });
+    }
+
     private static List<ServiceProvider<?>> toIpQualified(Object target) {
         if (target instanceof Collection) {
             List<ServiceProvider<?>> result = new ArrayList<>();
@@ -388,9 +400,7 @@ class DefaultInjectionPlans {
         if (self instanceof ServiceProviderBindable) {
             Object selfInterceptor = ((ServiceProviderBindable<?>) self).interceptor().orElse(null);
 
-            if (other == selfInterceptor) {
-                return true;
-            }
+            return other == selfInterceptor;
         }
 
         return false;
@@ -398,8 +408,8 @@ class DefaultInjectionPlans {
 
     private static boolean allowNullableInjectionPoint(InjectionPointInfo ipInfo) {
         ServiceInfoCriteria missingServiceInfo = ipInfo.dependencyToServiceInfo();
-        Set<String> contractsNeeded = missingServiceInfo.contractsImplemented();
-        return (1 == contractsNeeded.size() && contractsNeeded.contains(Interceptor.class.getName()));
+        Set<TypeName> contractsNeeded = missingServiceInfo.contractsImplemented();
+        return (1 == contractsNeeded.size() && contractsNeeded.contains(INTERCEPTOR));
     }
 
     @SuppressWarnings({"unchecked", "rawTypes"})
@@ -409,7 +419,7 @@ class DefaultInjectionPlans {
                                                    boolean expected) {
         List<?> result = new ArrayList<>();
 
-        ContextualServiceQuery query = ContextualServiceQueryDefault.builder()
+        ContextualServiceQuery query = ContextualServiceQuery.builder()
                 .injectionPointInfo(ipInfo)
                 .serviceInfoCriteria(ipInfo.dependencyToServiceInfo())
                 .expected(expected);

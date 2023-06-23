@@ -40,8 +40,8 @@ public class JacksonMediaSupportProvider implements MediaSupportProvider, Weight
     }
 
     @Override
-    public MediaSupport create(Config config) {
-        return JacksonSupport.create(config);
+    public MediaSupport create(Config config, String name) {
+        return JacksonSupport.create(config, name);
     }
 
     @Override

@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import io.helidon.builder.test.testsubjects.MyDerivedConfigBean;
-import io.helidon.builder.test.testsubjects.MyDerivedConfigBeanImpl;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,20 +29,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 class MyDerivedConfigBeanTest {
-
-    @Test
-    void testIt() {
-        assertThat(sort(MyDerivedConfigBeanImpl.__metaAttributes()).toString(),
-                   equalTo("{__generated={version=1}, enabled={__type=boolean}, name={__type=class java.lang.String, "
-                                   + "deprecated=false, experimental=false, kind=VALUE, "
-                                   + "mergeWithParent=false, provider=false, required=true, type=io.helidon.config.metadata"
-                                   + ".ConfiguredOption, value=io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED}, "
-                                   + "port={__type=int}}"));
-
-        MyDerivedConfigBean cfg = MyDerivedConfigBeanImpl.builder().name("test").build();
-        assertThat(cfg.toString(),
-                   equalTo("MyDerivedConfigBean(name=test, enabled=false, port=8080)"));
-    }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     static Map<String, ?> sort(Map<String, ?> inMap) {
@@ -60,6 +45,13 @@ class MyDerivedConfigBeanTest {
             }
         });
         return result;
+    }
+
+    @Test
+    void testIt() {
+        MyDerivedConfigBean cfg = MyDerivedConfigBean.builder().setName("test").build();
+        assertThat(cfg.toString(),
+                   equalTo("MyDerivedConfigBean{}MyConfigBean{name=test,enabled=false,port=8080}"));
     }
 
 }

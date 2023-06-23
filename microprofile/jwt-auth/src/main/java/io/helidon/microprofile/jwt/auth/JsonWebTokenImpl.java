@@ -26,12 +26,9 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
  * Implementation of {@link JsonWebToken} with additional support of {@link io.helidon.security.util.AbacSupport}.
- *
- * @deprecated this class will not be public in future versions of Helidon
  */
 // do not remove this class, just make it package private
-@Deprecated(forRemoval = true, since = "2.4.0")
-public class JsonWebTokenImpl implements JsonWebToken, Principal {
+class JsonWebTokenImpl implements JsonWebToken, Principal {
     protected JsonWebTokenImpl() {
     }
 
@@ -86,10 +83,8 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
      * @param clazz     expected type
      * @param <T>       type
      * @return claim value
-     * @deprecated This class will no longer be public in future versions
      */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public <T> T getClaim(String claimName, Class<T> clazz) {
+    <T> T getClaim(String claimName, Class<T> clazz) {
         return null;
     }
 

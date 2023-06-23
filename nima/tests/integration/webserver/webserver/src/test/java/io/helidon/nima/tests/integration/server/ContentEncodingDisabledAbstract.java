@@ -22,6 +22,7 @@ import io.helidon.common.http.Headers;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.nima.http.encoding.ContentEncodingContextConfig;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.http.HttpRules;
@@ -67,6 +68,11 @@ abstract class ContentEncodingDisabledAbstract {
     static final class EmptyEncodingContext implements ContentEncodingContext {
 
         private EmptyEncodingContext() {
+        }
+
+        @Override
+        public ContentEncodingContextConfig prototype() {
+            return ContentEncodingContextConfig.create();
         }
 
         @Override

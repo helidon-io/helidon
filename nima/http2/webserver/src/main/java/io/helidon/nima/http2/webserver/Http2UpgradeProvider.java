@@ -16,23 +16,22 @@
 
 package io.helidon.nima.http2.webserver;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.config.Config;
 import io.helidon.nima.http2.webserver.spi.Http2SubProtocolProvider;
+import io.helidon.nima.http2.webserver.spi.Http2SubProtocolSelector;
+import io.helidon.nima.webserver.ProtocolConfigs;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
+import io.helidon.nima.webserver.spi.ProtocolConfig;
 
 /**
  * {@link java.util.ServiceLoader} upgrade protocol provider to upgrade from HTTP/1.1 to HTTP/2.
  */
-public class Http2UpgradeProvider implements Http1UpgradeProvider {
+public class Http2UpgradeProvider implements Http1UpgradeProvider<Http2Config> {
     private final Http2Config http2Config;
     private final List<Http2SubProtocolProvider> subProtocolProviders;
 
@@ -60,30 +59,33 @@ public class Http2UpgradeProvider implements Http1UpgradeProvider {
     }
 
     @Override
-    public Set<String> configKeys() {
-        Set<String> result = new HashSet<>();
-        result.add(Http2ConnectionProvider.CONFIG_NAME);
-
-        result.addAll(subProtocolProviders.stream()
-                              .map(Http2SubProtocolProvider::configKey)
-                              .collect(Collectors.toSet()));
-
-        return result;
+    public String protocolType() {
+        return Http2ConnectionProvider.CONFIG_NAME;
     }
 
     @Override
-    public Http1Upgrader create(Function<String, Config> config) {
-        Http2Config usedConfig;
+    public Class<Http2Config> protocolConfigType() {
+        return Http2Config.class;
+    }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Override
+    public Http1Upgrader create(Http2Config config, ProtocolConfigs configs) {
+        Http2Config usedConfig;
         if (http2Config == null) {
-            usedConfig = Http2ConfigDefault.toBuilder(config.apply(Http2ConnectionProvider.CONFIG_NAME)).build();
+            usedConfig = config;
         } else {
             usedConfig = http2Config;
         }
 
-        var subProtocolSelectors = subProtocolProviders.stream()
-                .map(it -> it.create(config.apply(it.configKey())))
-                .toList();
+        var subProtocolSelectors = new ArrayList<Http2SubProtocolSelector>();
+        for (Http2SubProtocolProvider subProtocolProvider : subProtocolProviders) {
+            List<ProtocolConfig> providerConfigs = configs.config(subProtocolProvider.protocolType(),
+                                                                  subProtocolProvider.protocolConfigType());
+            for (ProtocolConfig providerConfig : providerConfigs) {
+                subProtocolSelectors.add(subProtocolProvider.create(providerConfig, configs));
+            }
+        }
 
         return new Http2Upgrader(usedConfig, subProtocolSelectors);
     }

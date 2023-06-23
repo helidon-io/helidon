@@ -20,8 +20,9 @@ import java.util.Optional;
 
 import io.helidon.nima.testing.junit5.webserver.Junit5Util;
 import io.helidon.nima.testing.junit5.webserver.spi.ServerJunitExtension;
-import io.helidon.nima.webserver.ListenerConfiguration;
+import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.Router;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.websocket.client.WsClient;
 import io.helidon.nima.websocket.webserver.WsRouting;
@@ -67,16 +68,16 @@ public class WsServerExtension implements ServerJunitExtension {
     private static final class RoutingParamHandler implements ParamHandler<WsRouting.Builder> {
         @Override
         public WsRouting.Builder get(String socketName,
-                                     WebServer.Builder serverBuilder,
-                                     ListenerConfiguration.Builder listenerBuilder,
+                                     ServerConfig.Builder serverBuilder,
+                                     ListenerConfig.Builder listenerBuilder,
                                      Router.RouterBuilder<?> routerBuilder) {
             return WsRouting.builder();
         }
 
         @Override
         public void handle(String socketName,
-                           WebServer.Builder serverBuilder,
-                           ListenerConfiguration.Builder listenerBuilder,
+                           ServerConfig.Builder serverBuilder,
+                           ListenerConfig.Builder listenerBuilder,
                            Router.RouterBuilder<?> routerBuilder,
                            WsRouting.Builder value) {
             routerBuilder.addRouting(value.build());

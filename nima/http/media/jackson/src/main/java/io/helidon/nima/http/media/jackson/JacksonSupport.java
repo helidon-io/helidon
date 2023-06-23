@@ -45,10 +45,13 @@ public class JacksonSupport implements MediaSupport {
     private final JacksonReader reader;
     private final JacksonWriter writer;
 
-    private JacksonSupport(ObjectMapper objectMapper, JacksonReader reader, JacksonWriter writer) {
+    private final String name;
+
+    private JacksonSupport(ObjectMapper objectMapper, JacksonReader reader, JacksonWriter writer, String name) {
         this.objectMapper = objectMapper;
         this.reader = reader;
         this.writer = writer;
+        this.name = name;
     }
 
     /**
@@ -58,11 +61,22 @@ public class JacksonSupport implements MediaSupport {
      * @return a new {@link JacksonSupport}
      */
     public static MediaSupport create(Config config) {
+        return create(config, "jackson");
+    }
+
+    /**
+     * Creates a new {@link JacksonSupport}.
+     *
+     * @param config must not be {@code null}
+     * @param name of the Jackson support
+     * @return a new {@link JacksonSupport}
+     */
+    public static MediaSupport create(Config config, String name) {
         ObjectMapper objectMapper = new ObjectMapper()
                 .registerModule(new ParameterNamesModule())
                 .registerModule(new Jdk8Module())
                 .registerModule(new JavaTimeModule());
-        return create(objectMapper);
+        return create(objectMapper, name);
     }
 
     /**
@@ -72,11 +86,34 @@ public class JacksonSupport implements MediaSupport {
      * @return a new {@link JacksonSupport}
      */
     public static MediaSupport create(ObjectMapper objectMapper) {
+        return create(objectMapper, "jackson");
+    }
+
+    /**
+     * Creates a new {@link JacksonSupport}.
+     *
+     * @param objectMapper must not be {@code null}
+     * @param name name of the jackson support to create
+     *
+     * @return a new {@link JacksonSupport}
+     */
+    public static MediaSupport create(ObjectMapper objectMapper, String name) {
         Objects.requireNonNull(objectMapper);
+        Objects.requireNonNull(name);
 
         JacksonReader reader = new JacksonReader(objectMapper);
         JacksonWriter writer = new JacksonWriter(objectMapper);
-        return new JacksonSupport(objectMapper, reader, writer);
+        return new JacksonSupport(objectMapper, reader, writer, name);
+    }
+
+    @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
+    public String type() {
+        return "jackson";
     }
 
     @Override

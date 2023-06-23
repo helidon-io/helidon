@@ -21,9 +21,8 @@ import java.util.Objects;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.api.BootstrapDefault;
+import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.runtime.testsubjects.HelloPico$$Application;
 
 import org.junit.jupiter.api.AfterEach;
@@ -41,11 +40,11 @@ class DefaultPicoServicesTest {
         tearDown();
         Config config = Config.builder(
                 ConfigSources.create(
-                        Map.of(PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true"), "config-1"))
+                        Map.of("pico.permits-dynamic", "true"), "config-1"))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-        PicoServices.globalBootstrap(BootstrapDefault.builder().config(config).build());
+        PicoServices.globalBootstrap(Bootstrap.builder().config(config).build());
     }
 
     @AfterEach

@@ -20,7 +20,7 @@ import java.util.Map;
 
 import io.helidon.common.Weight;
 import io.helidon.pico.api.DependenciesInfo;
-import io.helidon.pico.api.ServiceInfoDefault;
+import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.runtime.AbstractServiceProvider;
 import io.helidon.pico.runtime.Dependencies;
 
@@ -33,12 +33,12 @@ import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 @Singleton
 @Weight(DEFAULT_PICO_WEIGHT)
 public class PicoWorldImpl$$picoActivator extends AbstractServiceProvider<PicoWorldImpl> {
-    private static final ServiceInfoDefault serviceInfo =
-            ServiceInfoDefault.builder()
-                    .serviceTypeName(getServiceTypeName())
-                    .activatorTypeName(PicoWorldImpl$$picoActivator.class.getName())
-                    .addExternalContractsImplemented(PicoWorld.class.getName())
-                    .addScopeTypeName(Singleton.class.getName())
+    private static final ServiceInfo serviceInfo =
+            ServiceInfo.builder()
+                    .serviceTypeName(PicoWorldImpl.class)
+                    .activatorTypeName(PicoWorldImpl$$picoActivator.class)
+                    .addExternalContractImplemented(PicoWorld.class)
+                    .addScopeTypeName(Singleton.class)
                     .declaredWeight(DEFAULT_PICO_WEIGHT)
                     .build();
 
@@ -48,13 +48,9 @@ public class PicoWorldImpl$$picoActivator extends AbstractServiceProvider<PicoWo
         serviceInfo(serviceInfo);
     }
 
-    public static String getServiceTypeName() {
-        return PicoWorldImpl.class.getName();
-    }
-
     @Override
     public DependenciesInfo dependencies() {
-        DependenciesInfo dependencies = Dependencies.builder(getServiceTypeName())
+        DependenciesInfo dependencies = Dependencies.builder(PicoWorldImpl.class)
                 .build();
         return Dependencies.combine(super.dependencies(), dependencies);
     }
@@ -64,4 +60,8 @@ public class PicoWorldImpl$$picoActivator extends AbstractServiceProvider<PicoWo
         return new PicoWorldImpl();
     }
 
+    @Override
+    public Class<PicoWorldImpl> serviceType() {
+        return PicoWorldImpl.class;
+    }
 }

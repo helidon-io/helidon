@@ -16,6 +16,8 @@
 
 package io.helidon.pico.processor.spi;
 
+import io.helidon.pico.processor.ProcessingEvent;
+
 /**
  * Implementations of these are service-loaded by the {@link io.helidon.pico.processor.PicoAnnotationProcessor}, and will be
  * called to be able to observe processing events.

@@ -16,7 +16,6 @@
 
 package io.helidon.pico.tools;
 
-import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -42,15 +41,15 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
-import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.processor.AnnotationFactory;
+import io.helidon.common.processor.CopyrightHandler;
+import io.helidon.common.processor.TypeFactory;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.ElementInfo;
-import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.InterceptedTrigger;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.api.ServiceInfoBasics;
@@ -62,15 +61,12 @@ import io.github.classgraph.MethodTypeSignature;
 import io.github.classgraph.ScanResult;
 import jakarta.inject.Singleton;
 
-import static io.helidon.common.types.AnnotationAndValueDefault.create;
 import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
-import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueFromMirror;
-import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromAnnotations;
-import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
+import static io.helidon.pico.tools.TypeTools.createAnnotationListFromAnnotations;
+import static io.helidon.pico.tools.TypeTools.createAnnotationSet;
 import static io.helidon.pico.tools.TypeTools.createMethodElementInfo;
 import static io.helidon.pico.tools.TypeTools.gatherAllAnnotationsUsedOnPublicNonStaticMethods;
 import static io.helidon.pico.tools.TypeTools.toKind;
-import static io.helidon.pico.tools.TypeTools.toObjectTypeName;
 
 /**
  * The default {@link io.helidon.pico.tools.spi.InterceptorCreator} provider in use.
@@ -133,7 +129,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
          * @param annoTypeName the annotation type name
          * @return the list of (meta) annotations for the given annotation
          */
-        abstract Collection<AnnotationAndValue> resolve(String annoTypeName);
+        abstract Collection<Annotation> resolve(String annoTypeName);
     }
 
     static class ProcessorResolver extends AnnotationTypeNameResolver {
@@ -144,15 +140,19 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         }
 
         @Override
-        public Collection<AnnotationAndValue> resolve(String annoTypeName) {
+        public Collection<Annotation> resolve(String annoTypeName) {
            TypeElement typeElement = elements.getTypeElement(annoTypeName);
            if (typeElement == null) {
-               throw new ToolsException("Unable to resolve: " + annoTypeName);
+               // maybe an inner class, let's do a bit of a brute force
+               typeElement = elements.getTypeElement(annoTypeName.replace('$', '.'));
+               if (typeElement == null) {
+                   throw new ToolsException("Unable to resolve: " + annoTypeName);
+               }
            }
 
            List<? extends AnnotationMirror> annotations = typeElement.getAnnotationMirrors();
-           Set<AnnotationAndValue> result = annotations.stream()
-                            .map(it -> createAnnotationAndValueFromMirror(it, elements).orElseThrow())
+           Set<Annotation> result = annotations.stream()
+                            .map(it -> AnnotationFactory.createAnnotation(it, elements))
                             .collect(Collectors.toSet());
            return result;
         }
@@ -166,17 +166,17 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         }
 
         @Override
-        public Collection<AnnotationAndValue> resolve(String annoTypeName) {
+        public Collection<Annotation> resolve(String annoTypeName) {
             ClassInfo classInfo = scan.getClassInfo(annoTypeName);
             if (classInfo == null) {
                 try {
                     Class<? extends Annotation> annotationType = (Class<? extends Annotation>) Class.forName(annoTypeName);
-                    return createAnnotationAndValueListFromAnnotations(annotationType.getAnnotations());
+                    return createAnnotationListFromAnnotations(annotationType.getAnnotations());
                 } catch (ClassNotFoundException e) {
                     throw new ToolsException(e.getMessage(), e);
                 }
             }
-            return createAnnotationAndValueSet(classInfo);
+            return createAnnotationSet(classInfo);
         }
     }
 
@@ -198,7 +198,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         /**
          * the interceptor meta-annotation.
          */
-        public static final AnnotationAndValue TRIGGER = create(InterceptedTrigger.class);
+        public static final Annotation TRIGGER = Annotation.create(InterceptedTrigger.class);
 
         protected TriggerFilter() {
             this.creator = null;
@@ -247,8 +247,8 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
      * Enforces {@link Strategy#ALL_RUNTIME}.
      */
     private static class AllRuntimeStrategy extends TriggerFilter {
-        protected static final AnnotationAndValue RUNTIME = create(Retention.class, RetentionPolicy.RUNTIME.name());
-        protected static final AnnotationAndValue CLASS = create(Retention.class, RetentionPolicy.CLASS.name());
+        protected static final Annotation RUNTIME = Annotation.create(Retention.class, RetentionPolicy.RUNTIME.name());
+        protected static final Annotation CLASS = Annotation.create(Retention.class, RetentionPolicy.CLASS.name());
 
         protected AllRuntimeStrategy(InterceptorCreator creator,
                                      AnnotationTypeNameResolver resolver) {
@@ -383,7 +383,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
             this.logger = logger;
         }
 
-        String serviceTypeName() {
+        TypeName serviceTypeName() {
             return interceptedService.serviceTypeName();
         }
 
@@ -442,8 +442,8 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
                 throw te;
             }
 
-            Set<AnnotationAndValue> serviceLevelAnnotations = getServiceLevelAnnotations();
-            InterceptionPlan plan = InterceptionPlanDefault.builder()
+            Set<Annotation> serviceLevelAnnotations = getServiceLevelAnnotations();
+            InterceptionPlan plan = InterceptionPlan.builder()
                     .interceptedService(interceptedService)
                     .serviceLevelAnnotations(serviceLevelAnnotations)
                     .annotationTriggerTypeNames(interceptorAnnotationTriggers)
@@ -456,7 +456,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
 
         @Override
         public String toString() {
-            return serviceTypeName();
+            return serviceTypeName().fqName();
         }
 
         /**
@@ -467,7 +467,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         /**
          * @return only the service level annotations referenced by this type
          */
-        abstract Set<AnnotationAndValue> getServiceLevelAnnotations();
+        abstract Set<Annotation> getServiceLevelAnnotations();
 
         /**
          * @return true if there is a no-arg constructor present
@@ -490,9 +490,9 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         abstract List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers,
                                                                  Set<TypeName> interfaces);
 
-        boolean containsAny(Set<AnnotationAndValue> annotations,
+        boolean containsAny(Set<Annotation> annotations,
                             Set<String> annotationTypeNames) {
-            for (AnnotationAndValue annotation : annotations) {
+            for (Annotation annotation : annotations) {
                 if (annotationTypeNames.contains(annotation.typeName().name())) {
                     return true;
                 }
@@ -500,11 +500,11 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
             return false;
         }
 
-        boolean isProcessed(InjectionPointInfo.ElementKind kind,
+        boolean isProcessed(ElementKind kind,
                             Set<Modifier> modifiers,
                             Boolean isPrivate,
                             Boolean isStatic) {
-            assert (ElementInfo.ElementKind.CONSTRUCTOR == kind || InjectionPointInfo.ElementKind.METHOD == kind)
+            assert (ElementKind.CONSTRUCTOR == kind || ElementKind.METHOD == kind)
                     : kind + " in:" + serviceTypeName();
 
             if (modifiers != null) {
@@ -539,25 +539,31 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
                        ProcessingEnvironment processEnv,
                        System.Logger logger) {
             super(interceptedService, realCreator, createResolverFromProcessor(processEnv), logger);
-            this.serviceTypeElement = Objects
-                    .requireNonNull(processEnv.getElementUtils().getTypeElement(serviceTypeName()));
+
+            TypeElement typeElement = processEnv.getElementUtils().getTypeElement(serviceTypeName().fqName());
+            if (typeElement == null) {
+                throw new ToolsException("Failed to get type element for " + serviceTypeName());
+            }
+
+            this.serviceTypeElement = typeElement;
             this.processEnv = processEnv;
         }
 
         @Override
         Set<String> getAllAnnotations() {
-            Set<AnnotationAndValue> set = gatherAllAnnotationsUsedOnPublicNonStaticMethods(serviceTypeElement, processEnv);
+            Set<Annotation> set = gatherAllAnnotationsUsedOnPublicNonStaticMethods(serviceTypeElement, processEnv);
             return set.stream().map(a -> a.typeName().name()).collect(Collectors.toCollection(LinkedHashSet::new));
         }
 
         @Override
-        Set<AnnotationAndValue> getServiceLevelAnnotations() {
-            return createAnnotationAndValueSet(serviceTypeElement);
+        Set<Annotation> getServiceLevelAnnotations() {
+            return AnnotationFactory.createAnnotations(serviceTypeElement, processEnv.getElementUtils());
         }
 
         @Override
         boolean hasNoArgConstructor() {
-            return serviceTypeElement.getEnclosedElements().stream()
+            return serviceTypeElement.getEnclosedElements()
+                    .stream()
                     .filter(it -> it.getKind().equals(ElementKind.CONSTRUCTOR))
                     .map(ExecutableElement.class::cast)
                     .anyMatch(it -> it.getParameters().isEmpty());
@@ -575,7 +581,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
             }
 
             typeElement.getInterfaces().forEach(tm -> {
-                result.add(TypeTools.createTypeNameFromMirror(tm).orElseThrow());
+                result.add(TypeFactory.createTypeName(tm).orElseThrow());
                 gatherInterfaces(result, TypeTools.toTypeElement(tm).orElse(null));
             });
 
@@ -586,7 +592,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         @Override
         List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers) {
             List<InterceptedElement> result = new ArrayList<>();
-            Set<AnnotationAndValue> serviceLevelAnnos = getServiceLevelAnnotations();
+            Set<Annotation> serviceLevelAnnos = getServiceLevelAnnotations();
 
             // find the injectable constructor, falling back to the no-arg constructor
             gatherInjectableConstructor(result, serviceLevelAnnos, interceptorAnnotationTriggers);
@@ -597,7 +603,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
                     .map(ExecutableElement.class::cast)
                     .filter(e -> isProcessed(toKind(e), /*e.getParameters().size(),*/ e.getModifiers(), null, null))
                     .forEach(ee -> result.add(
-                            create(ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
+                            create(processEnv, ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
             return result;
         }
 
@@ -606,7 +612,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
                                                         Set<TypeName> interfaces) {
             assert (!interfaces.isEmpty());
             List<InterceptedElement> result = new ArrayList<>();
-            Set<AnnotationAndValue> serviceLevelAnnos = getServiceLevelAnnotations();
+            Set<Annotation> serviceLevelAnnos = getServiceLevelAnnotations();
 
             // find the injectable constructor, falling back to the no-arg constructor
             gatherInjectableConstructor(result, serviceLevelAnnos, interceptorAnnotationTriggers);
@@ -618,12 +624,12 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
                     .filter(e -> isProcessed(toKind(e), e.getModifiers(), null, null))
                     .filter(e -> mapsToAnInterface(e, interfaces))
                     .forEach(ee -> result.add(
-                            create(ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
+                            create(processEnv, ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
             return result;
         }
 
         void gatherInjectableConstructor(List<InterceptedElement> result,
-                                         Set<AnnotationAndValue> serviceLevelAnnos,
+                                         Set<Annotation> serviceLevelAnnos,
                                          Set<String> interceptorAnnotationTriggers) {
             serviceTypeElement.getEnclosedElements().stream()
                     .filter(e -> e.getKind() == ElementKind.CONSTRUCTOR)
@@ -631,14 +637,14 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
                     .filter(ee -> !ee.getModifiers().contains(Modifier.PRIVATE))
                     .filter(ee -> {
                         boolean hasInject = ee.getAnnotationMirrors().stream()
-                                .map(TypeTools::createAnnotationAndValue)
-                                .map(AnnotationAndValue::typeName)
+                                .map(it -> AnnotationFactory.createAnnotation(it, processEnv.getElementUtils()))
+                                .map(Annotation::typeName)
                                 .map(TypeName::name)
                                 .anyMatch(anno -> TypeNames.JAKARTA_INJECT.equals(anno) || TypeNames.JAVAX_INJECT.equals(anno));
                         return hasInject;
                     })
                     .forEach(ee -> result.add(
-                            create(ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
+                            create(processEnv, ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
 
             if (result.size() > 1) {
                 throw new ToolsException("There can be at most one injectable constructor for: " + serviceTypeName());
@@ -655,7 +661,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
                     .filter(ee -> !ee.getModifiers().contains(Modifier.PRIVATE))
                     .filter(ee -> ee.getParameters().isEmpty())
                     .forEach(ee -> result.add(
-                            create(ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
+                            create(processEnv, ee, serviceLevelAnnos, interceptorAnnotationTriggers)));
             if (result.isEmpty()) {
                 throw new ToolsException("There should either be a no-arg or injectable constructor for: " + serviceTypeName());
             }
@@ -679,14 +685,15 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
             return false;
         }
 
-        private InterceptedElement create(ExecutableElement ee,
-                                          Set<AnnotationAndValue> serviceLevelAnnos,
+        private InterceptedElement create(ProcessingEnvironment processingEnv,
+                                          ExecutableElement ee,
+                                          Set<Annotation> serviceLevelAnnos,
                                           Set<String> interceptorAnnotationTriggers) {
-            MethodElementInfo elementInfo = createMethodElementInfo(serviceTypeElement, ee, serviceLevelAnnos);
+            MethodElementInfo elementInfo = createMethodElementInfo(processingEnv, serviceTypeElement, ee, serviceLevelAnnos);
             Set<String> applicableTriggers = new LinkedHashSet<>(interceptorAnnotationTriggers);
             applicableTriggers.retainAll(elementInfo.annotations().stream()
                                                  .map(a -> a.typeName().name()).collect(Collectors.toSet()));
-            return InterceptedElementDefault.builder()
+            return InterceptedElement.builder()
                     .interceptedTriggerTypeNames(applicableTriggers)
                     .elementInfo(elementInfo)
                     .build();
@@ -707,13 +714,13 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
 
         @Override
         Set<String> getAllAnnotations() {
-            Set<AnnotationAndValue> set = gatherAllAnnotationsUsedOnPublicNonStaticMethods(classInfo);
+            Set<Annotation> set = gatherAllAnnotationsUsedOnPublicNonStaticMethods(classInfo);
             return set.stream().map(a -> a.typeName().name()).collect(Collectors.toCollection(LinkedHashSet::new));
         }
 
         @Override
-        Set<AnnotationAndValue> getServiceLevelAnnotations() {
-            return createAnnotationAndValueSet(classInfo);
+        Set<Annotation> getServiceLevelAnnotations() {
+            return createAnnotationSet(classInfo);
         }
 
         @Override
@@ -745,11 +752,11 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         @Override
         List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers) {
             List<InterceptedElement> result = new ArrayList<>();
-            Set<AnnotationAndValue> serviceLevelAnnos = getServiceLevelAnnotations();
+            Set<Annotation> serviceLevelAnnos = getServiceLevelAnnotations();
             classInfo.getMethodAndConstructorInfo()
                     .filter(m -> isProcessed(toKind(m), /*m.getParameterInfo().length,*/ null, m.isPrivate(), m.isStatic()))
                     .filter(m -> containsAny(serviceLevelAnnos, interceptorAnnotationTriggers)
-                            || containsAny(createAnnotationAndValueSet(m.getAnnotationInfo()), interceptorAnnotationTriggers))
+                            || containsAny(createAnnotationSet(m.getAnnotationInfo()), interceptorAnnotationTriggers))
                     .forEach(mi -> result.add(
                             create(mi, serviceLevelAnnos, interceptorAnnotationTriggers)));
             return result;
@@ -759,11 +766,11 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         List<InterceptedElement> getInterceptedElements(Set<String> interceptorAnnotationTriggers,
                                                         Set<TypeName> interfaces) {
             List<InterceptedElement> result = new ArrayList<>();
-            Set<AnnotationAndValue> serviceLevelAnnos = getServiceLevelAnnotations();
+            Set<Annotation> serviceLevelAnnos = getServiceLevelAnnotations();
             classInfo.getMethodAndConstructorInfo()
                     .filter(m -> isProcessed(toKind(m), null, m.isPrivate(), m.isStatic()))
                     .filter(m -> containsAny(serviceLevelAnnos, interceptorAnnotationTriggers)
-                            || containsAny(createAnnotationAndValueSet(m.getAnnotationInfo()), interceptorAnnotationTriggers))
+                            || containsAny(createAnnotationSet(m.getAnnotationInfo()), interceptorAnnotationTriggers))
                     .filter(m -> mapsToAnInterface(m, interfaces))
                     .forEach(mi -> result.add(
                             create(mi, serviceLevelAnnos, interceptorAnnotationTriggers)));
@@ -804,13 +811,13 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         }
 
         private InterceptedElement create(MethodInfo mi,
-                                          Set<AnnotationAndValue> serviceLevelAnnos,
+                                          Set<Annotation> serviceLevelAnnos,
                                           Set<String> interceptorAnnotationTriggers) {
             MethodElementInfo elementInfo = createMethodElementInfo(mi, serviceLevelAnnos);
             Set<String> applicableTriggers = new LinkedHashSet<>(interceptorAnnotationTriggers);
             applicableTriggers.retainAll(elementInfo.annotations().stream()
                                                  .map(a -> a.typeName().name()).collect(Collectors.toSet()));
-            return InterceptedElementDefault.builder()
+            return InterceptedElement.builder()
                     .interceptedTriggerTypeNames(applicableTriggers)
                     .elementInfo(elementInfo)
                     .build();
@@ -882,7 +889,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
                                                                           InterceptorCreator realCreator) {
         return new ReflectionBased(Objects.requireNonNull(interceptedService),
                                    Objects.requireNonNull(realCreator),
-                                   Objects.requireNonNull(SCAN.get().getClassInfo(interceptedService.serviceTypeName())),
+                                   Objects.requireNonNull(SCAN.get().getClassInfo(interceptedService.serviceTypeName().fqName())),
                                    logger());
     }
 
@@ -893,25 +900,32 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
      * @return the interceptor type name
      */
     static TypeName createInterceptorSourceTypeName(InterceptionPlan plan) {
-        String parent = plan.interceptedService().serviceTypeName();
+        String parent = plan.interceptedService().serviceTypeName().fqName();
         return toInterceptorTypeName(parent);
     }
 
     /**
      * Creates the source code associated with an interception plan.
      *
-     * @param plan the plan
+     * @param plan                the plan
      * @return the java source code body
      */
     String createInterceptorSourceBody(InterceptionPlan plan) {
-        String parent = plan.interceptedService().serviceTypeName();
+        TypeName generatorType = TypeName.create(getClass());
+        TypeName triggerType = TypeName.create(plan.interceptedService().serviceTypeName().fqName());
+
+        String parent = plan.interceptedService().serviceTypeName().fqName();
         TypeName interceptorTypeName = toInterceptorTypeName(parent);
         Map<String, Object> subst = new HashMap<>();
         subst.put("packageName", interceptorTypeName.packageName());
         subst.put("className", interceptorTypeName.className());
         subst.put("parent", parent);
-        subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
-        subst.put("generatedanno", toGeneratedSticker(null));
+        subst.put("header", CopyrightHandler.copyright(generatorType,
+                                                       triggerType,
+                                                       interceptorTypeName));
+        subst.put("generatedanno", templateHelper().generatedStickerFor(generatorType,
+                                                                        triggerType,
+                                                                        interceptorTypeName));
         subst.put("weight", interceptorWeight(plan.interceptedService().declaredWeight()));
         subst.put("interceptedmethoddecls", toInterceptedMethodDecls(plan));
         subst.put("interfaces", toInterfacesDecl(plan));
@@ -925,7 +939,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
                 .toList());
         subst.put("annotationtriggertypenames", IdAndToString
                 .toList(plan.annotationTriggerTypeNames(),
-                        str -> new IdAndToString(str.replace(".", "_"), str)));
+                        str -> new IdAndToString(str.replace(".", "_"), str.replace('$', '.'))));
         subst.put("servicelevelannotations", IdAndToString
                 .toList(plan.serviceLevelAnnotations(), InterceptorCreatorDefault::toDecl));
         String template = templateHelper().safeLoadTemplate(
@@ -939,14 +953,14 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
             IdAndToString methodTypedElement = toDecl(element);
             result.add(methodTypedElement);
 
-            if (element.elementInfo().elementKind() == ElementInfo.ElementKind.CONSTRUCTOR) {
+            if (element.elementInfo().elementKind() == io.helidon.pico.api.ElementKind.CONSTRUCTOR) {
                 continue;
             }
 
             for (ElementInfo param : element.elementInfo().parameterInfo()) {
                 IdAndToString paramTypedElement = new IdAndToString(element.elementInfo().elementName()
                                                                             + "__" + param.elementName(),
-                                                                    typeNameElementNameAnnotations(param));
+                                                                    typeNameElementNameAnnotations(param, false));
                 result.add(paramTypedElement);
             }
         }
@@ -961,16 +975,23 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
 
     private static IdAndToString toDecl(InterceptedElement method) {
         MethodElementInfo mi = method.elementInfo();
-        String name = (mi.elementKind() == ElementInfo.ElementKind.CONSTRUCTOR) ? CTOR_ALIAS : mi.elementName();
-        String builder = typeNameElementNameAnnotations(mi);
+        boolean constructor = mi.elementKind() == io.helidon.pico.api.ElementKind.CONSTRUCTOR;
+        String name = constructor ? CTOR_ALIAS : mi.elementName();
+        String builder = typeNameElementNameAnnotations(mi, constructor);
         return new IdAndToString(name, builder);
     }
 
-    private static String typeNameElementNameAnnotations(ElementInfo ei) {
-        StringBuilder builder = new StringBuilder(".typeName(create(" + ei.elementTypeName() + ".class))");
-        builder.append("\n\t\t\t.elementName(").append(CodeGenUtils.elementNameRef(ei.elementName())).append(")");
-        TreeSet<AnnotationAndValue> sortedAnnotations = new TreeSet<>(ei.annotations());
-        for (AnnotationAndValue anno : sortedAnnotations) {
+    private static String typeNameElementNameAnnotations(ElementInfo ei, boolean isConstructor) {
+        StringBuilder builder = new StringBuilder(".typeName(create(" + ei.elementTypeName() + ".class))")
+                .append("\n\t\t\t.elementTypeKind(TypeValues.");
+        if (isConstructor) {
+            builder.append("KIND_CONSTRUCTOR");
+        } else {
+            builder.append("KIND_METHOD");
+        }
+        builder.append(")\n\t\t\t.elementName(").append(CodeGenUtils.elementNameRef(ei.elementName())).append(")");
+        TreeSet<Annotation> sortedAnnotations = new TreeSet<>(ei.annotations());
+        for (Annotation anno : sortedAnnotations) {
             builder.append("\n\t\t\t.addAnnotation(").append(toDecl(anno)).append(")");
         }
         return builder.toString();
@@ -981,8 +1002,8 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         return new IdAndToString(name, elementInfo.elementTypeName() + " " + name);
     }
 
-    private static IdAndToString toDecl(AnnotationAndValue anno) {
-        StringBuilder builder = new StringBuilder("AnnotationAndValueDefault.create(" + anno.typeName() + ".class");
+    private static IdAndToString toDecl(Annotation anno) {
+        StringBuilder builder = new StringBuilder("Annotation.create(" + anno.typeName() + ".class");
         Map<String, String> map = anno.values();
         String val = anno.value().orElse(null);
         if (map != null && !map.isEmpty()) {
@@ -1012,7 +1033,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
     @SuppressWarnings("checkstyle:OperatorWrap")
     private static InterceptedMethodCodeGen toBody(InterceptedElement method) {
         MethodElementInfo mi = method.elementInfo();
-        String name = (mi.elementKind() == ElementInfo.ElementKind.CONSTRUCTOR) ? CTOR_ALIAS : mi.elementName();
+        String name = (mi.elementKind() == io.helidon.pico.api.ElementKind.CONSTRUCTOR) ? CTOR_ALIAS : mi.elementName();
         StringBuilder builder = new StringBuilder();
         builder.append("public ").append(mi.elementTypeName()).append(" ").append(mi.elementName()).append("(");
         String args = mi.parameterInfo().stream()
@@ -1031,7 +1052,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
             AtomicInteger count = new AtomicInteger();
             objArrayArgs = mi.parameterInfo().stream()
                     .map(ElementInfo::elementTypeName)
-                    .map(TypeTools::toObjectTypeName)
+                    .map(TypeName::boxed)
                     .map(typeName -> "(" + typeName + ") " + "args[" + count.getAndIncrement() + "]")
                     .collect(Collectors.joining(", "));
 
@@ -1045,7 +1066,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
                     .collect(Collectors.joining(", "));
         }
 
-        boolean hasReturn = !mi.elementTypeName().equals(void.class.getName());
+        boolean hasReturn = !mi.elementTypeName().equals(TypeName.create(void.class));
         builder.append(argDecls);
         builder.append(")");
         if (!mi.throwableTypeNames().isEmpty()) {
@@ -1053,21 +1074,30 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         }
         String methodDecl = builder.toString();
         builder.append(" {\n");
-        TypeName supplierType = (hasReturn) ? toObjectTypeName(mi.elementTypeName()) : TypeNameDefault.create(Void.class);
+        TypeName supplierType = (hasReturn) ? mi.elementTypeName().boxed() : TypeName.create(Void.class);
 
         String elementArgInfo = "";
         if (hasArgs) {
-            elementArgInfo = ",\n\t\t\t\tnew TypedElementInfo[] {" + typedElementArgs + "}";
+            elementArgInfo = ",\n\t\t\t\tList.of(" + typedElementArgs + ")";
         }
-        return new InterceptedMethodCodeGen(name, methodDecl, true, hasReturn, supplierType, elementArgInfo, args,
-                                            objArrayArgs, untypedElementArgs,
-                                            method.interceptedTriggerTypeNames(), builder);
+        return new InterceptedMethodCodeGen(name,
+                                            methodDecl,
+                                            true,
+                                            hasReturn,
+                                            supplierType,
+                                            elementArgInfo,
+                                            args,
+                                            objArrayArgs,
+                                            untypedElementArgs,
+                                            method.interceptedTriggerTypeNames(),
+                                            builder);
     }
 
     private static TypeName toInterceptorTypeName(String serviceTypeName) {
-        TypeName typeName = TypeNameDefault.createFromTypeName(serviceTypeName);
-        return TypeNameDefault.create(typeName.packageName(), typeName.className()
-                                                                      + INNER_INTERCEPTOR_CLASS_NAME);
+        TypeName typeName = TypeName.create(serviceTypeName);
+        return TypeName.builder()
+                .packageName(typeName.packageName())
+                .className(typeName.className() + INNER_INTERCEPTOR_CLASS_NAME);
     }
 
     /**

@@ -29,7 +29,7 @@ import com.oracle.bmc.Region;
 import jakarta.inject.Singleton;
 
 /**
- * This (overridable) implementation will check the {@link OciConfigBean} for {@code IMDS} availability. And if it is found to be
+ * This (overridable) implementation will check the {@link OciConfig} for {@code IMDS} availability. And if it is found to be
  * available, will also perform a secondary check on {@link Region#getRegionFromImds()} to ensure it returns a non-null value.
  */
 @Singleton
@@ -37,12 +37,12 @@ import jakarta.inject.Singleton;
 class OciAvailabilityDefault implements OciAvailability {
 
     @Override
-    public boolean isRunningOnOci(OciConfigBean ociConfigBean) {
-        return runningOnOci(ociConfigBean);
+    public boolean isRunningOnOci(OciConfig ociConfig) {
+        return runningOnOci(ociConfig);
     }
 
-    static boolean runningOnOci(OciConfigBean ociConfigBean) {
-        if (!canReach(ociConfigBean.imdsHostName(), ociConfigBean.imdsTimeoutMilliseconds())) {
+    static boolean runningOnOci(OciConfig ociConfig) {
+        if (!canReach(ociConfig.imdsHostName(), (int) ociConfig.imdsTimeout().toMillis())) {
             return false;
         }
 

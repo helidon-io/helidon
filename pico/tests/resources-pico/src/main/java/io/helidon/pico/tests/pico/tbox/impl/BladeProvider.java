@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.ContextualServiceQuery;
 import io.helidon.pico.api.InjectionPointProvider;
-import io.helidon.pico.api.QualifierAndValue;
-import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.tests.pico.tbox.AbstractBlade;
 
@@ -38,16 +38,16 @@ import jakarta.inject.Singleton;
 @Named("*")
 public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
 
-    static final QualifierAndValue all = QualifierAndValueDefault.createNamed("*");
-    static final QualifierAndValue coarse = QualifierAndValueDefault.createNamed("coarse");
-    static final QualifierAndValue fine = QualifierAndValueDefault.createNamed("fine");
+    static final Qualifier all = Qualifier.createNamed("*");
+    static final Qualifier coarse = Qualifier.createNamed("coarse");
+    static final Qualifier fine = Qualifier.createNamed("fine");
 
     @Override
     public Optional<AbstractBlade> first(ContextualServiceQuery query) {
         Objects.requireNonNull(query);
         ServiceInfoCriteria criteria = query.serviceInfoCriteria();
         assert (criteria.contractsImplemented().size() == 1) : criteria;
-        assert (criteria.contractsImplemented().contains(AbstractBlade.class.getName())) : criteria;
+        assert (criteria.contractsImplemented().contains(TypeName.create(AbstractBlade.class))) : criteria;
 
         AbstractBlade blade;
         if (criteria.qualifiers().contains(all) || criteria.qualifiers().contains(coarse)) {

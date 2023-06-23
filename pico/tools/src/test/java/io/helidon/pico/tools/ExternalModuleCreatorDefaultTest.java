@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.spi.ExternalModuleCreator;
 
@@ -54,7 +54,7 @@ class ExternalModuleCreatorDefaultTest extends AbstractBaseCreator {
     void tck330Gen() {
         Thread.currentThread().setContextClassLoader(ExternalModuleCreatorDefaultTest.class.getClassLoader());
 
-        CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
+        CodeGenPaths codeGenPaths = CodeGenPaths.builder()
                 .generatedSourcesPath("target/pico/generated-sources")
                 .outputPath("target/pico/generated-classes")
                 .build();
@@ -62,17 +62,17 @@ class ExternalModuleCreatorDefaultTest extends AbstractBaseCreator {
                 .createDirectFiler(codeGenPaths, System.getLogger(getClass().getName()));
         CodeGenFiler filer = CodeGenFiler.create(directFiler);
 
-        ActivatorCreatorConfigOptions activatorCreatorConfigOptions = ActivatorCreatorConfigOptionsDefault.builder()
+        ActivatorCreatorConfigOptions activatorCreatorConfigOptions = ActivatorCreatorConfigOptions.builder()
                 .supportsJsr330InStrictMode(true)
                 .build();
 
-        ExternalModuleCreatorRequest req = ExternalModuleCreatorRequestDefault.builder()
+        ExternalModuleCreatorRequest req = ExternalModuleCreatorRequest.builder()
                 .addPackageNamesToScan("org.atinject.tck.auto")
                 .addPackageNamesToScan("org.atinject.tck.auto.accessories")
                 .addServiceTypeToQualifiersMap(SpareTire.class.getName(),
-                                         Set.of(QualifierAndValueDefault.createNamed("spare")))
+                                         Set.of(Qualifier.createNamed("spare")))
                 .addServiceTypeToQualifiersMap(DriversSeat.class.getName(),
-                                         Set.of(QualifierAndValueDefault.create(Drivers.class)))
+                                         Set.of(Qualifier.create(Drivers.class)))
                 .activatorCreatorConfigOptions(activatorCreatorConfigOptions)
                 .innerClassesProcessed(false)
                 .codeGenPaths(codeGenPaths)

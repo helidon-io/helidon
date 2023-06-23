@@ -38,39 +38,35 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.lang.model.element.TypeElement;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.processor.TypeFactory;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.ModuleComponent;
-import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.tools.spi.ModuleComponentNamer;
 
 import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
+import static io.helidon.pico.tools.ModuleInfoDescriptorBlueprint.DEFAULT_MODULE_NAME;
 
 /**
  * Module specific utils.
  */
 public class ModuleUtils {
-    static final System.Logger LOGGER = System.getLogger(ModuleUtils.class.getName());
-
     /**
      * The "real" module-info.java file name.
      */
-    public static final String REAL_MODULE_INFO_JAVA_NAME = ModuleInfoDescriptor.DEFAULT_MODULE_INFO_JAVA_NAME;
-
+    public static final String REAL_MODULE_INFO_JAVA_NAME = ModuleInfoDescriptorBlueprint.DEFAULT_MODULE_INFO_JAVA_NAME;
     /**
      * The pico generated (e.g., module-info.java.pico) file name.
      */
-    public static final String PICO_MODULE_INFO_JAVA_NAME = REAL_MODULE_INFO_JAVA_NAME + "." + PicoServicesConfig.NAME;
-
+    public static final String PICO_MODULE_INFO_JAVA_NAME = REAL_MODULE_INFO_JAVA_NAME + ".pico";
     /**
      * The file name written to ./target/pico/ to track the last package name generated for this application.
      * This application package name is what we fall back to for the application name and the module name if not otherwise
      * specified directly.
      */
     public static final String APPLICATION_PACKAGE_FILE_NAME = "app-package-name.txt";
-
+    static final System.Logger LOGGER = System.getLogger(ModuleUtils.class.getName());
     static final String SERVICE_PROVIDER_MODULE_INFO_HBS = "module-info.hbs";
     static final String SRC_MAIN_JAVA_DIR = "/src/main/java";
     static final String SRC_TEST_JAVA_DIR = "/src/test/java";
@@ -81,14 +77,14 @@ public class ModuleUtils {
     /**
      * Returns the suggested package name to use.
      *
-     * @param descriptor         the module-info descriptor
      * @param typeNames          the set of types that are being codegen'ed
      * @param defaultPackageName the default package name to use if all options are exhausted
+     * @param descriptor         the module-info descriptor
      * @return the suggested package name
      */
-    public static String toSuggestedGeneratedPackageName(ModuleInfoDescriptor descriptor,
-                                                         Collection<TypeName> typeNames,
-                                                         String defaultPackageName) {
+    public static String toSuggestedGeneratedPackageName(Collection<TypeName> typeNames,
+                                                         String defaultPackageName,
+                                                         ModuleInfoDescriptor descriptor) {
         Objects.requireNonNull(descriptor);
         return innerToSuggestedGeneratedPackageName(descriptor, typeNames, defaultPackageName);
     }
@@ -117,8 +113,7 @@ public class ModuleUtils {
             if (provides.isEmpty() || provides.get().withOrTo().isEmpty()) {
                 export = descriptor.firstUnqualifiedPackageExport().orElse(null);
             } else {
-                export = TypeNameDefault
-                        .createFromTypeName(first(provides.get().withOrTo(), false)).packageName();
+                export = TypeName.create(first(provides.get().withOrTo(), false)).packageName();
             }
         }
 
@@ -177,7 +172,7 @@ public class ModuleUtils {
             return defaultName;
         }
         if (moduleName == null) {
-            moduleName = (defaultName == null) ? ModuleInfoDescriptor.DEFAULT_MODULE_NAME : defaultName;
+            moduleName = (defaultName == null) ? DEFAULT_MODULE_NAME : defaultName;
         }
         String suffix = normalizedModuleNameTypeSuffix(typeSuffix);
         return (typeSuffix == null || moduleName.endsWith(suffix)) ? moduleName : moduleName + suffix;
@@ -227,7 +222,7 @@ public class ModuleUtils {
         ModuleInfoDescriptor descriptor = findModuleInfo(basePath, sourcePath, typeSuffix, null, null)
                 .orElse(null);
         return Optional.ofNullable(toSuggestedModuleName((descriptor != null) ? descriptor.name() : null, typeSuffix.get(),
-                                     defaultToUnnamed ? ModuleInfoDescriptor.DEFAULT_MODULE_NAME : null));
+                                                         defaultToUnnamed ? ModuleInfoDescriptor.DEFAULT_MODULE_NAME : null));
     }
 
     /**
@@ -274,7 +269,7 @@ public class ModuleUtils {
         Path parent = sourcePath.getParent();
         if (parent != null) {
             String fileName = String.valueOf(sourcePath.getFileName());
-            Path scratch = parent.resolve(PicoServicesConfig.NAME).resolve(fileName);
+            Path scratch = parent.resolve("pico").resolve(fileName);
             moduleInfoPaths = findFile(scratch, scratch, PICO_MODULE_INFO_JAVA_NAME);
             if (1 == moduleInfoPaths.size()) {
                 // looks to be a potential test module, get the base name from the source tree...
@@ -283,20 +278,6 @@ public class ModuleUtils {
         }
 
         return Optional.empty();
-    }
-
-    private static Optional<ModuleInfoDescriptor> finishModuleInfoDescriptor(AtomicReference<File> moduleInfoPath,
-                                                                             AtomicReference<File> srcPath,
-                                                                             Set<Path> moduleInfoPaths,
-                                                                             String moduleInfoName) {
-        File moduleInfoFile = new File(first(moduleInfoPaths, false).toFile(), moduleInfoName);
-        if (moduleInfoPath != null) {
-            moduleInfoPath.set(moduleInfoFile);
-        }
-        if (srcPath != null) {
-            srcPath.set(moduleInfoFile.getParentFile());
-        }
-        return Optional.of(ModuleInfoDescriptor.create(moduleInfoFile.toPath()));
     }
 
     /**
@@ -334,10 +315,10 @@ public class ModuleUtils {
             path = "/" + path;
         }
         if (path.contains("/test/") || path.contains("/generated-test-sources/") || path.contains("/test-classes/")) {
-            return ActivatorCreatorCodeGen.DEFAULT_TEST_CLASS_PREFIX_NAME;
+            return "test";
         }
 
-        return ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME;
+        return "";
     }
 
     /**
@@ -350,7 +331,7 @@ public class ModuleUtils {
      */
     public static Optional<Path> toSourcePath(Path filePath,
                                               TypeElement type) {
-        TypeName typeName = TypeTools.createTypeNameFromElement(type).orElseThrow();
+        TypeName typeName = TypeFactory.createTypeName(type).orElseThrow();
         Path typePath = Paths.get(TypeTools.toFilePath(typeName));
         if (filePath.endsWith(typePath)) {
             return Optional.of(filePath.resolveSibling(typePath));
@@ -384,8 +365,65 @@ public class ModuleUtils {
      */
     public static boolean isUnnamedModuleName(String moduleName) {
         return !hasValue(moduleName)
-                || moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME)
-                || moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME + "/" + ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX);
+                || moduleName.equals(DEFAULT_MODULE_NAME)
+                || moduleName.equals(DEFAULT_MODULE_NAME + "/test");
+    }
+
+    /**
+     * Attempts to load the app package name from what was previously recorded.
+     *
+     * @param scratchPath the scratch directory path
+     * @return the app package name that was loaded
+     */
+    public static Optional<String> loadAppPackageName(Path scratchPath) {
+        File scratchDir = scratchPath.toFile();
+        File packageFileName = new File(scratchDir, APPLICATION_PACKAGE_FILE_NAME);
+        if (packageFileName.exists()) {
+            String packageName;
+            try {
+                packageName = Files.readString(packageFileName.toPath(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new ToolsException("Unable to load: " + packageFileName, e);
+            }
+
+            if (hasValue(packageName)) {
+                return Optional.of(packageName);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Persist the package name into scratch for later usage.
+     *
+     * @param scratchPath the scratch directory path
+     * @param packageName the package name
+     * @throws ToolsException if there are any errors creating or writing the content
+     */
+    public static void saveAppPackageName(Path scratchPath,
+                                          String packageName) {
+        File scratchDir = scratchPath.toFile();
+        File packageFileName = new File(scratchDir, APPLICATION_PACKAGE_FILE_NAME);
+        try {
+            Files.createDirectories(packageFileName.getParentFile().toPath());
+            Files.writeString(packageFileName.toPath(), packageName, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new ToolsException("Unable to save: " + packageFileName, e);
+        }
+    }
+
+    private static Optional<ModuleInfoDescriptor> finishModuleInfoDescriptor(AtomicReference<File> moduleInfoPath,
+                                                                             AtomicReference<File> srcPath,
+                                                                             Set<Path> moduleInfoPaths,
+                                                                             String moduleInfoName) {
+        File moduleInfoFile = new File(first(moduleInfoPaths, false).toFile(), moduleInfoName);
+        if (moduleInfoPath != null) {
+            moduleInfoPath.set(moduleInfoFile);
+        }
+        if (srcPath != null) {
+            srcPath.set(moduleInfoFile.getParentFile());
+        }
+        return Optional.of(ModuleInfoDescriptor.create(moduleInfoFile.toPath()));
     }
 
     private static Set<Path> findFile(Path startPath,
@@ -439,49 +477,6 @@ public class ModuleUtils {
         }
 
         return result;
-    }
-
-    /**
-     * Attempts to load the app package name from what was previously recorded.
-     *
-     * @param scratchPath the scratch directory path
-     * @return the app package name that was loaded
-     */
-    public static Optional<String> loadAppPackageName(Path scratchPath) {
-        File scratchDir = scratchPath.toFile();
-        File packageFileName = new File(scratchDir, APPLICATION_PACKAGE_FILE_NAME);
-        if (packageFileName.exists()) {
-            String packageName;
-            try {
-                packageName = Files.readString(packageFileName.toPath(), StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                throw new ToolsException("Unable to load: " + packageFileName, e);
-            }
-
-            if (hasValue(packageName)) {
-                return Optional.of(packageName);
-            }
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * Persist the package name into scratch for later usage.
-     *
-     * @param scratchPath the scratch directory path
-     * @param packageName the package name
-     * @throws ToolsException if there are any errors creating or writing the content
-     */
-    public static void saveAppPackageName(Path scratchPath,
-                                          String packageName) {
-        File scratchDir = scratchPath.toFile();
-        File packageFileName = new File(scratchDir, APPLICATION_PACKAGE_FILE_NAME);
-        try {
-            Files.createDirectories(packageFileName.getParentFile().toPath());
-            Files.writeString(packageFileName.toPath(), packageName, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new ToolsException("Unable to save: " + packageFileName, e);
-        }
     }
 
 }

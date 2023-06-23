@@ -20,16 +20,17 @@ import io.helidon.pico.api.PicoServicesConfig;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 
 class DefaultPicoServicesConfigTest {
 
     @Test
     void testIt() {
         PicoServicesConfig cfg = DefaultPicoServicesConfig.createDefaultConfigBuilder();
-        assertThat(cfg.providerName(), equalTo("oracle"));
-        assertThat(cfg.providerVersion(), equalTo("1"));
+        assertThat(cfg.providerName(), optionalValue(is("oracle")));
+        assertThat(cfg.providerVersion(), optionalValue(is("1")));
     }
 
 }

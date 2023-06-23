@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -39,6 +40,10 @@ import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;
+import io.helidon.nima.webserver.ListenerConfig;
+import io.helidon.nima.webserver.Router;
+import io.helidon.nima.webserver.Routing;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -85,14 +90,14 @@ public class ServerCdiExtension implements Extension {
     private static final System.Logger STARTUP_LOGGER = System.getLogger("io.helidon.microprofile.startup.server");
     private static final AtomicBoolean IN_PROGRESS_OR_RUNNING = new AtomicBoolean();
     private final Map<Bean<?>, RoutingConfiguration> serviceBeans = Collections.synchronizedMap(new IdentityHashMap<>());
+    private final List<HttpRouting.Builder> routingsWithKPIMetrics = new ArrayList<>();
     // build time
-    private WebServer.Builder serverBuilder = WebServer.builder()
+    private ServerConfig.Builder serverBuilder = WebServer.builder()
             .shutdownHook(false) // we use a custom CDI shutdown hook in HelidonContainerImpl
             .port(7001);
-
     private HttpRouting.Builder routingBuilder = HttpRouting.builder();
     private Map<String, HttpRouting.Builder> namedRoutings = new HashMap<>();
-    private final List<HttpRouting.Builder> routingsWithKPIMetrics = new ArrayList<>();
+    private Map<String, Router.Builder> namedRouters = new HashMap<>();
     private String basePath;
     private Config config;
 
@@ -113,50 +118,6 @@ public class ServerCdiExtension implements Extension {
     }
 
     /**
-     * Provides access to routing builder.
-     *
-     * @param namedRouting        Named routing.
-     * @param routingNameRequired Routing name required.
-     * @param appName             Application's name.
-     * @return The routing builder.
-     */
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    public HttpRouting.Builder routingBuilder(Optional<String> namedRouting,
-                                              boolean routingNameRequired,
-                                              String appName) {
-        if (namedRouting.isPresent()) {
-            String socket = namedRouting.get();
-            if (!serverBuilder.hasSocket(socket)) {
-                if (routingNameRequired) {
-                    throw new IllegalStateException("Application "
-                                                            + appName
-                                                            + " requires routing "
-                                                            + socket
-                                                            + " to exist, yet such a socket is not configured for web server");
-                } else {
-                    LOGGER.log(Level.INFO, "Routing " + socket + " does not exist, using default routing for application "
-                                        + appName);
-
-                    return serverRoutingBuilder();
-                }
-            } else {
-                return serverNamedRoutingBuilder(socket);
-            }
-        } else {
-            return serverRoutingBuilder();
-        }
-    }
-
-    /**
-     * Helidon web server configuration builder that can be used to re-configure the web server.
-     *
-     * @return web server configuration builder
-     */
-    public WebServer.Builder serverBuilder() {
-        return serverBuilder;
-    }
-
-    /**
      * Helidon webserver routing builder that can be used to add routes to the webserver.
      *
      * @return server routing builder
@@ -174,6 +135,42 @@ public class ServerCdiExtension implements Extension {
      */
     public HttpRouting.Builder serverNamedRoutingBuilder(String name) {
         return namedRoutings.computeIfAbsent(name, routeName -> HttpRouting.builder());
+    }
+
+    /**
+     * Add a routing to the server. This MUST NOT be HTTP routing. To update HTTP routing, please use
+     * {@link #serverRoutingBuilder()}.
+     *
+     * @param routing routing to add, such as WebSocket routing
+     */
+    public void addRouting(Routing routing) {
+        addRouting(routing, WebServer.DEFAULT_SOCKET_NAME, false, null);
+    }
+
+    /**
+     * Add a routing to the server. This MUST NOT be HTTP routing. To update HTTP routing, please use
+     * {@link #serverNamedRoutingBuilder(String)}.
+     *
+     * @param routing routing to add, such as WebSocket routing
+     * @param socketName name of the configured socket this routing should be assigned to, if not present (and required is false),
+     *                   the routing would be added to default socket
+     * @param required is the socket required to be present, validated against configured sockets
+     * @param appName name of the application, to provide meaningful error messages
+     */
+    public void addRouting(Routing routing, String socketName, boolean required, String appName) {
+        boolean hasRouting = serverBuilder.sockets().containsKey(socketName);
+        if (required && !hasRouting) {
+            throw new IllegalStateException("Application requires configured listener (socket name) "
+                                                    + socketName
+                                                    + " to exist, yet such a socket is not configured for web server"
+                                                    + " for app: " + appName);
+        }
+        if (!hasRouting && !WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
+            LOGGER.log(Level.INFO, "Routing " + socketName + " does not exist, using default routing instead for " + appName);
+        }
+
+        namedRouters.computeIfAbsent(socketName, it -> Router.builder())
+                .addRouting(routing);
     }
 
     /**
@@ -222,6 +219,50 @@ public class ServerCdiExtension implements Extension {
      */
     public void basePath(String basePath) {
         this.basePath = basePath;
+    }
+
+    /**
+     * Provides access to routing builder.
+     *
+     * @param namedRouting        Named routing.
+     * @param routingNameRequired Routing name required.
+     * @param appName             Application's name.
+     * @return The routing builder.
+     */
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    HttpRouting.Builder routingBuilder(Optional<String> namedRouting,
+                                       boolean routingNameRequired,
+                                       String appName) {
+        if (namedRouting.isPresent()) {
+            String socket = namedRouting.get();
+            if (!serverBuilder.sockets().containsKey(socket)) {
+                if (routingNameRequired) {
+                    throw new IllegalStateException("Application "
+                                                            + appName
+                                                            + " requires routing "
+                                                            + socket
+                                                            + " to exist, yet such a socket is not configured for web server");
+                } else {
+                    LOGGER.log(Level.INFO, "Routing " + socket + " does not exist, using default routing for application "
+                            + appName);
+
+                    return serverRoutingBuilder();
+                }
+            } else {
+                return serverNamedRoutingBuilder(socket);
+            }
+        } else {
+            return serverRoutingBuilder();
+        }
+    }
+
+    /**
+     * Helidon web server configuration builder that can be used to re-configure the web server.
+     *
+     * @return web server configuration builder
+     */
+    ServerConfig.Builder serverBuilder() {
+        return serverBuilder;
     }
 
     /**
@@ -300,7 +341,7 @@ public class ServerCdiExtension implements Extension {
             routingsWithKPIMetrics.add(routing);
             routing.any(KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
             LOGGER.log(Level.TRACE, () -> String.format("Adding deferrable request KPI metrics context for routing with name '%s'"
-                            + "", namedRouting.orElse("<unnamed>")));
+                                                                + "", namedRouting.orElse("<unnamed>")));
         }
     }
 
@@ -330,9 +371,19 @@ public class ServerCdiExtension implements Extension {
         namedRoutings.forEach((name, value) -> value.addFeature(ContextFeature.create()));
 
         // start the webserver
-        serverBuilder.routerBuilder(WebServer.DEFAULT_SOCKET_NAME).addRouting(routingBuilder.build());
+        serverBuilder.routing(routingBuilder.build());
 
-        namedRoutings.forEach((name, value) -> serverBuilder.routerBuilder(name).addRouting(value.build()));
+        namedRoutings.forEach((name, value) -> {
+            ListenerConfig listenerConfig = serverBuilder.sockets().get(name);
+            ListenerConfig.Builder builder;
+            if (listenerConfig == null) {
+                builder = ListenerConfig.builder();
+            } else {
+                builder = ListenerConfig.builder(listenerConfig);
+            }
+            builder.routing(value.build());
+            serverBuilder.putSocket(name, builder.build());
+        });
 
         if (this.context == null) {
             this.context = Contexts.context().orElse(Context.builder()
@@ -364,6 +415,7 @@ public class ServerCdiExtension implements Extension {
         serverBuilder = null;
         routingBuilder = null;
         namedRoutings = null;
+        namedRouters = null;
 
         STARTUP_LOGGER.log(Level.TRACE, "Server created");
     }
@@ -395,7 +447,7 @@ public class ServerCdiExtension implements Extension {
         List<JaxRsApplication> jaxRsApplications = jaxRs.applicationsToRun();
         if (jaxRsApplications.isEmpty()) {
             LOGGER.log(Level.WARNING,
-                    "There are no JAX-RS applications or resources. Maybe you forgot META-INF/beans.xml file?");
+                       "There are no JAX-RS applications or resources. Maybe you forgot META-INF/beans.xml file?");
         } else {
             // Creates shared injection manager if multiple apps and "internal" property false
             boolean singleManager = config.get("server.single-injection-manager").asBoolean().asOptional().orElse(false);
@@ -453,15 +505,16 @@ public class ServerCdiExtension implements Extension {
                                                                                                .as(Path.class)
                                                                                                .get());
         pBuilder.welcomeFileName(config.get("welcome")
-                                          .asString()
-                                          .orElse("index.html"));
+                                         .asString()
+                                         .orElse("index.html"));
 
         StaticContentService staticContent = pBuilder.build();
 
         if (context.exists()) {
             routingBuilder.register(context.asString().get(), staticContent);
         } else {
-            routingBuilder.register(staticContent);
+            Supplier<StaticContentService> ms = () -> staticContent;
+            routingBuilder.register(ms);
         }
         STARTUP_LOGGER.log(Level.TRACE, "Static path");
     }
@@ -531,10 +584,10 @@ public class ServerCdiExtension implements Extension {
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Application " + applicationMeta.appName()
-                                  + ", class: " + applicationMeta.appClassName()
-                                  + ", contextRoot: " + contextRoot
-                                  + ", namedRouting: " + namedRouting
-                                  + ", routingNameRequired: " + routingNameRequired);
+                    + ", class: " + applicationMeta.appClassName()
+                    + ", contextRoot: " + contextRoot
+                    + ", namedRouting: " + namedRouting
+                    + ", routingNameRequired: " + routingNameRequired);
         }
 
         HttpRouting.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
@@ -593,7 +646,7 @@ public class ServerCdiExtension implements Extension {
             return serverRoutingBuilder();
         }
 
-        if (!serverBuilder.hasSocket(routingName)) {
+        if (!serverBuilder.sockets().containsKey(routingName)) {
             // resolve missing socket configuration
             if (routingNameRequired) {
                 throw new IllegalStateException(className

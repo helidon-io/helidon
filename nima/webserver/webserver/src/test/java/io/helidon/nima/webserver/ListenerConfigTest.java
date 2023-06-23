@@ -17,23 +17,23 @@
 package io.helidon.nima.webserver;
 
 import io.helidon.config.Config;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.nima.webserver.WebServer.DEFAULT_SOCKET_NAME;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ListenerConfigTest {
 
     @Test
     void testListenerConfig() {
         Config config = Config.create();
-        WebServer.Builder webServerBuilder = WebServer.builder().config(config.get("server"));
-        ListenerConfiguration.Builder listenerBuilder1 = webServerBuilder.socket(DEFAULT_SOCKET_NAME);
-        assertThat(listenerBuilder1.build().writeQueueLength(), is(0));         // default
-        assertThat(listenerBuilder1.build().writeBufferSize(), is(512));        // default
-        ListenerConfiguration.Builder listenerBuilder2 = webServerBuilder.socket("other");
-        assertThat(listenerBuilder2.build().writeQueueLength(), is(64));
-        assertThat(listenerBuilder2.build().writeBufferSize(), is(1024));
+        var webServerConfig = WebServer.builder().config(config.get("server")).buildPrototype();
+        assertThat(webServerConfig.writeQueueLength(), is(0));         // default
+        assertThat(webServerConfig.writeBufferSize(), is(512));        // default
+        ListenerConfig listenerConfig2 = webServerConfig.sockets().get("other");
+        assertThat(listenerConfig2.writeQueueLength(), is(64));
+        assertThat(listenerConfig2.writeBufferSize(), is(1024));
     }
 }

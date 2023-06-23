@@ -17,6 +17,7 @@
 package io.helidon.pico.tools;
 
 import io.helidon.pico.api.ElementInfo;
+import io.helidon.pico.api.ElementKind;
 import io.helidon.pico.api.InjectionPointInfo;
 
 /**
@@ -28,8 +29,8 @@ final class CodeGenUtils {
     }
 
     static String elementNameKindRef(String elemName,
-                                     ElementInfo.ElementKind elemKind) {
-        if (elemKind == InjectionPointInfo.ElementKind.CONSTRUCTOR
+                                     ElementKind elemKind) {
+        if (elemKind == ElementKind.CONSTRUCTOR
                 && elemName.equals(InjectionPointInfo.CONSTRUCTOR)) {
             elemName = "CONSTRUCTOR";
         } else {

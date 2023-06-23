@@ -16,13 +16,13 @@
 
 package io.helidon.pico.configdriven.configuredby.test;
 
-import io.helidon.pico.configdriven.api.ConfiguredBy;
+import io.helidon.pico.configdriven.api.ConfigDriven;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Named;
 
-@ConfiguredBy(ASingletonConfigBean.class)
+@ConfigDriven(value = ASingletonConfigBeanBlueprint.class, activateByDefault = true)
 @Named("jane")
 class ASingletonService implements ASingletonServiceContract {
     private boolean running;

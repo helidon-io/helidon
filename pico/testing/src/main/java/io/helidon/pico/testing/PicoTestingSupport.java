@@ -22,16 +22,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
-import io.helidon.builder.config.spi.HelidonConfigBeanRegistry;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.api.BootstrapDefault;
+import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.PicoServicesHolder;
-import io.helidon.pico.api.Resettable;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.runtime.ServiceBinderDefault;
 
@@ -92,9 +88,8 @@ public class PicoTestingSupport {
     public static Config basicTestableConfig() {
         return Config.builder(
                         ConfigSources.create(
-                                Map.of(
-                                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
-                                        PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_SERVICE_LOOKUP_CACHING, "true"),
+                                Map.of("pico.permits-dynamic", "true",
+                                        "pico.service-lookup-caching", "true"),
                                 "config-1"))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -130,7 +125,7 @@ public class PicoTestingSupport {
 
     private static LazyValue<PicoServices> lazyCreate(Config config) {
         return LazyValue.create(() -> {
-            PicoServices.globalBootstrap(BootstrapDefault.builder().config(config).build());
+            PicoServices.globalBootstrap(Bootstrap.builder().config(config).build());
             return PicoServices.picoServices().orElseThrow();
         });
     }
@@ -140,11 +135,6 @@ public class PicoTestingSupport {
         public static void reset() {
             PicoServicesHolder.reset();
             instance = lazyCreate(basicTestableConfig());
-
-            HelidonConfigBeanRegistry registry = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
-            if (registry instanceof Resettable) {
-                ((Resettable) registry).reset(true);
-            }
         }
     }
 

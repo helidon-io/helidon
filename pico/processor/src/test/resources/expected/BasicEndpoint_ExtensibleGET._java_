@@ -8,7 +8,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-@javax.annotation.processing.Generated(value = "io.helidon.pico.processor.ExtensibleGetTemplateProducer", comments = "version=1")
+@io.helidon.common.Generated(value = "io.helidon.pico.processor.ExtensibleGetTemplateProducer", trigger = "io.helidon.pico.processor.testsubjects.BasicEndpoint")
 @Singleton
 @Named("io.helidon.pico.processor.testsubjects.ExtensibleGET")
 @Weight(100.0)

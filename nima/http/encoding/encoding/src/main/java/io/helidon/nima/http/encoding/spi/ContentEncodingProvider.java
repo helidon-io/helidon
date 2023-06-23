@@ -16,48 +16,11 @@
 
 package io.helidon.nima.http.encoding.spi;
 
-import java.util.Set;
-
-import io.helidon.nima.http.encoding.ContentDecoder;
-import io.helidon.nima.http.encoding.ContentEncoder;
+import io.helidon.common.config.ConfiguredProvider;
+import io.helidon.nima.http.encoding.ContentEncoding;
 
 /**
  * Content encoding {@link java.util.ServiceLoader} service provider interface.
  */
-public interface ContentEncodingProvider {
-    /**
-     * Identification(s) of this scheme as used in {@code Accept-Encoding} and {@code Content-Encoding} headers.
-     *
-     * @return identifications, such as {@code deflate}, {@code gzip}
-     */
-    Set<String> ids();
-
-    /**
-     * Does this provider support encoding.
-     *
-     * @return encoding supported
-     */
-    boolean supportsEncoding();
-
-    /**
-     * Does this provider support decoding.
-     *
-     * @return decoding supported
-     */
-    boolean supportsDecoding();
-
-    /**
-     * To decode bytes.
-     *
-     * @return decoder
-     */
-    ContentDecoder decoder();
-
-    /**
-     * To encode bytes.
-     *
-     * @return encoder
-     */
-    ContentEncoder encoder();
-
+public interface ContentEncodingProvider extends ConfiguredProvider<ContentEncoding> {
 }

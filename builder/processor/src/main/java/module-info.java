@@ -19,17 +19,13 @@
  */
 module io.helidon.builder.processor {
     requires java.compiler;
-    requires io.helidon.common;
-    requires io.helidon.builder;
-    requires io.helidon.builder.processor.spi;
-    requires io.helidon.builder.processor.tools;
+    requires jdk.compiler;
+
     requires io.helidon.common.types;
+    requires io.helidon.common.processor;
 
     exports io.helidon.builder.processor;
 
     provides javax.annotation.processing.Processor
-            with io.helidon.builder.processor.BuilderProcessor;
-
-    uses io.helidon.builder.processor.spi.BuilderCreatorProvider;
-    uses io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
+            with io.helidon.builder.processor.BlueprintProcessor;
 }

@@ -37,6 +37,7 @@ import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.MediaContextConfig;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.WebClient;
 
@@ -488,7 +489,12 @@ class ClientRequestImplTest {
     }
 
     private static class CustomizedMediaContext implements MediaContext {
-        private MediaContext delegated = MediaContext.create();
+        private final MediaContext delegated = MediaContext.create();
+
+        @Override
+        public MediaContextConfig prototype() {
+            return delegated.prototype();
+        }
 
         @Override
         public <T> EntityReader<T> reader(GenericType<T> type, Headers headers) {

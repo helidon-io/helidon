@@ -38,7 +38,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-config</artifactId>
+            <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
@@ -86,7 +86,7 @@
                         </path>
                         <path>
                             <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-config-processor</artifactId>
+                            <artifactId>helidon-builder-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>

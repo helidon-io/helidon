@@ -348,7 +348,7 @@ public class TestUtil {
             routingBuilder.addFeature(openApiBuilder);
         }
         WebServer result = WebServer.builder()
-                .addRouting(routingBuilder)
+                .routing(routingBuilder.build())
                 .port(port)
                 .build()
                 .start();

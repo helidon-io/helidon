@@ -16,12 +16,11 @@
 
 package io.helidon.pico.configdriven.runtime;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.builder.AttributeVisitor;
-import io.helidon.builder.config.spi.GeneratedConfigBeanBuilderBase;
 import io.helidon.common.config.Config;
 import io.helidon.pico.api.ContextualServiceQuery;
 import io.helidon.pico.api.DependenciesInfo;
@@ -29,6 +28,7 @@ import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceProviderBindable;
+import io.helidon.pico.configdriven.api.NamedInstance;
 import io.helidon.pico.runtime.PicoInjectionPlan;
 
 /**
@@ -37,25 +37,20 @@ import io.helidon.pico.runtime.PicoInjectionPlan;
  * @param <T>   the service type
  * @param <CB>  the config bean type
  */
-class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServiceProvider<T, CB> {
-    private final AbstractConfiguredServiceProvider<T, CB> delegate;
+class UnconfiguredServiceProvider<T, CB> extends ConfigDrivenServiceProviderBase<T, CB> {
+    private final ConfigDrivenServiceProviderBase<T, CB> delegate;
 
     /**
      * Default Constructor.
      *
      * @param delegate the root delegate
      */
-    UnconfiguredServiceProvider(AbstractConfiguredServiceProvider<T, CB> delegate) {
-        assert (delegate != null && delegate.isRootProvider());
+    UnconfiguredServiceProvider(ConfigDrivenServiceProviderBase<T, CB> delegate) {
+        super(delegate.instanceId());
+        assert (delegate.isRootProvider());
         this.delegate = Objects.requireNonNull(delegate);
         rootProvider(delegate);
         assert (rootProvider().orElseThrow() == delegate);
-    }
-
-    @Override
-    public <C extends io.helidon.common.config.Config, T> Optional<T> toConfigBean(C cfg,
-                                                                                   Class<T> configBeanType) {
-        return Optional.empty();
     }
 
     @Override
@@ -115,11 +110,6 @@ class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServiceProvid
     }
 
     @Override
-    public Optional<io.helidon.common.config.Config> rawConfig() {
-        return delegate.rawConfig();
-    }
-
-    @Override
     public Class<?> serviceType() {
         return delegate.serviceType();
     }
@@ -130,41 +120,8 @@ class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServiceProvid
     }
 
     @Override
-    public CB toConfigBean(io.helidon.common.config.Config cfg) {
-        return delegate.toConfigBean(cfg);
-    }
-
-    @Override
-    public GeneratedConfigBeanBuilderBase toConfigBeanBuilder(Config config) {
-        return delegate.toConfigBeanBuilder(config);
-    }
-
-    @Override
-    public <R> void visitAttributes(CB configBean,
-                                    AttributeVisitor<Object> visitor,
-                                    R userDefinedContext) {
-        delegate.visitAttributes(configBean, visitor, userDefinedContext);
-    }
-
-    @Override
-    public String toConfigBeanInstanceId(CB configBean) {
-        return delegate.toConfigBeanInstanceId(configBean);
-    }
-
-    @Override
-    public Optional<CB> configBean() {
-        return Optional.empty();
-    }
-
-    @Override
-    public void configBeanInstanceId(CB configBean,
-                                     String val) {
-        delegate.configBeanInstanceId(configBean, val);
-    }
-
-    @Override
-    protected AbstractConfiguredServiceProvider<T, CB> createInstance(Object configBean) {
-        throw new UnsupportedOperationException();
+    public CB configBean() {
+        throw new NullPointerException("Config bean is not available on root config driven provider.");
     }
 
     @Override
@@ -187,4 +144,18 @@ class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServiceProvid
         delegate.onFinalShutdown();
     }
 
+    @Override
+    public List<NamedInstance<CB>> createConfigBeans(Config config) {
+        return List.of();
+    }
+
+    @Override
+    public Class<CB> configBeanType() {
+        return delegate.configBeanType();
+    }
+
+    @Override
+    protected ConfigDrivenServiceProviderBase<T, CB> createInstance(NamedInstance<CB> configBean) {
+        return delegate.createInstance(configBean);
+    }
 }

@@ -19,7 +19,6 @@ package io.helidon.nima.webclient.http1;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.Set;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
@@ -43,8 +42,8 @@ class Http1ClientImpl extends LoomClient implements Http1Client {
                       .dnsResolver(clientConfig.dnsResolver())
                       .dnsAddressLookup(clientConfig.dnsAddressLookup()));
 
-        this.clientConfig = Http1ClientConfigDefault.toBuilder(clientConfig)
-                .services(Set.of()) // reset services to empty list
+        this.clientConfig = Http1ClientConfig.builder(clientConfig)
+                .services(List.of()) // reset services to empty list
                 .update(it -> services(clientConfig).forEach(it::addService)) // add all configured services
                 .update(it -> it.tls(it.tls().orElse(EMPTY_TLS)))
                 .build();

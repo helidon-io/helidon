@@ -16,25 +16,12 @@
 
 package io.helidon.nima.http.media.spi;
 
-import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfiguredProvider;
 import io.helidon.nima.http.media.MediaSupport;
 
 /**
  * {@link java.util.ServiceLoader} service provider for media supports.
  */
-public interface MediaSupportProvider {
-    /**
-     * Configuration key of this media support provider.
-     *
-     * @return config key to be used when getting config node to use with {@link #create(io.helidon.common.config.Config)}
-     */
-    String configKey();
+public interface MediaSupportProvider extends ConfiguredProvider<MediaSupport> {
 
-    /**
-     * Create media support based on the provided configuration.
-     *
-     * @param config configuration of the media support
-     * @return a new media support to provide readers and writers
-     */
-    MediaSupport create(Config config);
 }

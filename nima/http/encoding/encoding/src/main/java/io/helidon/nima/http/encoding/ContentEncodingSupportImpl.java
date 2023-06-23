@@ -18,29 +18,60 @@ package io.helidon.nima.http.encoding;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 
 class ContentEncodingSupportImpl implements ContentEncodingContext {
+    private static final String IDENTITY_ENCODING = "identity";
 
     private final boolean encodingEnabled;
     private final boolean decodingEnabled;
     private final Map<String, ContentEncoder> encoders;
     private final Map<String, ContentDecoder> decoders;
     private final ContentEncoder firstEncoder;
+    private final ContentEncodingContextConfig config;
 
-    ContentEncodingSupportImpl(Map<String, ContentEncoder> encoders,
-                               Map<String, ContentDecoder> decoders,
-                               ContentEncoder firstEncoder) {
-        this.encoders = encoders;
-        this.decoders = decoders;
+    ContentEncodingSupportImpl(ContentEncodingContextConfig config) {
+        this.config = config;
+
+        Map<String, ContentEncoder> encoders = new HashMap<>();
+        Map<String, ContentDecoder> decoders = new HashMap<>();
+        ContentEncoder firstEncoder = null;
+
+        for (ContentEncoding contentEncoding : config.contentEncodings()) {
+            Set<String> ids = contentEncoding.ids();
+            if (contentEncoding.supportsEncoding()) {
+                for (String id : ids) {
+                    ContentEncoder encoder = contentEncoding.encoder();
+                    if (firstEncoder == null) {
+                        firstEncoder = encoder;
+                    }
+                    encoders.putIfAbsent(id, encoder);
+                }
+            }
+
+            if (contentEncoding.supportsDecoding()) {
+                for (String id : ids) {
+                    decoders.putIfAbsent(id, contentEncoding.decoder());
+                }
+            }
+        }
+
         this.encodingEnabled = !encoders.isEmpty();
         this.decodingEnabled = !decoders.isEmpty();
+
+        encoders.put(IDENTITY_ENCODING, ContentEncoder.NO_OP);
+        decoders.put(IDENTITY_ENCODING, ContentDecoder.NO_OP);
+
+        this.encoders = encoders;
+        this.decoders = decoders;
         this.firstEncoder = firstEncoder;
     }
 
@@ -106,6 +137,11 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         }
 
         return ContentEncoder.NO_OP;
+    }
+
+    @Override
+    public ContentEncodingContextConfig prototype() {
+        return config;
     }
 
     /**

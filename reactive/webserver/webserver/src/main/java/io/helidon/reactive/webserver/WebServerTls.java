@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
@@ -129,8 +129,8 @@ public final class WebServerTls {
         private final Set<String> enabledTlsProtocols = new HashSet<>();
 
         private SSLContext sslContext;
-        private KeyConfig privateKeyConfig;
-        private KeyConfig trustConfig;
+        private Keys privateKeyConfig;
+        private Keys trustConfig;
         private long sessionCacheSize;
         private long sessionTimeoutSeconds;
 
@@ -182,10 +182,10 @@ public final class WebServerTls {
 
             config.get("client-auth").asString().ifPresent(this::clientAuth);
             config.get("private-key")
-                    .ifExists(it -> privateKey(KeyConfig.create(it)));
+                    .ifExists(it -> privateKey(Keys.create(it)));
 
             config.get("trust")
-                    .ifExists(it -> trust(KeyConfig.create(it)));
+                    .ifExists(it -> trust(Keys.create(it)));
 
             config.get("protocols").asList(String.class).ifPresent(this::enabledProtocols);
             config.get("session-cache-size").asLong().ifPresent(this::sessionCacheSize);
@@ -259,23 +259,15 @@ public final class WebServerTls {
          * @param privateKeyConfig the required private key configuration parameter
          * @return this builder
          */
+        @SuppressWarnings("rawtypes")
         @ConfiguredOption(required = true)
-        public Builder privateKey(KeyConfig privateKeyConfig) {
+        public Builder privateKey(Keys privateKeyConfig) {
+            privateKeyConfig = (privateKeyConfig instanceof io.helidon.common.Builder b) ? (Keys) b.build() : privateKeyConfig;
             // setting private key, need to reset ssl context
             this.enabled = true;
             this.sslContext = null;
             this.privateKeyConfig = Objects.requireNonNull(privateKeyConfig);
             return this;
-        }
-
-        /**
-         * Configure private key to use for SSL context.
-         *
-         * @param privateKeyConfigBuilder the required private key configuration parameter
-         * @return this builder
-         */
-        public Builder privateKey(Supplier<KeyConfig> privateKeyConfigBuilder) {
-            return privateKey(privateKeyConfigBuilder.get());
         }
 
         /**
@@ -285,7 +277,7 @@ public final class WebServerTls {
          * @return this builder
          */
         @ConfiguredOption
-        public Builder trust(KeyConfig trustConfig) {
+        public Builder trust(Keys trustConfig) {
             // setting explicit trust, need to reset ssl context
             this.enabled = true;
             this.sslContext = null;
@@ -299,7 +291,7 @@ public final class WebServerTls {
          * @param trustConfigBuilder the trust configuration builder
          * @return this builder
          */
-        public Builder trust(Supplier<KeyConfig> trustConfigBuilder) {
+        public Builder trust(Supplier<Keys> trustConfigBuilder) {
             return trust(trustConfigBuilder.get());
         }
 
@@ -397,7 +389,7 @@ public final class WebServerTls {
             }
         }
 
-        private static KeyManagerFactory buildKmf(KeyConfig privateKeyConfig) throws IOException, GeneralSecurityException {
+        private static KeyManagerFactory buildKmf(Keys privateKeyConfig) throws IOException, GeneralSecurityException {
             String algorithm = Security.getProperty("ssl.KeyManagerFactory.algorithm");
             if (algorithm == null) {
                 algorithm = "SunX509";
@@ -420,7 +412,7 @@ public final class WebServerTls {
             return kmf;
         }
 
-        private static TrustManagerFactory buildTmf(KeyConfig trustConfig)
+        private static TrustManagerFactory buildTmf(Keys trustConfig)
                 throws IOException, GeneralSecurityException {
             List<X509Certificate> certs;
 

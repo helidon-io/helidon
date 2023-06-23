@@ -17,7 +17,7 @@
 package io.helidon.tests.apps.bookstore.se;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.health.checks.DeadlockHealthCheck;
 import io.helidon.health.checks.DiskSpaceHealthCheck;
@@ -30,6 +30,7 @@ import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.observe.metrics.MetricsFeature;
 import io.helidon.nima.webserver.Routing;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -39,12 +40,6 @@ import io.helidon.nima.webserver.http.HttpRouting;
 public final class Main {
 
     private static final String SERVICE_PATH = "/books";
-
-    enum JsonLibrary {
-        JSONP,
-        JSONB,
-        JACKSON
-    }
 
     /**
      * Cannot be instantiated.
@@ -84,14 +79,13 @@ public final class Main {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-
         // Build server config based on params
-        WebServer.Builder serverBuilder = WebServer.builder()
+        var serverBuilder = WebServer.builder()
                 .addRouting(createRouting(config))
                 .config(config.get("server"))
                 .update(it -> configureJsonSupport(it, config))
                 .update(it -> configureSsl(it, ssl));
-                // .enableCompression(compression);
+        // .enableCompression(compression);
 
         configureJsonSupport(serverBuilder, config);
 
@@ -99,35 +93,38 @@ public final class Main {
         server.start();
         String url = (ssl ? "https" : "http") + "://localhost:" + server.port() + SERVICE_PATH;
         System.out.println("WEB server is up! " + url + " [ssl=" + ssl + ", http2=" + http2
-                + ", compression=" + compression + "]");
+                                   + ", compression=" + compression + "]");
 
         return server;
     }
 
-    private static void configureJsonSupport(WebServer.Builder wsBuilder, Config config) {
-        JsonLibrary jsonLibrary = getJsonLibrary(config);
-
-        switch (jsonLibrary) {
-        case JSONP:
-            wsBuilder.addMediaSupport(JsonpSupport.create(config));
-            break;
-        case JSONB:
-            wsBuilder.addMediaSupport(JsonbSupport.create(config));
-            break;
-        case JACKSON:
-            wsBuilder.addMediaSupport(JacksonSupport.create(config));
-            break;
-        default:
-            throw new RuntimeException("Unknown JSON library " + jsonLibrary);
-        }
+    static JsonLibrary getJsonLibrary(Config config) {
+        return config.get("app.json-library")
+                .asString()
+                .map(String::toUpperCase)
+                .map(JsonLibrary::valueOf)
+                .orElse(JsonLibrary.JSONP);
     }
 
-    private static void configureSsl(WebServer.Builder wsBuilder, boolean useSsl) {
+    private static void configureJsonSupport(ServerConfig.Builder wsBuilder, Config config) {
+        JsonLibrary jsonLibrary = getJsonLibrary(config);
+
+        wsBuilder.mediaContext(context -> {
+            switch (jsonLibrary) {
+            case JSONP -> context.addMediaSupport(JsonpSupport.create(config));
+            case JSONB -> context.addMediaSupport(JsonbSupport.create(config));
+            case JACKSON -> context.addMediaSupport(JacksonSupport.create(config));
+            default -> throw new RuntimeException("Unknown JSON library " + jsonLibrary);
+            }
+        });
+    }
+
+    private static void configureSsl(ServerConfig.Builder wsBuilder, boolean useSsl) {
         if (!useSsl) {
             return;
         }
 
-        KeyConfig privateKeyConfig = privateKey();
+        Keys privateKeyConfig = privateKey();
         Tls tls = Tls.builder()
                 .privateKey(privateKeyConfig.privateKey().get())
                 .privateKeyCertChain(privateKeyConfig.certChain())
@@ -136,12 +133,12 @@ public final class Main {
         wsBuilder.tls(tls);
     }
 
-    private static KeyConfig privateKey() {
+    private static Keys privateKey() {
         String password = "helidon";
 
-        return KeyConfig.keystoreBuilder()
-                .keystore(Resource.create("certificate.p12"))
-                .keystorePassphrase(password)
+        return Keys.builder()
+                .keystore(keystore -> keystore.keystore(Resource.create("certificate.p12"))
+                        .passphrase(password))
                 .build();
     }
 
@@ -169,11 +166,9 @@ public final class Main {
         return builder.build();
     }
 
-    static JsonLibrary getJsonLibrary(Config config) {
-        return config.get("app.json-library")
-                .asString()
-                .map(String::toUpperCase)
-                .map(JsonLibrary::valueOf)
-                .orElse(JsonLibrary.JSONP);
+    enum JsonLibrary {
+        JSONP,
+        JSONB,
+        JACKSON
     }
 }

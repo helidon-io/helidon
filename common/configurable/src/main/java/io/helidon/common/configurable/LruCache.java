@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,10 @@ import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.builder.api.RuntimeType;
 
 /**
  * Least recently used cache.
@@ -35,7 +34,8 @@ import io.helidon.config.metadata.ConfiguredOption;
  * @param <K> type of the keys of the map
  * @param <V> type of the values of the map
  */
-public final class LruCache<K, V> {
+@RuntimeType.PrototypedBy(LruCacheConfig.class)
+public final class LruCache<K, V> implements RuntimeType.Api<LruCacheConfig<K, V>> {
     /**
      * Default capacity of the cache: {@value}.
      */
@@ -47,9 +47,11 @@ public final class LruCache<K, V> {
     private final Lock writeLock = rwLock.writeLock();
 
     private final int capacity;
+    private final LruCacheConfig<K, V> config;
 
-    private LruCache(Builder<K, V> builder) {
-        this.capacity = builder.capacity;
+    private LruCache(LruCacheConfig<K, V> config) {
+        this.capacity = config.capacity();
+        this.config = config;
     }
 
     /**
@@ -59,8 +61,8 @@ public final class LruCache<K, V> {
      * @param <V> value type
      * @return a new fluent API builder instance
      */
-    public static <K, V> Builder<K, V> builder() {
-        return new Builder<>();
+    public static <K, V> LruCacheConfig.Builder<K, V> builder() {
+        return LruCacheConfig.builder();
     }
 
     /**
@@ -72,8 +74,38 @@ public final class LruCache<K, V> {
      * @see #DEFAULT_CAPACITY
      */
     public static <K, V> LruCache<K, V> create() {
-        Builder<K, V> builder = builder();
+        return LruCacheConfig.<K, V>builder().build();
+    }
+
+    /**
+     * Create an instance with custom configuration.
+     *
+     * @param config configuration of LRU cache
+     * @return a new cache instance
+     * @param <K> key type
+     * @param <V> value type
+     */
+    public static <K, V> LruCache<K, V> create(LruCacheConfig<K, V> config) {
+        return new LruCache<>(config);
+    }
+
+    /**
+     * Create an instance with custom configuration.
+     *
+     * @param consumer of custom configuration builder
+     * @return a new cache instance
+     * @param <K> key type
+     * @param <V> value type
+     */
+    public static <K, V> LruCache<K, V> create(Consumer<LruCacheConfig.Builder<K, V>> consumer) {
+        LruCacheConfig.Builder<K, V> builder = LruCacheConfig.builder();
+        consumer.accept(builder);
         return builder.build();
+    }
+
+    @Override
+    public LruCacheConfig<K, V> prototype() {
+        return config;
     }
 
     /**
@@ -222,47 +254,5 @@ public final class LruCache<K, V> {
     // for unit testing
     V directGet(K key) {
         return backingMap.get(key);
-    }
-
-    /**
-     * Fluent API builder for {@link io.helidon.common.configurable.LruCache}.
-     *
-     * @param <K> type of keys
-     * @param <V> type of values
-     */
-    @Configured
-    public static class Builder<K, V> implements io.helidon.common.Builder<Builder<K, V>, LruCache<K, V>> {
-        private int capacity = DEFAULT_CAPACITY;
-
-        private Builder() {
-        }
-
-        @Override
-        public LruCache<K, V> build() {
-            return new LruCache<>(this);
-        }
-
-        /**
-         * Load configuration of this cache from configuration.
-         *
-         * @param config configuration
-         * @return updated builder instance
-         */
-        public Builder<K, V> config(Config config) {
-            config.get("capacity").asInt().ifPresent(this::capacity);
-            return this;
-        }
-
-        /**
-         * Configure capacity of the cache.
-         *
-         * @param capacity maximal number of records in the cache before the oldest one is removed
-         * @return updated builder instance
-         */
-        @ConfiguredOption("10000")
-        public Builder<K, V> capacity(int capacity) {
-            this.capacity = capacity;
-            return this;
-        }
     }
 }

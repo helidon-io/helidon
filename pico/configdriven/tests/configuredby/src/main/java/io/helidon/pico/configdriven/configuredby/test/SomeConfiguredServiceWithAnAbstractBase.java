@@ -16,11 +16,11 @@
 
 package io.helidon.pico.configdriven.configuredby.test;
 
-import io.helidon.pico.configdriven.api.ConfiguredBy;
+import io.helidon.pico.configdriven.api.ConfigDriven;
 
 import jakarta.inject.Inject;
 
-@ConfiguredBy(SomeServiceConfig.class)
+@ConfigDriven(SomeServiceConfigBlueprint.class)
 public class SomeConfiguredServiceWithAnAbstractBase extends AbstractServiceBase {
     final SomeServiceConfig cfg;
 

@@ -19,7 +19,7 @@ package io.helidon.pico.tools;
 import java.util.Collections;
 import java.util.List;
 
-import io.helidon.common.types.TypeNameDefault;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.testsubjects.HelloPicoWorldImpl;
 
@@ -49,31 +49,31 @@ class ActivatorCreatorDefaultTest extends AbstractBaseCreator {
     @Test
     void codegenHelloActivator() {
         ActivatorCreatorDefault activatorCreator = (ActivatorCreatorDefault) this.activatorCreator;
-        CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
+        CodeGenPaths codeGenPaths = CodeGenPaths.builder()
                 .generatedSourcesPath("target/pico/generated-sources")
                 .outputPath("target/pico/generated-classes")
                 .build();
         AbstractFilerMessager directFiler = AbstractFilerMessager
                 .createDirectFiler(codeGenPaths, System.getLogger(getClass().getName()));
         CodeGenFiler filer = CodeGenFiler.create(directFiler);
-        ActivatorCreatorCodeGenDefault codeGen = ActivatorCreatorCodeGenDefault.builder().build();
-        ActivatorCreatorRequest req = ActivatorCreatorRequestDefault.builder()
-                .serviceTypeNames(List.of(TypeNameDefault.create(HelloPicoWorldImpl.class)))
+        ActivatorCreatorCodeGen codeGen = ActivatorCreatorCodeGen.builder().build();
+        ActivatorCreatorRequest req = ActivatorCreatorRequest.builder()
+                .serviceTypeNames(List.of(TypeName.create(HelloPicoWorldImpl.class)))
                 .codeGen(codeGen)
                 .codeGenPaths(codeGenPaths)
-                .configOptions(ActivatorCreatorConfigOptionsDefault.builder().build())
+                .configOptions(ActivatorCreatorConfigOptions.builder().build())
                 .filer(filer)
                 .build();
 
         ToolsException te = assertThrows(ToolsException.class, () -> activatorCreator.createModuleActivators(req));
         assertEquals("Failed in create", te.getMessage());
 
-        ActivatorCreatorRequest req2 = ActivatorCreatorRequestDefault.builder()
-                .serviceTypeNames(Collections.singletonList(TypeNameDefault.create(HelloPicoWorldImpl.class)))
-                .codeGenPaths(CodeGenPathsDefault.builder().build())
+        ActivatorCreatorRequest req2 = ActivatorCreatorRequest.builder()
+                .serviceTypeNames(Collections.singletonList(TypeName.create(HelloPicoWorldImpl.class)))
+                .codeGenPaths(CodeGenPaths.builder().build())
                 .throwIfError(Boolean.FALSE)
                 .codeGen(codeGen)
-                .configOptions(ActivatorCreatorConfigOptionsDefault.builder().build())
+                .configOptions(ActivatorCreatorConfigOptions.builder().build())
                 .filer(filer)
                 .build();
         ActivatorCreatorResponse res = activatorCreator.createModuleActivators(req2);

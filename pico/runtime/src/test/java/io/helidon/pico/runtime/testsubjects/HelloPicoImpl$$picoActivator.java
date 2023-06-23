@@ -23,10 +23,13 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.Weight;
+import io.helidon.common.types.TypeName;
+import io.helidon.pico.api.AccessModifier;
 import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.ElementKind;
 import io.helidon.pico.api.PostConstructMethod;
 import io.helidon.pico.api.PreDestroyMethod;
-import io.helidon.pico.api.ServiceInfoDefault;
+import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.runtime.AbstractServiceProvider;
 import io.helidon.pico.runtime.Dependencies;
 
@@ -34,8 +37,6 @@ import jakarta.annotation.Generated;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-import static io.helidon.pico.api.ElementInfo.Access;
-import static io.helidon.pico.api.ElementInfo.ElementKind;
 import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 
 /**
@@ -47,12 +48,12 @@ import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 @SuppressWarnings({"unchecked", "checkstyle:TypeName"})
 public class HelloPicoImpl$$picoActivator extends AbstractServiceProvider<HelloPicoWorldImpl> {
 
-    private static final ServiceInfoDefault serviceInfo =
-            ServiceInfoDefault.builder()
-                    .serviceTypeName(getServiceTypeName())
-                    .activatorTypeName(HelloPicoImpl$$picoActivator.class.getName())
-                    .addContractsImplemented(HelloPicoWorld.class.getName())
-                    .addScopeTypeName(Singleton.class.getName())
+    private static final ServiceInfo serviceInfo =
+            ServiceInfo.builder()
+                    .serviceTypeName(HelloPicoWorldImpl.class)
+                    .activatorTypeName(HelloPicoImpl$$picoActivator.class)
+                    .addContractImplemented(HelloPicoWorld.class)
+                    .addScopeTypeName(Singleton.class)
                     .declaredRunLevel(0)
                     .build();
 
@@ -62,24 +63,25 @@ public class HelloPicoImpl$$picoActivator extends AbstractServiceProvider<HelloP
         serviceInfo(serviceInfo);
     }
 
-    public static String getServiceTypeName() {
-        return HelloPicoWorldImpl.class.getName();
+    @Override
+    public Class<HelloPicoWorldImpl> serviceType() {
+        return HelloPicoWorldImpl.class;
     }
 
     @Override
     public DependenciesInfo dependencies() {
-        DependenciesInfo deps = Dependencies.builder(getServiceTypeName())
-                .add("world", PicoWorld.class, ElementKind.FIELD, Access.PACKAGE_PRIVATE)
-                .add("worldRef", PicoWorld.class, ElementKind.FIELD, Access.PACKAGE_PRIVATE)
-                                .providerWrapped()
-                .add("listOfWorlds", PicoWorld.class, ElementKind.FIELD, Access.PACKAGE_PRIVATE)
-                                .listWrapped()
-                .add("listOfWorldRefs", PicoWorld.class, ElementKind.FIELD, Access.PACKAGE_PRIVATE)
-                                .listWrapped().providerWrapped()
-                .add("redWorld", PicoWorld.class, ElementKind.FIELD, Access.PACKAGE_PRIVATE)
-                                .named("red").optionalWrapped()
-                .add("world", PicoWorld.class, ElementKind.METHOD, 1, Access.PACKAGE_PRIVATE)
-                                .elemOffset(1)
+        DependenciesInfo deps = Dependencies.builder(HelloPicoWorldImpl.class)
+                .add("world", PicoWorld.class, ElementKind.FIELD, AccessModifier.PACKAGE_PRIVATE).ipName("world").ipType(TypeName.create(PicoWorld.class))
+                .add("worldRef", PicoWorld.class, ElementKind.FIELD, AccessModifier.PACKAGE_PRIVATE)
+                                .providerWrapped().ipName("worldRef").ipType(TypeName.create(Provider.class))
+                .add("listOfWorlds", PicoWorld.class, ElementKind.FIELD, AccessModifier.PACKAGE_PRIVATE)
+                                .listWrapped().ipName("listOfWorlds").ipType(TypeName.create(List.class))
+                .add("listOfWorldRefs", PicoWorld.class, ElementKind.FIELD, AccessModifier.PACKAGE_PRIVATE)
+                                .listWrapped().providerWrapped().ipName("listOfWorldRefs").ipType(TypeName.create(List.class))
+                .add("redWorld", PicoWorld.class, ElementKind.FIELD, AccessModifier.PACKAGE_PRIVATE)
+                                .named("red").optionalWrapped().ipName("redWorld").ipType(TypeName.create(Optional.class))
+                .add("world", PicoWorld.class, ElementKind.METHOD, 1, AccessModifier.PACKAGE_PRIVATE)
+                                .elemOffset(1).ipName("world").ipType(TypeName.create(PicoWorld.class))
                 .build();
         return Dependencies.combine(super.dependencies(), deps);
     }
@@ -90,7 +92,7 @@ public class HelloPicoImpl$$picoActivator extends AbstractServiceProvider<HelloP
     }
 
     @Override
-    protected void doInjectingFields(Object t, Map<String, Object> deps, Set<String> injections, String forServiceType) {
+    protected void doInjectingFields(Object t, Map<String, Object> deps, Set<String> injections, TypeName forServiceType) {
         super.doInjectingFields(t, deps, injections, forServiceType);
         HelloPicoWorldImpl target = (HelloPicoWorldImpl) t;
         target.world = Objects.requireNonNull(
@@ -106,7 +108,7 @@ public class HelloPicoImpl$$picoActivator extends AbstractServiceProvider<HelloP
     }
 
     @Override
-    protected void doInjectingMethods(Object t, Map<String, Object> deps, Set<String> injections, String forServiceType) {
+    protected void doInjectingMethods(Object t, Map<String, Object> deps, Set<String> injections, TypeName forServiceType) {
         super.doInjectingMethods(t, deps, injections, forServiceType);
         HelloPicoWorldImpl target = (HelloPicoWorldImpl)t;
         target.world(Objects.requireNonNull(

@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.Qualifier;
 
 import org.apache.maven.plugins.annotations.Parameter;
 
@@ -37,7 +37,7 @@ public class ServiceTypeQualifiers {
     private String serviceTypeName;
 
     @Parameter(name = "qualifiers")
-    private List<Qualifier> qualifiers;
+    private List<QualifierConfig> qualifiers;
 
     /**
      * Default constructor.
@@ -48,7 +48,7 @@ public class ServiceTypeQualifiers {
     /**
      * @return the map representation for this instance
      */
-    Map<String, Set<QualifierAndValue>> toMap() {
+    Map<String, Set<Qualifier>> toMap() {
         return Map.of(Objects.requireNonNull(serviceTypeName), new LinkedHashSet<>(Objects.requireNonNull(qualifiers)));
     }
 

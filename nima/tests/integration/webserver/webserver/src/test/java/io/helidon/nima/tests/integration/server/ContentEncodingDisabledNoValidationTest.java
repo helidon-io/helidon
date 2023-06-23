@@ -15,17 +15,16 @@
  */
 package io.helidon.nima.tests.integration.server;
 
-import org.junit.jupiter.api.Test;
-
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http1.Http1ConfigDefault;
-import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.http1.Http1ConnectionSelector;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,14 +47,16 @@ public class ContentEncodingDisabledNoValidationTest extends ContentEncodingDisa
     }
 
     @SetUpServer
-    static void server(WebServer.Builder server) {
-        ServerConnectionProvider http1 = Http1ConnectionProvider.builder()
-                // Headers validation is disabled
-                .http1Config(Http1ConfigDefault.builder().validateHeaders(false).build())
+    static void server(ServerConfig.Builder server) {
+        ServerConnectionSelector http1 = Http1ConnectionSelector.builder()
+                .config(http1Config -> http1Config
+                        // Headers validation is disabled
+                        .validateHeaders(false))
                 .build();
-        server.addConnectionProvider(http1)
+
+        server.addConnectionSelector(http1)
                 // Content encoding needs to be completely disabled
-                .contentEncodingContext(emptyEncodingContext());
+                .contentEncoding(emptyEncodingContext());
     }
 
     @Test

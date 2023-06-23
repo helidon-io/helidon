@@ -22,21 +22,19 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.api.BootstrapDefault;
+import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceBinder;
+import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
-import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.ServiceProvider;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.pico.api.QualifierAndValueDefault.createNamed;
+import static io.helidon.pico.api.Qualifier.createNamed;
 import static io.helidon.pico.runtime.DefaultInjectionPlans.injectionPointProvidersFor;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -47,14 +45,14 @@ class DefaultInjectionPlansTest {
 
     Config config = Config.builder(
                     ConfigSources.create(
-                            Map.of(PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true"), "config-1"))
+                            Map.of("pico.permits-dynamic", "true"), "config-1"))
             .disableEnvironmentVariablesSource()
             .disableSystemPropertiesSource()
             .build();
 
     @BeforeEach
     void init() {
-        PicoServices.globalBootstrap(BootstrapDefault.builder().config(config).build());
+        PicoServices.globalBootstrap(Bootstrap.builder().config(config).build());
     }
 
     @AfterEach
@@ -66,14 +64,14 @@ class DefaultInjectionPlansTest {
      * Also exercised in examples/pico.
      */
     @Test
-    void testinjectionPointResolversFor() {
+    void testInjectionPointResolversFor() {
         PicoServices picoServices = PicoServices.picoServices().orElseThrow();
         DefaultServices services = (DefaultServices) PicoServices.realizedServices();
         services.bind(picoServices, new FakeModuleComponent(), true);
 
-        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
+        ServiceInfoCriteria criteria = ServiceInfoCriteria.builder()
                 .addQualifier(createNamed("whatever"))
-                .addContractImplemented(Closeable.class.getName())
+                .addContractImplemented(Closeable.class)
                 .build();
         List<String> result = injectionPointProvidersFor(services, criteria).stream()
                 .map(ServiceProvider::description).toList();
@@ -90,29 +88,39 @@ class DefaultInjectionPlansTest {
     }
 
     static class FakeInjectionPointProviderActivator extends AbstractServiceProvider<Closeable> {
-        private static final ServiceInfoDefault serviceInfo =
-                ServiceInfoDefault.builder()
-                        .serviceTypeName(FakeInjectionPointProviderActivator.class.getName())
-                        .addContractsImplemented(Closeable.class.getName())
-                        .addExternalContractsImplemented(io.helidon.pico.api.InjectionPointProvider.class.getName())
-                        .addExternalContractsImplemented(jakarta.inject.Provider.class.getName())
+        private static final ServiceInfo serviceInfo =
+                ServiceInfo.builder()
+                        .serviceTypeName(FakeInjectionPointProviderActivator.class)
+                        .addContractImplemented(Closeable.class)
+                        .addExternalContractImplemented(io.helidon.pico.api.InjectionPointProvider.class)
+                        .addExternalContractImplemented(jakarta.inject.Provider.class)
                         .build();
 
         public FakeInjectionPointProviderActivator() {
             serviceInfo(serviceInfo);
         }
+
+        @Override
+        public Class<Closeable> serviceType() {
+            return Closeable.class;
+        }
     }
 
     static class FakeRegularActivator extends AbstractServiceProvider<Closeable> {
-        private static final ServiceInfoDefault serviceInfo =
-                ServiceInfoDefault.builder()
-                        .serviceTypeName(FakeRegularActivator.class.getName())
-                        .addContractsImplemented(Closeable.class.getName())
-                        .addExternalContractsImplemented(jakarta.inject.Provider.class.getName())
+        private static final ServiceInfo serviceInfo =
+                ServiceInfo.builder()
+                        .serviceTypeName(FakeRegularActivator.class)
+                        .addContractImplemented(Closeable.class)
+                        .addExternalContractImplemented(jakarta.inject.Provider.class)
                         .build();
 
         public FakeRegularActivator() {
             serviceInfo(serviceInfo);
+        }
+
+        @Override
+        public Class<Closeable> serviceType() {
+            return Closeable.class;
         }
     }
 

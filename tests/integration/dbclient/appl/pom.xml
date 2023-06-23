@@ -41,7 +41,7 @@
     <name>Integration Tests: DB Client Application</name>
 
     <properties>
-        <version.lib.jandex-maven-plugin>1.0.6</version.lib.jandex-maven-plugin>
+        <version.lib.jandex-maven-plugin>3.1.2</version.lib.jandex-maven-plugin>
         <mainClass>io.helidon.tests.integration.dbclient.appl.ApplMain</mainClass>
     </properties>
 
@@ -155,16 +155,6 @@
                     <groupId>io.smallrye</groupId>
                     <artifactId>jandex-maven-plugin</artifactId>
                     <version>${version.lib.jandex-maven-plugin}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${version.plugin.surefire}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>${version.plugin.surefire}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

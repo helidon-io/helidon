@@ -19,12 +19,12 @@ package io.helidon.examples.pico.configdriven;
 import java.util.Objects;
 
 import io.helidon.examples.pico.basics.Tool;
-import io.helidon.pico.configdriven.api.ConfiguredBy;
+import io.helidon.pico.configdriven.api.ConfigDriven;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
-@ConfiguredBy(DrillConfig.class)
+@ConfigDriven(DrillConfigBlueprint.class)
 class Drill implements Tool {
 
     private final DrillConfig cfg;

@@ -24,7 +24,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
-import io.helidon.builder.processor.tools.BuilderTypeTools;
+import io.helidon.common.processor.GeneratedAnnotationHandler;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
 
@@ -41,7 +42,7 @@ public class TemplateHelper {
     /**
      * The tag that us used to represent the template name to use.
      */
-    public static final String TAG_TEMPLATE_NAME = PicoServicesConfig.FQN + ".template.name";
+    public static final String TAG_TEMPLATE_NAME = "io.helidon.pico.template.name";
 
     /**
      * The default template name to use.
@@ -54,7 +55,7 @@ public class TemplateHelper {
 
     private TemplateHelper(PicoServicesConfig cfg) {
         Objects.requireNonNull(cfg.providerName(), "provider name is required");
-        this.versionId = Objects.requireNonNull(cfg.providerVersion(), "provider version is required");
+        this.versionId = cfg.providerVersion().orElseThrow(() -> new IllegalStateException("provider version is required"));
     }
 
     /**
@@ -64,7 +65,7 @@ public class TemplateHelper {
      */
     public static TemplateHelper create() {
         PicoServicesConfig cfg = PicoServices.picoServices()
-                .orElseThrow(() -> new ToolsException(PicoServicesConfig.NAME + " services not found")).config();
+                .orElseThrow(() -> new ToolsException("Pico services not found")).config();
         return new TemplateHelper(cfg);
     }
 
@@ -72,10 +73,16 @@ public class TemplateHelper {
      * Produces the generated sticker annotation attribute contents.
      *
      * @param generatorClassTypeName the generator class type name
+     * @param triggerClassType class that caused the type to be generated
+     * @param generatedType generated type
      * @return the generated sticker
      */
-    public String generatedStickerFor(String generatorClassTypeName) {
-        return BuilderTypeTools.generatedStickerFor(generatorClassTypeName, versionId);
+    public String generatedStickerFor(TypeName generatorClassTypeName, TypeName triggerClassType, TypeName generatedType) {
+        return GeneratedAnnotationHandler.createString(generatorClassTypeName,
+                                                       triggerClassType,
+                                                       generatedType,
+                                                       versionId,
+                                                       "");
     }
 
     /**
@@ -144,11 +151,6 @@ public class TemplateHelper {
         return loadStringFromResource(toFQN(templateName, name));
     }
 
-    private static String toFQN(String templateName,
-                                String name) {
-        return "templates/" + PicoServicesConfig.NAME + "/" + templateName + "/" + name;
-    }
-
     /**
      * Determine the arguments needed for template evaluation.
      *
@@ -175,6 +177,11 @@ public class TemplateHelper {
         } catch (IOException e) {
             throw new ToolsException("unable to determine substitutions", e);
         }
+    }
+
+    private static String toFQN(String templateName,
+                                String name) {
+        return "templates/pico/" + templateName + "/" + name;
     }
 
     private static String applySubstitutions(String target,

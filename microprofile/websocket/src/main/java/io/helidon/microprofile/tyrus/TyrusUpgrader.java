@@ -39,6 +39,7 @@ import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.spi.ServerConnection;
+import io.helidon.nima.websocket.webserver.WsConfig;
 import io.helidon.nima.websocket.webserver.WsUpgrader;
 
 import jakarta.enterprise.inject.spi.CDI;
@@ -62,13 +63,23 @@ public class TyrusUpgrader extends WsUpgrader {
     private final TyrusRouting tyrusRouting;
     private final WebSocketEngine engine;
 
-    TyrusUpgrader(Set<String> origins) {
+    private TyrusUpgrader(WsConfig origins) {
         super(origins);
         TyrusCdiExtension extension = CDI.current().select(TyrusCdiExtension.class).get();
         Objects.requireNonNull(extension);
         this.tyrusRouting = extension.tyrusRouting();
         TyrusServerContainer tyrusServerContainer = initializeTyrus();
         this.engine = tyrusServerContainer.getWebSocketEngine();
+    }
+
+    /**
+     * Create a new configured instance of Tyrus upgrader.
+     *
+     * @param config configuration of WebSocket
+     * @return a new HTTP/1 upgrader
+     */
+    public static TyrusUpgrader create(WsConfig config) {
+        return new TyrusUpgrader(config);
     }
 
 
@@ -136,6 +147,11 @@ public class TyrusUpgrader extends WsUpgrader {
             LOGGER.log(Level.DEBUG, "Upgraded to websocket version " + version);
         }
         return new TyrusConnection(ctx, upgradeInfo);
+    }
+
+    @Override
+    protected Set<String> origins() {
+        return super.origins();
     }
 
     TyrusServerContainer initializeTyrus() {

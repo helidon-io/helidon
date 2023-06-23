@@ -29,25 +29,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.CallingContext;
 import io.helidon.pico.api.CallingContextFactory;
 import io.helidon.pico.api.InjectionException;
 import io.helidon.pico.api.Intercepted;
 import io.helidon.pico.api.Metrics;
-import io.helidon.pico.api.MetricsDefault;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesConfig;
-import io.helidon.pico.api.QualifierAndValue;
-import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.api.ServiceBinder;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.ServiceProviderBindable;
 import io.helidon.pico.api.ServiceProviderProvider;
@@ -55,7 +53,7 @@ import io.helidon.pico.api.Services;
 
 import jakarta.inject.Provider;
 
-import static io.helidon.pico.api.CallingContext.toErrorMessage;
+import static io.helidon.pico.runtime.PicoExceptions.toErrorMessage;
 
 /**
  * The default reference implementation of {@link io.helidon.pico.api.Services}.
@@ -63,8 +61,8 @@ import static io.helidon.pico.api.CallingContext.toErrorMessage;
 class DefaultServices implements Services, ServiceBinder, Resettable {
     private static final ServiceProviderComparator COMPARATOR = ServiceProviderComparator.create();
 
-    private final ConcurrentHashMap<String, ServiceProvider<?>> servicesByTypeName = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Set<ServiceProvider<?>>> servicesByContract = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<TypeName, ServiceProvider<?>> servicesByTypeName = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<TypeName, Set<ServiceProvider<?>>> servicesByContract = new ConcurrentHashMap<>();
     private final Map<ServiceInfoCriteria, List<ServiceProvider<?>>> cache = new ConcurrentHashMap<>();
     private final PicoServicesConfig cfg;
     private final AtomicInteger lookupCount = new AtomicInteger();
@@ -146,11 +144,10 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     static void assertPermitsDynamic(PicoServicesConfig cfg) {
         if (!cfg.permitsDynamic()) {
             String desc = "Services are configured to prevent dynamic updates.\n"
-                    + "Set config '"
-                    + PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC
-                    + " = true' to enable";
+                    + "Set config 'pico.permits-dynamic = true' to enable";
             Optional<CallingContext> callCtx = CallingContextFactory.create(false);
-            String msg = (callCtx.isEmpty()) ? toErrorMessage(desc) : toErrorMessage(callCtx.get(), desc);
+            String msg = callCtx.map(callingContext -> toErrorMessage(callingContext, desc))
+                    .orElseGet(() -> toErrorMessage(desc));
             throw new IllegalStateException(msg);
         }
     }
@@ -170,8 +167,8 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         return new InjectionException("Expected to resolve a service matching " + ctx);
     }
 
-    static InjectionException resolutionBasedInjectionError(String serviceTypeName) {
-        return resolutionBasedInjectionError(ServiceInfoCriteriaDefault.builder().serviceTypeName(serviceTypeName).build());
+    static InjectionException resolutionBasedInjectionError(TypeName serviceTypeName) {
+        return resolutionBasedInjectionError(ServiceInfoCriteria.builder().serviceTypeName(serviceTypeName).build());
     }
 
     /**
@@ -219,8 +216,8 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
                                                         boolean expected) {
-        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
-                .addContractImplemented(type.getName())
+        ServiceInfoCriteria criteria = ServiceInfoCriteria.builder()
+                .addContractImplemented(TypeName.create(type))
                 .build();
         return (Optional) lookupFirst(criteria, expected);
     }
@@ -230,9 +227,9 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     public <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
                                                         String name,
                                                         boolean expected) {
-        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
-                .addContractImplemented(type.getName())
-                .addQualifier(QualifierAndValueDefault.createNamed(name))
+        ServiceInfoCriteria criteria = ServiceInfoCriteria.builder()
+                .addContractImplemented(TypeName.create(type))
+                .addQualifier(Qualifier.createNamed(name))
                 .build();
         return (Optional) lookupFirst(criteria, expected);
     }
@@ -248,8 +245,8 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
     public <T> List<ServiceProvider<T>> lookupAll(Class<T> type) {
-        ServiceInfoCriteria serviceInfo = ServiceInfoCriteriaDefault.builder()
-                .addContractImplemented(type.getName())
+        ServiceInfoCriteria serviceInfo = ServiceInfoCriteria.builder()
+                .addContractImplemented(TypeName.create(type))
                 .build();
         return (List) lookup(serviceInfo, false, Integer.MAX_VALUE);
     }
@@ -269,7 +266,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         }
 
         ServiceInfo serviceInfo = toValidatedServiceInfo(serviceProvider);
-        String serviceTypeName = serviceInfo.serviceTypeName();
+        TypeName serviceTypeName = serviceInfo.serviceTypeName();
 
         ServiceProvider<?> previous = servicesByTypeName.putIfAbsent(serviceTypeName, serviceProvider);
         if (previous != null && previous != serviceProvider) {
@@ -283,14 +280,16 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         }
 
         // special handling in case we are an interceptor...
-        Set<QualifierAndValue> qualifiers = serviceInfo.qualifiers();
-        Optional<QualifierAndValue> interceptedQualifier = qualifiers.stream()
+        Set<Qualifier> qualifiers = serviceInfo.qualifiers();
+        Optional<Qualifier> interceptedQualifier = qualifiers.stream()
                 .filter(q -> q.typeName().name().equals(Intercepted.class.getName()))
                 .findFirst();
         if (interceptedQualifier.isPresent()) {
             // assumption: expected that the root service provider is registered prior to any interceptors
-            String interceptedServiceTypeName = Objects.requireNonNull(interceptedQualifier.get().value().orElseThrow());
-            ServiceProvider<?> interceptedSp = lookupFirst(ServiceInfoCriteriaDefault.builder()
+            TypeName interceptedServiceTypeName = Objects.requireNonNull(interceptedQualifier.get().value()
+                                                                                 .map(TypeName::create)
+                                                                                 .orElseThrow());
+            ServiceProvider<?> interceptedSp = lookupFirst(ServiceInfoCriteria.builder()
                                                                    .serviceTypeName(interceptedServiceTypeName)
                                                                    .build(), true).orElse(null);
             if (interceptedSp instanceof ServiceProviderBindable) {
@@ -298,15 +297,11 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
             }
         }
 
-        servicesByContract.compute(serviceTypeName, (contract, servicesSharingThisContract) -> {
-            if (servicesSharingThisContract == null) {
-                servicesSharingThisContract = new TreeSet<>(serviceProviderComparator());
-            }
-            boolean added = servicesSharingThisContract.add(serviceProvider);
-            assert (added) : "expected to have added: " + serviceProvider;
-            return servicesSharingThisContract;
-        });
-        for (String cn : serviceInfo.contractsImplemented()) {
+        boolean added = servicesByContract.computeIfAbsent(serviceTypeName, it -> new TreeSet<>(serviceProviderComparator()))
+                .add(serviceProvider);
+        assert (added) : "expected to have added: " + serviceProvider;
+
+        for (TypeName cn : serviceInfo.contractsImplemented()) {
             servicesByContract.compute(cn, (contract, servicesSharingThisContract) -> {
                 if (servicesSharingThisContract == null) {
                     servicesSharingThisContract = new TreeSet<>(serviceProviderComparator());
@@ -340,7 +335,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
     }
 
     Metrics metrics() {
-        return MetricsDefault.builder()
+        return Metrics.builder()
                 .serviceCount(size())
                 .lookupCount(lookupCount.get())
                 .cacheLookupCount(cacheLookupCount.get())
@@ -357,9 +352,9 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         lookupCount.incrementAndGet();
 
         if (hasContracts(criteria)) {
-            String serviceTypeName = criteria.serviceTypeName().orElse(null);
+            TypeName serviceTypeName = criteria.serviceTypeName().orElse(null);
             boolean hasOneContractInCriteria = (1 == criteria.contractsImplemented().size());
-            String theOnlyContractRequested = (hasOneContractInCriteria)
+            TypeName theOnlyContractRequested = (hasOneContractInCriteria)
                     ? criteria.contractsImplemented().iterator().next() : null;
             if (serviceTypeName == null
                     && hasOneContractInCriteria
@@ -400,7 +395,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
                 .stream().parallel()
                 .filter(sp -> sp.serviceInfo().matches(criteria))
                 .limit(limit)
-                .collect(Collectors.toList());
+                .toList();
         if (expected && result.isEmpty()) {
             throw resolutionBasedInjectionError(criteria);
         }
@@ -416,7 +411,7 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
         return result;
     }
 
-    ServiceProvider<?> serviceProviderFor(String serviceTypeName) {
+    ServiceProvider<?> serviceProviderFor(TypeName serviceTypeName) {
         ServiceProvider<?> serviceProvider = servicesByTypeName.get(serviceTypeName);
         if (serviceProvider == null) {
             throw resolutionBasedInjectionError(serviceTypeName);

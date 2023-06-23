@@ -19,16 +19,17 @@ package io.helidon.nima.webserver;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -38,6 +39,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.Version;
+import io.helidon.common.config.ConfigException;
 import io.helidon.common.context.Context;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
@@ -46,100 +48,82 @@ import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpFeature;
-import io.helidon.nima.webserver.spi.ServerConnectionSelector;
-import io.helidon.pico.configdriven.api.ConfiguredBy;
+import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.configdriven.api.ConfigDriven;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
-import jakarta.inject.Provider;
 
-@ConfiguredBy(ServerConfig.class)
+@ConfigDriven(value = ServerConfigBlueprint.class, activateByDefault = true)
 class LoomServer implements WebServer {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
+    private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
 
     private final Map<String, ServerListener> listeners;
     private final AtomicBoolean running = new AtomicBoolean();
     private final Lock lifecycleLock = new ReentrantLock();
     private final ExecutorService executorService;
     private final Context context;
+    private final ServerConfig serverConfig;
     private final boolean registerShutdownHook;
 
     private volatile Thread shutdownHook;
     private volatile List<ListenerFuture> startFutures;
     private volatile boolean alreadyStarted = false;
 
-    @Inject
-    LoomServer(ServerConfig serverConfig, List<Provider<HttpFeature>> features) {
-        this(WebServer.builder()
-                     .routing(it -> {
-                         features.stream()
-                                 .map(Provider::get)
-                                 .forEach(it::addFeature);
-                     }),
-             serverConfig,
-             DirectHandlers.builder().build());
+    LoomServer(ServerConfig serverConfig) {
+        this.registerShutdownHook = serverConfig.shutdownHook();
+        this.context = serverConfig.serverContext()
+                .orElseGet(() -> Context.builder()
+                        .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
+                        .build());
+        this.serverConfig = serverConfig;
+        this.executorService = Executors.newVirtualThreadPerTaskExecutor();
+
+        Map<String, ListenerConfig> sockets = new HashMap<>(serverConfig.sockets());
+        if (sockets.containsKey(DEFAULT_SOCKET_NAME)) {
+            throw new ConfigException("Configuration of default socket MUST be done on server config directly, not as a separate"
+                                              + " socket with " + DEFAULT_SOCKET_NAME + " name.");
+        }
+        sockets.put(DEFAULT_SOCKET_NAME, serverConfig);
+
+        // for each socket name, use the default router by default, override if customized in builder
+        Optional<HttpRouting> routing = serverConfig.routing();
+        List<Routing> routings = serverConfig.routings();
+
+        Router.Builder routerBuilder = Router.builder();
+        routings.forEach(routerBuilder::addRouting);
+        routing.ifPresent(routerBuilder::addRouting);
+        if (routing.isEmpty() && routings.isEmpty()) {
+            routerBuilder.addRouting(HttpRouting.create());
+        }
+
+        Map<String, ServerListener> listenerMap = new HashMap<>();
+        sockets.forEach((name, socketConfig) -> {
+            listenerMap.put(name,
+                            new ServerListener(name,
+                                               socketConfig,
+                                               routerBuilder.build(),
+                                               context,
+                                               serverConfig.mediaContext().orElseGet(MediaContext::create),
+                                               serverConfig.contentEncoding().orElseGet(ContentEncodingContext::create),
+                                               serverConfig.directHandlers().orElseGet(DirectHandlers::create)));
+        });
+
+        listeners = Map.copyOf(listenerMap);
     }
 
-    LoomServer(Builder builder, ServerConfig serverConfig, DirectHandlers directHandlers) {
-        // this will be modified once we move everything to config driven
-        builder.host(serverConfig.host());
-        builder.port(serverConfig.port());
+    // based on Pico services
+    @Inject
+    LoomServer(ServerConfig serverConfig, List<ServiceProvider<HttpFeature>> features) {
+        this(addFeatures(serverConfig, features));
+    }
 
-        this.registerShutdownHook = builder.shutdownHook();
-        this.context = builder.context();
-
-        List<ServerConnectionSelector> connectionProviders = builder.connectionProviders();
-
-        Map<String, Router> routers = builder.routers();
-        Map<String, ListenerConfiguration.Builder> sockets = builder.socketBuilders();
-
-        Set<String> socketNames = new HashSet<>(routers.keySet());
-        socketNames.addAll(sockets.keySet());
-
-        Map<String, ServerListener> listeners = new HashMap<>(socketNames.size());
-
-        Router defaultRouter = routers.get(DEFAULT_SOCKET_NAME);
-        if (defaultRouter == null) {
-            defaultRouter = Router.empty();
-        }
-
-        boolean inheritThreadLocals = builder.inheritThreadLocals();
-
-        for (String socketName : socketNames) {
-            Router router = routers.get(socketName);
-            if (router == null) {
-                router = defaultRouter;
-            }
-            ListenerConfiguration.Builder socketBuilder = sockets.get(socketName);
-            if (socketBuilder == null) {
-                socketBuilder = ListenerConfiguration.builder(socketName);
-            }
-
-            // defaults for each listener
-            MediaContext mediaContext = builder.mediaContext();
-            ContentEncodingContext contentEncodingContext = builder.contentEncodingContext();
-
-            ListenerConfiguration socketConfig = socketBuilder
-                    .defaultMediaContext(mediaContext)
-                    .defaultContentEncodingContext(contentEncodingContext)
-                    .defaultDirectHandlers(directHandlers)
-                    .parentContext(context)
-                    .build();
-
-            listeners.put(socketName,
-                          new ServerListener(connectionProviders,
-                                             socketName,
-                                             socketConfig,
-                                             router,
-                                             inheritThreadLocals));
-        }
-
-        this.listeners = Map.copyOf(listeners);
-        this.executorService = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                                          .allowSetThreadLocals(true)
-                                                                          .inheritInheritableThreadLocals(inheritThreadLocals)
-                                                                          .factory());
+    @Override
+    public ServerConfig prototype() {
+        return serverConfig;
     }
 
     @PostConstruct
@@ -223,6 +207,54 @@ class LoomServer implements WebServer {
         return context;
     }
 
+    private static ServerConfig addFeatures(ServerConfig serverConfig, List<ServiceProvider<HttpFeature>> features) {
+        ServerConfig.Builder newBuilder = ServerConfig.builder(serverConfig);
+
+        List<HttpFeature> defaultSocket = new ArrayList<>();
+        Map<String, List<HttpFeature>> customSockets = new LinkedHashMap<>();
+        Map<String, List<HttpFeature>> missingSockets = new LinkedHashMap<>();
+
+        for (ServiceProvider<HttpFeature> featureProvider : features) {
+            HttpFeature feature = featureProvider.get();
+            String socket = feature.socket();
+            if (DEFAULT_SOCKET_NAME.equals(socket)) {
+                defaultSocket.add(feature);
+            } else {
+                if (serverConfig.sockets().containsKey(socket)) {
+                    customSockets.computeIfAbsent(socket, it -> new ArrayList<>())
+                            .add(feature);
+                } else {
+                    if (feature.socketRequired()) {
+                        missingSockets.computeIfAbsent(socket, it -> new ArrayList<>())
+                                .add(feature);
+                    } else {
+                        defaultSocket.add(feature);
+                    }
+                }
+            }
+        }
+
+        if (!missingSockets.isEmpty()) {
+            throw new IllegalArgumentException("Server is configured with the following sockets: "
+                                                       + serverConfig.sockets().keySet()
+                                                       + ", yet there are services that require other sockets. Map of socket "
+                                                       + "names to features: "
+                                                       + missingSockets);
+        }
+        newBuilder.routing(routing -> {
+           defaultSocket.forEach(routing::addFeature);
+        });
+        customSockets.forEach((socketName, featureList) -> {
+            // we have validated the socket names exist, so we are fine to just use it
+            ListenerConfig.Builder newSocketBuilder = ListenerConfig.builder(newBuilder.sockets().get(socketName));
+            newSocketBuilder.routing(routing -> {
+                featureList.forEach(routing::addFeature);
+            });
+            newBuilder.putSocket(socketName, newSocketBuilder.build());
+        });
+
+        return newBuilder.buildPrototype();
+    }
 
     private void stopIt() {
         // We may be in a shutdown hook and new threads may not be created
@@ -238,15 +270,19 @@ class LoomServer implements WebServer {
 
     private void startIt() {
         long now = System.currentTimeMillis();
-        boolean result = parallel("start", ServerListener::start);
-        if (!result) {
-            LOGGER.log(System.Logger.Level.ERROR, "Níma server failed to start, shutting down");
-            parallel("stop", ServerListener::stop);
-            if (startFutures != null) {
-                startFutures.forEach(future -> future.future().cancel(true));
-            }
-            return;
+        // TODO parallel start breaks pico - issue
+        // boolean result = parallel("start", ServerListener::start);
+        for (ServerListener listener : listeners.values()) {
+            listener.start();
         }
+        //        if (!result) {
+        //            LOGGER.log(System.Logger.Level.ERROR, "Níma server failed to start, shutting down");
+        //            parallel("stop", ServerListener::stop);
+        //            if (startFutures != null) {
+        //                startFutures.forEach(future -> future.future().cancel(true));
+        //            }
+        //            return;
+        //        }
         if (registerShutdownHook) {
             registerShutdownHook();
         }
@@ -257,7 +293,6 @@ class LoomServer implements WebServer {
                 + now + " milliseconds. "
                 + uptime + " milliseconds since JVM startup. "
                 + "Java " + Runtime.version());
-
 
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
             LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));

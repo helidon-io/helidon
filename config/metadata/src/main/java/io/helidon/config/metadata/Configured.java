@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public @interface Configured {
      * Whether this is a root configuration object.
      * If set to {@code false} (default), the object is considered to be nested in another
      * configuration.
-     *
+     * <p>
      * For example WebServer is a standalone configuration object, as it can be read directly
      * from configuration. ThreadPoolSupplier is not standalone, as it can be used only as part of another
      * object.

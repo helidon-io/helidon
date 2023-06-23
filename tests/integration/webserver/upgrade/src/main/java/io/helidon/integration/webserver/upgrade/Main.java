@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package io.helidon.integration.webserver.upgrade;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.common.reactive.Single;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Http1Route;
@@ -32,7 +32,6 @@ import jakarta.websocket.server.ServerEndpointConfig;
 import static io.helidon.common.http.Http.Method.GET;
 import static io.helidon.common.http.Http.Method.POST;
 import static io.helidon.common.http.Http.Method.PUT;
-
 
 public class Main {
 
@@ -49,10 +48,11 @@ public class Main {
 
                     if (ssl) {
                         s.tls(WebServerTls.builder()
-                                .privateKey(KeyConfig.keystoreBuilder()
-                                        .keystorePassphrase("password")
-                                        .keystore(Resource.create("server.p12"))
-                                        .build()));
+                                      .privateKey(Keys.builder()
+                                                          .keystore(keystore -> keystore
+                                                                  .passphrase("password")
+                                                                  .keystore(Resource.create("server.p12")))
+                                                          .build()));
                     }
 
                 })
@@ -64,23 +64,23 @@ public class Main {
 
                         .route(Http1Route.route(GET, "/versionspecific1", (req, res) -> res.send("HTTP/1.1 route\n")))
                         .route(Http2Route.route(GET, "/versionspecific2", (req, res) -> res.send("HTTP/2.0 route\n")))
-
                         .route(Http1Route.route(
-                                        PathMatcher.create("/multi*"),
-                                        (req, res) -> res.send("HTTP/1.1 route " + req.method().name() + "\n"),
-                                        GET, POST, PUT
-                                )
+                                       PathMatcher.create("/multi*"),
+                                       (req, res) -> res.send("HTTP/1.1 route " + req.method().name() + "\n"),
+                                       GET, POST, PUT
+                               )
                         )
                         .route(Http2Route.route(
-                                        PathMatcher.create("/multi*"),
-                                        (req, res) -> res.send("HTTP/2.0 route " + req.method().name() + "\n"),
-                                        GET, POST, PUT
-                                )
+                                       PathMatcher.create("/multi*"),
+                                       (req, res) -> res.send("HTTP/2.0 route " + req.method().name() + "\n"),
+                                       GET, POST, PUT
+                               )
                         )
                 )
                 .addRouting(WebSocketRouting.builder()
-                        .endpoint("/ws-conf", ServerEndpointConfig.Builder.create(ConfiguredEndpoint.class, "/echo").build())
-                        .endpoint("/ws-annotated", AnnotatedEndpoint.class)// also /echo
+                                    .endpoint("/ws-conf",
+                                              ServerEndpointConfig.Builder.create(ConfiguredEndpoint.class, "/echo").build())
+                                    .endpoint("/ws-annotated", AnnotatedEndpoint.class)// also /echo
                 )
                 .build()
                 .start();

@@ -47,8 +47,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
-import io.helidon.pico.api.PicoServicesConfig;
 
 import static io.helidon.pico.tools.ModuleUtils.PICO_MODULE_INFO_JAVA_NAME;
 import static io.helidon.pico.tools.ModuleUtils.normalizedBaseModuleName;
@@ -95,11 +93,6 @@ public class CodeGenFiler {
         this.scratchBaseOutputPath = scratchClassClassOutputPath.getParent();
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "(outputPath=" + targetClassOutputPath + ")";
-    }
-
     /**
      * Creates a new code gen filer.
      *
@@ -121,6 +114,51 @@ public class CodeGenFiler {
         boolean prev = filerWriteEnabled;
         filerWriteEnabled = enabled;
         return prev;
+    }
+
+    /**
+     * Returns the path to the target scratch directory for Pico.
+     *
+     * @param targetOutputPath the target class output path
+     * @return the pico target scratch path
+     */
+    public static Path scratchClassOutputPath(Path targetOutputPath) {
+        Path fileName = targetOutputPath.getFileName();
+        Path parent = targetOutputPath.getParent();
+        if (fileName == null || parent == null) {
+            throw new IllegalStateException(targetOutputPath.toString());
+        }
+        String name = fileName.toString();
+        return parent.resolve("pico").resolve(name);
+    }
+
+    /**
+     * Returns the target class output directory.
+     *
+     * @param filer the filer
+     * @return the path to the target class output directory
+     */
+    public static Path targetClassOutputPath(Filer filer) {
+        if (filer instanceof AbstractFilerMessager.DirectFilerMessager) {
+            CodeGenPaths paths = ((AbstractFilerMessager.DirectFilerMessager) filer).codeGenPaths();
+            return Path.of(paths.outputPath().orElseThrow());
+        }
+
+        try {
+            FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", "___");
+            Path path = Path.of(f.toUri());
+            if (path.getParent() == null) {
+                throw new IllegalStateException(path.toString());
+            }
+            return path.getParent();
+        } catch (Exception e) {
+            throw new ToolsException("Unable to determine output path", e);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(outputPath=" + targetClassOutputPath + ")";
     }
 
     boolean filerWriterEnabled() {
@@ -192,54 +230,6 @@ public class CodeGenFiler {
     }
 
     /**
-     * Returns the target class output directory.
-     *
-     * @param filer the filer
-     * @return the path to the target class output directory
-     */
-    public static Path targetClassOutputPath(Filer filer) {
-        if (filer instanceof AbstractFilerMessager.DirectFilerMessager) {
-            CodeGenPaths paths = ((AbstractFilerMessager.DirectFilerMessager) filer).codeGenPaths();
-            return Path.of(paths.outputPath().orElseThrow());
-        }
-
-        try {
-            FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", "___");
-            Path path = Path.of(f.toUri());
-            if (path.getParent() == null) {
-                throw new IllegalStateException(path.toString());
-            }
-            return path.getParent();
-        } catch (Exception e) {
-            throw new ToolsException("Unable to determine output path", e);
-        }
-    }
-
-    /**
-     * Returns the path to the target scratch directory for Pico.
-     *
-     * @param targetOutputPath the target class output path
-     * @return the pico target scratch path
-     */
-    public static Path scratchClassOutputPath(Path targetOutputPath) {
-        Path fileName = targetOutputPath.getFileName();
-        Path parent = targetOutputPath.getParent();
-        if (fileName == null || parent == null) {
-            throw new IllegalStateException(targetOutputPath.toString());
-        }
-        String name = fileName.toString();
-        return parent.resolve(PicoServicesConfig.NAME).resolve(name);
-    }
-
-    private Filer scratchFiler() throws IOException {
-        Files.createDirectories(scratchClassClassOutputPath);
-        CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
-                .outputPath(scratchClassClassOutputPath.toString())
-                .build();
-        return new AbstractFilerMessager.DirectFilerMessager(codeGenPaths, filer.logger());
-    }
-
-    /**
      * Code generates a resource.
      *
      * @param outPath   the path to output the resource to
@@ -263,59 +253,6 @@ public class CodeGenFiler {
                                            String body,
                                            Function<InputStream, String> updater) {
         return codegenResourceFilerOut(outPath, body, Optional.of(updater));
-    }
-
-    private Optional<Path> codegenResourceFilerOut(String outPath,
-                                                   String body,
-                                                   Optional<Function<InputStream, String>> optFnUpdater) {
-        Messager messager = messager();
-        if (!filerWriterEnabled()) {
-            messager.log("(disabled) Writing " + outPath + " with:\n" + body);
-            return Optional.empty();
-        }
-        messager.debug("Writing " + outPath);
-
-        Filer filer = filer();
-        Function<InputStream, String> fnUpdater = optFnUpdater.orElse(null);
-
-        try {
-            if (FORCE_MODULE_INFO_PICO_INTO_SCRATCH_DIR
-                    && targetClassOutputPath != null
-                    && outPath.equals(PICO_MODULE_INFO_JAVA_NAME)) {
-                // hack: physically relocate it elsewhere under our scratch output directory
-                filer = scratchFiler();
-            }
-
-            FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", outPath);
-            Path fPath = Path.of(f.toUri());
-            if (fPath.toFile().exists()) {
-                if (fnUpdater != null) {
-                    // update it...
-                    try (InputStream is = f.openInputStream()) {
-                        body = fnUpdater.apply(is);
-                    }
-                }
-
-                String actualContents = Files.readString(fPath, StandardCharsets.UTF_8);
-                if (!actualContents.equals(body)) {
-                    Files.writeString(fPath, body, StandardCharsets.UTF_8);
-                }
-            } else {
-                // file does not exist yet... create it the normal way
-                f = filer.createResource(StandardLocation.CLASS_OUTPUT, "", outPath);
-                try (Writer os = f.openWriter()) {
-                    os.write(body);
-                }
-                fPath = Path.of(f.toUri());
-            }
-
-            return Optional.of(fPath);
-        } catch (Exception x) {
-            ToolsException te = new ToolsException("Error writing resource file: " + x.getMessage(), x);
-            messager.error(te.getMessage(), te);
-            // should not make it here
-            throw te;
-        }
     }
 
     /**
@@ -517,9 +454,9 @@ public class CodeGenFiler {
      */
     Optional<Path> toSourceLocation(String name) {
         if (filer instanceof AbstractFilerMessager.DirectFilerMessager) {
-            TypeName typeName = TypeNameDefault.createFromTypeName(name);
+            TypeName typeName = TypeName.create(name);
             Optional<Path> path = Optional.ofNullable(((AbstractFilerMessager.DirectFilerMessager) filer)
-                                               .toSourcePath(StandardLocation.SOURCE_PATH, typeName));
+                                                              .toSourcePath(StandardLocation.SOURCE_PATH, typeName));
             if (path.isPresent()) {
                 return path;
             }
@@ -527,6 +464,67 @@ public class CodeGenFiler {
 
         messager().log(CodeGenFiler.class.getSimpleName() + ": unable to determine source location for: " + name);
         return Optional.empty();
+    }
+
+    private Filer scratchFiler() throws IOException {
+        Files.createDirectories(scratchClassClassOutputPath);
+        CodeGenPaths codeGenPaths = CodeGenPaths.builder()
+                .outputPath(scratchClassClassOutputPath.toString())
+                .build();
+        return new AbstractFilerMessager.DirectFilerMessager(codeGenPaths, filer.logger());
+    }
+
+    private Optional<Path> codegenResourceFilerOut(String outPath,
+                                                   String body,
+                                                   Optional<Function<InputStream, String>> optFnUpdater) {
+        Messager messager = messager();
+        if (!filerWriterEnabled()) {
+            messager.log("(disabled) Writing " + outPath + " with:\n" + body);
+            return Optional.empty();
+        }
+        messager.debug("Writing " + outPath);
+
+        Filer filer = filer();
+        Function<InputStream, String> fnUpdater = optFnUpdater.orElse(null);
+
+        try {
+            if (FORCE_MODULE_INFO_PICO_INTO_SCRATCH_DIR
+                    && targetClassOutputPath != null
+                    && outPath.equals(PICO_MODULE_INFO_JAVA_NAME)) {
+                // hack: physically relocate it elsewhere under our scratch output directory
+                filer = scratchFiler();
+            }
+
+            FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", outPath);
+            Path fPath = Path.of(f.toUri());
+            if (fPath.toFile().exists()) {
+                if (fnUpdater != null) {
+                    // update it...
+                    try (InputStream is = f.openInputStream()) {
+                        body = fnUpdater.apply(is);
+                    }
+                }
+
+                String actualContents = Files.readString(fPath, StandardCharsets.UTF_8);
+                if (!actualContents.equals(body)) {
+                    Files.writeString(fPath, body, StandardCharsets.UTF_8);
+                }
+            } else {
+                // file does not exist yet... create it the normal way
+                f = filer.createResource(StandardLocation.CLASS_OUTPUT, "", outPath);
+                try (Writer os = f.openWriter()) {
+                    os.write(body);
+                }
+                fPath = Path.of(f.toUri());
+            }
+
+            return Optional.of(fPath);
+        } catch (Exception x) {
+            ToolsException te = new ToolsException("Error writing resource file: " + x.getMessage(), x);
+            messager.error(te.getMessage(), te);
+            // should not make it here
+            throw te;
+        }
     }
 
 }

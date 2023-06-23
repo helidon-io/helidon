@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.nima.webserver.http;
 import java.util.function.Supplier;
 
 import io.helidon.nima.webserver.ServerLifecycle;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.pico.api.Contract;
 
 /**
  * Can be registered with {@link io.helidon.nima.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)}.
@@ -32,6 +34,7 @@ import io.helidon.nima.webserver.ServerLifecycle;
  * {@link io.helidon.common.Weighted} to order features according to their weight. Higher weighted features are registered first.
  * This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc.).
  */
+@Contract
 public interface HttpFeature extends Supplier<HttpFeature>, ServerLifecycle {
     @Override
     default HttpFeature get() {
@@ -44,4 +47,23 @@ public interface HttpFeature extends Supplier<HttpFeature>, ServerLifecycle {
      * @param routing routing builder
      */
     void setup(HttpRouting.Builder routing);
+
+    /**
+     * Name of the listener socket this feature should be registered on, for automatically discovered features.
+     *
+     * @return name of the listener this service should be bound to
+     */
+    default String socket() {
+        return WebServer.DEFAULT_SOCKET_NAME;
+    }
+
+    /**
+     * Whether the socket defined in {@link #socket()} must be present for this feature, or it can be
+     * exposed on default socket.
+     *
+     * @return {@code true} if this feature must be exposed on the named socket, {@code false} by default
+     */
+    default boolean socketRequired() {
+        return false;
+    }
 }
