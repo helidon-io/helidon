@@ -139,52 +139,7 @@
             <!-- gRPC -->
             <dependency>
                 <groupId>io.helidon.grpc</groupId>
-                <artifactId>helidon-grpc-client</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.grpc</groupId>
                 <artifactId>io.grpc</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.grpc</groupId>
-                <artifactId>helidon-grpc-core</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.grpc</groupId>
-                <artifactId>helidon-grpc-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.grpc</groupId>
-                <artifactId>helidon-grpc-metrics</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-core</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-metrics</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-client</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile</groupId>
-                <artifactId>helidon-microprofile-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- graphQL -->
@@ -385,11 +340,6 @@
             <dependency>
                 <groupId>io.helidon.security.integration</groupId>
                 <artifactId>helidon-security-integration-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.security.integration</groupId>
-                <artifactId>helidon-security-integration-grpc</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1100,6 +1050,11 @@
             <dependency>
                 <groupId>io.helidon.reactive.webserver.cors</groupId>
                 <artifactId>helidon-cors</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Messaging -->
