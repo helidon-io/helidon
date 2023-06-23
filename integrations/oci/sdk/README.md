@@ -28,44 +28,44 @@ The **Helidon Injection Framework** offers two modules for integrating with the 
 
 In your pom.xml, add this plugin to be run as part of the compilation phase:
 ```pom.xml
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-            <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                <annotationProcessorPaths>
-                    <path>
-                        <groupId>io.helidon.integrations.oci.sdk</groupId>
-                        <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
-                        <version>${helidon.version}</version>
-                    </path>
-                </annotationProcessorPaths>
-        </configuration>
-    </plugin>
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <forceJavacCompilerUse>true</forceJavacCompilerUse>
+            <annotationProcessorPaths>
+                <path>
+                    <groupId>io.helidon.integrations.oci.sdk</groupId>
+                    <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
+                    <version>${helidon.version}</version>
+                </path>
+            </annotationProcessorPaths>
+    </configuration>
+</plugin>
 ```
 
 Add the runtime dependency to your pom.xml, along with any other OCI SDK library that is required by your application:
 ```pom.xml
-    <dependency>
-        <groupId>io.helidon.integrations.oci.sdk</groupId>
-        <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
-    </dependency>
-    
-    ...
-    <!-- arbitrarily selected OCI libraries - use the libraries appropriate for your application -->
-    <dependency>
-        <groupId>com.oracle.oci.sdk</groupId>
-        <artifactId>oci-java-sdk-ailanguage</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>com.oracle.oci.sdk</groupId>
-        <artifactId>oci-java-sdk-objectstorage</artifactId>
-    </dependency>
+<dependency>
+    <groupId>io.helidon.integrations.oci.sdk</groupId>
+    <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
+</dependency>
+
+...
+<!-- arbitrarily selected OCI libraries - use the libraries appropriate for your application -->
+<dependency>
+    <groupId>com.oracle.oci.sdk</groupId>
+    <artifactId>oci-java-sdk-ailanguage</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.oracle.oci.sdk</groupId>
+    <artifactId>oci-java-sdk-objectstorage</artifactId>
+</dependency>
 ```
 
-Note that if you are using JPMS (i.e., _module-info.java_), then you will also need to be sure to export the _io.helidon.integrations.generated_ derivative package names from your module(s).
+_**Note that if you are using JPMS (i.e., _module-info.java_), then you will also need to be sure to export the _io.helidon.integrations.generated_ derivative package names from your module(s)._**
 
-Finally, write your application using **@Inject** for any OCI SDK API. Here is a simple example that uses _Object Storage_:
+Additionally, write your application using **@Inject** for any OCI SDK API. Here is a simple example that uses _Object Storage_:
 
 ```java
 @Singleton
@@ -85,6 +85,11 @@ class AServiceUsingObjectStorage {
     ...
 }
 ```
+
+Besides being able to inject OCI SDK APIs, note also that these contracts are injectable (defined in the runtime module):
+* [OciAvailability](runtime/src/main/java/io/helidon/integrations/oci/sdk/runtime/OciAvailability.java) - can be used to determine if the current runtime environment is executing on an OCI compute node.
+* [Region](runtime/src/main/java/io/helidon/integrations/oci/sdk/runtime/OciRegionProvider.java) - can be used to determine the current region where the current compute environment is running. It is recommended to inject this as an _java.lang.Optional_ instance.
+
 
 ### How it works
 See the [InjectionProcessorObserverForOci](processor/src/main/java/io/helidon/integrations/oci/sdk/processor/InjectionProcessorObserverForOCI.java) for a more technical description for how the processor observes _@Inject_ usage. In summary, this processor will observe **OCI SDK** injection points and then code generate **Activators** enabling injection of SDK services in conjunction with the [runtime](./runtime) module on the classpath.
