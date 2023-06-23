@@ -31,26 +31,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.DefaultBootstrap;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
 
 /**
  * Provides the basic formation for {@code module-info.java} creation and manipulation.
  *
  * @see java.lang.module.ModuleDescriptor
  */
+@SuppressWarnings("unused")
 @Builder
 public interface ModuleInfoDescriptor {
-
-    /**
-     * The tag used to represent the module name.
-     */
-    String TAG_MODULE_NAME = "module_name";
 
     /**
      * The default module name (i.e., "unnamed").
@@ -72,11 +68,6 @@ public interface ModuleInfoDescriptor {
      * The java module-info name.
      */
     String DEFAULT_MODULE_INFO_JAVA_NAME = MODULE_INFO_NAME + ".java";
-
-    /**
-     * The resource providing the module-info template.
-     */
-    String SERVICE_PROVIDER_MODULE_INFO_HBS = "module-info.hbs";
 
 
     /**
@@ -148,12 +139,62 @@ public interface ModuleInfoDescriptor {
     List<ModuleInfoItem> items();
 
     /**
-     * Returns true if this module info is unnamed.
+     * Returns true if the name currently set is the same as the {@link #DEFAULT_MODULE_NAME}.
      *
-     * @return true if this module is unnamed
+     * @return true if the current name is the default name
      */
     default boolean isUnnamed() {
         return DEFAULT_MODULE_NAME.equals(name());
+    }
+
+    /**
+     * Provides the ability to create a new merged descriptor using this as the basis, and then combining another into it
+     * in order to create a new descriptor.
+     *
+     * @param another the other descriptor to merge
+     * @return the merged descriptor
+     */
+    @SuppressWarnings("unchecked")
+    default ModuleInfoDescriptor mergeCreate(ModuleInfoDescriptor another) {
+        if (another == this) {
+            throw new IllegalArgumentException("can't merge with self");
+        }
+
+        ModuleInfoDescriptorDefault.Builder newOne = ModuleInfoDescriptorDefault.toBuilder(this);
+        for (ModuleInfoItem itemThere : another.items()) {
+            Optional<ModuleInfoItem> itemHere = first(itemThere.target());
+            if (itemHere.isPresent()) {
+                int index = newOne.items.indexOf(itemHere.get());
+                newOne.items.remove(index);
+                ModuleInfoItem mergedItem = itemHere.get().mergeCreate(itemThere);
+                newOne.items.add(index, mergedItem);
+            } else {
+                newOne.addItem(itemThere);
+            }
+        }
+
+        return newOne.build();
+    }
+
+    /**
+     * Takes a builder, and if the target does not yet exist, will add the new module info item from the supplier.
+     *
+     * @param builder       the fluent builder
+     * @param target        the target to check for existence for
+     * @param itemSupplier  the item to add which presumably has the same target as above
+     * @return true if added
+     */
+    static boolean addIfAbsent(ModuleInfoDescriptorDefault.Builder builder,
+                               String target,
+                               Supplier<ModuleInfoItem> itemSupplier) {
+        Optional<ModuleInfoItem> existing = builder.first(target);
+        if (existing.isEmpty()) {
+            ModuleInfoItem item = Objects.requireNonNull(itemSupplier.get());
+            assert (target.equals(item.target())) : "target mismatch: " + target + " and " + item.target();
+            builder.addItem(item);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -181,7 +222,7 @@ public interface ModuleInfoDescriptor {
             String moduleInfo = Files.readString(path);
             return create(moduleInfo, ordering);
         } catch (IOException e) {
-            throw new ToolsException("unable to load: " + path, e);
+            throw new ToolsException("Unable to load: " + path, e);
         }
     }
 
@@ -210,7 +251,7 @@ public interface ModuleInfoDescriptor {
             String moduleInfo = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             return create(moduleInfo, ordering);
         } catch (IOException e) {
-            throw new ToolsException("unable to load from stream", e);
+            throw new ToolsException("Unable to load from stream", e);
         }
     }
 
@@ -235,7 +276,7 @@ public interface ModuleInfoDescriptor {
      */
     static ModuleInfoDescriptor create(String moduleInfo,
                                        Ordering ordering) {
-        DefaultModuleInfoDescriptor.Builder descriptor = DefaultModuleInfoDescriptor.builder();
+        ModuleInfoDescriptorDefault.Builder descriptor = ModuleInfoDescriptorDefault.builder();
 
         String clean = moduleInfo;
         List<String> comments = null;
@@ -245,12 +286,15 @@ public interface ModuleInfoDescriptor {
             clean = moduleInfo.replaceAll("/\\*[^*]*(?:\\*(?!/)[^*]*)*\\*/|//.*", "");
         }
 
+        // remove annotations
+        clean = cleanModuleAnnotations(clean);
+
         boolean firstLine = true;
         Map<String, TypeName> importAliases = new LinkedHashMap<>();
+        String line = null;
         try (BufferedReader reader = new BufferedReader(new StringReader(clean))) {
-            String line;
             while (null != (line = cleanLine(reader, comments, importAliases))) {
-                if (firstLine && Objects.nonNull(comments) && comments.size() > 0) {
+                if (firstLine && (comments != null) && comments.size() > 0) {
                     descriptor.headerComment(String.join("\n", comments));
                 }
                 firstLine = false;
@@ -267,13 +311,13 @@ public interface ModuleInfoDescriptor {
                     }
                     for (int i = start; i < split.length; i++) {
                         descriptor.addItem(requiresModuleName(cleanLine(split[i]), isTransitive, isStatic,
-                                                              Objects.nonNull(comments) ? comments : List.of()));
+                                                              (comments != null) ? comments : List.of()));
                     }
                 } else if (line.startsWith("exports ")) {
-                    DefaultModuleInfoItem.Builder exports = DefaultModuleInfoItem.builder()
+                    ModuleInfoItemDefault.Builder exports = ModuleInfoItemDefault.builder()
                             .exports(true)
                             .target(resolve(split[1], importAliases))
-                            .precomments(Objects.nonNull(comments) ? comments : List.of());
+                            .precomments((comments != null) ? comments : List.of());
                     for (int i = 2; i < split.length; i++) {
                         if (!"to".equalsIgnoreCase(split[i])) {
                             exports.addWithOrTo(resolve(cleanLine(split[i]), importAliases));
@@ -281,16 +325,19 @@ public interface ModuleInfoDescriptor {
                     }
                     descriptor.addItem(exports.build());
                 } else if (line.startsWith("uses ")) {
-                    DefaultModuleInfoItem.Builder uses = DefaultModuleInfoItem.builder()
+                    ModuleInfoItemDefault.Builder uses = ModuleInfoItemDefault.builder()
                             .uses(true)
                             .target(resolve(split[1], importAliases))
-                            .precomments(Objects.nonNull(comments) ? comments : List.of());
+                            .precomments((comments != null) ? comments : List.of());
                     descriptor.addItem(uses.build());
                 } else if (line.startsWith("provides ")) {
-                    DefaultModuleInfoItem.Builder provides = DefaultModuleInfoItem.builder()
+                    ModuleInfoItemDefault.Builder provides = ModuleInfoItemDefault.builder()
                             .provides(true)
                             .target(resolve(split[1], importAliases))
-                            .precomments(Objects.nonNull(comments) ? comments : List.of());
+                            .precomments((comments != null) ? comments : List.of());
+                    if (split.length < 3) {
+                        throw new ToolsException("Unable to process module-info's use of: " + line);
+                    }
                     if (split[2].equals("with")) {
                         for (int i = 3; i < split.length; i++) {
                             provides.addWithOrTo(resolve(cleanLine(split[i]), importAliases));
@@ -300,19 +347,26 @@ public interface ModuleInfoDescriptor {
                 } else if (line.equals("}")) {
                     break;
                 } else {
-                    throw new ToolsException("unable to process module-info's use of: " + line);
+                    throw new ToolsException("Unable to process module-info's use of: " + line);
                 }
 
-                if (Objects.nonNull(comments)) {
+                if (comments != null) {
                     comments = new ArrayList<>();
                 }
             }
-        } catch (IOException e) {
-            throw new ToolsException("unable to load module-info", e);
+        } catch (ToolsException e) {
+            throw e;
+        } catch (Exception e) {
+            if (line != null) {
+                throw new ToolsException("Failed on line: " + line + ";\n"
+                                                 + "unable to load or parse module-info: " + moduleInfo, e);
+            }
+            throw new ToolsException("Unable to load or parse module-info: " + moduleInfo, e);
         }
 
         return descriptor.build();
     }
+
 
     /**
      * Saves the descriptor source to the provided path.
@@ -324,7 +378,7 @@ public interface ModuleInfoDescriptor {
         try {
             Files.writeString(path, contents());
         } catch (IOException e) {
-            throw new ToolsException("unable to save: " + path, e);
+            throw new ToolsException("Unable to save: " + path, e);
         }
     }
 
@@ -355,7 +409,7 @@ public interface ModuleInfoDescriptor {
     /**
      * Provides the content of the description appropriate to write out.
      *
-     * @return The contents (source code body) for this descriptor.
+     * @return the contents (source code body) for this descriptor
      */
     default String contents() {
         return contents(true);
@@ -365,11 +419,10 @@ public interface ModuleInfoDescriptor {
      * Provides the content of the description appropriate to write out.
      *
      * @param wantAnnotation flag determining whether the Generated annotation comment should be present
-     * @return The contents (source code body) for this descriptor.
+     * @return the contents (source code body) for this descriptor
      */
     default String contents(boolean wantAnnotation) {
-        // note to self: this will change later to be a better resolution --jtrent
-        TemplateHelper helper = TemplateHelper.create(DefaultBootstrap.builder().build());
+        TemplateHelper helper = TemplateHelper.create();
 
         Map<String, Object> subst = new HashMap<>();
         subst.put("name", name());
@@ -377,7 +430,7 @@ public interface ModuleInfoDescriptor {
         if (!items.isEmpty()) {
             if (Ordering.SORTED == ordering()) {
                 ArrayList<ModuleInfoItem> newItems = new ArrayList<>();
-                items.forEach(i -> newItems.add(DefaultModuleInfoItem.toBuilder(i).ordering(Ordering.SORTED).build()));
+                items.forEach(i -> newItems.add(ModuleInfoItemDefault.toBuilder(i).ordering(Ordering.SORTED).build()));
                 items = newItems;
                 items.sort(Comparator.comparing(ModuleInfoItem::target));
             }
@@ -386,12 +439,12 @@ public interface ModuleInfoDescriptor {
         if (wantAnnotation) {
             subst.put("generatedanno",
                       (Ordering.NATURAL_PRESERVE_COMMENTS == ordering() || headerComment().isPresent())
-                              ? null : helper.defaultGeneratedStickerFor(getClass().getName()));
+                              ? null : helper.generatedStickerFor(getClass().getName()));
         }
         headerComment().ifPresent(it -> subst.put("header", it));
         descriptionComment().ifPresent(it -> subst.put("description", it));
         subst.put("hasdescription", descriptionComment().isPresent());
-        String template = helper.safeLoadTemplate(templateName(), SERVICE_PROVIDER_MODULE_INFO_HBS);
+        String template = helper.safeLoadTemplate(templateName(), ModuleUtils.SERVICE_PROVIDER_MODULE_INFO_HBS);
         String contents = helper.applySubstitutions(template, subst, true).trim();
         return CommonUtils.trimLines(contents);
     }
@@ -423,37 +476,7 @@ public interface ModuleInfoDescriptor {
      * @return the item created
      */
     static ModuleInfoItem usesExternalContract(String externalContract) {
-        return DefaultModuleInfoItem.builder().uses(true).target(externalContract).build();
-    }
-
-    /**
-     * Creates a new item declaring a {@code provides} contract from this module descriptor.
-     *
-     * @param contract the contract definition being provided
-     * @return the item created
-     */
-    static ModuleInfoItem providesContract(Class<?> contract) {
-        return providesContract(contract.getName());
-    }
-
-    /**
-     * Creates a new item declaring a {@code provides} contract from this module descriptor.
-     *
-     * @param contract the contract definition being provided
-     * @return the item created
-     */
-    static ModuleInfoItem providesContract(TypeName contract) {
-        return providesContract(contract.name());
-    }
-
-    /**
-     * Creates a new item declaring a {@code provides} contract from this module descriptor.
-     *
-     * @param contract the contract definition being provided
-     * @return the item created
-     */
-    static ModuleInfoItem providesContract(String contract) {
-        return DefaultModuleInfoItem.builder().provides(true).target(contract).build();
+        return ModuleInfoItemDefault.builder().uses(true).target(externalContract).build();
     }
 
     /**
@@ -466,7 +489,7 @@ public interface ModuleInfoDescriptor {
      */
     static ModuleInfoItem providesContract(String contract,
                                            String with) {
-        return DefaultModuleInfoItem.builder().provides(true).target(contract).addWithOrTo(with).build();
+        return ModuleInfoItemDefault.builder().provides(true).target(contract).addWithOrTo(with).build();
     }
 
     /**
@@ -476,7 +499,7 @@ public interface ModuleInfoDescriptor {
      * @return the item created
      */
     static ModuleInfoItem requiresModuleName(String moduleName) {
-        return DefaultModuleInfoItem.builder().requires(true).target(moduleName).build();
+        return ModuleInfoItemDefault.builder().requires(true).target(moduleName).build();
     }
 
     /**
@@ -493,7 +516,7 @@ public interface ModuleInfoDescriptor {
                                              boolean isTransitive,
                                              boolean isStatic,
                                              List<String> comments) {
-        return DefaultModuleInfoItem.builder()
+        return ModuleInfoItemDefault.builder()
                 .requires(true)
                 .precomments(comments)
                 .transitiveUsed(isTransitive)
@@ -503,7 +526,7 @@ public interface ModuleInfoDescriptor {
     }
 
     /**
-     * Creates a new item {@code exports} on a a package from this module descriptor.
+     * Creates a new item {@code exports} on a package from this module descriptor.
      *
      * @param typeName the type name exported
      * @return the item created
@@ -513,17 +536,17 @@ public interface ModuleInfoDescriptor {
     }
 
     /**
-     * Creates a new item {@code exports} on a a package from this module descriptor.
+     * Creates a new item {@code exports} on a package from this module descriptor.
      *
      * @param pkg the package name exported
      * @return the item created
      */
     static ModuleInfoItem exportsPackage(String pkg) {
-        return DefaultModuleInfoItem.builder().exports(true).target(pkg).build();
+        return ModuleInfoItemDefault.builder().exports(true).target(pkg).build();
     }
 
     /**
-     * Creates a new item {@code exports} on a a package from this module descriptor, along with
+     * Creates a new item {@code exports} on a package from this module descriptor, along with
      * a {@code 'to'} declaration.
      *
      * @param contract  the contract definition being exported
@@ -532,25 +555,25 @@ public interface ModuleInfoDescriptor {
      */
     static ModuleInfoItem exportsPackage(String contract,
                                          String to) {
-        return DefaultModuleInfoItem.builder().exports(true).target(contract).addWithOrTo(to).build();
+        return ModuleInfoItemDefault.builder().exports(true).target(contract).addWithOrTo(to).build();
     }
 
     private static String resolve(String name,
                                   Map<String, TypeName> importAliases) {
         TypeName typeName = importAliases.get(name);
-        return Objects.isNull(typeName) ? name : typeName.name();
+        return (typeName == null) ? name : typeName.name();
     }
 
     private static String cleanLine(BufferedReader reader,
                                     List<String> preComments,
                                     Map<String, TypeName> importAliases) throws IOException {
         String line = reader.readLine();
-        if (Objects.isNull(line)) {
+        if (line == null) {
             return null;
         }
 
         String trimmedline = line.trim();
-        if (Objects.nonNull(preComments)) {
+        if (preComments != null) {
             boolean incomment = trimmedline.startsWith("//") || trimmedline.startsWith("/*");
             boolean inempty = trimmedline.isEmpty();
             while (incomment || inempty) {
@@ -558,7 +581,7 @@ public interface ModuleInfoDescriptor {
                 incomment = incomment && !trimmedline.endsWith("*/") && !trimmedline.startsWith("//");
 
                 line = reader.readLine();
-                if (Objects.isNull(line)) {
+                if (line == null) {
                     return null;
                 }
                 trimmedline = line.trim();
@@ -587,7 +610,7 @@ public interface ModuleInfoDescriptor {
         line = cleanLine(result.toString());
         if (line.startsWith("import ")) {
             String[] split = line.split("\\s+");
-            TypeName typeName = DefaultTypeName.createFromTypeName(split[split.length - 1]);
+            TypeName typeName = TypeNameDefault.createFromTypeName(split[split.length - 1]);
             importAliases.put(typeName.className(), typeName);
             line = cleanLine(reader, preComments, importAliases);
         }
@@ -595,7 +618,7 @@ public interface ModuleInfoDescriptor {
     }
 
     private static String cleanLine(String line) {
-        if (Objects.isNull(line)) {
+        if (line == null) {
             return null;
         }
 
@@ -604,10 +627,46 @@ public interface ModuleInfoDescriptor {
         }
 
         if (line.contains("/*") || line.contains("*/")) {
-            throw new ToolsException("unable to parse lines that have inner comments: '" + line + "'");
+            throw new ToolsException("Unable to parse lines that have inner comments: '" + line + "'");
         }
 
         return line.trim();
     }
 
+    private static String cleanModuleAnnotations(String moduleText) {
+        StringBuilder response = new StringBuilder();
+
+        try (BufferedReader br = new BufferedReader(new StringReader(moduleText))) {
+            boolean inModule = false;
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (inModule) {
+                    response.append(line).append("\n");
+                    continue;
+                }
+                String trimmed = line.trim();
+                if (trimmed.startsWith("/*")) {
+                    // beginning of comments
+                    response.append(line).append("\n");
+                } else if (trimmed.startsWith("*")) {
+                    // comment line
+                    response.append(line).append("\n");
+                } else if (trimmed.startsWith("import ")) {
+                    // import line
+                    response.append(line).append("\n");
+                } else if (trimmed.startsWith("module")) {
+                    // now just add the rest (we do not cover annotations within module text)
+                    inModule = true;
+                    response.append(line).append("\n");
+                } else if (trimmed.isBlank()) {
+                    // empty line
+                    response.append("\n");
+                }
+            }
+        } catch (IOException ignored) {
+            // ignored, we cannot get an exception when closing string reader
+        }
+
+        return response.toString();
+    }
 }

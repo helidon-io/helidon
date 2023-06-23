@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,35 +58,35 @@ class ConfigVaultProviderTest {
         String secretString = "my secret";
         byte[] secret = secretString.getBytes(StandardCharsets.UTF_8);
 
-        String encryptedDefault = security.encrypt("config-vault-default", secret).await();
-        String encryptedOverride = security.encrypt("config-vault-override", secret).await();
+        String encryptedDefault = security.encrypt("config-vault-default", secret);
+        String encryptedOverride = security.encrypt("config-vault-override", secret);
 
         assertThat(encryptedOverride, not(encryptedDefault));
 
-        byte[] decrypted = security.decrypt("config-vault-default", encryptedDefault).await();
+        byte[] decrypted = security.decrypt("config-vault-default", encryptedDefault);
         assertThat(new String(decrypted), is(secretString));
 
-        decrypted = security.decrypt("config-vault-override", encryptedOverride).await();
+        decrypted = security.decrypt("config-vault-override", encryptedOverride);
         assertThat(new String(decrypted), is(secretString));
 
         // now make sure we used a different password
         Assertions.assertThrows(CryptoException.class,
-                                () -> security.decrypt("config-vault-override", encryptedDefault).await());
+                                () -> security.decrypt("config-vault-override", encryptedDefault));
 
         Assertions.assertThrows(CryptoException.class,
-                                () -> security.decrypt("config-vault-default", encryptedOverride).await());
+                                () -> security.decrypt("config-vault-default", encryptedOverride));
     }
 
     @Test
     void testSecretFromConfig() {
-        String password = security.secret("password", "default-value").await();
+        String password = security.secret("password", "default-value");
 
         assertThat(password, is("secret-password"));
     }
 
     @Test
     void testSecretFromBuilt() {
-        String password = builtSecurity.secret("password", "default-value").await();
+        String password = builtSecurity.secret("password", "default-value");
 
         assertThat(password, is("configured-password"));
     }

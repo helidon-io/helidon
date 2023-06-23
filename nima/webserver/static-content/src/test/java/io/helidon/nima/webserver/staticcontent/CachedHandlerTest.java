@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,13 +56,13 @@ class CachedHandlerTest {
 
     @BeforeAll
     static void initTestClass() {
-        classpathHandler = (ClassPathContentHandler) StaticContentSupport.builder("/web")
+        classpathHandler = (ClassPathContentHandler) StaticContentService.builder("/web")
                 .addCacheInMemory("favicon.ico")
                 .welcomeFileName("resource.txt")
                 .build();
         classpathHandler.beforeStart();
 
-        fsHandler = (FileSystemContentHandler) StaticContentSupport.builder(Paths.get("./src/test/resources/web"))
+        fsHandler = (FileSystemContentHandler) StaticContentService.builder(Paths.get("./src/test/resources/web"))
                 .addCacheInMemory("nested")
                 .welcomeFileName("resource.txt")
                 .build();
@@ -171,7 +171,8 @@ class CachedHandlerTest {
         CachedHandlerInMemory cached = cachedHandlerInMemory.get();
         assertThat("Cached bytes must not be null", cached.bytes(), notNullValue());
         assertThat("Cached bytes must not be empty", cached.bytes(), not(BufferData.EMPTY_BYTES));
-        assertThat("Content length", cached.contentLength(), is(7));
+        // content is: "Nested content"
+        assertThat("Content length", cached.contentLength(), is(14));
         assertThat("Last modified", cached.lastModified(), notNullValue());
         assertThat("Media type", cached.mediaType(), is(MediaTypes.TEXT_PLAIN));
     }

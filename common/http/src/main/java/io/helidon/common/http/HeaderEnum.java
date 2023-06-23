@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ enum HeaderEnum implements Http.HeaderName {
     EXPECT("Expect"),
     FORWARDED("Forwarded"),
     FROM("From"),
-    HOST("Host"),
+    HOST(Http.Header.HOST_STRING),
     IF_MATCH("If-Match"),
     IF_MODIFIED_SINCE("If-Modified-Since"),
     IF_NONE_MATCH("If-None-Match"),
@@ -90,6 +90,11 @@ enum HeaderEnum implements Http.HeaderName {
     VARY("Vary"),
     WARNING("Warning"),
     WWW_AUTHENTICATE("WWW-Authenticate"),
+    X_FORWARDED_FOR("X-Forwarded-For"),
+    X_FORWARDED_HOST("X-Forwarded-Host"),
+    X_FORWARDED_PORT("X-Forwarded-Port"),
+    X_FORWARDED_PREFIX("X-Forwarded-Prefix"),
+    X_FORWARDED_PROTO("X-Forwarded-Proto"),
     X_HELIDON_CN("X-HELIDON-CN");
 
     private static final Map<String, Http.HeaderName> BY_NAME;

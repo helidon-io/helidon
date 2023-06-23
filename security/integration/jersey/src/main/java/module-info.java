@@ -42,7 +42,6 @@ module io.helidon.security.integration.jersey {
     requires io.helidon.jersey.server;
     requires io.helidon.jersey.client;
     requires io.helidon.security.integration.common;
-    requires io.helidon.reactive.webclient.jaxrs;
 
     requires jakarta.inject;
 

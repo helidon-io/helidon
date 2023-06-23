@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.metadata.ConfiguredValue;
 
 /**
- * Used for demonstrating and testing the Pico Builder.
+ * Used for demonstrating and testing the Builder.
  *
  * @see MyDerivedConfigBean
  */
@@ -29,7 +29,7 @@ import io.helidon.config.metadata.ConfiguredValue;
 public interface MyConfigBean {
 
     /**
-     * Used for demonstrating and testing the Pico Builder. Here we can see that a {@code required=true} is placed on the configured
+     * Used for demonstrating and testing the Builder. Here we can see that a {@code required=true} is placed on the configured
      * option.
      *
      * @return ignored, here for testing purposes only

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-se</artifactId>
+        <artifactId>helidon-nima</artifactId>
         <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../../../../applications/se/pom.xml</relativePath>
+        <relativePath>../../../../applications/nima/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.tests.apps.bookstore.bookstore-se</groupId>
     <artifactId>bookstore-se</artifactId>
@@ -35,40 +35,56 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver</artifactId>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver-http2</artifactId>
+            <groupId>io.helidon.nima.webclient</groupId>
+            <artifactId>helidon-nima-webclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http2</groupId>
+            <artifactId>helidon-nima-http2-webclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http2</groupId>
+            <artifactId>helidon-nima-http2-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jsonp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jsonb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jackson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.health</groupId>
-            <artifactId>helidon-reactive-health</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-key-util</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health-checks</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.metrics</groupId>
-            <artifactId>helidon-reactive-metrics</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jsonp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jsonb</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jackson</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.common</groupId>
@@ -78,6 +94,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

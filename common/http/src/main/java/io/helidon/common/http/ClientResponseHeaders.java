@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import io.helidon.common.http.Http.DateTime;
 import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.media.type.ParserMode;
 
 import static io.helidon.common.http.Http.Header.ACCEPT_PATCH;
 import static io.helidon.common.http.Http.Header.EXPIRES;
@@ -36,12 +37,24 @@ import static io.helidon.common.http.Http.Header.LOCATION;
 public interface ClientResponseHeaders extends Headers {
     /**
      * Create a new instance from headers parsed from client response.
+     * Strict media type parsing mode is used for {@code Content-Type} header.
      *
      * @param responseHeaders client response headers
      * @return immutable instance of client response HTTP headers
      */
     static ClientResponseHeaders create(Headers responseHeaders) {
-        return new ClientResponseHeadersImpl(responseHeaders);
+        return new ClientResponseHeadersImpl(responseHeaders, ParserMode.STRICT);
+    }
+
+    /**
+     * Create a new instance from headers parsed from client response.
+     *
+     * @param responseHeaders client response headers
+     * @param parserMode media type parsing mode
+     * @return immutable instance of client response HTTP headers
+     */
+    static ClientResponseHeaders create(Headers responseHeaders, ParserMode parserMode) {
+        return new ClientResponseHeadersImpl(responseHeaders, parserMode);
     }
 
     /**

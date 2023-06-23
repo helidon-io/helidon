@@ -43,14 +43,21 @@ import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.staticcontent.StaticContentSupport;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.nima.webserver.staticcontent.StaticContentService;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.CreationException;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
@@ -361,6 +368,27 @@ public class ServerCdiExtension implements Extension {
         STARTUP_LOGGER.log(Level.TRACE, "Server created");
     }
 
+    /**
+     * Make Nima's {@code ServerRequest} and {@code ServerResponse} available for injection
+     * via CDI by registering them as beans.
+     *
+     * @param event after bean discovery event
+     */
+    private void afterBeanDiscovery(@Observes AfterBeanDiscovery event) {
+        event.addBean()
+                .qualifiers(Set.of(Default.Literal.INSTANCE, Any.Literal.INSTANCE))
+                .addTransitiveTypeClosure(ServerRequest.class)
+                .scope(RequestScoped.class)
+                .createWith(cc -> Contexts.context().flatMap(c -> c.get(ServerRequest.class))
+                        .orElseThrow(() -> new CreationException("Unable to retrieve ServerRequest from context")));
+        event.addBean()
+                .qualifiers(Set.of(Default.Literal.INSTANCE, Any.Literal.INSTANCE))
+                .addTransitiveTypeClosure(ServerResponse.class)
+                .scope(RequestScoped.class)
+                .createWith(cc -> Contexts.context().flatMap(c -> c.get(ServerResponse.class))
+                        .orElseThrow(() -> new CreationException("Unable to retrieve ServerResponse from context")));
+    }
+
     private void registerJaxRsApplications(BeanManager beanManager) {
         JaxRsCdiExtension jaxRs = beanManager.getExtension(JaxRsCdiExtension.class);
 
@@ -421,14 +449,14 @@ public class ServerCdiExtension implements Extension {
 
     private void registerPathStaticContent(Config config) {
         Config context = config.get("context");
-        StaticContentSupport.FileSystemBuilder pBuilder = StaticContentSupport.builder(config.get("location")
+        StaticContentService.FileSystemBuilder pBuilder = StaticContentService.builder(config.get("location")
                                                                                                .as(Path.class)
                                                                                                .get());
         pBuilder.welcomeFileName(config.get("welcome")
                                           .asString()
                                           .orElse("index.html"));
 
-        StaticContentSupport staticContent = pBuilder.build();
+        StaticContentService staticContent = pBuilder.build();
 
         if (context.exists()) {
             routingBuilder.register(context.asString().get(), staticContent);
@@ -441,7 +469,7 @@ public class ServerCdiExtension implements Extension {
     private void registerClasspathStaticContent(Config config) {
         Config context = config.get("context");
 
-        StaticContentSupport.ClassPathBuilder cpBuilder = StaticContentSupport.builder(config.get("location").asString().get());
+        StaticContentService.ClassPathBuilder cpBuilder = StaticContentService.builder(config.get("location").asString().get());
         cpBuilder.welcomeFileName(config.get("welcome")
                                           .asString()
                                           .orElse("index.html"));
@@ -455,7 +483,7 @@ public class ServerCdiExtension implements Extension {
                 .flatMap(List::stream)
                 .forEach(cpBuilder::addCacheInMemory);
 
-        StaticContentSupport staticContent = cpBuilder.build();
+        StaticContentService staticContent = cpBuilder.build();
 
         if (context.exists()) {
             routingBuilder.register(context.asString().get(), staticContent);

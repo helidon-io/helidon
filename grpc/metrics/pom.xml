@@ -48,8 +48,12 @@
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
-            <scope>provided</scope>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.reactive.metrics</groupId>
@@ -77,11 +81,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.reactive.webclient</groupId>
             <artifactId>helidon-reactive-webclient</artifactId>
             <scope>test</scope>
@@ -95,7 +94,6 @@
             -->
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
-            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
     </dependencies>

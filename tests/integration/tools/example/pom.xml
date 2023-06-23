@@ -25,7 +25,7 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
@@ -38,7 +38,7 @@
     <name>Helidon Integration Tests Tools: Test Example</name>
 
     <properties>
-        <version.lib.jandex-maven-plugin>1.0.6</version.lib.jandex-maven-plugin>
+        <version.lib.jandex-maven-plugin>3.1.2</version.lib.jandex-maven-plugin>
         <mainClass>io.helidon.tests.integration.tools.example.ServerMain</mainClass>
     </properties>
 
@@ -115,7 +115,7 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.jboss.jandex</groupId>
+                    <groupId>io.smallrye</groupId>
                     <artifactId>jandex-maven-plugin</artifactId>
                     <version>${version.lib.jandex-maven-plugin}</version>
                 </plugin>
@@ -145,7 +145,7 @@
             </plugin>
 
             <plugin>
-                <groupId>org.jboss.jandex</groupId>
+                <groupId>io.smallrye</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
                 <executions>
                     <execution>

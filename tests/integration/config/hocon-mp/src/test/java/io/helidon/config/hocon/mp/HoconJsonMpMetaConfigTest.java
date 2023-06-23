@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,15 @@ import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.CDI;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test meta-config on MP with HOCON and JSON parsing.
@@ -65,31 +67,31 @@ class HoconJsonMpMetaConfigTest {
 
     @Test
     void TestHoconConfig() {
-        Assertions.assertEquals(bean.hocon_string, "Meta String");
-        Assertions.assertEquals(bean.hocon_number, 20);
-        Assertions.assertEquals(bean.hocon_array_0, "Meta Array 1");
-        Assertions.assertEquals(bean.hocon_array_1, "Meta Array 2");
-        Assertions.assertEquals(bean.hocon_array_2, "Meta Array 3");
-        Assertions.assertTrue(bean.hocon_boolean);
+        assertThat(bean.hocon_string, is("Meta String"));
+        assertThat(bean.hocon_number, is(20));
+        assertThat(bean.hocon_array_0, is("Meta Array 1"));
+        assertThat(bean.hocon_array_1, is("Meta Array 2"));
+        assertThat(bean.hocon_array_2, is("Meta Array 3"));
+        assertThat(bean.hocon_boolean, is(true));
      }
 
      @Test
     void TestHoconIncludeConfig() {
-        Assertions.assertEquals(bean.hocon_include_string, "Meta Include String");
-        Assertions.assertEquals(bean.hocon_include_number, 10);
-        Assertions.assertEquals(bean.hocon_include_array_0, "Meta Include Array 1");
-        Assertions.assertEquals(bean.hocon_include_array_1, "Meta Include Array 2");
-        Assertions.assertEquals(bean.hocon_include_array_2, "Meta Include Array 3");
-        Assertions.assertFalse(bean.hocon_include_boolean);
+        assertThat(bean.hocon_include_string, is("Meta Include String"));
+        assertThat(bean.hocon_include_number, is(10));
+        assertThat(bean.hocon_include_array_0, is("Meta Include Array 1"));
+        assertThat(bean.hocon_include_array_1, is("Meta Include Array 2"));
+        assertThat(bean.hocon_include_array_2, is("Meta Include Array 3"));
+        assertThat(bean.hocon_include_boolean, is(false));
     }
 
     @Test
     void TestJsonConfig() {
-        Assertions.assertEquals(bean.json_string, "Meta String");
-        Assertions.assertEquals(bean.json_number, 20);
-        Assertions.assertEquals(bean.json_array_0, "Meta Array 1");
-        Assertions.assertEquals(bean.json_array_1, "Meta Array 2");
-        Assertions.assertEquals(bean.json_array_2, "Meta Array 3");
-        Assertions.assertTrue(bean.json_boolean);
+        assertThat(bean.json_string, is("Meta String"));
+        assertThat(bean.json_number, is(20));
+        assertThat(bean.json_array_0, is("Meta Array 1"));
+        assertThat(bean.json_array_1, is("Meta Array 2"));
+        assertThat(bean.json_array_2, is("Meta Array 3"));
+        assertThat(bean.json_boolean, is(true));
     }
 }

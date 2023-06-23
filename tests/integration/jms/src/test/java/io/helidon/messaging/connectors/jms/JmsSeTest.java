@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,15 +31,13 @@ import io.helidon.messaging.Messaging;
 
 import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled("3.0.0-JAKARTA")
 public class JmsSeTest extends AbstractJmsTest {
 
     @Test
@@ -66,6 +64,7 @@ public class JmsSeTest extends AbstractJmsTest {
                         .namedFactory(factoryName)
                         .destination(destination)
                         .type(Type.QUEUE)
+                        .periodExecutions(5)
                         .build())
                 .build();
 
@@ -82,7 +81,7 @@ public class JmsSeTest extends AbstractJmsTest {
                 .build()
                 .start();
 
-        assertTrue(cdl.await(2, TimeUnit.SECONDS));
+        assertThat(cdl.await(2, TimeUnit.SECONDS), is(true));
         assertThat(result, containsInAnyOrder("1", "2", "3", "4"));
     }
 
@@ -116,6 +115,7 @@ public class JmsSeTest extends AbstractJmsTest {
                         .jndiProviderUrl(url)
                         .destination(destination)
                         .type(Type.QUEUE)
+                        .periodExecutions(5)
                         .build())
                 .build();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,12 @@ public final class Filters implements ServerLifecycle {
 
         FilterChain chain = new FilterChainImpl(ctx, errorHandlers, filters, request, response, routingExecutor);
         request.path(new FilterRoutedPath(request.prologue().uriPath()));
+        errorHandlers.runWithErrorHandling(ctx, request, response, () -> executeFilters(chain));
+    }
+
+    private Void executeFilters(FilterChain chain) {
         chain.proceed();
+        return null;
     }
 
     private static final class FilterChainImpl implements FilterChain {
@@ -111,7 +116,7 @@ public final class Filters implements ServerLifecycle {
                 return;
             }
             if (filters.hasNext()) {
-                errorHandlers.runWithErrorHandling(ctx, request, response, this::runNextFilter);
+                filters.next().filter(this, request, response);
             } else {
                 errorHandlers.runWithErrorHandling(ctx, request, response, routingExecutor);
                 if (!response.isSent()) {
@@ -121,11 +126,6 @@ public final class Filters implements ServerLifecycle {
                                             Http.Status.INTERNAL_SERVER_ERROR_500);
                 }
             }
-        }
-
-        private Void runNextFilter() {
-            filters.next().filter(this, request, response);
-            return null;
         }
     }
 

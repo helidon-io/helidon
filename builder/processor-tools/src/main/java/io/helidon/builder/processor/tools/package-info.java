@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /**
- * The Helidon Pico Builder Processor Tools package. These are generally only needed by other Helidon modules like the Builder
+ * The Helidon Builder Processor Tools package. These are generally only needed by other Helidon modules like the Builder
  * annotation processor, etc.
  */
 package io.helidon.builder.processor.tools;

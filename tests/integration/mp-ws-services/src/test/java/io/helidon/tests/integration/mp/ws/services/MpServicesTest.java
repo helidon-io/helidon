@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -69,7 +68,6 @@ class MpServicesTest {
     }
 
     @Test
-    @Disabled
     void testJaxrs() throws IOException {
         // configured in application.yaml to override both the routing name and the routing path
         test(9999, "/jaxrs", "jax-rs");

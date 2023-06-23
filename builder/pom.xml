@@ -2,7 +2,7 @@
 
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <parent>
         <groupId>io.helidon</groupId>
@@ -36,32 +36,14 @@
     <name>Helidon Builder Project</name>
     <packaging>pom</packaging>
 
-    <properties>
-        <!-- Helidon Builder should be backward compatible with Java 11 -->
-        <version.java>11</version.java>
-    </properties>
-
     <modules>
         <module>builder</module>
         <module>processor-spi</module>
         <module>processor-tools</module>
         <module>processor</module>
+        <module>builder-config</module>
+        <module>builder-config-processor</module>
+        <module>testing</module>
         <module>tests</module>
     </modules>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <configuration>
-                        <!-- This module is Java 11, we must remove enable-preview from parent project -->
-                        <additionalOptions combine.self="override"/>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
-
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
@@ -96,6 +97,12 @@ class JaxRsService implements HttpService {
     static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
         resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
         resourceConfig.property(WADL_FEATURE_DISABLE, "true");
+
+        // TODO - temporary until MP OpenAPI TCK bug fix released. https://github.com/eclipse/microprofile-open-api/issues/557
+        if (System.getProperties().containsKey("io.helidon." + ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS)) {
+            resourceConfig.property(ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS,
+                                    Boolean.getBoolean("io.helidon." + ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS));
+        }
 
         InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
         ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,
@@ -184,7 +191,14 @@ class JaxRsService implements HttpService {
     }
 
     private void handle(ServerRequest req, ServerResponse res) {
-        Contexts.runInContext(req.context(), () -> doHandle(req.context(), req, res));
+        Context context = req.context();
+
+        // make these available in context for ServerCdiExtension
+        context.supply(ServerRequest.class, () -> req);
+        context.supply(ServerResponse.class, () -> res);
+
+        // call doHandle in active context
+        Contexts.runInContext(context, () -> doHandle(context, req, res));
     }
 
     private void doHandle(Context ctx, ServerRequest req, ServerResponse res) {

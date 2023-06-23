@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,12 @@ package io.helidon.nima.webclient.http1;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.ServiceLoader;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.ClientRequestHeaders;
@@ -30,6 +34,7 @@ import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.ParserMode;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
@@ -37,6 +42,8 @@ import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http.media.ReadableEntityBase;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ClientResponseEntity;
+import io.helidon.nima.webclient.http.spi.Source;
+import io.helidon.nima.webclient.http.spi.SourceHandlerProvider;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -44,6 +51,9 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 class ClientResponseImpl implements Http1ClientResponse {
     private static final System.Logger LOGGER = System.getLogger(ClientResponseImpl.class.getName());
+
+    private static final List<SourceHandlerProvider> SOURCE_HANDLERS
+            = HelidonServiceLoader.builder(ServiceLoader.load(SourceHandlerProvider.class)).build().asList();
 
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -53,10 +63,13 @@ class ClientResponseImpl implements Http1ClientResponse {
     private final DataReader reader;
     // todo configurable
     private final ContentEncodingContext encodingSupport = ContentEncodingContext.create();
-    private final MediaContext mediaContext = MediaContext.create();
+    private final MediaContext mediaContext;
     private final String channelId;
+    private final CompletableFuture<Void> whenComplete;
     private final boolean hasTrailers;
     private final List<String> trailerNames;
+    // Media type parsing mode configured on client.
+    private final ParserMode parserMode;
 
     private ClientConnection connection;
     private long entityLength;
@@ -67,13 +80,19 @@ class ClientResponseImpl implements Http1ClientResponse {
                        ClientRequestHeaders requestHeaders,
                        ClientResponseHeaders responseHeaders,
                        ClientConnection connection,
-                       DataReader reader) {
+                       DataReader reader,
+                       MediaContext mediaContext,
+                       ParserMode parserMode,
+                       CompletableFuture<Void> whenComplete) {
         this.responseStatus = responseStatus;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
         this.connection = connection;
         this.reader = reader;
+        this.mediaContext = mediaContext;
+        this.parserMode = parserMode;
         this.channelId = connection.channelId();
+        this.whenComplete = whenComplete;
 
         if (responseHeaders.contains(Header.CONTENT_LENGTH)) {
             this.entityLength = Long.parseLong(responseHeaders.get(Header.CONTENT_LENGTH).value());
@@ -101,7 +120,7 @@ class ClientResponseImpl implements Http1ClientResponse {
 
     @Override
     public ReadableEntity entity() {
-        return entity(requestHeaders, responseHeaders);
+        return entity(requestHeaders, responseHeaders, whenComplete);
     }
 
     @Override
@@ -122,8 +141,21 @@ class ClientResponseImpl implements Http1ClientResponse {
         }
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends Source<?>> void source(GenericType<T> sourceType, T source) {
+        for (SourceHandlerProvider p : SOURCE_HANDLERS) {
+            if (p.supports(sourceType, this)) {
+                p.handle(source, this, mediaContext);
+                return;
+            }
+        }
+        throw new UnsupportedOperationException("No source available for " + sourceType);
+    }
+
     private ReadableEntity entity(ClientRequestHeaders requestHeaders,
-                                  ClientResponseHeaders responseHeaders) {
+                                  ClientResponseHeaders responseHeaders,
+                                  CompletableFuture<Void> whenComplete) {
         ContentDecoder decoder;
 
         if (encodingSupport.contentDecodingEnabled()) {
@@ -154,7 +186,10 @@ class ClientResponseImpl implements Http1ClientResponse {
                 }
                 return ClientResponseEntity.create(decoder,
                                                    this::readEntity,
-                                                   this::close,
+                                                   () -> {
+                                                       whenComplete.complete(null);
+                                                       close();
+                                                   },
                                                    requestHeaders,
                                                    responseHeaders,
                                                    mediaContext);
@@ -166,11 +201,16 @@ class ClientResponseImpl implements Http1ClientResponse {
             entityLength = -1;
             return ClientResponseEntity.create(decoder,
                                                this::readEntityChunked,
-                                               this::close,
+                                               () -> {
+                                                   whenComplete.complete(null);
+                                                   close();
+                                               },
                                                requestHeaders,
                                                responseHeaders,
                                                mediaContext);
         }
+        // no entity, just complete right now
+        whenComplete.complete(null);
         return ReadableEntityBase.empty();
     }
 

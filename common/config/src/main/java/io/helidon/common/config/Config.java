@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,14 @@ import java.util.function.Function;
  * See {@link ConfigValue}.
  */
 public interface Config {
+    /**
+     * Empty instance of {@code Config}.
+     *
+     * @return empty instance of {@code Config}.
+     */
+    static Config empty() {
+        return EmptyConfig.EMPTY;
+    }
 
     /**
      * Returns the fully-qualified key of the {@code Config} node.
@@ -224,6 +232,18 @@ public interface Config {
      * @throws io.helidon.common.config.ConfigException in case of problem to map property value.
      */
     <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigException;
+
+    /**
+     * Returns a list of child {@code Config} nodes if the node is {@code Type#OBJECT}.
+     * Returns a list of element nodes if the node is {@code Type#LIST}.
+     * Throws {@code MissingValueException} if the node is {@code Type#MISSING}.
+     * Otherwise, if node is {@code Type#VALUE}, it throws {@code ConfigMappingException}.
+     *
+     * @return a list of {@code Type#OBJECT} members or a list of {@code Type#LIST} members
+     * @param <C> the common config derived type
+     * @throws io.helidon.common.config.ConfigException in case the node is {@code Type#VALUE}
+     */
+    <C extends Config> ConfigValue<List<C>> asNodeList() throws ConfigException;
 
     /**
      * Transform all leaf nodes (values) into Map instance.

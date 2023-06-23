@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
         <artifactId>tck-project</artifactId>
@@ -29,6 +29,22 @@
 
     <artifactId>tck-openapi</artifactId>
     <name>Helidon Microprofile Tests TCK OpenAPI</name>
+
+    <properties>
+        <selectedSnakeYamlVersion>1.32</selectedSnakeYamlVersion>
+    </properties>
+
+    <!-- The TCK uses Jackson which in turn uses SnakeYAML APIs that have disappeared in 2.0. So, for running the TCK
+          use the earlier SnakeYAML release (until an updated Jackson release becomes available). -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${selectedSnakeYamlVersion}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -62,11 +78,6 @@
             <artifactId>parsson</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <scope>test</scope>
-        </dependency>
         <!--
             RestAssured xml-path, used by the TCK, requires the javax flavor of JAX-B, so add the API and impl.
         -->
@@ -98,9 +109,14 @@
                         <dependency>org.eclipse.microprofile.openapi:microprofile-openapi-tck</dependency>
                     </dependenciesToScan>
                     <trimStackTrace>false</trimStackTrace>
-                    <!-- Following works around TCK test error when Application.getSingletons returns a non-empty set -->
                     <systemPropertyVariables>
+                        <!-- Following works around TCK test error when Application.getSingletons returns a non-empty set -->
                         <mp.openapi.extensions.helidon.use-jaxrs-semantics>false</mp.openapi.extensions.helidon.use-jaxrs-semantics>
+
+                        <!-- Following works around TCK test error in which multiple resources share the same path:
+                             https://github.com/eclipse/microprofile-open-api/issues/557
+                        -->
+                        <io.helidon.jersey.config.server.resource.validation.ignoreErrors>true</io.helidon.jersey.config.server.resource.validation.ignoreErrors>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

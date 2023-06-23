@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import io.helidon.nima.webserver.http.ServerResponse;
 abstract class FileBasedContentHandler extends StaticContentHandler {
     private final Map<String, MediaType> customMediaTypes;
 
-    FileBasedContentHandler(StaticContentSupport.FileBasedBuilder<?> builder) {
+    FileBasedContentHandler(StaticContentService.FileBasedBuilder<?> builder) {
         super(builder);
 
         this.customMediaTypes = builder.specificContentTypes();

@@ -16,80 +16,87 @@
 
 package io.helidon.nima.webclient.http1;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.Bytes;
-import io.helidon.common.buffers.DataReader;
-import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.ClientRequestHeaders;
-import io.helidon.common.http.ClientResponseHeaders;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.common.http.Http.HeaderValues;
-import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriEncoding;
+import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
-import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
-import io.helidon.nima.webclient.ConnectionKey;
 import io.helidon.nima.webclient.UriHelper;
-
-import static java.lang.System.Logger.Level.DEBUG;
+import io.helidon.nima.webclient.WebClientServiceRequest;
+import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.spi.WebClientService;
 
 class ClientRequestImpl implements Http1ClientRequest {
-    private static final System.Logger LOGGER = System.getLogger(ClientRequestImpl.class.getName());
-    private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] CRLF_BYTES = "\r\n".getBytes(StandardCharsets.UTF_8);
-    private static final String HTTPS = "https";
-    private static final Map<KeepAliveKey, Queue<Http1ClientConnection>> CHANNEL_CACHE = new ConcurrentHashMap<>();
+    private static final AtomicLong COUNTER = new AtomicLong();
 
-    private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private final UriQueryWriteable query;
     private final Map<String, String> pathParams = new HashMap<>();
-
-    private final Http1ClientImpl client;
     private final Http.Method method;
     private final UriHelper uri;
-    private final boolean defaultKeepAlive = true;
-    private final SocketOptions channelOptions;
-    private final BufferData writeBuffer = BufferData.growing(128);
-    // todo configurable
-    private MediaContext mediaContext = MediaContext.create();
+    private final String requestId;
+    private final Http1ClientConfig clientConfig;
+    private final MediaContext mediaContext;
+    private final Map<String, String> properties;
 
+    private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
+    private boolean followRedirects;
+    private int maxRedirects;
     private Tls tls;
     private String uriTemplate;
     private ClientConnection connection;
+    private UriFragment fragment = UriFragment.empty();
+    private boolean skipUriEncoding = false;
 
-    ClientRequestImpl(Http1ClientImpl client,
+    ClientRequestImpl(Http1ClientConfig clientConfig,
                       Http.Method method,
                       UriHelper helper,
-                      UriQueryWriteable query) {
-        this.client = client;
+                      UriQueryWriteable query,
+                      Map<String, String> properties) {
         this.method = method;
         this.uri = helper;
+        this.properties = properties;
 
-        this.tls = client.tls();
-        this.channelOptions = client.socketOptions();
+        this.clientConfig = clientConfig;
+        this.mediaContext = clientConfig.mediaContext();
+        this.followRedirects = clientConfig.followRedirects();
+        this.maxRedirects = clientConfig.maxRedirects();
+        this.tls = clientConfig.tls().orElse(null);
         this.query = query;
+
+        this.requestId = "http1-client-" + COUNTER.getAndIncrement();
+        this.explicitHeaders = WritableHeaders.create(clientConfig.defaultHeaders());
+    }
+
+    //Copy constructor for redirection purposes
+    private ClientRequestImpl(ClientRequestImpl request,
+                              Http.Method method,
+                              UriHelper helper,
+                              UriQueryWriteable query,
+                              Map<String, String> properties) {
+        this(request.clientConfig, method, helper, query, properties);
+        this.followRedirects = request.followRedirects;
+        this.maxRedirects = request.maxRedirects;
+        this.tls = request.tls;
+        this.connection = request.connection;
     }
 
     @Override
@@ -97,7 +104,11 @@ class ClientRequestImpl implements Http1ClientRequest {
         if (uri.indexOf('{') > -1) {
             this.uriTemplate = uri;
         } else {
-            uri(URI.create(UriEncoding.encodeUri(uri)));
+            if (skipUriEncoding) {
+                uri(URI.create(uri));
+            } else {
+                uri(URI.create(UriEncoding.encodeUri(uri)));
+            }
         }
 
         return this;
@@ -141,103 +152,67 @@ class ClientRequestImpl implements Http1ClientRequest {
     }
 
     @Override
+    public Http1ClientRequest fragment(String fragment) {
+        this.fragment = UriFragment.createFromDecoded(fragment);
+        return this;
+    }
+
+    @Override
+    public Http1ClientRequest followRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+        return this;
+    }
+
+    @Override
+    public Http1ClientRequest maxRedirects(int maxRedirects) {
+        this.maxRedirects = maxRedirects;
+        return this;
+    }
+
+    @Override
     public Http1ClientResponse request() {
         return submit(BufferData.EMPTY_BYTES);
     }
 
     @Override
     public Http1ClientResponse submit(Object entity) {
-        // todo validate request ok
-        if (uriTemplate != null) {
-            String resolved = resolvePathParams(uriTemplate);
-            this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
+        if (entity != BufferData.EMPTY_BYTES) {
+            rejectHeadWithEntity();
         }
-        ClientRequestHeaders headers = ClientRequestHeaders.create(explicitHeaders);
-        boolean keepAlive = handleKeepAlive(headers);
-
-        ClientConnection connection = getConnection(keepAlive);
-        DataWriter writer = connection.writer();
-        DataReader reader = connection.reader();
-
-        writeBuffer.clear();
-        // I have a valid connection
-        prologue(writeBuffer);
-
-        headers.setIfAbsent(Header.create(Header.HOST, uri.authority()));
-
-        byte[] entityBytes;
-        if (entity == BufferData.EMPTY_BYTES) {
-            entityBytes = BufferData.EMPTY_BYTES;
-        } else {
-            entityBytes = entityBytes(entity, headers);
+        if (followRedirects) {
+            return invokeWithFollowRedirectsEntity(entity);
         }
-
-        headers.set(Header.create(Header.CONTENT_LENGTH, entityBytes.length));
-
-        writeHeaders(headers, writeBuffer);
-        if (entityBytes.length > 0) {
-            writeBuffer.write(entityBytes);
-        }
-        writer.write(writeBuffer);
-
-        return readResponse(headers, connection, reader);
+        return invokeRequestWithEntity(entity);
     }
 
     @Override
     public Http1ClientResponse outputStream(OutputStreamHandler streamHandler) {
-        // todo validate request ok
+        rejectHeadWithEntity();
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        WebClientService.Chain callChain = new HttpCallOutputStreamChain(clientConfig,
+                                                                         connection,
+                                                                         tls,
+                                                                         whenSent,
+                                                                         whenComplete,
+                                                                         streamHandler);
 
-        WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);
-        boolean keepAlive = handleKeepAlive(headers);
-
-        ClientConnection connection = getConnection(keepAlive);
-        DataWriter writer = connection.writer();
-        DataReader reader = connection.reader();
-
-        // I have a valid connection
-        writeBuffer.clear();
-        prologue(writeBuffer);
-
-        headers.setIfAbsent(Header.create(Header.HOST, uri.authority()));
-        // hardcoded chunked encoding, as we have an output stream
-        // todo we may optimize small amounts
-        boolean chunked = false;
-        if (!headers.contains(Header.CONTENT_LENGTH)) {
-            chunked = true;
-            headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
-        }
-
-        writeHeaders(headers, writeBuffer);
-        writer.writeNow(writeBuffer);
-
-        // todo use 100 continue, so we know the endpoint exists before we start sending
-        // entity
-
-        // we have written the prologue and headers, now it is time to handle the output stream
-        ClientConnectionOutputStream cos = new ClientConnectionOutputStream(connection, writer, chunked);
-
-        try {
-            streamHandler.handle(cos);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-
-        if (!cos.closed()) {
-            throw new IllegalStateException("Output stream was not closed in handler");
-        }
-
-        return readResponse(ClientRequestHeaders.create(headers), connection, reader);
+        return invokeServices(callChain, whenSent, whenComplete);
     }
 
     @Override
     public URI resolvedUri() {
         if (uriTemplate != null) {
             String resolved = resolvePathParams(uriTemplate);
-            this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
+            if (skipUriEncoding) {
+                this.uri.resolve(URI.create(resolved), query);
+            } else {
+                this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
+            }
         }
         return URI.create(this.uri.scheme() + "://"
                                   + uri.authority()
-                                  + uri.pathWithQuery(query));
+                                  + uri.pathWithQueryAndFragment(query, fragment));
 
     }
 
@@ -247,20 +222,156 @@ class ClientRequestImpl implements Http1ClientRequest {
         return this;
     }
 
-    void writeHeaders(Headers headers, BufferData bufferData) {
-        for (HeaderValue header : headers) {
-            header.writeHttp1Header(bufferData);
-        }
-        bufferData.write(Bytes.CR_BYTE);
-        bufferData.write(Bytes.LF_BYTE);
+    @Override
+    public Http1ClientRequest skipUriEncoding() {
+        this.skipUriEncoding = true;
+        this.uri.skipUriEncoding(true);
+        return this;
     }
 
-    UriHelper uriHelper() {
+    @Override
+    public Http1ClientRequest property(String propertyName, String propertyValue) {
+        this.properties.put(propertyName, propertyValue);
+        return this;
+    }
+
+    Http1ClientConfig clientConfig() {
+        return clientConfig;
+    }
+
+    UriHelper uri() {
         return uri;
     }
 
-    private void prologue(BufferData nonEntityData) {
-        nonEntityData.writeAscii(method.text() + " " + uri.pathWithQuery(query) + " HTTP/1.1\r\n");
+    ClientRequestHeaders headers() {
+        return ClientRequestHeaders.create(explicitHeaders);
+    }
+
+    private ClientResponseImpl invokeWithFollowRedirectsEntity(Object entity) {
+        //Request object which should be used for invoking the next request. This will change in case of any redirection.
+        ClientRequestImpl clientRequest = this;
+        //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
+        Object entityToBeSent = entity;
+        for (int i = 0; i < maxRedirects; i++) {
+            ClientResponseImpl clientResponse = clientRequest.invokeRequestWithEntity(entityToBeSent);
+            int code = clientResponse.status().code();
+            if (code < 300 || code >= 400) {
+                return clientResponse;
+            } else if (!clientResponse.headers().contains(Http.Header.LOCATION)) {
+                throw new IllegalStateException("There is no " + Http.Header.LOCATION + " header present in the response! "
+                                                        + "It is not clear where to redirect.");
+            }
+            String redirectedUri = clientResponse.headers().get(Http.Header.LOCATION).value();
+            URI newUri = URI.create(redirectedUri);
+            UriQueryWriteable newQuery = UriQueryWriteable.create();
+            UriHelper redirectUri = UriHelper.create(newUri, newQuery);
+            String uriQuery = newUri.getQuery();
+            if (uriQuery != null) {
+                newQuery.fromQueryString(uriQuery);
+            }
+            if (newUri.getHost() == null) {
+                //To keep the information about the latest host, we need to use uri from the last performed request
+                //Example:
+                //request -> my-test.com -> response redirect -> my-example.com
+                //new request -> my-example.com -> response redirect -> /login
+                //with using the last request uri host etc, we prevent my-test.com/login from happening
+                redirectUri.scheme(clientRequest.uri.scheme());
+                redirectUri.host(clientRequest.uri.host());
+                redirectUri.port(clientRequest.uri.port());
+            }
+            //Method and entity is required to be the same as with original request with 307 and 308 requests
+            if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
+                    || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
+                clientRequest = new ClientRequestImpl(this, method, redirectUri, newQuery, properties);
+            } else {
+                //It is possible to change to GET and send no entity with all other redirect codes
+                entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
+                clientRequest = new ClientRequestImpl(this, Http.Method.GET, redirectUri, newQuery, properties);
+            }
+        }
+        throw new IllegalStateException("Maximum number of request redirections ("
+                                                + clientConfig.maxRedirects() + ") reached.");
+    }
+
+    private ClientResponseImpl invokeRequestWithEntity(Object entity) {
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        WebClientService.Chain callChain = new HttpCallEntityChain(clientConfig,
+                                                                   connection,
+                                                                   tls,
+                                                                   whenSent,
+                                                                   whenComplete,
+                                                                   entity);
+
+        return invokeServices(callChain, whenSent, whenComplete);
+    }
+
+    @Override
+    public Http.Method httpMethod(){
+        return method;
+    }
+
+    @Override
+    public UriPath uriPath(){
+        return UriPath.create(uri.path());
+    }
+
+    @Override
+    public UriQuery uriQuery(){
+        return UriQuery.create(resolvedUri());
+    }
+
+    private ClientResponseImpl invokeServices(WebClientService.Chain callChain,
+                                              CompletableFuture<WebClientServiceRequest> whenSent,
+                                              CompletableFuture<WebClientServiceResponse> whenComplete) {
+        if (uriTemplate != null) {
+            String resolved = resolvePathParams(uriTemplate);
+            if (skipUriEncoding) {
+                this.uri.resolve(URI.create(resolved), query);
+            } else {
+                this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
+            }
+        }
+
+        ClientRequestHeaders headers = ClientRequestHeaders.create(explicitHeaders);
+
+        WebClientServiceRequest serviceRequest = new ServiceRequestImpl(uri,
+                                                                        method,
+                                                                        Http.Version.V1_1,
+                                                                        query,
+                                                                        UriFragment.empty(),
+                                                                        headers,
+                                                                        Contexts.context().orElseGet(Context::create),
+                                                                        requestId,
+                                                                        whenComplete,
+                                                                        whenSent,
+                                                                        properties);
+
+        WebClientService.Chain last = callChain;
+
+        List<WebClientService> services = clientConfig.services();
+        ListIterator<WebClientService> serviceIterator = services.listIterator(services.size());
+        while (serviceIterator.hasPrevious()) {
+            last = new ServiceChainImpl(last, serviceIterator.previous());
+        }
+
+        WebClientServiceResponse serviceResponse = last.proceed(serviceRequest);
+
+        CompletableFuture<Void> complete = new CompletableFuture<>();
+        complete.thenAccept(ignored -> serviceResponse.whenComplete().complete(serviceResponse))
+                .exceptionally(throwable -> {
+                    serviceResponse.whenComplete().completeExceptionally(throwable);
+                    return null;
+                });
+
+        return new ClientResponseImpl(serviceResponse.status(),
+                                      serviceResponse.serviceRequest().headers(),
+                                      serviceResponse.headers(),
+                                      serviceResponse.connection(),
+                                      serviceResponse.reader(),
+                                      mediaContext,
+                                      clientConfig.mediaTypeParserMode(),
+                                      complete);
     }
 
     private String resolvePathParams(String path) {
@@ -280,159 +391,9 @@ class ClientRequestImpl implements Http1ClientRequest {
         return result;
     }
 
-    private Http1ClientResponse readResponse(ClientRequestHeaders usedHeaders, ClientConnection connection, DataReader reader) {
-        // todo configurable max status line length
-        Http.Status responseStatus = Http1StatusParser.readStatus(reader, 256);
-        ClientResponseHeaders responseHeaders = readHeaders(reader);
-
-        return new ClientResponseImpl(responseStatus, usedHeaders, responseHeaders, connection, reader);
-    }
-
-    private ClientResponseHeaders readHeaders(DataReader reader) {
-        // todo configurable max headers and validate headers
-        int maxHeaderSize = 16384;
-        boolean validateHeaders = true;
-
-        WritableHeaders<?> writable = Http1HeadersParser.readHeaders(reader, maxHeaderSize, validateHeaders);
-
-        return ClientResponseHeaders.create(writable);
-    }
-
-    private boolean handleKeepAlive(WritableHeaders<?> headers) {
-        if (headers.contains(HeaderValues.CONNECTION_CLOSE)) {
-            return false;
-        }
-        if (defaultKeepAlive) {
-            headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
-            return true;
-        }
-        if (headers.contains(HeaderValues.CONNECTION_KEEP_ALIVE)) {
-            return true;
-        }
-        headers.set(HeaderValues.CONNECTION_CLOSE);
-        return false;
-    }
-
-    private ClientConnection getConnection(boolean keepAlive) {
-        if (this.connection != null) {
-            return this.connection;
-        }
-
-        Http1ClientConnection connection;
-        Tls tls;
-        if (uri.scheme().equals(HTTPS)) {
-            tls = this.tls;
-        } else {
-            tls = null;
-        }
-
-        if (keepAlive) {
-            // todo add timeouts, proxy and tls to the key
-            KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(), uri.authority(), tls);
-            var connectionQueue = CHANNEL_CACHE.computeIfAbsent(keepAliveKey,
-                                                                it -> new ConcurrentLinkedDeque<>());
-
-            // TODO we must limit the queue in size
-            while ((connection = connectionQueue.poll()) != null && !connection.isConnected()) {
-            }
-
-            if (connection == null) {
-                connection = new Http1ClientConnection(channelOptions,
-                                                       connectionQueue,
-                                                       new ConnectionKey(uri.scheme(),
-                                                                         uri.host(),
-                                                                         uri.port(),
-                                                                         tls,
-                                                                         client.dnsResolver(),
-                                                                         client.dnsAddressLookup())).connect();
-            } else {
-                if (LOGGER.isLoggable(DEBUG)) {
-                    LOGGER.log(DEBUG, String.format("[%s] client connection obtained %s",
-                                                    connection.channelId(),
-                                                    Thread.currentThread().getName()));
-                }
-            }
-        } else {
-            connection = new Http1ClientConnection(channelOptions, new ConnectionKey(uri.scheme(),
-                                                                                     uri.host(),
-                                                                                     uri.port(),
-                                                                                     tls,
-                                                                                     client.dnsResolver(),
-                                                                                     client.dnsAddressLookup())).connect();
-        }
-        return connection;
-    }
-
-    private byte[] entityBytes(Object entity, ClientRequestHeaders headers) {
-        if (entity instanceof byte[]) {
-            return (byte[]) entity;
-        }
-        GenericType<Object> genericType = GenericType.create(entity);
-        EntityWriter<Object> writer = mediaContext.writer(genericType, headers);
-
-        // todo this should use output stream of client, but that would require delaying header write
-        // to first byte written
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        writer.write(genericType, entity, bos, headers);
-        return bos.toByteArray();
-    }
-
-    private record KeepAliveKey(String scheme, String authority, Tls tlsConfig) {
-    }
-
-    private static class ClientConnectionOutputStream extends OutputStream {
-        private final ClientConnection connection;
-        private final DataWriter writer;
-        private final boolean chunked;
-
-        private boolean closed;
-
-        private ClientConnectionOutputStream(ClientConnection connection, DataWriter writer, boolean chunked) {
-            this.connection = connection;
-            this.writer = writer;
-            this.chunked = chunked;
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            // this method should not be called, as we are wrapped with a buffered stream
-            chunk(0, 1, (byte) b);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            chunk(off, len, b);
-        }
-
-        @Override
-        public void close() throws IOException {
-            if (closed) {
-                return;
-            }
-            this.closed = true;
-            if (chunked) {
-                writer.write(BufferData.create(TERMINATING_CHUNK));
-            }
-            super.close();
-        }
-
-        boolean closed() {
-            return closed;
-        }
-
-        private void chunk(int offset, int length, byte... bytes) {
-            if (chunked) {
-                byte[] hexLen = Integer.toHexString(length).getBytes(StandardCharsets.UTF_8);
-                // cheaper to copy in memory than to write twice to channel
-                byte[] buffer = new byte[hexLen.length + length + 4]; // add CRLF after each
-                System.arraycopy(hexLen, 0, buffer, 0, hexLen.length);
-                System.arraycopy(CRLF_BYTES, 0, buffer, hexLen.length, 2);
-                System.arraycopy(bytes, offset, buffer, hexLen.length + 2, length);
-                System.arraycopy(CRLF_BYTES, 0, buffer, hexLen.length + 2 + length, 2);
-                writer.writeNow(BufferData.create(buffer));
-            } else {
-                writer.writeNow(BufferData.create(bytes, offset, length));
-            }
+    private void rejectHeadWithEntity() {
+        if (this.method.equals(Http.Method.HEAD)) {
+            throw new IllegalArgumentException("Payload in method '" + Http.Method.HEAD + "' has no defined semantics");
         }
     }
 }

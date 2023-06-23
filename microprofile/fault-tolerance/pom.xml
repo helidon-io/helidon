@@ -53,7 +53,6 @@
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.enterprise</groupId>
@@ -92,14 +91,7 @@
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
-            <scope>provided</scope>
             <optional>true</optional>
-        </dependency>
-        <!-- To keep HK2 from complaining when run with Java9+ -->
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.metrics</groupId>

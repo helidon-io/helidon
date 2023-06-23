@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@ package io.helidon.nima.webclient;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.nima.webclient.spi.DnsResolver;
 
 final class DefaultDnsResolver implements DnsResolver {
 
-    private final Map<String, InetAddress> hostnameAddresses = new HashMap<>();
+    private final Map<String, InetAddress> hostnameAddresses = new ConcurrentHashMap<>();
 
     @Override
     public InetAddress resolveAddress(String hostname, DnsAddressLookup dnsAddressLookup) {

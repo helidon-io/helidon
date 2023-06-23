@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,6 +20,10 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
+    <variables>
+        <text path="module-dir"><![CDATA[]]></text>
+        <boolean path="multi-module">false</boolean>
+    </variables>
     <step name="Helidon Flavor" optional="true">
         <inputs>
             <enum id="flavor"
@@ -27,15 +31,15 @@
                   default="se"
                   global="true"
                   optional="true">
-                <option value="se"
-                        name="Helidon SE"
-                        description="Programmatic, reactive &amp; non blocking">
-                    <exec src="se/se.xml"/>
-                </option>
                 <option value="mp"
                         name="Helidon MP"
                         description="Declarative, MicroProfile compliant">
                     <exec src="mp/mp.xml"/>
+                </option>
+                <option value="nima"
+                        name="Helidon Níma"
+                        description="WebSever based on Virtual Threads">
+                    <exec src="nima/nima.xml"/>
                 </option>
             </enum>
         </inputs>

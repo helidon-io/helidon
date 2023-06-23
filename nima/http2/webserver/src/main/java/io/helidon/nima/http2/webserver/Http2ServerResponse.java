@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import io.helidon.nima.http2.Http2FrameTypes;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.http2.Http2StreamWriter;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.ServerResponseBase;
 
 class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
@@ -45,7 +44,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private final Http2StreamWriter writer;
     private final int streamId;
     private final ServerResponseHeaders headers;
-    private final FlowControl flowControl;
+    private final FlowControl.Outbound flowControl;
 
     private boolean isSent;
     private boolean streamingEntity;
@@ -56,7 +55,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                         Http2ServerRequest request,
                         Http2StreamWriter writer,
                         int streamId,
-                        FlowControl flowControl) {
+                        FlowControl.Outbound flowControl) {
         super(ctx, request);
         this.ctx = ctx;
         this.writer = writer;
@@ -66,7 +65,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     }
 
     @Override
-    public ServerResponse header(HeaderValue header) {
+    public Http2ServerResponse header(HeaderValue header) {
         headers.set(header);
         return this;
     }
@@ -178,7 +177,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private final ServerResponseHeaders headers;
         private final Http2StreamWriter writer;
         private final int streamId;
-        private final FlowControl flowControl;
+        private final FlowControl.Outbound flowControl;
         private final Http.Status status;
         private final Runnable responseCloseRunnable;
 
@@ -190,7 +189,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private BlockingOutputStream(ServerResponseHeaders headers,
                                      Http2StreamWriter writer,
                                      int streamId,
-                                     FlowControl flowControl,
+                                     FlowControl.Outbound flowControl,
                                      Http.Status status,
                                      Runnable responseCloseRunnable) {
 
@@ -329,7 +328,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             bytesWritten += frameData.header().length();
             bytesWritten += Http2FrameHeader.LENGTH;
 
-            writer.write(frameData, flowControl);
+            writer.writeData(frameData, flowControl);
         }
 
         private void sendEndOfStream() {
@@ -341,7 +340,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
             bytesWritten += frameData.header().length();
             bytesWritten += Http2FrameHeader.LENGTH;
-            writer.write(frameData, flowControl);
+            writer.writeData(frameData, flowControl);
         }
     }
 }

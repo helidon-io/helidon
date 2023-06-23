@@ -28,12 +28,13 @@ import io.helidon.common.http.RoutedPath;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.ServerContext;
+import io.helidon.nima.webserver.ListenerContext;
 import io.helidon.nima.webserver.http.HttpSecurity;
 import io.helidon.nima.webserver.http.RoutingRequest;
 
@@ -51,6 +52,7 @@ class Http2ServerRequest implements RoutingRequest {
     private final String authority;
     private final LazyValue<Http2ServerRequestEntity> entity;
     private final HttpSecurity security;
+    private final LazyValue<UriInfo> uriInfo = LazyValue.create(this::createUriInfo);
 
     private HttpPrologue prologue;
     private RoutedPath path;
@@ -76,7 +78,7 @@ class Http2ServerRequest implements RoutingRequest {
                                                                              it -> entitySupplier.get(),
                                                                              NO_OP_RUNNABLE,
                                                                              this.headers,
-                                                                             ctx.serverContext().mediaContext()));
+                                                                             ctx.listenerContext().mediaContext()));
     }
 
     static Http2ServerRequest create(ConnectionContext ctx,
@@ -174,15 +176,15 @@ class Http2ServerRequest implements RoutingRequest {
     }
 
     @Override
-    public ServerContext serverContext() {
-        return ctx.serverContext();
+    public ListenerContext listenerContext() {
+        return ctx.listenerContext();
     }
 
     @Override
     public Context context() {
         if (context == null) {
             context = Contexts.context().orElseGet(() -> Context.builder()
-                    .parent(ctx.serverContext().context())
+                    .parent(ctx.listenerContext().context())
                     .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId)
                     .build());
         }
@@ -192,5 +194,19 @@ class Http2ServerRequest implements RoutingRequest {
     @Override
     public HttpSecurity security() {
         return security;
+    }
+
+    @Override
+    public UriInfo requestedUri() {
+        return uriInfo.get();
+    }
+
+    private UriInfo createUriInfo() {
+        return ctx.listenerContext().config().requestedUriDiscoveryContext().uriInfo(remotePeer().address().toString(),
+                                                                                     localPeer().address().toString(),
+                                                                                     path.path(),
+                                                                                     headers,
+                                                                                     query(),
+                                                                                     isSecure());
     }
 }

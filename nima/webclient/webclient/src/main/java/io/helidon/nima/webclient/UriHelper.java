@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package io.helidon.nima.webclient;
 
 import java.net.URI;
+import java.util.Map;
 
 import io.helidon.common.uri.UriEncoding;
+import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 
@@ -26,6 +28,11 @@ import io.helidon.common.uri.UriQueryWriteable;
  * Helper for client URI handling.
  */
 public class UriHelper {
+
+    private static final Map<String, Integer> DEFAULT_PORTS = Map.of(
+            "http", 80,
+            "https", 443
+    );
     private final String baseScheme;
     private final String baseAuthority;
     private final String basePath;
@@ -37,6 +44,7 @@ public class UriHelper {
     private String path;
     private String host;
     private int port;
+    private boolean skipUriEncoding = false;
 
     private UriHelper() {
         this.baseScheme = null;
@@ -83,7 +91,55 @@ public class UriHelper {
 
     @Override
     public String toString() {
-        return scheme + "://" + authority + "/" + path;
+        return scheme + "://" + authority + (path.startsWith("/") ? "" : "/") + path;
+    }
+
+    /**
+     * Scheme of this URI.
+     *
+     * @param scheme to use (such as {@code http})
+     */
+    public void scheme(String scheme) {
+        this.scheme = scheme;
+    }
+
+    /**
+     * Host of this URI.
+     *
+     * @param host to connect to
+     */
+    public void host(String host) {
+        this.host = host;
+        authority(host, port);
+    }
+
+    /**
+     * Port of this URI.
+     *
+     * @param port to connect to
+     */
+    public void port(int port) {
+        this.port = port;
+        authority(host, port);
+    }
+
+    /**
+     * Path of this URI.
+     *
+     * @param path path to use
+     * @param query writable query to extract query parameters to
+     */
+    public void path(String path, UriQueryWriteable query) {
+        this.path = extractQuery(path, query);
+    }
+
+    /**
+     * Whether to skip uri encoding.
+     *
+     * @param skipUriEncoding skip uri encoding
+     */
+    public void skipUriEncoding(boolean skipUriEncoding) {
+        this.skipUriEncoding = skipUriEncoding;
     }
 
     /**
@@ -162,6 +218,9 @@ public class UriHelper {
      * @return port
      */
     public int port() {
+        if (this.port == -1) {
+            return DEFAULT_PORTS.getOrDefault(this.scheme, -1);
+        }
         return port;
     }
 
@@ -175,23 +234,33 @@ public class UriHelper {
     }
 
     /**
-     * Encoded path with query.
+     * Encoded path with query and fragment.
      *
-     * @param query query to use
+     * @param query query to use (may be empty)
+     * @param fragment fragment to use (may be empty)
      * @return string containing encoded path with query
      */
-    public String pathWithQuery(UriQuery query) {
+    public String pathWithQueryAndFragment(UriQuery query, UriFragment fragment) {
+        String queryString = skipUriEncoding ? query.value() : query.rawValue();
+
+        boolean hasQuery = !queryString.isEmpty();
+
         String path;
         if (this.path.equals("")) {
             path = "/";
         } else {
-            path = UriEncoding.encodeUri(this.path);
+            path = skipUriEncoding ? this.path : UriEncoding.encodeUri(this.path);
         }
-        String queryString = query.rawValue();
-        if (queryString.isEmpty()) {
-            return path;
+
+        if (hasQuery) {
+            path = path + '?' + queryString;
         }
-        return path + '?' + queryString;
+        if (fragment.hasValue()) {
+            String fragmentValue = skipUriEncoding ? fragment.value() : fragment.rawValue();
+            path = path + '#' + fragmentValue;
+        }
+
+        return path;
     }
 
     private static String extractQuery(String path, UriQueryWriteable query) {

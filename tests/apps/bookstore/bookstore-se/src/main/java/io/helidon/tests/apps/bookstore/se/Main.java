@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,19 @@ package io.helidon.tests.apps.bookstore.se;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
-import io.helidon.health.checks.HealthChecks;
+import io.helidon.health.checks.DeadlockHealthCheck;
+import io.helidon.health.checks.DiskSpaceHealthCheck;
+import io.helidon.health.checks.HeapMemoryHealthCheck;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.media.jackson.JacksonSupport;
-import io.helidon.reactive.media.jsonb.JsonbSupport;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.metrics.MetricsSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.WebServerTls;
+import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.http.media.jackson.JacksonSupport;
+import io.helidon.nima.http.media.jsonb.JsonbSupport;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
+import io.helidon.nima.observe.health.HealthFeature;
+import io.helidon.nima.observe.metrics.MetricsFeature;
+import io.helidon.nima.webserver.Routing;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 /**
  * Simple Hello World rest application.
@@ -81,24 +84,22 @@ public final class Main {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
+
         // Build server config based on params
-        WebServer server = WebServer.builder(createRouting(config))
+        WebServer.Builder serverBuilder = WebServer.builder()
+                .addRouting(createRouting(config))
                 .config(config.get("server"))
                 .update(it -> configureJsonSupport(it, config))
-                .update(it -> configureSsl(it, ssl))
-                .enableCompression(compression)
-                .build();
+                .update(it -> configureSsl(it, ssl));
+                // .enableCompression(compression);
 
-        // Start the server and print some info.
-        server.start().thenAccept(ws -> {
-            String url = (ssl ? "https" : "http") + "://localhost:" + ws.port() + SERVICE_PATH;
-            System.out.println("WEB server is up! " + url + " [ssl=" + ssl + ", http2=" + http2
-                    + ", compression=" + compression + "]");
-        });
+        configureJsonSupport(serverBuilder, config);
 
-        // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown()
-                .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+        WebServer server = serverBuilder.build();
+        server.start();
+        String url = (ssl ? "https" : "http") + "://localhost:" + server.port() + SERVICE_PATH;
+        System.out.println("WEB server is up! " + url + " [ssl=" + ssl + ", http2=" + http2
+                + ", compression=" + compression + "]");
 
         return server;
     }
@@ -108,13 +109,13 @@ public final class Main {
 
         switch (jsonLibrary) {
         case JSONP:
-            wsBuilder.addMediaSupport(JsonpSupport.create());
+            wsBuilder.addMediaSupport(JsonpSupport.create(config));
             break;
         case JSONB:
-            wsBuilder.addMediaSupport(JsonbSupport.create());
+            wsBuilder.addMediaSupport(JsonbSupport.create(config));
             break;
         case JACKSON:
-            wsBuilder.addMediaSupport(JacksonSupport.create());
+            wsBuilder.addMediaSupport(JacksonSupport.create(config));
             break;
         default:
             throw new RuntimeException("Unknown JSON library " + jsonLibrary);
@@ -126,12 +127,22 @@ public final class Main {
             return;
         }
 
-        wsBuilder.tls(WebServerTls.builder()
-                              .privateKey(KeyConfig.keystoreBuilder()
-                                                  .keystore(Resource.create("certificate.p12"))
-                                                  .keystorePassphrase("helidon".toCharArray())
-                                                  .build())
-                              .build());
+        KeyConfig privateKeyConfig = privateKey();
+        Tls tls = Tls.builder()
+                .privateKey(privateKeyConfig.privateKey().get())
+                .privateKeyCertChain(privateKeyConfig.certChain())
+                .build();
+
+        wsBuilder.tls(tls);
+    }
+
+    private static KeyConfig privateKey() {
+        String password = "helidon";
+
+        return KeyConfig.keystoreBuilder()
+                .keystore(Resource.create("certificate.p12"))
+                .keystorePassphrase(password)
+                .build();
     }
 
     /**
@@ -141,15 +152,21 @@ public final class Main {
      * @return routing configured with JSON support, a health check, and a service
      */
     private static Routing createRouting(Config config) {
-        HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
+
+        HealthFeature health = HealthFeature.builder()
+                .useSystemServices(false)
+                .addCheck(HeapMemoryHealthCheck.create())
+                .addCheck(DiskSpaceHealthCheck.create())
+                .addCheck(DeadlockHealthCheck.create())
+                .details(true)
                 .build();
 
-        return Routing.builder()
-                .register(health)                   // Health at "/health"
-                .register(MetricsSupport.create())  // Metrics at "/metrics"
-                .register(SERVICE_PATH, new BookService(config))
-                .build();
+        HttpRouting.Builder builder = HttpRouting.builder()
+                .addFeature(health)                   // Health at "/health"
+                .addFeature(MetricsFeature.builder().build())  // Metrics at "/metrics"
+                .register(SERVICE_PATH, new BookService(config));
+
+        return builder.build();
     }
 
     static JsonLibrary getJsonLibrary(Config config) {

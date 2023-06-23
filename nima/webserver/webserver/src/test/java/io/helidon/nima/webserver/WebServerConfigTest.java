@@ -16,15 +16,25 @@
 
 package io.helidon.nima.webserver;
 
-import java.lang.reflect.InvocationTargetException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.junit.jupiter.api.Test;
-
+import io.helidon.common.GenericType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.config.Config;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.nima.http.media.EntityWriter;
+import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonStructure;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -71,6 +81,122 @@ public class WebServerConfigTest {
         failsWith(() -> contentEncodingContext.encoder("gzip"), NoSuchElementException.class);
         failsWith(() -> contentEncodingContext.decoder("x-gzip"), NoSuchElementException.class);
         failsWith(() -> contentEncodingContext.encoder("x-gzip"), NoSuchElementException.class);
+    }
+
+    // Check that WebServer MediaContext builder produces expected provider using MediaContext configuration from Config file:
+    //  - java service loader enabled in server node of application.yaml
+    //  - JSON should be present
+    // Writing JsonObject should work and produce valid JSON data.
+    @Test
+    void testMediaSupportFileConfigJson() throws IOException {
+        Config config = Config.create();
+        Config server = config.get("server2");
+        WebServer.Builder wsBuilder = WebServer.builder().config(server);
+        wsBuilder.build(); // triggers processing of media context
+        MediaContext mediaContext = wsBuilder.mediaContext();
+        assertThat(mediaContext, is(notNullValue()));
+        WritableHeaders<?> writableHeaders = WritableHeaders.create();
+        EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
+        writer.write(GenericType.create(JsonObject.class),
+                Json.createObjectBuilder()
+                        .add("name", "John Smith")
+                        .build(),
+                outputStream,
+                writableHeaders);
+        outputStream.close();
+        // Verify written data
+        JsonObject verify = Json.createObjectBuilder()
+                .add("name", "John Smith")
+                .build();
+        JsonStructure js = Json.createReader(new ByteArrayInputStream(outputStream.toByteArray())).read();
+        assertThat(js.asJsonObject(), is(verify));
+    }
+
+    // Check that WebServer MediaContext builder produces expected provider using MediaContext configuration from Config file:
+    //  - java service loader disabled in server node of application.yaml
+    //  - JSON should not be present
+    // Writing JsonObject should work and produce valid JSON data.
+    @Test
+    void testMediaSupportFileConfigNoJson() throws IOException {
+        Config config = Config.create();
+        WebServer.Builder wsBuilder = WebServer.builder().config(config.get("server"));
+        wsBuilder.build(); // trigger processing of media context
+        MediaContext mediaContext = wsBuilder.mediaContext();
+        assertThat(mediaContext, is(notNullValue()));
+        WritableHeaders<?> writableHeaders = WritableHeaders.create();
+        EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
+        failsWith(() -> writer.write(
+                        GenericType.create(JsonObject.class),
+                        Json.createObjectBuilder()
+                                .add("name", "John Smith")
+                                .build(),
+                        outputStream,
+                        writableHeaders),
+                IllegalArgumentException.class);
+        outputStream.close();
+    }
+
+    // Check that WebServer MediaContext builder produces expected provider using manually built MediaContext:
+    //  - java service loader disabled
+    //  - JSON added manually
+    // Writing JsonObject should work and produce valid JSON data.
+    @Test
+    void testMediaSupportManualConfigJson() throws IOException {
+        Config config = Config.create();
+        WebServer.Builder wsBuilder = WebServer.builder()
+                .config(config.get("server"))
+                .mediaContext(MediaContext.builder()
+                        .discoverServices(false)
+                        .addMediaSupport(JsonpSupport.create(Config.empty()))
+                        .build());
+        MediaContext mediaContext = wsBuilder.mediaContext();
+        assertThat(mediaContext, is(notNullValue()));
+        WritableHeaders<?> writableHeaders = WritableHeaders.create();
+        EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
+        writer.write(GenericType.create(JsonObject.class),
+                                        Json.createObjectBuilder()
+                                                .add("name", "John Smith")
+                                                .build(),
+                                        outputStream,
+                                        writableHeaders);
+        outputStream.close();
+        // Verify written data
+        JsonObject verify = Json.createObjectBuilder()
+                .add("name", "John Smith")
+                .build();
+        JsonStructure js = Json.createReader(new ByteArrayInputStream(outputStream.toByteArray())).read();
+        assertThat(js.asJsonObject(), is(verify));
+    }
+
+    // Check that WebServer MediaContext builder produces expected provider using manually built MediaContext:
+    //  - java service loader disabled
+    //  - JSON not added manually
+    // Writing JsonObject should fail on missing JSOn media support.
+    @Test
+    void testMediaSupportManualConfigNoJson() throws IOException {
+        Config config = Config.create();
+        WebServer.Builder wsBuilder = WebServer.builder()
+                .config(config.get("server"))
+                .mediaContext(MediaContext.builder()
+                        .discoverServices(false)
+                        .build());
+        MediaContext mediaContext = wsBuilder.mediaContext();
+        assertThat(mediaContext, is(notNullValue()));
+        WritableHeaders<?> writableHeaders = WritableHeaders.create();
+        EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
+        failsWith(() -> writer.write(
+                GenericType.create(JsonObject.class),
+                        Json.createObjectBuilder()
+                                .add("name", "John Smith")
+                                .build(),
+                        outputStream,
+                        writableHeaders),
+                IllegalArgumentException.class);
+        outputStream.close();
     }
 
     // Verify that provided task throws an exception

@@ -19,28 +19,22 @@
  */
 module io.helidon.security.providers.oidc.common {
 
+    requires transitive io.helidon.nima.webclient;
     // EncryptionProvider.EncryptionSupport is part of API
     requires transitive io.helidon.security;
     // TokenHandler is part of API
     requires transitive io.helidon.security.util;
-    // WebClient is part of API
-    requires transitive io.helidon.reactive.webclient;
     requires io.helidon.common.parameters;
 
     requires io.helidon.security.providers.common;
     requires io.helidon.security.jwt;
     requires io.helidon.security.providers.httpauth;
-    requires io.helidon.reactive.webclient.jaxrs;
-    requires io.helidon.reactive.webclient.security;
-    requires io.helidon.reactive.webclient.tracing;
-    requires io.helidon.reactive.media.jsonp;
+    requires io.helidon.common.context;
     requires io.helidon.common.crypto;
     requires static io.helidon.config.metadata;
     requires io.helidon.cors;
-
-    // these are deprecated and will be removed in 3.x
-    requires jersey.client;
-    requires jakarta.ws.rs;
+    requires io.helidon.nima.http.media.jsonp;
+    requires io.helidon.nima.webclient.tracing;
 
     exports io.helidon.security.providers.oidc.common;
     exports io.helidon.security.providers.oidc.common.spi;

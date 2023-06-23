@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -429,6 +429,11 @@ public final class Http {
          * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.8">HTTP/1.1 documentation</a>.
          */
         public static final Status TEMPORARY_REDIRECT_307 = new Status(307, "Temporary Redirect", true);
+        /**
+         * 308 Permanent Redirect, see
+         * <a href="https://www.rfc-editor.org/rfc/rfc7538">HTTP Status Code 308 documentation</a>.
+         */
+        public static final Status PERMANENT_REDIRECT_308 = new Status(308, "Permanent Redirect", true);
         /**
          * 400 Bad Request, see
          * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">HTTP/1.1 documentation</a>.
@@ -1094,6 +1099,12 @@ public final class Http {
          */
         public static final HeaderName HOST = HeaderEnum.HOST;
         /**
+         * The {@value} header.
+         *
+         * @see #HOST
+         */
+        public static final String HOST_STRING = "Host";
+        /**
          * The {@code If-Match} header name.
          * Only perform the action if the client supplied entity matches the same entity on the server. This is mainly
          * for methods like PUT to only update a resource if it has not been modified since the user last updated it.
@@ -1358,6 +1369,35 @@ public final class Http {
          * This header will be removed if it is part of the request.
          */
         public static final HeaderName X_HELIDON_CN = HeaderEnum.X_HELIDON_CN;
+        /**
+         * The {@code X-Forwarded-For} header name.
+         * Represents the originating client and intervening proxies when the request has passed through one or more proxies.
+         */
+        public static final HeaderName X_FORWARDED_FOR = HeaderEnum.X_FORWARDED_FOR;
+        /**
+         * The {@code X_FORWARDED_HOST} header name.
+         * Represents the host specified by the originating client when the request has passed through one or more proxies.
+         */
+        public static final HeaderName X_FORWARDED_HOST = HeaderEnum.X_FORWARDED_HOST;
+
+        /**
+         * The {@code X_FORWARDED_PORT} header name.
+         * Represents the port specified by the originating client when the request has passed through one or more proxies.
+         */
+        public static final HeaderName X_FORWARDED_PORT = HeaderEnum.X_FORWARDED_PORT;
+
+        /**
+         * The {@code X_FORWARDED_PREFIX} header name.
+         * Represents the path prefix to be applied to relative paths resolved against this request when the request has passed
+         * through one or more proxies.
+         *
+         */
+        public static final HeaderName X_FORWARDED_PREFIX = HeaderEnum.X_FORWARDED_PREFIX;
+        /**
+         * The {@code X_FORWARDED_PROTO} header name.
+         * Represents the protocol specified by the originating client when the request has passed through one or more proxies.
+         */
+        public static final HeaderName X_FORWARDED_PROTO = HeaderEnum.X_FORWARDED_PROTO;
 
         private Header() {
         }
@@ -1462,6 +1502,9 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, LazyString value) {
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(value);
+
             return new HeaderValueLazy(name, false, false, value);
         }
 
@@ -1474,6 +1517,8 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, int value) {
+            Objects.requireNonNull(name);
+
             return new HeaderValueSingle(name, false, false, String.valueOf(value));
         }
 
@@ -1486,6 +1531,8 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, long value) {
+            Objects.requireNonNull(name);
+
             return new HeaderValueSingle(name, false, false, String.valueOf(value));
         }
 
@@ -1498,6 +1545,9 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static HeaderValue create(HeaderName name, String value) {
+            Objects.requireNonNull(name, "HeaderName must not be null");
+            Objects.requireNonNull(value, "HeaderValue must not be null");
+
             return new HeaderValueSingle(name,
                                          false,
                                          false,
@@ -1597,6 +1647,12 @@ public final class Http {
         public static final HeaderValue CONTENT_TYPE_OCTET_STREAM = Header.createCached(Header.CONTENT_TYPE,
                                                                                         "application/octet-stream");
         /**
+         * Content type SSE event stream.
+         */
+        public static final HeaderValue CONTENT_TYPE_EVENT_STREAM = Header.createCached(Header.CONTENT_TYPE,
+                                                                                  "text/event-stream");
+
+        /**
          * Accept application/json.
          */
         public static final HeaderValue ACCEPT_JSON = Header.createCached(Header.ACCEPT, "application/json");
@@ -1604,6 +1660,10 @@ public final class Http {
          * Accept text/plain with UTF-8.
          */
         public static final HeaderValue ACCEPT_TEXT = Header.createCached(Header.ACCEPT, "text/plain;charset=UTF-8");
+        /**
+         * Accept text/event-stream.
+         */
+        public static final HeaderValue ACCEPT_EVENT_STREAM = Header.createCached(Header.ACCEPT, "text/event-stream");
         /**
          * Expect 100 header.
          */

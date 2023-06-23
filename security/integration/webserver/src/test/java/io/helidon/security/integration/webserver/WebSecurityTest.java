@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.integration.webserver;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,9 +46,8 @@ public class WebSecurityTest {
         Routing routing = Routing.builder()
                 .register(WebSecurity.create(security))
                 .get("/unit_test", (req, res) -> {
-                    req.context()
-                            .get(SecurityContext.class)
-                            .ifPresent(context -> execClassHolder.set(context.executorService().getClass()));
+                    req.context().get(SecurityHandler.class, ExecutorService.class)
+                            .ifPresent(executorService -> execClassHolder.set(executorService.getClass()));
                     req.next();
                 })
                 .build();

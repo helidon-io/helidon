@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,28 @@
 package io.helidon.security.providers.idcs.mapper;
 
 import java.lang.System.Logger.Level;
+import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.LazyValue;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+import io.helidon.common.http.Http;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -35,41 +47,29 @@ import io.helidon.security.SubjectType;
 import io.helidon.security.integration.common.RoleMapTracing;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.jwt.Validator;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SubjectMappingProvider;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.client.Invocation;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
 
 /**
- * Common functionality for IDCS role mapping.
- *
- * @deprecated use {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperRxProviderBase} instead
+ * Common functionality for IDCS role mapping using {@link io.helidon.nima.webclient.http1.Http1Client}.
  */
-@Deprecated(forRemoval = true, since = "2.4.0")
 public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvider {
     /**
      * User subject type used when requesting roles from IDCS.
      * An attempt is made to obtain it from JWT claim {@code sub_type}. If not defined,
-     * default is used as configured in {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProviderBase.Builder}.
+     * default is used as configured in {@link IdcsRoleMapperProviderBase.Builder}.
      */
     public static final String IDCS_SUBJECT_TYPE_USER = "user";
     /**
      * Client subject type used when requesting roles from IDCS.
      * An attempt is made to obtain it from JWT claim {@code sub_type}. If not defined,
-     * default is used as configured in {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProviderBase.Builder}.
+     * default is used as configured in {@link IdcsRoleMapperProviderBase.Builder}.
      */
     public static final String IDCS_SUBJECT_TYPE_CLIENT = "client";
-
-    private static final System.Logger LOGGER = System.getLogger(IdcsRoleMapperProviderBase.class.getName());
-
     /**
      * Json key for group roles to be retrieved from IDCS response.
      */
@@ -87,8 +87,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      * We cannot use the constant declared in {@code ClientTracingFilter}, as it is not a required dependency.
      */
     protected static final String PARENT_CONTEXT_CLIENT_PROPERTY = "io.helidon.tracing.span-context";
-
-    private static final int STATUS_NOT_AUTHENTICATED = 401;
+    private static final System.Logger LOGGER = System.getLogger(IdcsRoleMapperProviderBase.class.getName());
 
     private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
     private final OidcConfig oidcConfig;
@@ -101,6 +100,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      */
     protected IdcsRoleMapperProviderBase(Builder<?> builder) {
         this.oidcConfig = builder.oidcConfig;
+        this.oidcConfig.tokenEndpointUri(); //Remove once IDCS is rewritten to be lazily loaded
         this.defaultIdcsSubjectType = builder.defaultIdcsSubjectType;
         if (builder.supportedTypes.isEmpty()) {
             this.supportedTypes.add(SubjectType.USER);
@@ -110,64 +110,50 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
     }
 
     @Override
-    public CompletionStage<AuthenticationResponse> map(ProviderRequest authenticatedRequest,
-                                                       AuthenticationResponse previousResponse) {
+    public AuthenticationResponse map(ProviderRequest authenticatedRequest, AuthenticationResponse previousResponse) {
 
         Optional<Subject> maybeUser = previousResponse.user();
         Optional<Subject> maybeService = previousResponse.service();
 
-        if (!maybeService.isPresent() && !maybeUser.isPresent()) {
-            return complete(previousResponse);
+        if (maybeService.isEmpty() && maybeUser.isEmpty()) {
+            return previousResponse;
         }
 
         // create a new response
-        AuthenticationResponse.Builder builder = AuthenticationResponse.builder();
-
-        maybeUser
-                .map(subject -> {
-                    if (supportedTypes.contains(SubjectType.USER)) {
-                        return enhance(subject, authenticatedRequest, previousResponse);
-                    } else {
-                        return subject;
-                    }
-                })
-                .ifPresent(builder::user);
-
-        maybeService
-                .map(subject -> {
-                    if (supportedTypes.contains(SubjectType.SERVICE)) {
-                        return enhance(subject, authenticatedRequest, previousResponse);
-                    } else {
-                        return subject;
-                    }
-                })
-                .ifPresent(builder::service);
-
+        AuthenticationResponse.Builder builder = AuthenticationResponse.builder()
+                .requestHeaders(previousResponse.requestHeaders());
         previousResponse.description().ifPresent(builder::description);
-        builder.requestHeaders(previousResponse.requestHeaders());
 
-        return complete(builder.build());
+        if (maybeUser.isPresent()) {
+            if (supportedTypes.contains(SubjectType.USER)) {
+                Subject subject = enhance(authenticatedRequest, previousResponse, maybeUser.get());
+                builder.user(subject);
+            } else {
+                builder.service(maybeUser.get());
+            }
+        }
+
+        if (maybeService.isPresent()) {
+            if (supportedTypes.contains(SubjectType.SERVICE)) {
+                Subject subject = enhance(authenticatedRequest, previousResponse, maybeService.get());
+                builder.user(subject);
+            } else {
+                builder.service(maybeService.get());
+            }
+        }
+
+        return builder.build();
     }
 
     /**
-     * Create a {@link java.util.concurrent.CompletionStage} with the provided response as its completion.
+     * Enhance subject with IDCS roles, reactive.
      *
-     * @param response authentication response to complete with
-     * @return stage completed with the response
+     * @param request provider request
+     * @param previousResponse authenticated response
+     * @param subject subject to enhance
+     * @return future with enhanced subject
      */
-    protected CompletionStage<AuthenticationResponse> complete(AuthenticationResponse response) {
-        return CompletableFuture.completedFuture(response);
-    }
-
-    /**
-     * Enhance subject with IDCS roles.
-     *
-     * @param subject          subject of the user (never null)
-     * @param request          provider request
-     * @param previousResponse authenticated response (never null)
-     * @return stage with the new authentication response
-     */
-    protected abstract Subject enhance(Subject subject, ProviderRequest request, AuthenticationResponse previousResponse);
+    protected abstract Subject enhance(ProviderRequest request, AuthenticationResponse previousResponse, Subject subject);
 
     /**
      * Updates original subject with the list of grants.
@@ -185,70 +171,40 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         return builder.build();
     }
 
-    /**
-     * Process the server response to retrieve groups and app roles from it.
-     *
-     * @param groupResponse response from IDCS
-     * @param subjectName name of the subject
-     * @return list of grants obtained from the IDCS response
-     */
-    protected Optional<List<? extends Grant>> processServerResponse(Response groupResponse, String subjectName) {
-        Response.StatusType statusInfo = groupResponse.getStatusInfo();
-        if (statusInfo.getFamily() == Response.Status.Family.SUCCESSFUL) {
-            JsonObject jsonObject = groupResponse.readEntity(JsonObject.class);
-            JsonArray groups = jsonObject.getJsonArray("groups");
-            JsonArray appRoles = jsonObject.getJsonArray("appRoles");
-
-            if ((null == groups) && (null == appRoles)) {
-                LOGGER.log(Level.TRACE, () -> "Neither groups nor app roles found for user " + subjectName);
-                return Optional.empty();
-            }
-
-            List<Role> result = new LinkedList<>();
-            for (String type : Arrays.asList(ROLE_GROUP, ROLE_APPROLE)) {
-                JsonArray types = jsonObject.getJsonArray(type);
-                if (null != types) {
-                    for (int i = 0; i < types.size(); i++) {
-                        JsonObject typeJson = types.getJsonObject(i);
-                        String name = typeJson.getString("display");
-                        String id = typeJson.getString("value");
-                        String ref = typeJson.getString("$ref");
-
-                        Role role = Role.builder()
-                                .name(name)
-                                .addAttribute("type", type)
-                                .addAttribute("id", id)
-                                .addAttribute("ref", ref)
-                                .build();
-
-                        result.add(role);
-                    }
+    protected List<? extends Grant> processRoleRequest(Http1ClientRequest request, Object entity, String subjectName) {
+        try (Http1ClientResponse response = request.submit(entity)) {
+            if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+                try {
+                    JsonObject jsonObject = response.as(JsonObject.class);
+                    return processServerResponse(jsonObject, subjectName);
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING,
+                               "Cannot read groups for user \"" + subjectName + "\". "
+                                       + "Error message: Failed to read JSON from response",
+                               e);
+                }
+            } else {
+                String message;
+                try {
+                    message = response.as(String.class);
+                    LOGGER.log(Level.WARNING, "Cannot read groups for user \"" + subjectName + "\". "
+                            + "Response code: " + response.status()
+                            + (response.status() == Http.Status.UNAUTHORIZED_401 ? ", make sure your IDCS client has role "
+                                    + "\"Authenticator Client\" added on the client configuration page" : "")
+                            + ", error entity: " + message);
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING,
+                               "Cannot read groups for user \"" + subjectName + "\". "
+                                       + "Error message: Failed to process error entity",
+                               e);
                 }
             }
-
-            return Optional.of(result);
-        } else {
-            if (statusInfo.getStatusCode() == STATUS_NOT_AUTHENTICATED) {
-                // most likely not allowed to do this
-                LOGGER.log(Level.WARNING, "Cannot read groups for user \""
-                                       + subjectName
-                                       + "\". Response code: "
-                                       + groupResponse.getStatus()
-                                       + ", make sure your IDCS client has role \"Authenticator Client\" added on the client"
-                                       + " configuration page"
-                                       + ", entity: "
-                                       + groupResponse.readEntity(String.class));
-            } else {
-                LOGGER.log(Level.WARNING, "Cannot read groups for user \""
-                                       + subjectName
-                                       + "\". Response code: "
-                                       + groupResponse.getStatus()
-                                       + ", entity: "
-                                       + groupResponse.readEntity(String.class));
-            }
-
-            return Optional.empty();
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Cannot read groups for user \"" + subjectName + "\". "
+                               + "Error message: Failed to invoke request",
+                       e);
         }
+        return List.of();
     }
 
     /**
@@ -270,19 +226,52 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         return defaultIdcsSubjectType;
     }
 
+    private List<? extends Grant> processServerResponse(JsonObject jsonObject, String subjectName) {
+        JsonArray groups = jsonObject.getJsonArray("groups");
+        JsonArray appRoles = jsonObject.getJsonArray("appRoles");
+
+        if ((null == groups) && (null == appRoles)) {
+            LOGGER.log(Level.TRACE, () -> "Neither groups nor app roles found for user " + subjectName);
+            return List.of();
+        }
+
+        List<Role> result = new ArrayList<>();
+        for (String type : Arrays.asList(ROLE_GROUP, ROLE_APPROLE)) {
+            JsonArray types = jsonObject.getJsonArray(type);
+            if (null != types) {
+                for (int i = 0; i < types.size(); i++) {
+                    JsonObject typeJson = types.getJsonObject(i);
+                    String name = typeJson.getString("display");
+                    String id = typeJson.getString("value");
+                    String ref = typeJson.getString("$ref");
+
+                    Role role = Role.builder()
+                            .name(name)
+                            .addAttribute("type", type)
+                            .addAttribute("id", id)
+                            .addAttribute("ref", ref)
+                            .build();
+
+                    result.add(role);
+                }
+            }
+        }
+
+        return result;
+    }
+
     /**
-     * Fluent API builder for {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProviderBase}.
+     * Fluent API builder for {@link IdcsRoleMapperProviderBase}.
      * @param <B> Type of the extending builder
      */
+    @Configured
     public static class Builder<B extends Builder<B>> {
 
         private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
-        private String defaultIdcsSubjectType = IDCS_SUBJECT_TYPE_USER;
-
-        private OidcConfig oidcConfig;
-
         @SuppressWarnings("unchecked")
-        private B me = (B) this;
+        private final B me = (B) this;
+        private String defaultIdcsSubjectType = IDCS_SUBJECT_TYPE_USER;
+        private OidcConfig oidcConfig;
 
         /**
          * Default constructor.
@@ -329,6 +318,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * @param config oidc specific configuration, must have at least identity endpoint and client credentials configured
          * @return updated builder instance
          */
+        @ConfiguredOption
         public B oidcConfig(OidcConfig config) {
             this.oidcConfig = config;
             return me;
@@ -363,6 +353,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * @param subjectType type of subject to use when requesting roles from IDCS
          * @return updated builder instance
          */
+        @ConfiguredOption(IDCS_SUBJECT_TYPE_USER)
         public B defaultIdcsSubjectType(String subjectType) {
             this.defaultIdcsSubjectType = subjectType;
             return me;
@@ -378,6 +369,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * @param type subject type to add to the list of supported types
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "subject-types", kind = ConfiguredOption.Kind.LIST, value = "USER")
         public B addSubjectType(SubjectType type) {
             this.supportedTypes.add(type);
             return me;
@@ -385,69 +377,135 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
     }
 
     /**
-     * A token for app access to IDCS.
+     * Reactive token for app access to IDCS.
      */
     protected static class AppToken {
-        private final WebTarget tokenEndpoint;
-        // caching application token (as that can be re-used for group requests)
-        private Optional<String> tokenContent = Optional.empty();
-        private Jwt appJwt;
+        private static final List<Validator<Jwt>> TIME_VALIDATORS = Jwt.defaultTimeValidators();
 
-        /**
-         * Create a new token with a token endpoint.
-         *
-         * @param tokenEndpoint used to get a new token from IDCS
-         */
-        protected AppToken(WebTarget tokenEndpoint) {
-            this.tokenEndpoint = tokenEndpoint;
+        private final AtomicReference<LazyValue<AppTokenData>> token = new AtomicReference<>();
+        private final Http1Client webClient;
+        private final URI tokenEndpointUri;
+        private final Duration tokenRefreshSkew;
+
+        protected AppToken(Http1Client webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
+            this.webClient = webClient;
+            this.tokenEndpointUri = tokenEndpointUri;
+            this.tokenRefreshSkew = tokenRefreshSkew;
         }
 
-        /**
-         * Get the token to use for requests to IDCS.
-         * @param tracing tracing to use when requesting a new token from server
-         * @return token content or empty if it could not be obtained
-         */
-        protected synchronized Optional<String> getToken(RoleMapTracing tracing) {
-            if (null == appJwt) {
-                fromServer(tracing);
-            } else {
-                if (!appJwt.validate(Jwt.defaultTimeValidators()).isValid()) {
-                    fromServer(tracing);
+        protected Optional<String> getToken(RoleMapTracing tracing) {
+            LazyValue<AppTokenData> currentTokenData = token.get();
+            if (currentTokenData == null) {
+                LazyValue<AppTokenData> newLazyValue = LazyValue.create(() -> fromServer(tracing));
+                if (token.compareAndSet(null, newLazyValue)) {
+                    currentTokenData = newLazyValue;
+                } else {
+                    // another thread "stole" the data, return its future
+                    currentTokenData = token.get();
                 }
+                return currentTokenData.get().tokenContent();
             }
-            return tokenContent;
+
+            AppTokenData tokenData = currentTokenData.get();
+            Jwt jwt = tokenData.appJwt();
+            if (jwt == null
+                    || !jwt.validate(TIME_VALIDATORS).isValid()
+                    || isNearExpiration(jwt)) {
+                // it is not valid or is very close to expiration - we must get a new value
+                LazyValue<AppTokenData> newLazyValue = LazyValue.create(() -> fromServer(tracing));
+                if (token.compareAndSet(currentTokenData, newLazyValue)) {
+                    currentTokenData = newLazyValue;
+                } else {
+                    // another thread "stole" the data, return its future
+                    currentTokenData = token.get();
+                }
+                return currentTokenData.get().tokenContent();
+            } else {
+                // present and valid
+                return tokenData.tokenContent();
+            }
         }
 
-        private void fromServer(RoleMapTracing tracing) {
-            MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
-            formData.putSingle("grant_type", "client_credentials");
-            formData.putSingle("scope", "urn:opc:idm:__myscopes__");
+        private boolean isNearExpiration(Jwt jwt) {
+            return jwt.expirationTime()
+                    .map(exp -> exp.minus(tokenRefreshSkew).isBefore(Instant.now()))
+                    .orElse(false);
+        }
 
-            Invocation.Builder reqBuilder = tokenEndpoint.request();
+        private AppTokenData fromServer(RoleMapTracing tracing) {
+            Parameters params = Parameters.builder("idcs-form-params")
+                    .add("grant_type", "client_credentials")
+                    .add("scope", "urn:opc:idm:__myscopes__")
+                    .build();
+
+            // use current span context as a parent for client outbound
+            // using a custom child context, so we do not replace the parent in the current context
+            Context parentContext = Contexts.context().orElseGet(Contexts::globalContext);
+            Context childContext = Context.builder()
+                    .parent(parentContext)
+                    .build();
 
             tracing.findParent()
-                    .ifPresent(spanContext -> reqBuilder.property(PARENT_CONTEXT_CLIENT_PROPERTY, spanContext));
+                    .ifPresent(childContext::register);
 
-            Response tokenResponse = reqBuilder
-                    .accept(MediaType.APPLICATION_JSON_TYPE)
-                    .post(Entity.form(formData));
+            Http1ClientRequest request = webClient.post()
+                    .uri(tokenEndpointUri)
+                    .header(Http.HeaderValues.ACCEPT_JSON);
 
-            if (tokenResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-                JsonObject response = tokenResponse.readEntity(JsonObject.class);
-                String accessToken = response.getString(ACCESS_TOKEN_KEY);
-                LOGGER.log(Level.TRACE, () -> "Access token: " + accessToken);
-                SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
-
-                this.tokenContent = Optional.of(accessToken);
-                this.appJwt = signedJwt.getJwt();
-            } else {
-                LOGGER.log(Level.ERROR, "Failed to obtain access token for application to read groups"
-                                      + " from IDCS. Response code: " + tokenResponse.getStatus() + ", entity: "
-                                      + tokenResponse.readEntity(String.class));
-                this.tokenContent = Optional.empty();
-                this.appJwt = null;
+            try (Http1ClientResponse response = request.submit(params)) {
+                if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+                    try {
+                        JsonObject jsonObject = response.as(JsonObject.class);
+                        String accessToken = jsonObject.getString(ACCESS_TOKEN_KEY);
+                        LOGGER.log(Level.TRACE, () -> "Access token: " + accessToken);
+                        SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
+                        return new AppTokenData(accessToken, signedJwt.getJwt());
+                    } catch (Exception e) {
+                        LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
+                                + "groups from IDCS. Failed with exception:  Failed to read JSON from response",
+                                   e);
+                    }
+                } else {
+                    String message;
+                    try {
+                        message = response.as(String.class);
+                        LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
+                                + "groups from IDCS. Status: " + response.status() + ", error message: " + message);
+                    } catch (Exception e) {
+                        LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
+                                           + "groups from IDCS. Failed with exception:  Failed to process error entity",
+                                   e);
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
+                                   + "groups from IDCS. Failed with exception:  Failed to invoke request",
+                           e);
             }
+            return new AppTokenData();
         }
     }
 
+    private static final class AppTokenData {
+        private final Optional<String> tokenContent;
+        private final Jwt appJwt;
+
+        AppTokenData() {
+            this.tokenContent = Optional.empty();
+            this.appJwt = null;
+        }
+
+        AppTokenData(String tokenContent, Jwt appJwt) {
+            this.tokenContent = Optional.ofNullable(tokenContent);
+            this.appJwt = appJwt;
+        }
+
+        Optional<String> tokenContent() {
+            return tokenContent;
+        }
+
+        Jwt appJwt() {
+            return appJwt;
+        }
+    }
 }

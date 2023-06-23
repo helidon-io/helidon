@@ -1,0 +1,62 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-applications</artifactId>
+        <version>{{helidon-version}}</version>
+        <relativePath/>
+    </parent>
+    <groupId>{{groupId}}</groupId>
+    <artifactId>{{parent-artifactId}}</artifactId>
+    <version>{{project-version}}</version>
+    <packaging>pom</packaging>
+
+    <properties>
+        <version.lib.jackson.databind.nullable>0.2.3</version.lib.jackson.databind.nullable>
+        <version.plugin.jandex>3.1.2</version.plugin.jandex>
+        <version.plugin.openapi>6.2.1</version.plugin.openapi>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.openapitools</groupId>
+                <artifactId>jackson-databind-nullable</artifactId>
+                <version>${version.lib.jackson.databind.nullable}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.smallrye</groupId>
+                    <artifactId>jandex-maven-plugin</artifactId>
+                    <version>${version.plugin.jandex}</version>
+                    <executions>
+                        <execution>
+                            <id>make-index</id>
+                            <goals>
+                                <goal>jandex</goal>
+                            </goals>
+                            <phase>process-classes</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.openapitools</groupId>
+                    <artifactId>openapi-generator-maven-plugin</artifactId>
+                    <version>${version.plugin.openapi}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <modules>
+        <module>client</module>
+        <module>server</module>
+    </modules>
+</project>

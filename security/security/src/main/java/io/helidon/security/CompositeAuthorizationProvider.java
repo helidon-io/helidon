@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.ProviderConfig;
@@ -67,41 +65,33 @@ final class CompositeAuthorizationProvider implements AuthorizationProvider {
     }
 
     @Override
-    public CompletionStage<AuthorizationResponse> authorize(ProviderRequest context) {
-        CompletionStage<AuthorizationResponse> previous = CompletableFuture.completedFuture(AuthorizationResponse.abstain());
+    public AuthorizationResponse authorize(ProviderRequest context) {
+        AuthorizationResponse previous = AuthorizationResponse.abstain();
 
-        for (Atz providerConfig : providers) {
-            previous = previous.thenCombine(providerConfig.provider.authorize(context),
-                                            (prevResponse, thisResponse) -> processProvider(providerConfig,
-                                                                                            prevResponse,
-                                                                                            thisResponse));
-        }
-
-        return previous.exceptionally(throwable -> {
-            Throwable cause = throwable.getCause();
+        try {
+            for (Atz providerConfig : providers) {
+                AuthorizationResponse thisResponse = providerConfig.provider.authorize(context);
+                previous = processProvider(providerConfig, previous, thisResponse);
+            }
+        } catch (Exception exception) {
+            Throwable cause = exception.getCause();
             if (null == cause) {
-                cause = throwable;
+                cause = exception;
             }
             if (cause instanceof AsyncAtzException) {
                 return ((AsyncAtzException) cause).response;
             }
             return AuthorizationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
-                    .description("Failed processing: " + throwable.getMessage())
-                    .throwable(throwable)
+                    .description("Failed processing: " + exception.getMessage())
+                    .throwable(exception)
                     .build();
-        }).thenApply(atzResponse -> {
-            if (atzResponse.status() == SecurityResponse.SecurityStatus.ABSTAIN) {
-                // TODO how to resolve optional - too many places to configure it
-                //                if (context.getSecurityContext().getEndpointConfig().isOptional()) {
-                //                    return AuthorizationResponse.permit();
-                //                } else {
-                //                    return AuthorizationResponse.abstain();
-                //                }
-                return AuthorizationResponse.abstain();
-            }
-            return atzResponse;
-        });
+        }
+
+        if (previous.status() == SecurityResponse.SecurityStatus.ABSTAIN) {
+            return AuthorizationResponse.abstain();
+        }
+        return previous;
     }
 
     private AuthorizationResponse processProvider(Atz providerConfig,

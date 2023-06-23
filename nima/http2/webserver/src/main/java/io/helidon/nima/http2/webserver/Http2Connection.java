@@ -16,11 +16,12 @@
 
 package io.helidon.nima.http2.webserver;
 
+import java.io.UncheckedIOException;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -30,7 +31,7 @@ import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.task.InterruptableTask;
-import io.helidon.nima.http2.FlowControl;
+import io.helidon.nima.http2.ConnectionFlowControl;
 import io.helidon.nima.http2.Http2ConnectionWriter;
 import io.helidon.nima.http2.Http2ErrorCode;
 import io.helidon.nima.http2.Http2Exception;
@@ -86,11 +87,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             Http2FrameListener.create(List.of(new Http2LoggingFrameListener("recv")));
     private final Http2ConnectionWriter connectionWriter;
     private final List<Http2SubProtocolSelector> subProviders;
-    private final WindowSize connectionWindowSize = new WindowSize();
     private final DataReader reader;
-
     private final Http2Settings serverSettings;
     private final boolean sendErrorDetails;
+    private final ConnectionFlowControl flowControl;
 
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
@@ -104,9 +104,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private State state = State.WRITE_SERVER_SETTINGS;
     private int continuationExpectedStreamId;
     private int lastStreamId;
-    private long maxClientFrameSize;
     private long maxClientConcurrentStreams;
-    private int streamInitialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
 
     Http2Connection(ConnectionContext ctx, Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
         this.ctx = ctx;
@@ -115,15 +113,38 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 .update(builder -> settingsUpdate(http2Config, builder))
                 .add(Http2Setting.ENABLE_PUSH, false)
                 .build();
-        this.connectionWriter = new Http2ConnectionWriter(ctx, ctx.dataWriter(), List.of(new Http2LoggingFrameListener("send")));
+        this.connectionWriter = new Http2ConnectionWriter(ctx,
+                                                          ctx.dataWriter(),
+                                                          List.of(new Http2LoggingFrameListener("send")));
         this.subProviders = subProviders;
-        this.requestDynamicTable = Http2Headers.DynamicTable.create(serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
+        this.requestDynamicTable = Http2Headers.DynamicTable.create(
+                serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
         this.requestHuffman = new Http2HuffmanDecoder();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.reader = ctx.dataReader();
         this.sendErrorDetails = http2Config.sendErrorDetails();
-        this.maxClientFrameSize = http2Config.maxClientFrameSize();
         this.maxClientConcurrentStreams = http2Config.maxConcurrentStreams();
+
+        // Flow control is initialized by RFC 9113 default values
+        this.flowControl = ConnectionFlowControl.serverBuilder(this::writeWindowUpdateFrame)
+                .initialWindowSize(http2Config.initialWindowSize())
+                .blockTimeout(http2Config.flowControlTimeout())
+                .maxFrameSize(http2Config.maxFrameSize())
+                .build();
+    }
+
+    private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
+        applySetting(builder, config.maxFrameSize(), Http2Setting.MAX_FRAME_SIZE);
+        applySetting(builder, config.maxHeaderListSize(), Http2Setting.MAX_HEADER_LIST_SIZE);
+        applySetting(builder, config.maxConcurrentStreams(), Http2Setting.MAX_CONCURRENT_STREAMS);
+        applySetting(builder, config.initialWindowSize(), Http2Setting.INITIAL_WINDOW_SIZE);
+    }
+
+    // Add value to the builder only when differs from default
+    private static void applySetting(Http2Settings.Builder builder, long value, Http2Setting<Long> settings) {
+        if (value != settings.defaultValue()) {
+            builder.add(settings, value);
+        }
     }
 
     @Override
@@ -144,9 +165,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             Http2GoAway frame = new Http2GoAway(0,
                                                 e.code(),
                                                 sendErrorDetails ? e.getMessage() : "");
-            connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()), FlowControl.NOOP);
+            connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             state = State.FINISHED;
-        } catch (CloseConnectionException | InterruptedException e) {
+        } catch (CloseConnectionException
+                 | InterruptedException
+                 | UncheckedIOException e) {
             throw e;
         } catch (Throwable e) {
             if (state == State.FINISHED) {
@@ -156,22 +179,79 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             Http2GoAway frame = new Http2GoAway(0,
                                                 Http2ErrorCode.INTERNAL,
                                                 sendErrorDetails ? e.getClass().getName() + ": " + e.getMessage() : "");
-            connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()), FlowControl.NOOP);
+            connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             state = State.FINISHED;
             throw e;
         }
     }
 
     /**
-     * Client settings, obtained from HTTP/2 upgrade request.
+     * Client settings, obtained from SETTINGS frame or HTTP/2 upgrade request.
      *
      * @param http2Settings client settings to use
      */
     public void clientSettings(Http2Settings http2Settings) {
         this.clientSettings = http2Settings;
+        this.receiveFrameListener.frame(ctx, clientSettings);
         if (this.clientSettings.hasValue(Http2Setting.HEADER_TABLE_SIZE)) {
             updateHeaderTableSize(clientSettings.value(Http2Setting.HEADER_TABLE_SIZE));
         }
+
+        if (this.clientSettings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
+            Long initialWindowSize = clientSettings.value(Http2Setting.INITIAL_WINDOW_SIZE);
+
+            //6.9.2/3 - legal range for the increment to the flow-control window is 1 to 2^31-1 (2,147,483,647) octets.
+            if (initialWindowSize > WindowSize.MAX_WIN_SIZE) {
+                Http2GoAway frame = new Http2GoAway(0,
+                                                    Http2ErrorCode.FLOW_CONTROL,
+                                                    "Window " + initialWindowSize + " size too large");
+                connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+            }
+
+            //6.9.1/1 - changing the flow-control window for streams that are not yet active
+            flowControl.resetInitialWindowSize(initialWindowSize.intValue());
+
+            //6.9.2/1 - SETTINGS frame can alter the initial flow-control
+            //   window size for streams with active flow-control windows (that is,
+            //   streams in the "open" or "half-closed (remote)" state)
+            for (StreamContext sctx : streams.values()) {
+                Http2StreamState streamState = sctx.stream.streamState();
+                if (streamState == Http2StreamState.OPEN || streamState == Http2StreamState.HALF_CLOSED_REMOTE) {
+                    sctx.stream.flowControl().outbound().resetStreamWindowSize(initialWindowSize.intValue());
+                }
+            }
+
+            // Unblock frames waiting for update
+            this.flowControl.outbound().triggerUpdate();
+        }
+
+        if (this.clientSettings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
+            Long maxFrameSize = this.clientSettings.value(Http2Setting.MAX_FRAME_SIZE);
+            // specification defines, that the frame size must be between the initial size (16384) and 2^24-1
+            if (maxFrameSize < WindowSize.DEFAULT_MAX_FRAME_SIZE || maxFrameSize > WindowSize.MAX_MAX_FRAME_SIZE) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                         "Frame size must be between 2^14 and 2^24-1, but is: " + maxFrameSize);
+            }
+
+            flowControl.resetMaxFrameSize(maxFrameSize.intValue());
+        }
+
+        // Set server MAX_CONCURRENT_STREAMS limit when client sends number lower than hard limit
+        // from configuration. Refuse settings if client sends larger number than is configured.
+        this.clientSettings.presentValue(Http2Setting.MAX_CONCURRENT_STREAMS)
+                .ifPresent(it -> {
+                    if (http2Config.maxConcurrentStreams() >= it) {
+                        maxClientConcurrentStreams = it;
+                    } else {
+                        Http2GoAway frame =
+                                new Http2GoAway(0,
+                                                Http2ErrorCode.PROTOCOL,
+                                                "Value of maximum concurrent streams limit " + it
+                                                        + " exceeded hard limit value "
+                                                        + http2Config.maxConcurrentStreams());
+                        connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+                    }
+                });
     }
 
     /**
@@ -212,19 +292,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         return serverSettings;
     }
 
-    private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
-        applySetting(builder, config.maxFrameSize(), Http2Setting.MAX_FRAME_SIZE);
-        applySetting(builder, config.maxHeaderListSize(), Http2Setting.MAX_HEADER_LIST_SIZE);
-        applySetting(builder, config.maxConcurrentStreams(), Http2Setting.MAX_CONCURRENT_STREAMS);
-    }
-
-    // Add value to the builder only when differs from default
-    private static void applySetting(Http2Settings.Builder builder, long value, Http2Setting<Long> settings) {
-        if (value != settings.defaultValue()) {
-            builder.add(settings, value);
-        }
-    }
-
     private void doHandle() throws InterruptedException {
 
         while (state != State.FINISHED) {
@@ -240,25 +307,32 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     // no data to read -> connection is closed
                     throw new CloseConnectionException("Connection closed by client", e);
                 }
+                dispatchHandler();
+
+            } else {
+                dispatchHandler();
             }
-            switch (state) {
-            case CONTINUATION -> doContinuation();
-            case WRITE_SERVER_SETTINGS -> writeServerSettings();
-            case WINDOW_UPDATE -> windowUpdateFrame();
-            case SETTINGS -> doSettings();
-            case ACK_SETTINGS -> ackSettings();
-            case DATA -> dataFrame();
-            case HEADERS -> doHeaders();
-            case PRIORITY -> doPriority();
-            case READ_PUSH_PROMISE -> throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM, "Push promise not supported");
-            case PING -> pingFrame();
-            case SEND_PING_ACK -> writePingAck();
-            case GO_AWAY ->
-                // todo we may need to do graceful shutdown to process the last stream
-                    goAwayFrame();
-            case RST_STREAM -> rstStream();
-            default -> unknownFrame();
-            }
+        }
+    }
+
+    private void dispatchHandler() {
+        switch (state) {
+        case CONTINUATION -> doContinuation();
+        case WRITE_SERVER_SETTINGS -> writeServerSettings();
+        case WINDOW_UPDATE -> readWindowUpdateFrame();
+        case SETTINGS -> doSettings();
+        case ACK_SETTINGS -> ackSettings();
+        case DATA -> dataFrame();
+        case HEADERS -> doHeaders();
+        case PRIORITY -> doPriority();
+        case READ_PUSH_PROMISE -> throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM, "Push promise not supported");
+        case PING -> pingFrame();
+        case SEND_PING_ACK -> writePingAck();
+        case GO_AWAY ->
+            // todo we may need to do graceful shutdown to process the last stream
+                goAwayFrame();
+        case RST_STREAM -> rstStream();
+        default -> unknownFrame();
         }
     }
 
@@ -274,6 +348,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void readFrame() {
+
         BufferData frameHeaderBuffer = reader.readBuffer(FRAME_HEADER_LENGTH);
 
         receiveFrameListener.frameHeader(ctx, frameHeaderBuffer);
@@ -329,11 +404,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private void doContinuation() {
         Http2Flag.ContinuationFlags flags = frameHeader.flags(Http2FrameTypes.CONTINUATION);
-        List<Http2FrameData> continuationData = stream(frameHeader.streamId()).contData();
-        if (continuationData.isEmpty()) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received continuation without headers.");
-        }
-        continuationData.add(new Http2FrameData(frameHeader, inProgressFrame()));
+
+        stream(frameHeader.streamId())
+                .addContinuation(new Http2FrameData(frameHeader, inProgressFrame()));
+
         if (flags.endOfHeaders()) {
             state = State.HEADERS;
         } else {
@@ -342,38 +416,43 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void writeServerSettings() {
-        connectionWriter.write(serverSettings.toFrameData(serverSettings, 0, Http2Flag.SettingsFlags.create(0)),
-                               FlowControl.NOOP);
+        connectionWriter.write(serverSettings.toFrameData(serverSettings, 0, Http2Flag.SettingsFlags.create(0)));
         state = State.READ_FRAME;
     }
 
-    private void windowUpdateFrame() {
+    private void readWindowUpdateFrame() {
         Http2WindowUpdate windowUpdate = Http2WindowUpdate.create(inProgressFrame());
         receiveFrameListener.frame(ctx, windowUpdate);
         state = State.READ_FRAME;
 
         boolean overflow;
+        int increment = windowUpdate.windowSizeIncrement();
+        int streamId = frameHeader.streamId();
 
-        if (frameHeader.streamId() == 0) {
+        if (streamId == 0) {
             // overall connection
-            // todo implement
-            if (windowUpdate.windowSizeIncrement() == 0) {
+            if (increment == 0) {
                 Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, "Window size 0");
-                connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()), FlowControl.NOOP);
+                connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             }
-            overflow = connectionWindowSize.incrementWindowSize(windowUpdate.windowSizeIncrement());
+            overflow = flowControl.incrementOutboundConnectionWindowSize(increment) > WindowSize.MAX_WIN_SIZE;
             if (overflow) {
                 Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
-                connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()), FlowControl.NOOP);
+                connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             }
         } else {
             try {
-                StreamContext stream = stream(frameHeader.streamId());
+                StreamContext stream = stream(streamId);
                 stream.stream().windowUpdate(windowUpdate);
             } catch (Http2Exception ignored) {
                 // stream closed
             }
         }
+    }
+
+    // Used in inbound flow control instance to write WINDOW_UPDATE frame.
+    private void writeWindowUpdateFrame(int streamId, Http2WindowUpdate windowUpdateFrame) {
+        connectionWriter.write(windowUpdateFrame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
     }
 
     private void doSettings() {
@@ -388,67 +467,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 throw new Http2Exception(Http2ErrorCode.FRAME_SIZE, "Settings with ACK should not have payload.");
             }
         } else {
-            this.clientSettings = Http2Settings.create(inProgressFrame());
-            this.receiveFrameListener.frame(ctx, clientSettings);
-
-            this.clientSettings.presentValue(Http2Setting.HEADER_TABLE_SIZE)
-                    .ifPresent(this::updateHeaderTableSize);
-
-            Optional<Long> windowSize = this.clientSettings.presentValue(Http2Setting.INITIAL_WINDOW_SIZE);
-            if (windowSize.isPresent()) {
-                long it = windowSize.get();
-
-                //6.9.2/3 - legal range for the increment to the flow-control window is 1 to 2^31-1 (2,147,483,647) octets.
-                if (it > WindowSize.MAX_WIN_SIZE) {
-                    Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window " + it + " size too large");
-                    connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()), FlowControl.NOOP);
-                }
-
-                //6.9.1/1 - changing the flow-control window for streams that are not yet active
-                streamInitialWindowSize = (int) it;
-
-                //6.9.2/1 - SETTINGS frame can alter the initial flow-control
-                //   window size for streams with active flow-control windows (that is,
-                //   streams in the "open" or "half-closed (remote)" state)
-                for (StreamContext sctx : streams.values()) {
-                    Http2StreamState streamState = sctx.stream.streamState();
-                    if (streamState == Http2StreamState.OPEN || streamState == Http2StreamState.HALF_CLOSED_REMOTE) {
-                        sctx.stream.flowControl().resetStreamWindowSize(it);
-                    }
-                }
-
-                // Unblock frames waiting for update
-                this.connectionWindowSize.triggerUpdate();
-            }
-
-            this.clientSettings.presentValue(Http2Setting.MAX_FRAME_SIZE)
-                    .ifPresent(it -> this.maxClientFrameSize = it);
-
-            // specification defines, that the frame size must be between the initial size (16384) and 2^24-1
-            if (this.maxClientFrameSize < 16_384 || this.maxClientFrameSize > 16_777_215) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Frame size must be between 2^14 and 2^24-1, but is: "
-                        + maxClientFrameSize);
-            }
-
-            // Set server MAX_CONCURRENT_STREAMS limit when client sends number lower than hard limit
-            // from configuration. Refuse settings if client sends larger number than is configured.
-            this.clientSettings.presentValue(Http2Setting.MAX_CONCURRENT_STREAMS)
-                    .ifPresent(it -> {
-                        if (http2Config.maxConcurrentStreams() >= it) {
-                            maxClientConcurrentStreams = it;
-                        } else {
-                            Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL,
-                                    "Value of maximum concurrent streams limit " + it
-                                          + " exceeded hard limit value " + http2Config.maxConcurrentStreams());
-                            connectionWriter.write(
-                                    frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()),
-                                    FlowControl.NOOP);
-
-                        }
-                    });
+            clientSettings(Http2Settings.create(inProgressFrame()));
 
             // TODO for each
-            //        Http2Setting.MAX_CONCURRENT_STREAMS;
             //        Http2Setting.MAX_HEADER_LIST_SIZE;
             state = State.ACK_SETTINGS;
         }
@@ -457,7 +478,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private void ackSettings() {
         Http2Flag.SettingsFlags flags = Http2Flag.SettingsFlags.create(Http2Flag.ACK);
         Http2FrameHeader header = Http2FrameHeader.create(0, Http2FrameTypes.SETTINGS, flags, 0);
-        connectionWriter.write(new Http2FrameData(header, BufferData.empty()), FlowControl.NOOP);
+        connectionWriter.write(new Http2FrameData(header, BufferData.empty()));
         state = State.READ_FRAME;
 
         if (upgradeHeaders != null) {
@@ -470,19 +491,30 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             stream.prologue(upgradePrologue);
             stream.headers(upgradeHeaders, !hasEntity);
             upgradeHeaders = null;
-            ctx.sharedExecutor()
-                    .submit(new StreamRunnable(streams, stream, stream.streamId()));
+            ctx.executor()
+                    .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
         }
     }
 
     private void dataFrame() {
         BufferData buffer;
 
-        StreamContext stream = stream(frameHeader.streamId());
+        int streamId = frameHeader.streamId();
+        StreamContext stream = stream(streamId);
         stream.stream().checkDataReceivable();
 
-        // todo we need to have some information about how much data is buffered for a stream
-        // to prevent OOM (use flow control!)
+        // Flow-control: reading frameHeader.length() bytes from HTTP2 socket for known stream ID.
+        int length = frameHeader.length();
+        if (length > 0) {
+            if (streamId > 0 && frameHeader.type() != Http2FrameType.HEADERS) {
+                // Stream ID > 0: update connection and stream
+                stream.stream()
+                        .flowControl()
+                        .inbound()
+                        .decrementWindowSize(length);
+            }
+        }
+
         if (frameHeader.flags(Http2FrameTypes.DATA).padded()) {
             BufferData frameData = inProgressFrame();
             int padLength = frameData.read();
@@ -515,9 +547,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // first frame, expecting continuation
         if (frameHeader.type() == Http2FrameType.HEADERS && !frameHeader.flags(Http2FrameTypes.HEADERS).endOfHeaders()) {
             // this needs to retain the data until we receive last continuation, cannot use the same data
-            streamContext.contData().clear();
-            streamContext.contData().add(new Http2FrameData(frameHeader, inProgressFrame().copy()));
-            streamContext.continuationHeader = frameHeader;
+            streamContext.addHeadersToBeContinued(frameHeader, inProgressFrame().copy());
             this.continuationExpectedStreamId = streamId;
             this.state = State.READ_FRAME;
             return;
@@ -530,14 +560,12 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         if (frameHeader.type() == Http2FrameType.CONTINUATION) {
             // end of continuations with header frames
-            List<Http2FrameData> frames = streamContext.contData();
             headers = Http2Headers.create(stream,
                                           requestDynamicTable,
                                           requestHuffman,
-                                          frames.toArray(new Http2FrameData[0]));
-            endOfStream = streamContext.continuationHeader.flags(Http2FrameTypes.HEADERS).endOfStream();
-            frames.clear();
-            streamContext.continuationHeader = null;
+                                          streamContext.contData());
+            endOfStream = streamContext.contHeader().flags(Http2FrameTypes.HEADERS).endOfStream();
+            streamContext.clearContinuations();
             continuationExpectedStreamId = 0;
         } else {
             endOfStream = frameHeader.flags(Http2FrameTypes.HEADERS).endOfStream();
@@ -562,8 +590,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         state = State.READ_FRAME;
 
         // we now have all information needed to execute
-        ctx.sharedExecutor()
-                .submit(new StreamRunnable(streams, stream, stream.streamId()));
+        ctx.executor()
+                .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
     }
 
     private void pingFrame() {
@@ -623,7 +651,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                           Http2Flag.PingFlags.create(Http2Flag.ACK),
                                                           0);
         ping = null;
-        connectionWriter.write(new Http2FrameData(header, frame), FlowControl.NOOP);
+        connectionWriter.write(new Http2FrameData(header, frame));
         state = State.READ_FRAME;
     }
 
@@ -680,13 +708,14 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 }
             }
 
-            // MAX_CONCURRENT_STREAMS limit check - according to RFC 9113 section 5.1.2 endpoint MUST treat this
-            // as a stream error (section 5.4.2) of type PROTOCOL_ERROR or REFUSED_STREAM.
+            // 5.1.2 MAX_CONCURRENT_STREAMS limit check - stream error of type PROTOCOL_ERROR or REFUSED_STREAM
             if (streams.size() > maxClientConcurrentStreams) {
                 throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM,
-                        "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
+                                         "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
             }
+
             streamContext = new StreamContext(streamId,
+                                              http2Config.maxHeaderListSize(),
                                               new Http2Stream(ctx,
                                                               routing,
                                                               http2Config,
@@ -695,9 +724,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                               serverSettings,
                                                               clientSettings,
                                                               connectionWriter,
-                                                              FlowControl.create(streamId,
-                                                                                 streamInitialWindowSize,
-                                                                                 connectionWindowSize)));
+                                                              flowControl));
             streams.put(streamId, streamContext);
         }
 
@@ -741,33 +768,41 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         UNKNOWN
     }
 
-    private static final class StreamRunnable implements Runnable {
-        private final Map<Integer, StreamContext> streams;
-        private final Http2Stream stream;
-        private final int streamId;
-
-        private StreamRunnable(Map<Integer, StreamContext> streams, Http2Stream stream, int streamId) {
-            this.streams = streams;
-            this.stream = stream;
-            this.streamId = streamId;
-        }
+    private record StreamRunnable(Map<Integer, StreamContext> streams,
+                                  Http2Stream stream,
+                                  Thread handlerThread) implements Runnable {
 
         @Override
         public void run() {
-            stream.run();
-            streams.remove(stream.streamId());
+            try {
+                stream.run();
+            } catch (UncheckedIOException e) {
+                // Broken connection
+                if (e.getCause() instanceof SocketException) {
+                    // Interrupt handler thread
+                    handlerThread.interrupt();
+                    LOGGER.log(DEBUG, "Socket error on writer thread", e);
+                } else {
+                    throw e;
+                }
+            } finally {
+                streams.remove(stream.streamId());
+            }
         }
     }
 
     private static class StreamContext {
         private final List<Http2FrameData> continuationData = new ArrayList<>();
+        private final long maxHeaderListSize;
         private final int streamId;
         private final Http2Stream stream;
+        private long headerListSize = 0;
 
         private Http2FrameHeader continuationHeader;
 
-        StreamContext(int streamId, Http2Stream stream) {
+        StreamContext(int streamId, long maxHeaderListSize, Http2Stream stream) {
             this.streamId = streamId;
+            this.maxHeaderListSize = maxHeaderListSize;
             this.stream = stream;
         }
 
@@ -775,12 +810,41 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             return stream;
         }
 
-        public Http2FrameHeader contHeader() {
+        Http2FrameData[] contData() {
+            return continuationData.toArray(new Http2FrameData[0]);
+        }
+
+        Http2FrameHeader contHeader() {
             return continuationHeader;
         }
 
-        public List<Http2FrameData> contData() {
-            return continuationData;
+        void addContinuation(Http2FrameData frameData) {
+            if (continuationData.isEmpty()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received continuation without headers.");
+            }
+            this.continuationData.add(frameData);
+            addAndValidateHeaderListSize(frameData.header().length());
+        }
+
+        void addHeadersToBeContinued(Http2FrameHeader frameHeader,  BufferData bufferData) {
+            clearContinuations();
+            continuationHeader = frameHeader;
+            this.continuationData.add(new Http2FrameData(frameHeader, bufferData));
+            addAndValidateHeaderListSize(frameHeader.length());
+        }
+
+        private void addAndValidateHeaderListSize(int headerSizeIncrement){
+            // Check MAX_HEADER_LIST_SIZE
+            headerListSize += headerSizeIncrement;
+            if (headerListSize > maxHeaderListSize){
+                throw new Http2Exception(Http2ErrorCode.REQUEST_HEADER_FIELDS_TOO_LARGE,
+                        "Request Header Fields Too Large");
+            }
+        }
+
+        private void clearContinuations() {
+            continuationData.clear();
+            headerListSize = 0;
         }
     }
 }

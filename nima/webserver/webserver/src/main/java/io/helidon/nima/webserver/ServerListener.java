@@ -36,12 +36,15 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.task.HelidonTaskExecutor;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
@@ -50,7 +53,7 @@ import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
 
-class ServerListener {
+class ServerListener implements ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
 
     private static final long EXECUTOR_SHUTDOWN_MILLIS = 500L;
@@ -62,31 +65,34 @@ class ServerListener {
     private final HelidonTaskExecutor readerExecutor;
     private final ExecutorService sharedExecutor;
     private final Thread serverThread;
-    private final DirectHandlers simpleHandlers;
+    private final DirectHandlers directHandlers;
     private final CompletableFuture<Void> closeFuture;
     private final SocketOptions connectionOptions;
     private final InetSocketAddress configuredAddress;
 
-    private final ServerContext serverContext;
+    private final MediaContext mediaContext;
+    private final ContentEncodingContext contentEncodingContext;
+    private final Context context;
 
     private volatile boolean running;
     private volatile int connectedPort;
     private volatile ServerSocket serverSocket;
 
-    ServerListener(ServerContext serverContext,
-                   List<ServerConnectionSelector> connectionProviders,
+    ServerListener(List<ServerConnectionSelector> connectionProviders,
                    String socketName,
                    ListenerConfiguration listenerConfig,
                    Router router,
-                   DirectHandlers simpleHandlers,
                    boolean inheritThreadLocals) {
 
-        this.serverContext = serverContext;
         this.connectionProviders = ConnectionProviders.create(connectionProviders);
         this.socketName = socketName;
         this.listenerConfig = listenerConfig;
         this.router = router;
         this.connectionOptions = listenerConfig.connectionOptions();
+        this.directHandlers = listenerConfig.directHandlers();
+        this.mediaContext = listenerConfig.mediaContext();
+        this.contentEncodingContext = listenerConfig.contentEncodingContext();
+        this.context = listenerConfig.context();
 
         this.serverThread = Thread.ofPlatform()
                 .allowSetThreadLocals(true)
@@ -94,12 +100,14 @@ class ServerListener {
                 .daemon(false)
                 .name("server-" + socketName + "-listener")
                 .unstarted(this::listen);
-        this.simpleHandlers = simpleHandlers;
+
+        // to read requests and execute tasks
         this.readerExecutor = ThreadPerTaskExecutor.create(Thread.ofVirtual()
                                                                          .allowSetThreadLocals(true)
                                                                          .inheritInheritableThreadLocals(inheritThreadLocals)
                                                                          .factory());
 
+        // to do anything else (writers etc.)
         this.sharedExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                                                                          .allowSetThreadLocals(true)
                                                                          .inheritInheritableThreadLocals(inheritThreadLocals)
@@ -112,6 +120,36 @@ class ServerListener {
             port = 0;
         }
         this.configuredAddress = new InetSocketAddress(listenerConfig.address(), port);
+    }
+
+    @Override
+    public MediaContext mediaContext() {
+        return mediaContext;
+    }
+
+    @Override
+    public ContentEncodingContext contentEncodingContext() {
+        return contentEncodingContext;
+    }
+
+    @Override
+    public DirectHandlers directHandlers() {
+        return directHandlers;
+    }
+
+    @Override
+    public Context context() {
+        return context;
+    }
+
+    @Override
+    public ListenerConfiguration config() {
+        return listenerConfig;
+    }
+
+    @Override
+    public ExecutorService executor() {
+        return sharedExecutor;
     }
 
     @Override
@@ -199,14 +237,13 @@ class ServerListener {
                                            connectedPort,
                                            socketName));
 
-            if (listenerConfig.writeQueueLength() <= 1) {
-                LOGGER.log(System.Logger.Level.INFO, "[" + serverChannelId + "] direct writes");
-            } else {
-                LOGGER.log(System.Logger.Level.INFO,
-                           "[" + serverChannelId + "] async writes, queue length: " + listenerConfig.writeQueueLength());
-            }
-
             if (LOGGER.isLoggable(TRACE)) {
+                if (listenerConfig.writeQueueLength() <= 1) {
+                    LOGGER.log(System.Logger.Level.TRACE, "[" + serverChannelId + "] direct writes");
+                } else {
+                    LOGGER.log(System.Logger.Level.TRACE,
+                               "[" + serverChannelId + "] async writes, queue length: " + listenerConfig.writeQueueLength());
+                }
                 if (listenerConfig.hasTls()) {
                     debugTls(serverChannelId, listenerConfig.tls());
                 }
@@ -277,16 +314,10 @@ class ServerListener {
                         helidonSocket = PlainSocket.server(socket, channelId, serverChannelId);
                     }
 
-                    handler = new ConnectionHandler(serverContext,
+                    handler = new ConnectionHandler(this,
                                                     connectionProviders,
-                                                    sharedExecutor,
-                                                    serverChannelId,
-                                                    channelId,
                                                     helidonSocket,
-                                                    router,
-                                                    listenerConfig.writeQueueLength(),
-                                                    listenerConfig.maxPayloadSize(),
-                                                    simpleHandlers);
+                                                    router);
 
                     readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {

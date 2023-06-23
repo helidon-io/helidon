@@ -226,7 +226,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
                 return -1;
             }
             ensureBuffer(512);
-            if (currentBuffer == null) {
+            if (finished || currentBuffer == null) {
                 return -1;
             }
             return currentBuffer.read();
@@ -238,7 +238,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
                 return -1;
             }
             ensureBuffer(len);
-            if (currentBuffer == null) {
+            if (finished || currentBuffer == null) {
                 return -1;
             }
             return currentBuffer.read(b, off, len);

@@ -18,7 +18,7 @@ package io.helidon.tracing.tracerresolver;
 
 import java.lang.System.Logger.Level;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
 
 import io.opentracing.Tracer;

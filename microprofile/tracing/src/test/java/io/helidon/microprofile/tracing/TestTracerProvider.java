@@ -19,7 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
 import io.helidon.tracing.opentracing.spi.OpenTracingProvider;

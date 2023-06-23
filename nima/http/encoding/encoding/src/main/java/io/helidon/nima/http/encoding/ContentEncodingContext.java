@@ -108,7 +108,7 @@ public interface ContentEncodingContext {
     ContentEncoder encoder(Headers headers);
 
     /**
-     * Builder to set up this encoding support content.
+     * Builder to set up this encoding support context.
      *
      * @return a new builder
      */
@@ -126,11 +126,15 @@ public interface ContentEncodingContext {
         private final HelidonServiceLoader.Builder<ContentEncodingProvider> encodingProviders
                 = HelidonServiceLoader.builder(ServiceLoader.load(ContentEncodingProvider.class));
 
+        // Builder instance must be created using factory method.
+        private Builder() {
+        }
+
         /**
          * Update this builder from configuration.
          * <p>
          * Configuration:<ul>
-         *     <li><b>disable: true</b>  - to disable content encoding support</li>
+         *     <li><b>discover-services: false</b> - to disable content encoding support providers service loader discovery</li>
          * </ul>
          *
          * @param config configuration to use

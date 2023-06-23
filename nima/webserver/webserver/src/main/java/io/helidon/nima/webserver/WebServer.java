@@ -34,14 +34,17 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.MediaSupport;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+import io.helidon.pico.api.Contract;
 
 /**
  * Server that opens server sockets and handles requests through routing.
  */
+@Contract
 public interface WebServer {
     /**
      * The default server socket configuration name. All the default server socket
@@ -116,7 +119,7 @@ public interface WebServer {
     }
 
     /**
-     * Context associated with the {@code WebServer}, used as a parent for request contexts.
+     * Context associated with the {@code WebServer}, used as a parent for listener contexts.
      *
      * @return a server context
      */
@@ -160,13 +163,16 @@ public interface WebServer {
 
         private final Map<String, ListenerConfiguration.Builder> socketBuilder = new HashMap<>();
         private final Map<String, Router.Builder> routers = new HashMap<>();
-        private final DirectHandlers.Builder simpleHandlers = DirectHandlers.builder();
+        private final DirectHandlers.Builder directHandlers = DirectHandlers.builder();
 
         private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders
                 = HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
 
+        private final ServerConfigDefault.Builder configBuilder = ServerConfigDefault.builder();
+
         private Config providersConfig = Config.empty();
         private MediaContext mediaContext = MediaContext.create();
+        private MediaContext.Builder mediaContextBuilder;
         private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         private boolean shutdownHook = true;
@@ -192,8 +198,20 @@ public interface WebServer {
                         .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
                         .build();
             }
+            if (mediaContext == null) {
+                if (mediaContextBuilder == null) {
+                    mediaContext = MediaContext.create();
+                } else {
+                    mediaContext = mediaContextBuilder.build();
+                }
+            } else {
+                if (mediaContextBuilder != null) {
+                    mediaContext = mediaContextBuilder.fallback(mediaContext).build();
+                }
+            }
+            mediaContextBuilder = null;
 
-            return new LoomServer(this, simpleHandlers.build());
+            return new LoomServer(this, configBuilder.build(), directHandlers.build());
         }
 
         /**
@@ -232,6 +250,7 @@ public interface WebServer {
                         listenerConfig.get("backlog").asInt().ifPresent(listener::backlog);
                         listenerConfig.get("receive-buffer-size").asInt().ifPresent(listener::receiveBufferSize);
                         listenerConfig.get("write-queue-length").asInt().ifPresent(listener::writeQueueLength);
+                        listenerConfig.get("write-buffer-size").asInt().ifPresent(listener::writeBufferSize);
 
                         listenerConfig.get("tls").as(Tls::create).ifPresent(listener::tls);
 
@@ -254,6 +273,16 @@ public interface WebServer {
             config.get("content-encoding")
                     .as(ContentEncodingContext::create)
                     .ifPresent(this::contentEncodingContext);
+            // Configure media support
+            Config mediaSupportConfig = config.get("media-support");
+            if (mediaSupportConfig.exists()) {
+                // we are directly updating the builder, and we do not need to fallback to defaults
+                // also configuration overrides any manual setup
+                mediaContext = null;
+                mediaContextBuilder = MediaContext.builder();
+                mediaSupportConfig.ifExists(mediaContextBuilder::config);
+            }
+
             // Store providers config node for later usage.
             providersConfig = config.get("connection-providers");
             return this;
@@ -324,6 +353,7 @@ public interface WebServer {
          */
         public Builder port(int port) {
             socket(DEFAULT_SOCKET_NAME).port(port);
+            configBuilder.port(port);
             return this;
         }
 
@@ -335,6 +365,7 @@ public interface WebServer {
          */
         public Builder host(String host) {
             socket(DEFAULT_SOCKET_NAME).host(host);
+            configBuilder.host(host);
             return this;
         }
 
@@ -347,7 +378,7 @@ public interface WebServer {
          */
         public Builder directHandler(DirectHandler handler, DirectHandler.EventType... eventTypes) {
             for (DirectHandler.EventType eventType : eventTypes) {
-                simpleHandlers.addHandler(eventType, handler);
+                directHandlers.addHandler(eventType, handler);
             }
 
             return this;
@@ -408,11 +439,35 @@ public interface WebServer {
         }
 
         /**
-         * Configure the default {@link MediaContext}.
-         * This method discards all previously registered MediaContext.
+         * Add an explicit media support to the list.
+         * By default, all discovered media supports will be available to the server. Use this method only when
+         * the media support is not discoverable by service loader, or when using explicit
+         * {@link #mediaContext(io.helidon.nima.http.media.MediaContext)}.
+         *
+         * @param mediaSupport media support to add
+         * @return updated builder
+         */
+        public Builder addMediaSupport(MediaSupport mediaSupport) {
+            Objects.requireNonNull(mediaSupport);
+            if (mediaContextBuilder == null) {
+                mediaContextBuilder = MediaContext.builder()
+                        .discoverServices(false);
+            }
+
+            mediaContextBuilder.addMediaSupport(mediaSupport);
+            return this;
+        }
+
+        /**
+         * Configure the {@link MediaContext}.
+         * This method discards previously registered {@link io.helidon.nima.http.media.MediaContext}
+         * and all previously registered {@link io.helidon.nima.http.media.MediaSupport}.
+         * If an explicit media support is configured using {@link #addMediaSupport(io.helidon.nima.http.media.MediaSupport)},
+         * this context will be used as a fallback for a new one created from configured values.
          *
          * @param mediaContext media context
          * @return updated instance of the builder
+         * @see #addMediaSupport(io.helidon.nima.http.media.MediaSupport)
          */
         public Builder mediaContext(MediaContext mediaContext) {
             Objects.requireNonNull(mediaContext);
@@ -514,7 +569,7 @@ public interface WebServer {
                     .toList();
         }
 
-        private ListenerConfiguration.Builder socket(String socketName) {
+        ListenerConfiguration.Builder socket(String socketName) {
             return socketBuilder.computeIfAbsent(socketName, ListenerConfiguration::builder);
         }
 

@@ -19,7 +19,7 @@
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.microprofile</groupId>
@@ -38,11 +38,6 @@
         <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -76,7 +71,6 @@
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
-            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -112,7 +106,6 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/HelloWorldAsyncResponseTest.java</exclude>
-                                <exclude>**/TestExtendedKPIMetrics.java</exclude>
                                 <exclude>**/TestMetricsOnOwnSocket.java</exclude>
                                 <exclude>**/TestDisabledMetrics.java</exclude>
                                 <exclude>**/TestConfigProcessing.java</exclude>
@@ -128,7 +121,6 @@
                         <configuration>
                             <includes>
                                 <include>**/HelloWorldAsyncResponseTest.java</include>
-                                <include>**/TestExtendedKPIMetrics.java</include>
                                 <include>**/TestMetricsOnOwnSocket.java</include>
                             </includes>
                         </configuration>

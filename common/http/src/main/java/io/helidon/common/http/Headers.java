@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import io.helidon.common.media.type.MediaType;
 
@@ -193,11 +195,11 @@ public interface Headers extends Iterable<Http.HeaderValue> {
     int size();
 
     /**
-     * Returns a list of acceptedTypes ({@link io.helidon.common.http.Http.Header#ACCEPT} header) content types in
+     * Returns a list of acceptedTypes ({@link io.helidon.common.http.Http.Header#ACCEPT} header) content discoveryTypes in
      * quality factor order. Never {@code null}.
      * Returns an empty list by default.
      *
-     * @return A list of acceptedTypes media types.
+     * @return A list of acceptedTypes media discoveryTypes.
      */
     List<HttpMediaType> acceptedTypes();
 
@@ -226,5 +228,14 @@ public interface Headers extends Iterable<Http.HeaderValue> {
         forEach(it -> headers.put(it.name(), it.allValues()));
 
         return headers;
+    }
+
+    /**
+     * A sequential stream with these headers as the source.
+     *
+     * @return stream of header values
+     */
+    default Stream<Http.HeaderValue> stream() {
+        return StreamSupport.stream(spliterator(), false);
     }
 }

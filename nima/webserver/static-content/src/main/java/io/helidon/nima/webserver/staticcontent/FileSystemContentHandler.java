@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.nima.webserver.staticcontent;
 
 import java.io.IOException;
 import java.lang.System.Logger.Level;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -41,7 +40,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     private final Path root;
     private final Set<String> cacheInMemory;
 
-    FileSystemContentHandler(StaticContentSupport.FileSystemBuilder builder) {
+    FileSystemContentHandler(StaticContentService.FileSystemBuilder builder) {
         super(builder);
 
         this.root = builder.root().toAbsolutePath().normalize();
@@ -148,7 +147,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         return handler.handle(handlerCache(), method, req, res, requestedResource);
     }
 
-    private void addToInMemoryCache(String resource) throws IOException, URISyntaxException {
+    private void addToInMemoryCache(String resource) throws IOException {
         /*
           we need to know:
           - content size

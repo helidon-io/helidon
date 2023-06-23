@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,10 +41,11 @@ import io.helidon.nima.webserver.ConnectionContext;
  *
  * @param <T> type of the response extending this class to allow fluent API
  */
+@SuppressWarnings("unchecked")
 public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implements RoutingResponse {
+
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
-    private final HttpPrologue requestPrologue;
     private final ServerRequestHeaders requestHeaders;
     private final List<Runnable> whenSent = new ArrayList<>(5);
 
@@ -61,16 +62,15 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * @param request server request
      */
     protected ServerResponseBase(ConnectionContext ctx, ServerRequest request) {
-        this.contentEncodingContext = ctx.serverContext().contentEncodingContext();
-        this.mediaContext = ctx.serverContext().mediaContext();
-        this.requestPrologue = request.prologue();
+        this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
+        this.mediaContext = ctx.listenerContext().mediaContext();
         this.requestHeaders = request.headers();
     }
 
     @Override
-    public ServerResponse status(Http.Status status) {
+    public T status(Http.Status status) {
         this.status = status;
-        return this;
+        return (T) this;
     }
 
     @Override
@@ -111,39 +111,39 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     }
 
     @Override
-    public ServerResponse whenSent(Runnable listener) {
+    public T whenSent(Runnable listener) {
         whenSent.add(listener);
-        return this;
+        return (T) this;
     }
 
     @Override
-    public ServerResponse reroute(String newPath) {
+    public T reroute(String newPath) {
         if (nexted) {
             throw new IllegalStateException("Cannot reroute a response that has been nexted");
         }
         this.reroute = true;
         this.reroutePath = newPath;
-        return this;
+        return (T) this;
     }
 
     @Override
-    public ServerResponse reroute(String path, UriQuery query) {
+    public T reroute(String path, UriQuery query) {
         if (nexted) {
             throw new IllegalStateException("Cannot reroute a response that has been nexted");
         }
         this.reroute = true;
         this.reroutePath = path;
         this.rerouteQuery = query;
-        return this;
+        return (T) this;
     }
 
     @Override
-    public ServerResponse next() {
+    public T next() {
         if (reroute) {
             throw new IllegalStateException("Cannot next a response that has been rerouted");
         }
         this.nexted = true;
-        return this;
+        return (T) this;
     }
 
     @Override
@@ -173,6 +173,15 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     @Override
     public boolean isNexted() {
         return nexted;
+    }
+
+    /**
+     * Gets media context for this response.
+     *
+     * @return the media context
+     */
+    protected MediaContext mediaContext() {
+        return mediaContext;
     }
 
     /**

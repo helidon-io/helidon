@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.nima.http2.Http2Headers.DynamicTable;
 import io.helidon.nima.http2.Http2Headers.HeaderRecord;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -163,7 +164,7 @@ class Http2HeadersTest {
     @Test
     void testC_4_toBytes() {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
-        WritableHeaders headers = WritableHeaders.create();
+        WritableHeaders<?> headers = WritableHeaders.create();
         Http2Headers http2Headers = Http2Headers.create(headers);
         http2Headers.method(Http.Method.GET);
         http2Headers.scheme("http");
@@ -256,74 +257,12 @@ class Http2HeadersTest {
                                                           Http2FrameTypes.HEADERS,
                                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
                                                           1);
-        return Http2Headers.create(stream(),
+
+        Http2Stream stream = Mockito.mock(Http2Stream.class);
+
+        return Http2Headers.create(stream,
                                    dynamicTable,
                                    new Http2HuffmanDecoder(),
                                    new Http2FrameData(header, data));
-    }
-
-    private Http2Stream stream() {
-        return new Http2Stream() {
-            @Override
-            public void rstStream(Http2RstStream rstStream) {
-
-            }
-
-            @Override
-            public void windowUpdate(Http2WindowUpdate windowUpdate) {
-
-            }
-
-            @Override
-            public void headers(Http2Headers headers, boolean endOfStream) {
-
-            }
-
-            @Override
-            public void data(Http2FrameHeader header, BufferData data) {
-
-            }
-
-            @Override
-            public void priority(Http2Priority http2Priority) {
-
-            }
-
-            @Override
-            public int streamId() {
-                return 1;
-            }
-
-            @Override
-            public Http2StreamState streamState() {
-                return Http2StreamState.IDLE;
-            }
-
-            @Override
-            public FlowControl flowControl() {
-                return FlowControl.NOOP;
-            }
-        };
-    }
-
-    private static class DevNullWriter implements Http2StreamWriter {
-
-        @Override
-        public void write(Http2FrameData frame, FlowControl flowControl) {
-        }
-
-        @Override
-        public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags, FlowControl flowControl) {
-            return 0;
-        }
-
-        @Override
-        public int writeHeaders(Http2Headers headers,
-                                int streamId,
-                                Http2Flag.HeaderFlags flags,
-                                Http2FrameData dataFrame,
-                                FlowControl flowControl) {
-            return 0;
-        }
     }
 }

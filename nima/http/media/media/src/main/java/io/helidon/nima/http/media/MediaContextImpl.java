@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,20 +21,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
-import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.http.media.spi.MediaSupportProvider;
-import io.helidon.nima.http.media.spi.MediaSupportProvider.ReaderResponse;
-import io.helidon.nima.http.media.spi.MediaSupportProvider.WriterResponse;
+import io.helidon.nima.http.media.MediaSupport.ReaderResponse;
+import io.helidon.nima.http.media.MediaSupport.WriterResponse;
 
-import static io.helidon.nima.http.media.spi.MediaSupportProvider.SupportLevel.COMPATIBLE;
-import static io.helidon.nima.http.media.spi.MediaSupportProvider.SupportLevel.SUPPORTED;
+import static io.helidon.nima.http.media.MediaSupport.SupportLevel.COMPATIBLE;
+import static io.helidon.nima.http.media.MediaSupport.SupportLevel.SUPPORTED;
 
 @SuppressWarnings("unchecked")
 class MediaContextImpl implements MediaContext {
@@ -42,23 +39,20 @@ class MediaContextImpl implements MediaContext {
     private static final ConcurrentHashMap<GenericType<?>, AtomicBoolean> LOGGED_READERS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<GenericType<?>, AtomicBoolean> LOGGED_WRITERS = new ConcurrentHashMap<>();
 
-    private final List<MediaSupportProvider> providers =
-            HelidonServiceLoader.builder(ServiceLoader.load(MediaSupportProvider.class))
-                    .addService(new StringSupportProvider())
-                    .addService(new FormParamsSupportProvider())
-                    .addService(new PathSupportProvider())
-                    .build()
-                    .asList();
+    private final List<MediaSupport> supports;
+    private final MediaContext fallback;
 
-    MediaContextImpl() {
-        providers.forEach(it -> it.init(this));
+    MediaContextImpl(List<MediaSupport> supports, MediaContext fallback) {
+        this.supports = supports;
+        this.supports.forEach(it -> it.init(this));
+        this.fallback = fallback;
     }
 
     @Override
     public <T> EntityReader<T> reader(GenericType<T> type, Headers headers) {
         ReaderResponse<T> compatible = null;
-        for (MediaSupportProvider provider : providers) {
-            ReaderResponse<T> response = provider.reader(type, headers);
+        for (MediaSupport support : supports) {
+            ReaderResponse<T> response = support.reader(type, headers);
             if (response.support() == SUPPORTED) {
                 return entityReader(response);
             } else if (response.support() == COMPATIBLE) {
@@ -66,7 +60,11 @@ class MediaContextImpl implements MediaContext {
             }
         }
         if (compatible == null) {
-            return FailingReader.instance();
+            if (fallback == null) {
+                return FailingReader.instance();
+            } else {
+                return fallback.reader(type, headers);
+            }
         }
         return entityReader(compatible);
     }
@@ -76,8 +74,8 @@ class MediaContextImpl implements MediaContext {
                                       Headers requestHeaders,
                                       WritableHeaders<?> responseHeaders) {
         WriterResponse<T> compatible = null;
-        for (MediaSupportProvider provider : providers) {
-            WriterResponse<T> response = provider.writer(type, requestHeaders, responseHeaders);
+        for (MediaSupport support : supports) {
+            WriterResponse<T> response = support.writer(type, requestHeaders, responseHeaders);
             if (response.support() == SUPPORTED) {
                 return entityWriter(response);
             }
@@ -87,7 +85,11 @@ class MediaContextImpl implements MediaContext {
         }
 
         if (compatible == null) {
-            return FailingWriter.instance();
+            if (fallback == null) {
+                return FailingWriter.instance();
+            } else {
+                return fallback.writer(type, requestHeaders, responseHeaders);
+            }
         }
         return entityWriter(compatible);
     }
@@ -98,8 +100,8 @@ class MediaContextImpl implements MediaContext {
                                       Headers responseHeaders) {
 
         ReaderResponse<T> compatible = null;
-        for (MediaSupportProvider provider : providers) {
-            ReaderResponse<T> response = provider.reader(type, requestHeaders, responseHeaders);
+        for (MediaSupport support : supports) {
+            ReaderResponse<T> response = support.reader(type, requestHeaders, responseHeaders);
             if (response.support() == SUPPORTED) {
                 return entityReader(response);
             }
@@ -108,7 +110,11 @@ class MediaContextImpl implements MediaContext {
             }
         }
         if (compatible == null) {
-            return FailingReader.instance();
+            if (fallback == null) {
+                return FailingReader.instance();
+            } else {
+                return fallback.reader(type, requestHeaders, responseHeaders);
+            }
         }
         return entityReader(compatible);
     }
@@ -116,8 +122,8 @@ class MediaContextImpl implements MediaContext {
     @Override
     public <T> EntityWriter<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
         WriterResponse<T> compatible = null;
-        for (MediaSupportProvider provider : providers) {
-            WriterResponse<T> response = provider.writer(type, requestHeaders);
+        for (MediaSupport support : supports) {
+            WriterResponse<T> response = support.writer(type, requestHeaders);
             if (response.support() == SUPPORTED) {
                 return entityWriter(response);
             }
@@ -127,7 +133,11 @@ class MediaContextImpl implements MediaContext {
         }
 
         if (compatible == null) {
-            return FailingWriter.instance();
+            if (fallback == null) {
+                return FailingWriter.instance();
+            } else {
+                return fallback.writer(type, requestHeaders);
+            }
         }
         return entityWriter(compatible);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  */
 class MultiPortTest {
     private static final Http1Client CLIENT = WebClient.builder()
+            .followRedirect(false)
             .build();
     private Handler commonHandler;
     private WebServer server;

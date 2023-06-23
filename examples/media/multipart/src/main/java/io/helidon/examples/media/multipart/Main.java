@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,75 +16,47 @@
 package io.helidon.examples.media.multipart;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Single;
-import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.media.multipart.MultiPartSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.staticcontent.StaticContentService;
 
 /**
  * This application provides a simple file upload service with a UI to exercise multipart.
  */
 public final class Main {
-    private static final Http.HeaderValue REDIRECT_LOCATION = Http.Header.createCached(Http.Header.LOCATION, "/ui");
+    private static final Http.HeaderValue UI_LOCATION = Http.Header.createCached(Http.Header.LOCATION, "/ui");
 
     private Main() {
     }
 
     /**
-     * Creates new {@link Routing}.
+     * Executes the example.
      *
-     * @return the new instance
+     * @param args command line arguments, ignored
      */
-    static Routing createRouting() {
-        return Routing.builder()
-                .any("/", (req, res) -> {
-                    res.status(Http.Status.MOVED_PERMANENTLY_301);
-                    res.headers().set(REDIRECT_LOCATION);
-                    res.send();
-                })
-                .register("/ui", StaticContentSupport.builder("WEB")
-                        .welcomeFileName("index.html")
-                        .build())
-                .register("/api", new FileService())
-                .build();
+    public static void main(String[] args) {
+        WebServer server = WebServer.builder()
+                                    .routing(Main::routing)
+                                    .port(8080)
+                                    .start();
+
+        System.out.println("WEB server is up! http://localhost:" + server.port());
     }
 
     /**
-     * Application main entry point.
-     * @param args command line arguments.
+     * Updates the routing rules.
+     *
+     * @param rules routing rules
      */
-    public static void main(final String[] args) {
-        startServer(8080);
+    static void routing(HttpRules rules) {
+        rules.any("/", (req, res) -> {
+                 res.status(Http.Status.MOVED_PERMANENTLY_301);
+                 res.header(UI_LOCATION);
+                 res.send();
+             })
+             .register("/ui", StaticContentService.builder("WEB")
+                                                  .welcomeFileName("index.html")
+                                                  .build())
+             .register("/api", new FileService());
     }
-
-    /**
-     * Start the server.
-     * @return the created {@link WebServer} instance
-     */
-    static Single<WebServer> startServer(int port) {
-        LogConfig.configureRuntime();
-        WebServer server = WebServer.builder(createRouting())
-                .port(port)
-                .addMediaSupport(MultiPartSupport.create())
-                .addMediaSupport(JsonpSupport.create())
-                .build();
-
-        Single<WebServer> webserver = server.start();
-
-        // Start the server and print some info.
-        webserver.thenAccept(ws -> {
-            System.out.println("WEB server is up! http://localhost:" + ws.port());
-        });
-
-        // Server threads are not demon. NO need to block. Just react.
-        server.whenShutdown()
-                .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
-
-        return webserver;
-    }
-
-
 }

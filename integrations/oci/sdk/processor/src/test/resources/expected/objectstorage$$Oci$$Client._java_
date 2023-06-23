@@ -1,0 +1,41 @@
+package io.helidon.integrations.generated.com.oracle.bmc.objectstorage;
+
+import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+
+import com.oracle.bmc.objectstorage.ObjectStorageClient;
+import com.oracle.bmc.objectstorage.ObjectStorageClient.Builder;
+
+import io.helidon.common.Weight;
+import io.helidon.pico.api.ContextualServiceQuery;
+import io.helidon.pico.api.ExternalContracts;
+import io.helidon.pico.api.InjectionPointProvider;
+import io.helidon.pico.api.ServiceInfoBasics;
+
+import jakarta.annotation.Generated;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
+import java.util.Optional;
+
+@Generated(value = "io.helidon.pico.processor.spi.PicoAnnotationProcessorObserver", comments = "version=1")
+@Singleton
+@Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@ExternalContracts(com.oracle.bmc.objectstorage.ObjectStorage.class)
+class ObjectStorage$$Oci$$Client implements InjectionPointProvider<ObjectStorageClient> {
+    private final InjectionPointProvider<AbstractAuthenticationDetailsProvider> authProvider;
+    private final InjectionPointProvider<ObjectStorageClient.Builder> builderProvider;
+
+    @Deprecated
+    @Inject
+    ObjectStorage$$Oci$$Client(Provider<AbstractAuthenticationDetailsProvider> authProvider, Provider<ObjectStorageClient.Builder> builderProvider) {
+        this.authProvider = (InjectionPointProvider<AbstractAuthenticationDetailsProvider>) authProvider;
+        this.builderProvider = (InjectionPointProvider<ObjectStorageClient.Builder>) builderProvider;
+    }
+
+    @Override
+    public Optional<ObjectStorageClient> first(ContextualServiceQuery query) {
+        return Optional.of(builderProvider.first(query).orElseThrow().build(authProvider.first(query).orElseThrow()));
+    }
+
+}

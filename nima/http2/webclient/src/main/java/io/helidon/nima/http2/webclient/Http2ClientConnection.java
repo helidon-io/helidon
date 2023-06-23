@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,55 +17,120 @@
 package io.helidon.nima.http2.webclient;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
+import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.Http1HeadersParser;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.TlsSocket;
+import io.helidon.nima.http2.ConnectionFlowControl;
 import io.helidon.nima.http2.Http2ConnectionWriter;
-import io.helidon.nima.webclient.ConnectionKey;
+import io.helidon.nima.http2.Http2ErrorCode;
+import io.helidon.nima.http2.Http2Exception;
+import io.helidon.nima.http2.Http2Flag;
+import io.helidon.nima.http2.Http2FrameData;
+import io.helidon.nima.http2.Http2FrameHeader;
+import io.helidon.nima.http2.Http2FrameListener;
+import io.helidon.nima.http2.Http2FrameTypes;
+import io.helidon.nima.http2.Http2GoAway;
+import io.helidon.nima.http2.Http2Headers;
+import io.helidon.nima.http2.Http2LoggingFrameListener;
+import io.helidon.nima.http2.Http2Ping;
+import io.helidon.nima.http2.Http2RstStream;
+import io.helidon.nima.http2.Http2Setting;
+import io.helidon.nima.http2.Http2Settings;
+import io.helidon.nima.http2.Http2WindowUpdate;
+import io.helidon.nima.http2.WindowSize;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
+import static java.lang.System.Logger.Level.WARNING;
 
 class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
-
+    private static final int FRAME_HEADER_LENGTH = 9;
+    private static final String UPGRADE_REQ_MASK = """
+            %s %s HTTP/1.1\r
+            Host: %s:%s\r
+            Connection: Upgrade, HTTP2-Settings\r
+            Upgrade: h2c\r
+            HTTP2-Settings: %s\r\n\r
+            """;
+    private static final byte[] PRIOR_KNOWLEDGE_PREFACE =
+            "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes(StandardCharsets.UTF_8);
+    private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
+    private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     private final ExecutorService executor;
     private final SocketOptions socketOptions;
     private final ConnectionKey connectionKey;
-    private final boolean priorKnowledge;
-
+    private final String primaryPath;
+    private final LockingStreamIdSequence streamIdSeq = new LockingStreamIdSequence();
+    private final Map<Integer, Http2ClientStream> streams = new HashMap<>();
+    private final ConnectionFlowControl connectionFlowControl;
+    private final ConnectionContext connectionContext;
+    private final Http2Headers.DynamicTable inboundDynamicTable =
+            Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+    private Http2Settings serverSettings = Http2Settings.builder()
+            .build();
     private String channelId;
     private Socket socket;
     private PlainSocket helidonSocket;
     private Http2ConnectionWriter writer;
-    private InputStream inputStream;
+    private DataReader reader;
+    private DataWriter dataWriter;
+    private Future<?> handleTask;
 
     Http2ClientConnection(ExecutorService executor,
                           SocketOptions socketOptions,
                           ConnectionKey connectionKey,
-                          boolean priorKnowledge) {
+                          String primaryPath,
+                          ConnectionContext connectionContext) {
         this.executor = executor;
         this.socketOptions = socketOptions;
         this.connectionKey = connectionKey;
-        this.priorKnowledge = priorKnowledge;
+        this.primaryPath = primaryPath;
+        this.connectionContext = connectionContext;
+        this.connectionFlowControl = ConnectionFlowControl.clientBuilder(this::writeWindowsUpdate)
+                .maxFrameSize(connectionContext.maxFrameSize())
+                .initialWindowSize(connectionContext.initialWindowSize())
+                .blockTimeout(connectionContext.timeout())
+                .build();
+    }
+
+    Http2ConnectionWriter writer() {
+        return writer;
+    }
+
+    Http2Headers.DynamicTable getInboundDynamicTable() {
+        return this.inboundDynamicTable;
+    }
+
+    ConnectionFlowControl flowControl() {
+        return this.connectionFlowControl;
     }
 
     Http2ClientConnection connect() {
@@ -85,30 +150,170 @@ class Http2ClientConnection {
         return this;
     }
 
-    Http2ClientStream stream(int priority) {
-        return null;
+    Http2ClientStream stream(int streamId) {
+        return streams.get(streamId);
+    }
+
+    Http2ClientStream createStream(int priority) {
+        //FIXME: priority
+        return new Http2ClientStream(this,
+                                     serverSettings,
+                                     helidonSocket,
+                                     connectionContext,
+                                     streamIdSeq);
+    }
+
+    void addStream(int streamId, Http2ClientStream stream) {
+        this.streams.put(streamId, stream);
+    }
+
+    void removeStream(int streamId) {
+        this.streams.remove(streamId);
     }
 
     Http2ClientStream tryStream(int priority) {
         try {
-            return stream(priority);
-        } catch (IllegalStateException e) {
+            return createStream(priority);
+        } catch (IllegalStateException | UncheckedIOException e) {
             return null;
         }
     }
 
     void close() {
         try {
+            handleTask.cancel(true);
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    private void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
+        writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+    }
+
+    private void handle() {
+        this.reader.ensureAvailable();
+        BufferData frameHeaderBuffer = this.reader.readBuffer(FRAME_HEADER_LENGTH);
+        Http2FrameHeader frameHeader = Http2FrameHeader.create(frameHeaderBuffer);
+        frameHeader.type().checkLength(frameHeader.length());
+        BufferData data;
+        if (frameHeader.length() != 0) {
+            data = this.reader.readBuffer(frameHeader.length());
+        } else {
+            data = BufferData.empty();
+        }
+
+        int streamId = frameHeader.streamId();
+
+        switch (frameHeader.type()) {
+        case GO_AWAY:
+            Http2GoAway http2GoAway = Http2GoAway.create(data);
+            recvListener.frameHeader(helidonSocket, frameHeader);
+            recvListener.frame(helidonSocket, http2GoAway);
+            this.close();
+            throw new IllegalStateException("Connection closed by the other side, error code: "
+                                                    + http2GoAway.errorCode()
+                                                    + " lastStreamId: " + http2GoAway.lastStreamId());
+
+        case SETTINGS:
+            serverSettings = Http2Settings.create(data);
+            recvListener.frameHeader(helidonSocket, frameHeader);
+            recvListener.frame(helidonSocket, serverSettings);
+            // §4.3.1 Endpoint communicates the size chosen by its HPACK decoder context
+            inboundDynamicTable.protocolMaxTableSize(serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
+            if (serverSettings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
+                connectionFlowControl.resetMaxFrameSize(serverSettings.value(Http2Setting.MAX_FRAME_SIZE).intValue());
+            }
+            // §6.5.2 Update initial window size for new streams and window sizes of all already existing streams
+            if (serverSettings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
+                Long initWinSizeLong = serverSettings.value(Http2Setting.INITIAL_WINDOW_SIZE);
+                if (initWinSizeLong > WindowSize.MAX_WIN_SIZE) {
+                    goAway(streamId, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
+                    throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                             "Received too big INITIAL_WINDOW_SIZE " + initWinSizeLong);
+                }
+                int initWinSize = initWinSizeLong.intValue();
+                connectionFlowControl.resetInitialWindowSize(initWinSize);
+                streams.values().forEach(stream -> stream.flowControl().outbound().resetStreamWindowSize(initWinSize));
+
+            }
+            // §6.5.3 Settings Synchronization
+            ackSettings();
+            //FIXME: Max number of concurrent streams
+            return;
+
+        case WINDOW_UPDATE:
+            Http2WindowUpdate windowUpdate = Http2WindowUpdate.create(data);
+            recvListener.frameHeader(helidonSocket, frameHeader);
+            recvListener.frame(helidonSocket, windowUpdate);
+            // Outbound flow-control window update
+            if (streamId == 0) {
+                int increment = windowUpdate.windowSizeIncrement();
+                boolean overflow;
+                // overall connection
+                if (increment == 0) {
+                    Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, "Window size 0");
+                    writer.write(frame.toFrameData(serverSettings, 0, Http2Flag.NoFlags.create()));
+                }
+                overflow = connectionFlowControl.incrementOutboundConnectionWindowSize(increment) > WindowSize.MAX_WIN_SIZE;
+                if (overflow) {
+                    Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
+                    writer.write(frame.toFrameData(serverSettings, 0, Http2Flag.NoFlags.create()));
+                }
+
+            } else {
+                stream(streamId)
+                        .windowUpdate(windowUpdate);
+            }
+            return;
+        case PING:
+            if (streamId != 0) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                         "Received ping for a stream " + streamId);
+            }
+            if (frameHeader.length() != 8) {
+                throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
+                                         "Received ping with wrong size. Should be 8 bytes, is " + frameHeader.length());
+            }
+            if (!frameHeader.flags(Http2FrameTypes.PING).ack()) {
+                Http2Ping ping = Http2Ping.create(data);
+                recvListener.frame(helidonSocket, ping);
+                BufferData frame = ping.data();
+                Http2FrameHeader header = Http2FrameHeader.create(frame.available(),
+                                                                  Http2FrameTypes.PING,
+                                                                  Http2Flag.PingFlags.create(Http2Flag.ACK),
+                                                                  0);
+                writer.write(new Http2FrameData(header, frame));
+            }
+            break;
+
+        case RST_STREAM:
+            Http2RstStream rstStream = Http2RstStream.create(data);
+            recvListener.frame(helidonSocket, rstStream);
+            stream(streamId).rstStream(rstStream);
+            break;
+
+        case DATA:
+            Http2ClientStream stream = stream(streamId);
+            stream.flowControl().inbound().decrementWindowSize(frameHeader.length());
+            stream.push(new Http2FrameData(frameHeader, data));
+            break;
+
+        case HEADERS, CONTINUATION:
+            stream(streamId).push(new Http2FrameData(frameHeader, data));
+            return;
+
+        default:
+            LOGGER.log(WARNING, "Unsupported frame type!! " + frameHeader.type());
+        }
+
+    }
+
     private void doConnect() throws IOException {
-        SSLSocket sslSocket = connectionKey.tls() == null
-                ? null
-                : connectionKey.tls().createSocket("h2");
+        boolean useTls = "https".equals(connectionKey.scheme()) && connectionKey.tls() != null;
+
+        SSLSocket sslSocket = useTls ? connectionKey.tls().createSocket("h2") : null;
         socket = sslSocket == null ? new Socket() : sslSocket;
 
         socketOptions.configureSocket(socket);
@@ -126,9 +331,9 @@ class Http2ClientConnection {
                 ? PlainSocket.client(socket, channelId)
                 : TlsSocket.client(sslSocket, channelId);
 
-        DataWriter writer = SocketWriter.create(executor, helidonSocket, 32);
-        inputStream = socket.getInputStream();
-        this.writer = new Http2ConnectionWriter(helidonSocket, writer, List.of());
+        dataWriter = SocketWriter.create(executor, helidonSocket, 32);
+        this.reader = new DataReader(helidonSocket);
+        this.writer = new Http2ConnectionWriter(helidonSocket, dataWriter, List.of());
 
         if (sslSocket != null) {
             sslSocket.startHandshake();
@@ -141,6 +346,99 @@ class Http2ClientConnection {
                 throw new IllegalStateException("Failed to negotiate h2 protocol. Protocol from socket: " + negotiatedProtocol);
             }
         }
+
+        if (!connectionContext.priorKnowledge() && !useTls) {
+            httpUpgrade();
+            // Settings are part of the HTTP/1 upgrade request
+            sendPreface(false);
+        } else {
+            sendPreface(true);
+        }
+
+        handleTask = executor.submit(() -> {
+            while (!Thread.interrupted()) {
+                handle();
+            }
+            LOGGER.log(DEBUG, () -> "Client listener interrupted");
+        });
+    }
+
+    private void ackSettings() {
+        Http2Flag.SettingsFlags flags = Http2Flag.SettingsFlags.create(Http2Flag.ACK);
+        Http2Settings http2Settings = Http2Settings.create();
+        Http2FrameData frameData = http2Settings.toFrameData(null, 0, flags);
+        sendListener.frameHeader(helidonSocket, frameData.header());
+        sendListener.frame(helidonSocket, http2Settings);
+        writer.write(frameData);
+    }
+
+    private void goAway(int streamId, Http2ErrorCode errorCode, String msg) {
+        Http2Settings http2Settings = Http2Settings.create();
+        Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
+        writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
+    }
+
+    private void sendPreface(boolean sendSettings) {
+        dataWriter.writeNow(BufferData.create(PRIOR_KNOWLEDGE_PREFACE));
+        if (sendSettings) {
+            // §3.5 Preface bytes must be followed by setting frame
+            Http2Settings.Builder b = Http2Settings.builder();
+            if (connectionContext.maxHeaderListSize() > 0) {
+                b.add(Http2Setting.MAX_HEADER_LIST_SIZE, connectionContext.maxHeaderListSize());
+            }
+            Http2Settings http2Settings = b
+                    .add(Http2Setting.INITIAL_WINDOW_SIZE, (long) connectionContext.initialWindowSize())
+                    .add(Http2Setting.MAX_FRAME_SIZE, (long) connectionContext.maxFrameSize())
+                    .add(Http2Setting.ENABLE_PUSH, false)
+                    .build();
+
+            Http2Flag.SettingsFlags flags = Http2Flag.SettingsFlags.create(0);
+            Http2FrameData frameData = http2Settings.toFrameData(null, 0, flags);
+            sendListener.frameHeader(helidonSocket, frameData.header());
+            sendListener.frame(helidonSocket, http2Settings);
+            writer.write(frameData);
+        }
+        // First connection window update, with prefetch increment
+        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(connectionContext.connectionPrefetch());
+        Http2Flag.NoFlags flags = Http2Flag.NoFlags.create();
+        Http2FrameData frameData = windowUpdate.toFrameData(null, 0, flags);
+        sendListener.frameHeader(helidonSocket, frameData.header());
+        sendListener.frame(helidonSocket, windowUpdate);
+        writer.write(frameData);
+    }
+
+    private void httpUpgrade() {
+        Http2FrameData settingsFrame = Http2Settings.create().toFrameData(null, 0, Http2Flag.SettingsFlags.create(0));
+        BufferData upgradeRequest = createUpgradeRequest(settingsFrame);
+        sendListener.frame(helidonSocket, upgradeRequest);
+        dataWriter.writeNow(upgradeRequest);
+        reader.skip("HTTP/1.1 ".length());
+        String status = reader.readAsciiString(3);
+        String message = reader.readLine();
+        WritableHeaders<?> headers = Http1HeadersParser.readHeaders(reader, 8192, false);
+        switch (status) {
+        case "101":
+            break;
+        case "301":
+            throw new UpgradeRedirectException(headers.get(Http.Header.LOCATION).value());
+        default:
+            close();
+            throw new IllegalStateException("Upgrade to HTTP/2 failed: " + message);
+        }
+    }
+
+    private BufferData createUpgradeRequest(Http2FrameData settingsFrame) {
+        BufferData settingsData = settingsFrame.data();
+        byte[] b = new byte[settingsData.available()];
+        settingsData.write(b);
+
+        return BufferData.create(UPGRADE_REQ_MASK.formatted(
+                connectionKey.method().text(),
+                this.primaryPath != null && !"".equals(this.primaryPath) ? primaryPath : "/",
+                connectionKey.host(),
+                connectionKey.port(),
+                Base64.getEncoder().encodeToString(b)
+        ));
     }
 
     private void debugTls(SSLSocket sslSocket) {

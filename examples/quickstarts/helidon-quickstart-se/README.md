@@ -4,7 +4,7 @@ This project implements a simple Hello World REST service using Helidon SE.
 
 ## Build and run
 
-With JDK17+
+With20+
 ```bash
 mvn package
 java -jar target/helidon-quickstart-se.jar

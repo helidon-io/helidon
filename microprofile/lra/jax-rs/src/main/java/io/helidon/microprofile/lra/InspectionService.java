@@ -158,7 +158,7 @@ class InspectionService {
                 methodInfo.declaringClass(),
                 annotations,
                 methodInfo.name(),
-                methodInfo.parameters().toArray(new Type[0])
+                methodInfo.parameterTypes().toArray(new Type[0])
         );
         HashSet<AnnotationInstance> result = new HashSet<>(annotations.values());
 

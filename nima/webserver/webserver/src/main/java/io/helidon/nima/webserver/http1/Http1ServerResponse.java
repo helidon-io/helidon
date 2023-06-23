@@ -16,12 +16,17 @@
 
 package io.helidon.nima.webserver.http1;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.Headers;
@@ -30,18 +35,20 @@ import io.helidon.common.http.Http.DateTime;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.nima.http.media.EntityWriter;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.ServerResponseBase;
+import io.helidon.nima.webserver.http.spi.Sink;
+import io.helidon.nima.webserver.http.spi.SinkProvider;
 
-/*
-HTTP/1.1 200 OK
-Connection: keep-alive
-Content-Length: 2
-Date: Fri, 22 Oct 2021 16:47:41 +0200
-hi
+/**
+ * An HTTP/1 server response.
  */
 class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final byte[] HTTP_BYTES = "HTTP/1.1 ".getBytes(StandardCharsets.UTF_8);
@@ -54,6 +61,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             Http.Header.create(Http.Header.TRAILER, STREAM_STATUS_NAME.defaultCase()
                     + "," + STREAM_RESULT_NAME.defaultCase());
 
+    private static final List<SinkProvider> SINK_PROVIDERS
+            = HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
+    private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
+
     private final ConnectionContext ctx;
     private final Http1ConnectionListener sendListener;
     private final DataWriter dataWriter;
@@ -64,7 +75,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
     private boolean streamingEntity;
     private boolean isSent;
-    private BlockingOutputStream outputStream;
+    private ClosingBufferedOutputStream outputStream;
     private long entitySize;
     private String streamResult = "";
 
@@ -93,7 +104,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             buffer.write(OK_200);
         } else {
             buffer.write(HTTP_BYTES);
-            buffer.write((status.code() + " " + status.reasonPhrase()).getBytes(StandardCharsets.US_ASCII));
+            if (status.reasonPhrase().isEmpty()) {
+                buffer.write((status.codeText()).getBytes(StandardCharsets.US_ASCII));
+            } else {
+                buffer.write((status.code() + " " + status.reasonPhrase()).getBytes(StandardCharsets.US_ASCII));
+            }
             buffer.write('\r');
             buffer.write('\n');
         }
@@ -121,7 +136,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     @Override
-    public ServerResponse header(HeaderValue header) {
+    public Http1ServerResponse header(HeaderValue header) {
         this.headers.set(header);
         return this;
     }
@@ -152,9 +167,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
         streamingEntity = true;
 
-        request.reset();
-
-        this.outputStream = new BlockingOutputStream(headers,
+        BlockingOutputStream bos = new BlockingOutputStream(headers,
                                                      trailers,
                                                      this::status,
                                                      () -> streamResult,
@@ -162,12 +175,15 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                                      () -> {
                                                          this.isSent = true;
                                                          afterSend();
+                                                         request.reset();
                                                      },
                                                      ctx,
                                                      sendListener,
                                                      request,
                                                      keepAlive);
 
+        int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
+        outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
         return contentEncode(outputStream);
     }
 
@@ -213,6 +229,46 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     public void commit() {
         if (outputStream != null) {
             outputStream.commit();
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
+        for (SinkProvider p : SINK_PROVIDERS) {
+            if (p.supports(sinkType, request)) {
+                return (X) p.create(this,
+                        (e, m) -> handleSinkData(e, (MediaType) m),
+                        this::commit);
+            }
+        }
+        // Request not acceptable if provider not found
+        throw new HttpException("Unable to find sink provider for request", Http.Status.NOT_ACCEPTABLE_406);
+    }
+
+    private void handleSinkData(Object data, MediaType mediaType) {
+        if (outputStream == null) {
+            outputStream();
+        }
+        try {
+            MediaContext mediaContext = mediaContext();
+
+            if (data instanceof byte[] bytes) {
+                outputStream.write(bytes);
+            } else {
+                if (data instanceof String str && mediaType.equals(MediaTypes.TEXT_PLAIN)) {
+                    EntityWriter<String> writer = mediaContext.writer(GenericType.STRING, EMPTY_HEADERS, EMPTY_HEADERS);
+                    writer.write(GenericType.STRING, str, outputStream, EMPTY_HEADERS, EMPTY_HEADERS);
+                } else {
+                    GenericType<Object> type = GenericType.create(data);
+                    WritableHeaders<?> resHeaders = WritableHeaders.create();
+                    resHeaders.set(Http.Header.CONTENT_TYPE, mediaType.text());
+                    EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS, resHeaders);
+                    writer.write(type, data, outputStream, EMPTY_HEADERS, resHeaders);
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -272,6 +328,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private boolean isChunked;
         private boolean firstByte = true;
         private long responseBytesTotal;
+        private boolean closing = false;
 
         private BlockingOutputStream(ServerResponseHeaders headers,
                                      WritableHeaders<?> trailers,
@@ -313,16 +370,37 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             write(BufferData.create(b, off, len));
         }
 
+        /**
+         * Last call to flush before closing should be ignored to properly
+         * support content length optimization.
+         *
+         * @throws IOException an I/O exception
+         */
         @Override
         public void flush() throws IOException {
+            if (closing) {
+                return;     // ignore final flush
+            }
             if (firstByte && firstBuffer != null) {
                 write(BufferData.empty());
             }
         }
 
+        /**
+         * This is a noop, even when user closes the output stream, we wait for the
+         * call to {@link this#commit()}.
+         */
         @Override
         public void close() {
-            // this is a noop, even when user closes the output stream, we wait for commit
+            // no-op
+        }
+
+        /**
+         * Informs output stream that closing phase has started. Special handling
+         * for {@link this#flush()}.
+         */
+        public void closing() {
+            closing = true;
         }
 
         void commit() {
@@ -378,19 +456,29 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             if (closed) {
                 throw new IOException("Stream already closed");
             }
+
             if (!isChunked) {
                 if (firstByte) {
                     firstByte = false;
+                    sendListener.headers(ctx, headers);
+                    // write headers and payload part in one buffer to avoid TCP/ACK delay problems
                     BufferData growing = BufferData.growing(256 + buffer.available());
                     nonEntityBytes(headers, status.get(), growing, keepAlive);
+                    // check not exceeding content-length
+                    bytesWritten += buffer.available();
+                    checkContentLength(buffer);
+                    sendListener.data(ctx, buffer);
+                    // write single buffer headers and payload part
+                    growing.write(buffer);
                     responseBytesTotal += growing.available();
                     dataWriter.write(growing);
+                } else {
+                    // if not chunked, always write
+                    writeContent(buffer);
                 }
-
-                // if not chunked, always write
-                writeContent(buffer);
                 return;
             }
+
             // try chunked data optimization
             if (firstByte && firstBuffer == null) {
                 // if somebody re-uses the byte buffer sent to us, we must copy it
@@ -482,17 +570,57 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             dataWriter.write(toWrite);
         }
 
-        private void writeContent(BufferData buffer) throws IOException {
-            bytesWritten += buffer.available();
+        private void checkContentLength(BufferData buffer) throws IOException {
             if (bytesWritten > contentLength && contentLength != -1) {
                 throw new IOException("Content length was set to " + contentLength
-                                              + ", but you are writing additional " + (bytesWritten - contentLength) + " "
-                                              + "bytes");
+                        + ", but you are writing additional " + (bytesWritten - contentLength) + " "
+                        + "bytes");
             }
+        }
 
+        private void writeContent(BufferData buffer) throws IOException {
+            bytesWritten += buffer.available();
+            checkContentLength(buffer);
             sendListener.data(ctx, buffer);
             responseBytesTotal += buffer.available();
             dataWriter.write(buffer);
+        }
+    }
+
+    /**
+     * A buffered output stream that wraps a {@link BlockingOutputStream} and informs
+     * it before it is finally flushed and closed.
+     */
+    static class ClosingBufferedOutputStream extends BufferedOutputStream {
+
+        private final BlockingOutputStream delegate;
+
+        ClosingBufferedOutputStream(BlockingOutputStream out, int size) {
+            super(out, size);
+            this.delegate = out;
+        }
+
+        @Override
+        public void close() {
+            delegate.closing();     // inform of imminent call to close for last flush
+            try {
+                super.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        long totalBytesWritten() {
+            return delegate.totalBytesWritten();
+        }
+
+        void commit() {
+            try {
+                flush();
+                delegate.commit();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 }

@@ -16,24 +16,27 @@
 
 package io.helidon.builder.test;
 
-import java.util.Optional;
+import java.util.Map;
 
-import io.helidon.builder.test.testsubjects.DefaultPickle;
-import io.helidon.builder.test.testsubjects.DefaultPickleBarrel;
 import io.helidon.builder.test.testsubjects.Pickle;
 import io.helidon.builder.test.testsubjects.PickleBarrel;
+import io.helidon.builder.test.testsubjects.PickleBarrelDefault;
+import io.helidon.builder.test.testsubjects.PickleDefault;
+import io.helidon.builder.testing.BuilderUtils;
+import io.helidon.builder.testing.ExpandOptions;
+import io.helidon.builder.testing.ExpandOptionsDefault;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PickleBarrelTest {
 
     @Test
     void testIt() {
-        DefaultPickle.Builder pickleBuilder = DefaultPickle.builder().size(Optional.of(Pickle.Size.MEDIUM));
+        PickleDefault.Builder pickleBuilder = PickleDefault.builder().size(Pickle.Size.MEDIUM);
         Exception e = assertThrows(IllegalStateException.class, pickleBuilder::build);
         assertThat(e.getMessage(),
                equalTo("'type' is a required attribute and should not be null"));
@@ -43,7 +46,7 @@ class PickleBarrelTest {
         assertThat(pickle.toString(),
                equalTo("Pickle(type=DILL, size=Optional[MEDIUM])"));
 
-        DefaultPickleBarrel.Builder pickleBarrelBuilder = DefaultPickleBarrel.builder();
+        PickleBarrelDefault.Builder pickleBarrelBuilder = PickleBarrelDefault.builder();
         e = assertThrows(IllegalStateException.class, pickleBarrelBuilder::build);
         assertThat(e.getMessage(),
                equalTo("'id' is a required attribute and should not be null"));
@@ -52,4 +55,21 @@ class PickleBarrelTest {
         assertThat(pickleBarrel.toString(),
                equalTo("PickleBarrel(id=123, type=Optional[PLASTIC], pickles=[Pickle(type=DILL, size=Optional[MEDIUM])])"));
     }
+
+    @Test
+    void expand() {
+        Pickle pickle = PickleDefault.builder().size(Pickle.Size.MEDIUM).type(Pickle.Type.DILL).build();
+        PickleBarrel pickleBarrel = PickleBarrelDefault.builder().addPickle(pickle).id("123").build();
+
+        Map<String, String> expand = BuilderUtils.expand(pickleBarrel);
+        assertThat(expand.toString(),
+                   equalTo("{id=123, type=PLASTIC, pickles[0]=io.helidon.builder.test.testsubjects.PickleDefault, pickles[0]"
+                                   + ".type=DILL, pickles[0].size=MEDIUM}"));
+
+        ExpandOptions expandOptions = ExpandOptionsDefault.builder().includeTypeInformation(false).build();
+        expand = BuilderUtils.expand(pickleBarrel, expandOptions);
+        assertThat(expand.toString(),
+                   equalTo("{id=123, type=PLASTIC, pickles[0].type=DILL, pickles[0].size=MEDIUM}"));
+    }
+
 }

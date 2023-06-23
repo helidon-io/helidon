@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.nima.Nima;
 import io.helidon.nima.http.media.EntityWriter;
-import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.SecureHandler;
@@ -41,7 +41,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
 class ConfigService implements HttpService {
-    private static final EntityWriter<JsonObject> WRITER = JsonpMediaSupportProvider.serverResponseWriter();
+    private static final EntityWriter<JsonObject> WRITER = JsonpSupport.serverResponseWriter();
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
     private final List<Pattern> secretPatterns;
@@ -136,7 +136,7 @@ class ConfigService implements HttpService {
     }
 
     private void write(ServerRequest req, ServerResponse res, JsonObject json) {
-        WRITER.write(JsonpMediaSupportProvider.JSON_OBJECT_TYPE,
+        WRITER.write(JsonpSupport.JSON_OBJECT_TYPE,
                      json,
                      res.outputStream(),
                      req.headers(),

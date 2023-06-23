@@ -57,9 +57,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
 
     static final byte[] CONTINUE_100 = "HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.UTF_8);
 
-    private static final byte[] UNSUPPORTED_EXPECT_417 =
-            "HTTP/1.1 417 Unsupported-Expect\r\n\r\n".getBytes(StandardCharsets.UTF_8);
-
     private final ConnectionContext ctx;
     private final Http1Config http1Config;
     private final DataWriter writer;
@@ -102,9 +99,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.reader.listener(recvListener, ctx);
         this.http1headers = new Http1Headers(reader, http1Config.maxHeadersSize(), http1Config.validateHeaders());
         this.http1prologue = new Http1Prologue(reader, http1Config.maxPrologueLength(), http1Config.validatePath());
-        this.contentEncodingContext = ctx.serverContext().contentEncodingContext();
+        this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
-        this.maxPayloadSize = ctx.maxPayloadSize();
+        this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();
     }
 
     @Override
@@ -251,7 +248,11 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         requestId++;
 
         if (entity == EntityStyle.NONE) {
-            Http1ServerRequest request = Http1ServerRequest.create(ctx, routing.security(), prologue, headers, requestId);
+            Http1ServerRequest request = Http1ServerRequest.create(ctx,
+                                                                   routing.security(),
+                                                                   prologue,
+                                                                   headers,
+                                                                   requestId);
             Http1ServerResponse response = new Http1ServerResponse(ctx,
                                                                    sendListener,
                                                                    writer,
@@ -292,7 +293,14 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 decoder = ContentDecoder.NO_OP;
             }
         } else {
-            // todo if validation of request enabled, check the content encoding and fail if present
+            // Check whether Content-Encoding header is present when headers validation is enabled
+            if (http1Config.validateHeaders() && headers.contains(Http.Header.CONTENT_ENCODING)) {
+                throw RequestException.builder()
+                        .type(EventType.BAD_REQUEST)
+                        .request(DirectTransportRequest.create(prologue, headers))
+                        .message("Content-Encoding header present when content encoding is disabled")
+                        .build();
+            }
             decoder = ContentDecoder.NO_OP;
         }
 
@@ -349,12 +357,15 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void handleRequestException(RequestException e) {
-        DirectHandler handler = ctx.directHandlers().handler(e.eventType());
+        DirectHandler handler = ctx.listenerContext()
+                .directHandlers()
+                .handler(e.eventType());
         DirectHandler.TransportResponse response = handler.handle(e.request(),
                                                                   e.eventType(),
                                                                   e.status(),
                                                                   e.responseHeaders(),
-                                                                  e);
+                                                                  e,
+                                                                  LOGGER);
 
         BufferData buffer = BufferData.growing(128);
         ServerResponseHeaders headers = response.headers();
@@ -377,11 +388,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         if (response.status() == Http.Status.INTERNAL_SERVER_ERROR_500) {
             LOGGER.log(WARNING, "Internal server error", e);
         }
-    }
-
-    // jUnit Http2Config pkg only visible test accessor.
-    Http1Config config() {
-        return http1Config;
     }
 
     void reset() {

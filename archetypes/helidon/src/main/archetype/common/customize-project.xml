@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
             <enum id="build-system" name="Select a Build System" default="maven" optional="true">
                 <option value="maven" name="Apache Maven">
                     <output>
-                        <templates engine="mustache" transformations="mustache">
+                        <templates engine="mustache" transformations="mustache,module-dir">
                             <directory>files</directory>
                             <includes>
                                 <include>pom.xml.mustache</include>
@@ -41,8 +41,11 @@
         </inputs>
         <output>
             <model>
+                <value key="parent-groupId" if="!${multi-module}">io.helidon.applications</value>
+                <value key="parent-version" if="!${multi-module}">${helidon-version}</value>
+                <value key="remote-parent-pom" if="!${multi-module}">true</value>
+                <value key="artifactId" if="!${multi-module}">${artifactId}</value>
                 <value key="groupId">${groupId}</value>
-                <value key="artifactId">${artifactId}</value>
                 <value key="project-version">${version}</value>
                 <value key="package">${package}</value>
             </model>

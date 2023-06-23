@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CredentialPatternTest {
 
@@ -31,7 +30,7 @@ class CredentialPatternTest {
     @Test
     void testPatternNormal() {
         Matcher m = pattern.matcher("user:password");
-        assertTrue(m.matches());
+        assertThat(m.matches(), is(true));
         assertThat(m.group(1), is("user"));
         assertThat(m.group(2), is("password"));
     }
@@ -39,12 +38,12 @@ class CredentialPatternTest {
     @Test
     void testPatternColonInPassword() {
         Matcher m = pattern.matcher("user:pass:word");
-        assertTrue(m.matches());
+        assertThat(m.matches(), is(true));
         assertThat(m.group(1), is("user"));
         assertThat(m.group(2), is("pass:word"));
 
         m = pattern.matcher("user::pass:word:");
-        assertTrue(m.matches());
+        assertThat(m.matches(), is(true));
         assertThat(m.group(1), is("user"));
         assertThat(m.group(2), is(":pass:word:"));
     }

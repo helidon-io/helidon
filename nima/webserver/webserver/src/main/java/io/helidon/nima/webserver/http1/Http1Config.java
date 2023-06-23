@@ -19,14 +19,15 @@ import java.util.List;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
+import io.helidon.builder.config.ConfigBean;
+import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.builder.config.ConfigBean;
 
 /**
  * HTTP/1.1 server configuration.
  */
 @Builder(interceptor = Http1BuilderInterceptor.class)
-@ConfigBean(key = "server.connection-providers.http_1_1")
+@ConfigBean("server.connection-providers.http_1_1")
 public interface Http1Config {
     /**
      * Maximal size of received HTTP prologue (GET /path HTTP/1.1).
@@ -90,6 +91,14 @@ public interface Http1Config {
      */
     @ConfiguredOption("false")
     boolean continueImmediately();
+
+    /**
+     * Requested URI discovery settings.
+     *
+     * @return settings for computing the requested URI
+     */
+    @ConfiguredOption(key = "requested-uri-discovery")
+    RequestedUriDiscoveryContext requestedUriDiscovery();
 
     /**
      * Connection send event listeners for HTTP/1.1.

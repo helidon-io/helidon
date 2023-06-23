@@ -41,14 +41,14 @@ import javax.tools.JavaFileObject;
 
 import io.helidon.builder.processor.spi.BuilderCreatorProvider;
 import io.helidon.builder.processor.spi.TypeAndBody;
-import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weights;
-import io.helidon.pico.types.AnnotationAndValue;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
+import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNameDefault;
 
 /**
  * The processor for handling any annotation having a {@link io.helidon.builder.BuilderTrigger}.
@@ -94,14 +94,14 @@ public class BuilderProcessor extends AbstractProcessor {
                 .orElse(null);
 
         if (tools == null) {
-            String msg = "no available " + TypeInfoCreatorProvider.class.getSimpleName() + " instances found";
+            String msg = "No available " + TypeInfoCreatorProvider.class.getSimpleName() + " instances found";
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             throw new IllegalStateException(msg);
         }
         LOGGER.log(System.Logger.Level.DEBUG, TypeInfoCreatorProvider.class.getSimpleName() + ": " + tools);
 
         if (PRODUCERS.isEmpty()) {
-            String msg = "no available " + BuilderCreatorProvider.class.getSimpleName() + " instances found";
+            String msg = "No available " + BuilderCreatorProvider.class.getSimpleName() + " instances found";
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             throw new IllegalStateException(msg);
         }
@@ -154,11 +154,12 @@ public class BuilderProcessor extends AbstractProcessor {
                 .orElseThrow(() -> new IllegalArgumentException("Cannot find annotation mirror for " + annoType
                                                                         + " on " + element));
 
-        AnnotationAndValue builderAnnotation = BuilderTypeTools
+        AnnotationAndValue builderAnno = BuilderTypeTools
                 .createAnnotationAndValueFromMirror(am, elementUtils).get();
         TypeName typeName = BuilderTypeTools.createTypeNameFromElement(element).orElse(null);
+        boolean defineDefaultMethods = Boolean.parseBoolean(builderAnno.value("defineDefaultMethods").orElse(null));
         Optional<TypeInfo> typeInfo = tools
-                .createTypeInfo(builderAnnotation.typeName(), typeName, (TypeElement) element, processingEnv);
+            .createBuilderTypeInfo(builderAnno.typeName(), typeName, (TypeElement) element, processingEnv, defineDefaultMethods);
         if (typeInfo.isEmpty()) {
             String msg = "Nothing to process, skipping: " + element;
             LOGGER.log(System.Logger.Level.WARNING, msg);
@@ -166,9 +167,9 @@ public class BuilderProcessor extends AbstractProcessor {
             return;
         }
 
-        Set<BuilderCreatorProvider> creators = getProducersForType(DefaultTypeName.create(annoType));
+        Set<BuilderCreatorProvider> creators = getProducersForType(TypeNameDefault.create(annoType));
         Optional<List<TypeAndBody>> result = creators.stream()
-                .map(it -> it.create(typeInfo.get(), builderAnnotation))
+                .map(it -> it.create(typeInfo.get(), builderAnno))
                 .filter(it -> !it.isEmpty())
                 .findFirst();
         if (result.isEmpty()) {
@@ -203,7 +204,7 @@ public class BuilderProcessor extends AbstractProcessor {
                     .asList();
             producers.forEach(producer -> {
                 producer.supportedAnnotationTypes().forEach(annoType -> {
-                    PRODUCERS_BY_ANNOTATION.computeIfAbsent(DefaultTypeName.create(annoType), it -> new LinkedHashSet<>())
+                    PRODUCERS_BY_ANNOTATION.computeIfAbsent(TypeNameDefault.create(annoType), it -> new LinkedHashSet<>())
                             .add(producer);
                 });
             });

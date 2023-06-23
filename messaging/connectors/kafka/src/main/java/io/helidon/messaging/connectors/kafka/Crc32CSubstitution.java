@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import org.apache.kafka.common.utils.Checksums;
 /**
  * Method handles are not supported by native-image,
  * invoke {@link java.util.zip.CRC32C CRC32C} directly.
- *
- * Helidon runs only on Java 11 and newer, {@link java.util.zip.CRC32C CRC32C}
+ * <p/>
+ * Helidon (since version 2) runs only on Java 11 and newer, {@link java.util.zip.CRC32C CRC32C}
  * doesn't have to be instantiated by method handles.
  */
 @TargetClass(org.apache.kafka.common.utils.Crc32C.class)

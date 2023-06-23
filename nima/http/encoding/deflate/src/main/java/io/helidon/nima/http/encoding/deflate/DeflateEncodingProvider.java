@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.nima.http.encoding.deflate;
 
-import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 import java.util.Set;
 import java.util.zip.DeflaterOutputStream;
@@ -63,7 +62,7 @@ public class DeflateEncodingProvider implements ContentEncodingProvider {
         return new ContentEncoder() {
             @Override
             public OutputStream encode(OutputStream network) {
-                return new DeflaterOutputStream(new BufferedOutputStream(network, 512));
+                return new DeflaterOutputStream(network);
             }
 
             @Override

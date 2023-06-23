@@ -467,6 +467,18 @@ public interface WebClient {
         }
 
         /**
+         * Set which type of DNS resolver should be used.
+         *
+         * @param dnsResolverType type of the DNS resolver to be used
+         * @return updated builder instance
+         */
+        public Builder dnsResolverType(DnsResolverType dnsResolverType) {
+            configuration.dnsResolverType(dnsResolverType);
+            return this;
+        }
+
+
+        /**
          * Set whether cookies should be automatically saved to the store.
          *
          * @param enableAutomaticCookieStore whether to save cookies, default is false

@@ -72,6 +72,29 @@ class ThreadPerTaskExecutorTest {
         assertThat(executor.isTerminated(), is(true));
     }
 
+    @Test
+    void testContextClassLoader() throws InterruptedException {
+        ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+        HelidonTaskExecutor executor = newExecutor();
+        CountDownLatch latch = new CountDownLatch(1);
+        executor.execute(new InterruptableTask<>() {
+            @Override
+            public boolean canInterrupt() {
+                return true;
+            }
+
+            @Override
+            public void run() {
+                // ccl must be set in the thread
+                if (Thread.currentThread().getContextClassLoader() == ccl) {
+                    latch.countDown();
+                }
+            }
+        });
+        assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
+        executor.terminate(1, TimeUnit.SECONDS);
+    }
+
     private static HelidonTaskExecutor newExecutor() {
         return ThreadPerTaskExecutor.create(Thread.ofVirtual()
                 .allowSetThreadLocals(true)

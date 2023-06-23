@@ -181,9 +181,7 @@ class OidcSupportTest {
                 .build();
         EndpointConfig endpointConfig = EndpointConfig.builder().build();
 
-        OutboundSecurityResponse response = provider.outboundSecurity(providerRequest, outboundEnv, endpointConfig)
-                .toCompletableFuture()
-                .join();
+        OutboundSecurityResponse response = provider.outboundSecurity(providerRequest, outboundEnv, endpointConfig);
 
         List<String> authorization = response.requestHeaders().get("Authorization");
         assertThat("Authorization header", authorization, hasItem("Bearer " + tokenContent));
@@ -215,9 +213,7 @@ class OidcSupportTest {
         boolean outboundSupported = provider.isOutboundSupported(providerRequest, outboundEnv, endpointConfig);
         assertThat("Outbound should not be supported by default", outboundSupported, is(false));
 
-        OutboundSecurityResponse response = provider.outboundSecurity(providerRequest, outboundEnv, endpointConfig)
-                .toCompletableFuture()
-                .join();
+        OutboundSecurityResponse response = provider.outboundSecurity(providerRequest, outboundEnv, endpointConfig);
 
         assertThat("Disabled target should have empty headers", response.requestHeaders().size(), is(0));
     }

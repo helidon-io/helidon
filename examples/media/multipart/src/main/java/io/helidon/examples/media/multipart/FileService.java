@@ -15,92 +15,136 @@
  */
 package io.helidon.examples.media.multipart;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.stream.Stream;
 
-import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.ContentDisposition;
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.common.reactive.IoMulti;
-import io.helidon.reactive.media.multipart.ReadableBodyPart;
-import io.helidon.reactive.webserver.ResponseHeaders;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.http.media.multipart.MultiPart;
+import io.helidon.nima.http.media.multipart.ReadablePart;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonBuilderFactory;
 
+import static io.helidon.common.http.Http.Status.BAD_REQUEST_400;
+import static io.helidon.common.http.Http.Status.MOVED_PERMANENTLY_301;
+import static io.helidon.common.http.Http.Status.NOT_FOUND_404;
+
 /**
  * File service.
  */
-public final class FileService implements Service {
-
-    private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
-    private final FileStorage storage;
-    private final ExecutorService executor = ThreadPoolSupplier.create("multipart-thread-pool").get();
-
+public final class FileService implements HttpService {
+    private static final Http.HeaderValue UI_LOCATION = Http.Header.createCached(Http.Header.LOCATION, "/ui");
+    private final JsonBuilderFactory jsonFactory;
+    private final Path storage;
 
     /**
      * Create a new file upload service instance.
      */
     FileService() {
-        storage = new FileStorage();
+        jsonFactory = Json.createBuilderFactory(Map.of());
+        storage = createStorage();
+        System.out.println("Storage: " + storage);
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/", this::list)
-                .get("/{fname}", this::download)
-                .post("/", this::upload);
+             .get("/{fname}", this::download)
+             .post("/", this::upload);
+    }
+
+    private static Path createStorage() {
+        try {
+            return Files.createTempDirectory("fileupload");
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static Stream<String> listFiles(Path storage) {
+
+        try (Stream<Path> walk = Files.walk(storage)) {
+            return walk.filter(Files::isRegularFile)
+                       .map(storage::relativize)
+                       .map(Path::toString)
+                       .toList()
+                       .stream();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static OutputStream newOutputStream(Path storage, String fname) {
+        try {
+            return Files.newOutputStream(storage.resolve(fname),
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private void list(ServerRequest req, ServerResponse res) {
-        JsonArrayBuilder arrayBuilder = JSON_FACTORY.createArrayBuilder();
-        storage.listFiles().forEach(arrayBuilder::add);
-        res.send(JSON_FACTORY.createObjectBuilder().add("files", arrayBuilder).build());
+        JsonArrayBuilder arrayBuilder = jsonFactory.createArrayBuilder();
+        listFiles(storage).forEach(arrayBuilder::add);
+        res.send(jsonFactory.createObjectBuilder().add("files", arrayBuilder).build());
     }
 
     private void download(ServerRequest req, ServerResponse res) {
-        Path filePath = storage.lookup(req.path().param("fname"));
-        ResponseHeaders headers = res.headers();
+        Path filePath = storage.resolve(req.path().pathParameters().value("fname"));
+        if (!filePath.getParent().equals(storage)) {
+            res.status(BAD_REQUEST_400).send("Invalid file name");
+            return;
+        }
+        if (!Files.exists(filePath)) {
+            res.status(NOT_FOUND_404).send();
+            return;
+        }
+        if (!Files.isRegularFile(filePath)) {
+            res.status(BAD_REQUEST_400).send("Not a file");
+            return;
+        }
+        ServerResponseHeaders headers = res.headers();
         headers.contentType(MediaTypes.APPLICATION_OCTET_STREAM);
-        headers.set(Http.Header.CONTENT_DISPOSITION, ContentDisposition.builder()
-                .filename(filePath.getFileName().toString())
-                .build()
-                .toString());
+        headers.set(ContentDisposition.builder()
+                                      .filename(filePath.getFileName().toString())
+                                      .build());
         res.send(filePath);
     }
 
     private void upload(ServerRequest req, ServerResponse res) {
-        req.content().asStream(ReadableBodyPart.class)
-           .forEach(part -> {
-               if (part.isNamed("file[]")) {
-                   String filename = part.filename()
-                                         .orElseThrow(() -> new BadRequestException("Missing filename"));
-                   part.content()
-                       .map(DataChunk::data)
-                       .flatMapIterable(Arrays::asList)
-                       .to(IoMulti.writeToFile(storage.create(filename))
-                                  .executor(executor)
-                                  .build());
-               } else {
-                   // when streaming unconsumed parts needs to be drained
-                   part.drain();
-               }
-           })
-           .onError(res::send)
-           .onComplete(() -> {
-               res.status(Http.Status.MOVED_PERMANENTLY_301);
-               res.headers().set(Http.Header.LOCATION, "/ui");
-               res.send();
-           }).ignoreElement();
+        MultiPart mp = req.content().as(MultiPart.class);
+
+        while (mp.hasNext()) {
+            ReadablePart part = mp.next();
+            if ("file[]".equals(URLDecoder.decode(part.name(), StandardCharsets.UTF_8))) {
+                try (InputStream in = part.inputStream(); OutputStream out = newOutputStream(storage, part.fileName().get())) {
+                    in.transferTo(out);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to write content", e);
+                }
+            }
+        }
+
+        res.status(MOVED_PERMANENTLY_301)
+           .header(UI_LOCATION)
+           .send();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.security;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 import io.helidon.tracing.SpanContext;
@@ -125,13 +124,6 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
      */
     boolean isUserInRole(String role,
                          String authorizerName);
-
-    /**
-     * Executor service of the security module.
-     *
-     * @return executor service to use to execute asynchronous tasks related to security
-     */
-    ExecutorService executorService();
 
     /**
      * Check if user is in specified role if supported by global authorization provider.
@@ -327,7 +319,6 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
     class Builder implements io.helidon.common.Builder<Builder, SecurityContext> {
         private final Security security;
         private String id;
-        private Supplier<ExecutorService> executorServiceSupplier;
         private SecurityTime serverTime;
         private Tracer tracingTracer;
         private SpanContext tracingSpan;
@@ -336,7 +327,6 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
 
         Builder(Security security) {
             this.security = security;
-            this.executorServiceSupplier = security.executorService();
         }
 
         @Override
@@ -359,10 +349,6 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
 
         String id() {
             return id;
-        }
-
-        Supplier<ExecutorService> executorServiceSupplier() {
-            return executorServiceSupplier;
         }
 
         SecurityTime serverTime() {
@@ -397,36 +383,6 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
          */
         public Builder id(String id) {
             this.id = id;
-            return this;
-        }
-
-        /**
-         * Executor service to use for requests within this context.
-         * By default uses a custom executor service that is configured when building
-         * {@link Security} instance.
-         * <p>
-         * Use this method only if you need to override default behavior!
-         *
-         * @param executorServiceSupplier supplier of an executor service
-         * @return updated builder instance
-         */
-        public Builder executorService(Supplier<ExecutorService> executorServiceSupplier) {
-            this.executorServiceSupplier = executorServiceSupplier;
-            return this;
-        }
-
-        /**
-         * Executor service to use for requests within this context.
-         * By default uses a custom executor service that is configured when building
-         * {@link Security} instance.
-         * <p>
-         * Use this method only if you need to override default behavior!
-         *
-         * @param executorService executor service
-         * @return updated builder instance
-         */
-        public Builder executorService(ExecutorService executorService) {
-            this.executorServiceSupplier = () -> executorService;
             return this;
         }
 

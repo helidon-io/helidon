@@ -32,6 +32,7 @@ module io.helidon.security.providers.idcs.mapper {
 
     requires transitive io.helidon.config;
     requires transitive io.helidon.common;
+    requires transitive io.helidon.common.context;
     requires transitive io.helidon.security;
     requires transitive io.helidon.security.providers.common;
     requires transitive io.helidon.security.jwt;
@@ -41,9 +42,7 @@ module io.helidon.security.providers.idcs.mapper {
 
     requires io.helidon.security.integration.common;
     requires io.helidon.security.util;
-    requires io.helidon.reactive.webclient;
 
-    requires jersey.client;
     requires jakarta.ws.rs;
 
     exports io.helidon.security.providers.idcs.mapper;

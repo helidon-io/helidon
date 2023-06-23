@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,18 @@ package io.helidon.common.http;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
+
+import io.helidon.common.media.type.ParserMode;
 
 class ClientResponseHeadersImpl implements ClientResponseHeaders {
     private final Headers headers;
+    private final ParserMode parserMode;
 
-    ClientResponseHeadersImpl(Headers headers) {
+    ClientResponseHeadersImpl(Headers headers, ParserMode parserMode) {
         this.headers = headers;
+        this.parserMode = parserMode;
     }
 
     @Override
@@ -45,6 +50,16 @@ class ClientResponseHeadersImpl implements ClientResponseHeaders {
     @Override
     public Http.HeaderValue get(Http.HeaderName name) {
         return headers.get(name);
+    }
+
+    @Override
+    public Optional<HttpMediaType> contentType() {
+        if (parserMode == ParserMode.RELAXED) {
+            return contains(HeaderEnum.CONTENT_TYPE)
+                    ? Optional.of(HttpMediaType.create(get(HeaderEnum.CONTENT_TYPE).value(), parserMode))
+                    : Optional.empty();
+        }
+        return headers.contentType();
     }
 
     @Override

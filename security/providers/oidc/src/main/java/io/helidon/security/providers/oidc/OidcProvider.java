@@ -26,13 +26,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.configurable.LruCache;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
@@ -134,41 +131,37 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     @Override
-    public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-        Single<String> tenantIdSingle = tenantIdFinders.stream()
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
+        String tenantId = tenantIdFinders.stream()
                 .map(tenantIdFinder -> tenantIdFinder.tenantId(providerRequest))
                 .flatMap(Optional::stream)
                 .findFirst()
-                .map(Single::just)
                 .orElseGet(() -> findTenantIdFromRedirects(providerRequest));
-        return  tenantIdSingle.flatMapCompletionStage(tenantId -> authenticateWithTenant(tenantId, providerRequest));
+
+        return authenticateWithTenant(tenantId, providerRequest);
     }
 
-    private CompletionStage<AuthenticationResponse> authenticateWithTenant(String tenantId, ProviderRequest providerRequest) {
+    private AuthenticationResponse authenticateWithTenant(String tenantId, ProviderRequest providerRequest) {
         Optional<TenantAuthenticationHandler> tenantHandler = tenantAuthHandlers.get(tenantId);
         if (tenantHandler.isPresent()) {
             return tenantHandler.get().authenticate(tenantId, providerRequest);
         } else {
-            return CompletableFuture.supplyAsync(
-                            () -> {
-                                TenantConfig possibleConfig = tenantConfigFinders.stream()
-                                        .map(tenantConfigFinder -> tenantConfigFinder.config(tenantId))
-                                        .flatMap(Optional::stream)
-                                        .findFirst()
-                                        .orElse(oidcConfig.tenantConfig(tenantId));
-                                Tenant tenant = Tenant.create(oidcConfig, possibleConfig);
-                                TenantAuthenticationHandler handler = new TenantAuthenticationHandler(oidcConfig,
-                                                                                                      tenant,
-                                                                                                      useJwtGroups,
-                                                                                                      optional);
-                                return tenantAuthHandlers.computeValue(tenantId, () -> Optional.of(handler)).get();
-                            },
-                            providerRequest.securityContext().executorService())
-                    .thenCompose(handler -> handler.authenticate(tenantId, providerRequest));
+            TenantConfig possibleConfig = tenantConfigFinders.stream()
+                    .map(tenantConfigFinder -> tenantConfigFinder.config(tenantId))
+                    .flatMap(Optional::stream)
+                    .findFirst()
+                    .orElse(oidcConfig.tenantConfig(tenantId));
+            Tenant tenant = Tenant.create(oidcConfig, possibleConfig);
+            TenantAuthenticationHandler handler = new TenantAuthenticationHandler(oidcConfig,
+                                                                                  tenant,
+                                                                                  useJwtGroups,
+                                                                                  optional);
+            return tenantAuthHandlers.computeValue(tenantId, () -> Optional.of(handler)).get()
+                    .authenticate(tenantId, providerRequest);
         }
     }
 
-    private Single<String> findTenantIdFromRedirects(ProviderRequest providerRequest) {
+    private String findTenantIdFromRedirects(ProviderRequest providerRequest) {
         List<String> missingLocations = new LinkedList<>();
         Optional<String> tenantId = Optional.empty();
         missingLocations.add("tenant-id-finder");
@@ -180,7 +173,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             }
         }
         if (oidcConfig.useCookie() && tenantId.isEmpty()) {
-            Optional<Single<String>> cookie = oidcConfig.tenantCookieHandler()
+            Optional<String> cookie = oidcConfig.tenantCookieHandler()
                     .findCookie(providerRequest.env().headers());
 
             if (cookie.isPresent()) {
@@ -189,14 +182,14 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             missingLocations.add("cookie");
         }
         if (tenantId.isPresent()) {
-            return Single.just(tenantId.get());
+            return tenantId.get();
         } else {
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG,
                            "Missing tenant id, could not find in either of: " + missingLocations
                                    + "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
             }
-            return Single.just(DEFAULT_TENANT_ID);
+            return DEFAULT_TENANT_ID;
         }
     }
 
@@ -213,9 +206,9 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     @Override
-    public CompletionStage<OutboundSecurityResponse> outboundSecurity(ProviderRequest providerRequest,
-                                                                      SecurityEnvironment outboundEnv,
-                                                                      EndpointConfig outboundEndpointConfig) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundEndpointConfig) {
         Optional<Subject> user = providerRequest.securityContext().user();
 
         if (user.isPresent()) {
@@ -232,12 +225,12 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 if (enabled) {
                     Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
                     target.tokenHandler.header(headers, tokenContent);
-                    return CompletableFuture.completedFuture(OutboundSecurityResponse.withHeaders(headers));
+                    return OutboundSecurityResponse.withHeaders(headers);
                 }
             }
         }
 
-        return CompletableFuture.completedFuture(OutboundSecurityResponse.empty());
+        return OutboundSecurityResponse.empty();
     }
 
     /**
@@ -248,8 +241,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 provides = {AuthenticationProvider.class, SecurityProvider.class})
     public static final class Builder implements io.helidon.common.Builder<Builder, OidcProvider> {
 
-        private static final int BUILDER_WEIGHT = 50000;
-        private static final int DEFAULT_WEIGHT = 100000;
+        private static final int BUILDER_WEIGHT = 300;
+        private static final int DEFAULT_WEIGHT = 100;
 
         private final HelidonServiceLoader.Builder<TenantConfigProvider> tenantConfigProviders = HelidonServiceLoader
                 .builder(ServiceLoader.load(TenantConfigProvider.class))

@@ -24,7 +24,7 @@ Helidon supports two programming models:
 In either case your application is just a Java SE program.
 
 ## Early access branch
-This branch requires Java 19 early access release with Loom support.
+This branch requires Java 20 early access release with Loom support.
 Applications written using this version will require `--enable-preview` to be used when starting JVM.
 Kindly use latest official release to work with Java 17, unless you are interested in the newest and greatest!
 

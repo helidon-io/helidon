@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,12 @@ package io.helidon.examples.logging.logback.aot;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.HelidonMdc;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
@@ -60,20 +59,20 @@ public final class Main {
         // done by the webserver
         Contexts.runInContext(Context.create(), Main::logging);
 
-        WebServer.builder()
-                .routing(Routing.builder()
-                                 .get("/", (req, res) -> {
-                                     HelidonMdc.set("name", String.valueOf(req.requestId()));
-                                     LOGGER.debug("Debug message to show runtime reloading works");
-                                     LOGGER.info("Running in webserver, id:");
-                                     res.send("Hello")
-                                             .forSingle(ignored -> LOGGER.debug("Response sent"));
-                                 })
-                                 .build())
+        WebServer server = WebServer.builder()
                 .port(8080)
-                .build()
-                .start()
-                .await(10, TimeUnit.SECONDS);
+                .routing(Main::routing)
+                .start();
+    }
+
+    private static void routing(HttpRouting.Builder routing) {
+        routing.get("/", (req, res) -> {
+            HelidonMdc.set("name", String.valueOf(req.id()));
+            LOGGER.debug("Debug message to show runtime reloading works");
+            LOGGER.info("Running in webserver, id:");
+            res.send("Hello");
+            LOGGER.debug("Response sent");
+        });
     }
 
     private static void setupLogging() {

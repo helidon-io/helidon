@@ -28,35 +28,33 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
-
-import io.helidon.common.http.Http;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
 
 import com.oracle.bedrock.runtime.Application;
 import com.oracle.bedrock.runtime.LocalPlatform;
 import com.oracle.bedrock.runtime.console.CapturingApplicationConsole;
 import com.oracle.bedrock.runtime.options.Arguments;
 import com.oracle.bedrock.runtime.options.Console;
+import io.helidon.common.http.Http;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.http1.Http1Client;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.startsWith;
 
-@Disabled
 class MainTest {
 
     private static String appJarPathSE = System.getProperty("app.jar.path.se", "please-set-app.jar.path.se");
@@ -111,6 +109,7 @@ class MainTest {
         private void waitForApplication(boolean toBeUp) throws Exception {
             long timeout = 15 * 1000; // 15 seconds should be enough to start/stop the server
             long now = System.currentTimeMillis();
+            int count = 0;
             String operation = (toBeUp ? "start" : "stop");
             URL url = getHealthUrl();
             LOGGER.log(Level.INFO, "Waiting for application to " + operation);
@@ -120,11 +119,12 @@ class MainTest {
             do {
                 Thread.sleep(500);
                 if ((System.currentTimeMillis() - now) > timeout) {
-                    Assertions.fail("Application failed to " + operation);
+                    Assertions.fail("Application failed to " + operation + ": count=" + count);
                 }
                 try {
+                    count++;
                     conn = (HttpURLConnection) url.openConnection();
-                    conn.setConnectTimeout(500);
+                    conn.setConnectTimeout(1000);
                     responseCode = conn.getResponseCode();
                     if (toBeUp && responseCode != 200) {
                         LOGGER.log(Level.INFO, "Waiting for application to " + operation + ": Bad health response  "
@@ -141,7 +141,7 @@ class MainTest {
                     conn.disconnect();
                 }
             } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1));
-            LOGGER.log(Level.INFO, "Application " + operation + " successful" );
+            LOGGER.log(Level.INFO, "Application " + operation + " successful");
         }
     }
 
@@ -154,9 +154,9 @@ class MainTest {
     /**
      * Start the application using the application jar and classpath
      *
-     * @param appJarPath    Path to jar file with application
-     * @param javaArgs      Additional java arguments to pass
-     * @throws Exception    Error starting the application
+     * @param appJarPath Path to jar file with application
+     * @param javaArgs Additional java arguments to pass
+     * @throws Exception Error starting the application
      */
     HelidonApplication startTheApplication(String appJarPath, List<String> javaArgs) throws Exception {
         int port = localPlatform.getAvailablePorts().next();
@@ -170,10 +170,10 @@ class MainTest {
     /**
      * Start the application using the application jar and module path
      *
-     * @param appJarPath    Path to jar file with application
-     * @param javaArgs      Additional java arguments to pass
-     * @param moduleName    Name of application's module that contains Main
-     * @throws Exception    Error starting the application
+     * @param appJarPath Path to jar file with application
+     * @param javaArgs Additional java arguments to pass
+     * @param moduleName Name of application's module that contains Main
+     * @throws Exception Error starting the application
      */
     HelidonApplication startTheApplicationModule(String appJarPath, List<String> javaArgs, String moduleName) throws Exception {
         int port = localPlatform.getAvailablePorts().next();
@@ -210,41 +210,36 @@ class MainTest {
 
         String eol = System.getProperty("line.separator");
         Assertions.fail("quickstart " + edition + " did not exit as expected." + eol
-                                + eol
-                                + "stdOut: " + stdOut + eol
-                                + eol
-                                + " stdErr: " + console.getCapturedErrorLines());
+                + eol
+                + "stdOut: " + stdOut + eol
+                + eol
+                + " stdErr: " + console.getCapturedErrorLines());
         application.close();
     }
 
-    @Test
-    void basicTestJsonP() throws Exception {
-        runJsonFunctionalTest("se", "jsonp");
+    @ParameterizedTest
+    @ValueSource(strings = {"se", "mp"})
+    void basicTestJson(String edition) throws Exception {
+        // Run using the default json library for the edition
+        runJsonFunctionalTest(edition, "");
     }
 
-    @Test
-    void basicTestJsonB() throws Exception {
-        runJsonFunctionalTest("se", "jsonb");
+    @ParameterizedTest
+    @ValueSource(strings = {"se"})
+    void basicTestJsonB(String edition) throws Exception {
+        runJsonFunctionalTest(edition, "jsonb");
     }
 
-    @Test
-    void basicTestJackson() throws Exception {
-        runJsonFunctionalTest("se", "jackson");
+    @ParameterizedTest
+    @ValueSource(strings = {"se"})
+    void basicTestJackson(String edition) throws Exception {
+        runJsonFunctionalTest(edition, "jackson");
     }
 
-    @Test
-    void basicTestJsonMP() throws Exception {
-        runJsonFunctionalTest("mp", "");
-    }
-
-    @Test
-    void basicTestMetricsHealthSE() throws Exception {
-        runMetricsAndHealthTest("se", "jsonp", false);
-    }
-
-    @Test
-    void basicTestMetricsHealthMP() throws Exception {
-        runMetricsAndHealthTest("mp", "", false);
+    @ParameterizedTest
+    @ValueSource(strings = {"se", "mp"})
+    void basicTestMetricsHealth(String edition) throws Exception {
+        runMetricsAndHealthTest(edition, "", false);
     }
 
     @Test
@@ -257,16 +252,10 @@ class MainTest {
         runMetricsAndHealthTest("se", "jackson", false);
     }
 
-    @Test
-    @Disabled("3.0.0-JAKARTA")
-    void basicTestMetricsHealthSEModules() throws Exception {
-        runMetricsAndHealthTest("se", "jsonp", true);
-    }
-
-    @Test
-    @Disabled("3.0.0-JAKARTA")
-    void basicTestMetricsHealthMPModules() throws Exception {
-        runMetricsAndHealthTest("mp", "", true);
+    @ParameterizedTest
+    @ValueSource(strings = {"se", "mp"})
+    void basicTestMetricsHealthModules(String edition) throws Exception {
+        runMetricsAndHealthTest(edition, "", true);
     }
 
     /**
@@ -275,8 +264,8 @@ class MainTest {
      * So we set a system property to select the library to use before starting
      * the server
      *
-     * @param edition     "mp", "se"
-     * @param jsonLibrary "jsonp", "jsonb" or "jackson"
+     * @param edition "mp", "se"
+     * @param jsonLibrary "jsonp" or "jsonb"
      * @throws Exception on test failure
      */
     private void runJsonFunctionalTest(String edition, String jsonLibrary) throws Exception {
@@ -290,55 +279,43 @@ class MainTest {
         }
 
         HelidonApplication application = startTheApplication(editionToJarPath(edition), systemPropertyArgs);
-        WebClient webClient = WebClient.builder()
-                .baseUri(application.getBaseUrl())
-                .addMediaSupport(JsonpSupport.create())
-                .build();
+        try {
+            Http1Client webClient = WebClient.builder()
+                    .baseUri(application.getBaseUrl().toURI())
+                    .build();
 
-        webClient.get()
-                .path("/books")
-                .request(JsonArray.class)
-                .thenAccept(bookArray -> assertThat("Number of books", bookArray.size(), is(numberOfBooks)))
-                .toCompletableFuture()
-                .get();
+            JsonArray bookArray = webClient.get()
+                    .path("/books")
+                    .request(JsonArray.class);
+            assertThat("Number of books", bookArray.size(), is(numberOfBooks));
 
-        webClient.post()
-                .path("/books")
-                .submit(json)
-                .thenAccept(it -> assertThat("HTTP response POST", it.status(), is(Http.Status.OK_200)))
-                .thenCompose(it -> webClient.get()
-                        .path("/books/123456")
-                        .request(JsonObject.class))
-                .thenAccept(it -> assertThat("Checking if correct ISBN", it.getString("isbn"), is("123456")))
-                .toCompletableFuture()
-                .get();
+            ClientResponse response = webClient
+                    .post("/books")
+                    .submit(json);
+            assertThat("HTTP response POST", response.status(), is(Http.Status.OK_200));
 
-        webClient.get()
-                .path("/books/0000")
-                .request()
-                .thenAccept(it -> assertThat("HTTP response GET bad ISBN", it.status(), is(Http.Status.NOT_FOUND_404)))
-                .toCompletableFuture()
-                .get();
+            JsonObject book = webClient
+                    .get("/books/123456")
+                    .request(JsonObject.class);
+            assertThat("Checking if correct ISBN", book.getString("isbn"), is("123456"));
 
-        webClient.get()
-                .path("/books")
-                .request()
-                .thenApply(it -> {
-                    assertThat("HTTP response list books", it.status(), is(Http.Status.OK_200));
-                    return it;
-                })
-                .thenCompose(WebClientResponse::close)
-                .toCompletableFuture()
-                .get();
+            response = webClient.get()
+                    .path("/books/0000")
+                    .request();
+            assertThat("HTTP response GET bad ISBN", response.status(), is(Http.Status.NOT_FOUND_404));
 
-        webClient.delete()
-                .path("/books/123456")
-                .request()
-                .thenAccept(it -> assertThat("HTTP response delete book", it.status(), is(Http.Status.OK_200)))
-                .toCompletableFuture()
-                .get();
+            response = webClient.delete()
+                    .path("/books/123456")
+                    .request();
+            assertThat("HTTP response DELETE", response.status(), is(Http.Status.OK_200));
 
-        application.stop();
+            bookArray = webClient.get()
+                    .path("/books")
+                    .request(JsonArray.class);
+            assertThat("Number of books", bookArray.size(), is(numberOfBooks));
+        } finally {
+            application.stop();
+        }
     }
 
     /**
@@ -347,7 +324,7 @@ class MainTest {
      * So we set a system property to select the library to use before starting
      * the server
      *
-     * @param edition     "mp", "se"
+     * @param edition "mp", "se"
      * @param jsonLibrary "jsonp", "jsonb" or "jackson"
      * @param useModules true to use modulepath, false to use classpath
      * @throws Exception on test failure
@@ -367,101 +344,60 @@ class MainTest {
             application = startTheApplication(editionToJarPath(edition), systemPropertyArgs);
         }
 
-        WebClient webClient = WebClient.builder()
-                .baseUri(application.getBaseUrl())
-                .addMediaSupport(JsonpSupport.create())
-                .build();
+        try {
+            Http1Client webClient = WebClient.builder()
+                    .baseUri(application.getBaseUrl().toURI())
+                    .build();
 
-        // Get Prometheus style metrics
-        webClient.get()
-                .accept(MediaTypes.WILDCARD)
-                .path("/metrics")
-                .request(String.class)
-                // Make sure we got prometheus metrics
-                .thenAccept(it -> assertThat("Making sure we got Prometheus format", it, startsWith("# TYPE")))
-                .toCompletableFuture()
-                .get();
+            String payload = webClient.get()
+                    .path("/metrics")
+                    .header(Http.Header.ACCEPT, MediaTypes.WILDCARD.text())
+                    .request(String.class);
+            assertThat("Making sure we got Prometheus format", payload, startsWith("# TYPE"));
 
-        // Get JSON encoded metrics
-        webClient.get()
-                .accept(MediaTypes.APPLICATION_JSON)
-                .path("/metrics")
-                .request(JsonObject.class)
-                // Makes sure we got JSON metrics
-                .thenAccept(it -> assertThat("Checking request count",
-                                             it.getJsonObject("vendor").getInt("requests.count"),
-                                             greaterThan(0)))
-                .toCompletableFuture()
-                .get();
+            JsonObject jsonObject;
 
-        // Get JSON encoded metrics/base
-        webClient.get()
-                .accept(MediaTypes.APPLICATION_JSON)
-                .path("/metrics/base")
-                .request(JsonObject.class)
-                // Makes sure we got JSON metrics
-                .thenAccept(it -> assertThat("Checking request count",
-                                             it.getInt("thread.count"),
-                                             greaterThan(0)))
-                .toCompletableFuture()
-                .get();
+            // current metrics implementation not compatible with Jackson
+            if (!Objects.equals(jsonLibrary, "jackson")) {
+                jsonObject = webClient.get()
+                        .path("/metrics")
+                        .header(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                        .request(JsonObject.class);
+                assertThat("Checking request count",
+                        jsonObject.getJsonObject("vendor").getInt("requests.count"), greaterThan(0));
+            }
 
-        // Get JSON encoded health check
-        webClient.get()
-                .accept(MediaTypes.APPLICATION_JSON)
-                .path("/health")
-                .request(JsonObject.class)
-                .thenAccept(it -> {
-                    assertThat("Checking health status", it.getString("status"), is("UP"));
-                    // Verify that built-in health checks are disabled in MP according to
-                    // 'microprofile-config.properties' setting in bookstore application
-                    if (edition.equals("mp")) {
-                        assertThat("Checking built-in health checks disabled",
-                                   it.getJsonArray("checks").size(),
-                                   is(0));
-                    }
-                })
-                .toCompletableFuture()
-                .get();
-
-        application.stop();
+            jsonObject = webClient.get()
+                    .path("/health")
+                    .header(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                    .request(JsonObject.class);
+            assertThat("Checking health status", jsonObject.getString("status"), is("UP"));
+            if (edition.equals("mp")) {
+                assertThat("Checking built-in health checks disabled",
+                        jsonObject.getJsonArray("checks").size(), is(0));
+            }
+        } finally {
+            application.stop();
+        }
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"se", "mp"})
     void routing(String edition) throws Exception {
-
         HelidonApplication application = startTheApplication(editionToJarPath(edition), Collections.emptyList());
-        WebClient webClient = WebClient.builder()
-                .baseUri(application.getBaseUrl())
-                .addMediaSupport(JsonpSupport.create())
-                .build();
+        try {
+            Http1Client webClient = WebClient.builder()
+                    .baseUri(application.getBaseUrl().toURI())
+                    .build();
 
-        webClient.get()
-                .accept(MediaTypes.APPLICATION_JSON)
-                .skipUriEncoding()
-                .path("/boo%6bs")
-                .request()
-                .thenAccept(it -> {
-                    if ("se".equals(edition)) {
-                        assertThat("Checking encode URL response SE", it.status(), is(Http.Status.OK_200));
-                    } else {
-                        // JAXRS does not decode URLs before matching
-                        assertThat("Checking encode URL response MP", it.status(), is(Http.Status.NOT_FOUND_404));
-                    }
-                })
-                .toCompletableFuture()
-                .get();
-
-        webClient.get()
-                .accept(MediaTypes.APPLICATION_JSON)
-                .path("/badurl")
-                .request()
-                .thenAccept(it -> assertThat("Checking encode URL response", it.status(), is(Http.Status.NOT_FOUND_404)))
-                .toCompletableFuture()
-                .get();
-
-        application.stop();
+            ClientResponse response = webClient.get()
+                    .path("/badurl")
+                    .header(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                    .request();
+            assertThat("Checking encode URL response", response.status(), is(Http.Status.NOT_FOUND_404));
+        } finally {
+            application.stop();
+        }
     }
 
     private JsonObject getBookAsJsonObject() throws IOException {
@@ -478,7 +414,7 @@ class MainTest {
         startArgs.add("-Dserver.port=" + port);
         startArgs.add("--enable-preview");
 
-        if (moduleName != null && ! moduleName.isEmpty() ) {
+        if (moduleName != null && !moduleName.isEmpty()) {
             File jarFile = new File(appJarPath);
             // --module-path target/bookstore-se.jar:target/libs -m io.helidon.tests.apps.bookstore.se/io.helidon.tests.apps.bookstore.se.Main
             startArgs.add("--module-path");

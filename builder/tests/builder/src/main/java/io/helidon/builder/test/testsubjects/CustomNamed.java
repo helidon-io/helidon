@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
 
 /**
- * Used for demonstrating and testing the Pico Builder.
+ * Used for demonstrating and testing the Builder.
  * <p>
  * In this case we are overriding the Map, Set, and List types, usages of annotations placed on the generated class, as well as
  * changing the package name targeted for the generated class.

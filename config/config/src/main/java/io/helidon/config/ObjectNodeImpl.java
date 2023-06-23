@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,14 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         return members.entrySet();
     }
 
+    static ObjectNode create(Config config) {
+        ObjectNode.Builder root = ObjectNode.builder();
+
+        addObjectNode(root, config);
+
+        return root.build();
+    }
+
     static void initDescription(ConfigNode node, String description) {
         switch (node.nodeType()) {
         case OBJECT:
@@ -103,6 +111,57 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         default:
             throw new IllegalArgumentException("Unsupported node type: " + node.getClass().getName());
         }
+    }
+
+    private static void addObjectNode(Builder parentBuilder, Config parent) {
+        parent.asNodeList().ifPresent(it -> {
+            for (Config child : it) {
+                String escapedName = Config.Key.escapeName(child.name());
+                switch (child.type()) {
+                case OBJECT -> {
+                    Builder childBuilder = ObjectNode.builder();
+                    addObjectNode(childBuilder, child);
+                    parentBuilder.addObject(escapedName, childBuilder.build());
+                }
+                case LIST -> {
+                    ListNode.Builder childBuilder = ListNode.builder();
+                    addListNode(childBuilder, child);
+                    parentBuilder.addList(escapedName, childBuilder.build());
+                }
+                case VALUE -> {
+                    parentBuilder.addValue(escapedName, child.asString().get());
+                }
+                default -> {
+                    // do nothing
+                }
+                }
+            }
+        });
+    }
+
+    private static void addListNode(ListNode.Builder parentBuilder, Config parent) {
+        parent.asNodeList().ifPresent(it -> {
+            for (Config child : it) {
+                switch (child.type()) {
+                case OBJECT -> {
+                    Builder childBuilder = ObjectNode.builder();
+                    addObjectNode(childBuilder, child);
+                    parentBuilder.addObject(childBuilder.build());
+                }
+                case LIST -> {
+                    ListNode.Builder childBuilder = ListNode.builder();
+                    addListNode(childBuilder, child);
+                    parentBuilder.addList(childBuilder.build());
+                }
+                case VALUE -> {
+                    parentBuilder.addValue(child.asString().get());
+                }
+                default -> {
+                    // do nothing
+                }
+                }
+            }
+        });
     }
 
     private MergeableNode mergeWithValueNode(ValueNodeImpl node) {

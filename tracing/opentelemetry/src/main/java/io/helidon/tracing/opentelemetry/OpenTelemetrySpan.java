@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,47 @@
 package io.helidon.tracing.opentelemetry;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Scope;
+import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
-import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 
-class OpenTelemetrySpan implements io.helidon.tracing.Span {
-    private final Span delegate;
+class OpenTelemetrySpan implements Span {
+    private final io.opentelemetry.api.trace.Span delegate;
 
-    OpenTelemetrySpan(Span span) {
+    OpenTelemetrySpan(io.opentelemetry.api.trace.Span span) {
         this.delegate = span;
     }
 
     @Override
-    public void tag(String key, String value) {
+    public Span tag(String key, String value) {
         delegate.setAttribute(key, value);
+        return this;
     }
 
     @Override
-    public void tag(String key, Boolean value) {
+    public Span tag(String key, Boolean value) {
         delegate.setAttribute(key, value);
+        return this;
     }
 
     @Override
-    public void tag(String key, Number value) {
+    public Span tag(String key, Number value) {
         if (value instanceof Double || value instanceof Float) {
             delegate.setAttribute(key, value.doubleValue());
         } else {
             delegate.setAttribute(key, value.longValue());
         }
+        return this;
     }
 
     @Override
@@ -87,6 +94,33 @@ class OpenTelemetrySpan implements io.helidon.tracing.Span {
     @Override
     public Scope activate() {
         return new OpenTelemetryScope(delegate.makeCurrent());
+    }
+
+    @Override
+    public Span baggage(String key, String value) {
+        Objects.requireNonNull(key, "Baggage Key cannot be null");
+        Objects.requireNonNull(value, "Baggage Value cannot be null");
+
+        Baggage.builder()
+                .put(key, value)
+                .build()
+                .storeInContext(getContext())
+                .makeCurrent();
+        return this;
+    }
+
+    @Override
+    public Optional<String> baggage(String key) {
+        Objects.requireNonNull(key, "Baggage Key cannot be null");
+        return Optional.ofNullable(Baggage.fromContext(getContext()).getEntryValue(key));
+    }
+
+    // Check if OTEL Context is already available in Global Helidon Context.
+    // If not – use Current context.
+    private static Context getContext() {
+        return Contexts.context()
+                .flatMap(ctx -> ctx.get(Context.class))
+                .orElseGet(Context::current);
     }
 
     private Attributes toAttributes(Map<String, ?> attributes) {

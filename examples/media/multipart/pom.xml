@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-se</artifactId>
+        <artifactId>helidon-nima</artifactId>
         <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../../../applications/se/pom.xml</relativePath>
+        <relativePath>../../../applications/nima/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.media</groupId>
     <artifactId>helidon-examples-media-multipart</artifactId>
@@ -41,24 +41,24 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver</artifactId>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver-static-content</artifactId>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-multipart</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-multipart</artifactId>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jsonp</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jsonp</artifactId>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver-static-content</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>parsson</artifactId>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -71,8 +71,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient</artifactId>
+            <groupId>io.helidon.nima.testing.junit5</groupId>
+            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -90,12 +90,15 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <compilerArgs>
-                        <compilerArg>--enable-preview</compilerArg>
-                    </compilerArgs>
-                </configuration>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

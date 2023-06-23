@@ -25,8 +25,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -367,34 +365,31 @@ public class GrpcSecurityHandler
                                                .customObjects(customObjects.orElse(new ClassToInstanceStore<>()))
                                                .build());
 
-        CompletionStage<Boolean> stage = processAuthentication(call, headers, securityContext, tracing.atnTracing())
-                .thenCompose(atnResult -> {
-                    if (atnResult.proceed) {
-                        // authentication was OK or disabled, we should continue
-                        return processAuthorization(securityContext, tracing.atzTracing());
-                    } else {
-                        // authentication told us to stop processing
-                        return CompletableFuture.completedFuture(AtxResult.STOP);
-                    }
-                })
-                .thenApply(atzResult -> {
-                    if (atzResult.proceed) {
-                        // authorization was OK, we can continue processing
-                        tracing.logProceed();
-                        tracing.finish();
-                        return true;
-                    } else {
-                        tracing.logDeny();
-                        tracing.finish();
-                        return false;
-                    }
-                });
-
         ServerCall.Listener<ReqT> listener;
         CallWrapper<ReqT, RespT> callWrapper = new CallWrapper<>(call);
 
         try {
-            boolean proceed = stage.toCompletableFuture().get();
+            AtxResult atnResult = processAuthentication(call, headers, securityContext, tracing.atnTracing());
+            AtxResult atzResult;
+            if (atnResult.proceed) {
+                // authentication was OK or disabled, we should continue
+                atzResult = processAuthorization(securityContext, tracing.atzTracing());
+            } else {
+                // authentication told us to stop processing
+                atzResult = AtxResult.STOP;
+            }
+            boolean proceed;
+            if (atzResult.proceed) {
+                // authorization was OK, we can continue processing
+                tracing.logProceed();
+                tracing.finish();
+                proceed = true;
+            } else {
+                tracing.logDeny();
+                tracing.finish();
+                proceed = false;
+            }
+
 
             if (proceed) {
                 listener = next.startCall(callWrapper, headers);
@@ -441,59 +436,51 @@ public class GrpcSecurityHandler
         securityContext.audit(auditEvent);
     }
 
-    private CompletionStage<AtxResult> processAuthentication(ServerCall<?, ?> call,
-                                                             Metadata headers,
-                                                             SecurityContext securityContext,
-                                                             AtnTracing atnTracing) {
+    private AtxResult processAuthentication(ServerCall<?, ?> call,
+                                            Metadata headers,
+                                            SecurityContext securityContext,
+                                            AtnTracing atnTracing) {
         if (!authenticate.orElse(false)) {
-            return CompletableFuture.completedFuture(AtxResult.PROCEED);
+            return AtxResult.PROCEED;
         }
-
-        CompletableFuture<AtxResult> future = new CompletableFuture<>();
 
         SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext.atnClientBuilder();
 
         configureSecurityRequest(clientBuilder,
                                  atnTracing.findParent().orElse(null));
 
-        clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit().thenAccept(response -> {
+        try {
+            AuthenticationResponse response = clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit();
             switch (response.status()) {
             case SUCCESS:
                 //everything is fine, we can continue with processing
                 break;
             case FAILURE_FINISH:
-                if (atnFinishFailure(future)) {
+                if (atnFinishFailure()) {
                     atnSpanFinish(atnTracing, response);
-                    return;
+                    return AtxResult.STOP;
                 }
                 break;
             case SUCCESS_FINISH:
-                atnFinish(future);
                 atnSpanFinish(atnTracing, response);
-                return;
+                return AtxResult.STOP;
             case ABSTAIN:
             case FAILURE:
-                if (atnAbstainFailure(future)) {
+                if (atnAbstainFailure()) {
                     atnSpanFinish(atnTracing, response);
-                    return;
+                    return AtxResult.STOP;
                 }
                 break;
             default:
-                Exception e = new SecurityException("Invalid SecurityStatus returned: " + response.status());
-                future.completeExceptionally(e);
-                atnTracing.error(e);
-                return;
+                throw new SecurityException("Invalid SecurityStatus returned: " + response.status());
             }
 
             atnSpanFinish(atnTracing, response);
-            future.complete(new AtxResult(clientBuilder.buildRequest()));
-        }).exceptionally(throwable -> {
-            atnTracing.error(throwable);
-            future.completeExceptionally(throwable);
-            return null;
-        });
-
-        return future;
+            return new AtxResult(clientBuilder.buildRequest());
+        } catch (Exception e) {
+            atnTracing.error(e);
+            throw e;
+        }
     }
 
     private void atnSpanFinish(AtnTracing atnTracing, AuthenticationResponse response) {
@@ -504,29 +491,22 @@ public class GrpcSecurityHandler
         atnTracing.finish();
     }
 
-    private boolean atnAbstainFailure(CompletableFuture<AtxResult> future) {
+    private boolean atnAbstainFailure() {
         if (authenticationOptional.orElse(false)) {
             LOGGER.log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             return false;
         }
-
-        future.complete(AtxResult.STOP);
         return true;
     }
 
-    private boolean atnFinishFailure(CompletableFuture<AtxResult> future) {
+    private boolean atnFinishFailure() {
 
         if (authenticationOptional.orElse(false)) {
             LOGGER.log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             return false;
         } else {
-            future.complete(AtxResult.STOP);
             return true;
         }
-    }
-
-    private void atnFinish(CompletableFuture<AtxResult> future) {
-        future.complete(AtxResult.STOP);
     }
 
     private void configureSecurityRequest(SecurityRequestBuilder<? extends SecurityRequestBuilder<?>> request,
@@ -536,16 +516,11 @@ public class GrpcSecurityHandler
                 .tracingSpan(parentSpanContext);
     }
 
-    private CompletionStage<AtxResult> processAuthorization(
-            SecurityContext context,
-            AtzTracing atzTracing) {
-        CompletableFuture<AtxResult> future = new CompletableFuture<>();
-
+    private AtxResult processAuthorization(SecurityContext context, AtzTracing atzTracing) {
         if (!authorize.orElse(false)) {
-            future.complete(AtxResult.PROCEED);
             atzTracing.logStatus(SecurityResponse.SecurityStatus.ABSTAIN);
             atzTracing.finish();
-            return future;
+            return AtxResult.PROCEED;
         }
 
         Set<String> rolesSet = rolesAllowed.orElse(Set.of());
@@ -554,15 +529,13 @@ public class GrpcSecurityHandler
             // first validate roles - RBAC is supported out of the box by security, no need to invoke provider
             if (explicitAuthorizer.isPresent()) {
                 if (rolesSet.stream().noneMatch(role -> context.isUserInRole(role, explicitAuthorizer.get()))) {
-                    future.complete(AtxResult.STOP);
                     atzTracing.finish();
-                    return future;
+                    return AtxResult.STOP;
                 }
             } else {
                 if (rolesSet.stream().noneMatch(context::isUserInRole)) {
-                    future.complete(AtxResult.STOP);
                     atzTracing.finish();
-                    return future;
+                    return AtxResult.STOP;
                 }
             }
         }
@@ -573,7 +546,8 @@ public class GrpcSecurityHandler
         configureSecurityRequest(client,
                                  atzTracing.findParent().orElse(null));
 
-        client.explicitProvider(explicitAuthorizer.orElse(null)).submit().thenAccept(response -> {
+        try {
+            AuthorizationResponse response = client.explicitProvider(explicitAuthorizer.orElse(null)).submit();
             atzTracing.logStatus(response.status());
             switch (response.status()) {
             case SUCCESS:
@@ -581,31 +555,21 @@ public class GrpcSecurityHandler
                 break;
             case FAILURE_FINISH:
             case SUCCESS_FINISH:
-                atzTracing.finish();
-                future.complete(AtxResult.STOP);
-                return;
             case ABSTAIN:
             case FAILURE:
                 atzTracing.finish();
-                future.complete(AtxResult.STOP);
-                return;
+                return AtxResult.STOP;
             default:
-                SecurityException e = new SecurityException("Invalid SecurityStatus returned: " + response.status());
-                atzTracing.error(e);
-                future.completeExceptionally(e);
-                return;
+                throw new SecurityException("Invalid SecurityStatus returned: " + response.status());
             }
 
             atzTracing.finish();
             // everything was OK
-            future.complete(AtxResult.PROCEED);
-        }).exceptionally(throwable -> {
-            atzTracing.error(throwable);
-            future.completeExceptionally(throwable);
-            return null;
-        });
-
-        return future;
+            return AtxResult.PROCEED;
+        } catch (Exception e) {
+            atzTracing.error(e);
+            throw e;
+        }
     }
 
     /**

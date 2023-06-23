@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,13 @@ class NoDepsBuilderInterceptorBeanTest {
 
     @Test
     void testMutation() {
-        NoDepsInterceptedBean val = DefaultNoDepsInterceptedBean.builder()
+        NoDepsInterceptedBean val = NoDepsInterceptedBeanDefault.builder()
                 .name("Larry")
                 .build();
         assertThat(val.name(), equalTo("Larry"));
         assertThat(val.helloMessage(), equalTo("Hello Larry"));
 
-        NoDepsInterceptedBean val2 = DefaultNoDepsInterceptedBean.builder()
+        NoDepsInterceptedBean val2 = NoDepsInterceptedBeanDefault.builder()
                 .name("Larry")
                 .build();
         assertThat(val, equalTo(val2));

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,5 +35,11 @@
         <!-- Used to grow data structure -->
         <Class name="io.helidon.common.configurable.ThreadPool$RateLimitGrowth"/>
         <Bug pattern="PREDICTABLE_RANDOM"/>
+    </Match>
+    <Match>
+        <!-- False positive similar to https://github.com/spotbugs/spotbugs/issues/1877 -->
+        <Class name="io.helidon.common.http.RequestedUriDiscoveryContext$UnsafeRequestedUriSettingsException"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern = "VA_FORMAT_STRING_USES_NEWLINE"/>
     </Match>
 </FindBugsFilter>

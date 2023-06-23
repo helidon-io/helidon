@@ -168,7 +168,10 @@ public final class ErrorHandlers {
                 }
             }
         }
-        ctx.directHandlers().handle(e, response, keepAlive);
+        ctx.listenerContext()
+                .directHandlers()
+                .handle(e, response, keepAlive);
+
         response.commit();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.socket.SocketOptions;
-import io.helidon.nima.webclient.ConnectionKey;
 
 // a representation of a single remote endpoint
 // this may use one or more connections (depending on parallel streams)
@@ -33,20 +32,23 @@ class Http2ClientConnectionHandler {
 
     private final ExecutorService executor;
     private final SocketOptions socketOptions;
+    private String primaryPath;
     private final ConnectionKey connectionKey;
     private final AtomicReference<Http2ClientConnection> activeConnection = new AtomicReference<>();
-    // simple solutio for now
+    // simple solution for now
     private final Semaphore semaphore = new Semaphore(1);
 
     Http2ClientConnectionHandler(ExecutorService executor,
                                  SocketOptions socketOptions,
+                                 String primaryPath,
                                  ConnectionKey connectionKey) {
         this.executor = executor;
         this.socketOptions = socketOptions;
+        this.primaryPath = primaryPath;
         this.connectionKey = connectionKey;
     }
 
-    public Http2ClientStream newStream(boolean priorKnowledge, int priority) {
+    public Http2ClientStream newStream(ConnectionContext ctx) {
         try {
             semaphore.acquire();
         } catch (InterruptedException e) {
@@ -57,13 +59,13 @@ class Http2ClientConnectionHandler {
             Http2ClientConnection conn = activeConnection.get();
             Http2ClientStream stream;
             if (conn == null) {
-                conn = createConnection(connectionKey, priorKnowledge);
-                stream = conn.stream(priority);
+                conn = createConnection(connectionKey, ctx);
+                stream = conn.createStream(ctx.priority());
             } else {
-                stream = conn.tryStream(priority);
+                stream = conn.tryStream(ctx.priority());
                 if (stream == null) {
-                    conn = createConnection(connectionKey, priorKnowledge);
-                    stream = conn.stream(priority);
+                    conn = createConnection(connectionKey, ctx);
+                    stream = conn.createStream(ctx.priority());
                 }
             }
 
@@ -73,8 +75,9 @@ class Http2ClientConnectionHandler {
         }
     }
 
-    private Http2ClientConnection createConnection(ConnectionKey connectionKey, boolean priorKnowledge) {
-        Http2ClientConnection conn = new Http2ClientConnection(executor, socketOptions, connectionKey, priorKnowledge);
+    private Http2ClientConnection createConnection(ConnectionKey connectionKey, ConnectionContext connectionContext) {
+        Http2ClientConnection conn =
+                new Http2ClientConnection(executor, socketOptions, connectionKey, primaryPath, connectionContext);
         conn.connect();
         activeConnection.set(conn);
         fullConnections.add(conn);

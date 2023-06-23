@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -827,15 +827,8 @@ public interface Config extends io.helidon.common.config.Config {
                                    Config::asNode);
     }
 
-    /**
-     * Returns a list of child {@code Config} nodes if the node is {@link Type#OBJECT}.
-     * Returns a list of element nodes if the node is {@link Type#LIST}.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING}.
-     * Otherwise, if node is {@link Type#VALUE}, it throws {@link ConfigMappingException}.
-     *
-     * @return a list of {@link Type#OBJECT} members or a list of {@link Type#LIST} members
-     * @throws ConfigMappingException in case the node is {@link Type#VALUE}
-     */
+    @Override
+    @SuppressWarnings("unchecked")
     ConfigValue<List<Config>> asNodeList() throws ConfigMappingException;
 
     /**
@@ -1315,6 +1308,16 @@ public interface Config extends io.helidon.common.config.Config {
         Builder disableKeyResolving();
 
         /**
+         * When key resolving is enabled and a reference cannot be resolved, should we fail, or use the key verbatim.
+         * Defaults to {@code false}, so key resolving does not fail when a reference is missing.
+         *
+         * @param shouldFail whether to fail when key reference cannot be resolved
+         * @return updated builder
+         * @see #disableKeyResolving()
+         */
+        Builder failOnMissingKeyReference(boolean shouldFail);
+
+        /**
          * Disables an usage of resolving value tokens.
          * <p>
          * A value can contain tokens enclosed in {@code ${}} (i.e. ${name}), that are resolved by default and tokens are replaced
@@ -1325,6 +1328,16 @@ public interface Config extends io.helidon.common.config.Config {
          * @return an updated builder instance
          */
         Builder disableValueResolving();
+
+        /**
+         * When value resolving is enabled and a reference cannot be resolved, should we fail, or use the value verbatim.
+         * Defaults to {@code false}, so value resolving does not fail when a reference is missing.
+         *
+         * @param shouldFail whether to fail when value reference cannot be resolved
+         * @return updated builder
+         * @see #disableValueResolving()
+         */
+        Builder failOnMissingValueReference(boolean shouldFail);
 
         /**
          * Disables use of {@link ConfigSources#environmentVariables() environment variables config source}.

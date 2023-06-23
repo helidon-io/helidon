@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.security;
 
-import java.util.concurrent.CompletionStage;
-
 /**
  * Common methods for security clients.
  *
@@ -33,7 +31,7 @@ public interface SecurityClient<T extends SecurityResponse> {
      * SecurityResponse.SecurityStatus#isSuccess()}
      * Otherwise security request failed or could not be processed.
      */
-    CompletionStage<T> submit();
+    T submit();
 
     /**
      * Synchronous complement to {@link #submit()}.
@@ -43,7 +41,7 @@ public interface SecurityClient<T extends SecurityResponse> {
      * @throws SecurityException in case of timeout, interrupted call or exception during future processing
      */
     default T get() {
-        return SecurityResponse.get(submit());
+        return submit();
     }
 
 }

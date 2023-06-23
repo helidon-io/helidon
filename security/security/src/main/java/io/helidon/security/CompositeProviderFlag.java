@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,23 @@ import java.util.Set;
 public enum CompositeProviderFlag {
     /**
      * Provider may fail, nothing happens if it does.
+     * <p>
+     * If succeeds, continues to the next provider.
+     * To create a provider that may fail, yet that is sufficient,
+     * please configure the flag to be {@link #SUFFICIENT}, and set the provider itself to be optional
+     * (most Helidon providers support {@code optional} configuration option), so the provider abstains instead of fails
+     * when user cannot be authenticated using it.
      */
     MAY_FAIL(EnumSet.of(SecurityResponse.SecurityStatus.SUCCESS,
                         SecurityResponse.SecurityStatus.ABSTAIN,
                         SecurityResponse.SecurityStatus.FAILURE)),
     /**
      * If succeeds, no further providers are called, otherwise same as optional.
+     * <p>
+     * To create a provider that may fail, yet that is sufficient,
+     * use this flag, and set the provider itself to be optional
+     * (most Helidon providers support {@code optional} configuration option), so the provider abstains instead of fails
+     * when user cannot be authenticated using it.
      */
     SUFFICIENT(EnumSet.of(SecurityResponse.SecurityStatus.SUCCESS, SecurityResponse.SecurityStatus.ABSTAIN)),
     /**

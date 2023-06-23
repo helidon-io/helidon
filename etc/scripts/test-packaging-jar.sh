@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,13 +31,6 @@ cd ${WS_DIR}/tests/integration/native-image
 mvn ${MAVEN_ARGS} -e clean install
 
 # Run tests with classpath and then module path
-
-#
-# Run SE-1 (does not contain module-info.java)
-#
-cd ${WS_DIR}/tests/integration/native-image/se-1
-# Classpath
-java -Dexit.on.started=! -jar target/helidon-tests-native-image-se-1.jar
 
 #
 # Run MP-1

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,10 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.ClientResponse;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Helidon connector follow redirect tests.
@@ -103,18 +105,17 @@ public class FollowRedirectsTest extends AbstractTest {
     @ParamTest
     public void testDoFollow(String entityType) {
         Response r = target("test/redirect", entityType).register(RedirectTestFilter.class).request().get();
-        Assertions.assertEquals(200, r.getStatus());
-        Assertions.assertEquals("GET", r.readEntity(String.class));
+        assertThat(r.getStatus(), is(200));
+        assertThat(r.readEntity(String.class), is("GET"));
 
-        Assertions.assertEquals(
-                UriBuilder.fromUri(getBaseUri()).path(RedirectResource.class).build().toString(),
-                r.getHeaderString(RedirectTestFilter.RESOLVED_URI_HEADER));
+        assertThat(r.getHeaderString(RedirectTestFilter.RESOLVED_URI_HEADER),
+                is(UriBuilder.fromUri(getBaseUri()).path(RedirectResource.class).build().toString()));
     }
 
     @ParamTest
     public void testDontFollow(String entityType) {
         WebTarget t = target("test/redirect", entityType);
         t.property(ClientProperties.FOLLOW_REDIRECTS, false);
-        Assertions.assertEquals(303, t.request().get().getStatus());
+        assertThat(t.request().get().getStatus(), is(303));
     }
 }

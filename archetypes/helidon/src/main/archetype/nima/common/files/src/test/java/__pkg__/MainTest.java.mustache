@@ -1,0 +1,11 @@
+package {{package}};
+
+import io.helidon.nima.testing.junit5.webserver.DirectClient;
+import io.helidon.nima.testing.junit5.webserver.RoutingTest;
+
+@RoutingTest
+class MainTest extends AbstractMainTest {
+    MainTest(DirectClient client) {
+        super(client);
+    }
+}

@@ -17,8 +17,6 @@ package io.helidon.microprofile.security;
 
 import java.lang.System.Logger.Level;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.context.Contexts;
@@ -163,8 +161,7 @@ public class SecurityCdiExtension implements Extension {
         this.security.set(security);
     }
 
-    private CompletionStage<AuthenticationResponse> failingAtnProvider(ProviderRequest request) {
-        return CompletableFuture
-                .completedFuture(AuthenticationResponse.failed("No provider configured"));
+    private AuthenticationResponse failingAtnProvider(ProviderRequest request) {
+        return AuthenticationResponse.failed("No provider configured");
     }
 }

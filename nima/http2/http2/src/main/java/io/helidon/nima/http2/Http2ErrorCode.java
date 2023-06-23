@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,12 @@ public enum Http2ErrorCode {
      * The endpoint requires that HTTP/1.1 be used
      * instead of HTTP/2.
      */
-    HTTP_1_1_REQUIRED(0xd);
+    HTTP_1_1_REQUIRED(0xd),
+    /**
+     * Request header fields are too large.
+     * RFC6585
+     */
+    REQUEST_HEADER_FIELDS_TOO_LARGE(431);
 
     private static final Map<Integer, Http2ErrorCode> BY_CODE;
 

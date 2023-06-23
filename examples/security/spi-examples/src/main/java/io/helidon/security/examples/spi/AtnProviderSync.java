@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,15 +37,14 @@ import io.helidon.security.Role;
 import io.helidon.security.SecurityLevel;
 import io.helidon.security.Subject;
 import io.helidon.security.spi.AuthenticationProvider;
-import io.helidon.security.spi.SynchronousProvider;
 
 /**
  * Example of an authentication provider implementation - synchronous.
  * This is a full-blows example of a provider that requires additional configuration on a resource.
  */
-public class AtnProviderSync extends SynchronousProvider implements AuthenticationProvider {
+public class AtnProviderSync implements AuthenticationProvider {
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
 
         // first obtain the configuration of this request
         // either from annotation, custom object or config

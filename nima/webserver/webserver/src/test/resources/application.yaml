@@ -18,6 +18,11 @@ server:
   port: 8079
   host: 127.0.0.1
 
+  sockets:
+    - name: "other"
+      write-buffer-size: 1024
+      write-queue-length: 64
+
   connection-providers:
     http_1_1:
       max-prologue-length: 4096
@@ -28,9 +33,19 @@ server:
   content-encoding:
     discover-services: false
 
+  media-support:
+    discover-services: false
+
 server2:
   port: 8079
   host: 127.0.0.1
 
   connection-providers:
     discover-services: false
+
+  media-support:
+
+  content-encoding:
+
+pico:
+  permits-dynamic: true

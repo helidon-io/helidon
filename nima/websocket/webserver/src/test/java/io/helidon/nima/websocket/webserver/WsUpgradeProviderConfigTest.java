@@ -23,18 +23,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.jupiter.api.Test;
-
 import io.helidon.common.buffers.DataReader;
 import io.helidon.config.Config;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.ListenerConfiguration;
+import io.helidon.nima.webserver.ListenerContext;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http1.Http1Connection;
 import io.helidon.nima.webserver.http1.Http1ConnectionSelector;
 import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -100,7 +101,9 @@ public class WsUpgradeProviderConfigTest {
         ConnectionContext ctx = mock(ConnectionContext.class);
         when(ctx.dataReader()).thenReturn(mock(DataReader.class));
         when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.serverContext()).thenReturn(mock(ServerContext.class));
+        ListenerContext lc = mock(ListenerContext.class);
+        when(lc.config()).thenReturn(ListenerConfiguration.create("@default"));
+        when(ctx.listenerContext()).thenReturn(lc);
         return ctx;
     }
 

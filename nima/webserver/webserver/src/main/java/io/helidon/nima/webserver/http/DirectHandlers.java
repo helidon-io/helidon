@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,15 @@ public class DirectHandlers {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create a new instance with default handlers.
+     *
+     * @return a new instance
+     */
+    public static DirectHandlers create() {
+        return builder().build();
     }
 
     /**
@@ -133,6 +142,17 @@ public class DirectHandlers {
          */
         public Builder addHandler(EventType eventType, DirectHandler handler) {
             handlers.put(eventType, handler);
+            return this;
+        }
+
+        /**
+         * Add defaults for even types not supported by the created handlers.
+         *
+         * @param handlers handlers to use as defaults
+         * @return updated builder
+         */
+        public Builder defaults(DirectHandlers handlers) {
+            handlers.handlers.forEach(this.handlers::putIfAbsent);
             return this;
         }
     }
