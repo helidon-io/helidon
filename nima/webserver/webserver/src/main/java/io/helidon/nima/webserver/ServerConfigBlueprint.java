@@ -67,7 +67,7 @@ interface ServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Facto
         public ServerConfig.BuilderBase<?, ?> intercept(ServerConfig.BuilderBase<?, ?> target) {
             if (target.sockets().containsKey(WebServer.DEFAULT_SOCKET_NAME)) {
                 throw new ConfigException("Default socket must be configured directly on server config node, or through"
-                                                  + " ServerConfig.Builder, not as a separated socket.");
+                                                  + " \"ServerConfig.Builder\", not as a separated socket.");
             }
 
             return target;
