@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
@@ -50,7 +51,7 @@ public class StringSupport implements MediaSupport {
      * @param name name of this instance
      */
     protected StringSupport(String name) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name);
     }
 
     /**

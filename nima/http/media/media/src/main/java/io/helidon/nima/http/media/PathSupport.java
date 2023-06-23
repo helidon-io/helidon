@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.ContentDisposition;
@@ -47,7 +48,7 @@ public class PathSupport implements MediaSupport {
      * @param name name of this instance
      */
     protected PathSupport(String name) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name);
     }
 
     /**

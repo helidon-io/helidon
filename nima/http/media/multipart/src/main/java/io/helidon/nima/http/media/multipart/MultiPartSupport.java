@@ -17,6 +17,7 @@
 package io.helidon.nima.http.media.multipart;
 
 import java.lang.System.Logger.Level;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
@@ -48,7 +49,7 @@ public class MultiPartSupport implements MediaSupport {
     private MediaContext context;
 
     private MultiPartSupport(String name) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name);
     }
 
     /**

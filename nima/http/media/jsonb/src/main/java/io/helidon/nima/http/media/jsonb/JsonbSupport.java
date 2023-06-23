@@ -16,6 +16,8 @@
 
 package io.helidon.nima.http.media.jsonb;
 
+import java.util.Objects;
+
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.http.Headers;
@@ -69,6 +71,9 @@ public class JsonbSupport implements MediaSupport {
      * @see #create(io.helidon.common.config.Config)
      */
     public static MediaSupport create(Config config, String name) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+
         return new JsonbSupport(name);
     }
 

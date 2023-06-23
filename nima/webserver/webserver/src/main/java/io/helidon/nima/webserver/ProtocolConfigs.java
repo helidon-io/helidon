@@ -17,6 +17,7 @@
 package io.helidon.nima.webserver;
 
 import java.util.List;
+import java.util.Objects;
 
 import io.helidon.nima.webserver.spi.ProtocolConfig;
 
@@ -37,6 +38,7 @@ public class ProtocolConfigs {
      * @return protocol configuration handler
      */
     public static ProtocolConfigs create(List<ProtocolConfig> protocolConfigs) {
+        Objects.requireNonNull(protocolConfigs);
         return new ProtocolConfigs(protocolConfigs);
     }
 
@@ -53,6 +55,9 @@ public class ProtocolConfigs {
      */
     public <T extends ProtocolConfig> List<T> config(String protocolType,
                                                      Class<T> protocolConfigType) {
+        Objects.requireNonNull(protocolType);
+        Objects.requireNonNull(protocolConfigType);
+
         return protocolConfigs.stream()
                 .filter(it -> protocolType.equals(it.type()))
                 .filter(it -> protocolConfigType.isAssignableFrom(it.getClass()))
