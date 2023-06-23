@@ -27,6 +27,7 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.nima.webserver.WebServer;
@@ -127,11 +128,12 @@ class TestServer {
         }
     }
 
-    static OkHttpClient newOkHttpClient(boolean ssl) throws Exception {
+    static OkHttpClient newOkHttpClient(boolean ssl, boolean http2) throws Exception {
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
                 .addNetworkInterceptor(new LoggingInterceptor())
                 .retryOnConnectionFailure(false)
-                .protocols(Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1));
+                .protocols(http2 ? Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1)
+                                 : List.of(Protocol.HTTP_1_1));
         if (ssl) {
             SSLContext sslContext = setupSSLTrust();
             clientBuilder.sslSocketFactory(sslContext.getSocketFactory(), TRUST_MANAGER);
