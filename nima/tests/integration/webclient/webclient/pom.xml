@@ -33,6 +33,11 @@
             <artifactId>helidon-nima-webclient</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.nima.testing.junit5</groupId>
             <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
             <scope>test</scope>

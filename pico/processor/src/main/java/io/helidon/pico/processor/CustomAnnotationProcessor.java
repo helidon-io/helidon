@@ -16,13 +16,13 @@
 
 package io.helidon.pico.processor;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +31,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
@@ -39,7 +38,6 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
-import io.helidon.common.types.TypedElementName;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.CodeGenFiler;
@@ -54,9 +52,7 @@ import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_C
 import static io.helidon.pico.processor.GeneralProcessorUtils.hasValue;
 import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElementOf;
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
-import static io.helidon.pico.tools.TypeTools.createTypedElementNameFromElement;
-import static io.helidon.pico.tools.TypeTools.isStatic;
-import static io.helidon.pico.tools.TypeTools.toAccess;
+import static io.helidon.pico.tools.TypeTools.createTypedElementInfoFromElement;
 import static io.helidon.pico.tools.TypeTools.toFilePath;
 
 /**
@@ -77,9 +73,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
     }
 
     static List<CustomAnnotationTemplateCreator> initialize() {
-        // note: it is important to use this class' CL since maven will not give us the "right" one.
-        List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(ServiceLoader.load(
-                CustomAnnotationTemplateCreator.class, CustomAnnotationTemplateCreator.class.getClassLoader())).asList();
+        List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(loader()).asList();
         creators.forEach(creator -> {
             try {
                 Set<String> annoTypes = creator.annoTypes();
@@ -186,12 +180,12 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
         AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, utils());
         CodeGenFiler codegen = CodeGenFiler.create(filer);
         response.generatedSourceCode().forEach(codegen::codegenJavaFilerOut);
-        response.generatedResources().forEach((typedElementName, resourceBody) -> {
-            String fileType = typedElementName.elementName();
+        response.generatedResources().forEach((TypedElementInfo, resourceBody) -> {
+            String fileType = TypedElementInfo.elementName();
             if (!hasValue(fileType)) {
                 fileType = ".generated";
             }
-            codegen.codegenResourceFilerOut(toFilePath(typedElementName.typeName(), fileType), resourceBody);
+            codegen.codegenResourceFilerOut(toFilePath(TypedElementInfo.typeName(), fileType), resourceBody);
         });
     }
 
@@ -238,26 +232,21 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
                 .filerEnabled(true)
                 .annoTypeName(annoTypeName)
                 .serviceInfo(siInfo)
-                .targetElement(createTypedElementNameFromElement(typeToProcess, elements).orElseThrow())
-                .enclosingTypeInfo(enclosingClassTypeInfo)
-                // the following are duplicates that should be removed - get them from the enclosingTypeInfo instead
-                // see https://github.com/helidon-io/helidon/issues/6773
-                .targetElementArgs(toArgs(typeToProcess))
-                .targetElementAccess(toAccess(typeToProcess))
-                .elementStatic(isStatic(typeToProcess));
+                .targetElement(createTypedElementInfoFromElement(typeToProcess, elements).orElseThrow())
+                .enclosingTypeInfo(enclosingClassTypeInfo);
     }
 
-    List<TypedElementName> toArgs(Element typeToProcess) {
-        if (!(typeToProcess instanceof ExecutableElement)) {
-            return List.of();
+    private static ServiceLoader<CustomAnnotationTemplateCreator> loader() {
+        try {
+            // note: it is important to use this class' CL since maven will not give us the "right" one.
+            return ServiceLoader.load(
+                    CustomAnnotationTemplateCreator.class, CustomAnnotationTemplateCreator.class.getClassLoader());
+        } catch (ServiceConfigurationError e) {
+            // see issue #6261 - running inside the IDE?
+            // this version will use the thread ctx classloader
+            System.getLogger(CustomAnnotationProcessor.class.getName()).log(System.Logger.Level.WARNING, e.getMessage(), e);
+            return ServiceLoader.load(CustomAnnotationTemplateCreator.class);
         }
-
-        Elements elements = processingEnv.getElementUtils();
-        List<TypedElementName> result = new ArrayList<>();
-        ExecutableElement executableElement = (ExecutableElement) typeToProcess;
-        executableElement.getParameters().forEach(v -> result.add(
-                createTypedElementNameFromElement(v, elements).orElseThrow()));
-        return result;
     }
 
     private static TypeElement toEnclosingClassTypeElement(Element typeToProcess) {

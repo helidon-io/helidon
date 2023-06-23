@@ -53,7 +53,7 @@ import static org.hamcrest.Matchers.not;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Disabled("3.0.0-JAKARTA") // OpenAPI: Caused by: java.lang.NoSuchMethodError:
-// 'java.util.List org.jboss.jandex.ClassInfo.unsortedFields()'
+// 'java.util.List io.smallrye.jandex.ClassInfo.unsortedFields()'
 public class TestCORS {
 
     private static final String JSON_MESSAGE_RESPONSE_LABEL = "message";

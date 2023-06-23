@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package io.helidon.security.spi;
-
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.ProviderRequest;
@@ -44,7 +42,7 @@ public interface AuthorizationProvider extends SecurityProvider {
      * @return response that either permits, denies or abstains from decision
      * @see AuthorizationResponse#permit()
      */
-    CompletionStage<AuthorizationResponse> authorize(ProviderRequest context);
+    AuthorizationResponse authorize(ProviderRequest context);
 
     /**
      * Return true if current user is in the specified role.

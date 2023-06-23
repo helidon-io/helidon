@@ -21,10 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
@@ -99,6 +102,9 @@ public final class WebSecurity implements Service {
     private final Security security;
     private final Config config;
     private final SecurityHandler defaultHandler;
+    private final Supplier<ExecutorService> executorService = ThreadPoolSupplier.builder()
+                .name("security-thread-pool")
+                .build();
 
     private WebSecurity(Security security, Config config) {
         this(security, config, SecurityHandler.create());
@@ -363,6 +369,7 @@ public final class WebSecurity implements Service {
             SecurityContext context = contextBuilder.build();
 
             req.context().register(context);
+            req.context().register(SecurityHandler.class, executorService.get());
             req.context().register(defaultHandler);
         }
 
@@ -384,8 +391,8 @@ public final class WebSecurity implements Service {
 
                 String path = pathConfig.get("path")
                         .asString()
-                        .orElseThrow(() -> new SecurityException(pathConfig
-                                                                         .key() + " must contain path key with a path to "
+                        .orElseThrow(() -> new SecurityException(pathConfig.key()
+                                                                         + " must contain path key with a path to "
                                                                          + "register to web server"));
                 if (methods.isEmpty()) {
                     routing.any(path, SecurityHandler.create(pathConfig, defaults));

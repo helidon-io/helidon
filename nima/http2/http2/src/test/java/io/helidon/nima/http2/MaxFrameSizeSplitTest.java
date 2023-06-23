@@ -24,6 +24,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.logging.common.LogConfig;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -63,6 +64,15 @@ class MaxFrameSizeSplitTest {
                          new SplitTest(2, 8, 2),
                          new SplitTest(1, 16, 1)
         );
+    }
+
+    @Test
+    void splitHeaders() {
+        BufferData bf = BufferData.create("This is so long text!");
+        BufferData[] split = Http2Headers.split(bf, 12);
+        assertThat(split.length, is(2));
+        assertThat(split[0].available(), is(12));
+        assertThat(split[1].available(), is(9));
     }
 
     @ParameterizedTest

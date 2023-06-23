@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import io.helidon.common.context.Contexts;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.spi.AuthenticationProvider;
-import io.helidon.security.spi.SynchronousProvider;
+import io.helidon.security.spi.SecurityProvider;
 
-public class RestrictedProvider extends SynchronousProvider implements AuthenticationProvider {
+public class RestrictedProvider implements AuthenticationProvider {
 
     /**
      * Register an entry in {@link io.helidon.common.context.Context} and fail authentication.
@@ -35,7 +35,7 @@ public class RestrictedProvider extends SynchronousProvider implements Authentic
      * @return authentication response
      */
     @Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
         // Use context to communicate with MySecurityResponseMapper
         Contexts.context()
                 .ifPresent(c -> c.register(RestrictedProvider.class, getClass().getSimpleName()));

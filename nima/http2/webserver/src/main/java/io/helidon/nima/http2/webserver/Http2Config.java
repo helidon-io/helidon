@@ -42,11 +42,11 @@ public interface Http2Config {
     /**
      * The maximum field section size that the sender is prepared to accept in bytes.
      * See RFC 9113 section 6.5.2 for details.
-     * Default is maximal unsigned int.
+     * Default is 8192.
      *
      * @return maximal header list size in bytes
      */
-    @ConfiguredOption("0xFFFFFFFFL")
+    @ConfiguredOption("8192")
     long maxHeaderListSize();
 
     /**

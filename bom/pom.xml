@@ -112,11 +112,6 @@
             <!-- WebClient -->
             <dependency>
                 <groupId>io.helidon.reactive.webclient</groupId>
-                <artifactId>helidon-reactive-webclient-jaxrs</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webclient</groupId>
                 <artifactId>helidon-reactive-webclient</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1489,6 +1484,18 @@
             <dependency>
                 <groupId>io.helidon.pico.configdriven</groupId>
                 <artifactId>helidon-pico-configdriven-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Pico Integrations related -->
+            <dependency>
+                <groupId>io.helidon.integrations.oci.sdk</groupId>
+                <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci.sdk</groupId>
+                <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

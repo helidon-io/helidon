@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ import io.helidon.security.spi.OutboundSecurityProvider;
  */
 public class PathBasedProvider implements AuthenticationProvider, OutboundSecurityProvider, AuthorizationProvider {
     @Override
-    public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-        return CompletableFuture.completedFuture(providerRequest.env().path().map(path -> {
+    public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
+        return providerRequest.env().path().map(path -> {
             switch (path) {
             case "/jack":
                 return ResourceBasedProvider.success("path-jack");
@@ -62,12 +62,12 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
                 }
                 return AuthenticationResponse.failed("path-Invalid request");
             }
-        }).orElse(AuthenticationResponse.abstain()));
+        }).orElse(AuthenticationResponse.abstain());
     }
 
     @Override
-    public CompletionStage<AuthorizationResponse> authorize(ProviderRequest context) {
-        return CompletableFuture.completedFuture(context.env().path().map(path -> {
+    public AuthorizationResponse authorize(ProviderRequest context) {
+        return context.env().path().map(path -> {
             switch (path) {
             case "/atz/permit":
                 return AuthorizationResponse.permit();
@@ -83,7 +83,7 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
             default:
                 return AuthorizationResponse.permit();
             }
-        }).orElse(AuthorizationResponse.abstain()));
+        }).orElse(AuthorizationResponse.abstain());
     }
 
     @Override
@@ -94,11 +94,11 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
     }
 
     @Override
-    public CompletionStage<OutboundSecurityResponse> outboundSecurity(ProviderRequest providerRequest,
-                                                                      SecurityEnvironment outboundEnv,
-                                                                      EndpointConfig outboundConfig) {
+    public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
+                                                     SecurityEnvironment outboundEnv,
+                                                     EndpointConfig outboundConfig) {
 
-        return CompletableFuture.completedFuture(providerRequest.env().path().map(path -> {
+        return providerRequest.env().path().map(path -> {
             switch (path) {
             case "/jack":
                 return OutboundSecurityResponse.withHeaders(Map.of("path", List.of("path-jack")));
@@ -119,6 +119,6 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
                 return OutboundSecurityResponse.builder().status(SecurityResponse.SecurityStatus.FAILURE)
                         .description("path-Invalid request").build();
             }
-        }).orElse(OutboundSecurityResponse.abstain()));
+        }).orElse(OutboundSecurityResponse.abstain());
     }
 }

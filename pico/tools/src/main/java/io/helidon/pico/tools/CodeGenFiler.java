@@ -191,7 +191,13 @@ public class CodeGenFiler {
         }
     }
 
-    private static Path targetClassOutputPath(Filer filer) {
+    /**
+     * Returns the target class output directory.
+     *
+     * @param filer the filer
+     * @return the path to the target class output directory
+     */
+    public static Path targetClassOutputPath(Filer filer) {
         if (filer instanceof AbstractFilerMessager.DirectFilerMessager) {
             CodeGenPaths paths = ((AbstractFilerMessager.DirectFilerMessager) filer).codeGenPaths();
             return Path.of(paths.outputPath().orElseThrow());
@@ -209,7 +215,13 @@ public class CodeGenFiler {
         }
     }
 
-    private static Path scratchClassOutputPath(Path targetOutputPath) {
+    /**
+     * Returns the path to the target scratch directory for Pico.
+     *
+     * @param targetOutputPath the target class output path
+     * @return the pico target scratch path
+     */
+    public static Path scratchClassOutputPath(Path targetOutputPath) {
         Path fileName = targetOutputPath.getFileName();
         Path parent = targetOutputPath.getParent();
         if (fileName == null || parent == null) {

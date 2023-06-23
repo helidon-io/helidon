@@ -54,10 +54,6 @@
             <artifactId>helidon-common-context</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient-jaxrs</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>

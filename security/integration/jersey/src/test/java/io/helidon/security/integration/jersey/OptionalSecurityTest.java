@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,13 +143,11 @@ class OptionalSecurityTest {
         };
     }
 
-    private static CompletionStage<AuthenticationResponse> authenticate(ProviderRequest request) {
-        AuthenticationResponse res = AuthenticationResponse.builder()
+    private static AuthenticationResponse authenticate(ProviderRequest request) {
+        return AuthenticationResponse.builder()
                 .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
                 .statusCode(301)
                 .build();
-
-        return CompletableFuture.completedFuture(res);
     }
 
     @Path("/")

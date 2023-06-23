@@ -75,7 +75,7 @@ endif::[]
 :version-lib-oracle-jdbc: 21
 :version-lib-oracle-ucp: {version-lib-oracle-jdbc}
 :version-plugin-jib: 0.10.1
-:version-plugin-jandex: 1.0.6
+:version-plugin-jandex: 3.1.2
 :version-lib-micrometer: 1.6.6
 :version-lib-smallrye-open-api: 2.1.16
 
@@ -93,7 +93,7 @@ endif::[]
 :microprofile-open-api-base-url: {microprofile-base-url}/microprofile-open-api-{version-lib-microprofile-openapi-api}
 :microprofile-open-api-spec-url: {microprofile-open-api-base-url}/microprofile-openapi-spec-{version-lib-microprofile-openapi-api}.html
 :microprofile-open-api-javadoc-base-url: {microprofile-open-api-base-url}/apidocs
-:microprofile-open-api-javadoc-url: {microprofile-open-api-javadoc-base-url}/apidocs/org/eclipse/microprofile/openapi/
+:microprofile-open-api-javadoc-url: {microprofile-open-api-javadoc-base-url}/org/eclipse/microprofile/openapi
 
 :microprofile-lra-base-url: {microprofile-base-url}/microprofile-lra-{version-lib-microprofile-lra-api}
 :microprofile-lra-spec-url: {microprofile-lra-base-url}/microprofile-lra-spec-{version-lib-microprofile-lra-api}.html

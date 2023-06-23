@@ -22,7 +22,7 @@ import java.util.function.Function;
 
 import io.helidon.common.types.AnnotationAndValue;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.InvocationContext;
 import io.helidon.pico.api.InvocationContextDefault;
@@ -58,8 +58,8 @@ public abstract class InterceptedMethod<I, V> implements Function<Object[], V> {
                                 TypeName serviceTypeName,
                                 Collection<AnnotationAndValue> serviceLevelAnnotations,
                                 Collection<Provider<Interceptor>> interceptors,
-                                TypedElementName methodInfo,
-                                TypedElementName[] methodArgInfo) {
+                                TypedElementInfo methodInfo,
+                                TypedElementInfo[] methodArgInfo) {
         this.impl = Objects.requireNonNull(interceptedImpl);
         this.ctx =  InvocationContextDefault.builder()
                 .serviceProvider(serviceProvider)
@@ -86,7 +86,7 @@ public abstract class InterceptedMethod<I, V> implements Function<Object[], V> {
                                 TypeName serviceTypeName,
                                 Collection<AnnotationAndValue> serviceLevelAnnotations,
                                 Collection<Provider<Interceptor>> interceptors,
-                                TypedElementName methodInfo) {
+                                TypedElementInfo methodInfo) {
         this.impl = Objects.requireNonNull(interceptedImpl);
         this.ctx =  InvocationContextDefault.builder()
                 .serviceProvider(serviceProvider)

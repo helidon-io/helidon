@@ -37,13 +37,13 @@
 
         <!-- plugin versions -->
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
-        <version.plugin.dependency>3.0.0</version.plugin.dependency>
+        <version.plugin.dependency>3.6.0</version.plugin.dependency>
         <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.helidon>3.0.3</version.plugin.helidon>
         <version.plugin.helidon-cli>3.0.3</version.plugin.helidon-cli>
-        <version.plugin.jandex>1.0.6</version.plugin.jandex>
+        <version.plugin.jandex>3.1.2</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
@@ -69,7 +69,7 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss</groupId>
+            <groupId>io.smallrye</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
@@ -147,7 +147,7 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.jboss.jandex</groupId>
+                    <groupId>io.smallrye</groupId>
                     <artifactId>jandex-maven-plugin</artifactId>
                     <version>${version.plugin.jandex}</version>
                 </plugin>
@@ -189,13 +189,12 @@
                             <overWriteIfNewer>true</overWriteIfNewer>
                             <overWriteIfNewer>true</overWriteIfNewer>
                             <includeScope>runtime</includeScope>
-                            <excludeScope>test</excludeScope>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.jboss.jandex</groupId>
+                <groupId>io.smallrye</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
                 <executions>
                     <execution>

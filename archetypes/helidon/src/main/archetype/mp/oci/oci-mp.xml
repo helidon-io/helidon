@@ -193,7 +193,7 @@ ocimetrics:
                     <value key="scope">runtime</value>
                 </map>
                 <map>
-                    <value key="groupId">org.jboss</value>
+                    <value key="groupId">io.smallrye</value>
                     <value key="artifactId">jandex</value>
                     <value key="scope">runtime</value>
                 </map>
@@ -220,7 +220,7 @@ ocimetrics:
             </list>
             <list key="maven-plugins">
                 <value template="mustache"><![CDATA[            <plugin>
-                <groupId>org.jboss.jandex</groupId>
+                <groupId>io.smallrye</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
                 <executions>
                     <execution>

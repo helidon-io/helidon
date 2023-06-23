@@ -22,33 +22,22 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.http.Http;
 import io.helidon.common.http.SetCookie;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 import io.helidon.security.util.TokenHandler;
-
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.WebTarget;
 
 /**
  * Configuration of OIDC usable from all resources that utilize OIDC specification, such as security provider, web server
@@ -361,11 +350,8 @@ public final class OidcConfig extends TenantConfigImpl {
     private final boolean forceHttpsRedirects;
     private final Duration tokenRefreshSkew;
     private final boolean relativeUris;
-    private final Client generalClient;
-    private final WebClient webClient;
-    private final LazyValue<Optional<WebTarget>> introspectEndpoint;
-    private final Supplier<WebClient.Builder> webClientBuilderSupplier;
-    private final Supplier<ClientBuilder> jaxrsClientBuilderSupplier;
+    private final Http1Client webClient;
+    private final Supplier<Http1Client.Http1ClientBuilder> webClientBuilderSupplier;
     private final LazyValue<Tenant> defaultTenant;
     private final boolean useParam;
     private final String paramName;
@@ -392,7 +378,6 @@ public final class OidcConfig extends TenantConfigImpl {
         this.tokenRefreshSkew = builder.tokenRefreshSkew;
         this.tenantConfigurations = Map.copyOf(builder.tenantConfigurations);
         this.webClient = builder.webClient;
-        this.generalClient = builder.generalClient;
         this.relativeUris = builder.relativeUris;
 
         this.useParam = builder.useParam;
@@ -405,14 +390,7 @@ public final class OidcConfig extends TenantConfigImpl {
         this.idTokenCookieHandler = builder.idTokenCookieBuilder.build();
         this.tenantCookieHandler = builder.tenantCookieBuilder.build();
 
-        if (builder.validateJwtWithJwk()) {
-            this.introspectEndpoint = LazyValue.create(Optional.empty());
-        } else {
-            this.introspectEndpoint = LazyValue.create(() -> Optional.of(appClient().target(builder.introspectUri())));
-        }
-
         this.webClientBuilderSupplier = builder.webClientBuilderSupplier;
-        this.jaxrsClientBuilderSupplier = builder.jaxrsClientBuilderSupplier;
         this.defaultTenant = LazyValue.create(() -> Tenant.create(this, this));
 
         LOGGER.log(Level.TRACE, () -> "Redirect URI with host: " + frontendUri + redirectUri);
@@ -438,50 +416,6 @@ public final class OidcConfig extends TenantConfigImpl {
         return OidcConfig.builder()
                 .config(config)
                 .build();
-    }
-
-    /**
-     * Processing of {@link io.helidon.reactive.webclient.WebClient} submit using a POST method.
-     * This is a helper method to handle possible cases (success, failure with readable entity, failure).
-     *
-     * @param requestBuilder WebClient request builder
-     * @param toSubmit object to submit (such as {@link io.helidon.common.parameters.Parameters}
-     * @param jsonProcessor processor of successful JSON response
-     * @param errorEntityProcessor processor of an error that has an entity, to fail the single
-     * @param errorProcessor processor of an error that does not have an entity
-     * @param <T> type of the result the call
-     * @return a future that completes successfully if processed from json, or if an error processor returns a non-empty value,
-     *      completes with error otherwise
-     */
-    public static <T> Single<T> postJsonResponse(WebClientRequestBuilder requestBuilder,
-                                                 Object toSubmit,
-                                                 Function<JsonObject, T> jsonProcessor,
-                                                 BiFunction<Http.Status, String, Optional<T>> errorEntityProcessor,
-                                                 BiFunction<Throwable, String, Optional<T>> errorProcessor) {
-        return requestBuilder.submit(toSubmit)
-                .flatMapSingle(response -> {
-                    if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
-                        return response.content()
-                                .as(JsonObject.class)
-                                .map(jsonProcessor)
-                                .onErrorResumeWithSingle(t -> errorProcessor.apply(t, "Failed to read JSON from response")
-                                        .map(Single::just)
-                                        .orElseGet(() -> Single.error(t)));
-                    } else {
-                        return response.content()
-                                .as(String.class)
-                                .flatMapSingle(it -> errorEntityProcessor.apply(response.status(), it)
-                                        .map(Single::just)
-                                        .orElseGet(() -> Single.error(new SecurityException("Failed to process request: " + it))))
-                                .onErrorResumeWithSingle(t -> errorProcessor.apply(t, "Failed to process error entity")
-                                        .map(Single::just)
-                                        .orElseGet(() -> Single.error(t)));
-                    }
-                })
-                .onErrorResumeWithSingle(t -> errorProcessor.apply(t, "Failed to invoke request")
-                        .map(Single::just)
-                        .orElseGet(() -> Single.error(t)));
-
     }
 
     /**
@@ -571,7 +505,6 @@ public final class OidcConfig extends TenantConfigImpl {
         return tenantCookieHandler;
     }
 
-
     /**
      * Redirection URI.
      *
@@ -635,7 +568,7 @@ public final class OidcConfig extends TenantConfigImpl {
 
     /**
      * Redirect URI with host information taken from request,
-     *  unless an explicit frontend uri is defined in configuration.
+     * unless an explicit frontend uri is defined in configuration.
      *
      * @param frontendUri the frontend uri
      * @return redirect URI
@@ -724,7 +657,7 @@ public final class OidcConfig extends TenantConfigImpl {
      * @return prefix of cookie value
      * @see OidcConfig.Builder#cookieName(String)
      * @deprecated use {@link io.helidon.security.providers.oidc.common.OidcCookieHandler} instead, this method
-     *      will no longer be avilable
+     * will no longer be avilable
      */
     @Deprecated(forRemoval = true, since = "2.4.0")
     public String cookieValuePrefix() {
@@ -745,31 +678,9 @@ public final class OidcConfig extends TenantConfigImpl {
      * Client with configured proxy with no security.
      *
      * @return client for general use.
-     * @deprecated Use {@link #generalWebClient()} instead
      */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public Client generalClient() {
-        return generalClient;
-    }
-
-    /**
-     * Client with configured proxy with no security.
-     *
-     * @return client for general use.
-     */
-    public WebClient generalWebClient() {
+    public Http1Client generalWebClient() {
         return webClient;
-    }
-
-    /**
-     * Client with configured proxy and security of this OIDC client.
-     *
-     * @return client for communication with OIDC server
-     * @deprecated Use {@link #appWebClient()}
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public Client appClient() {
-        return defaultTenant.get().appClient();
     }
 
     /**
@@ -777,34 +688,8 @@ public final class OidcConfig extends TenantConfigImpl {
      *
      * @return client for communicating with OIDC identity server
      */
-    public WebClient appWebClient() {
+    public Http1Client appWebClient() {
         return defaultTenant.get().appWebClient();
-    }
-
-    /**
-     * Token endpoint of the OIDC server.
-     *
-     * @return target the endpoint is on
-     * @see OidcConfig.Builder#tokenEndpointUri(URI)
-     * @deprecated Please use {@link #appWebClient()} and {@link #tokenEndpointUri()} instead; result of moving to
-     *      reactive webclient from JAX-RS client
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public WebTarget tokenEndpoint() {
-        return defaultTenant.get().tokenEndpoint();
-    }
-
-    /**
-     * Token introspection endpoint.
-     *
-     * @return introspection endpoint
-     * @see OidcConfig.Builder#introspectEndpointUri(URI)
-     *@deprecated Please use {@link #appWebClient()} and {@link #introspectUri()} instead; result of moving to
-     *      reactive webclient from JAX-RS client
-     */
-    @Deprecated(forRemoval = true, since = "2.4.0")
-    public WebTarget introspectEndpoint() {
-        return introspectEndpoint.get().orElse(null);
     }
 
     /**
@@ -879,12 +764,8 @@ public final class OidcConfig extends TenantConfigImpl {
         return defaultTenant.get().introspectUri();
     }
 
-    Supplier<WebClient.Builder> webClientBuilderSupplier() {
+    Supplier<Http1Client.Http1ClientBuilder> webClientBuilderSupplier() {
         return webClientBuilderSupplier;
-    }
-
-    Supplier<ClientBuilder> jaxrsClientBuilderSupplier() {
-        return jaxrsClientBuilderSupplier;
     }
 
     /**
@@ -919,8 +800,6 @@ public final class OidcConfig extends TenantConfigImpl {
          * <p>
          * Optional:
          * {@code iat}
-         *
-         *
          */
         CLIENT_SECRET_JWT,
         /**
@@ -984,11 +863,8 @@ public final class OidcConfig extends TenantConfigImpl {
         private String proxyHost;
         private String proxyProtocol = DEFAULT_PROXY_PROTOCOL;
         private int proxyPort = DEFAULT_PROXY_PORT;
-        @Deprecated
-        private Client generalClient;
-        private WebClient webClient;
-        private Supplier<WebClient.Builder> webClientBuilderSupplier;
-        private Supplier<ClientBuilder> jaxrsClientBuilderSupplier;
+        private Http1Client webClient;
+        private Supplier<Http1Client.Http1ClientBuilder> webClientBuilderSupplier;
         private String paramName = DEFAULT_PARAM_NAME;
         private String tenantParamName = DEFAULT_TENANT_PARAM_NAME;
         private boolean useHeader = DEFAULT_HEADER_USE;
@@ -1034,8 +910,8 @@ public final class OidcConfig extends TenantConfigImpl {
                         String frontendHost = URI.create(frontendUri).getHost();
                         if (identityHost.equals(frontendHost)) {
                             LOGGER.log(Level.INFO, "As frontend host and identity host are equal, setting Same-Site policy"
-                                                + " to Strict this can be overridden using configuration option of OIDC: "
-                                                + "\"cookie-same-site\"");
+                                    + " to Strict this can be overridden using configuration option of OIDC: "
+                                    + "\"cookie-same-site\"");
                             this.tenantCookieBuilder.sameSite(SetCookie.SameSite.STRICT);
                             this.tokenCookieBuilder.sameSite(SetCookie.SameSite.STRICT);
                             this.idTokenCookieBuilder.sameSite(SetCookie.SameSite.STRICT);
@@ -1048,13 +924,11 @@ public final class OidcConfig extends TenantConfigImpl {
                 idTokenCookieBuilder.encryptionEnabled(true);
             }
 
-            this.webClientBuilderSupplier = () -> OidcUtil.webClientBaseBuilder(proxyHost,
+            this.webClientBuilderSupplier = () -> OidcUtil.webClientBaseBuilder(proxyProtocol,
+                                                                                proxyHost,
                                                                                 proxyPort,
                                                                                 relativeUris,
                                                                                 clientTimeout());
-            this.jaxrsClientBuilderSupplier = () -> OidcUtil.clientBaseBuilder(proxyProtocol, proxyHost, proxyPort);
-
-            this.generalClient = jaxrsClientBuilderSupplier.get().build();
             this.webClient = webClientBuilderSupplier.get().build();
 
             return new OidcConfig(this);
@@ -1217,7 +1091,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * if the host is unable to accept absolute URIs.
          * Defaults to {@value #DEFAULT_RELATIVE_URIS}.
          *
-         * @param  relativeUris relative URIs flag
+         * @param relativeUris relative URIs flag
          * @return updated builder instance
          */
         @ConfiguredOption("false")
@@ -1280,6 +1154,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * Configure the parameter used to store the number of attempts in redirect.
          * <p>
          * Defaults to {@value #DEFAULT_ATTEMPT_PARAM}
+         *
          * @param paramName name of the parameter used in the state parameter
          * @return updated builder instance
          */
@@ -1294,6 +1169,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * attempt.
          * <p>
          * Defaults to {@value #DEFAULT_MAX_REDIRECTS}
+         *
          * @param maxRedirects maximal number of redirects from Helidon to OIDC provider
          * @return updated builder instance
          */
@@ -1347,8 +1223,6 @@ public final class OidcConfig extends TenantConfigImpl {
             this.proxyPort = proxyPort;
             return this;
         }
-
-
 
         /**
          * A {@link TokenHandler} to
@@ -1451,7 +1325,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * Defaults to {@code false}.
          *
          * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as obtained from
-         *                               OIDC server {@code false}
+         *                                OIDC server {@code false}
          * @return updated builder instance
          */
         public Builder cookieEncryptionEnabled(boolean cookieEncryptionEnabled) {
@@ -1464,7 +1338,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * Defaults to {@code true}.
          *
          * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as obtained from
-         *                               OIDC server {@code false}
+         *                                OIDC server {@code false}
          * @return updated builder instance
          */
         public Builder cookieEncryptionEnabledIdToken(boolean cookieEncryptionEnabled) {
@@ -1477,7 +1351,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * Defaults to {@code true}.
          *
          * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as obtained from
-         *                               OIDC server {@code false}
+         *                                OIDC server {@code false}
          * @return updated builder instance
          */
         public Builder cookieEncryptionEnabledTenantName(boolean cookieEncryptionEnabled) {
@@ -1652,10 +1526,6 @@ public final class OidcConfig extends TenantConfigImpl {
         public Builder addTenantConfig(TenantConfig tenantConfig) {
             tenantConfigurations.put(tenantConfig.name(), tenantConfig);
             return this;
-        }
-
-        private void clientTimeoutMillis(long millis) {
-            this.clientTimeout(Duration.ofMillis(millis));
         }
     }
 }

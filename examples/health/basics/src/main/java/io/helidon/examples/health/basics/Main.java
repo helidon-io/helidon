@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@ package io.helidon.examples.health.basics;
 
 import java.time.Duration;
 
-import io.helidon.health.checks.HealthChecks;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-
-import org.eclipse.microprofile.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckType;
+import io.helidon.logging.common.LogConfig;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.observe.health.HealthFeature;
+import io.helidon.nima.observe.health.HealthObserveProvider;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 /**
  * Main class of health check integration example.
@@ -41,33 +43,42 @@ public final class Main {
      */
     public static void main(String[] args) {
         serverStartTime = System.currentTimeMillis();
-        HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())
-                .addReadiness(() -> HealthCheckResponse.named("exampleHealthCheck")
-                        .up()
-                        .withData("time", System.currentTimeMillis())
-                        .build())
-                .addStartup(() -> HealthCheckResponse.named("exampleStartCheck")
-                        .status(isStarted())
-                        .withData("time", System.currentTimeMillis())
-                        .build())
+
+        // load logging
+        LogConfig.configureRuntime();
+
+        WebServer server = WebServer.builder()
+                .routing(Main::routing)
+                .start();
+
+        System.out.println("WEB server is up! http://localhost:" + server.port());
+    }
+
+    /**
+     * Set up HTTP routing.
+     * This method is used from tests as well.
+     *
+     * @param router HTTP routing builder
+     */
+    static void routing(HttpRouting.Builder router) {
+        ObserveFeature observe = ObserveFeature.builder()
+                .useSystemServices(true)
+                .addProvider(HealthObserveProvider.create(HealthFeature.builder()
+                        .useSystemServices(true)
+                        .addCheck(() -> HealthCheckResponse.builder()
+                                .status(HealthCheckResponse.Status.UP)
+                                .detail("time", System.currentTimeMillis())
+                                .build(), HealthCheckType.READINESS)
+                        .addCheck(() -> HealthCheckResponse.builder()
+                                .status(isStarted())
+                                .detail("time", System.currentTimeMillis())
+                                .build(), HealthCheckType.STARTUP)
+                        .build()))
                 .build();
 
-        Routing routing = Routing.builder()
-                .register(health)
-                .get("/hello", (req, res) -> res.send("Hello World!"))
-                .build();
 
-        WebServer ws = WebServer.create(routing);
-
-        ws.start()
-                .thenApply(webServer -> {
-                    String endpoint = "http://localhost:" + webServer.port();
-                    System.out.println("Hello World started on " + endpoint + "/hello");
-                    System.out.println("Health checks available on " + endpoint + "/health");
-                    return null;
-                });
-
+        router.get("/hello", (req, res) -> res.send("Hello World!"))
+              .addFeature(observe);
     }
 
     private static boolean isStarted() {

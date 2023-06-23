@@ -230,7 +230,10 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
     @Override
     protected void innerExecute() {
-        this.permittedProviderType = PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
+        this.permittedProviderType =
+                (permittedProviderTypes == null || permittedProviderTypes.isBlank())
+                        ? ApplicationCreatorConfigOptions.DEFAULT_PERMITTED_PROVIDER_TYPE
+                        : PermittedProviderType.valueOf(permittedProviderTypes.toUpperCase());
 
         CallingContext callCtx = null;
         Optional<CallingContextDefault.Builder> callingContextBuilder =
@@ -297,7 +300,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     : null;
             String moduleInfoModuleName = getThisModuleName();
             Optional<ServiceProvider<ModuleComponent>> moduleSp = lookupThisModule(moduleInfoModuleName, services, false);
-            String packageName = determinePackageName(moduleSp, serviceTypeNames, descriptor, true);
+            String packageName = determinePackageName(moduleSp, serviceTypeNames, Optional.ofNullable(descriptor), true);
 
             CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
                     .generatedSourcesPath(getGeneratedSourceDirectory().getPath())

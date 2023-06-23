@@ -364,7 +364,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                   e.eventType(),
                                                                   e.status(),
                                                                   e.responseHeaders(),
-                                                                  e);
+                                                                  e,
+                                                                  LOGGER);
 
         BufferData buffer = BufferData.growing(128);
         ServerResponseHeaders headers = response.headers();

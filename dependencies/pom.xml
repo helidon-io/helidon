@@ -53,8 +53,8 @@
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.google-protobuf>3.21.7</version.lib.google-protobuf>
         <version.lib.graalvm>22.3.0</version.lib.graalvm>
-        <version.lib.graphql-java>17.5</version.lib.graphql-java>
-        <version.lib.graphql-java.extended.scalars>17.1</version.lib.graphql-java.extended.scalars>
+        <version.lib.graphql-java>18.6</version.lib.graphql-java>
+        <version.lib.graphql-java.extended.scalars>18.3</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.9.0</version.lib.gson>
         <version.lib.grpc>1.54.1</version.lib.grpc>
         <version.lib.guava>31.1-jre</version.lib.guava>
@@ -82,7 +82,7 @@
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.1.0</version.lib.jakarta.websockets-api>
         <version.lib.jakarta.xml.bind-api>4.0.0</version.lib.jakarta.xml.bind-api>
-        <version.lib.jandex>2.4.3.Final</version.lib.jandex>
+        <version.lib.jandex>3.1.2</version.lib.jandex>
         <version.lib.jaxb-core>3.0.2</version.lib.jaxb-core>
         <version.lib.jaxb-impl>3.0.2</version.lib.jaxb-impl>
         <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
@@ -111,7 +111,7 @@
         <version.lib.microprofile-health>4.0</version.lib.microprofile-health>
         <version.lib.microprofile-jwt>2.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>4.0</version.lib.microprofile-metrics-api>
-        <version.lib.microprofile-openapi-api>3.0</version.lib.microprofile-openapi-api>
+        <version.lib.microprofile-openapi-api>3.1</version.lib.microprofile-openapi-api>
         <version.lib.microprofile-reactive-messaging-api>3.0</version.lib.microprofile-reactive-messaging-api>
         <version.lib.microprofile-reactive-streams-operators-api>3.0</version.lib.microprofile-reactive-streams-operators-api>
         <version.lib.microprofile-reactive-streams-operators-core>3.0</version.lib.microprofile-reactive-streams-operators-core>
@@ -132,12 +132,10 @@
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.okhttp3>3.14.9</version.lib.okhttp3>
         <version.lib.okio>1.17.5</version.lib.okio>
-        <version.lib.opentelemetry>1.22.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.semconv>1.22.0-alpha</version.lib.opentelemetry.semconv>
         <version.lib.opentelemetry-sdk-extension-autoconfigure>1.22.0-alpha</version.lib.opentelemetry-sdk-extension-autoconfigure>
         <version.lib.opentelemetry.opentracing.shim>1.22.0-alpha</version.lib.opentelemetry.opentracing.shim>
         <version.lib.opentelemetry>1.22.0</version.lib.opentelemetry>
-        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.22.0-alpha</version.lib.opentelemetry-sdk-extension-autoconfigure>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
@@ -146,7 +144,7 @@
         <version.lib.postgresql>42.4.3</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>2.0.0</version.lib.slf4j>
-        <version.lib.smallrye-openapi>2.1.16</version.lib.smallrye-openapi>
+        <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.0.4</version.lib.tyrus>
@@ -260,23 +258,8 @@
                 <version>${version.lib.opentelemetry}</version>
             </dependency>
             <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-context</artifactId>
-                <version>${version.lib.opentelemetry}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-exporter-otlp</artifactId>
-                <version>${version.lib.opentelemetry}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.opentelemetry.instrumentation</groupId>
                 <artifactId>opentelemetry-instrumentation-api</artifactId>
-                <version>${version.lib.opentelemetry}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-sdk</artifactId>
                 <version>${version.lib.opentelemetry}</version>
             </dependency>
             <dependency>
@@ -776,7 +759,7 @@
                 <version>${version.lib.microprofile-lra-api}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss</groupId>
+                <groupId>io.smallrye</groupId>
                 <artifactId>jandex</artifactId>
                 <version>${version.lib.jandex}</version>
             </dependency>

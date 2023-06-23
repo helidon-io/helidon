@@ -41,7 +41,6 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http1HeadersParser;
@@ -68,11 +67,8 @@ class WsClientImpl extends LoomClient implements WsClient {
     private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
     private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
 
-    private final Headers headers;
-
     protected WsClientImpl(WsClient.Builder builder) {
         super(builder);
-        this.headers = WritableHeaders.create(builder.headers());
     }
 
     @Override
@@ -176,7 +172,7 @@ class WsClientImpl extends LoomClient implements WsClient {
         /*
         Prepare headers
          */
-        WritableHeaders<?> headers = WritableHeaders.create(this.headers);
+        WritableHeaders<?> headers = WritableHeaders.create(defaultHeaders());
         byte[] nonce = new byte[16];
         RANDOM.get().nextBytes(nonce);
         String secWsKey = B64_ENCODER.encodeToString(nonce);

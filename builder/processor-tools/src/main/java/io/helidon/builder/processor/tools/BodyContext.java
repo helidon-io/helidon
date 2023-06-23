@@ -30,7 +30,7 @@ import io.helidon.common.types.AnnotationAndValueDefault;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.processor.tools.BeanUtils.isBooleanType;
 import static io.helidon.builder.processor.tools.BeanUtils.isReservedWord;
@@ -54,8 +54,8 @@ public class BodyContext {
     private final TypeName implTypeName;
     private final TypeInfo typeInfo;
     private final AnnotationAndValue builderTriggerAnnotation;
-    private final Map<String, TypedElementName> map = new LinkedHashMap<>();
-    private final List<TypedElementName> allTypeInfos = new ArrayList<>();
+    private final Map<String, TypedElementInfo> map = new LinkedHashMap<>();
+    private final List<TypedElementInfo> allTypeInfos = new ArrayList<>();
     private final List<String> allAttributeNames = new ArrayList<>();
     private final boolean hasStreamSupportOnImpl;
     private final boolean hasStreamSupportOnBuilder;
@@ -126,10 +126,11 @@ public class BodyContext {
                 searchForBuilderAnnotation("interceptorCreateMethod", builderTriggerAnnotation, typeInfo);
         this.interceptorCreateMethod = (interceptorCreateMethod == null || interceptorCreateMethod.isEmpty())
                 ? null : interceptorCreateMethod;
-        this.publicOrPackagePrivateDecl = (typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)
-                                                   || typeInfo.modifierNames().isEmpty()
-                                                   || typeInfo.modifierNames().contains(TypeInfo.MODIFIER_PUBLIC))
-                                                        ? "public " : "";
+        this.publicOrPackagePrivateDecl = (
+                typeInfo.typeKind().equals(TypeInfo.KIND_INTERFACE)
+                        || typeInfo.modifierNames().isEmpty()
+                        || typeInfo.modifierNames().stream().anyMatch(TypeInfo.MODIFIER_PUBLIC::equalsIgnoreCase))
+                ? "public " : "";
     }
 
     @Override
@@ -179,7 +180,7 @@ public class BodyContext {
      *
      * @return the map of elements by name
      */
-    protected Map<String, TypedElementName> map() {
+    protected Map<String, TypedElementInfo> map() {
         return map;
     }
 
@@ -188,7 +189,7 @@ public class BodyContext {
      *
      * @return the list of type elements
      */
-    public List<TypedElementName> allTypeInfos() {
+    public List<TypedElementInfo> allTypeInfos() {
         return allTypeInfos;
     }
 
@@ -427,7 +428,7 @@ public class BodyContext {
      */
     public boolean hasOtherMethod(String name,
                                   TypeInfo typeInfo) {
-        for (TypedElementName elem : typeInfo.otherElementInfo()) {
+        for (TypedElementInfo elem : typeInfo.otherElementInfo()) {
             if (elem.elementName().equals(name)) {
                 return true;
             }
@@ -447,7 +448,7 @@ public class BodyContext {
      * @param isBeanStyleRequired   is bean style required
      * @return the bean attribute name
      */
-    protected static String toBeanAttributeName(TypedElementName method,
+    protected static String toBeanAttributeName(TypedElementInfo method,
                                                 boolean isBeanStyleRequired) {
         AtomicReference<Optional<List<String>>> refAttrNames = new AtomicReference<>();
         validateAndParseMethodName(method.elementName(), method.typeName().name(), isBeanStyleRequired, refAttrNames);
@@ -584,9 +585,9 @@ public class BodyContext {
             }
         }
 
-        for (TypedElementName method : typeInfo.elementInfo()) {
+        for (TypedElementInfo method : typeInfo.interestingElementInfo()) {
             String beanAttributeName = toBeanAttributeName(method, beanStyleRequired);
-            TypedElementName existing = map.get(beanAttributeName);
+            TypedElementInfo existing = map.get(beanAttributeName);
             if (existing != null
                     && isBooleanType(method.typeName().name())
                     && method.elementName().startsWith("is")) {
@@ -629,16 +630,16 @@ public class BodyContext {
         }
     }
 
-    private static void populateMap(Map<String, TypedElementName> map,
+    private static void populateMap(Map<String, TypedElementInfo> map,
                                     TypeInfo typeInfo,
                                     boolean isBeanStyleRequired) {
         if (typeInfo.superTypeInfo().isPresent()) {
             populateMap(map, typeInfo.superTypeInfo().get(), isBeanStyleRequired);
         }
 
-        for (TypedElementName method : typeInfo.elementInfo()) {
+        for (TypedElementInfo method : typeInfo.interestingElementInfo()) {
             String beanAttributeName = toBeanAttributeName(method, isBeanStyleRequired);
-            TypedElementName existing = map.get(beanAttributeName);
+            TypedElementInfo existing = map.get(beanAttributeName);
             if (existing != null) {
                 if (!existing.typeName().equals(method.typeName())) {
                     throw new IllegalStateException(method + " cannot redefine types from super for " + beanAttributeName);
@@ -683,7 +684,7 @@ public class BodyContext {
             return typeInfo.typeName();
         }
 
-        return (parentAnnotationTypeName != null && typeInfo.elementInfo().isEmpty()
+        return (parentAnnotationTypeName != null && typeInfo.interestingElementInfo().isEmpty()
                         ? typeInfo.superTypeInfo().orElseThrow().typeName() : typeInfo.typeName());
     }
 

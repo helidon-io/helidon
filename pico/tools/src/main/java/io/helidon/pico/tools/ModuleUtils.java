@@ -26,19 +26,24 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.lang.model.element.TypeElement;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.tools.spi.ModuleComponentNamer;
 
 import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
@@ -76,16 +81,34 @@ public class ModuleUtils {
     /**
      * Returns the suggested package name to use.
      *
-     * @param descriptor         optionally, the module-info descriptor
-     * @param typeNames          optionally, the set of types that are being codegen'ed
+     * @param descriptor         the module-info descriptor
+     * @param typeNames          the set of types that are being codegen'ed
      * @param defaultPackageName the default package name to use if all options are exhausted
      * @return the suggested package name
      */
     public static String toSuggestedGeneratedPackageName(ModuleInfoDescriptor descriptor,
                                                          Collection<TypeName> typeNames,
                                                          String defaultPackageName) {
-        String export = null;
+        Objects.requireNonNull(descriptor);
+        return innerToSuggestedGeneratedPackageName(descriptor, typeNames, defaultPackageName);
+    }
 
+    /**
+     * Returns the suggested package name to use.
+     *
+     * @param typeNames          the set of types that are being codegen'ed
+     * @param defaultPackageName the default package name to use if all options are exhausted
+     * @return the suggested package name
+     */
+    public static String toSuggestedGeneratedPackageName(Collection<TypeName> typeNames,
+                                                         String defaultPackageName) {
+        return innerToSuggestedGeneratedPackageName(null, typeNames, defaultPackageName);
+    }
+
+    static String innerToSuggestedGeneratedPackageName(ModuleInfoDescriptor descriptor,
+                                                       Collection<TypeName> typeNames,
+                                                       String defaultPackageName) {
+        String export = null;
         if (descriptor != null) {
             Optional<ModuleInfoItem> provides = descriptor.first(Application.class.getName());
             if (provides.isEmpty() || provides.get().withOrTo().isEmpty()) {
@@ -100,6 +123,13 @@ public class ModuleUtils {
         }
 
         if (export == null && typeNames != null) {
+            // check for any providers who want to give us a name to use
+            Optional<String> suggested = toSuggestedPackageNameFromProviders(typeNames);
+            if (suggested.isPresent()) {
+                return suggested.get();
+            }
+
+            // default to the first one
             export = typeNames.stream()
                     .sorted()
                     .map(TypeName::packageName)
@@ -107,6 +137,28 @@ public class ModuleUtils {
         }
 
         return (export != null) ? export : defaultPackageName;
+    }
+
+    private static Optional<String> toSuggestedPackageNameFromProviders(Collection<TypeName> typeNames) {
+        List<ModuleComponentNamer> namers = HelidonServiceLoader.create(namerLoader()).asList();
+        return namers.stream()
+                .map(it -> it.suggestedPackageName(typeNames))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
+    }
+
+    private static ServiceLoader<ModuleComponentNamer> namerLoader() {
+        try {
+            // note: it is important to use this class' CL since maven will not give us the "right" one.
+            return ServiceLoader.load(
+                    ModuleComponentNamer.class, ModuleComponentNamer.class.getClassLoader());
+        } catch (ServiceConfigurationError e) {
+            // see issue #6261 - running inside the IDE?
+            // this version will use the thread ctx classloader
+            System.getLogger(ModuleComponentNamer.class.getName()).log(System.Logger.Level.WARNING, e.getMessage(), e);
+            return ServiceLoader.load(ModuleComponentNamer.class);
+        }
     }
 
     /**

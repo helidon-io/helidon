@@ -132,6 +132,22 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
     B fragment(String fragment);
 
     /**
+     * Whether to follow redirects.
+     *
+     * @param followRedirects follow redirects
+     * @return updated request
+     */
+    B followRedirects(boolean followRedirects);
+
+    /**
+     * Max number of the followed redirects.
+     *
+     * @param maxRedirects max followed redirects
+     * @return updated request
+     */
+    B maxRedirects(int maxRedirects);
+
+    /**
      * Request without an entity.
      *
      * @return response
@@ -180,6 +196,22 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
      * @return updated client request
      */
     B connection(ClientConnection connection);
+
+    /**
+     * Disable uri encoding.
+     *
+     * @return updated client request
+     */
+    B skipUriEncoding();
+
+    /**
+     * Add a property to be used by this request.
+     *
+     * @param propertyName  property name
+     * @param propertyValue property value
+     * @return updated builder instance
+     */
+    B property(String propertyName, String propertyValue);
 
     /**
      * Handle output stream.

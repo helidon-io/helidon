@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,17 +30,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
@@ -203,7 +198,7 @@ public interface Security {
      * @param bytesToEncrypt    bytes to encrypt
      * @return future with cipher text
      */
-    Single<String> encrypt(String configurationName, byte[] bytesToEncrypt);
+    String encrypt(String configurationName, byte[] bytesToEncrypt);
 
     /**
      * Decrypt cipher text.
@@ -214,7 +209,7 @@ public interface Security {
      * @param cipherText        cipher text to decrypt
      * @return future with decrypted bytes
      */
-    Single<byte[]> decrypt(String configurationName, String cipherText);
+    byte[] decrypt(String configurationName, String cipherText);
 
     /**
      * Create a digest for the provided bytes.
@@ -224,7 +219,7 @@ public interface Security {
      * @param preHashed         whether the data is already a hash
      * @return future with digest (such as signature or HMAC)
      */
-    Single<String> digest(String configurationName, byte[] bytesToDigest, boolean preHashed);
+    String digest(String configurationName, byte[] bytesToDigest, boolean preHashed);
 
     /**
      * Create a digest for the provided raw bytes.
@@ -233,7 +228,7 @@ public interface Security {
      * @param bytesToDigest     data to digest
      * @return future with digest (such as signature or HMAC)
      */
-    Single<String> digest(String configurationName, byte[] bytesToDigest);
+    String digest(String configurationName, byte[] bytesToDigest);
 
     /**
      * Verify a digest.
@@ -244,7 +239,7 @@ public interface Security {
      * @param preHashed         whether the data is already a hash
      * @return future with result of verification ({@code true} means the digest is valid)
      */
-    Single<Boolean> verifyDigest(String configurationName, byte[] bytesToDigest, String digest, boolean preHashed);
+    boolean verifyDigest(String configurationName, byte[] bytesToDigest, String digest, boolean preHashed);
 
     /**
      * Verify a digest.
@@ -254,7 +249,7 @@ public interface Security {
      * @param digest            digest as provided by a third party (or another component)
      * @return future with result of verification ({@code true} means the digest is valid)
      */
-    Single<Boolean> verifyDigest(String configurationName, byte[] bytesToDigest, String digest);
+    boolean verifyDigest(String configurationName, byte[] bytesToDigest, String digest);
 
     /**
      * Get a secret.
@@ -262,7 +257,7 @@ public interface Security {
      * @param configurationName name of the secret configuration
      * @return future with the secret value, or error if the secret is not configured
      */
-    Single<Optional<String>> secret(String configurationName);
+    Optional<String> secret(String configurationName);
 
     /**
      * Get a secret.
@@ -271,7 +266,7 @@ public interface Security {
      * @param defaultValue      default value to use if secret not configured
      * @return future with the secret value
      */
-    Single<String> secret(String configurationName, String defaultValue);
+    String secret(String configurationName, String defaultValue);
 
     /**
      * Security environment builder, to be used to create
@@ -314,13 +309,6 @@ public interface Security {
     ProviderSelectionPolicy providerSelectionPolicy();
 
     /**
-     * Executor service to handle possible blocking tasks in security.
-     *
-     * @return executor service supplier (may be backed by a lazy implementation)
-     */
-    Supplier<ExecutorService> executorService();
-
-    /**
      * Find an authentication provider by name, or use the default if the name is not available.
      *
      * @param providerName name of the provider
@@ -361,7 +349,7 @@ public interface Security {
         private final Map<String, DigestProvider<?>> digestProviders = new HashMap<>();
         private final Map<SecurityProvider, Boolean> allProviders = new IdentityHashMap<>();
 
-        private final Map<String, Supplier<Single<Optional<String>>>> secrets = new HashMap<>();
+        private final Map<String, Supplier<Optional<String>>> secrets = new HashMap<>();
         private final Map<String, EncryptionProvider.EncryptionSupport> encryptions = new HashMap<>();
         private final Map<String, DigestProvider.DigestSupport> digests = new HashMap<>();
         private final Set<String> providerNames = new HashSet<>();
@@ -374,7 +362,6 @@ public interface Security {
         private Tracer tracer;
         private boolean tracingEnabled = true;
         private SecurityTime serverTime = SecurityTime.builder().build();
-        private Supplier<ExecutorService> executorService = ThreadPoolSupplier.create("security-thread-pool");
         private boolean enabled = true;
 
         private Builder() {
@@ -885,8 +872,7 @@ public interface Security {
             }
 
             if (atnProviders.isEmpty()) {
-                addAuthenticationProvider(context -> CompletableFuture
-                        .completedFuture(AuthenticationResponse.success(SecurityContext.ANONYMOUS)), "default");
+                addAuthenticationProvider(context -> AuthenticationResponse.success(SecurityContext.ANONYMOUS), "default");
             }
 
             if (atzProviders.isEmpty()) {
@@ -978,7 +964,6 @@ public interface Security {
             }
 
             config.get("environment.server-time").as(SecurityTime::create).ifPresent(this::serverTime);
-            executorService(ThreadPoolSupplier.create(config.get("environment.executor-service"), "security-thread-pool"));
 
             Map<String, SecurityProviderService> configKeyToService = new HashMap<>();
             Map<String, SecurityProviderService> classNameToService = new HashMap<>();
@@ -1163,18 +1148,6 @@ public interface Security {
             if (provider instanceof DigestProvider) {
                 addDigestProvider((DigestProvider<?>) provider, name);
             }
-        }
-
-        /**
-         * Configure executor service to be used for blocking operations within security.
-         *
-         * @param supplier supplier of an executor service, as as {@link io.helidon.common.configurable.ThreadPoolSupplier}
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "environment.executor-service", type = ThreadPoolSupplier.class)
-        public Builder executorService(Supplier<ExecutorService> supplier) {
-            this.executorService = supplier;
-            return this;
         }
 
         private String resolveProviderName(Config pConf,
@@ -1402,7 +1375,7 @@ public interface Security {
             return allProviders;
         }
 
-        Map<String, Supplier<Single<Optional<String>>>> secrets() {
+        Map<String, Supplier<Optional<String>>> secrets() {
             return secrets;
         }
 
@@ -1450,19 +1423,14 @@ public interface Security {
             return serverTime;
         }
 
-        Supplier<ExecutorService> executorService() {
-            return executorService;
-        }
-
         boolean enabled() {
             return enabled;
         }
 
         private static class DefaultAtzProvider implements AuthorizationProvider {
             @Override
-            public CompletionStage<AuthorizationResponse> authorize(ProviderRequest context) {
-                return CompletableFuture
-                        .completedFuture(AuthorizationResponse.permit());
+            public AuthorizationResponse authorize(ProviderRequest context) {
+                return AuthorizationResponse.permit();
             }
         }
     }

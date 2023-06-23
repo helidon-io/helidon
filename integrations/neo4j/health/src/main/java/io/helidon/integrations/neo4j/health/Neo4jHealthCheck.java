@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,43 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.integrations.neo4j.health;
 
-import io.helidon.microprofile.health.BuiltInHealthCheck;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
-import org.eclipse.microprofile.health.Readiness;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 
-
 /**
- * Health support module for Neo4j. Follows the standard MicroProfile HealthCheck pattern.
+ * Health support module for Neo4j (implements {@link io.helidon.health.HealthCheck}).
  */
-@Readiness
-@ApplicationScoped
-@BuiltInHealthCheck
 public class Neo4jHealthCheck implements HealthCheck {
 
+    private static final String NAME = "Neo4j connection health check";
+    private final Driver driver;
     /**
      * The Cypher statement used to verify Neo4j is up.
      */
     static final String CYPHER = "CALL dbms.components() YIELD name, edition WHERE name = 'Neo4j Kernel' RETURN edition";
-
-    private final Driver driver;
 
     /**
      * Constructor for Health checks.
      *
      * @param driver Neo4j.
      */
-    @Inject //will be ignored out of CDI
-    Neo4jHealthCheck(Driver driver) {
+    public Neo4jHealthCheck(Driver driver) {
         this.driver = driver;
     }
 
@@ -63,10 +52,15 @@ public class Neo4jHealthCheck implements HealthCheck {
         return new Neo4jHealthCheck(driver);
     }
 
-    private HealthCheckResponse runHealthCheckQuery(HealthCheckResponseBuilder builder) {
+    @Override
+    public String name() {
+        return NAME;
+    }
 
+    @Override
+    public HealthCheckResponse call() {
+        HealthCheckResponse.Builder builder = HealthCheckResponse.builder();
         try (Session session = this.driver.session()) {
-
             return session.writeTransaction(tx -> {
                 var result = tx.run(CYPHER);
 
@@ -75,27 +69,19 @@ public class Neo4jHealthCheck implements HealthCheck {
                 var serverInfo = resultSummary.server();
 
                 var responseBuilder = builder
-                        .withData("server", serverInfo.version() + "@" + serverInfo.address())
-                        .withData("edition", edition);
+                        .detail("server", serverInfo.version() + "@" + serverInfo.address())
+                        .detail("edition", edition);
 
                 var databaseInfo = resultSummary.database();
                 if (!databaseInfo.name().trim().isBlank()) {
-                    responseBuilder.withData("database", databaseInfo.name().trim());
+                    responseBuilder.detail("database", databaseInfo.name().trim());
                 }
 
-                return responseBuilder.up().build();
+                return responseBuilder.status(HealthCheckResponse.Status.UP).build();
             });
+        } catch (Exception e) {
+            return builder.status(HealthCheckResponse.Status.DOWN).build();
         }
     }
 
-    @Override
-    public HealthCheckResponse call() {
-
-        var builder = HealthCheckResponse.named("Neo4j connection health check");
-        try {
-            return runHealthCheckQuery(builder);
-        } catch (Exception ex) {
-            return builder.down().withData("reason", ex.getMessage()).build();
-        }
-    }
 }

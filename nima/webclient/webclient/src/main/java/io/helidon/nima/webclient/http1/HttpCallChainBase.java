@@ -83,8 +83,13 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
                                                 BufferData writeBuffer);
 
     void prologue(BufferData nonEntityData, WebClientServiceRequest request, UriHelper uri) {
+        // TODO When proxy is implemented, change default value of Http1ClientConfig.relativeUris to false
+        //  and below conditional statement to:
+        //  proxy == Proxy.noProxy() || proxy.noProxyPredicate().apply(finalUri) || clientConfig.relativeUris
+        String schemeHostPort = clientConfig.relativeUris() ? "" : uri.scheme() + "://" + uri.host() + ":" + uri.port();
         nonEntityData.writeAscii(request.method().text()
                                          + " "
+                                         + schemeHostPort
                                          + uri.pathWithQueryAndFragment(request.query(), request.fragment())
                                          + " HTTP/1.1\r\n");
     }
@@ -94,7 +99,7 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
                                                                      clientConfig.maxHeaderSize(),
                                                                      clientConfig.validateHeaders());
 
-        return ClientResponseHeaders.create(writable);
+        return ClientResponseHeaders.create(writable, clientConfig.mediaTypeParserMode());
     }
 
     private ClientConnection obtainConnection(WebClientServiceRequest request) {

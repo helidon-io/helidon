@@ -68,6 +68,8 @@ import io.helidon.pico.spi.InjectionResolver;
 
 import jakarta.inject.Provider;
 
+import static io.helidon.pico.api.PicoServices.createActivationRequestDefault;
+import static io.helidon.pico.api.PicoServices.isDebugEnabled;
 import static io.helidon.pico.runtime.ServiceUtils.isQualifiedInjectionTarget;
 
 /**
@@ -199,13 +201,17 @@ public abstract class AbstractServiceProvider<T>
         return phase;
     }
 
-    /**
-     * Used to access the current pico services instance assigned to this service provider.
-     *
-     * @return the pico services assigned to this service provider
-     */
-    public PicoServices picoServices() {
-        return Objects.requireNonNull(picoServices, description() + ": picoServices should have been previously set");
+    @Override
+    public Optional<PicoServices> picoServices() {
+        return Optional.ofNullable(picoServices);
+    }
+
+    PicoServices requiredPicoServices() {
+        PicoServices picoServices = picoServices().orElse(null);
+        if (picoServices == null) {
+            throw new PicoServiceProviderException(description() + ": picoServices should have been previously set", this);
+        }
+        return picoServices;
     }
 
     @Override
@@ -321,6 +327,12 @@ public abstract class AbstractServiceProvider<T>
         return (simple) ? TypeNameDefault.createFromTypeName(name).className() : name;
     }
 
+    @Override
+    public T get() {
+        return first(PicoServices.SERVICE_QUERY_REQUIRED)
+                .orElseThrow(() -> new PicoServiceProviderException("Expected to find a match", this));
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public Optional<T> first(ContextualServiceQuery ctx) {
@@ -339,6 +351,10 @@ public abstract class AbstractServiceProvider<T>
                     }
                 } else {
                     instance = NonSingletonServiceProvider.createAndActivate(this);
+                }
+
+                if (ctx.expected() && instance == null) {
+                    throw new PicoServiceProviderException("Expected to find a match: " + ctx, this);
                 }
 
                 return Optional.ofNullable(instance);
@@ -527,9 +543,8 @@ public abstract class AbstractServiceProvider<T>
                     InjectionPointInfo ipInfo = InjectionPointInfoDefault.builder()
                             .id(id)
                             .dependencyToServiceInfo(serviceInfo);
-                    //                            .build();
                     Object resolved = Objects.requireNonNull(
-                            resolver.resolve(ipInfo, picoServices(), AbstractServiceProvider.this, false));
+                            resolver.resolve(ipInfo, requiredPicoServices(), AbstractServiceProvider.this, false));
                     PicoInjectionPlan plan = createBuilder(id)
                             .unqualifiedProviders(List.of(resolved))
                             .resolved(false)
@@ -600,8 +615,8 @@ public abstract class AbstractServiceProvider<T>
             dependencies(dependencies());
         }
 
-        Map<String, PicoInjectionPlan> plan =
-                DefaultInjectionPlans.createInjectionPlans(picoServices(), this, dependencies, resolveIps, logger());
+        Map<String, PicoInjectionPlan> plan = DefaultInjectionPlans
+                .createInjectionPlans(requiredPicoServices(), this, dependencies, resolveIps, logger());
         assert (this.injectionPlan == null);
         this.injectionPlan = Objects.requireNonNull(plan);
 
@@ -617,7 +632,7 @@ public abstract class AbstractServiceProvider<T>
             didAcquire = activationSemaphore.tryAcquire(1, TimeUnit.MILLISECONDS);
 
             if (service != null) {
-                System.Logger.Level level = (PicoServices.isDebugEnabled())
+                System.Logger.Level level = (isDebugEnabled())
                         ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
                 logger().log(level, "Resetting " + this);
                 if (deep && service instanceof Resettable) {
@@ -671,7 +686,7 @@ public abstract class AbstractServiceProvider<T>
             return ActivationResult.createSuccess(this);
         }
 
-        PicoServices picoServices = picoServices();
+        PicoServices picoServices = requiredPicoServices();
         PicoServicesConfig cfg = picoServices.config();
 
         // if we are here then we are not yet at the ultimate target phase, and we either have to activate or deactivate
@@ -849,7 +864,7 @@ public abstract class AbstractServiceProvider<T>
 
             if (serviceOrProvider == null
                     || Phase.ACTIVE != currentActivationPhase()) {
-                ActivationRequest req = PicoServices.createActivationRequestDefault();
+                ActivationRequest req = createActivationRequestDefault();
                 ActivationResult res = activate(req);
                 if (res.failure()) {
                     if (ctx.expected()) {
@@ -1100,7 +1115,7 @@ public abstract class AbstractServiceProvider<T>
         ActivationLogEntryDefault.Builder res = logEntryAndResult.logEntry;
         Throwable prev = res.error().orElse(null);
         if (prev == null || !(t instanceof InjectionException)) {
-            String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "failed to complete operation";
+            String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "Failed to complete operation";
             e = new InjectionException(msg, t, this);
             log.ifPresent(e::activationLog);
         } else {

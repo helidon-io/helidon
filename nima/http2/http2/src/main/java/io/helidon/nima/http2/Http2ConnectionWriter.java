@@ -74,19 +74,62 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         // we must enforce parallelism of exactly 1, to make sure the dynamic table is updated
         // and then immediately written
 
+        int maxFrameSize = flowControl.maxFrameSize();
+
         return withStreamLock(() -> {
             int written = 0;
             headerBuffer.clear();
             headers.write(outboundDynamicTable, responseHuffman, headerBuffer);
-            Http2FrameHeader frameHeader = Http2FrameHeader.create(headerBuffer.available(),
-                                                                   Http2FrameTypes.HEADERS,
-                                                                   flags,
-                                                                   streamId);
+
+            // Fast path when headers fits within the SETTINGS_MAX_FRAME_SIZE
+            if (headerBuffer.available() <= maxFrameSize) {
+                Http2FrameHeader frameHeader = Http2FrameHeader.create(headerBuffer.available(),
+                        Http2FrameTypes.HEADERS,
+                        flags,
+                        streamId);
+                written += frameHeader.length();
+                written += Http2FrameHeader.LENGTH;
+
+                noLockWrite(new Http2FrameData(frameHeader, headerBuffer));
+                return written;
+            }
+
+            // Split header frame to smaller continuation frames RFC 9113 §6.10
+            BufferData[] fragments = Http2Headers.split(headerBuffer, maxFrameSize);
+
+            // First header fragment
+            BufferData fragment = fragments[0];
+            Http2FrameHeader frameHeader;
+            frameHeader = Http2FrameHeader.create(fragment.available(),
+                    Http2FrameTypes.HEADERS,
+                    Http2Flag.HeaderFlags.create(0),
+                    streamId);
             written += frameHeader.length();
             written += Http2FrameHeader.LENGTH;
+            noLockWrite(new Http2FrameData(frameHeader, fragment));
 
-            noLockWrite(new Http2FrameData(frameHeader, headerBuffer));
+            // Header continuation fragments in the middle
+            for (int i = 1; i < fragments.length; i++) {
+                fragment = fragments[i];
+                frameHeader = Http2FrameHeader.create(fragment.available(),
+                        Http2FrameTypes.CONTINUATION,
+                        Http2Flag.ContinuationFlags.create(0),
+                        streamId);
+                written += frameHeader.length();
+                written += Http2FrameHeader.LENGTH;
+                noLockWrite(new Http2FrameData(frameHeader, fragment));
+            }
 
+            // Last header continuation fragment
+            fragment = fragments[fragments.length - 1];
+            frameHeader = Http2FrameHeader.create(fragment.available(),
+                    Http2FrameTypes.CONTINUATION,
+                    // Last fragment needs to indicate the end of headers
+                    Http2Flag.ContinuationFlags.create(flags.value() | Http2Flag.END_OF_HEADERS),
+                    streamId);
+            written += frameHeader.length();
+            written += Http2FrameHeader.LENGTH;
+            noLockWrite(new Http2FrameData(frameHeader, fragment));
             return written;
         });
     }
@@ -104,17 +147,8 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         return withStreamLock(() -> {
             int bytesWritten = 0;
 
-            headerBuffer.clear();
-            headers.write(outboundDynamicTable, responseHuffman, headerBuffer);
-            bytesWritten += headerBuffer.available();
+            bytesWritten += writeHeaders(headers, streamId, flags, flowControl);
 
-            Http2FrameHeader frameHeader = Http2FrameHeader.create(headerBuffer.available(),
-                                                                   Http2FrameTypes.HEADERS,
-                                                                   flags,
-                                                                   streamId);
-            bytesWritten += Http2FrameHeader.LENGTH;
-
-            noLockWrite(new Http2FrameData(frameHeader, headerBuffer));
             writeData(dataFrame, flowControl);
             bytesWritten += Http2FrameHeader.LENGTH;
             bytesWritten += dataFrame.header().length();
@@ -151,6 +185,8 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             } finally {
                 streamLock.unlock();
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

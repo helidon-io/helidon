@@ -57,6 +57,7 @@ class ClientRequestImplTest {
     private static final Http.HeaderValue REQ_EXPECT_100_HEADER_NAME = Http.Header.createCached(
             Http.Header.create("X-Req-Expect100"), "true");
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
+    private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";
     private static final long NO_CONTENT_LENGTH = -1L;
 
     private final String baseURI;
@@ -70,6 +71,10 @@ class ClientRequestImplTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.put("/test", ClientRequestImplTest::responseHandler);
+        rules.put("/redirectKeepMethod", ClientRequestImplTest::redirectKeepMethod);
+        rules.put("/redirect", ClientRequestImplTest::redirect);
+        rules.get("/afterRedirect", ClientRequestImplTest::afterRedirectGet);
+        rules.put("/afterRedirect", ClientRequestImplTest::afterRedirectPut);
         rules.put("/chunkresponse", ClientRequestImplTest::chunkResponseHandler);
     }
 
@@ -287,6 +292,35 @@ class ClientRequestImplTest {
         assertThat(connectionNow, is(connection));
     }
 
+    @Test
+    void testRedirect() {
+        try (Http1ClientResponse response = injectedHttp1client.put("/redirect")
+                .followRedirects(false)
+                .submit("Test entity")) {
+            assertThat(response.status(), is(Http.Status.FOUND_302));
+        }
+
+        try (Http1ClientResponse response = injectedHttp1client.put("/redirect")
+                .submit("Test entity")) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(String.class), is(EXPECTED_GET_AFTER_REDIRECT_STRING));
+        }
+    }
+
+    @Test
+    void testRedirectKeepMethod() {
+        try (Http1ClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
+                .followRedirects(false)
+                .submit("Test entity")) {
+            assertThat(response.status(), is(Http.Status.TEMPORARY_REDIRECT_307));
+        }
+
+        try (Http1ClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
+                .submit("Test entity")) {
+            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+        }
+    }
+
     private static void validateSuccessfulResponse(Http1Client client) {
         String requestEntity = "Sending Something";
         Http1ClientRequest request = client.put("/test");
@@ -317,6 +351,38 @@ class ClientRequestImplTest {
         }
         String responseEntity = response.entity().as(String.class);
         assertThat(responseEntity, is(entity));
+    }
+
+    private static void redirect(ServerRequest req, ServerResponse res) {
+        res.status(Http.Status.FOUND_302)
+                .header(Http.Header.LOCATION, "/afterRedirect")
+                .send();
+    }
+
+    private static void redirectKeepMethod(ServerRequest req, ServerResponse res) {
+        res.status(Http.Status.TEMPORARY_REDIRECT_307)
+                .header(Http.Header.LOCATION, "/afterRedirect")
+                .send();
+    }
+
+    private static void afterRedirectGet(ServerRequest req, ServerResponse res) {
+        if (req.content().hasEntity()) {
+            res.status(Http.Status.BAD_REQUEST_400)
+                    .send("GET after redirect endpoint reached with entity");
+            return;
+        }
+        res.send(EXPECTED_GET_AFTER_REDIRECT_STRING);
+    }
+
+    private static void afterRedirectPut(ServerRequest req, ServerResponse res) {
+        String entity = req.content().as(String.class);
+        if (!entity.equals("Test entity")) {
+            res.status(Http.Status.BAD_REQUEST_400)
+                    .send("Entity was not kept the same after the redirect");
+            return;
+        }
+        res.status(Http.Status.NO_CONTENT_204)
+                .send();
     }
 
     private static void responseHandler(ServerRequest req, ServerResponse res) throws IOException {

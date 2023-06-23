@@ -100,8 +100,8 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Audience", config.audience(), is("https://identity.oracle.com")),
                 () -> assertThat("Parameter name", config.paramName(), is("accessToken")),
                 () -> assertThat("Issuer", config.issuer(), nullValue()),
-                () -> assertThat("Client without authentication", config.generalClient(), notNullValue()),
-                () -> assertThat("Client with authentication", config.appClient(), notNullValue()),
+                () -> assertThat("Client without authentication", config.generalWebClient(), notNullValue()),
+                () -> assertThat("Client with authentication", config.appWebClient(), notNullValue()),
                 () -> assertThat("JWK Keys", config.signJwk(), notNullValue())
         );
     }

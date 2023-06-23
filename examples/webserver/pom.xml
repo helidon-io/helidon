@@ -36,7 +36,6 @@
         <module>tutorial</module>
         <module>comment-aas</module>
         <module>static-content</module>
-        <module>jersey</module>
         <module>opentracing</module>
         <module>streaming</module>
         <module>websocket</module>

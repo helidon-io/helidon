@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  */
 @HelidonTest
 @Disabled("3.0.0-JAKARTA") // OpenAPI: Caused by: java.lang.NoSuchMethodError:
-        // 'java.util.List org.jboss.jandex.ClassInfo.unsortedFields()'
+        // 'java.util.List io.smallrye.jandex.ClassInfo.unsortedFields()'
 class ImplicitHelloWorldTest {
     private final WebTarget target;
 

@@ -17,7 +17,7 @@
 package io.helidon.builder.processor.tools;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementName;
+import io.helidon.common.types.TypedElementInfo;
 
 final class GenerateJavadoc {
     private GenerateJavadoc() {
@@ -106,7 +106,7 @@ final class GenerateJavadoc {
     }
 
     static void builderField(StringBuilder builder,
-                             TypedElementName method) {
+                             TypedElementInfo method) {
         builder.append("\t\t/**\n" + "\t\t * Field value for {@code ")
                 .append(method)
                 .append("()}.\n\t\t */\n");

@@ -14,15 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.pico.tools.ActivatorCreatorDefault;
-import io.helidon.pico.tools.ApplicationCreatorDefault;
-import io.helidon.pico.tools.ExternalModuleCreatorDefault;
-import io.helidon.pico.tools.InterceptorCreatorDefault;
-import io.helidon.pico.tools.spi.ActivatorCreator;
-import io.helidon.pico.tools.spi.ApplicationCreator;
-import io.helidon.pico.tools.spi.ExternalModuleCreator;
-import io.helidon.pico.tools.spi.InterceptorCreator;
-
 /**
  * The Pico Tools module.
  */
@@ -50,13 +41,14 @@ module io.helidon.pico.tools {
     uses io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
     uses io.helidon.pico.tools.spi.ExternalModuleCreator;
     uses io.helidon.pico.tools.spi.InterceptorCreator;
+    uses io.helidon.pico.tools.spi.ModuleComponentNamer;
 
-    provides ActivatorCreator
-            with ActivatorCreatorDefault;
-    provides ApplicationCreator
-            with ApplicationCreatorDefault;
-    provides ExternalModuleCreator
-            with ExternalModuleCreatorDefault;
-    provides InterceptorCreator
-            with InterceptorCreatorDefault;
+    provides io.helidon.pico.tools.spi.ActivatorCreator
+            with io.helidon.pico.tools.ActivatorCreatorDefault;
+    provides io.helidon.pico.tools.spi.ApplicationCreator
+            with io.helidon.pico.tools.ApplicationCreatorDefault;
+    provides io.helidon.pico.tools.spi.ExternalModuleCreator
+            with io.helidon.pico.tools.ExternalModuleCreatorDefault;
+    provides io.helidon.pico.tools.spi.InterceptorCreator
+            with io.helidon.pico.tools.InterceptorCreatorDefault;
 }

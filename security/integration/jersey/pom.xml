@@ -74,10 +74,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient-jaxrs</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-server</artifactId>
             <scope>provided</scope>

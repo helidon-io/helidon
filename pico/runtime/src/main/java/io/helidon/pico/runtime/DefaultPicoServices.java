@@ -396,13 +396,13 @@ class DefaultPicoServices implements PicoServices, Resettable {
     private void bindApplications(DefaultServices services,
                           Collection<Application> apps) {
         if (!cfg.usesCompileTimeApplications()) {
-            LOGGER.log(System.Logger.Level.DEBUG, "application binding is disabled");
+            LOGGER.log(System.Logger.Level.DEBUG, "Application binding is disabled");
             return;
         }
 
         if (apps.size() > 1) {
-            LOGGER.log(System.Logger.Level.WARNING,
-                       "there is typically only 1 application instance; app instances = " + apps);
+            LOGGER.log(System.Logger.Level.INFO,
+                       "There is typically only 1 application instance; app instances = " + apps);
         } else if (apps.isEmpty()) {
             LOGGER.log(System.Logger.Level.TRACE, "no " + Application.class.getName() + " was found.");
             return;
@@ -415,12 +415,12 @@ class DefaultPicoServices implements PicoServices, Resettable {
     private void bindModules(DefaultServices services,
                              Collection<ModuleComponent> modules) {
         if (!cfg.usesCompileTimeModules()) {
-            LOGGER.log(System.Logger.Level.DEBUG, "module binding is disabled");
+            LOGGER.log(System.Logger.Level.DEBUG, "Module binding is disabled");
             return;
         }
 
         if (modules.isEmpty()) {
-            LOGGER.log(System.Logger.Level.WARNING, "no " + ModuleComponent.class.getName() + " was found.");
+            LOGGER.log(System.Logger.Level.WARNING, "No " + ModuleComponent.class.getName() + " was found.");
         } else {
             modules.forEach(module -> services.bind(this, module, isBinding.get()));
         }

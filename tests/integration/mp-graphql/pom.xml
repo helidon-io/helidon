@@ -118,7 +118,7 @@
                 </executions>
             </plugin>
               <plugin>
-                <groupId>org.jboss.jandex</groupId>
+                <groupId>io.smallrye</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
                 <executions>
                     <execution>
@@ -127,7 +127,7 @@
                             <goal>jandex</goal>
                         </goals>
                         <!-- phase is 'process-classes by default' -->
-                        <phase>integration-test</phase>
+                        <phase>process-test-resources</phase>
                         <configuration>
                             <fileSets>
                                 <fileSet>

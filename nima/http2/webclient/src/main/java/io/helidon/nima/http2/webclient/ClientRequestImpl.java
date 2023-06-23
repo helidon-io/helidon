@@ -57,12 +57,15 @@ class ClientRequestImpl implements Http2ClientRequest {
     private final int maxFrameSize;
     private final long maxHeaderListSize;
     private final int connectionPrefetch;
+    private final Map<String, String> properties;
 
-    private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
+    private WritableHeaders<?> explicitHeaders;
     private Tls tls;
     private int priority;
     private boolean priorKnowledge;
+    private boolean followRedirects;
     private int requestPrefetch = 0;
+    private int maxRedirects;
     private ClientConnection explicitConnection;
     private Duration flowControlTimeout = Duration.ofMillis(100);
     private Duration timeout = Duration.ofSeconds(10);
@@ -83,8 +86,12 @@ class ClientRequestImpl implements Http2ClientRequest {
         this.maxFrameSize = client.maxFrameSize();
         this.maxHeaderListSize = client.maxHeaderListSize();
         this.connectionPrefetch = client.prefetch();
+        this.properties = client.properties();
         this.tls = tls == null || !tls.enabled() ? null : tls;
         this.query = query;
+        this.followRedirects = client.followRedirects();
+        this.maxRedirects = client.maxRedirects();
+        this.explicitHeaders = WritableHeaders.create(client.defaultHeaders());
     }
 
     @Override
@@ -195,6 +202,18 @@ class ClientRequestImpl implements Http2ClientRequest {
     }
 
     @Override
+    public Http2ClientRequest skipUriEncoding() {
+        this.uri.skipUriEncoding(true);
+        return this;
+    }
+
+    @Override
+    public Http2ClientRequest property(String propertyName, String propertyValue) {
+        properties.put(propertyName, propertyValue);
+        return this;
+    }
+
+    @Override
     public Http2ClientRequest priority(int priority) {
         if (priority < 1 || priority > 256) {
             throw new IllegalArgumentException("Priority must be between 1 and 256 (inclusive)");
@@ -231,6 +250,20 @@ class ClientRequestImpl implements Http2ClientRequest {
     public Http2ClientRequest fragment(String fragment) {
         this.fragment = UriFragment.create(fragment);
         return this;
+    }
+
+    @Override
+    public Http2ClientRequest followRedirects(boolean followRedirects) {
+//        this.followRedirects = followRedirects;
+//        return this;
+        throw new UnsupportedOperationException("Not supported in HTTP2 yet");
+    }
+
+    @Override
+    public Http2ClientRequest maxRedirects(int maxRedirects) {
+//        this.maxRedirects = maxRedirects;
+//        return this;
+        throw new UnsupportedOperationException("Not supported in HTTP2 yet");
     }
 
     UriHelper uriHelper() {

@@ -1362,7 +1362,7 @@ public final class TypeTools extends BuilderTypeTools {
         boolean startsWithJakarta = typeName.startsWith(TypeNames.PREFIX_JAKARTA);
         boolean startsWithJavax = !startsWithJakarta && typeName.startsWith(TypeNames.PREFIX_JAVAX);
 
-        assert (startsWithJakarta || startsWithJavax);
+        assert (startsWithJakarta || startsWithJavax) : typeName;
 
         if (startsWithJakarta) {
             return typeName.replace(TypeNames.PREFIX_JAKARTA, TypeNames.PREFIX_JAVAX);
@@ -1472,11 +1472,11 @@ public final class TypeTools extends BuilderTypeTools {
      * @return the access
      */
     public static ElementInfo.Access toAccess(Set<String> modifiers) {
-        if (modifiers.contains(TypeInfo.MODIFIER_PROTECTED)) {
+        if (modifiers.stream().anyMatch(TypeInfo.MODIFIER_PROTECTED::equalsIgnoreCase)) {
             return ElementInfo.Access.PROTECTED;
-        } else if (modifiers.contains(TypeInfo.MODIFIER_PRIVATE)) {
+        } else if (modifiers.stream().anyMatch(TypeInfo.MODIFIER_PRIVATE::equalsIgnoreCase)) {
             return ElementInfo.Access.PRIVATE;
-        } else if (modifiers.contains(TypeInfo.MODIFIER_PUBLIC)) {
+        } else if (modifiers.stream().anyMatch(TypeInfo.MODIFIER_PUBLIC::equalsIgnoreCase)) {
             return ElementInfo.Access.PUBLIC;
         }
         return ElementInfo.Access.PACKAGE_PRIVATE;

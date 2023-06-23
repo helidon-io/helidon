@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,9 +118,8 @@ public class SubjectMappingTest {
 
     private static class Mapper implements SubjectMappingProvider {
         @Override
-        public CompletionStage<AuthenticationResponse> map(ProviderRequest providerRequest,
-                                                           AuthenticationResponse previousResponse) {
-            return CompletableFuture.completedFuture(buildResponse(providerRequest, previousResponse));
+        public AuthenticationResponse map(ProviderRequest providerRequest, AuthenticationResponse previousResponse) {
+            return buildResponse(providerRequest, previousResponse);
         }
 
         private AuthenticationResponse buildResponse(ProviderRequest providerRequest,
@@ -158,8 +157,8 @@ public class SubjectMappingTest {
 
     private static class Atn implements AuthenticationProvider {
         @Override
-        public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-            return CompletableFuture.completedFuture(buildResponse(providerRequest));
+        public AuthenticationResponse authenticate(ProviderRequest providerRequest) {
+            return buildResponse(providerRequest);
         }
 
         private AuthenticationResponse buildResponse(ProviderRequest providerRequest) {

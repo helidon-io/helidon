@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -132,9 +132,9 @@ To use Jandex, configure a Maven plugin that adds the index to your
 .jandex dependency
 ----
 <dependency>
-    <groupId>org.jboss</groupId>
+    <groupId>io.smallrye</groupId>
     <artifactId>jandex</artifactId>
-    <version>2.0.4.Final</version>
+    <version>{version.plugin.jandex}</version>
 </dependency>
 ----
 
@@ -144,9 +144,9 @@ To use Jandex, configure a Maven plugin that adds the index to your
 <build>
     <plugins>
         <plugin>
-            <groupId>org.jboss.jandex</groupId>
+            <groupId>io.smallrye</groupId>
             <artifactId>jandex-maven-plugin</artifactId>
-            <version>1.0.5</version>
+            <version>3.1.2</version>
             <executions>
                 <execution>
                     <id>make-index</id>

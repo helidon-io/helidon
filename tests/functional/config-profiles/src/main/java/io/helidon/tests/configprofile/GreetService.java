@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,16 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 
-public class GreetService implements Service {
+public class GreetService implements HttpService {
 
     private final AtomicReference<String> greeting = new AtomicReference<>();
 
@@ -40,7 +40,7 @@ public class GreetService implements Service {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/", this::getDefaultMessageHandler);
     }
 

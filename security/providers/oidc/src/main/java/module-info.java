@@ -31,6 +31,7 @@ module io.helidon.security.providers.oidc {
     requires io.helidon.config;
     requires io.helidon.common;
     requires io.helidon.common.crypto;
+    requires io.helidon.nima.webclient;
     requires io.helidon.security;
 
     requires io.helidon.security.providers.oidc.common;
@@ -38,7 +39,6 @@ module io.helidon.security.providers.oidc {
     requires io.helidon.security.util;
     requires io.helidon.security.abac.scope;
     requires io.helidon.security.jwt;
-    requires io.helidon.reactive.webclient;
 
     requires io.helidon.cors;
     requires static io.helidon.nima.webserver;

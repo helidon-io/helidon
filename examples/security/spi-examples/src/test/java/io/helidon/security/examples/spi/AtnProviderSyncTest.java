@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class AtnProviderSyncTest {
 
         AtnProviderSync provider = new AtnProviderSync();
 
-        AuthenticationResponse response = provider.syncAuthenticate(request);
+        AuthenticationResponse response = provider.authenticate(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
     }
@@ -181,7 +181,7 @@ public class AtnProviderSyncTest {
 
         AtnProviderSync provider = new AtnProviderSync();
 
-        AuthenticationResponse response = provider.syncAuthenticate(request);
+        AuthenticationResponse response = provider.authenticate(request);
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
     }
@@ -219,7 +219,7 @@ public class AtnProviderSyncTest {
     private void testSuccess(ProviderRequest request) {
         AtnProviderSync provider = new AtnProviderSync();
 
-        AuthenticationResponse response = provider.syncAuthenticate(request);
+        AuthenticationResponse response = provider.authenticate(request);
         validateResponse(response);
     }
 }

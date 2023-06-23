@@ -31,7 +31,7 @@ public class AnnotationAndValueDefault implements AnnotationAndValue, Comparable
     private final Map<String, String> values;
 
     /**
-     * Ctor.
+     * Constructor taking the result of the fluent builder.
      *
      * @param b the builder
      * @see #builder()
@@ -230,12 +230,11 @@ public class AnnotationAndValueDefault implements AnnotationAndValue, Comparable
      */
     public static class Builder implements io.helidon.common.Builder<Builder, AnnotationAndValueDefault> {
         private final Map<String, String> values = new LinkedHashMap<>();
-
         private TypeName typeName;
         private String value;
 
         /**
-         * Default ctor.
+         * Default fluent builder constructor.
          */
         protected Builder() {
         }

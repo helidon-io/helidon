@@ -20,7 +20,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import io.helidon.pico.api.Phase;
 
@@ -35,7 +34,7 @@ class NonSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
 
     private NonSingletonServiceProvider(AbstractServiceProvider<T> delegate) {
         this.delegate = delegate;
-        picoServices(Optional.of(delegate.picoServices()));
+        picoServices(delegate.picoServices());
         serviceInfo(delegate.serviceInfo());
         dependencies(delegate.dependencies());
     }

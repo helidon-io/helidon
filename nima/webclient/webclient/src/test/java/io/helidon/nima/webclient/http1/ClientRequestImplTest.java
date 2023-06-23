@@ -17,10 +17,13 @@
 package io.helidon.nima.webclient.http1;
 
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.StringTokenizer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
@@ -38,13 +41,18 @@ import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.WebClient;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class ClientRequestImplTest {
     private static final Http.HeaderValue REQ_CHUNKED_HEADER = Http.Header.createCached(
@@ -175,6 +183,45 @@ class ClientRequestImplTest {
         http1ClientConnection.close();
     }
 
+    @Test
+    void testSkipUrlEncoding() {
+        //Fill with chars which should be encoded
+        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/ěščžř")
+                .queryParam("specialChar+", "someValue,").fragment("someFragment,");
+        URI uri = request.resolvedUri();
+        assertThat(uri.getRawPath(), is("/%C4%9B%C5%A1%C4%8D%C5%BE%C5%99"));
+        assertThat(uri.getRawQuery(), is("specialChar%2B=someValue%2C"));
+        assertThat(uri.getRawFragment(), is("someFragment%2C"));
+
+        request = request.skipUriEncoding();
+        uri = request.resolvedUri();
+        assertThat(uri.getRawPath(), is("/ěščžř"));
+        assertThat(uri.getRawQuery(), is("specialChar+=someValue,"));
+        assertThat(uri.getRawFragment(), is("someFragment,"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("relativeUris")
+    void testRelativeUris(boolean relativeUris, boolean outputStream, String requestUri, String expectedUriStart) {
+        Http1Client client = WebClient.builder().relativeUris(relativeUris).build();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+        Http1ClientRequest request = client.put(requestUri);
+        request.connection(connection);
+        Http1ClientResponse response;
+        if (outputStream) {
+            response = getHttp1ClientResponseFromOutputStream(request, new String[] {"Sending Something"});
+        } else {
+            response = request.submit("Sending Something");
+        }
+
+        assertThat(response.status(), is(Http.Status.OK_200));
+        StringTokenizer st = new StringTokenizer(connection.getPrologue(), " ");
+        // skip method part
+        st.nextToken();
+        // Validate URI part
+        assertThat(st.nextToken(), startsWith(expectedUriStart));
+    }
+
     private static void validateSuccessfulResponse(Http1Client client, ClientConnection connection) {
         String requestEntity = "Sending Something";
         Http1ClientRequest request = client.put("http://localhost:" + dummyPort + "/test");
@@ -230,6 +277,28 @@ class ClientRequestImplTest {
         return response;
     }
 
+    private static Stream<Arguments> relativeUris() {
+        return Stream.of(
+                // OutputStream (chunk request)
+                arguments(false, true, "http://www.dummy.com/test", "http://www.dummy.com:80/"),
+                arguments(false, true, "http://www.dummy.com:1111/test", "http://www.dummy.com:1111/"),
+                arguments(false, true, "https://www.dummy.com/test", "https://www.dummy.com:443/"),
+                arguments(false, true, "https://www.dummy.com:1111/test", "https://www.dummy.com:1111/"),
+                arguments(true, true, "http://www.dummy.com/test", "/test"),
+                arguments(true, true, "http://www.dummy.com:1111/test", "/test"),
+                arguments(true, true, "https://www.dummy.com/test", "/test"),
+                arguments(true, true, "https://www.dummy.com:1111/test", "/test"),
+                // non-OutputStream (single entity request)
+                arguments(false, false, "http://www.dummy.com/test", "http://www.dummy.com:80/"),
+                arguments(false, false, "http://www.dummy.com:1111/test", "http://www.dummy.com:1111/"),
+                arguments(false, false, "https://www.dummy.com/test", "https://www.dummy.com:443/"),
+                arguments(false, false, "https://www.dummy.com:1111/test", "https://www.dummy.com:1111/"),
+                arguments(true, false, "http://www.dummy.com/test", "/test"),
+                arguments(true, false, "http://www.dummy.com:1111/test", "/test"),
+                arguments(true, false, "https://www.dummy.com/test", "/test"),
+                arguments(true, false, "https://www.dummy.com:1111/test", "/test"));
+    }
+
     private static class FakeHttp1ClientConnection implements ClientConnection {
         private final DataReader clientReader;
         private final DataWriter clientWriter;
@@ -237,6 +306,7 @@ class ClientRequestImplTest {
         private final DataWriter serverWriter;
         private Throwable serverException;
         private ExecutorService webServerEmulator;
+        private String prologue;
 
         FakeHttp1ClientConnection() {
             ArrayBlockingQueue<byte[]> serverToClient = new ArrayBlockingQueue<>(1024);
@@ -270,6 +340,11 @@ class ClientRequestImplTest {
         @Override
         public String channelId() {
             return null;
+        }
+
+        // This will be used for testing the element of Prologue
+        String getPrologue() {
+            return prologue;
         }
 
         private DataWriter writer(ArrayBlockingQueue<byte[]> queue) {
@@ -343,8 +418,8 @@ class ClientRequestImplTest {
             // Read prologue
             int lineLength = serverReader.findNewLine(16384);
             if (lineLength > 0) {
-                //String prologue = serverReader.readAsciiString(lineLength);
-                serverReader.skip(lineLength + 2); // skip Prologue + CRLF
+                prologue = serverReader.readAsciiString(lineLength);
+                serverReader.skip(2); // skip CRLF
             }
 
             // Read Headers
@@ -432,8 +507,9 @@ class ClientRequestImplTest {
                                   Headers requestHeaders,
                                   WritableHeaders<?> responseHeaders) {
                     if (object instanceof String) {
-                        String maxLen5 = ((String) object).substring(0, 5);
-                        impl.write(type, (T) maxLen5, outputStream, requestHeaders, responseHeaders);
+                        @SuppressWarnings("unchecked")
+                        final T maxLen5 = (T)((String) object).substring(0, 5);
+                        impl.write(type, maxLen5, outputStream, requestHeaders, responseHeaders);
                     } else {
                         impl.write(type, object, outputStream, requestHeaders, responseHeaders);
                     }

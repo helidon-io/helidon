@@ -34,6 +34,7 @@ import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.ParserMode;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
@@ -62,11 +63,13 @@ class ClientResponseImpl implements Http1ClientResponse {
     private final DataReader reader;
     // todo configurable
     private final ContentEncodingContext encodingSupport = ContentEncodingContext.create();
-    private final MediaContext mediaContext = MediaContext.create();
+    private final MediaContext mediaContext;
     private final String channelId;
     private final CompletableFuture<Void> whenComplete;
     private final boolean hasTrailers;
     private final List<String> trailerNames;
+    // Media type parsing mode configured on client.
+    private final ParserMode parserMode;
 
     private ClientConnection connection;
     private long entityLength;
@@ -78,12 +81,16 @@ class ClientResponseImpl implements Http1ClientResponse {
                        ClientResponseHeaders responseHeaders,
                        ClientConnection connection,
                        DataReader reader,
+                       MediaContext mediaContext,
+                       ParserMode parserMode,
                        CompletableFuture<Void> whenComplete) {
         this.responseStatus = responseStatus;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
         this.connection = connection;
         this.reader = reader;
+        this.mediaContext = mediaContext;
+        this.parserMode = parserMode;
         this.channelId = connection.channelId();
         this.whenComplete = whenComplete;
 

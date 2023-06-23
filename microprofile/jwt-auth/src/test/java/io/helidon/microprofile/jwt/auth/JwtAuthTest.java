@@ -104,7 +104,7 @@ class JwtAuthTest {
 
         assertThat(provider.isOutboundSupported(request, outboundEnv, outboundEp), is(true));
 
-        OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
+        OutboundSecurityResponse response = provider.outboundSecurity(request, outboundEnv, outboundEp);
 
         String signedToken = response.requestHeaders().get("Authorization").get(0);
 

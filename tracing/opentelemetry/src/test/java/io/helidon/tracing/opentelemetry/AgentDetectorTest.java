@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.tracing.opentelemetry;
 
+import java.util.Map;
+
 import io.helidon.config.Config;
-import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
-import jakarta.enterprise.inject.spi.CDI;
+import io.helidon.config.ConfigSources;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,30 +30,29 @@ import static org.hamcrest.Matchers.is;
 /**
  * Check Agent Detector working correctly.
  */
-@HelidonTest(resetPerTest = true)
-@AddExtension(ServerCdiExtension.class)
 class AgentDetectorTest {
 
+    public static final String OTEL_AGENT_PRESENT = "otel.agent.present";
+    public static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
+
     @Test
-    @AddConfig(key = HelidonOpenTelemetry.OTEL_AGENT_PRESENT_PROPERTY, value = "true")
     void shouldBeNoOpTelemetry(){
-        Config config = CDI.current().select(Config.class).get();
+        Config config = Config.create(ConfigSources.create(Map.of(OTEL_AGENT_PRESENT, "true")));
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
         assertThat(present, is(true));
     }
 
     @Test
-    @AddConfig(key = HelidonOpenTelemetry.OTEL_AGENT_PRESENT_PROPERTY, value = "false")
     void shouldNotBeNoOpTelemetry(){
-        Config config = CDI.current().select(Config.class).get();
+        Config config = Config.create(ConfigSources.create(Map.of(OTEL_AGENT_PRESENT, "false")));
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
         assertThat(present, is(false));
     }
 
     @Test
     void checkEnvVariable(){
-        System.setProperty(HelidonOpenTelemetry.IO_OPENTELEMETRY_JAVAAGENT, "true");
-        Config config = CDI.current().select(Config.class).get();
+        System.setProperty(IO_OPENTELEMETRY_JAVAAGENT, "true");
+        Config config = Config.create();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
         assertThat(present, is(true));
     }
