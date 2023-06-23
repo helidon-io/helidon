@@ -88,11 +88,11 @@ public class PrometheusSupportTest {
             String body = response.as(String.class);
             assertThat(body, containsString("# HELP beta"));
             assertThat(body, containsString("# TYPE beta counter"));
-            assertThat(body, containsString("beta 3.0"));
+            assertThat(body, containsString("beta_total 3.0"));
             assertThat(body, containsString("# TYPE alpha counter"));
             assertThat(body, containsString("# HELP alpha Alpha help with \\\\ and \\n."));
-            assertThat(body, containsString("alpha{method=\"bar\",} 6.0"));
-            assertThat(body, containsString("alpha{method=\"\\\"foo\\\" \\\\ \\n\",} 5.0"));
+            assertThat(body, containsString("alpha_total{method=\"bar\",} 6.0"));
+            assertThat(body, containsString("alpha_total{method=\"\\\"foo\\\" \\\\ \\n\",} 5.0"));
         }
     }
 
@@ -102,13 +102,13 @@ public class PrometheusSupportTest {
             assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null),
                     StringStartsWith.startsWith("text/plain"));
             String body = response.as(String.class);
-            assertThat(body, containsString("alpha{method=\"bar\",} 6.0"));
-            assertThat(body, not(containsString("alpha{method=\"baz\"")));
+            assertThat(body, containsString("alpha_total{method=\"bar\",} 6.0"));
+            assertThat(body, not(containsString("alpha_total{method=\"baz\"")));
             alpha.labels("baz").inc();
         }
         try (Http1ClientResponse response = client.get("/metrics").request()) {
             String body = response.as(String.class);
-            assertThat(body, containsString("alpha{method=\"baz\",} 1.0"));
+            assertThat(body, containsString("alpha_total{method=\"baz\",} 1.0"));
         }
     }
 
@@ -118,9 +118,9 @@ public class PrometheusSupportTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             String body = response.as(String.class);
             assertThat(body, not(containsString("# TYPE beta")));
-            assertThat(body, not(containsString("beta 3.0")));
+            assertThat(body, not(containsString("beta_total 3.0")));
             assertThat(body, containsString("# TYPE alpha counter"));
-            assertThat(body, containsString("alpha{method=\"bar\",} 6.0"));
+            assertThat(body, containsString("alpha_total{method=\"bar\",} 6.0"));
         }
     }
 }
