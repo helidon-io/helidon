@@ -63,6 +63,9 @@
         <module>jpa</module>
         <module>jms</module>
         <module>config</module>
+        <!-- synchronnous -->
+        <module>db-client</module>
+        <!-- reactive -->
         <module>dbclient</module>
         <module>jep290</module>
         <module>mp-bean-validation</module>

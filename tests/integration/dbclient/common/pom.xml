@@ -29,7 +29,7 @@
 
     <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>helidon-tests-integration-dbclient-common</artifactId>
-    <name>Integration Tests: DB Client Common</name>
+    <name>Integration Tests: Reactive DB Client Common</name>
 
     <dependencies>
         <dependency>

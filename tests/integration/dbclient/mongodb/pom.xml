@@ -29,7 +29,7 @@
 
     <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>helidon-tests-integration-dbclient-mongodb</artifactId>
-    <name>Integration Tests: DB Client MongoDB</name>
+    <name>Integration Tests: Reactive DB Client MongoDB</name>
 
     <properties>
         <mongo.port>27017</mongo.port>

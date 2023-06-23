@@ -679,6 +679,28 @@
 
             <!-- db client -->
             <dependency>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-jdbc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- reactive db client -->
+            <dependency>
                 <groupId>io.helidon.reactive.dbclient</groupId>
                 <artifactId>helidon-reactive-dbclient</artifactId>
                 <version>${helidon.version}</version>

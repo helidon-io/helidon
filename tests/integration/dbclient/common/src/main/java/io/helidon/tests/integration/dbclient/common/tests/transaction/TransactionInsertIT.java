@@ -55,7 +55,7 @@ public class TransactionInsertIT extends AbstractIT {
      */
     @Test
     public void testCreateNamedInsertStrNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(BASE_ID+2, "Furret", TYPES.get(1));
+       Pokemon pokemon = new Pokemon(BASE_ID+2, "Furret", TYPES.get(1));
        Long result = DB_CLIENT.inTransaction(tx -> tx
                 .createNamedInsert("insert-pokemon-named-arg")
                 .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()

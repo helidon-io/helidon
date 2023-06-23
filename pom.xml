@@ -194,6 +194,7 @@
         <module>grpc</module>
         <module>openapi</module>
         <module>jersey</module>
+        <module>dbclient</module>
         <module>integrations</module>
         <module>messaging</module>
         <module>graphql</module>
