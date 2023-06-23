@@ -113,14 +113,15 @@ class TestServer {
             Request request = chain.request();
 
             long t1 = System.nanoTime();
-            System.out.println(String.format("Sending request %s on %s%n%s",
-                    request.url(), chain.connection(), request.headers()));
+            System.out.println(String.format("Sending request %s %s on %s%n%s",
+                    request.method(), request.url(), chain.connection(), request.headers()));
 
             Response response = chain.proceed(request);
 
             long t2 = System.nanoTime();
-            System.out.println(String.format("Received response for %s in %.1fms%nProtocol is %s%n%s",
-                    response.request().url(), (t2 - t1) / 1e6d, response.protocol(), response.headers()));
+            System.out.println(String.format("Received response %d for %s in %.1fms%nProtocol is %s%n%s",
+                    response.code(), response.request().url(), (t2 - t1) / 1e6d, response.protocol(),
+                    response.headers()));
 
             return response;
         }
@@ -129,6 +130,7 @@ class TestServer {
     static OkHttpClient newOkHttpClient(boolean ssl) throws Exception {
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
                 .addNetworkInterceptor(new LoggingInterceptor())
+                .retryOnConnectionFailure(false)
                 .protocols(Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1));
         if (ssl) {
             SSLContext sslContext = setupSSLTrust();
