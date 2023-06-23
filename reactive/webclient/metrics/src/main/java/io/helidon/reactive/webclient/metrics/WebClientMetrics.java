@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,15 +56,6 @@ public class WebClientMetrics implements WebClientService {
     }
 
     /**
-     * Creates new meter client metric.
-     *
-     * @return client metric builder
-     */
-    public static WebClientMetric.Builder meter() {
-        return WebClientMetric.builder(WebClientMetricType.METER);
-    }
-
-    /**
      * Creates new gauge in progress client metric.
      *
      * @return client metric builder
@@ -92,8 +83,6 @@ public class WebClientMetrics implements WebClientService {
         switch (type) {
         case "COUNTER":
             return counter().config(metricConfig).build();
-        case "METER":
-            return meter().config(metricConfig).build();
         case "TIMER":
             return timer().config(metricConfig).build();
         case "GAUGE_IN_PROGRESS":

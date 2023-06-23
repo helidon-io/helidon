@@ -309,9 +309,7 @@ public class MetricsSupport extends HelidonRestServiceSupport {
 
         // routing to GET and OPTIONS for each metrics scope (registry type) and a specific metric within each scope:
         // application, base, vendor
-        Stream.of(org.eclipse.microprofile.metrics.Registry.values_SCOPE())
-                .map(org.eclipse.microprofile.metrics.MetricRegistry.Type::name)
-                .map(String::toLowerCase)
+       Registry.BUILT_IN_SCOPES
                 .forEach(type -> Stream.of("", "/{metric}") // for the whole scope and for a specific metric within that scope
                         .map(suffix -> context + "/" + type + suffix)
                         .forEach(path -> rules.get(path, DISABLED_ENDPOINT_HANDLER)

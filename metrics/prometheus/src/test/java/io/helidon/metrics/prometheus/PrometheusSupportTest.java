@@ -53,7 +53,7 @@ public class PrometheusSupportTest {
     }
 
     @BeforeEach
-    public void prepareRegistry() {
+    public void prepareRegistry() throws InterruptedException {
         this.alpha = Counter.build()
                                .name("alpha")
                                .help("Alpha help with \\ and \n.")

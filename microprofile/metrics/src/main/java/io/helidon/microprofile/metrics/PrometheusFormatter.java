@@ -24,6 +24,7 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 
 import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
 
@@ -74,7 +75,7 @@ public class PrometheusFormatter {
      * @return filtered Prometheus output
      */
     public String filteredOutput() {
-        return formattedOutput(MpRegistryFactory.get().prometheusMeterRegistry(),
+        return formattedOutput(prometheusMeterRegistry(),
                                resultMediaType,
                                scopeSelection,
                                meterSelection);
@@ -152,6 +153,15 @@ public class PrometheusFormatter {
         return allOutput.append(flushForMeterAndClear(typeAndHelpOutputForCurrentMeter, meterOutputForCurrentMeter))
                 .toString()
                 .replaceFirst("# EOF\r?\n?", "");
+    }
+
+    private static PrometheusMeterRegistry prometheusMeterRegistry() {
+        return Metrics.globalRegistry.getRegistries().stream()
+                .filter(PrometheusMeterRegistry.class::isInstance)
+                .map(PrometheusMeterRegistry.class::cast)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Unable to locate " + PrometheusMeterRegistry.class.getName()
+                            + " from global registry"));
     }
 
     private static String flushForMeterAndClear(StringBuilder helpAndType, StringBuilder metricData) {
