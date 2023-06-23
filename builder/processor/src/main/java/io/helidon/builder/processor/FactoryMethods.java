@@ -76,11 +76,10 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
 
         return new FactoryMethods(targetFactory,
                                   configFactory,
-                                  builder(processingContext, blueprint, typeHandler, configObjectCandidates));
+                                  builder(processingContext, typeHandler, configObjectCandidates));
     }
 
     private static Optional<FactoryMethod> builder(ProcessingContext processingContext,
-                                                   TypeInfo blueprint,
                                                    TypeHandler typeHandler,
                                                    Set<TypeName> builderCandidates) {
         if (typeHandler.actualType().equals(OBJECT)) {
@@ -92,7 +91,6 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
         for (TypeName builderCandidate : builderCandidates) {
             if (typeHandler.actualType().primitive()) {
                 // primitive methods do not have builders
-                found = null;
                 continue;
             }
             TypeInfo typeInfo = processingContext.toTypeInfo(builderCandidate.genericTypeName()).orElse(null);
