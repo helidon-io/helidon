@@ -17,10 +17,15 @@
 package io.helidon.config;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigException;
+import io.helidon.common.config.ConfigValue;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.pico.api.ExternalContracts;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.api.ServiceProvider;
@@ -30,7 +35,8 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 @Singleton
-class ConfigProducer implements Provider<Config> {
+@ExternalContracts(Config.class)
+class ConfigProducer implements Config {
     private final Config config;
 
     @Inject
@@ -55,7 +61,67 @@ class ConfigProducer implements Provider<Config> {
     }
 
     @Override
-    public Config get() {
-        return config;
+    public Key key() {
+        return config.key();
+    }
+
+    @Override
+    public Config get(String key) throws ConfigException {
+        return config.get(key);
+    }
+
+    @Override
+    public Config detach() throws ConfigException {
+        return config.detach();
+    }
+
+    @Override
+    public boolean exists() {
+        return config.exists();
+    }
+
+    @Override
+    public boolean isLeaf() {
+        return config.isLeaf();
+    }
+
+    @Override
+    public boolean isObject() {
+        return config.isObject();
+    }
+
+    @Override
+    public boolean isList() {
+        return config.isList();
+    }
+
+    @Override
+    public boolean hasValue() {
+        return config.hasValue();
+    }
+
+    @Override
+    public <T> ConfigValue<T> as(Class<T> type) {
+        return config.as(type);
+    }
+
+    @Override
+    public <T> ConfigValue<T> map(Function<Config, T> mapper) {
+        return config.map(mapper);
+    }
+
+    @Override
+    public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigException {
+        return config.asList(type);
+    }
+
+    @Override
+    public <C extends Config> ConfigValue<List<C>> asNodeList() throws ConfigException {
+        return config.asNodeList();
+    }
+
+    @Override
+    public ConfigValue<Map<String, String>> asMap() throws ConfigException {
+        return config.asMap();
     }
 }

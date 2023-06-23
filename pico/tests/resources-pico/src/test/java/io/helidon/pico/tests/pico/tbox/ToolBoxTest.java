@@ -179,13 +179,14 @@ class ToolBoxTest {
         List<ServiceProvider<ModuleComponent>> allModules = services.lookupAll(ModuleComponent.class);
         List<String> desc = allModules.stream().map(ServiceProvider::description).collect(Collectors.toList());
         // note that order matters here
+        // there is now config pico module as active as well
         assertThat("ensure that Annotation Processors are enabled in the tools module meta-inf/services",
-                   desc, contains("Pico$$Module:ACTIVE", "Pico$$TestModule:ACTIVE"));
+                   desc, contains("Pico$$Module:ACTIVE", "Pico$$Module:ACTIVE", "Pico$$TestModule:ACTIVE"));
         List<String> names = allModules.stream()
                 .sorted()
                 .map(m -> m.get().named().orElse(m.get().getClass().getSimpleName() + ":null")).collect(Collectors.toList());
         assertThat(names,
-                   contains("io.helidon.pico.tests.pico", "io.helidon.pico.tests.pico/test"));
+                   contains("io.helidon.config", "io.helidon.pico.tests.pico", "io.helidon.pico.tests.pico/test"));
     }
 
     /**
@@ -302,7 +303,8 @@ class ToolBoxTest {
         assertThat(report, hasEntry(TypeName.create("io.helidon.pico.tests.pico.stacking.OuterInterceptedImpl"), "ACTIVE->DESTROYED"));
         assertThat(report, hasEntry(TypeName.create("io.helidon.pico.tests.pico.stacking.InterceptedImpl"), "ACTIVE->DESTROYED"));
         assertThat(report, hasEntry(TypeName.create("io.helidon.pico.tests.pico.TestingSingleton"), "ACTIVE->DESTROYED"));
-        assertThat(report + " : expected 8 services to be present", report.size(), equalTo(8));
+        // ConfigProducer is the 9th
+        assertThat(report + " : expected 9 services to be present", report.size(), equalTo(9));
 
         assertThat(TestingSingleton.postConstructCount(), equalTo(1));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(1));
@@ -322,7 +324,8 @@ class ToolBoxTest {
                 .collect(Collectors.toMap(Map.Entry::getKey,
                                           e2 -> e2.getValue().startingActivationPhase().toString()
                                                   + "->" + e2.getValue().finishingActivationPhase()));
-        assertThat(report.toString(), report.size(), is(5));
+        // now contains config as well
+        assertThat(report.toString(), report.size(), is(6));
 
         tearDown();
         map = picoServices.shutdown().orElseThrow();

@@ -34,8 +34,9 @@ module io.helidon.config {
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.media.type;
 
+    requires io.helidon.pico.api;
+
     requires static io.helidon.common.features.api;
-    requires static io.helidon.pico.api;
     requires static io.helidon.pico.runtime;
     requires static jakarta.inject;
 

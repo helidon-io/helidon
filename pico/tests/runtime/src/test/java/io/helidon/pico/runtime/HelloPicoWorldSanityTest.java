@@ -67,7 +67,8 @@ import static org.hamcrest.Matchers.sameInstance;
  * Sanity type tests only. The "real" testing is in the tests submodules.
  */
 class HelloPicoWorldSanityTest {
-    private static final int EXPECTED_MODULES = 2;
+    // helidon-config is now one of the modules
+    private static final int EXPECTED_MODULES = 3;
 
     @BeforeEach
     void setUp() {
@@ -95,8 +96,9 @@ class HelloPicoWorldSanityTest {
         assertThat(moduleProviders.size(),
                    equalTo(EXPECTED_MODULES));
         List<String> descriptions = ServiceUtils.toDescriptions(moduleProviders);
+        // helidon-config is now first
         assertThat(descriptions,
-                   containsInAnyOrder("EmptyModule:ACTIVE", "HelloPico$$Module:ACTIVE"));
+                   containsInAnyOrder("Pico$$Module:ACTIVE", "EmptyModule:ACTIVE", "HelloPico$$Module:ACTIVE"));
 
         List<ServiceProvider<Application>> applications = services.lookupAll(Application.class);
         assertThat(applications.size(),
