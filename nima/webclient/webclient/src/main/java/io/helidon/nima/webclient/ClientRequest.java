@@ -153,19 +153,6 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
      * @param contentType content type of the request.
      * @return updated request
      */
-    default B contentType(HttpMediaType contentType) {
-        return headers(it -> {
-            it.contentType(contentType);
-            return it;
-        });
-    }
-
-    /**
-     * Sets the content type of the request.
-     *
-     * @param contentType content type of the request.
-     * @return updated request
-     */
     default B contentType(MediaType contentType) {
         return headers(it -> {
             it.contentType(contentType);
