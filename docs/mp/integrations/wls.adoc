@@ -186,11 +186,11 @@ To access the WebLogic JMS Server from outside, a client library is required. Th
 emitting messages.
 
 You can obtain the {wls-thin-link} from multiple sources.
-Legacy versions of the thin client can be found in the server/lib directory(`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.
+Legacy versions of the thin client can be found in the server/lib directory (`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.
 
-WARNING: Helidon supports {jakarta-version}. Legacy versions of `javax` based thin T3 client will not work correctly when if it is on the Helidon classpath. The legacy thin T3 clients must be used with specialized xref:../../mp/reactivemessaging/weblogic.adoc[WebLogic JMS Connector] to work.
+WARNING: Helidon supports {jakarta-version}. Legacy versions of `javax` based thin T3 client will not work correctly if it is on the Helidon classpath. The legacy thin T3 clients must be used with specialized xref:../../mp/reactivemessaging/weblogic.adoc[WebLogic JMS Connector] to work.
 
-An updated version of the thin T3 client compatible with modern Jakarta runtimes is available at {osdc-link} as `wlthint3client.jakarta`. After downloading the client, you should install the thin T3 client artifact in the Maven repository accessible from the application build.
+An updated version of the thin T3 client compatible with modern Jakarta runtimes is available at {osdc-link} as `wlthint3client.jakarta`. After you download the client, install the thin T3 client artifact in the Maven repository accessible from the application build.
 
 [source, shell]
 .Example of Installing the Thin T3 Client Artifact to the Local Maven Repository
@@ -202,31 +202,30 @@ mvn install:install-file \
 -Dversion=1.0
 ----
 
-WARNING: Helidon has hardened serialization security with xref:../../mp/security/jep-290.adoc[JEP-290]
-so every class needs to be whitelisted for deserialization otherwise `java.io.InvalidClassException: filter status: REJECTED` is thrown.
+WARNING: Helidon has hardened serialization security with xref:../../mp/security/jep-290.adoc[JEP-290]. Therefore, every class needs to be whitelisted for deserialization. Otherwise, `java.io.InvalidClassException: filter status: REJECTED` is thrown.
 
-As T3 thin client uses RMI, list of the classes needed to be whitelisted can get extensive.
-JEP-290 filter with usual suspects for JMS looks like this:
+Because T3 thin client uses RMI, the list of classes needed to be whitelisted can get extensive.
+
+The JEP-290 filter with usual suspects for JMS looks as follows:
 
 [source, shell]
 ----
 weblogic.**;java.util.**;java.lang.**;java.io.**;java.rmi.**;javax.naming.**;jakarta.jms.**
 ----
-You can set the filter either with system property `java -Dhelidon.serialFilter.pattern="<FILTER_PATTERN>" -jar ...` or
-by adding file `META-INF/helidon/serial-config.properties` to your jar file with `pattern=<FILTER_PATTERN>` .
+You can set the filter either with the `java -Dhelidon.serialFilter.pattern="<FILTER_PATTERN>" -jar ...` system property or by adding the `META-INF/helidon/serial-config.properties` file to your jar file with `pattern=<FILTER_PATTERN>`.
 
 [source, shell]
-.Example of `serial-config.properties` content
+.Example of `serial-config.properties` Content
 ----
 pattern=weblogic.**;java.util.**;java.lang.**;java.io.**;java.rmi.**;javax.naming.**;jakarta.jms.**
 ----
 
 xref:../../mp/reactivemessaging/weblogic.adoc[WebLogic JMS Connector for legacy thin T3 clients] includes serialization
-filter with usual suspects already.
+filter with the usual suspects.
 
 === Maven Coordinates [[JMS-Integration-Maven-Coordinates]]
 
-To enable WebLogic Server JMS  with Helidon, add the following dependencies to your project’s `pom.xml` file:
+To enable WebLogic Server JMS integration with Helidon, add the following dependencies to your project’s `pom.xml` file:
 
 [source,xml]
 .Dependencies for Reactive Messaging with the Thin T3 Client
@@ -246,8 +245,8 @@ To enable WebLogic Server JMS  with Helidon, add the following dependencies to y
 </dependency>
 ----
 <1> Dependency for Reactive Messaging.
-<2> Dependency for JMS connector.
-<3> Dependency for manually installed WLS thin client.
+<2> Dependency for the JMS connector.
+<3> Dependency for the manually installed WLS thin client.
 
 
 === Usage [[JMS-Integration-Usage]]
@@ -317,7 +316,7 @@ public PublisherBuilder<String> produceToJms() {
 }
 ----
 
-For more information about setting up JMS integration between Helidon and WebLogic Server, see {wls-jms-link}.
+For more information about setting up the JMS integration between Helidon and WebLogic Server, see {wls-jms-link}.
 
 === References [[JMS-Integration-References]]
 
@@ -337,12 +336,12 @@ For more information about setting up JMS integration between Helidon and WebLog
 
 === Overview [[Web-Services-Integration-Overview]]
 
-Helion MP and WebLogic Server Web Services integration enables the Helidon microservice application to communicate with the WebLogic Web Service deployed in WebLogic Server.
+Helidon MP and WebLogic Server Web Services integration enables the Helidon microservice application to communicate with the WebLogic Web Service deployed in WebLogic Server.
 
 === Maven Coordinates [[Web-Services-Integration-Maven-Coordinates]]
 
 An updated client compatible with modern Jakarta runtimes is available at {osdc-link} as `com.oracle.webservices.wls.jaxws-wlswss-client.jakarta.jar`.
-After downloading the client, you should install the client artifact in the Maven repository accessible from the application build.
+After you download the client, install the client artifact in the Maven repository accessible from the application build.
 
 [source, shell]
 .Example of Installing the Client Artifact to the Local Maven Repository
@@ -353,7 +352,6 @@ mvn install:install-file \
 -DartifactId=com.oracle.webservices.wls.jaxws-wlswss-client.jakarta \
 -Dversion=1.0
 ----
-
 
 Add the `com.oracle.webservices.wls.jaxws-wlswss-client.jakarta.jar` client file downloaded from {osdc-link}, as part of the Maven dependencies:
 [source, xml]
@@ -368,9 +366,9 @@ Add the `com.oracle.webservices.wls.jaxws-wlswss-client.jakarta.jar` client file
 === Usage [[Web-Services-Integration-Usage]]
 
 Use the `clientgen` WebLogic Web Services Ant task from the `com.oracle.webservices.wls.jaxws-wlswss-client.jakarta.jar` file, installed earlier,
-to generate the *jakarta* based client artifacts that client applications use to invoke the WebLogic Web Services to `target/generated-sources`.
+to generate the *jakarta* based client artifacts that client applications use to invoke the WebLogic Web Services from the  `target/generated-sources` folder.
 
-Add a `maven-antrun-plugin` to execute the `clientgen` Ant task during `generate-sources` build phase:
+Add the `maven-antrun-plugin` plug-in to execute the `clientgen` Ant task during the `generate-sources` build phase:
 [source, xml]
 ----
 <plugin>
@@ -406,10 +404,10 @@ Add a `maven-antrun-plugin` to execute the `clientgen` Ant task during `generate
 </plugin>
 ----
 <1> Look for the `weblogic.wsee.tools.anttasks.ClientGenTask` on the project compile path.
-<2> Folder for generated client classes, needs to be added as a source folder.
-<3> Package name for new client classes.
+<2> Folder for the generated client classes; should be added as a source folder.
+<3> Name of the package for the new client classes.
 
-Use `build-helper-maven-plugin` to add `/target/generated-sources` with generated client classes as additional directory with sources.
+Use `build-helper-maven-plugin` to add `/target/generated-sources` with generated client classes as an additional directory with sources.
 [source, xml]
 ----
 
@@ -434,13 +432,12 @@ Use `build-helper-maven-plugin` to add `/target/generated-sources` with generate
 </plugin>
 ----
 
-As we are generating client classes to the folder recognized by maven as additional sources, client classes can
-be used directly from our business code.
+Because the client classes are generating to the folder recognized by Maven as additional sources, client classes can
+be used directly from Oracle's business code.
 
 === Example [[Web-Services-Integration-Example]]
 
-You can create the RESTful Web Service to invoke the WebLogic Web Service with generated client classes,
-as shown in the following example:
+You can create the RESTful Web Service to invoke the WebLogic Web Service with the generated client classes, as shown in the following example:
 [source, java]
 ----
 @Path("/helidon-client")
@@ -467,9 +464,9 @@ public class HelidonWSEEClient {
     }
 }
 ----
-<1> Generated client classes used from business code.
-<2> Override JAX-WS url from WSDL document used for generating client classes.
-<3> Call actual JAX-WS operation.
+<1> Generates the client classes used from the business code.
+<2> Overrides the JAX-WS URL from the WSDL document used for generating the  client classes.
+<3> Calls the actual JAX-WS operation.
 
 === References [[Web-Services-Integration-References]]
 
