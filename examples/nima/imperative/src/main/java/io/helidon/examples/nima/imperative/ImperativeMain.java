@@ -17,8 +17,8 @@
 package io.helidon.examples.nima.imperative;
 
 import io.helidon.common.config.Config;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.http.Http;
-import io.helidon.nima.Nima;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -35,7 +35,7 @@ public final class ImperativeMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-        Config config = Nima.config();
+        Config config = GlobalConfig.config();
 
         WebServer server = WebServer.create(ws -> ws.config(config.get("server"))
                         .routing(ImperativeMain::routing))

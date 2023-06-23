@@ -22,10 +22,10 @@ import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weighted;
+import io.helidon.common.config.Config;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
-import io.helidon.config.Config;
-import io.helidon.nima.Nima;
 import io.helidon.nima.observe.spi.ObserveProvider;
 import io.helidon.nima.webserver.cors.CorsSupport;
 import io.helidon.nima.webserver.http.HttpFeature;
@@ -124,7 +124,7 @@ public class ObserveFeature implements HttpFeature, Weighted {
         private Config config;
 
         private Builder() {
-            config(Nima.config().get("observe"));
+            config(GlobalConfig.config().get("observe"));
         }
 
         @Override
@@ -143,7 +143,7 @@ public class ObserveFeature implements HttpFeature, Weighted {
                     }
                     String endpoint = providerEndpoint(providerConfig.get("endpoint").asString()
                                                                .orElseGet(provider::defaultEndpoint));
-                    CorsSupport cors = providerConfig.get("cors").as(CorsSupport::create).orElse(corsSupport);
+                    CorsSupport cors = providerConfig.get("cors").map(CorsSupport::create).orElse(corsSupport);
                     providerSetups.add(new ProviderSetup(endpoint, providerConfig, cors, provider));
                 }
             } else {
@@ -182,7 +182,7 @@ public class ObserveFeature implements HttpFeature, Weighted {
          */
         public Builder config(Config config) {
             // use config to set up defaults
-            config.get("cors").as(CorsSupport::create).ifPresent(this::corsSupport);
+            config.get("cors").map(CorsSupport::create).ifPresent(this::corsSupport);
             config.get("enabled").asBoolean().ifPresent(this::enabled);
             config.get("endpoint").asString().ifPresent(this::endpoint);
             config.get("weight").asDouble().ifPresent(this::weight);

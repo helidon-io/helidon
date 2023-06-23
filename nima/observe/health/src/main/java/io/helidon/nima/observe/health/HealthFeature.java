@@ -23,9 +23,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.config.spi.ConfigSource;
+import io.helidon.common.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckType;
 import io.helidon.health.spi.HealthCheckProvider;
@@ -141,7 +139,7 @@ public class HealthFeature extends HelidonFeatureSupport {
         private final List<HealthCheck> liveChecks = new ArrayList<>();
         private final List<HealthCheck> startChecks = new ArrayList<>();
 
-        private final List<Config> configs = new ArrayList<>();
+        private Config config = Config.empty();
 
         private boolean enabled = true;
         private boolean details = false;
@@ -153,12 +151,6 @@ public class HealthFeature extends HelidonFeatureSupport {
         @Override
         public HealthFeature build() {
             // Optimize for the most common cases.
-            Config config =
-                    switch (configs.size()) {
-                        case 0 -> Config.empty();
-                        case 1 -> configs.get(0);
-                        default -> effectiveConfig();
-                    };
             providers.build()
                     .asList()
                     .stream()
@@ -204,7 +196,7 @@ public class HealthFeature extends HelidonFeatureSupport {
          */
         public Builder config(Config config) {
             super.config(config);
-            configs.add(config);
+            this.config = config;
 
             config.get("enabled").asBoolean().ifPresent(this::enabled);
             config.get("details").asBoolean().ifPresent(this::details);
@@ -252,13 +244,6 @@ public class HealthFeature extends HelidonFeatureSupport {
         public Builder useSystemServices(boolean useServices) {
             providers.useSystemServiceLoader(useServices);
             return this;
-        }
-
-        private Config effectiveConfig() {
-
-            return Config.create(configs.stream()
-                                         .map(ConfigSources::create)
-                                         .toArray(ConfigSource[]::new));
         }
     }
 }

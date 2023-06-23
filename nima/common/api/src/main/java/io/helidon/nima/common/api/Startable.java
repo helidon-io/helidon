@@ -14,26 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.nima.faulttolerance;
+package io.helidon.nima.common.api;
 
-import io.helidon.config.Config;
-
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
+import io.helidon.pico.api.Contract;
 
 /**
- * This service will be part of Níma on Pico module.
- * It may use pico to get config sources exposed through pico.
+ * Some components may require start when Helidon is bootstrapped, such as WebServer (to open server sockets).
+ * This interface is a Helidon Injection contract, that allows us to discover all startable services and start them
+ * on boot when desired.
  */
-@Singleton
-class ConfigService implements Provider<Config> {
-    private static volatile Config config;
-    static void config(Config config) {
-        ConfigService.config = config;
-    }
-
-    @Override
-    public Config get() {
-        return config;
-    }
+@Contract
+public interface Startable {
+    /**
+     * Start this service.
+     */
+    void startService();
 }

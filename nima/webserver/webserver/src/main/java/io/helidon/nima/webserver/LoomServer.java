@@ -43,6 +43,7 @@ import io.helidon.common.config.ConfigException;
 import io.helidon.common.context.Context;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.nima.common.api.Startable;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
@@ -52,11 +53,10 @@ import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.configdriven.api.ConfigDriven;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
 @ConfigDriven(value = WebServerConfigBlueprint.class, activateByDefault = true)
-class LoomServer implements WebServer {
+class LoomServer implements WebServer, Startable {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
     private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
@@ -126,7 +126,11 @@ class LoomServer implements WebServer {
         return serverConfig;
     }
 
-    @PostConstruct
+    @Override
+    public void startService() {
+        start();
+    }
+
     @Override
     public WebServer start() {
         HelidonFeatures.flavor(HelidonFlavor.NIMA);

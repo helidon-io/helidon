@@ -35,10 +35,10 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.config.Config;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;

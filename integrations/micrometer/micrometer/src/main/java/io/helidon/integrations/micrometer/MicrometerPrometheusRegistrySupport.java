@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.integrations.micrometer;
 
 import java.io.IOException;
@@ -21,9 +22,9 @@ import java.util.Enumeration;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigValue;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;

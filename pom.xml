@@ -179,6 +179,7 @@
         <module>parent</module>
         <module>dependencies</module>
         <module>bom</module>
+        <module>helidon</module>
         <module>applications</module>
         <module>licensing</module>
         <module>common</module>

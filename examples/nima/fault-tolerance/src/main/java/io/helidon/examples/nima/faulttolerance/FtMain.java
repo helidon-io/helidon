@@ -16,11 +16,7 @@
 
 package io.helidon.examples.nima.faulttolerance;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.logging.common.LogConfig;
-import io.helidon.pico.api.Bootstrap;
-import io.helidon.pico.api.PicoServices;
+import io.helidon.nima.Helidon;
 
 /**
  * Main class of the example, starts Helidon with injection support.
@@ -35,25 +31,6 @@ public final class FtMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-        // TODO move to a helidon-inject-runtime module (or similar) to set everything up
-        LogConfig.configureRuntime();
-
-        Config config = Config.builder()
-                .addSource(ConfigSources.classpath("application.yaml"))
-                .disableSystemPropertiesSource()
-                .disableEnvironmentVariablesSource()
-                .build();
-
-        ConfigService.config(config);
-
-        Bootstrap bootstrap = Bootstrap.builder()
-                .config(config)
-                .build();
-
-        PicoServices.globalBootstrap(bootstrap);
-
-        PicoServices picoServices = PicoServices.picoServices().get();
-        // this line is needed!
-        picoServices.services();
+        Helidon.start();
     }
 }

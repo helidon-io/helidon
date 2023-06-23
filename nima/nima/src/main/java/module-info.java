@@ -17,6 +17,16 @@ module io.helidon.nima {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.logging.common;
+    requires io.helidon.pico.api;
+    
+    requires io.helidon.nima.common.api;
+
+    requires jakarta.inject;
+
+    requires io.helidon.common.types;
+    requires io.helidon.pico.runtime;
 
     exports io.helidon.nima;
+
+    provides io.helidon.pico.api.ModuleComponent with io.helidon.nima.Pico$$Module;
 }

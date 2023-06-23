@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.integrations.micrometer;
 
 import java.util.Collections;
@@ -20,8 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
+import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigValue;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;
