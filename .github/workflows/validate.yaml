@@ -4,11 +4,20 @@
 
 name: "Validate"
 
-on: [pull_request, push]
+on:
+  pull_request:
+    branches-ignore:
+      - 'release-*'
+      - 'test-release-*'
+  push:
+    branches-ignore:
+      - 'release-*'
+      - 'test-release-*'
+  workflow_call:
 
 env:
   JAVA_VERSION: '17'
-  JAVA_DISTRO: 'oracle'
+  JAVA_DISTRO: 'temurin'
   HELIDON_PIPELINES: 'true'
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
 
@@ -25,7 +34,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -38,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -51,7 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -67,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -88,7 +97,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -104,7 +113,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -120,7 +129,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -139,7 +148,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -164,7 +173,7 @@ jobs:
           set-java-home: false
           cache: maven
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.11.0
+        uses: actions/setup-java@v3.6.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
