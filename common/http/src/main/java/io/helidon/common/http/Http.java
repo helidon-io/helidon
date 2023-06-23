@@ -979,18 +979,6 @@ public final class Http {
             return null;
         }
 
-        /**
-         * Check validity of a header value.
-         *
-         * @param value header value
-         * @throws IllegalArgumentException in case the HeaderValue is not valid
-         */
-        static void validate(String value) {
-            String errorMessage = validateValueErrorMessage(value);
-            if (errorMessage != null) {
-                throw new IllegalArgumentException(errorMessage);
-            }
-        }
 
         /**
          * Check validity of header name and values.
@@ -1001,6 +989,7 @@ public final class Http {
             String name = name();
             // validate that header name only contains valid characters
             HttpToken.validate(name);
+            // Validate header value
             String errorMessage = validateValueErrorMessage(values());
             if (errorMessage != null) {
                 throw new IllegalArgumentException(errorMessage + " for header '" + name + "'");

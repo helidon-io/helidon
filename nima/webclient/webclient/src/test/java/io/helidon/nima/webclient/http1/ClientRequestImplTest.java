@@ -62,8 +62,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 class ClientRequestImplTest {
     public static final String VALID_HEADER_VALUE = "Valid-Header-Value";
     public static final String VALID_HEADER_NAME = "Valid-Header-Name";
-    public static final String BAD_HEADER_VALUE_PATH = "/badHeaderValue";
-    public static final String BAD_HEADER_NAME_PATH = "/badHeaderName";
+    public static final String BAD_HEADER_PATH = "/badHeader";
     private static final Http.HeaderValue REQ_CHUNKED_HEADER = Http.Header.create(
             Http.Header.create("X-Req-Chunked"), "true");
     private static final Http.HeaderValue REQ_EXPECT_100_HEADER_NAME = Http.Header.create(
@@ -73,6 +72,7 @@ class ClientRequestImplTest {
     private static final long NO_CONTENT_LENGTH = -1L;
     private static final Http1Client client = WebClient.builder().build();
     private static final int dummyPort = 1234;
+    public static final String HEADER_NAME_VALUE_DELIMETER = "->";
 
     @Test
     void testMaxHeaderSizeFail() {
@@ -233,11 +233,11 @@ class ClientRequestImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("headers")
-    void testHeaders(Http.HeaderValue header, boolean expectsValid) {
+    @MethodSource("headerValues")
+    void testHeaderValues(List<String> headerValues, boolean expectsValid) {
         Http1ClientRequest request = client.get("http://localhost:" + dummyPort + "/test");
+        request.header(Http.Header.create(Http.Header.create("HeaderName"), headerValues));
         request.connection(new FakeHttp1ClientConnection());
-        request.header(header);
         if (expectsValid) {
             Http1ClientResponse response = request.request();
             assertThat(response.status(), is(Http.Status.OK_200));
@@ -247,11 +247,11 @@ class ClientRequestImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("headerValues")
-    void testHeaderValues(List<String> headerValues, boolean expectsValid) {
+    @MethodSource("headers")
+    void testHeaders(Http.HeaderValue header, boolean expectsValid) {
         Http1ClientRequest request = client.get("http://localhost:" + dummyPort + "/test");
-        request.header(Http.Header.create(Http.Header.create("HeaderName"), headerValues));
         request.connection(new FakeHttp1ClientConnection());
+        request.header(header);
         if (expectsValid) {
             Http1ClientResponse response = request.request();
             assertThat(response.status(), is(Http.Status.OK_200));
@@ -278,59 +278,33 @@ class ClientRequestImplTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-            "Header\u007fValue", "\u001fHeaderValue", "HeaderValue, H\u0015eaderValue2"
-    })
-    void testBadHeaderValueFromResponse(String headerValue) {
-        Http1ClientRequest request = client.get("http://localhost:" + dummyPort + BAD_HEADER_VALUE_PATH);
+    @MethodSource("responseHeaders")
+    void testHeadersFromResponse(String headerName, String headerValue, boolean expectsValid) {
+        Http1ClientRequest request = client.get("http://localhost:" + dummyPort + BAD_HEADER_PATH);
         request.connection(new FakeHttp1ClientConnection());
-        Http1ClientResponse response = request.submit(headerValue);
-        IllegalArgumentException ie = Assertions.assertThrows(IllegalArgumentException.class, () ->
-                response.headers().get(BAD_HEADER_NAME).values());
+        String headerNameAndValue = headerName + HEADER_NAME_VALUE_DELIMETER + headerValue;
+        if (expectsValid) {
+            Http1ClientResponse response = request.submit(headerNameAndValue);
+            assertThat(response.status(), is(Http.Status.OK_200));
+            String responseHeaderValue = response.headers().get(Http.Header.create(headerName)).values();
+            assertThat(responseHeaderValue, is(headerValue.trim()));
+        } else {
+            Assertions.assertThrows(IllegalArgumentException.class, () -> request.submit(headerNameAndValue));
+        }
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-            "Header\u007fValue", "\u001fHeaderValue", "HeaderValue, H\u0015eaderValue2"
-    })
-    void testDisableValidationWithBadHeaderValueFromResponse(String headerValue) {
+    @MethodSource("responseHeadersForDisabledValidation")
+    void testDisableValidationForHeadersFromResponse(String headerName, String headerValue) {
         Http1Client clientWithNoHeaderValidation = WebClient.builder()
                 .validateHeaders(false)
                 .build();
-        Http1ClientRequest request = clientWithNoHeaderValidation.get("http://localhost:" + dummyPort + BAD_HEADER_VALUE_PATH);
+        Http1ClientRequest request = clientWithNoHeaderValidation.put("http://localhost:" + dummyPort + BAD_HEADER_PATH);
         request.connection(new FakeHttp1ClientConnection());
-        Http1ClientResponse response = request.submit(headerValue);
-        assertThat(response.status(), is(Http.Status.OK_200));
-        String responseHeaderValue = response.headers().get(BAD_HEADER_NAME).values();
-        assertThat(responseHeaderValue, is(headerValue));
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-            "Header\u001aName", "Header\u000EName", "HeaderName\r\n", "HeaderName\u00FF\u0124", "(Header:Name)", "<Header?Name>",
-            "{Header=Name}", "\"HeaderName\"", "[\\HeaderName]", "@Header,Name;"
-    })
-    void testBadHeaderNameFromResponse(String headerName) {
-        Http1ClientRequest request = client.get("http://localhost:" + dummyPort + BAD_HEADER_NAME_PATH);
-        request.connection(new FakeHttp1ClientConnection());
-        Assertions.assertThrows(IllegalArgumentException.class, () -> request.submit(headerName));
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-            "Header\u001aName", "Header\u000EName", "(HeaderName)", "<Header?Name>", "{Header=Name}", "\"HeaderName\"",
-            "[\\HeaderName]", "@Header,Name;"
-    })
-    void testDisableValidationWithBadHeaderNameFromResponse(String headerName) {
-        Http1Client clientWithNoHeaderValidation = WebClient.builder()
-                .validateHeaders(false)
-                .build();
-        Http1ClientRequest request = clientWithNoHeaderValidation.get("http://localhost:" + dummyPort + BAD_HEADER_NAME_PATH);
-        request.connection(new FakeHttp1ClientConnection());
-        Http1ClientResponse response = request.submit(headerName);
+        Http1ClientResponse response = request.submit(headerName + HEADER_NAME_VALUE_DELIMETER + headerValue);
         assertThat(response.status(), is(Http.Status.OK_200));
         String responseHeaderValue = response.headers().get(Http.Header.create(headerName)).values();
-        assertThat(responseHeaderValue, is(VALID_HEADER_VALUE));
+        assertThat(responseHeaderValue, is(headerValue.trim()));
     }
 
     private static void validateSuccessfulResponse(Http1Client client, ClientConnection connection) {
@@ -451,6 +425,57 @@ class ClientRequestImplTest {
                 arguments(Http.Header.create(Http.Header.create("\"HeaderName\""), VALID_HEADER_VALUE), false),
                 arguments(Http.Header.create(Http.Header.create("[\\HeaderName]"), VALID_HEADER_VALUE), false),
                 arguments(Http.Header.create(Http.Header.create("@Header,Name;"), VALID_HEADER_VALUE), false)
+        );
+    }
+
+    private static Stream<Arguments> responseHeaders() {
+        return Stream.of(
+                // Invalid header names
+                arguments("Header\u001aName", VALID_HEADER_VALUE, false),
+                arguments("Header\u000EName", VALID_HEADER_VALUE, false),
+                arguments("HeaderName\r\n", VALID_HEADER_VALUE, false),
+                arguments("(Header:Name)", VALID_HEADER_VALUE, false),
+                arguments("<Header?Name>", VALID_HEADER_VALUE, false),
+                arguments("{Header=Name}", VALID_HEADER_VALUE, false),
+                arguments("\"HeaderName\"", VALID_HEADER_VALUE, false),
+                arguments("[\\HeaderName]", VALID_HEADER_VALUE, false),
+                arguments("@Header,Name;", VALID_HEADER_VALUE, false),
+                // Valid header names
+                arguments("!#$Custom~%&\'*Header+^`|", VALID_HEADER_VALUE, true),
+                arguments("Custom_0-9_a-z_A-Z_Header", VALID_HEADER_VALUE, true),
+                // Valid header values
+                arguments(VALID_HEADER_NAME, "Header Value", true),
+                arguments(VALID_HEADER_NAME, "HeaderValue1\u0009, Header=Value2", true),
+                arguments(VALID_HEADER_NAME, "Header\tValue", true),
+                arguments(VALID_HEADER_NAME, " Header Value ", true),
+                // Invalid header values
+                arguments(VALID_HEADER_NAME, "H\u001ceaderValue1", false),
+                arguments(VALID_HEADER_NAME, "HeaderValue1, Header\u007fValue", false),
+                arguments(VALID_HEADER_NAME, "HeaderValue1\u001f, HeaderValue2", false)
+        );
+    }
+
+    private static Stream<Arguments> responseHeadersForDisabledValidation() {
+        return Stream.of(
+                // Invalid header names
+                arguments("Header\u001aName", VALID_HEADER_VALUE, false),
+                arguments("Header\u000EName", VALID_HEADER_VALUE, false),
+                arguments("{Header=Name}", VALID_HEADER_VALUE, false),
+                arguments("\"HeaderName\"", VALID_HEADER_VALUE, false),
+                arguments("[\\HeaderName]", VALID_HEADER_VALUE, false),
+                arguments("@Header,Name;", VALID_HEADER_VALUE, false),
+                // Valid header names
+                arguments("!#$Custom~%&\'*Header+^`|", VALID_HEADER_VALUE, true),
+                arguments("Custom_0-9_a-z_A-Z_Header", VALID_HEADER_VALUE, true),
+                // Valid header values
+                arguments(VALID_HEADER_NAME, "Header Value", true),
+                arguments(VALID_HEADER_NAME, "HeaderValue1\u0009, Header=Value2", true),
+                arguments(VALID_HEADER_NAME, "Header\tValue", true),
+                arguments(VALID_HEADER_NAME, " Header Value ", true),
+                // Invalid header values
+                arguments(VALID_HEADER_NAME, "H\u001ceaderValue1", false),
+                arguments(VALID_HEADER_NAME, "HeaderValue1, Header\u007fValue", false),
+                arguments(VALID_HEADER_NAME, "HeaderValue1\u001f, HeaderValue2", false)
         );
     }
 
@@ -636,14 +661,10 @@ class ClientRequestImplTest {
                 }
             }
 
-            // if prologue contains "/badHeaderValue" path, send back the entity as a header value
-            if (getPrologue().contains(BAD_HEADER_VALUE_PATH)) {
-                resHeaders.add(Http.Header.create(BAD_HEADER_NAME, entity.readString(entitySize, StandardCharsets.US_ASCII)));
-            }
-            // if prologue contains "/badHeaderName" path, send back the entity as a header name
-            if (getPrologue().contains(BAD_HEADER_NAME_PATH)) {
-                resHeaders.add(Http.Header.create(Http.Header.create(entity.readString(entitySize, StandardCharsets.US_ASCII)),
-                                                  VALID_HEADER_VALUE));
+            // if prologue contains "/badHeader" path, send back the entity (name and value delimited by ->) as a header
+            if (getPrologue().contains(BAD_HEADER_PATH)) {
+                String[] header = entity.readString(entitySize, StandardCharsets.US_ASCII).split(HEADER_NAME_VALUE_DELIMETER);
+                resHeaders.add(Http.Header.create(Http.Header.create(header[0]), header[1]));
             }
 
             String responseMessage = !requestFailed ? "HTTP/1.1 200 OK\r\n" : "HTTP/1.1 400 Bad Request\r\n";

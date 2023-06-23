@@ -18,46 +18,18 @@ package io.helidon.common.buffers;
 
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class LazyStringTest {
-    private static String INVALID_VALUE = "invalid-value";
-
     @ParameterizedTest
     @MethodSource("owsData")
     void testOwsHandling(OwsTestData data) {
         assertThat(data.string().stripOws(), is(data.expected()));
-    }
-
-    @ParameterizedTest
-    @MethodSource("valuesToValidate")
-    void testValidator(String value, boolean validate, boolean expectsValid) {
-        LazyString lazyString = new LazyString(value.getBytes(US_ASCII), US_ASCII);
-        // Supply custom validator when validate is true that will throw IllegalArgumentException if the value is invalid
-        if (validate) {
-            lazyString.setValidator(valueToValidate -> {
-                if (valueToValidate.contains(INVALID_VALUE)) {
-                    throw new IllegalArgumentException("Found an invalid value");
-                }
-            });
-        }
-        // If there is no validator or validator does not encounter a problem, expect the value retrieval to succeed. Otherwise,
-        // expect that an IllegalArgumentException will be thrown.
-        if (expectsValid) {
-            assertThat(lazyString.stripOws(), is(value));
-            assertThat(lazyString.toString(), is(value));
-        } else {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> lazyString.stripOws());
-            Assertions.assertThrows(IllegalArgumentException.class, () -> lazyString.toString());
-        }
     }
 
     private static Stream<OwsTestData> owsData() {
@@ -80,20 +52,6 @@ class LazyStringTest {
                 new OwsTestData(new LazyString(" \tsome-value\t ".getBytes(US_ASCII), US_ASCII), "some-value"),
                 new OwsTestData(new LazyString(" \t\t ".getBytes(US_ASCII), US_ASCII), ""),
                 new OwsTestData(new LazyString(" \t\r\t ".getBytes(US_ASCII), US_ASCII), "\r")
-        );
-    }
-
-    private static Stream<Arguments> valuesToValidate() {
-        return Stream.of(
-                // Invalid value with validator set, expects that value retrieval will fail
-                arguments("first-" + INVALID_VALUE, true, false),
-                arguments(INVALID_VALUE + "-second", true, false),
-                // Valid value with validator set, expects that value retrieval will succeed
-                arguments("valid-third", true, true),
-                arguments("fourth-valid", true, true),
-                // Valid or Invalid value with no validator set, expects that value retrieval will succeed
-                arguments("valid-fifth", false, true),
-                arguments("sixth" + INVALID_VALUE, false, true)
         );
     }
 

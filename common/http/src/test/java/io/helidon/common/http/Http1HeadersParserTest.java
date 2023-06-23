@@ -35,6 +35,8 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 class Http1HeadersParserTest {
     private static String CUSTOM_HEADER_NAME = "Custom-Header-Name";
     private static String CUSTOM_HEADER_VALUE = "Custom-Header-Value";
+    public static final String VALID_HEADER_VALUE = "Valid-Header-Value";
+    public static final String VALID_HEADER_NAME = "Valid-Header-Name";
 
     @Test
     void testHeadersAreCaseInsensitive() {
@@ -54,52 +56,29 @@ class Http1HeadersParserTest {
     }
 
     @ParameterizedTest
-    @MethodSource("headerValues")
-    void testHeaderValuesWithValidationEnabled(String headerValue, boolean expectsValid) {
+    @MethodSource("headers")
+    void testHeadersWithValidationEnabled(String headerName, String headerValue, boolean expectsValid) {
         // retrieve headers with validation enabled
-        WritableHeaders<?> headers = getHeaders(CUSTOM_HEADER_NAME, headerValue, true);
+        WritableHeaders<?> headers;
         if (expectsValid) {
-            String responseHeaderValue = headers.get(Http.Header.create(CUSTOM_HEADER_NAME)).values();
+            headers = getHeaders(headerName, headerValue, true);
+            String responseHeaderValue = headers.get(Http.Header.create(headerName)).values();
             // returned header values WhiteSpaces are trimmed so need to be tested with trimmed values
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
             Assertions.assertThrows(IllegalArgumentException.class,
-                                    () -> headers.get(Http.Header.create(CUSTOM_HEADER_NAME)).values());
+                                    () -> getHeaders(headerName, headerValue, true));
         }
     }
 
     @ParameterizedTest
-    @MethodSource("headerValues")
-    void testHeaderValuesWithValidationDisabled(String headerValue) {
+    @MethodSource("headers")
+    void testHeadersWithValidationDisabled(String headerValue) {
         // retrieve headers without validating
         WritableHeaders<?> headers = getHeaders(CUSTOM_HEADER_NAME, headerValue, false);
         String responseHeaderValue = headers.get(Http.Header.create(CUSTOM_HEADER_NAME)).values();
         // returned header values WhiteSpaces are trimmed so need to be tested with trimmed values
         assertThat(responseHeaderValue, is(headerValue.trim()));
-    }
-
-    @ParameterizedTest
-    @MethodSource("headerNames")
-    void testHeaderNamesWithValidationEnabled(String headerName, boolean expectsValid) {
-        boolean validate = true;
-        if (expectsValid) {
-            WritableHeaders<?> headers = getHeaders(headerName, CUSTOM_HEADER_VALUE, validate);
-            String responseHeaderValue = headers.get(Http.Header.create(headerName)).values();
-            assertThat(responseHeaderValue, is(CUSTOM_HEADER_VALUE));
-        } else {
-            Assertions.assertThrows(IllegalArgumentException.class,
-                                    () -> getHeaders(headerName, CUSTOM_HEADER_VALUE, validate));
-        }
-    }
-
-    @ParameterizedTest
-    @MethodSource("headerValues")
-    void testHeaderNamesWithValidationDisabled(String headerName) {
-        // retrieve headers without validating
-        WritableHeaders<?> headers = getHeaders(headerName, CUSTOM_HEADER_VALUE, false);
-        String responseHeaderValue = headers.get(Http.Header.create(headerName)).values();
-        // returned header values WhiteSpaces are trimmed so need to be tested with trimmed values
-        assertThat(responseHeaderValue, is(CUSTOM_HEADER_VALUE));
     }
 
     private static WritableHeaders<?> getHeaders(String headerName, String headerValue, boolean validate) {
@@ -108,37 +87,33 @@ class Http1HeadersParserTest {
         return Http1HeadersParser.readHeaders(reader, 1024, validate);
     }
 
-    private static Stream<Arguments> headerValues() {
+    private static Stream<Arguments> headers() {
         return Stream.of(
+                // Invalid header names
+                arguments("Header\u001aName", VALID_HEADER_VALUE, false),
+                arguments("Header\u000EName", VALID_HEADER_VALUE, false),
+                arguments("HeaderName\r\n", VALID_HEADER_VALUE, false),
+                arguments("(Header:Name)", VALID_HEADER_VALUE, false),
+                arguments("<Header?Name>", VALID_HEADER_VALUE, false),
+                arguments("{Header=Name}", VALID_HEADER_VALUE, false),
+                arguments("\"HeaderName\"", VALID_HEADER_VALUE, false),
+                arguments("[\\HeaderName]", VALID_HEADER_VALUE, false),
+                arguments("@Header,Name;", VALID_HEADER_VALUE, false),
+                // Valid header names
+                arguments("!#$Custom~%&\'*Header+^`|", VALID_HEADER_VALUE, true),
+                arguments("Custom_0-9_a-z_A-Z_Header", VALID_HEADER_VALUE, true),
                 // Valid header values
-                arguments("Header Value", true),
-                arguments("HeaderValue1\u0009, Header=Value2", true),
-                arguments("Header\tValue", true),
-                arguments(" Header Value ", true),
+                arguments(VALID_HEADER_NAME, "Header Value", true),
+                arguments(VALID_HEADER_NAME, "HeaderValue1\u0009, Header=Value2", true),
+                arguments(VALID_HEADER_NAME, "Header\tValue", true),
+                arguments(VALID_HEADER_NAME, " Header Value ", true),
                 // Invalid header values
-                arguments("H\u001ceaderValue1", false),
-                arguments("HeaderValue1, Header\u007fValue", false),
-                arguments("HeaderValue1\u001f, HeaderValue2", false)
+                arguments(VALID_HEADER_NAME, "H\u001ceaderValue1", false),
+                arguments(VALID_HEADER_NAME, "HeaderValue1, Header\u007fValue", false),
+                arguments(VALID_HEADER_NAME, "HeaderValue1\u001f, HeaderValue2", false)
         );
     }
 
-    private static Stream<Arguments> headerNames() {
-        return Stream.of(
-                // Invalid header names
-                arguments("Header\u001aName", false),
-                arguments("Header\u000EName", false),
-                arguments("HeaderName\r\n", false),
-                arguments("(Header:Name)", false),
-                arguments("<Header?Name>", false),
-                arguments("{Header=Name}", false),
-                arguments("\"HeaderName\"", false),
-                arguments("[\\HeaderName]", false),
-                arguments("@Header,Name;", false),
-                // Valid header names
-                arguments("!#$Custom~%&\'*Header+^`|", true),
-                arguments("Custom_0-9_a-z_A-Z_Header", true)
-        );
-    }
 
     private void testHeader(Headers headers, String header, String... values) {
         Http.HeaderName headerName = Http.Header.create(header);
