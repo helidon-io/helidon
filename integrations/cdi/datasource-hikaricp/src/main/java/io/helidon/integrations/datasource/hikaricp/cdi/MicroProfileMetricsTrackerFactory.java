@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.zaxxer.hikari.metrics.PoolStats;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 
 @ApplicationScoped
 class MicroProfileMetricsTrackerFactory implements MetricsTrackerFactory {
@@ -35,7 +35,7 @@ class MicroProfileMetricsTrackerFactory implements MetricsTrackerFactory {
     }
 
     @Inject
-    MicroProfileMetricsTrackerFactory(@RegistryType(type = Registry.VENDOR_SCOPE) final MetricRegistry registry) {
+    MicroProfileMetricsTrackerFactory(@RegistryScope(scope = "vendor") final MetricRegistry registry) {
         super();
         this.registry = registry;
     }
