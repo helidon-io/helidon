@@ -147,19 +147,17 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     }
 
     /**
-     * Get a registry based on its type.
-     * For {@value Registry#APPLICATION_SCOPE} and {@value Registry#VENDOR_SCOPE} returns a modifiable registry,
-     * for {@value Registry#BASE_SCOPE} returns a final registry (cannot register new metrics).
+     * Get a registry based on its scope.
      *
-     * @param scope type of registry
-     * @return MetricRegistry for the type defined.
+     * @param scope scope of registry
+     * @return Registry for the scope requested
      */
     @Override
-    public Registry getRegistry(String scope) {
+    public io.helidon.metrics.api.Registry getRegistry(String scope) {
         if (Registry.BASE_SCOPE.equals(scope)) {
             ensureBase();
         }
-        return registries.get(scope);
+        return registries.computeIfAbsent(scope, s -> Registry.create(s, metricsSettings.registrySettings(s)));
     }
 
     @Override

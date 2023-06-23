@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.metrics;
+package io.helidon.metrics.api;
 
 import java.util.Optional;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.metrics.api.GlobalTagsHelper;
+
 import io.micrometer.core.instrument.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +34,7 @@ class TestGlobalTagHelper {
 
     @Test
     void checkSingle() {
-        GlobalTagsHelper helper = new GlobalTagsHelper();
+        GlobalTagsHelper helper = GlobalTagsHelper.create();
         Optional<Tag[]> tagsOpt = helper.tags("a=4");
         assertThat("Optional tags", tagsOpt, OptionalMatcher.optionalPresent());
         Tag[] tags = tagsOpt.get();
@@ -43,7 +45,7 @@ class TestGlobalTagHelper {
 
     @Test
     void checkMultiple() {
-        GlobalTagsHelper helper = new GlobalTagsHelper();
+        GlobalTagsHelper helper = GlobalTagsHelper.create();
         Optional<Tag[]> tagsOpt = helper.tags("a=11,b=12,c=13");
         assertThat("Optional tags", tagsOpt, OptionalMatcher.optionalPresent());
         Tag[] tags = tagsOpt.get();
@@ -59,7 +61,7 @@ class TestGlobalTagHelper {
 
     @Test
     void checkQuoted() {
-        GlobalTagsHelper helper = new GlobalTagsHelper();
+        GlobalTagsHelper helper = GlobalTagsHelper.create();
         Optional<Tag[]> tagsOpt = helper.tags("d=r\\=3,e=4,f=0\\,1,g=hi");
         assertThat("Optional tags", tagsOpt, OptionalMatcher.optionalPresent());
         Tag[] tags = tagsOpt.get();
@@ -76,7 +78,7 @@ class TestGlobalTagHelper {
 
     @Test
     void checkErrors() {
-        GlobalTagsHelper helper = new GlobalTagsHelper();
+        GlobalTagsHelper helper = GlobalTagsHelper.create();
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> helper.tags(""));
         assertThat("Exception for empty assignments", ex.getMessage(), containsString("empty"));
 

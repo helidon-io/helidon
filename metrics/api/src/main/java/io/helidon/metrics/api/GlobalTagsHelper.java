@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.metrics;
+package io.helidon.metrics.api;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 
 /**
  * Manages retrieving and dispensing global tags.
@@ -29,30 +32,55 @@ import io.micrometer.core.instrument.Tag;
  *     concerned with.
  * </p>
  */
-class GlobalTagsHelper {
+public class GlobalTagsHelper {
 
     // Static instance is used normally at runtime to share a single set of global tags across possibly multiple metric
     // registries. Otherwise, regular instances of the helper are typically created only for testing.
     private static final GlobalTagsHelper INSTANCE = new GlobalTagsHelper();
 
-    private Optional<Tag[]> tags = Optional.empty();
+    private Tag[] globalTags;
+    private String scopeTagName;
+
+    private GlobalTagsHelper() {
+    }
 
     /**
      * Sets the tags for normal use.
      *
      * @param tagExpression tag assignments
      */
-    static void globalTags(String tagExpression) {
+    public static void globalTags(String tagExpression) {
         INSTANCE.tags(tagExpression);
     }
 
     /**
-     * Retrieves the tags for normal use.
+     * Sets the tag name used for identifying the scope in metrics output.
      *
-     * @return tags derived from the earlier assignment
+     * @param scopeTagName tag name for identifying a meter's scope
      */
-    static Optional<Tag[]> globalTags() {
-        return INSTANCE.tags();
+    public static void scopeTagName(String scopeTagName) {
+        INSTANCE.scopeTagName = scopeTagName;
+    }
+
+    /**
+     * Prepares a {@link Tags} object accounting for the specified scope (if the scope tag name has been set),
+     * any globally-set tags, and the indicated tags from the caller.
+     *
+     * @param scope scope to identify using a tag
+     * @param tags tags otherwise specified for the meter
+     * @return the {@code Tags} object reflecting the relevant tags
+     */
+    public static Tags augmentedTags(String scope, Iterable<Map.Entry<String, String>> tags) {
+        return INSTANCE.augmentTags(scope, tags);
+    }
+
+    /**
+     * Creates a new instance of the helper <em>without</em> also establishing it as the singleton instance.
+     *
+     * @return new instance
+     */
+    static GlobalTagsHelper create() {
+        return new GlobalTagsHelper();
     }
 
     /**
@@ -115,16 +143,30 @@ class GlobalTagsHelper {
             throw new IllegalArgumentException("Error(s) in global tag assignment: " + problems);
         }
 
-        tags = Optional.of(result);
-        return tags;
+        globalTags = result;
+        return tags();
     }
 
-    /**
+   /**
      * For testing or internal use; returns the tags derived from the assignment expression.
      *
      * @return tags
      */
     Optional<Tag[]> tags() {
-        return tags;
+        return globalTags == null || globalTags.length == 0
+                ? Optional.empty()
+                : Optional.of(globalTags);
+    }
+
+    private Tags augmentTags(String scope, Iterable<Map.Entry<String, String>> tags) {
+        AtomicReference<Tags> result = new AtomicReference<>(Tags.empty());
+        tags.forEach(tag -> result.set(result.get().and(tag.getKey(), tag.getValue())));
+        if (scopeTagName != null) {
+            result.set(result.get().and(Tag.of(scopeTagName, scope)));
+        }
+        if (globalTags != null && globalTags.length > 0) {
+            result.set(result.get().and(globalTags));
+        }
+        return result.get();
     }
 }

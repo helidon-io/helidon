@@ -16,10 +16,17 @@
 
 package io.helidon.metrics;
 
+import java.util.AbstractMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
 import io.helidon.metrics.api.AbstractMetric;
+import io.helidon.metrics.api.GlobalTagsHelper;
 
 import io.micrometer.core.instrument.Tags;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 
 /**
@@ -57,12 +64,44 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         return "";
     }
 
-    protected static Tags tags(Tag... tags) {
-        Tags result = Tags.empty();
-        for (Tag tag : tags) {
-            result = result.and(tag.getTagName(), tag.getTagValue());
-        }
-        return result;
+//    protected static Tags tags(Tag... tags) {
+//        Tags result = Tags.empty();
+//        for (Tag tag : tags) {
+//            result = result.and(tag.getTagName(), tag.getTagValue());
+//        }
+//        return result;
+//    }
+
+    protected static Tags augmentedTags(String scope, Tag... tags) {
+        return GlobalTagsHelper.augmentedTags(scope, iterable(tags));
+    }
+
+    protected static String sanitizeUnit(String unit) {
+        return unit != null && !unit.equals(MetricUnits.NONE)
+                ? unit
+                : null;
+    }
+
+    private static Iterable<Map.Entry<String, String>> iterable(Tag... tags) {
+        return () -> new Iterator<>() {
+            private int next;
+
+            @Override
+            public boolean hasNext() {
+                return next < tags.length;
+            }
+
+            @Override
+            public Map.Entry<String, String> next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                var result = new AbstractMap.SimpleEntry<>(tags[next].getTagName(),
+                                                           tags[next].getTagValue());
+                next++;
+                return result;
+            }
+        };
     }
 
 }

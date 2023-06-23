@@ -76,7 +76,8 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                                    io.micrometer.core.instrument.Gauge
                                            .builder(metadata.getName(), target, t -> function.apply(t).doubleValue())
                                            .description(metadata.getDescription())
-                                           .tags(tags(tags))
+                                           .tags(augmentedTags(scope, tags))
+                                           .baseUnit(sanitizeUnit(metadata.getUnit()))
                                            .strongReference(true)
                                            .register(meterRegistry));
     }
@@ -105,7 +106,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                                            .baseUnit(metadata.getUnit())
                                            .description(metadata.getDescription())
                                            .strongReference(true)
-                                           .tags(tags(tags))
+                                           .tags(augmentedTags(scope, tags))
                                            .register(meterRegistry));
     }
 
@@ -136,7 +137,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                                                  .builder(metadata.getName(), target, fn)
                                                  .description(metadata.getDescription())
                                                  .baseUnit(metadata.getUnit())
-                                                 .tags(tags(tags))
+                                                 .tags(augmentedTags(scope, tags))
                                                  .strongReference(true)
                                                  .register(meterRegistry));
 

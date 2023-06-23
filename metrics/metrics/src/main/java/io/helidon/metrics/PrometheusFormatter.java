@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.metrics;
+package io.helidon.metrics;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -58,11 +58,13 @@ public class PrometheusFormatter {
     private static final String PROMETHEUS_TYPE_PREFIX = "# TYPE";
     private static final String PROMETHEUS_HELP_PREFIX = "# HELP";
 
+    private final String scopeTagName;
     private final String scopeSelection;
     private final String meterSelection;
     private final MediaType resultMediaType;
 
     private PrometheusFormatter(Builder builder) {
+        scopeTagName = builder.scopeTagName;
         scopeSelection = builder.scopeSelection;
         meterSelection = builder.meterNameSelection;
         resultMediaType = builder.resultMediaType;
@@ -77,6 +79,7 @@ public class PrometheusFormatter {
     public String filteredOutput() {
         return formattedOutput(prometheusMeterRegistry(),
                                resultMediaType,
+                               scopeTagName,
                                scopeSelection,
                                meterSelection);
     }
@@ -93,13 +96,14 @@ public class PrometheusFormatter {
      */
     String formattedOutput(PrometheusMeterRegistry prometheusMeterRegistry,
                                   MediaType resultMediaType,
+                                  String scopeTagName,
                                   String scopeSelection,
                                   String meterNameSelection) {
         String rawPrometheusOutput = prometheusMeterRegistry
                 .scrape(PrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(resultMediaType),
                         meterNamesOfInterest(prometheusMeterRegistry, meterNameSelection));
 
-        return filter(rawPrometheusOutput, scopeSelection);
+        return filter(rawPrometheusOutput, scopeTagName, scopeSelection);
     }
 
     /**
@@ -109,7 +113,7 @@ public class PrometheusFormatter {
      * @param scope scope to filter; null means no filtering by scope
      * @return output filtered by scope (if specified)
      */
-    static String filter(String output, String scope) {
+    static String filter(String output, String scopeTagName, String scope) {
         if (scope == null) {
             return output;
         }
@@ -128,7 +132,9 @@ public class PrometheusFormatter {
          * Then, once we have the line containing the actual meter ID, if that line matches the selection
          * add the previously-gathered help and type and the meter line to the output.
          */
-        Pattern scopePattern = Pattern.compile(".*?\\{.*?mp_scope=\"" + scope + "\".*?}.*?");
+        Pattern scopePattern = Pattern.compile(String.format(".*?\\{/*?%s=\"%s\".*?}.*?",
+                                                             scopeTagName,
+                                                             scope));
 
         StringBuilder allOutput = new StringBuilder();
         StringBuilder typeAndHelpOutputForCurrentMeter = new StringBuilder();
@@ -255,6 +261,7 @@ public class PrometheusFormatter {
     public static class Builder implements io.helidon.common.Builder<Builder, PrometheusFormatter> {
 
         private String meterNameSelection;
+        private String scopeTagName;
         private String scopeSelection;
         private MediaType resultMediaType = MediaTypes.TEXT_PLAIN;
 
@@ -288,6 +295,17 @@ public class PrometheusFormatter {
          */
         public Builder scope(String scope) {
             scopeSelection = scope;
+            return identity();
+        }
+
+        /**
+         * Sets the scope tag name with which to filter the output.
+         *
+         * @param scopeTagName scope tag name
+         * @return updated builder
+         */
+        public Builder scopeTagName(String scopeTagName) {
+            this.scopeTagName = scopeTagName;
             return identity();
         }
 

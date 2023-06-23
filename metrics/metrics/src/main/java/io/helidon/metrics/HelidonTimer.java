@@ -48,17 +48,17 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
         this.meterRegistry = meterRegistry;
     }
 
-    static HelidonTimer create(String repoType, Metadata metadata, Tag... tags) {
-        return create(Metrics.globalRegistry, repoType, metadata, tags);
+    static HelidonTimer create(String scope, Metadata metadata, Tag... tags) {
+        return create(Metrics.globalRegistry, scope, metadata, tags);
     }
 
-    static HelidonTimer create(MeterRegistry meterRegistry, String repoType, Metadata metadata, Tag... tags) {
+    static HelidonTimer create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
         return new HelidonTimer(meterRegistry,
-                                repoType,
+                                scope,
                                 metadata,
                                 io.micrometer.core.instrument.Timer.builder(metadata.getName())
                                         .description(metadata.getDescription())
-                                        .tags(tags(tags))
+                                        .tags(augmentedTags(scope, tags))
                                         .publishPercentiles(DEFAULT_PERCENTILES)
                                         .percentilePrecision(DEFAULT_PERCENTILE_PRECISION)
                                         .register(meterRegistry));

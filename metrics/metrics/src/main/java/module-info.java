@@ -40,6 +40,7 @@ module io.helidon.metrics {
     requires io.helidon.common.configurable;
     requires transitive micrometer.core;
     requires micrometer.registry.prometheus;
+    requires simpleclient.common; // for Prometheus formatting
 
     exports io.helidon.metrics;
 

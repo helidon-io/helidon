@@ -137,8 +137,9 @@ public interface RegistrySettings {
         Builder config(Config registrySettings);
 
         /**
+         * Indicates the builder's current setting for whether metrics in the relevant registry are to be used.
          *
-         * @return builder's current setting for whether metrics in the relevant registry are to be used
+         * @return enabled setting
          */
         boolean isEnabled();
 

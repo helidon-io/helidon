@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.metrics;
+package io.helidon.metrics;
 
 import java.util.Arrays;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.helidon.metrics.api.RegistrySettings;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -35,63 +34,51 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestCounters {
 
-    static PrometheusMeterRegistry prometheusMeterRegistry;
-    static MeterRegistry meterRegistry;
-    static MpMetricRegistry mpMetricRegistry;
+    static MetricRegistry metricRegistry;
 
     @BeforeAll
     static void setup() {
-        PrometheusConfig config = new PrometheusConfig() {
-            @Override
-            public String get(String s) {
-                return null;
-            }
-        };
-
-        prometheusMeterRegistry = new PrometheusMeterRegistry(config);
-        meterRegistry = Metrics.globalRegistry;
-
-        mpMetricRegistry = MpMetricRegistry.create("myscope", meterRegistry);
+        metricRegistry = Registry.create("myscope", RegistrySettings.create());
     }
 
     @Test
     void testCounter() {
-        Counter counter = mpMetricRegistry.counter("myCounter");
+        Counter counter = metricRegistry.counter("myCounter");
         counter.inc();
         assertThat("Updated counter", counter.getCount(), is(1L));
     }
 
     @Test
     void testConflictingTags() {
-        Counter counter = mpMetricRegistry.counter("conflictingCounterDueToTags"); // name only
+        metricRegistry.counter("conflictingCounterDueToTags"); // name only
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                     () -> mpMetricRegistry.counter("conflictingCounterDueToTags",
-                                                    new Tag[] {new Tag("tag1", "value1")}));
-        assertThat("Inconsistent tags check", ex.getMessage(), containsString("inconsistent"));
+                     () -> metricRegistry.counter("conflictingCounterDueToTags",
+                                                  new Tag[] {new Tag("tag1", "value1")}));
+        assertThat("Inconsistent tags check", ex.getMessage(), containsString("Inconsistent"));
     }
 
     @Test
     void testConsistentTags() {
         Tag[] tags = {new Tag("tag1", "value1"), new Tag("tag2", "value2")};
-        Counter counter1 = mpMetricRegistry.counter("sameTag", tags);
-        Counter counter2 = mpMetricRegistry.counter("sameTag", Arrays.copyOf(tags, tags.length));
+        Counter counter1 = metricRegistry.counter("sameTag", tags);
+        Counter counter2 = metricRegistry.counter("sameTag", Arrays.copyOf(tags, tags.length));
         assertThat("Reregistered meter", counter2, is(sameInstance(counter1)));
     }
 
     @Test
     void conflictingMetadata() {
-        mpMetricRegistry.counter(Metadata.builder()
+        metricRegistry.counter(Metadata.builder()
                                          .withName("counterWithMetadata")
                                          .withDescription("first")
                                          .build());
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                                                   () -> mpMetricRegistry.counter(Metadata.builder()
+                                                   () -> metricRegistry.counter(Metadata.builder()
                                                                                           .withName("counterWithMetadata")
                                                                                           .withDescription("second")
                                                                                           .build()));
 
         assertThat("Error message",
-                   ex.getMessage().matches(".*?metadata.*?inconsistent.*?"),
+                   ex.getMessage().contains("metadata conflicts"),
                    is(true));
     }
 }

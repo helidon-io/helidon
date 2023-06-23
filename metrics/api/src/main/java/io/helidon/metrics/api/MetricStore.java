@@ -114,25 +114,14 @@ class MetricStore {
         return writeAccess(() -> {
             HelidonMetric metric = getMetricLocked(newMetadata.getName(), tags);
             if (metric == null) {
-                // See if there is a matching metric using only the name; if so, make sure
-                // the tag names for the two metric IDs are the same. We
-                // only need to check the first same-named metric because
-                // any others would have already passed this check before being added.
                 MetricID newMetricID = new MetricID(newMetadata.getName(), tags);
-                List<MetricID> sameNamedMetricIDs = allMetricIDsByName.get(newMetadata.getName());
-                if (sameNamedMetricIDs != null && !sameNamedMetricIDs.isEmpty()) {
-                    ensureTagNamesConsistent(sameNamedMetricIDs.get(0), newMetricID);
-                }
+                ensureTagNamesConsistent(newMetricID);
                 getConsistentMetadataLocked(newMetadata);
                 metric = registerMetricLocked(newMetricID,
                                               createEnabledAwareMetric(clazz, newMetadata));
                 return clazz.cast(metric);
             }
-            if (!baseMetricClass(metric.getClass()).isAssignableFrom(newBaseType)) {
-                throw new IllegalArgumentException("Attempt to register new metric of type " + clazz.getName()
-                + " when previously-registered metric " + newMetadata.getName() + Arrays.asList(tags)
-                + " is of incompatible type " + metric.getClass());
-            }
+            ensureConsistentMetricTypes(metric, newBaseType, () -> new MetricID(newMetadata.getName(), tags));
             enforceConsistentMetadata(metric.metadata(), newMetadata);
             return clazz.cast(metric);
         });
@@ -375,27 +364,17 @@ class MetricStore {
         Class<? extends Metric> newBaseType = baseMetricClass(clazz);
         return writeAccess(() -> {
             HelidonMetric metric = metricFactory.get();
+            MetricID newMetricID = metricIDFactory.get();
             if (metric == null) {
-                try {
+                    ensureTagNamesConsistent(newMetricID);
                     Metadata metadata = metadataFactory.get();
                     if (metadata == null) {
                         metadata = registerMetadataLocked(metricName);
                     }
                     metric = registerMetricLocked(metricIDFactory.get(),
                                                   createEnabledAwareMetric(clazz, metadata));
-                } catch (Exception e) {
-                    throw new RuntimeException("Error attempting to register new metric " + metricIDFactory.get(), e);
-                }
             } else {
-                if (!baseMetricClass(metric.getClass()).isAssignableFrom(newBaseType)) {
-                    MetricID tempID = metricIDFactory.get();
-                    throw new IllegalArgumentException(
-                            "Attempt to register new metric of type " + clazz.getName()
-                             + " when previously-registered metric "
-                             + metricName
-                             + Arrays.asList(tempID.getTagsAsArray())
-                             + " is of incompatible type " + metric.getClass());
-                }
+                ensureConsistentMetricTypes(metric, newBaseType, metricIDFactory);
                 Metadata existingMetadata = metadataFactory.get();
                 if (existingMetadata == null) {
                     throw new IllegalStateException("Could not find existing metadata under name "
@@ -464,6 +443,31 @@ class MetricStore {
             throw new IllegalArgumentException("Inconsistent tag names between two metrics with the same name '"
                                                        + existingID.getName() + "'; previously-registered tag names: "
                                                + existingTagNames + ", proposed tag names: " + newTagNames);
+        }
+    }
+
+    private void ensureTagNamesConsistent(MetricID newID) {
+        // See if there is a matching metric using only the name; if so, make sure
+        // the tag names for the two metric IDs are the same. We
+        // only need to check the first same-named metric because
+        // any others would have already passed this check before being added.
+        List<MetricID> sameNamedMetricIDs = allMetricIDsByName.get(newID.getName());
+        if (sameNamedMetricIDs != null && !sameNamedMetricIDs.isEmpty()) {
+            ensureTagNamesConsistent(sameNamedMetricIDs.get(0), newID);
+        }
+    }
+
+    private void ensureConsistentMetricTypes(HelidonMetric existingMetric,
+                                             Class<? extends Metric> newBaseType,
+                                             Supplier<MetricID> metricIDSupplier) {
+        if (!baseMetricClass(existingMetric.getClass()).isAssignableFrom(newBaseType)) {
+            MetricID tempID = metricIDSupplier.get();
+            throw new IllegalArgumentException(
+                    "Attempt to register new metric of type " + newBaseType.getName()
+                            + " when previously-registered metric "
+                            + tempID.getName()
+                            + Arrays.asList(tempID.getTagsAsArray())
+                            + " is of incompatible type " + existingMetric.getClass());
         }
     }
 

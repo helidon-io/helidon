@@ -71,20 +71,23 @@ public interface MetricsSettings {
     }
 
     /**
+     * Returns whether metrics are enabled.
      *
-     * @return whether metrics are enabled according to the settings
+     * @return enabled setting
      */
     boolean isEnabled();
 
     /**
+     * Returns the KPI metrics settings.
      *
-     * @return the KPI metrics settings
+     * @return KPI metrics settings
      */
     KeyPerformanceIndicatorMetricsSettings keyPerformanceIndicatorSettings();
 
     /**
+     * Returns the base metrics settings.
      *
-     * @return the base metrics settings
+     * @return base metrics settings
      */
     BaseMetricsSettings baseMetricsSettings();
 
