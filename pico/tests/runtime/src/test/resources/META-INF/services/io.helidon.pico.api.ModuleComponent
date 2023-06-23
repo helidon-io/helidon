@@ -14,5 +14,5 @@
 # limitations under the License.
 #
 
-io.helidon.pico.runtime.testsubjects.EmptyModule
 io.helidon.pico.runtime.testsubjects.HelloPico$$Module
+io.helidon.pico.runtime.testsubjects.EmptyModule

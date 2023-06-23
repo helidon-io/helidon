@@ -48,6 +48,7 @@ import io.helidon.pico.runtime.testsubjects.PicoWorldImpl$$picoActivator;
 import io.helidon.pico.spi.InjectionPlan;
 
 import jakarta.inject.Singleton;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -162,8 +163,8 @@ class HelloPicoWorldSanityTest {
 
         // now activate
         HelloPicoWorld hello1 = helloProvider1.get();
-        assertThat(hello1.sayHello(),
-                   equalTo("Hello pico"));
+        MatcherAssert.assertThat(hello1.sayHello(),
+                                 equalTo("Hello pico"));
         assertThat(helloProvider1.currentActivationPhase(),
                    equalTo(Phase.ACTIVE));
         assertThat(helloProvider1.description(),
@@ -174,10 +175,10 @@ class HelloPicoWorldSanityTest {
                    equalTo("PicoWorldImpl:ACTIVE"));
 
         // check the post construct counts
-        assertThat(((HelloPicoWorldImpl) helloProvider1.get()).postConstructCallCount(),
-                   equalTo(1));
-        assertThat(((HelloPicoWorldImpl) helloProvider1.get()).preDestroyCallCount(),
-                   equalTo(0));
+        MatcherAssert.assertThat(((HelloPicoWorldImpl) helloProvider1.get()).postConstructCallCount(),
+                                 equalTo(1));
+        MatcherAssert.assertThat(((HelloPicoWorldImpl) helloProvider1.get()).preDestroyCallCount(),
+                                 equalTo(0));
 
         // deactivate just the Hello service
         ActivationResult result = helloProvider1.deActivator().orElseThrow()
@@ -191,10 +192,10 @@ class HelloPicoWorldSanityTest {
                    is(Phase.ACTIVE));
         assertThat(helloProvider1.description(),
                    equalTo("HelloPicoWorldImpl:DESTROYED"));
-        assertThat(((HelloPicoWorldImpl) hello1).postConstructCallCount(),
-                   equalTo(1));
-        assertThat(((HelloPicoWorldImpl) hello1).preDestroyCallCount(),
-                   equalTo(1));
+        MatcherAssert.assertThat(((HelloPicoWorldImpl) hello1).postConstructCallCount(),
+                                 equalTo(1));
+        MatcherAssert.assertThat(((HelloPicoWorldImpl) hello1).preDestroyCallCount(),
+                                 equalTo(1));
         assertThat(worldProvider1.description(),
                    equalTo("PicoWorldImpl:ACTIVE"));
     }
@@ -212,13 +213,13 @@ class HelloPicoWorldSanityTest {
         assertThat(result.success(), is(true));
 
         HelloPicoWorld hello1 = subversiveWay.serviceRef().orElseThrow();
-        assertThat(hello1.sayHello(),
-                   equalTo("Hello pico"));
-        assertThat(subversiveWay.currentActivationPhase(),
-                   equalTo(Phase.ACTIVE));
+        MatcherAssert.assertThat(hello1.sayHello(),
+                                 equalTo("Hello pico"));
+        MatcherAssert.assertThat(subversiveWay.currentActivationPhase(),
+                                 equalTo(Phase.ACTIVE));
 
-        assertThat(hello1,
-                   sameInstance(subversiveWay.get()));
+        MatcherAssert.assertThat(hello1,
+                                 sameInstance(subversiveWay.get()));
         assertThat(subversiveWay, sameInstance(result.serviceProvider()));
 
         // the above is subversive because it is disconnected from the "real" activator
@@ -242,9 +243,9 @@ class HelloPicoWorldSanityTest {
         ActivationResult result = activator.activate(ActivationRequest.builder().targetPhase(Phase.INJECTING).build());
         assertThat(result.success(), is(true));
 
-        assertThat(activator.currentActivationPhase(), is(Phase.INJECTING));
-        assertThat(activator.serviceRef().orElseThrow().postConstructCallCount(), equalTo(0));
-        assertThat(activator.serviceRef().orElseThrow().preDestroyCallCount(), equalTo(0));
+        MatcherAssert.assertThat(activator.currentActivationPhase(), is(Phase.INJECTING));
+        MatcherAssert.assertThat(activator.serviceRef().orElseThrow().postConstructCallCount(), equalTo(0));
+        MatcherAssert.assertThat(activator.serviceRef().orElseThrow().preDestroyCallCount(), equalTo(0));
 
         Map<String, ? extends InjectionPlan> injectionPlan = result.injectionPlans();
         assertThat(injectionPlan.keySet(), containsInAnyOrder(
@@ -275,9 +276,9 @@ class HelloPicoWorldSanityTest {
                                             .startingPhase(activator.currentActivationPhase())
                                             .build());
         assertThat(result.success(), is(true));
-        assertThat(activator.currentActivationPhase(), is(Phase.ACTIVE));
-        assertThat(activator.serviceRef().orElseThrow().postConstructCallCount(), equalTo(1));
-        assertThat(activator.serviceRef().orElseThrow().preDestroyCallCount(), equalTo(0));
+        MatcherAssert.assertThat(activator.currentActivationPhase(), is(Phase.ACTIVE));
+        MatcherAssert.assertThat(activator.serviceRef().orElseThrow().postConstructCallCount(), equalTo(1));
+        MatcherAssert.assertThat(activator.serviceRef().orElseThrow().preDestroyCallCount(), equalTo(0));
 
         // these should have happened prior, so not there any longer
         assertThat(result.injectionPlans(), equalTo(Map.of()));
