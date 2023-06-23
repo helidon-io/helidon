@@ -19,12 +19,14 @@ package io.helidon.nima.webclient;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.List;
 import java.util.function.Function;
 
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.nima.common.tls.Tls;
 
@@ -84,11 +86,22 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
      * Set an HTTP header.
      *
      * @param name  header name
-     * @param value header value
+     * @param values header values
      * @return updated request
      */
-    default B header(Http.HeaderName name, String value) {
-        return header(Http.Header.create(name, true, false, value));
+    default B header(Http.HeaderName name, String... values) {
+        return header(Http.Header.create(name, true, false, values));
+    }
+
+    /**
+     * Set an HTTP header with multiple values.
+     *
+     * @param name   header name
+     * @param values header values
+     * @return updated request
+     */
+    default B header(Http.HeaderName name, List<String> values) {
+        return header(Http.Header.create(name, values));
     }
 
     /**
@@ -113,12 +126,38 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
     }
 
     /**
+     * Accepted media types. Supports quality factor and wildcards.
+     *
+     * @param acceptedTypes media types to accept
+     * @return updated request
+     */
+    default B accept(MediaType... acceptedTypes) {
+        return headers(it -> {
+            it.accept(acceptedTypes);
+            return it;
+        });
+    }
+
+    /**
      * Sets the content type of the request.
      *
      * @param contentType content type of the request.
      * @return updated request
      */
     default B contentType(HttpMediaType contentType) {
+        return headers(it -> {
+            it.contentType(contentType);
+            return it;
+        });
+    }
+
+    /**
+     * Sets the content type of the request.
+     *
+     * @param contentType content type of the request.
+     * @return updated request
+     */
+    default B contentType(MediaType contentType) {
         return headers(it -> {
             it.contentType(contentType);
             return it;
