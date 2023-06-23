@@ -75,10 +75,10 @@ abstract class ValidationTask {
     /**
      * Validate runtime object that is configured by a prototype.
      * <p>
-     * If annotated by @ConfiguredBy
+     * If annotated by {@value io.helidon.builder.processor.Types#RUNTIME_PROTOTYPE}
      *             - RuntimeType must have "static RuntimeType create(ConfigObject)"
      *             - RuntimeType must have "static RuntimeType create(Consumer<ConfigObject.Builder>)
-     *             - must implement ConfiguredType
+     *             - must implement {@value io.helidon.builder.processor.Types#RUNTIME_OBJECT}
      */
     static class ValidateConfiguredType extends ValidationTask {
         private final TypeInfo runtimeTypeInfo;
@@ -101,8 +101,12 @@ abstract class ValidationTask {
                     new ValidateCreateWithConsumerMethod(configObjectWithTypeParams, runtimeTypeInfo),
                     new ValidateImplements(runtimeTypeInfo,
                                            configuredTypeInterface,
-                                           "Type annotated with @ConfiguredBy(" + configObjectType.className()
-                                                   + ".class) must implement ConfiguredType<"
+                                           "Type annotated with @"
+                                                   + RUNTIME_PROTOTYPE_TYPE.classNameWithEnclosingNames()
+                                                   + "(" + configObjectType.className()
+                                                   + ".class) must implement "
+                                                   + RUNTIME_OBJECT_TYPE.classNameWithEnclosingNames()
+                                                   + "<"
                                                    + configObjectWithTypeParams.classNameWithTypes() + ">")
             );
         }
@@ -223,7 +227,9 @@ abstract class ValidationTask {
                                TypeName.builder(RUNTIME_OBJECT_TYPE)
                                        .addTypeArgument(configObjectType.boxed())
                                        .build(),
-                               "As " + blueprintInfo.typeName().fqName() + " implements Factory<"
+                               "As " + blueprintInfo.typeName().fqName() + " implements "
+                                       + Types.PROTOTYPE_FACTORY_TYPE.classNameWithEnclosingNames()
+                                       + "<"
                                        + runtimeTypeInfo.typeName().fqName() + ">, the runtime type must implement(or extend) "
                                        + "interface " + RUNTIME_OBJECT_TYPE.fqName() + "<" + configObjectType.className() + ">"
             );
@@ -300,7 +306,9 @@ abstract class ValidationTask {
                                   runtimeTypeInfo.typeName(),
                                   "create",
                                   configObjectType,
-                                  "As " + fqName + " is annotated with @RuntimeType.PrototypedBy("
+                                  "As " + fqName + " is annotated with @"
+                                          + RUNTIME_PROTOTYPE_TYPE.classNameWithEnclosingNames()
+                                          + "("
                                           + configObjectType.className()
                                           + "), the type must implement the following "
                                           + "method:\n"
@@ -340,7 +348,9 @@ abstract class ValidationTask {
                                   runtimeTypeInfo.typeName(),
                                   "create",
                                   consumerArgument,
-                                  "As " + configObjectType.fqName() + " implements Factory<"
+                                  "As " + configObjectType.fqName() + " implements "
+                                          + Types.PROTOTYPE_FACTORY_TYPE.classNameWithEnclosingNames()
+                                          + "<"
                                           + runtimeTypeInfo.typeName()
                                           .fqName() + ">, the type " + runtimeTypeInfo.typeName().className()
                                           + " must implement the following "
@@ -384,7 +394,9 @@ abstract class ValidationTask {
                                   configObjectBuilder,
                                   "builder",
                                   null,
-                                  "As " + configObjectType.fqName() + " implements Factory<"
+                                  "As " + configObjectType.fqName() + " implements "
+                                          + Types.PROTOTYPE_FACTORY_TYPE.classNameWithEnclosingNames()
+                                          + "<"
                                           + runtimeTypeInfo.typeName()
                                           .fqName() + ">, the runtime type must implement the following "
                                           + "method:\n"
