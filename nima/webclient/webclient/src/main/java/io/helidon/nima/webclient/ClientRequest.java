@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import io.helidon.common.http.ClientRequestHeaders;
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
@@ -103,6 +104,14 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
     default B header(Http.HeaderName name, List<String> values) {
         return header(Http.Header.create(name, values));
     }
+
+    /**
+     * Configure headers. Copy all headers from supplied {@link Headers} instance.
+     *
+     * @param headers to copy
+     * @return updated request
+     */
+    B headers(Headers headers);
 
     /**
      * Update headers.
@@ -211,6 +220,13 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
      * @return response
      */
     R request();
+
+    /**
+     * Get a (mutable) instance of outgoing headers.
+     *
+     * @return client request headers
+     */
+    ClientRequestHeaders headers();
 
     /**
      * Request without sending an entity, asking for entity only.

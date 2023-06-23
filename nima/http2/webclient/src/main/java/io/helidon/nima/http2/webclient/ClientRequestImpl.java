@@ -30,6 +30,7 @@ import java.util.function.Function;
 import io.helidon.common.Version;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.ClientRequestHeaders;
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
@@ -112,6 +113,14 @@ class ClientRequestImpl implements Http2ClientRequest {
     }
 
     @Override
+    public Http2ClientRequest headers(Headers headers) {
+        for (HeaderValue header : headers) {
+            this.explicitHeaders.add(header);
+        }
+        return this;
+    }
+
+    @Override
     public Http2ClientRequest headers(Function<ClientRequestHeaders, WritableHeaders<?>> headersConsumer) {
         this.explicitHeaders = headersConsumer.apply(ClientRequestHeaders.create(explicitHeaders));
         return this;
@@ -131,6 +140,11 @@ class ClientRequestImpl implements Http2ClientRequest {
     @Override
     public Http2ClientResponse request() {
         return submit(BufferData.EMPTY_BYTES);
+    }
+
+    @Override
+    public ClientRequestHeaders headers() {
+        return ClientRequestHeaders.create(explicitHeaders);
     }
 
     @Override
@@ -253,15 +267,15 @@ class ClientRequestImpl implements Http2ClientRequest {
 
     @Override
     public Http2ClientRequest followRedirects(boolean followRedirects) {
-//        this.followRedirects = followRedirects;
-//        return this;
+        //        this.followRedirects = followRedirects;
+        //        return this;
         throw new UnsupportedOperationException("Not supported in HTTP2 yet");
     }
 
     @Override
     public Http2ClientRequest maxRedirects(int maxRedirects) {
-//        this.maxRedirects = maxRedirects;
-//        return this;
+        //        this.maxRedirects = maxRedirects;
+        //        return this;
         throw new UnsupportedOperationException("Not supported in HTTP2 yet");
     }
 
