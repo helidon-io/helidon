@@ -50,7 +50,7 @@ final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMe
                 .baseUnit(sanitizeUnit(metadata.getUnit()))
                 .publishPercentiles(DEFAULT_PERCENTILES)
                 .percentilePrecision(DEFAULT_PERCENTILE_PRECISION)
-                .tags(augmentedTags(scope, tags))
+                .tags(allTags(scope, tags))
                 .register(meterRegistry));
     }
 

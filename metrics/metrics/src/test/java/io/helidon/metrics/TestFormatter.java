@@ -19,8 +19,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.metrics.api.GlobalTagsHelper;
 import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.SystemTagsManager;
 
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -41,16 +41,18 @@ public class TestFormatter {
     private static final String COUNTER_OUTPUT_PATTERN = ".*?^%s_total\\{.*%s=\"%s\".*?}\\s+(\\S).*?";
 
     private static RegistryFactory registryFactory;
+    private static MetricsSettings metricsSettings;
 
     @BeforeAll
     static void init() {
-        registryFactory = RegistryFactory.create(MetricsSettings.create());
-        GlobalTagsHelper.scopeTagName(SCOPE_TAG_NAME);
+        metricsSettings = MetricsSettings.create();
+        registryFactory = RegistryFactory.create(metricsSettings);
+        SystemTagsManager.create(metricsSettings, SCOPE_TAG_NAME, null);
     }
 
     @AfterAll
     static void finish() {
-        GlobalTagsHelper.scopeTagName(null);
+        SystemTagsManager.create(metricsSettings, null, null);
     }
 
     @Test

@@ -45,7 +45,7 @@ final class HelidonCounter extends MetricImpl implements Counter, SampledMetric 
         return new HelidonCounter(scope, metadata, io.micrometer.core.instrument.Counter.builder(metadata.getName())
                 .baseUnit(sanitizeUnit(metadata.getUnit()))
                 .description(metadata.getDescription())
-                .tags(augmentedTags(scope, tags))
+                .tags(allTags(scope, tags))
                 .register(meterRegistry));
     }
 

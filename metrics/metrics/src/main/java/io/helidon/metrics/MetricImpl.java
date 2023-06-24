@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import io.helidon.metrics.api.AbstractMetric;
-import io.helidon.metrics.api.GlobalTagsHelper;
+import io.helidon.metrics.api.SystemTagsManager;
 
 import io.micrometer.core.instrument.Tags;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -64,16 +64,39 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
         return "";
     }
 
-//    protected static Tags tags(Tag... tags) {
-//        Tags result = Tags.empty();
-//        for (Tag tag : tags) {
-//            result = result.and(tag.getTagName(), tag.getTagValue());
-//        }
-//        return result;
-//    }
 
-    protected static Tags augmentedTags(String scope, Tag... tags) {
-        return GlobalTagsHelper.augmentedTags(scope, iterable(tags));
+    protected static Tags allTags(String scope, Tag[] tags) {
+        return toTags(SystemTagsManager.instance().allTags(iterable(tags), scope));
+    }
+
+    private static Tags toTags(Iterable<Map.Entry<String, String>> iterable) {
+        return Tags.of(tags(iterable));
+    }
+
+    private static Iterable<io.micrometer.core.instrument.Tag> tags(Iterable<Map.Entry<String, String>> iterable) {
+        return new Iterable<>() {
+
+            private final Iterator<Map.Entry<String, String>> iterator = iterable.iterator();
+
+            @Override
+            public Iterator<io.micrometer.core.instrument.Tag> iterator() {
+                return new Iterator<>() {
+                    @Override
+                    public boolean hasNext() {
+                        return iterator.hasNext();
+                    }
+
+                    @Override
+                    public io.micrometer.core.instrument.Tag next() {
+                        if (!hasNext()) {
+                            throw new NoSuchElementException();
+                        }
+                        var next = iterator.next();
+                        return io.micrometer.core.instrument.Tag.of(next.getKey(), next.getValue());
+                    }
+                };
+            }
+        };
     }
 
     protected static String sanitizeUnit(String unit) {

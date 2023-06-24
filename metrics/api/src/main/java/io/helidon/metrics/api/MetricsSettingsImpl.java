@@ -164,7 +164,7 @@ class MetricsSettingsImpl implements MetricsSettings {
                     .ifPresent(this::addAllTypedRegistrySettings);
 
             metricsSettingsConfig.get(GLOBAL_TAGS_CONFIG_KEY)
-                    .as(this::globalTagsExpressionToMap)
+                    .as(Builder::globalTagsExpressionToMap)
                     .ifPresent(this::globalTags);
 
             metricsSettingsConfig.get(APP_TAG_CONFIG_KEY)
@@ -202,23 +202,47 @@ class MetricsSettingsImpl implements MetricsSettings {
             typedRegistrySettingsList.forEach(settings -> registrySettings.put(settings.scope, settings));
         }
 
-        private Map<String, String> globalTagsExpressionToMap(Config globalTagExpression) {
-            String pairs = globalTagExpression.asString().get();
+        private static Map<String, String> globalTagsExpressionToMap(Config globalTagExpression) {
+            return globalTagsExpressionToMap(globalTagExpression.asString().get());
+        }
+
+        static Map<String, String> globalTagsExpressionToMap(String pairs) {
+
             Map<String, String> result = new HashMap<>();
             List<String> errorPairs = new ArrayList<>();
-            String[] assignments = pairs.split(",");
+            String[] assignments = pairs.split("(?<!\\\\),"); // split using non-escaped commas
+            int position = 0;
             for (String assignment : assignments) {
-                int equalsSlot = assignment.indexOf("=");
-                if (equalsSlot == -1) {
-                    errorPairs.add("Missing '=': " + assignment);
-                } else if (equalsSlot == 0) {
-                    errorPairs.add("Missing tag name: " + assignment);
-                } else if (equalsSlot == assignment.length() - 1) {
-                    errorPairs.add("Missing tag value: " + assignment);
+                List<String> errors = new ArrayList<>();
+                if (assignment.isBlank()) {
+                    errors.add("empty assignment at position " + position + ": " + assignment);
                 } else {
-                    result.put(assignment.substring(0, equalsSlot),
-                               assignment.substring(equalsSlot + 1));
+                    String[] parts = assignment.split("(?<!\\\\)="); // split using non-escaped equals sign
+                    if (parts.length != 2) {
+                        errors.add("expected 2 parts separated by =; found '" + assignment + "' containing " + parts.length);
+                    } else {
+                        String name = parts[0];
+                        String value = parts[1];
+                        if (name.isBlank()) {
+                            errors.add("missing tag name");
+                        }
+                        if (value.isBlank()) {
+                            errors.add("missing tag value");
+                        }
+                        if (!name.matches("[A-Za-z_][A-Za-z_0-9]*")) {
+                            errors.add("tag name must start with a letter and include only letters, digits, and underscores");
+                        }
+                        if (errors.isEmpty()) {
+                            result.put(name,
+                                       value.replace("\\,", ",")
+                                               .replace("\\=", "="));
+                        }
+                    }
                 }
+                if (!errors.isEmpty()) {
+                    errorPairs.add("Position " + position + " with expression " + assignment + ": " + errors);
+                }
+                position++;
             }
             if (!errorPairs.isEmpty()) {
                 throw new IllegalArgumentException("Error(s) in global tag expression: " + errorPairs);

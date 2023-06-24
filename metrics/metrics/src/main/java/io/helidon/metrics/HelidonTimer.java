@@ -58,7 +58,7 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
                                 metadata,
                                 io.micrometer.core.instrument.Timer.builder(metadata.getName())
                                         .description(metadata.getDescription())
-                                        .tags(augmentedTags(scope, tags))
+                                        .tags(allTags(scope, tags))
                                         .publishPercentiles(DEFAULT_PERCENTILES)
                                         .percentilePrecision(DEFAULT_PERCENTILE_PRECISION)
                                         .register(meterRegistry));

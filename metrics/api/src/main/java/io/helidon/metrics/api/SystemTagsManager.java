@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,21 @@ public interface SystemTagsManager {
      * @return new tags manager
      */
     static SystemTagsManager create(MetricsSettings metricsSettings) {
-        return SystemTagsManagerImpl.create(metricsSettings);
+        return SystemTagsManager.create(metricsSettings, null, null);
+    }
+
+    /**
+     * Creates a new system tags manager using the provided metrics setting and tag name to use
+     * for adding each metric's scope to its tags, saving the new instance as the initialized singleton
+     * which will be returned to subsequent invocatinos of {@link #instance()}.
+     *
+     * @param metricsSettings settings containing the global and app-level tags (if any)
+     * @param scopeTagName name for the tag to identify the scope of each metric
+     * @param appTagName name for the tag to identify the application with each metric
+     * @return new tags manager
+     */
+    static SystemTagsManager create(MetricsSettings metricsSettings, String scopeTagName, String appTagName) {
+        return SystemTagsManagerImpl.create(metricsSettings, scopeTagName, appTagName);
     }
 
     /**
@@ -50,18 +64,28 @@ public interface SystemTagsManager {
     }
 
     /**
-     * Returns a single iterator over the explicit tags in the metric ID plus any global and app-level tags.
+     * Returns a single iterator over the explicit tags in the metric ID plus any global and app tags.
      *
      * @param metricID metric ID possibly containing explicit tag settings
-     * @return iterator over all tags, explicit and global and app-level
+     * @return iterator over all tags, explicit and global and app
      */
     Iterable<Map.Entry<String, String>> allTags(MetricID metricID);
 
     /**
-     * Returns a single iterator over the explicit tags in the provided map plus any global and app-level tags.
+     * Returns a single iterator over the explicit tags in the provided map plus any global and app tags.
      *
      * @param explicitTags map containing explicitly-defined tags for a metric
-     * @return iterator over all tags, explicit and global and app-level
+     * @return iterator over all tags, explicit and global and app
      */
     Iterable<Map.Entry<String, String>> allTags(Map<String, String> explicitTags);
+
+    /**
+     * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
+     * and app tags, plus a tag for the specified scope (if the system tags manager has been initialized
+     * with a scope tag name).
+     * @param explicitTags iterable over the key/value pairs for tags
+     * @param scope scope value
+     * @return iterator over all tags, explicit and global and app
+     */
+    Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope);
 }
