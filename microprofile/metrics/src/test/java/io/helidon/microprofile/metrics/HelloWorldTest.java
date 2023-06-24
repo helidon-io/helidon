@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,16 +33,16 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.Timer;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
-import static io.helidon.microprofile.metrics.HelloWorldResource.MESSAGE_SIMPLE_TIMER;
+import static io.helidon.microprofile.metrics.HelloWorldResource.MESSAGE_TIMER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -61,7 +61,7 @@ class HelloWorldTest {
     MetricRegistry registry;
 
     @Inject
-    @RegistryType(type = Registry.BASE_SCOPE)
+    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
     MetricRegistry restRequestMetricsRegistry;
 
     @BeforeAll
@@ -125,26 +125,26 @@ class HelloWorldTest {
         assertThat("Value of interceptor-updated class-level counter for method", classLevelCounterForMethod.getCount(),
                 is((long) iterations));
 
-        SimpleTimer simpleTimer = getSyntheticSimpleTimer("message");
-        assertThat("Synthetic simple timer", simpleTimer, is(notNullValue()));
-        assertThatWithRetry("Synthetic simple timer count value", simpleTimer::getCount, is((long) iterations));
+        Timer timer = getSyntheticTimer("message");
+        assertThat("Synthetic timer", timer, is(notNullValue()));
+        assertThatWithRetry("Synthetic timer count value", timer::getCount, is((long) iterations + 1L));
 
         checkMetricsUrl(iterations);
     }
 
     @Test
-    public void testSyntheticSimpleTimer() throws InterruptedException {
-        testSyntheticSimpleTimer(1L);
+    public void testSyntheticTimer() throws InterruptedException {
+        testSyntheticTimer(1L);
     }
 
     @Test
     public void testMappedException() throws Exception {
         Tag[] tags = new Tag[] {new Tag("class", HelloWorldResource.class.getName()),
                 new Tag("method", "triggerMappedException")};
-        SimpleTimer simpleTimer = restRequestMetricsRegistry.simpleTimer("REST.request", tags);
+        Timer timer = restRequestMetricsRegistry.timer("REST.request", tags);
         Counter counter = restRequestMetricsRegistry.counter("REST.request.unmappedException.total", tags);
 
-        long successfulBeforeRequest = simpleTimer.getCount();
+        long successfulBeforeRequest = timer.getCount();
         long unsuccessfulBeforeRequest = counter.getCount();
 
         Response response = runAndPause(() -> webTarget.path("helloworld/mappedExc")
@@ -155,7 +155,7 @@ class HelloWorldTest {
 
         assertThat("Response code from mapped exception endpoint", response.getStatus(), is(500));
         assertThatWithRetry("Change in successful count",
-                            () -> simpleTimer.getCount() - successfulBeforeRequest,
+                            () -> timer.getCount() - successfulBeforeRequest,
                             is(1L));
         assertThat("Change in unsuccessful count", counter.getCount() - unsuccessfulBeforeRequest, is(0L));
     }
@@ -164,10 +164,10 @@ class HelloWorldTest {
     void testUnmappedException() throws Exception {
         Tag[] tags = new Tag[] {new Tag("class", HelloWorldResource.class.getName()),
                 new Tag("method", "triggerUnmappedException")};
-        SimpleTimer simpleTimer = restRequestMetricsRegistry.simpleTimer("REST.request", tags);
+        Timer timer = restRequestMetricsRegistry.timer("REST.request", tags);
         Counter counter = restRequestMetricsRegistry.counter("REST.request.unmappedException.total", tags);
 
-        long successfulBeforeRequest = simpleTimer.getCount();
+        long successfulBeforeRequest = timer.getCount();
         long unsuccessfulBeforeRequest = counter.getCount();
 
         Response response = runAndPause(() -> webTarget.path("helloworld/unmappedExc")
@@ -178,17 +178,17 @@ class HelloWorldTest {
 
         assertThat("Response code from unmapped exception endpoint", response.getStatus(), is(500));
         assertThatWithRetry("Change in successful count",
-                            () -> simpleTimer.getCount() - successfulBeforeRequest,
+                            () -> timer.getCount() - successfulBeforeRequest,
                             is(0L));
         assertThat("Change in unsuccessful count", counter.getCount() - unsuccessfulBeforeRequest, is(1L));
     }
 
-    void testSyntheticSimpleTimer(long expectedSyntheticSimpleTimerCount) {
-        SimpleTimer explicitSimpleTimer = registry.getSimpleTimer(new MetricID(MESSAGE_SIMPLE_TIMER));
-        assertThat("SimpleTimer from explicit @SimplyTimed", explicitSimpleTimer, is(notNullValue()));
-        SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer("messageWithArg", String.class);
-        assertThat("SimpleTimer from @SyntheticRestRequest", syntheticSimpleTimer, is(notNullValue()));
-        IntStream.range(0, (int) expectedSyntheticSimpleTimerCount).forEach(
+    void testSyntheticTimer(long expectedSyntheticTimerCount) {
+        Timer explicitTimer = registry.getTimer(new MetricID(MESSAGE_TIMER));
+        assertThat("SimpleTimer from explicit @SimplyTimed", explicitTimer, is(notNullValue()));
+        Timer syntheticTimer = getSyntheticTimer("messageWithArg", String.class);
+        assertThat("SimpleTimer from @SyntheticRestRequest", syntheticTimer, is(notNullValue()));
+        IntStream.range(0, (int) expectedSyntheticTimerCount).forEach(
                 i -> webTarget
                         .path("helloworld/withArg/Joe")
                         .request(MediaType.TEXT_PLAIN_TYPE)
@@ -196,30 +196,30 @@ class HelloWorldTest {
 
         pause();
         assertThatWithRetry("SimpleTimer from explicit @SimpleTimed count",
-                            explicitSimpleTimer::getCount,
-                            is(expectedSyntheticSimpleTimerCount));
+                            explicitTimer::getCount,
+                            is(expectedSyntheticTimerCount));
 
         assertThatWithRetry("SimpleTimer from @SyntheticRestRequest count",
-                            syntheticSimpleTimer::getCount,
-                            is(expectedSyntheticSimpleTimerCount));
+                            syntheticTimer::getCount,
+                            is(expectedSyntheticTimerCount));
     }
 
-    SimpleTimer getSyntheticSimpleTimer(String methodName, Class<?>... paramTypes) {
+    Timer getSyntheticTimer(String methodName, Class<?>... paramTypes) {
         try {
-            return getSyntheticSimpleTimer(HelloWorldResource.class.getMethod(methodName, paramTypes));
+            return getSyntheticTimer(HelloWorldResource.class.getMethod(methodName, paramTypes));
         } catch (NoSuchMethodException ex) {
             throw new RuntimeException(ex);
         }
     }
 
-    SimpleTimer getSyntheticSimpleTimer(Method method) {
-            return getSyntheticSimpleTimer(MetricsCdiExtension.restEndpointTimerMetricID(method));
+    Timer getSyntheticTimer(Method method) {
+            return getSyntheticTimer(MetricsCdiExtension.restEndpointTimerMetricID(method));
     }
 
-    SimpleTimer getSyntheticSimpleTimer(MetricID metricID) {
+    Timer getSyntheticTimer(MetricID metricID) {
 
-        Map<MetricID, SimpleTimer> simpleTimers = restRequestMetricsRegistry.getSimpleTimers();
-        return simpleTimers.get(metricID);
+        Map<MetricID, Timer> timers = restRequestMetricsRegistry.getTimers();
+        return timers.get(metricID);
     }
 
     void checkMetricsUrl(int iterations) {

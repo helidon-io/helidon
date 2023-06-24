@@ -44,6 +44,7 @@ import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
@@ -747,7 +748,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 });
 
         // registry factory is available in global
-        Contexts.globalContext().register(MpRegistryFactory.getInstance());
+        Contexts.globalContext().register(RegistryFactory.getInstance());
 
         return defaultRouting;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import io.micrometer.core.instrument.Meter;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
@@ -109,7 +109,7 @@ public class MetricProducerMethodBeanTest {
     public void callCachedMethodMultipleTimes() {
 
         Timer calls = registry.getTimers().get(callsMID);
-        Meter hits = registry.getMeters().get(hitsMID);
+        Counter hits = registry.getCounters().get(hitsMID);
         long count = 10 + Math.round(Math.random() * 10);
         for (int i = 0; i < count; i++) {
             bean.cachedMethod((Math.random() < 0.5));

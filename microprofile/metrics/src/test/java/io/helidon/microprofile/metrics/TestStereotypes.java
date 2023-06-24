@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,11 @@ import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.SimpleTimer;
+import org.eclipse.microprofile.metrics.Timer;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
@@ -49,14 +48,14 @@ class TestStereotypes {
         Counter counter = metricRegistry.getCounter(new MetricID(BeanViaStereotypeA.class.getName() + ".noOp"));
         assertThat("Counter registered via stereotype", counter, notNullValue());
 
-        SimpleTimer simpleTimer = metricRegistry.getSimpleTimer(
-                new MetricID(BeanViaStereotypeA.class.getPackageName() + "." + StereotypeA.SIMPLE_TIMER_NAME + ".noOp"));
-        assertThat("Simple timer registered via stereotype", simpleTimer, notNullValue());
+        Timer timer = metricRegistry.getTimer(
+                new MetricID(BeanViaStereotypeA.class.getPackageName() + "." + StereotypeA.TIMER_NAME + ".noOp"));
+        assertThat("Simple timer registered via stereotype", timer, notNullValue());
 
         myBean.noOp();
 
         assertThat("Counter value after one call", counter.getCount(), is(1L));
-        assertThat("Simple timer value after one call", simpleTimer.getCount(), is(1L));
+        assertThat("Simple timer value after one call", timer.getCount(), is(1L));
     }
 
     @Test
@@ -68,8 +67,8 @@ class TestStereotypes {
         assertThat("Gauge value", value, allOf(greaterThanOrEqualTo(0L),
                                                       lessThanOrEqualTo(BeanViaStereotypeA.SPEED_BOUND)));
 
-        SimpleTimer simpleTimer = metricRegistry.getSimpleTimer(new MetricID(StereotypeB.SIMPLE_TIMER_NAME));
-        assertThat("Simple timer registered via stereotype", simpleTimer, notNullValue());
-        assertThat("Simple timer count", simpleTimer.getCount(), equalTo(1L));
+        Timer timer = metricRegistry.getTimer(new MetricID(StereotypeB.TIMER_NAME));
+        assertThat("Simple timer registered via stereotype", timer, notNullValue());
+        assertThat("Simple timer count", timer.getCount(), equalTo(1L));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,8 @@ import io.helidon.metrics.api.HelidonMetric;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
@@ -90,30 +88,12 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testMetered1() {
-        MeteredBean bean = newBean(MeteredBean.class);
-        IntStream.range(0, 9).forEach(i -> bean.method1());
-        Meter meter = getMetric(bean, "method1");
-        assertThat(meter.getCount(), is(9L));
-        assertThat(meter.getMeanRate(), is(greaterThan(0.0)));
-    }
-
-    @Test
-    public void testMetered2() {
-        MeteredBean bean = newBean(MeteredBean.class);
-        IntStream.range(0, 12).forEach(i -> bean.method2());
-        Meter meter = getMetric(bean, "method2");
-        assertThat(meter.getCount(), is(12L));
-        assertThat(meter.getMeanRate(), is(greaterThan(0.0)));
-    }
-
-    @Test
     public void testTimed1() {
         TimedBean bean = newBean(TimedBean.class);
         IntStream.range(0, 11).forEach(i -> bean.method1());
         Timer timer = getMetric(bean, "method1");
         assertThat(timer.getCount(), is(11L));
-        assertThat(timer.getMeanRate(), is(greaterThan(0.0)));
+        assertThat(timer.getSnapshot().getMean(), is(greaterThan(0.0)));
     }
 
     @Test
@@ -122,32 +102,13 @@ public class MetricsTest extends MetricsBaseTest {
         IntStream.range(0, 14).forEach(i -> bean.method2());
         Timer timer = getMetric(bean, "method2");
         assertThat(timer.getCount(), is(14L));
-        assertThat(timer.getMeanRate(), is(greaterThan(0.0)));
-    }
-
-    @Test
-    public void testSimplyTimed1() {
-        SimplyTimedBean bean = newBean(SimplyTimedBean.class);
-        IntStream.range(0, 7).forEach(i -> bean.method1());
-        SimpleTimer simpleTimer = getMetric(bean, "method1");
-        assertThat(simpleTimer.getCount(), is(7L));
-        assertThat(simpleTimer.getElapsedTime().toNanos(), is(greaterThan(0L)));
-    }
-
-    @Test
-    public void testSimplyTimed2() {
-        SimplyTimedBean bean = newBean(SimplyTimedBean.class);
-        IntStream.range(0, 15).forEach(i -> bean.method2());
-        SimpleTimer simpleTimer = getMetric(bean, "method2");
-        assertThat(simpleTimer.getCount(), is(15L));
-        assertThat(simpleTimer.getElapsedTime().toNanos(), is(greaterThan(0L)));
+        assertThat(timer.getSnapshot().getMean(), is(greaterThan(0.0)));
     }
 
     @Test
     public void testInjection() {
         InjectedBean bean = newBean(InjectedBean.class);
         assertThat(bean.counter, notNullValue());
-        assertThat(bean.meter, notNullValue());
         assertThat(bean.timer, notNullValue());
         assertThat(bean.histogram, notNullValue());
         assertThat(bean.gaugeForInjectionTest, notNullValue());
@@ -196,20 +157,16 @@ public class MetricsTest extends MetricsBaseTest {
 
     @Test
     void testOmittedDisplayName() {
-        MeteredBean bean = newBean(MeteredBean.class);
-        String metricName = MeteredBean.class.getName() + ".method1";
+        TimedBean bean = newBean(TimedBean.class);
+        String metricName = TimedBean.class.getName() + ".method1";
         Metadata metadata = getMetricRegistry().getMetadata().get(metricName);
         assertThat("Metadata for meter of annotated method", metadata, is(notNullValue()));
 
-        // The displayName value stored in the retrieved metadata should be null, but Metadata.getDisplayName() returns the name
-        // in those cases. So an easy way to check is to attempt to re-register/look up the meter using a new Metadata instance
-        // for which we know the displayName is null.
         Metadata newMetadata = Metadata.builder()
                 .withName(metadata.getName())
-                .withType(MetricType.METERED)
-                .withUnit(MetricUnits.PER_SECOND)
+                .withUnit(metadata.getUnit())
                 .build();
         // Should return the existing meter. Throws exception if metadata is mismatched.
-        Meter meter = getMetricRegistry().meter(newMetadata);
+        Timer timer = getMetricRegistry().timer(newMetadata);
     }
 }

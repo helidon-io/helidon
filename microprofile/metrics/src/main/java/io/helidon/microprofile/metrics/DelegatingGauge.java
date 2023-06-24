@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.eclipse.microprofile.metrics.Gauge;
  *
  * @param <T> data type reported by the underlying {@code Gauge}
  */
-class DelegatingGauge<T /* extends Number */> implements Gauge<T> {
+class DelegatingGauge<T extends Number> implements Gauge<T> {
     // TODO uncomment preceding clause once MP metrics enforces restriction
 
     private final Method method;
@@ -51,7 +51,7 @@ class DelegatingGauge<T /* extends Number */> implements Gauge<T> {
      * @param clazz  type of the underlying gauge
      * @return {@code DelegatingGauge}
      */
-    public static <S /* extends Number */> DelegatingGauge<S> newInstance(Method method, Object obj,
+    public static <S extends Number> DelegatingGauge<S> newInstance(Method method, Object obj,
             Class<S> clazz) {
         // TODO uncomment preceding clause once MP metrics enforces restriction
         return new DelegatingGauge<>(method, obj, clazz);

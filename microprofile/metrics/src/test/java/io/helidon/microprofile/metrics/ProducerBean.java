@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.Metric;
 
 /**
  * Class ProducerBean.
@@ -35,17 +33,16 @@ public class ProducerBean {
     private MetricRegistry metricRegistry;
 
     @Produces @Red
-    final Counter counter1 = new LongCounter();
+    private Counter counter1;
 
     @PostConstruct
     private void init() {
-        metricRegistry.register("counter1", counter1);
+        counter1 = metricRegistry.counter("counter1");
     }
 
     @Produces @Green
     public Counter getCounter() {
-        LongCounter counter = new LongCounter();
-        metricRegistry.register("counter2", counter);
+        Counter counter = metricRegistry.counter("counter2");
         counter.inc();
         return counter;
     }

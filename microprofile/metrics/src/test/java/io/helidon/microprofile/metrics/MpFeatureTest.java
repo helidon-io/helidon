@@ -41,7 +41,7 @@ public class MpFeatureTest {
     @Disabled
     @Test
     void testEndpoint() {
-        MetricRegistry metricRegistry = RegistryFactory.getInstance().getRegistry(RegistryFactory.APPLICATION_SCOPE);
+        MetricRegistry metricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
         Counter counter = metricRegistry.counter("endpointCounter");
         counter.inc(4);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.junit.jupiter.api.AfterAll;
 
 /**
@@ -41,7 +41,7 @@ public class MetricsMpServiceTest {
     }
 
     static MetricRegistry cleanUpSyntheticSimpleTimerRegistry() {
-        MetricRegistry result = RegistryFactory.getInstance().getRegistry(Registry.BASE_SCOPE);
+        MetricRegistry result = RegistryFactory.getInstance().getRegistry(MetricRegistry.BASE_SCOPE);
         result.remove(MetricsCdiExtension.SYNTHETIC_TIMER_METRIC_NAME);
         return result;
     }
@@ -50,7 +50,7 @@ public class MetricsMpServiceTest {
     private MetricRegistry registry;
 
     @Inject
-    @RegistryType(type = Registry.BASE_SCOPE)
+    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
     private MetricRegistry baseRegistry;
 
     MetricRegistry syntheticTimerTimerRegistry() {
@@ -64,9 +64,7 @@ public class MetricsMpServiceTest {
     protected static void registerCounter(MetricRegistry registry, String name) {
         Metadata meta = Metadata.builder()
                         .withName(name)
-                        .withDisplayName(name)
                         .withDescription(name)
-                        .withType(MetricType.COUNTER)
                         .withUnit(MetricUnits.NONE)
                         .build();
         registry.counter(meta);

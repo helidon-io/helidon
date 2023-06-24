@@ -37,10 +37,10 @@ import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
-import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
@@ -58,7 +58,7 @@ public class HelloWorldResource {
     // In case pipeline runs need a different time
     static final int SLOW_DELAY_MS = Integer.getInteger("helidon.microprofile.metrics.asyncSimplyTimedDelayMS", 2 * 1000);
 
-    static final String MESSAGE_SIMPLE_TIMER = "messageSimpleTimer";
+    static final String MESSAGE_TIMER = "messageTimer";
     static final String SLOW_MESSAGE_TIMER = "slowMessageTimer";
     static final String SLOW_MESSAGE_SIMPLE_TIMER = "slowMessageSimpleTimer";
 
@@ -88,22 +88,22 @@ public class HelloWorldResource {
         slowRequestResponseSent.await();
     }
 
-    static Optional<org.eclipse.microprofile.metrics.ConcurrentGauge> inflightRequests(MetricRegistry metricRegistry) {
-        return metricRegistry.getConcurrentGauges((metricID, metric) -> metricID.getName().endsWith("inFlight"))
+    static Optional<Gauge> inflightRequests(MetricRegistry metricRegistry) {
+        return metricRegistry.getGauges((metricID, metric) -> metricID.getName().endsWith("inFlight"))
                 .values()
                 .stream()
                 .findAny();
     }
 
     static long inflightRequestsCount(MetricRegistry metricRegistry) {
-        return inflightRequests(metricRegistry).get().getCount();
+        return inflightRequests(metricRegistry).get().getValue().longValue();
     }
 
     @Inject
     MetricRegistry metricRegistry;
 
     @Inject
-    @RegistryType(type = Registry.VENDOR_SCOPE)
+    @RegistryScope(scope = MetricRegistry.VENDOR_SCOPE)
     private MetricRegistry vendorRegistry;
 
     public HelloWorldResource() {
@@ -119,7 +119,7 @@ public class HelloWorldResource {
     }
 
     @GET
-    @SimplyTimed(name = MESSAGE_SIMPLE_TIMER, absolute = true)
+    @Timed(name = MESSAGE_TIMER, absolute = true)
     @Path("/withArg/{name}")
     @Produces(MediaType.TEXT_PLAIN)
     public String messageWithArg(@PathParam("name") String input){
@@ -129,7 +129,6 @@ public class HelloWorldResource {
     @GET
     @Path("/slow")
     @Produces(MediaType.TEXT_PLAIN)
-    @SimplyTimed(name = SLOW_MESSAGE_SIMPLE_TIMER, absolute = true)
     @Timed(name = SLOW_MESSAGE_TIMER, absolute = true)
     public void slowMessage(@Suspended AsyncResponse ar, @Context ServerResponse serverResponse) {
         if (slowRequestInProgress == null) {
@@ -177,7 +176,6 @@ public class HelloWorldResource {
     @GET
     @Path("/slowWithArg/{name}")
     @Produces(MediaType.TEXT_PLAIN)
-    @SimplyTimed(name = SLOW_MESSAGE_SIMPLE_TIMER, absolute = true)
     @Timed(name = SLOW_MESSAGE_TIMER, absolute = true)
     public void slowMessageWithArg(@PathParam("name") String input, @Suspended AsyncResponse ar) {
         executorService.execute(() -> {
