@@ -67,6 +67,11 @@ final class HelidonCounter extends MetricImpl implements Counter, SampledMetric 
     }
 
     @Override
+    public io.micrometer.core.instrument.Counter delegate() {
+        return delegate;
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), delegate);
     }

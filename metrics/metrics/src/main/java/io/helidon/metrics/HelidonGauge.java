@@ -48,7 +48,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
      * This way the typing works out (with the expected unchecked cast).
      */
 
-
+    private final io.micrometer.core.instrument.Gauge delegate;
 
     static <T, N extends Number> FunctionBased<N, T> create(String scope,
                                                             Metadata metadata,
@@ -143,8 +143,14 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
 
     }
 
-    protected HelidonGauge(String scope, Metadata metadata) {
+    protected HelidonGauge(String scope, Metadata metadata, io.micrometer.core.instrument.Gauge delegate) {
         super(scope, metadata);
+        this.delegate = delegate;
+    }
+
+    @Override
+    public io.micrometer.core.instrument.Gauge delegate() {
+        return delegate;
     }
 
     static class FunctionBased<N extends Number, T> extends HelidonGauge<N> {
@@ -157,7 +163,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                               T target,
                               Function<T, N> function,
                               io.micrometer.core.instrument.Gauge delegate) {
-            super(scope, metadata);
+            super(scope, metadata, delegate);
             this.target = target;
             this.function = function;
         }
@@ -178,7 +184,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                                       T target,
                                       ToDoubleFunction<T> fn,
                                       io.micrometer.core.instrument.Gauge delegate) {
-            super(scope, metadata);
+            super(scope, metadata, delegate);
             this.target = target;
             this.fn = fn;
         }
@@ -197,7 +203,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                               Metadata metadata,
                               Supplier<N> supplier,
                               io.micrometer.core.instrument.Gauge delegate) {
-            super(scope, metadata);
+            super(scope, metadata, delegate);
             this.supplier = supplier;
         }
 

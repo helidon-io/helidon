@@ -25,6 +25,7 @@ import io.helidon.metrics.api.AbstractRegistry;
 import io.helidon.metrics.api.MetricInstance;
 import io.helidon.metrics.api.RegistrySettings;
 
+import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -91,4 +92,8 @@ public class Registry extends AbstractRegistry {
         return super.metricIDsForName(metricName);
     }
 
+    @Override
+    protected void doRemove(MetricID metricId, io.helidon.metrics.api.HelidonMetric metric) {
+        Metrics.globalRegistry.remove(((HelidonMetric) metric).delegate());
+    }
 }

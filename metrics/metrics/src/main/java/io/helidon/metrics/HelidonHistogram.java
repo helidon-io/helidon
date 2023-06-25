@@ -86,15 +86,10 @@ final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMe
         return WrappedSnapshot.create(getSnapshot());
     }
 
-    /**
-     * Returns underlying delegate. For testing purposes only.
-     *
-     * @return Underlying delegate.
-     */
-    io.micrometer.core.instrument.DistributionSummary getDelegate() {
+    @Override
+    public DistributionSummary delegate() {
         return delegate;
     }
-
 
     @Override
     public boolean equals(Object o) {

@@ -24,6 +24,7 @@ import java.util.NoSuchElementException;
 import io.helidon.metrics.api.AbstractMetric;
 import io.helidon.metrics.api.SystemTagsManager;
 
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tags;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricUnits;

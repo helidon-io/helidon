@@ -78,4 +78,9 @@ class NoOpMetricRegistry extends AbstractRegistry {
                                                    metadata,
                                                    supplier::get);
     }
+
+    @Override
+    protected void doRemove(MetricID metricId, HelidonMetric metric) {
+        // The no-op registry does not have a delegate registry (such as Micrometer) to keep synchronized.
+    }
 }

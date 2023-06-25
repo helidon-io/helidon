@@ -23,7 +23,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import io.helidon.metrics.Registry;
+import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
@@ -33,6 +36,7 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
@@ -76,6 +80,12 @@ class HelloWorldTest {
         MetricsMpServiceTest.wrapupTest();
     }
 
+    private static void clearMetrics() {
+        RegistryFactory.getInstance()
+                .getRegistry(Registry.APPLICATION_SCOPE)
+                .removeMatching(MetricFilter.ALL);
+    }
+
     // Gives the server a chance to update metrics after sending the response before the test code
     // checks those metrics.
     static <T> T runAndPause(Callable<T> c) throws Exception {
@@ -106,6 +116,8 @@ class HelloWorldTest {
                 registry.getCounters().get(new MetricID(
                         HelloWorldResource.class.getName() + "." + HelloWorldResource.class.getSimpleName()));
         long classLevelCounterStart = classLevelCounterForConstructor.getCount();
+        Timer timer = getSyntheticTimer("message");
+        long initialTimerCount = timer != null ? timer.getCount() : 0L;
 
         IntStream.range(0, iterations).forEach(
                 i -> webTarget
@@ -127,9 +139,11 @@ class HelloWorldTest {
         assertThat("Value of interceptor-updated class-level counter for method", classLevelCounterForMethod.getCount(),
                 is((long) iterations));
 
-        Timer timer = getSyntheticTimer("message");
+        Timer timerAgain = getSyntheticTimer("message");
         assertThat("Synthetic timer", timer, is(notNullValue()));
-        assertThatWithRetry("Synthetic timer count value", timer::getCount, is((long) iterations));
+        assertThatWithRetry("Synthetic timer count value",
+                            () -> timerAgain.getCount() - initialTimerCount,
+                            is((long) iterations));
 
         checkMetricsUrl(iterations);
     }

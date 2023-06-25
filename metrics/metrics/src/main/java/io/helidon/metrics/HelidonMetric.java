@@ -29,4 +29,11 @@ interface HelidonMetric extends io.helidon.metrics.api.HelidonMetric {
      * @return metric name
      */
     String getName();
+
+    /**
+     * Returns the delegate metric which actually records the value(s) of interest.
+     *
+     * @return the delegate
+     */
+    io.micrometer.core.instrument.Meter delegate();
 }

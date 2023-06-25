@@ -48,7 +48,8 @@ class MetricStoreTests {
 
         MetricStore store = MetricStore.create(REGISTRY_SETTINGS,
                                                new NoOpMetricFactory(),
-                                               MetricRegistry.APPLICATION_SCOPE);
+                                               MetricRegistry.APPLICATION_SCOPE,
+                                               registry::doRemove);
 
         store.getOrRegisterMetric(meta1, Timer.class, NO_TAGS);
 
@@ -66,7 +67,8 @@ class MetricStoreTests {
 
         MetricStore store = MetricStore.create(REGISTRY_SETTINGS,
                                                new NoOpMetricFactory(),
-                                               MetricRegistry.APPLICATION_SCOPE);
+                                               MetricRegistry.APPLICATION_SCOPE,
+                                               registry::doRemove);
 
         Counter counter1 = store.getOrRegisterMetric(metadata, Counter.class, NO_TAGS);
         Counter counter2 = store.getOrRegisterMetric(metadata, Counter.class, NO_TAGS);
@@ -84,7 +86,8 @@ class MetricStoreTests {
 
         MetricStore store = MetricStore.create(REGISTRY_SETTINGS,
                                                new NoOpMetricFactory(),
-                                               MetricRegistry.APPLICATION_SCOPE);
+                                               MetricRegistry.APPLICATION_SCOPE,
+                                               registry::doRemove);
 
         Counter counter1 = store.getOrRegisterMetric(metadata, Counter.class, tags);
         Counter counter2 = store.getOrRegisterMetric(metadata, Counter.class, tags);
@@ -103,7 +106,8 @@ class MetricStoreTests {
 
         MetricStore store = MetricStore.create(REGISTRY_SETTINGS,
                                                new NoOpMetricFactory(),
-                                               MetricRegistry.APPLICATION_SCOPE);
+                                               MetricRegistry.APPLICATION_SCOPE,
+                                               registry::doRemove);
 
         store.getOrRegisterMetric(metadata, Counter.class, tags1);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,

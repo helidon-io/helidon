@@ -149,7 +149,7 @@ public class MicrometerPrometheusFormatter {
          * Then, once we have the line containing the actual meter ID, if that line matches the selection
          * add the previously-gathered help and type and the meter line to the output.
          */
-        Pattern scopePattern = Pattern.compile(String.format(".*?\\{/*?%s=\"%s\".*?}.*?",
+        Pattern scopePattern = Pattern.compile(String.format(".*?\\{.*?%s=\"%s\".*?}.*?",
                                                              scopeTagName,
                                                              scopeExpression));
 

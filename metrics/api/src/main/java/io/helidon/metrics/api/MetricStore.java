@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -71,22 +72,27 @@ class MetricStore {
     private final MetricFactory metricFactory;
     private final MetricFactory noOpMetricFactory = new NoOpMetricFactory();
     private final String scope;
+    private final BiConsumer<MetricID, HelidonMetric> doRemove;
 
     static MetricStore create(RegistrySettings registrySettings,
                               MetricFactory metricFactory,
-                              String scope) {
+                              String scope,
+                              BiConsumer<MetricID, HelidonMetric> doRemove) {
         return new MetricStore(registrySettings,
                                metricFactory,
-                               scope);
+                               scope,
+                               doRemove);
 
     }
 
     private MetricStore(RegistrySettings registrySettings,
                         MetricFactory metricFactory,
-                        String scope) {
+                        String scope,
+                        BiConsumer<MetricID, HelidonMetric> doRemove) {
         this.registrySettings = registrySettings;
         this.metricFactory = metricFactory;
         this.scope = scope;
+        this.doRemove = doRemove;
     }
 
     void update(RegistrySettings registrySettings) {
@@ -106,7 +112,8 @@ class MetricStore {
                                    clazz,
                                    () -> getMetricLocked(metricName, tags),
                                    () -> new MetricID(metricName, tags),
-                                   () -> getConsistentMetadataLocked(metricName));
+                                   () -> getConsistentMetadataLocked(metricName),
+                                   tags);
     }
 
     <U extends Metric> U getOrRegisterMetric(Metadata newMetadata, Class<U> clazz, Tag... tags) {
@@ -118,7 +125,7 @@ class MetricStore {
                 ensureTagNamesConsistent(newMetricID);
                 getConsistentMetadataLocked(newMetadata);
                 metric = registerMetricLocked(newMetricID,
-                                              createEnabledAwareMetric(clazz, newMetadata));
+                                              createEnabledAwareMetric(clazz, newMetadata, tags));
                 return clazz.cast(metric);
             }
             ensureConsistentMetricTypes(metric, newBaseType, () -> new MetricID(newMetadata.getName(), tags));
@@ -218,6 +225,7 @@ class MetricStore {
                 if (doomedMetric != null) {
                     doomedMetric.markAsDeleted();
                 }
+                doRemove.accept(metricID, doomedMetric);
                 return doomedMetric != null;
             }
         });
@@ -235,6 +243,7 @@ class MetricStore {
                 if (metric != null) {
                     metric.markAsDeleted();
                     result |= allMetrics.remove(metricID) != null;
+                    doRemove.accept(metricID, metric);
                 }
             }
             allMetricIDsByName.remove(name);
@@ -360,7 +369,8 @@ class MetricStore {
                                                      Class<U> clazz,
                                                      Supplier<HelidonMetric> metricFactory,
                                                      Supplier<MetricID> metricIDFactory,
-                                                     Supplier<Metadata> metadataFactory) {
+                                                     Supplier<Metadata> metadataFactory,
+                                                     Tag... tags) {
         Class<? extends Metric> newBaseType = baseMetricClass(clazz);
         return writeAccess(() -> {
             HelidonMetric metric = metricFactory.get();
@@ -371,8 +381,8 @@ class MetricStore {
                     if (metadata == null) {
                         metadata = registerMetadataLocked(metricName);
                     }
-                    metric = registerMetricLocked(metricIDFactory.get(),
-                                                  createEnabledAwareMetric(clazz, metadata));
+                    metric = registerMetricLocked(newMetricID,
+                                                  createEnabledAwareMetric(clazz, metadata, tags));
             } else {
                 ensureConsistentMetricTypes(metric, newBaseType, metricIDFactory);
                 Metadata existingMetadata = metadataFactory.get();
@@ -471,17 +481,17 @@ class MetricStore {
         }
     }
 
-    private <U extends Metric> HelidonMetric createEnabledAwareMetric(Class<U> clazz, Metadata metadata) {
+    private <U extends Metric> HelidonMetric createEnabledAwareMetric(Class<U> clazz, Metadata metadata, Tag... tags) {
         String metricName = metadata.getName();
         Class<? extends Metric> baseClass = baseMetricClass(clazz);
         Metric result;
         MetricFactory factoryToUse = registrySettings.isMetricEnabled(metricName) ? metricFactory : noOpMetricFactory;
         if (baseClass.isAssignableFrom(Counter.class)) {
-            result = factoryToUse.counter(scope, metadata);
+            result = factoryToUse.counter(scope, metadata, tags);
         } else if (baseClass.isAssignableFrom(Histogram.class)) {
-            result = factoryToUse.summary(scope, metadata);
+            result = factoryToUse.summary(scope, metadata, tags);
         } else if (baseClass.isAssignableFrom(Timer.class)) {
-            result = factoryToUse.timer(scope, metadata);
+            result = factoryToUse.timer(scope, metadata, tags);
         } else {
             throw new IllegalArgumentException("Cannot identify correct metric type for " + clazz.getName());
         }

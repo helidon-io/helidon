@@ -29,7 +29,9 @@ module helidon.metrics.microprofile.cdi {
     requires io.helidon.microprofile.servicecommon;
     requires jakarta.cdi;
     requires io.helidon.config;
+    requires microprofile.metrics.api;
     requires microprofile.config.api;
+    requires jakarta.ws.rs;
 
     provides Extension with MetricsCdiExtension;
 }

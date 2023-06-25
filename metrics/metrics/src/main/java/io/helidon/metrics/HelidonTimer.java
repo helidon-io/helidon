@@ -104,6 +104,11 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
         return WrappedSnapshot.create(getSnapshot());
     }
 
+    @Override
+    public io.micrometer.core.instrument.Timer delegate() {
+        return delegate;
+    }
+
     private final class ContextImpl implements Context {
         private final io.micrometer.core.instrument.Timer.Sample delegate;
 

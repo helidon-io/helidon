@@ -65,7 +65,7 @@ public abstract class AbstractRegistry implements Registry {
                                RegistrySettings registrySettings,
                                MetricFactory metricFactory) {
         this.scope = scope;
-        this.metricStore = MetricStore.create(registrySettings, metricFactory, scope);
+        this.metricStore = MetricStore.create(registrySettings, metricFactory, scope, this::doRemove);
         this.metricFactory = metricFactory;
     }
 
@@ -426,6 +426,14 @@ public abstract class AbstractRegistry implements Registry {
      * @return new gauge
      */
     protected abstract <R extends Number> Gauge<R> createGauge(Metadata metadata, Supplier<R> supplier);
+
+    /**
+     * Removes the specified metric from the actual meter registry (not just the Helidon data structures).
+     *
+     * @param metricId metric ID of the metric to remove
+     * @param metric the metric being removed
+     */
+    protected abstract void doRemove(MetricID metricId, HelidonMetric metric);
 
     // -- Private methods -----------------------------------------------------
 
