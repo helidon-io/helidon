@@ -42,11 +42,13 @@ final class HelidonCounter extends MetricImpl implements Counter, SampledMetric 
     }
 
     static HelidonCounter create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
-        return new HelidonCounter(scope, metadata, io.micrometer.core.instrument.Counter.builder(metadata.getName())
-                .baseUnit(sanitizeUnit(metadata.getUnit()))
-                .description(metadata.getDescription())
-                .tags(allTags(scope, tags))
-                .register(meterRegistry));
+        return new HelidonCounter(scope,
+                                  metadata,
+                                  io.micrometer.core.instrument.Counter.builder(metadata.getName())
+                                          .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                          .description(metadata.getDescription())
+                                          .tags(allTags(scope, tags))
+                                          .register(meterRegistry));
     }
 
     @Override

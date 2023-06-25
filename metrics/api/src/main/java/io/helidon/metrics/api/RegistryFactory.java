@@ -18,6 +18,7 @@ package io.helidon.metrics.api;
 
 import java.util.Set;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.Config;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -147,6 +148,20 @@ public interface RegistryFactory {
      * @return whether this factory is enabled, disabled factory may only do no-ops (and produce no-op metrics)
      */
     boolean enabled();
+
+    /**
+     * Exposes the contents of the implementation registry according to the requested media type,
+     * using the specified tag name used to add each metric's scope to its identity, and limiting by the provided scope
+     * selection and meter name selection.
+     *
+     * @param mediaType {@link io.helidon.common.media.type.MediaType} to control the output format
+     * @param scopeSelection {@link java.lang.Iterable} of individual scope names to include in the output
+     * @param meterNameSelection {@link java.lang.Iterable} of individual meter names to include in the output
+     * @return {@link String} meter exposition as governed by the parameters
+     * @throws java.lang.IllegalArgumentException if the implementation cannot handle the requested media type
+     * @throws java.lang.UnsupportedOperationException if the implementation cannot expose its metrics
+     */
+    String scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection);
 
     /**
      * Called to start required background tasks of a factory (if any).

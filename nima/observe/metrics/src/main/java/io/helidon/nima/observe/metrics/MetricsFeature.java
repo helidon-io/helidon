@@ -17,19 +17,20 @@ package io.helidon.nima.observe.metrics;
 
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.api.SystemTagsManager;
-import io.helidon.metrics.serviceapi.PrometheusFormat;
 import io.helidon.nima.servicecommon.HelidonFeatureSupport;
 import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.nima.webserver.http.Handler;
@@ -38,10 +39,6 @@ import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -75,10 +72,10 @@ import jakarta.json.JsonObject;
  */
 public class MetricsFeature extends HelidonFeatureSupport {
     private static final System.Logger LOGGER = System.getLogger(MetricsFeature.class.getName());
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final Handler DISABLED_ENDPOINT_HANDLER = (req, res) -> res.status(Http.Status.NOT_FOUND_404)
             .send("Metrics are disabled");
 
+    private static final Iterable<String> EMPTY_ITERABLE = Collections::emptyIterator;
     private final MetricsSettings metricsSettings;
     private final RegistryFactory registryFactory;
 
@@ -187,19 +184,32 @@ public class MetricsFeature extends HelidonFeatureSupport {
         configureVendorMetrics(defaultRouting);
     }
 
-    private static void getAll(ServerRequest req, ServerResponse res, Registry registry) {
+    private void getAll(ServerRequest req, ServerResponse res) {
+        getAll(req, res, queryAll(req, "scope"), queryAll(req, "name"));
+    }
+
+    private Iterable<String> queryAll(ServerRequest req, String name) {
+        UriQuery uriQuery = req.query();
+        return uriQuery.isEmpty() ? EMPTY_ITERABLE : uriQuery.all(name);
+    }
+
+    private void getAll(ServerRequest req, ServerResponse res, Iterable<String> scopeSelection, Iterable<String> nameSelection) {
+        MediaType mediaType = bestAccepted(req);
         res.header(Http.HeaderValues.CACHE_NO_CACHE);
-        if (registry.empty()) {
-            res.status(Http.Status.NO_CONTENT_204);
+        if (mediaType == null) {
+            res.status(Http.Status.NOT_ACCEPTABLE_406);
             res.send();
-            return;
         }
 
-        MediaType mediaType = bestAccepted(req);
-
-        if (mediaType == MediaTypes.TEXT_PLAIN) {
-            res.send(PrometheusFormat.prometheusData(registry));
-        } else {
+        try {
+            String output = RegistryFactory.getInstance().scrape(mediaType,
+                                                                 scopeSelection,
+                                                                 nameSelection);
+            res.status(Http.Status.OK_200)
+                    .headers().contentType(mediaType);
+            res.send(output);
+        } catch (UnsupportedOperationException ex) {
+            // The registry factory does not support that media type.
             res.status(Http.Status.NOT_ACCEPTABLE_406);
             res.send();
         }
@@ -207,12 +217,8 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
     private static MediaType bestAccepted(ServerRequest req) {
         return req.headers()
-                .bestAccepted(MediaTypes.TEXT_PLAIN, MediaTypes.APPLICATION_JSON)
+                .bestAccepted(MediaTypes.TEXT_PLAIN, MediaTypes.APPLICATION_OPENMETRICS_TEXT)
                 .orElse(null);
-    }
-
-    private static void sendJson(ServerResponse res, JsonObject object) {
-        res.send(object);
     }
 
     private static KeyPerformanceIndicatorSupport.Context kpiContext(ServerRequest request) {
@@ -227,51 +233,29 @@ public class MetricsFeature extends HelidonFeatureSupport {
         Registry app = registryFactory.getRegistry(Registry.APPLICATION_SCOPE);
 
         // routing to root of metrics
-        rules.get("/", (req, res) -> getMultiple(req, res, base, app, vendor))
-                .options("/", (req, res) -> optionsMultiple(req, res, base, app, vendor));
+        // As of Helidon 4, this is the only path we should need because scope-based or metric-name-based
+        // selection should use query parameters instead of paths.
+        rules.get("/", this::getAll)
+                .options("/", this::rejectOptions);
 
         // routing to each scope
+        // As of Helidon 4, users should use /metrics?scope=xyz instead of /metrics/xyz, and
+        // /metrics/?scope=xyz&name=abc isntead of /metrics/xyz/abc. These routings are kept
+        // temporarily for backward compatibility.
         Stream.of(app, base, vendor)
                 .forEach(registry -> {
                     String type = registry.scope();
 
-                    rules.get("/" + type, (req, res) -> getAll(req, res, registry))
-                            .get("/" + type + "/{metric}", (req, res) -> getByName(req, res, registry))
-                            .options("/" + type, (req, res) -> optionsAll(req, res, registry))
-                            .options("/" + type + "/{metric}", (req, res) -> optionsOne(req, res, registry));
+                    rules.get("/" + type, (req, res) -> getAll(req, res, Set.of(type), Set.of()))
+                            .get("/" + type + "/{metric}", (req, res) -> getByName(req, res, Set.of(type))) // should use ?scope=
+                            .options("/" + type, this::rejectOptions)
+                            .options("/" + type + "/{metric}", this::rejectOptions);
                 });
     }
 
-    private void getByName(ServerRequest req, ServerResponse res, Registry registry) {
+    private void getByName(ServerRequest req, ServerResponse res, Iterable<String> scopeSelection) {
         String metricName = req.path().pathParameters().value("metric");
-
-        res.header(Http.HeaderValues.CACHE_NO_CACHE);
-        registry.find(metricName)
-                .ifPresentOrElse(entry -> {
-                    MediaType mediaType = bestAccepted(req);
-                    if (mediaType == MediaTypes.TEXT_PLAIN) {
-                        res.send(PrometheusFormat.prometheusDataByName(registry, metricName));
-                    } else {
-                        res.status(Http.Status.NOT_ACCEPTABLE_406);
-                        res.send();
-                    }
-                }, () -> {
-                    res.status(Http.Status.NOT_FOUND_404);
-                    res.send();
-                });
-    }
-
-    private void optionsAll(ServerRequest req, ServerResponse res, Registry registry) {
-        if (registry.empty()) {
-            res.status(Http.Status.NO_CONTENT_204);
-            res.send();
-            return;
-        }
-
-        // Options used to provide metadata for JSON output, but it's not used for Prometheus.
-        res.status(Http.Status.NOT_ACCEPTABLE_406);
-        res.send();
-
+        getAll(req, res, scopeSelection, Set.of(metricName));
     }
 
     private void postRequestProcessing(PostRequestMetricsSupport prms,
@@ -283,35 +267,16 @@ public class MetricsFeature extends HelidonFeatureSupport {
         prms.runTasks(request, response, throwable);
     }
 
-    private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
-        MediaType mediaType = bestAccepted(req);
-        res.header(Http.HeaderValues.CACHE_NO_CACHE);
-        if (mediaType == MediaTypes.TEXT_PLAIN) {
-            res.send(PrometheusFormat.prometheusData(registries));
-        } else {
-            res.status(Http.Status.NOT_ACCEPTABLE_406);
-            res.send();
-        }
-    }
-
-    private void optionsMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
+    private void rejectOptions(ServerRequest req, ServerResponse res) {
         // Options used to return metadata but it's no longer supported unless we restore JSON support.
-        res.status(Http.Status.NOT_ACCEPTABLE_406);
+        res.header(Http.Header.ALLOW, "GET");
+        res.status(Http.Status.METHOD_NOT_ALLOWED_405);
         res.send();
-    }
-
-    private void optionsOne(ServerRequest req, ServerResponse res, Registry registry) {
-        String metricName = req.path().pathParameters().value("metric");
-
-        registry.metricsByName(metricName)
-                .ifPresentOrElse(entry -> {
-                    res.status(Http.Status.NOT_ACCEPTABLE_406).send();
-                }, () -> res.status(Http.Status.NOT_FOUND_404).send()); // metric not found
     }
 
     private void setUpDisabledEndpoints(HttpRules rules) {
         rules.get("/", DISABLED_ENDPOINT_HANDLER)
-                .options("/", DISABLED_ENDPOINT_HANDLER);
+                .options("/", this::rejectOptions);
 
         // routing to GET and OPTIONS for each metrics scope (registry type) and a specific metric within each scope:
         // application, base, vendor
@@ -319,7 +284,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
                 .forEach(type -> Stream.of("", "/{metric}") // for the whole scope and for a specific metric within that scope
                         .map(suffix -> "/" + type + suffix)
                         .forEach(path -> rules.get(path, DISABLED_ENDPOINT_HANDLER)
-                                .options(path, DISABLED_ENDPOINT_HANDLER)
+                                .options(path, this::rejectOptions)
                         ));
     }
 

@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.metrics;
+package io.helidon.metrics;
+
+import io.helidon.metrics.api.RegistrySettings;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
@@ -21,10 +23,9 @@ import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Snapshot;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import static io.helidon.microprofile.metrics.MetricsMatcher.withinTolerance;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -36,7 +37,7 @@ public class TestHistograms {
 
     static MeterRegistry meterRegistry;
 
-    static MpMetricRegistry mpMetricRegistry;
+    static Registry registry;
 
     @BeforeAll
     static void setup() {
@@ -50,12 +51,12 @@ public class TestHistograms {
         prometheusMeterRegistry = new PrometheusMeterRegistry(config);
         meterRegistry = Metrics.globalRegistry;
 
-        mpMetricRegistry = MpMetricRegistry.create("histoScope", meterRegistry);
+        registry = Registry.create("histoScope", RegistrySettings.create());
     }
 
     @Test
     void testHistogram() {
-        Histogram histogram = mpMetricRegistry.histogram("myHisto");
+        Histogram histogram = registry.histogram("myHisto");
         histogram.update(4);
         histogram.update(24);
         assertThat("Count", histogram.getCount(), is(2L));
@@ -70,7 +71,7 @@ public class TestHistograms {
 
         for (int i = 0; i < percentileValues.length; i++ ) {
             assertThat("Percentile " + i + " %", percentileValues[i].getPercentile(), is(expectedPercents[i]));
-            assertThat("Percentile " + i + " value", percentileValues[i].getValue(), is(withinTolerance(expectedValues[i])));
+            assertThat("Percentile " + i + " value", percentileValues[i].getValue(), Matchers.is(MetricsMatcher.withinTolerance(expectedValues[i])));
         }
     }
 }

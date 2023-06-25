@@ -16,8 +16,10 @@
 package io.helidon.metrics;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.regex.Pattern;
 
 import io.helidon.common.media.type.MediaType;
@@ -29,7 +31,8 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
 
 /**
- * Retrieves and prepares meter output according to the formats supported by the Prometheus meter registry.
+ * Retrieves and prepares meter output from the global registry according to the formats supported by the Prometheus
+ * meter registry.
  * <p>
  *     Because the Prometheus exposition format is flat, and because some meter types have multiple values, the meter names
  *     in the output repeat the actual meter name with suffixes to indicate the specific quantities (e.g.,
@@ -37,7 +40,7 @@ import io.prometheus.client.exporter.common.TextFormat;
  *     "m_" if the actual meter name starts with a digit or underscore and underscores replace special characters.
  * </p>
  */
-public class PrometheusFormatter {
+public class MicrometerPrometheusFormatter {
     /**
      * Mapping from supported media types to the corresponding Prometheus registry content types.
      */
@@ -59,11 +62,11 @@ public class PrometheusFormatter {
     private static final String PROMETHEUS_HELP_PREFIX = "# HELP";
 
     private final String scopeTagName;
-    private final String scopeSelection;
-    private final String meterSelection;
+    private final Iterable<String> scopeSelection;
+    private final Iterable<String> meterSelection;
     private final MediaType resultMediaType;
 
-    private PrometheusFormatter(Builder builder) {
+    private MicrometerPrometheusFormatter(Builder builder) {
         scopeTagName = builder.scopeTagName;
         scopeSelection = builder.scopeSelection;
         meterSelection = builder.meterNameSelection;
@@ -97,10 +100,10 @@ public class PrometheusFormatter {
     String formattedOutput(PrometheusMeterRegistry prometheusMeterRegistry,
                                   MediaType resultMediaType,
                                   String scopeTagName,
-                                  String scopeSelection,
-                                  String meterNameSelection) {
+                                  Iterable<String> scopeSelection,
+                                  Iterable<String> meterNameSelection) {
         String rawPrometheusOutput = prometheusMeterRegistry
-                .scrape(PrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(resultMediaType),
+                .scrape(MicrometerPrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(resultMediaType),
                         meterNamesOfInterest(prometheusMeterRegistry, meterNameSelection));
 
         return filter(rawPrometheusOutput, scopeTagName, scopeSelection);
@@ -110,13 +113,27 @@ public class PrometheusFormatter {
      * Filter the Prometheus-format report by the specified scope.
      *
      * @param output Prometheus-format report
-     * @param scope scope to filter; null means no filtering by scope
+     * @param scopeTagName tag name used to add the scope to each meter's identity during registration; blank means none
+     * @param scopeSelection scope(s) to filter; null means no filtering by scope
      * @return output filtered by scope (if specified)
      */
-    static String filter(String output, String scopeTagName, String scope) {
-        if (scope == null) {
+    static String filter(String output, String scopeTagName, Iterable<String> scopeSelection) {
+        if (scopeSelection == null || scopeTagName.isBlank()) {
             return output;
         }
+
+        Iterator<String> scopeSelections = scopeSelection.iterator();
+        if (!scopeSelections.hasNext()) {
+            return output;
+        }
+
+        StringJoiner scopeAlternatives = new StringJoiner("|");
+        while (scopeSelections.hasNext()) {
+            scopeAlternatives.add(scopeSelections.next());
+        }
+
+        String scopeExpression = scopeAlternatives.length() == 1 ? scopeAlternatives.toString()
+                : "(?:" + scopeAlternatives + ")";
 
         /*
          * Output looks like repeating sections of this:
@@ -134,7 +151,7 @@ public class PrometheusFormatter {
          */
         Pattern scopePattern = Pattern.compile(String.format(".*?\\{/*?%s=\"%s\".*?}.*?",
                                                              scopeTagName,
-                                                             scope));
+                                                             scopeExpression));
 
         StringBuilder allOutput = new StringBuilder();
         StringBuilder typeAndHelpOutputForCurrentMeter = new StringBuilder();
@@ -186,34 +203,41 @@ public class PrometheusFormatter {
      * the specified meter name selection.
      *
      * @param prometheusMeterRegistry Prometheus meter registry to query
-     * @param meterNameSelection meter name to select
-     * @return set of matching meter names
+     * @param meterNameSelection meter names to select
+     * @return set of matching meter names, augmented with units where needed to match the names as stored in the meter registry
      */
     static Set<String> meterNamesOfInterest(PrometheusMeterRegistry prometheusMeterRegistry,
-                                            String meterNameSelection) {
-        if (meterNameSelection == null || meterNameSelection.isEmpty()) {
+                                            Iterable<String> meterNameSelection) {
+        if (meterNameSelection == null) {
             return null; // null passed to PrometheusMeterRegistry.scrape means "no selection based on meter name
         }
-
-        // Meter names in the output include units (if specified) so retrieve matching meters to get the units.
-        String normalizedMeterName = normalizeMeterName(meterNameSelection);
-        Set<String> unitsForMeter = new HashSet<>();
-        unitsForMeter.add("");
-
-        Set<String> suffixesForMeter = new HashSet<>();
-        suffixesForMeter.add("");
-
-        prometheusMeterRegistry.find(meterNameSelection)
-                .meters()
-                .forEach(meter -> {
-                    Meter.Id meterId = meter.getId();
-                    unitsForMeter.add("_" + meterId.getBaseUnit());
-                    suffixesForMeter.addAll(meterNameSuffixes(meterId.getType()));
-                });
+        Iterator<String> meterNames = meterNameSelection.iterator();
+        if (!meterNames.hasNext()) {
+            return null;
+        }
 
         Set<String> result = new HashSet<>();
-        unitsForMeter.forEach(units -> suffixesForMeter.forEach(
-                suffix -> result.add(normalizedMeterName + units + suffix)));
+        while (meterNames.hasNext()) {
+            String meterName = meterNames.next();
+            String normalizedMeterName = normalizeMeterName(meterName);
+            Set<String> unitsForMeter = new HashSet<>();
+            unitsForMeter.add("");
+
+            Set<String> suffixesForMeter = new HashSet<>();
+            suffixesForMeter.add("");
+
+            // Meter names include units (if specified) so retrieve matching meters to get the units.
+            prometheusMeterRegistry.find(meterName)
+                    .meters()
+                    .forEach(meter -> {
+                        Meter.Id meterId = meter.getId();
+                        unitsForMeter.add("_" + meterId.getBaseUnit());
+                        suffixesForMeter.addAll(meterNameSuffixes(meterId.getType()));
+                    });
+
+            unitsForMeter.forEach(units -> suffixesForMeter.forEach(
+                    suffix -> result.add(normalizedMeterName + units + suffix)));
+        }
 
         return result;
     }
@@ -258,11 +282,11 @@ public class PrometheusFormatter {
     /**
      * Builder for creating a tailored Prometheus formatter.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, PrometheusFormatter> {
+    public static class Builder implements io.helidon.common.Builder<Builder, MicrometerPrometheusFormatter> {
 
-        private String meterNameSelection;
+        private Iterable<String> meterNameSelection;
         private String scopeTagName;
-        private String scopeSelection;
+        private Iterable<String> scopeSelection;
         private MediaType resultMediaType = MediaTypes.TEXT_PLAIN;
 
         /**
@@ -272,29 +296,29 @@ public class PrometheusFormatter {
         }
 
         @Override
-        public PrometheusFormatter build() {
-            return new PrometheusFormatter(this);
+        public MicrometerPrometheusFormatter build() {
+            return new MicrometerPrometheusFormatter(this);
         }
 
         /**
          * Sets the meter name with which to filter the output.
          *
-         * @param meterName meter name to select
+         * @param meterNameSelection meter name to select
          * @return updated builder
          */
-        public Builder meterName(String meterName) {
-            meterNameSelection = meterName;
+        public Builder meterNameSelection(Iterable<String> meterNameSelection) {
+            this.meterNameSelection = meterNameSelection;
             return identity();
         }
 
         /**
          * Sets the scope value with which to filter the output.
          *
-         * @param scope scope to select
+         * @param scopeSelection scope to select
          * @return updated builder
          */
-        public Builder scope(String scope) {
-            scopeSelection = scope;
+        public Builder scopeSelection(Iterable<String> scopeSelection) {
+            this.scopeSelection = scopeSelection;
             return identity();
         }
 

@@ -21,12 +21,13 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.Config;
+import io.helidon.metrics.api.MetricsProgrammaticSettings;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.spi.MetricFactory;
 
 import io.micrometer.core.instrument.Metrics;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
 
 /**
  * Access point to all registries.
@@ -63,7 +64,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     protected RegistryFactory(MetricsSettings metricsSettings, Registry appRegistry, Registry vendorRegistry) {
         this.metricsSettings = metricsSettings;
         prometheusConfig = new HelidonPrometheusConfig(metricsSettings);
-        metricFactory = HelidonMetricFactory.create(Metrics.globalRegistry.add(new PrometheusMeterRegistry(prometheusConfig)));
+        metricFactory = HelidonMetricFactory.create(Metrics.globalRegistry);
         registries.put(Registry.APPLICATION_SCOPE, appRegistry);
         registries.put(Registry.VENDOR_SCOPE, vendorRegistry);
     }
@@ -172,6 +173,20 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     @Override
     public boolean enabled() {
         return true;
+    }
+
+    @Override
+    public String scrape(MediaType mediaType,
+                         Iterable<String> scopeSelection,
+                         Iterable<String> meterNameSelection) {
+        MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder()
+                .resultMediaType(mediaType)
+                .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
+                .scopeSelection(scopeSelection)
+                .meterNameSelection(meterNameSelection)
+                .build();
+
+        return formatter.filteredOutput();
     }
 
     @Override

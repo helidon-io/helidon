@@ -25,33 +25,14 @@ import org.eclipse.microprofile.metrics.MetricID;
 public interface SystemTagsManager {
 
     /**
-     * MicroProfile-specified tag for app-wide tag.
-     */
-    String APP_TAG = "_app";
-
-    /**
-     * Creates a new system tags manager using the provided metrics settings and saves it as
-     * the initialized instance returned to subsequent invocations of {@link #instance()}.
+     * Creates a new system tags manager using the provided metrics settings, saving the new instance as the initialized
+     * singleton which will be returned to subsequent invocatinos of {@link #instance()}.
      *
      * @param metricsSettings settings containing the global and app-level tags (if any)
      * @return new tags manager
      */
     static SystemTagsManager create(MetricsSettings metricsSettings) {
-        return SystemTagsManager.create(metricsSettings, null, null);
-    }
-
-    /**
-     * Creates a new system tags manager using the provided metrics setting and tag name to use
-     * for adding each metric's scope to its tags, saving the new instance as the initialized singleton
-     * which will be returned to subsequent invocatinos of {@link #instance()}.
-     *
-     * @param metricsSettings settings containing the global and app-level tags (if any)
-     * @param scopeTagName name for the tag to identify the scope of each metric
-     * @param appTagName name for the tag to identify the application with each metric
-     * @return new tags manager
-     */
-    static SystemTagsManager create(MetricsSettings metricsSettings, String scopeTagName, String appTagName) {
-        return SystemTagsManagerImpl.create(metricsSettings, scopeTagName, appTagName);
+        return SystemTagsManagerImpl.create(metricsSettings);
     }
 
     /**

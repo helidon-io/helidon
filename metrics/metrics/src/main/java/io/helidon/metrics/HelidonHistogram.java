@@ -45,13 +45,15 @@ final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMe
     }
 
     static HelidonHistogram create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
-        return new HelidonHistogram(scope, metadata, io.micrometer.core.instrument.DistributionSummary.builder(metadata.getName())
-                .description(metadata.getDescription())
-                .baseUnit(sanitizeUnit(metadata.getUnit()))
-                .publishPercentiles(DEFAULT_PERCENTILES)
-                .percentilePrecision(DEFAULT_PERCENTILE_PRECISION)
-                .tags(allTags(scope, tags))
-                .register(meterRegistry));
+        return new HelidonHistogram(scope,
+                                    metadata,
+                                    io.micrometer.core.instrument.DistributionSummary.builder(metadata.getName())
+                                            .description(metadata.getDescription())
+                                            .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                            .publishPercentiles(DEFAULT_PERCENTILES)
+                                            .percentilePrecision(DEFAULT_PERCENTILE_PRECISION)
+                                            .tags(allTags(scope, tags))
+                                            .register(meterRegistry));
     }
 
     @Override

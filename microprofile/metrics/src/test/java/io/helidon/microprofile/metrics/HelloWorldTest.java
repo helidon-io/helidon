@@ -20,6 +20,8 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import io.helidon.microprofile.tests.junit5.AddConfig;
@@ -127,7 +129,7 @@ class HelloWorldTest {
 
         Timer timer = getSyntheticTimer("message");
         assertThat("Synthetic timer", timer, is(notNullValue()));
-        assertThatWithRetry("Synthetic timer count value", timer::getCount, is((long) iterations + 1L));
+        assertThatWithRetry("Synthetic timer count value", timer::getCount, is((long) iterations));
 
         checkMetricsUrl(iterations);
     }
@@ -224,13 +226,16 @@ class HelloWorldTest {
 
     void checkMetricsUrl(int iterations) {
         assertThatWithRetry("helloCounter count", () -> {
-            JsonObject app = webTarget
+            String promOutput = webTarget
                     .path("metrics")
                     .request()
-                    .accept(MediaType.APPLICATION_JSON_TYPE)
-                    .get(JsonObject.class)
-                    .getJsonObject("application");
-            return app.getJsonNumber("helloCounter").intValue();
+                    .accept(MediaType.TEXT_PLAIN)
+                    .get(String.class);
+            Pattern pattern = Pattern.compile(".*?^helloCounter_total\\S*\\s+(\\S+).*?", Pattern.MULTILINE | Pattern.DOTALL);
+            Matcher matcher = pattern.matcher(promOutput);
+            assertThat("Output matched pattern", matcher.matches(), is(true));
+            assertThat("Matched output contains a capturing group for the count", matcher.groupCount(), is(1));
+            return (int) Double.parseDouble(matcher.group(1));
         }, is(iterations));
     }
 }

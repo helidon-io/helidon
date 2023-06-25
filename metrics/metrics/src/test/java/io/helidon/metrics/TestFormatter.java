@@ -15,10 +15,12 @@
  */
 package io.helidon.metrics;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.metrics.api.MetricsProgrammaticSettings;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.SystemTagsManager;
 
@@ -26,7 +28,6 @@ import io.micrometer.core.instrument.Metrics;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -36,23 +37,17 @@ import static org.hamcrest.Matchers.is;
 public class TestFormatter {
 
     private static final String SCOPE = "formatScope";
-    private static final String SCOPE_TAG_NAME = "scope";
+    private static final String OTHER_SCOPE = "otherScope";
 
     private static final String COUNTER_OUTPUT_PATTERN = ".*?^%s_total\\{.*%s=\"%s\".*?}\\s+(\\S).*?";
 
     private static RegistryFactory registryFactory;
-    private static MetricsSettings metricsSettings;
 
     @BeforeAll
     static void init() {
-        metricsSettings = MetricsSettings.create();
+        MetricsSettings metricsSettings = MetricsSettings.create();
         registryFactory = RegistryFactory.create(metricsSettings);
-        SystemTagsManager.create(metricsSettings, SCOPE_TAG_NAME, null);
-    }
-
-    @AfterAll
-    static void finish() {
-        SystemTagsManager.create(metricsSettings, null, null);
+        SystemTagsManager.create(metricsSettings);
     }
 
     @Test
@@ -71,7 +66,7 @@ public class TestFormatter {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Cannot find Prometheus registry"));
 
-        PrometheusFormatter formatter = PrometheusFormatter.builder().build();
+        MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder().build();
         String promFormat = formatter.filteredOutput();
 
         // Want to match: any uninteresting lines, start-of-line, the meter name, the tags (capturing the scope tag value),
@@ -87,33 +82,16 @@ public class TestFormatter {
     }
 
     @Test
-    void testScopeSelection() {
-        io.helidon.metrics.api.Registry reg = registryFactory.getRegistry(SCOPE);
+    void testSingleScopeSelection() {
+        String counterName = "counterWithScopeSingle";
+        String otherCounterName = "otherWithScopeSingle";
 
-        String otherScope = "other";
-        MetricRegistry otherRegistry = registryFactory.getRegistry(otherScope);
+        prepareForScopeSelection(counterName, SCOPE, otherCounterName, OTHER_SCOPE);
 
-        String counterName = "formatCounterWithScope";
-        Counter counter = reg.counter(counterName);
-        counter.inc();
-        assertThat("Updated counter", counter.getCount(), is(1L));
-
-        // Even though we register this "other" counter in a different MP registry, it should
-        // find its way into the shared Prometheus meter registry (with the correct mp_scope tag).
-        Counter otherCounter = otherRegistry.counter(counterName);
-        otherCounter.inc(2L);
-
-        Metrics.globalRegistry.getRegistries()
-                .stream()
-                .filter(PrometheusMeterRegistry.class::isInstance)
-                .map(PrometheusMeterRegistry.class::cast)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Cannot find Prometheus registry"));
-
-        PrometheusFormatter formatter = PrometheusFormatter.builder()
+        MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder()
                 .resultMediaType(MediaTypes.TEXT_PLAIN)
-                .scopeTagName(SCOPE_TAG_NAME)
-                .scope(SCOPE)
+                .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
+                .scopeSelection(Set.of(SCOPE))
                 .build();
         String promFormat = formatter.filteredOutput();
 
@@ -131,7 +109,7 @@ public class TestFormatter {
 
         // Make sure the "other" counter is not also present in the output; it should have been suppressed
         // because of the scope filtering we requested.
-        Pattern unexpectedNameAndTagAndValue = counterPattern(counterName, otherScope);
+        Pattern unexpectedNameAndTagAndValue = counterPattern(counterName, OTHER_SCOPE);
         matcher = unexpectedNameAndTagAndValue.matcher(promFormat);
         assertThat("Pattern match check: output " + System.lineSeparator() + promFormat + System.lineSeparator(),
                    matcher.matches(),
@@ -140,28 +118,52 @@ public class TestFormatter {
     }
 
     @Test
-    void testNameSelection() {
-        io.helidon.metrics.api.Registry reg = registryFactory.getRegistry(SCOPE);
+    void testMultipleScopeSelection() {
+        String counterName = "counterWithScopeMulti";
+        String otherCounterName = "otherWithScopeMulti";
 
-        String counterName = "formatCounterWithName";
-        Counter counter = reg.counter(counterName);
-        counter.inc();
-        assertThat("Updated counter", counter.getCount(), is(1L));
+        prepareForScopeSelection(counterName, SCOPE, otherCounterName, OTHER_SCOPE);
 
-        String otherCounterName = "otherFormatCounterWithName";
-        Counter otherCounter = reg.counter(otherCounterName);
-        otherCounter.inc(3L);
-
-        Metrics.globalRegistry.getRegistries()
-                .stream()
-                .filter(PrometheusMeterRegistry.class::isInstance)
-                .map(PrometheusMeterRegistry.class::cast)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Cannot find Prometheus registry"));
-
-        PrometheusFormatter formatter = PrometheusFormatter.builder()
+        MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder()
                 .resultMediaType(MediaTypes.TEXT_PLAIN)
-                .meterName(counterName)
+                .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
+                .scopeSelection(Set.of(SCOPE, OTHER_SCOPE))
+                .build();
+        String promFormat = formatter.filteredOutput();
+
+        // Want to match: any uninteresting lines, start-of-line, the meter name, the tags (capturing the scope tag value),
+        // capture the meter value, further uninteresting text.
+        Pattern expectedNameAndTagAndValue = counterPattern(counterName, SCOPE);
+        Matcher matcher = expectedNameAndTagAndValue.matcher(promFormat);
+        assertThat("Pattern match check: output " + System.lineSeparator() + promFormat + System.lineSeparator(),
+                   matcher.matches(),
+                   is(true));
+        assertThat("Output matcher groups", matcher.groupCount(), is(1));
+        assertThat("Captured value of counter " + counterName + " as ",
+                   Double.parseDouble(matcher.group(1)),
+                   is(1.0D));
+
+        // Make sure the "other" counter is also present in the output; it should have been included
+        // because of the multiple scope filtering we requested.
+        Pattern otherNameAndTagAndValue = counterPattern(otherCounterName, OTHER_SCOPE);
+        matcher = otherNameAndTagAndValue.matcher(promFormat);
+        assertThat("Pattern match check: output " + System.lineSeparator() + promFormat + System.lineSeparator(),
+                   matcher.matches(),
+                   is(true));
+
+    }
+
+    @Test
+    void testNameSelection() {
+        String counterName = "formatCounterWithName";
+        String otherScope = "other";
+        String otherCounterName = "otherFormatCounterWithName";
+
+        prepareForScopeSelection(counterName, SCOPE, otherCounterName, otherScope);
+
+        MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder()
+                .resultMediaType(MediaTypes.TEXT_PLAIN)
+                .meterNameSelection(Set.of(counterName))
                 .build();
         String promFormat = formatter.filteredOutput();
 
@@ -188,10 +190,32 @@ public class TestFormatter {
                    is(false));
     }
 
+    private static void prepareForScopeSelection(String counterName, String firstScope, String otherCounterName, String otherScope) {
+        io.helidon.metrics.api.Registry reg = registryFactory.getRegistry(firstScope);
+
+        MetricRegistry otherRegistry = registryFactory.getRegistry(otherScope);
+
+        Counter counter = reg.counter(counterName);
+        counter.inc();
+        assertThat("Updated counter", counter.getCount(), is(1L));
+
+        // Even though we register this "other" counter in a different MP registry, it should
+        // find its way into the shared Prometheus meter registry (with the correct mp_scope tag).
+        Counter otherCounter = otherRegistry.counter(otherCounterName);
+        otherCounter.inc(2L);
+
+        Metrics.globalRegistry.getRegistries()
+                .stream()
+                .filter(PrometheusMeterRegistry.class::isInstance)
+                .map(PrometheusMeterRegistry.class::cast)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Cannot find Prometheus registry"));
+    }
+
     private static Pattern counterPattern(String counterName, String scope) {
         return Pattern.compile(String.format(COUNTER_OUTPUT_PATTERN,
                                              counterName,
-                                             SCOPE_TAG_NAME,
+                                             MetricsProgrammaticSettings.instance().scopeTagName(),
                                              scope),
                                Pattern.MULTILINE | Pattern.DOTALL);
     }

@@ -34,4 +34,5 @@ module io.helidon.metrics.api {
 
     uses RegistryFactoryProvider;
     uses ExemplarService;
+    uses io.helidon.metrics.api.MetricsProgrammaticSettings;
 }

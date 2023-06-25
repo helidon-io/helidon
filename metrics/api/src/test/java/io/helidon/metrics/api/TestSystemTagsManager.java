@@ -89,7 +89,7 @@ class TestSystemTagsManager {
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
                                    hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE),
-                                   not(hasKey(SystemTagsManager.APP_TAG))));
+                                   not(hasKey(MetricsProgrammaticSettings.instance().appTagName()))));
 
     }
 
@@ -107,7 +107,7 @@ class TestSystemTagsManager {
                    fullTags, allOf(not(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1)),
                                    not(hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2)),
                                    hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE),
-                                   hasKey(SystemTagsManager.APP_TAG)));
+                                   hasKey(MetricsProgrammaticSettings.instance().appTagName())));
     }
 
     @Test
@@ -124,7 +124,7 @@ class TestSystemTagsManager {
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
                                    hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE),
-                                   hasKey(SystemTagsManager.APP_TAG)));
+                                   hasKey(MetricsProgrammaticSettings.instance().appTagName())));
     }
 
     @Test
@@ -154,6 +154,6 @@ class TestSystemTagsManager {
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
-                                   hasKey(SystemTagsManager.APP_TAG)));
+                                   hasKey(MetricsProgrammaticSettings.instance().appTagName())));
     }
 }

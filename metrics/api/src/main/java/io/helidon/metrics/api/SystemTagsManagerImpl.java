@@ -34,18 +34,13 @@ import org.eclipse.microprofile.metrics.MetricID;
  * <p>
  *     Further, the MP config key {@code mp.metrics.appName} or the SE config key {metrics.appName} can convey
  *     an application name which will add a tag conveying the app name to each metric ID written to output.
- *     The tag name is settable (defaults to {@value #APP_TAG_NAME_DEFAULT}).
  * </p>
  */
 class SystemTagsManagerImpl implements SystemTagsManager {
 
-    private static final String APP_TAG_NAME_DEFAULT = "_app";
-    private static final String SCOPE_TAG_NAME_DEFAULT = null;
-
     private static SystemTagsManagerImpl instance = new SystemTagsManagerImpl();
 
     private final Map<String, String> systemTags;
-    private final String scopeTagName;
 
     /**
      * Returns the singleton instance of the system tags manager.
@@ -56,27 +51,26 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return instance;
     }
 
-    static SystemTagsManagerImpl create(MetricsSettings metricsSettings, String scopeTagName, String appTagName) {
-        instance = createWithoutSaving(metricsSettings, scopeTagName, appTagName);
+    static SystemTagsManagerImpl create(MetricsSettings metricsSettings) {
+        instance = createWithoutSaving(metricsSettings);
         return instance;
     }
 
-    static SystemTagsManagerImpl createWithoutSaving(MetricsSettings metricsSettings, String scopeTagName, String appTagName) {
-        return new SystemTagsManagerImpl(metricsSettings, scopeTagName, appTagName);
+    static SystemTagsManagerImpl createWithoutSaving(MetricsSettings metricsSettings) {
+        return new SystemTagsManagerImpl(metricsSettings);
     }
 
-    private SystemTagsManagerImpl(MetricsSettings metricsSettings, String scopeTagName, String appTagName) {
-        this.scopeTagName = scopeTagName;
+    private SystemTagsManagerImpl(MetricsSettings metricsSettings) {
         Map<String, String> result = new HashMap<>(metricsSettings.globalTags());
-        if (metricsSettings.appTagValue() != null) {
-            result.put(appTagName != null ? appTagName : APP_TAG_NAME_DEFAULT, metricsSettings.appTagValue());
+        String appTagName = MetricsProgrammaticSettings.instance().appTagName();
+        if (metricsSettings.appTagValue() != null && appTagName != null && !appTagName.isBlank()) {
+            result.put(appTagName, metricsSettings.appTagValue());
         }
         systemTags = Collections.unmodifiableMap(result);
     }
 
     // for testing
     private SystemTagsManagerImpl() {
-        scopeTagName = SCOPE_TAG_NAME_DEFAULT;
         systemTags = Collections.emptyMap();
     }
 
@@ -100,7 +94,8 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     private Iterable<Map.Entry<String, String>> scopeIterable(String scope) {
         return () -> new Iterator<>() {
 
-            private boolean hasNext = scopeTagName != null;
+            private final String scopeTagName = MetricsProgrammaticSettings.instance().scopeTagName();
+            private boolean hasNext = scopeTagName != null && !scopeTagName.isBlank();
 
             @Override
             public boolean hasNext() {
