@@ -168,8 +168,13 @@ record CustomMethods(List<CustomMethod> factoryMethods,
         if (processingType.packageName().isEmpty()) {
             if (processingType.className().equals("<any>")) {
                 // cannot be resolved as this is part of our round, good faith it is a correct parameter
+                // this type name is used for types that are part of this round and that have a generic declaration
+                // such as BuilderBase<?, ?>, also compilation will fail with a correct exception if the type is wrong
+                // it will just fail on the generated class
                 return true;
             }
+            // the type name is known, but package could not be determined as the type is generated as part of this
+            // annotation processing round - if the class name is correct, assume we have the right type
             return knownType.className().equals(processingType.className())
                     && knownType.enclosingNames().equals(processingType.enclosingNames());
         }

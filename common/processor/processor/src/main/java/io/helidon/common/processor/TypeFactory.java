@@ -87,9 +87,10 @@ public final class TypeFactory {
         case TYPEVAR -> {
             return Optional.of(createFromGenericDeclaration(typeMirror.toString()));
         }
-        case WILDCARD -> {
+        case WILDCARD, ERROR -> {
             return Optional.of(TypeName.create(typeMirror.toString()));
         }
+        // this is most likely a type that is code generated as part of this round, best effort
         case NONE -> {
             return Optional.empty();
         }
