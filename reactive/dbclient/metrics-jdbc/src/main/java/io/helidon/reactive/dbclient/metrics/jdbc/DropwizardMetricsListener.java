@@ -19,6 +19,7 @@ import java.lang.System.Logger.Level;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 
 import com.codahale.metrics.Counter;
@@ -54,8 +55,16 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
 
     @Override
     public void onGaugeAdded(String name, Gauge<?> gauge) {
-        LOGGER.log(Level.TRACE, () -> String.format("Gauge added: %s", name));
-        registry.get().register(prefix + name, new JdbcMetricsGauge<>(gauge));
+        Object value = gauge.getValue();
+            if (value instanceof Number) {
+                LOGGER.log(Level.TRACE, () -> String.format("Gauge added: %s", name));
+                org.eclipse.microprofile.metrics.Gauge<?> mpGauge = new JdbcMetricsGauge<>((Gauge<? extends Number>) gauge);
+                registry.get().gauge(prefix + name, mpGauge::getValue);
+            } else {
+                LOGGER.log(Level.WARNING, () -> String.format("Cannot add gauge returning type "
+                                                                      + value.getClass().getName()
+                                                                      + " which does not extend Number"));
+            }
     }
 
     @Override
@@ -67,7 +76,7 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
     @Override
     public void onCounterAdded(String name, Counter counter) {
         LOGGER.log(Level.TRACE, () -> String.format("Counter added: %s", name));
-        registry.get().register(prefix + name, new JdbcMetricsCounter(counter));
+        registry.get().gauge(prefix + name, counter::getCount);
     }
 
     @Override
@@ -76,40 +85,52 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
         registry.get().remove(prefix + name);
     }
 
+    // TODO can we support this in some way?
     @Override
     public void onHistogramAdded(String name, Histogram histogram) {
-        LOGGER.log(Level.TRACE, () -> String.format("Histogram added: %s", name));
-        registry.get().register(prefix + name, new JdbcMetricsHistogram(histogram));
+//        LOGGER.log(Level.TRACE, () -> String.format("Histogram added: %s", name));
+//        registry.get().register(prefix + name, new JdbcMetricsHistogram(histogram));
+        LOGGER.log(Level.TRACE, () -> String.format("Ignoring histogram added: %s", name));
     }
 
+    // TODO can we support this in some way?
     @Override
     public void onHistogramRemoved(String name) {
-        LOGGER.log(Level.TRACE, () -> String.format("Histogram removed: %s", name));
-        registry.get().remove(prefix + name);
+//        LOGGER.log(Level.TRACE, () -> String.format("Histogram removed: %s", name));
+//        registry.get().remove(prefix + name);
+        LOGGER.log(Level.TRACE, () -> String.format("Ignoring histogram removed: %s", name));
     }
 
+    // TODO can we support this in some way?
     @Override
     public void onMeterAdded(String name, Meter meter) {
-        LOGGER.log(Level.TRACE, () -> String.format("Meter added: %s", name));
-        registry.get().register(prefix + name, new JdbcMetricsMeter(meter));
+//        LOGGER.log(Level.TRACE, () -> String.format("Meter added: %s", name));
+//        registry.get().register(prefix + name, new JdbcMetricsMeter(meter));
+        LOGGER.log(Level.TRACE, () -> String.format("Ignoring meter added: %s", name));
     }
 
     @Override
+    // TODO can we support this in some way?
     public void onMeterRemoved(String name) {
-        LOGGER.log(Level.TRACE, () -> String.format("Meter removed: %s", name));
-        registry.get().remove(prefix + name);
+//        LOGGER.log(Level.TRACE, () -> String.format("Meter removed: %s", name));
+//        registry.get().remove(prefix + name);
+        LOGGER.log(Level.TRACE, () -> String.format("Ignoring meter removed: %s", name));
     }
 
     @Override
+    // TODO can we support this in some way?
     public void onTimerAdded(String name, Timer timer) {
-        LOGGER.log(Level.TRACE, () -> String.format("Timer added: %s", name));
-        registry.get().register(prefix + name, new JdbcMetricsTimer(timer));
+//        LOGGER.log(Level.TRACE, () -> String.format("Timer added: %s", name));
+//        registry.get().register(prefix + name, new JdbcMetricsTimer(timer));
+        LOGGER.log(Level.TRACE, () -> String.format("Ignoring timer added: %s", name));
     }
 
     @Override
+    // TODO can we support this in some way?
     public void onTimerRemoved(String name) {
-        LOGGER.log(Level.TRACE, () -> String.format("Timer removed: %s", name));
-        registry.get().remove(prefix + name);
+//        LOGGER.log(Level.TRACE, () -> String.format("Timer removed: %s", name));
+//        registry.get().remove(prefix + name);
+        LOGGER.log(Level.TRACE, () -> String.format("Ignoring histogram removed: %s", name));
     }
 
 }

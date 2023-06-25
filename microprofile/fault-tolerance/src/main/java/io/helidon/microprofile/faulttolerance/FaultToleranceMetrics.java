@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.metrics.api.Registry;
 
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.util.AnnotationLiteral;
@@ -34,7 +35,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.getRealClass;
 
@@ -47,7 +48,7 @@ class FaultToleranceMetrics {
 
     private static final ReentrantLock LOCK = new ReentrantLock();
     private static final LazyValue<MetricRegistry> METRIC_REGISTRY = LazyValue.create(
-            () -> CDI.current().select(MetricRegistry.class, new BaseRegistryTypeLiteral()).get());
+            () -> CDI.current().select(MetricRegistry.class, new BaseRegistryScopeLiteral()).get());
 
     private FaultToleranceMetrics() {
     }
@@ -63,10 +64,10 @@ class FaultToleranceMetrics {
     /**
      * Annotation literal to inject base registry.
      */
-    static class BaseRegistryTypeLiteral extends AnnotationLiteral<RegistryType> implements RegistryType {
+    static class BaseRegistryScopeLiteral extends AnnotationLiteral<RegistryScope> implements RegistryScope {
 
         @Override
-        public MetricRegistry.Type type() {
+        public String scope() {
             return Registry.BASE_SCOPE;
         }
     }
@@ -81,7 +82,7 @@ class FaultToleranceMetrics {
 
         abstract String description();
 
-        abstract MetricType metricType();
+        abstract Class<? extends Metric> metricType();
 
         abstract String unit();
 
@@ -95,9 +96,7 @@ class FaultToleranceMetrics {
             if (counter == null) {
                 Metadata metadata = Metadata.builder()
                         .withName(name())
-                        .withDisplayName(name())
                         .withDescription(description())
-                        .withType(metricType())
                         .withUnit(unit())
                         .build();
                 try {
@@ -121,9 +120,7 @@ class FaultToleranceMetrics {
             if (histogram == null) {
                 Metadata metadata = Metadata.builder()
                         .withName(name())
-                        .withDisplayName(name())
                         .withDescription(description())
-                        .withType(metricType())
                         .withUnit(unit())
                         .build();
                 try {
@@ -138,7 +135,7 @@ class FaultToleranceMetrics {
         }
 
         @SuppressWarnings("unchecked")
-        protected <T> Gauge<T> getGauge(Tag... tags) {
+        protected <T extends Number> Gauge<T> getGauge(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
             return (Gauge<T>) getMetricRegistry().getMetrics().get(metricID);
         }
@@ -160,7 +157,7 @@ class FaultToleranceMetrics {
         }
 
         @SuppressWarnings("unchecked")
-        static <T> Gauge<T> getGauge(Method method, String name) {
+        static <T extends Number> Gauge<T> getGauge(Method method, String name) {
             return getMetric(method, name);
         }
 
@@ -176,7 +173,7 @@ class FaultToleranceMetrics {
             return getHistogram(method, name);
         }
 
-        static <T> Gauge<T> getGauge(Object bean, String methodName, String name,
+        static <T extends Number> Gauge<T> getGauge(Object bean, String methodName, String name,
                                      Class<?>... params) throws Exception {
             Method method = findMethod(getRealClass(bean), methodName, params);
             return getGauge(method, name);
@@ -203,18 +200,16 @@ class FaultToleranceMetrics {
         }
 
         @SuppressWarnings("unchecked")
-        protected <T> Gauge<T> registerGauge(Gauge<T> newGauge, Tag... tags) {
+        protected <T extends Number> Gauge<T> registerGauge(Gauge<T> newGauge, Tag... tags) {
             Gauge<T> gauge = getGauge(tags);
             if (gauge == null) {
                 Metadata metadata = Metadata.builder()
                         .withName(name())
-                        .withDisplayName(name())
                         .withDescription(description())
-                        .withType(metricType())
                         .withUnit(unit())
                         .build();
                 try {
-                    gauge = getMetricRegistry().register(metadata, newGauge, tags);
+                    gauge = getMetricRegistry().gauge(metadata, newGauge::getValue, tags);
                 } catch (IllegalArgumentException e) {
                     // Looks like we lost the registration race
                     gauge = getGauge(tags);
@@ -281,8 +276,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.COUNTER;
+        Class<? extends Metric> metricType() {
+            return Counter.class;
         }
 
         @Override
@@ -356,8 +351,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.COUNTER;
+        Class<? extends Metric> metricType() {
+            return Counter.class;
         }
 
         @Override
@@ -395,8 +390,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.COUNTER;
+        Class<? extends Metric> metricType() {
+            return Counter.class;
         }
 
         @Override
@@ -453,8 +448,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.COUNTER;
+        Class<? extends Metric> metricType() {
+            return Counter.class;
         }
 
         @Override
@@ -492,8 +487,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.HISTOGRAM;
+        Class<? extends Metric> metricType() {
+            return Histogram.class;
         }
 
         @Override
@@ -550,7 +545,7 @@ class FaultToleranceMetrics {
      * Class for "ft.circuitbreaker.calls.total" counters.
      */
     @SuppressWarnings("unchecked")
-    static <T> Gauge<T> registerGauge(Method method, String metricName, String description, Gauge<T> gauge) {
+    static <T extends Number> Gauge<T> registerGauge(Method method, String metricName, String description, Gauge<T> gauge) {
         LOCK.lock();
         try {
             MetricID metricID = new MetricID(String.format(METRIC_NAME_TEMPLATE,
@@ -559,13 +554,11 @@ class FaultToleranceMetrics {
                     metricName));
             Gauge<T> existing = getMetricRegistry().getGauges().get(metricID);
             if (existing == null) {
-                getMetricRegistry().register(Metadata.builder()
+                getMetricRegistry().gauge(Metadata.builder()
                         .withName(metricID.getName())
-                        .withDisplayName(metricID.getName())
                         .withDescription(description)
-                        .withType(MetricType.GAUGE)
                         .withUnit(MetricUnits.NANOSECONDS).build(),
-                        gauge);
+                        gauge::getValue);
             }
             return existing;
         } finally {
@@ -592,8 +585,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.COUNTER;
+        Class<? extends Metric> metricType() {
+            return Counter.class;
         }
 
         @Override
@@ -631,8 +624,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.GAUGE;
+        Class<? extends Metric> metricType() {
+            return Gauge.class;
         }
 
         @Override
@@ -671,8 +664,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.COUNTER;
+        Class<? extends Metric> metricType() {
+            return Counter.class;
         }
 
         @Override
@@ -730,8 +723,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.COUNTER;
+        Class<? extends Metric> metricType() {
+            return Counter.class;
         }
 
         @Override
@@ -769,8 +762,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.GAUGE;
+        Class<? extends Metric> metricType() {
+            return Gauge.class;
         }
 
         @Override
@@ -808,8 +801,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.GAUGE;
+        Class<? extends Metric> metricType() {
+            return Gauge.class;
         }
 
         @Override
@@ -847,8 +840,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.HISTOGRAM;
+        Class<? extends Metric> metricType() {
+            return Histogram.class;
         }
 
         @Override
@@ -886,8 +879,8 @@ class FaultToleranceMetrics {
         }
 
         @Override
-        MetricType metricType() {
-            return MetricType.HISTOGRAM;
+        Class<? extends Metric> metricType() {
+            return Histogram.class;
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.reactive.dbclient.metrics.jdbc;
 
 import java.io.OutputStream;
+import java.util.List;
 
 import org.eclipse.microprofile.metrics.Snapshot;
 
@@ -31,38 +32,29 @@ public class JdbcMetricsSnapshot extends Snapshot {
     }
 
     @Override
-    public double getValue(double quantile) {
-        return snapshot.getValue(quantile);
+    public PercentileValue[] percentileValues() {
+        return new PercentileValue[] {
+                new PercentileValue(0.5, snapshot.getMean()),
+                new PercentileValue(0.75, snapshot.get75thPercentile()),
+                new PercentileValue(0.95, snapshot.get95thPercentile()),
+                new PercentileValue(0.98, snapshot.get98thPercentile()),
+                new PercentileValue(0.99, snapshot.get99thPercentile()),
+                new PercentileValue(0.999, snapshot.get999thPercentile())};
     }
 
     @Override
-    public long[] getValues() {
-        return snapshot.getValues();
-    }
-
-    @Override
-    public int size() {
+    public long size() {
         return snapshot.size();
     }
 
     @Override
-    public long getMax() {
+    public double getMax() {
         return snapshot.getMax();
     }
 
     @Override
     public double getMean() {
         return snapshot.getMean();
-    }
-
-    @Override
-    public long getMin() {
-        return snapshot.getMin();
-    }
-
-    @Override
-    public double getStdDev() {
-        return snapshot.getStdDev();
     }
 
     @Override

@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.Config;
 import io.helidon.integrations.oci.metrics.OciMetricsSupport;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
