@@ -13,25 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.nima.openapi;
-
-import io.helidon.openapi.OpenApiFeature;
+package io.helidon.openapi;
 
 /**
  * SE implementation of {@link OpenApiFeature}.
  */
-public class SeOpenApiFeature extends OpenApiFeature {
+class SeOpenApiFeature extends OpenApiFeature {
 
     private static final System.Logger LOGGER = System.getLogger(SeOpenApiFeature.class.getName());
-
-    /**
-     * Create a new builder for the feature.
-     *
-     * @return the new builder
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
 
     /**
      * Creates a new instance.

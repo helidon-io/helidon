@@ -15,7 +15,6 @@
  */
 package io.helidon.openapi;
 
-import java.io.StringReader;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +22,6 @@ import java.util.Map;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import jakarta.json.stream.JsonParser;
 import org.yaml.snakeyaml.Yaml;
 
 public class StaticFileOnlyOpenApiFeatureImpl extends OpenApiFeature {
@@ -32,7 +30,7 @@ public class StaticFileOnlyOpenApiFeatureImpl extends OpenApiFeature {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
-    static Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
