@@ -25,7 +25,6 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.MetricsSettings;

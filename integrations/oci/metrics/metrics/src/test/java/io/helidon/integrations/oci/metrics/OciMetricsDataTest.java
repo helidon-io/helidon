@@ -72,16 +72,16 @@ public class OciMetricsDataTest {
         baseMetricRegistry.counter(counterName).inc();
         int counterMetricCount = 1;
         appMetricRegistry.timer(timerName).update(Duration.of(100, ChronoUnit.MILLIS));
-        int timerMetricCount = 4;
+        int timerMetricCount = 3;
         int totalMetricCount = counterMetricCount + timerMetricCount;
         OciMetricsData ociMetricsData = new OciMetricsData(
                 metricRegistries, nameFormatter, "compartmentId", "namespace", "resourceGroup", false);
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
         allMetricDataDetails.stream().forEach((c) -> {
             if (c.getName().contains(counterName)) {
-                assertThat(c.getDimensions().get(dimensionScopeName), is(equalTo(Type.BASE.getName())));
+                assertThat(c.getDimensions().get(dimensionScopeName), is(equalTo(Registry.BASE_SCOPE)));
             } else if (c.getName().contains(timerName)) {
-                assertThat(c.getDimensions().get(dimensionScopeName), is(equalTo(Type.APPLICATION.getName())));
+                assertThat(c.getDimensions().get(dimensionScopeName), is(equalTo(Registry.APPLICATION_SCOPE)));
             }
             else {
                 fail("Unknown metric: " + c.getName());

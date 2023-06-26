@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,14 @@
  */
 package io.helidon.microprofile.messaging.metrics;
 
+import io.helidon.metrics.api.Registry;
 import io.helidon.microprofile.messaging.MessagingChannelProcessor;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
 /**
@@ -33,7 +34,7 @@ public class MessagingCounter implements MessagingChannelProcessor {
     private final MetricRegistry metricsRegistry;
 
     @Inject
-    MessagingCounter(@RegistryType(type = Registry.BASE_SCOPE) MetricRegistry metricsRegistry) {
+    MessagingCounter(@RegistryScope(scope = Registry.BASE_SCOPE) MetricRegistry metricsRegistry) {
         this.metricsRegistry = metricsRegistry;
     }
 

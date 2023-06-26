@@ -16,7 +16,6 @@
 package io.helidon.reactive.dbclient.metrics.jdbc;
 
 import java.io.OutputStream;
-import java.util.List;
 
 import org.eclipse.microprofile.metrics.Snapshot;
 

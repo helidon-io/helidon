@@ -150,6 +150,12 @@ public class OciMetricsSupport implements HttpService {
             return result.toString();
         }
 
+        /**
+         * Converts a metric instance into the corresponding text representation of its metric type.
+         *
+         * @param metric {@link org.eclipse.microprofile.metrics.Metric} to be converted
+         * @return text type of the metric
+         */
         static String textType(Metric metric) {
             if (metric instanceof Counter) {
                 return "counter";
