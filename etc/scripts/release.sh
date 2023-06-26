@@ -150,7 +150,7 @@ update_version(){
 
     # Hack to update helidon-version-is-release in doc files
     # We are a released version if we are not a SNAPSHOT version
-    if [[ ${FULL_VERSION} == *-SNAPSHOT ]]; then
+    if [[ ${HELIDON_VERSION} == *-SNAPSHOT ]]; then
         readonly IS_RELEASED="false"
     else
         readonly IS_RELEASED="true"
@@ -258,15 +258,8 @@ release_build(){
       -DstagingRepositoryId="${STAGING_REPO_ID}" \
       -DstagingDescription="${STAGING_DESC}"
 
-    # Create and push a git tag
-    local GIT_REMOTE=$(git config --get remote.origin.url | \
-        sed "s,https://\([^/]*\)/,git@\1:,")
-
-    git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
-    git remote set-url release "${GIT_REMOTE}"
-
     git tag -f "${FULL_VERSION}"
-    git push --force release refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
 }
 
 # Invoke command
