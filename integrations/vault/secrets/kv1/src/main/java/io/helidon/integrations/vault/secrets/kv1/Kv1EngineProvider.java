@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,37 +28,29 @@ import io.helidon.integrations.vault.spi.SecretsEngineProvider;
 /**
  * Java Service Loader service for this engine.
  */
-public class Kv1EngineProvider implements SecretsEngineProvider<Kv1SecretsRx>,
+public class Kv1EngineProvider implements SecretsEngineProvider<Kv1Secrets>,
                                           InjectionProvider {
     private static final List<InjectionType<?>> INJECTABLES;
 
     static {
         List<InjectionType<?>> injectables = new LinkedList<>();
 
-        injectables.add(InjectionType.create(Kv1SecretsRx.class,
-                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
-                                                     .map(it -> vault.secrets(Kv1SecretsRx.ENGINE, it))
-                                                     .orElseGet(() -> vault.secrets(Kv1SecretsRx.ENGINE))));
-
         injectables.add(InjectionType.create(Kv1Secrets.class,
-                                             (vault, config, instanceConfig) -> {
-                                                 Kv1SecretsRx rx = instanceConfig.vaultPath()
-                                                         .map(it -> vault.secrets(Kv1SecretsRx.ENGINE, it))
-                                                         .orElseGet(() -> vault.secrets(Kv1SecretsRx.ENGINE));
-
-                                                 return new Kv1SecretsImpl(rx);
-                                             }));
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.secrets(Kv1Secrets.ENGINE, it))
+                                                     .orElseGet(() -> vault.secrets(Kv1Secrets.ENGINE))));
 
         INJECTABLES = List.copyOf(injectables);
     }
+
     @Override
-    public Engine<Kv1SecretsRx> supportedEngine() {
-        return Kv1SecretsRx.ENGINE;
+    public Engine<Kv1Secrets> supportedEngine() {
+        return Kv1Secrets.ENGINE;
     }
 
     @Override
-    public Kv1SecretsRx createSecrets(Config config, RestApi restAccess, String mount) {
-        return new Kv1SecretsRxImpl(restAccess, mount);
+    public Kv1Secrets createSecrets(Config config, RestApi restAccess, String mount) {
+        return new Kv1SecretsImpl(restAccess, mount);
     }
 
     @Override

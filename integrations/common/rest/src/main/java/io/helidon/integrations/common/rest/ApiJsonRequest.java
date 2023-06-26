@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.helidon.common.media.type.MediaType;
 /**
  * Common base class for REST requests that have an entity.
  * This class acts as a mutable builder of request JSON object.
- *
+ * <p>
  * Path is not a part of this request.
  *
  * @param <T> type of the request

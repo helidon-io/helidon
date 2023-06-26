@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,39 +16,79 @@
 
 package io.helidon.integrations.vault.secrets.cubbyhole;
 
+import java.util.Optional;
+
+import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.ListSecrets;
+import io.helidon.integrations.vault.Secret;
+import io.helidon.integrations.vault.Vault;
+import io.helidon.integrations.vault.VaultApiException;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 import io.helidon.integrations.vault.VaultRestException;
 
-class CubbyholeSecretsImpl implements CubbyholeSecrets {
-    private final CubbyholeSecretsRx delegate;
+import jakarta.json.JsonObject;
 
-    CubbyholeSecretsImpl(CubbyholeSecretsRx delegate) {
-        this.delegate = delegate;
+class CubbyholeSecretsImpl implements CubbyholeSecrets {
+    private final RestApi restApi;
+    private final String mount;
+
+    CubbyholeSecretsImpl(RestApi restApi, String mount) {
+        this.restApi = restApi;
+        this.mount = mount;
     }
 
     @Override
     public VaultOptionalResponse<GetCubbyhole.Response> get(GetCubbyhole.Request request) {
-        return delegate.get(request).await();
-    }
+        String path = request.path();
+        String apiPath = mount + "/" + path;
 
-    @Override
-    public CreateCubbyhole.Response create(CreateCubbyhole.Request request) throws VaultRestException {
-        return delegate.create(request).await();
-    }
-
-    @Override
-    public UpdateCubbyhole.Response update(UpdateCubbyhole.Request request) {
-        return delegate.update(request).await();
-    }
-
-    @Override
-    public DeleteCubbyhole.Response delete(DeleteCubbyhole.Request request) {
-        return delegate.delete(request).await();
+        return restApi.get(apiPath, request, VaultOptionalResponse.<GetCubbyhole.Response, JsonObject>vaultResponseBuilder()
+                .entityProcessor(json -> GetCubbyhole.Response.create(path, json)));
     }
 
     @Override
     public VaultOptionalResponse<ListSecrets.Response> list(ListSecrets.Request request) {
-        return delegate.list(request).await();
+        String apiPath = mount + "/" + request.path().orElse("");
+
+        return restApi
+                .invokeOptional(Vault.LIST,
+                                apiPath,
+                                request,
+                                VaultOptionalResponse.<ListSecrets.Response, JsonObject>vaultResponseBuilder()
+                                        .entityProcessor(ListSecrets.Response::create));
+    }
+
+    @Override
+    public CreateCubbyhole.Response create(CreateCubbyhole.Request request) throws VaultRestException {
+        String path = request.path();
+
+        Optional<Secret> secret = get(path);
+        if (secret.isPresent()) {
+            throw new VaultApiException(
+                    "Cannot create a secret that already exists on path: \"%s\", please use update",
+                    path);
+        }
+        String apiPath = mount + "/" + path;
+        return restApi.post(apiPath, request, CreateCubbyhole.Response.builder());
+    }
+
+    @Override
+    public UpdateCubbyhole.Response update(UpdateCubbyhole.Request request) {
+        String path = request.path();
+
+        Optional<Secret> secret = get(path);
+        if (secret.isEmpty()) {
+            throw new VaultApiException(
+                    "Cannot update a secret that does not exist on path: \"%s\", please use create",
+                    path);
+        }
+        String apiPath = mount + "/" + path;
+        return restApi.put(apiPath, request, UpdateCubbyhole.Response.builder());
+    }
+
+    @Override
+    public DeleteCubbyhole.Response delete(DeleteCubbyhole.Request request) {
+        String apiPath = mount + "/" + request.path();
+        return restApi.delete(apiPath, request, DeleteCubbyhole.Response.builder());
     }
 }

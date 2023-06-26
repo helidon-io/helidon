@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,35 +21,32 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Optional;
 
+import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 
 /**
  * API operation for Vault PKI Secrets Engine.
- *
- * All methods block the current thread. This implementation is not suitable for reactive programming.
- * Use {@link io.helidon.integrations.vault.secrets.pki.PkiSecretsRx} in reactive code.
  */
 public interface PkiSecrets extends Secrets {
+
+    /**
+     * PKI secrets engine.
+     * <p>
+     * Documentation:
+     * <a href="https://www.vaultproject.io/api-docs/secret/pki">https://www.vaultproject.io/api-docs/secret/pki</a>
+     */
+    Engine<PkiSecrets> ENGINE = Engine.create(PkiSecrets.class, "pki", "pki");
+
     /**
      * RSA algorithm for keys.
      */
-    String KEY_TYPE_RSA = PkiSecretsRx.KEY_TYPE_RSA;
+    String KEY_TYPE_RSA = "rsa";
     /**
      * EC (Elliptic curve) algorithm for keys.
      */
-    String KEY_TYPE_EC = PkiSecretsRx.KEY_TYPE_EC;
-
-    /**
-     * Create a new blocking API from its reactive counterpart.
-     *
-     * @param reactive reactive PKI Secrets
-     * @return blocking PKI Secrets
-     */
-    static PkiSecrets create(PkiSecretsRx reactive) {
-        return new PkiSecretsImpl(reactive);
-    }
+    String KEY_TYPE_EC = "ec";
 
     /**
      * List certificate serial numbers.
@@ -84,7 +81,7 @@ public interface PkiSecrets extends Secrets {
     /**
      * Certification authority certificate.
      *
-     * @param request request with optional {@link io.helidon.integrations.vault.secrets.pki.PkiFormat}
+     * @param request request with optional {@link PkiFormat}
      *                configured
      * @return CA certificate bytes
      */
@@ -104,10 +101,10 @@ public interface PkiSecrets extends Secrets {
     }
 
     /**
-     * Certificate in raw bytes, currently only {@link io.helidon.integrations.vault.secrets.pki.PkiFormat#PEM} is supported.
+     * Certificate in raw bytes, currently only {@link PkiFormat#PEM} is supported.
      *
      * @param serialNumber serial number of the certificate
-     * @param format format - must be {@link io.helidon.integrations.vault.secrets.pki.PkiFormat#PEM}
+     * @param format format - must be {@link PkiFormat#PEM}
      * @return certificate bytes in {@code PEM} format
      */
     default Optional<byte[]> certificate(String serialNumber, PkiFormat format) {
@@ -159,7 +156,7 @@ public interface PkiSecrets extends Secrets {
     /**
      * Issue a new certificate returning raw data.
      * <p>
-     * The format of data returned depends on the {@link io.helidon.integrations.vault.secrets.pki.PkiFormat} chosen:
+     * The format of data returned depends on the {@link PkiFormat} chosen:
      * <ul>
      *     <li>{@link PkiFormat#PEM} - pem bytes (e.g. {@code -----BEGIN CERTIFICATE-----...})</li>
      *     <li>{@link PkiFormat#PEM_BUNDLE} - same as above, with certificate bundling the private key</li>
@@ -225,15 +222,15 @@ public interface PkiSecrets extends Secrets {
 
     /**
      * This endpoint creates or updates the role definition.
-     * Note that the {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#addAllowedDomain(String)},
-     * {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#allowSubDomains(boolean)},
-     * {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#allowGlobDomains(boolean)}, and
-     * {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#allowAnyName(boolean)} are additive; between these
+     * Note that the {@link PkiRole.Request#addAllowedDomain(String)},
+     * {@link PkiRole.Request#allowSubDomains(boolean)},
+     * {@link PkiRole.Request#allowGlobDomains(boolean)}, and
+     * {@link PkiRole.Request#allowAnyName(boolean)} are additive; between these
      * options, and across multiple roles,  nearly any
      * issuing policy can be accommodated.
-     * {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#serverFlag(boolean)},
-     * {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#clientFlag(boolean)},
-     * and {@link io.helidon.integrations.vault.secrets.pki.PkiRole.Request#codeSigningFlag(boolean)} are additive as well. If
+     * {@link PkiRole.Request#serverFlag(boolean)},
+     * {@link PkiRole.Request#clientFlag(boolean)},
+     * and {@link PkiRole.Request#codeSigningFlag(boolean)} are additive as well. If
      * a client
      * requests a certificate that is not allowed by the CN policy in the role, the request is denied.
      *

@@ -16,14 +16,12 @@
 
 package io.helidon.integrations.vault.secrets.kv1;
 
-import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.integrations.vault.Vault;
-import io.helidon.integrations.vault.VaultOptionalResponse;
 import io.helidon.security.spi.ProviderConfig;
 import io.helidon.security.spi.SecretsProvider;
 
@@ -31,10 +29,10 @@ import io.helidon.security.spi.SecretsProvider;
  * Integration with Helidon Security.
  */
 public class Kv1SecurityProvider implements SecretsProvider<Kv1SecurityProvider.Kv1SecretConfig> {
-    private final Kv1SecretsRx secrets;
+    private final Kv1Secrets secrets;
 
     Kv1SecurityProvider(Vault vault) {
-        this.secrets = vault.secrets(Kv1SecretsRx.ENGINE);
+        this.secrets = vault.secrets(Kv1Secrets.ENGINE);
     }
 
     @Override
@@ -47,9 +45,8 @@ public class Kv1SecurityProvider implements SecretsProvider<Kv1SecurityProvider.
         String key = providerConfig.key;
 
         return () -> secrets.get(providerConfig.request())
-                .map(VaultOptionalResponse::entity)
-                .map(it -> it.flatMap(response -> response.value(key)))
-                .await(Duration.ofSeconds(10));
+                .entity()
+                .flatMap(response -> response.value(key));
     }
 
     /**

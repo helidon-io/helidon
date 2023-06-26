@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -145,12 +145,12 @@ public final class CreateToken {
         }
 
         /**
-         * Choose token type. Defaults to {@value TokenAuthRx#TYPE_SERVICE}.
+         * Choose token type. Defaults to {@value TokenAuth#TYPE_SERVICE}.
          *
          * @param type token type
          * @return updated request
-         * @see TokenAuthRx#TYPE_SERVICE
-         * @see TokenAuthRx#TYPE_BATCH
+         * @see TokenAuth#TYPE_SERVICE
+         * @see TokenAuth#TYPE_BATCH
          */
         public Request type(String type) {
             return add("type", type);

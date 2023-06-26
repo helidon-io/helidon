@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ module io.helidon.integrations.vault.secrets.cubbyhole {
 
     requires java.logging;
 
-    requires io.helidon.integrations.vault;
+    requires transitive io.helidon.integrations.vault;
     requires io.helidon.integrations.common.rest;
-    requires io.helidon.security;
+    requires transitive io.helidon.security;
 
     exports io.helidon.integrations.vault.secrets.cubbyhole;
 

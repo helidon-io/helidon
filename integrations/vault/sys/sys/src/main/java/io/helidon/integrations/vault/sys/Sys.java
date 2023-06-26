@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,28 +18,17 @@ package io.helidon.integrations.vault.sys;
 
 import io.helidon.integrations.vault.AuthMethod;
 import io.helidon.integrations.vault.Engine;
+import io.helidon.integrations.vault.SysApi;
 
 /**
- * Blocking APIs for Sys operations on Vault. Methods block the calling thread.
- * DO NOT use this API in reactive environment, always use {@link io.helidon.integrations.vault.sys.SysRx}.
- * <p>
- * This class is intended for use in blocking environments, such as CDI (where it can be injected)
- *  or in blocking server environment, where it can be obtained through {@link #create(SysRx)}.
- *
+ * APIs for Sys operations on Vault.
  */
 public interface Sys {
+
     /**
-     * Create a new instance of blocking Vault Sys operations from the reactive instance.
-     * Handle with caution, as all methods on the returned instance block the calling thread, and as such
-     * are NOT SUITABLE FOR REACTIVE usage.
-     *
-     * @param reactiveSys reactive vault Sys operations, as obtained from
-     * {@link io.helidon.integrations.vault.Vault#sys(io.helidon.integrations.vault.SysApi)}
-     * @return a new blocking Sys API
+     * The API of this sys implementation.
      */
-    static Sys create(SysRx reactiveSys) {
-        return new SysImpl(reactiveSys);
-    }
+    SysApi<Sys> API = SysApi.create(Sys.class);
 
     /**
      * Enable (mount) a secret engine on a default path.

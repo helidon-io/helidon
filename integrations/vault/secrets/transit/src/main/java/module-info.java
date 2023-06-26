@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 /**
  * Vault transit secrets.
  *
- * @see io.helidon.integrations.vault.secrets.transit.TransitSecretsRx
  * @see io.helidon.integrations.vault.secrets.transit.TransitSecrets
  */
 @Feature(value = "Transit",
@@ -34,9 +33,9 @@ module io.helidon.integrations.vault.secrets.transit {
     requires jakarta.json;
 
     requires io.helidon.integrations.common.rest;
-    requires io.helidon.integrations.vault;
+    requires transitive io.helidon.integrations.vault;
     requires io.helidon.common.http;
-    requires static io.helidon.security;
+    requires transitive io.helidon.security;
 
     exports io.helidon.integrations.vault.secrets.transit;
 

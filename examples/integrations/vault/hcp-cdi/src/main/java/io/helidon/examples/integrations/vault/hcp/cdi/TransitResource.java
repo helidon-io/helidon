@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import io.helidon.integrations.vault.secrets.transit.Encrypt;
 import io.helidon.integrations.vault.secrets.transit.Hmac;
 import io.helidon.integrations.vault.secrets.transit.Sign;
 import io.helidon.integrations.vault.secrets.transit.TransitSecrets;
-import io.helidon.integrations.vault.secrets.transit.TransitSecretsRx;
 import io.helidon.integrations.vault.secrets.transit.UpdateKeyConfig;
 import io.helidon.integrations.vault.secrets.transit.Verify;
 import io.helidon.integrations.vault.sys.DisableEngine;
@@ -63,7 +62,7 @@ public class TransitResource {
     @Path("/engine")
     @GET
     public Response enableEngine() {
-        EnableEngine.Response response = sys.enableEngine(TransitSecretsRx.ENGINE);
+        EnableEngine.Response response = sys.enableEngine(TransitSecrets.ENGINE);
 
         return Response.ok()
                 .entity("Transit secret engine is now enabled. Original status: " + response.status().code())
@@ -77,7 +76,7 @@ public class TransitResource {
     @Path("/engine")
     @DELETE
     public Response disableEngine() {
-        DisableEngine.Response response = sys.disableEngine(TransitSecretsRx.ENGINE);
+        DisableEngine.Response response = sys.disableEngine(TransitSecrets.ENGINE);
 
         return Response.ok()
                 .entity("Transit secret engine is now disabled. Original status: " + response.status())

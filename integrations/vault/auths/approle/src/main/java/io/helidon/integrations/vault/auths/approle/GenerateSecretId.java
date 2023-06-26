@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import jakarta.json.JsonWriterFactory;
 
 /**
  * Generate secret ID request and response.
- * @see AppRoleAuthRx#generateSecretId(io.helidon.integrations.vault.auths.approle.GenerateSecretId.Request)
+ * @see AppRoleAuth#generateSecretId(io.helidon.integrations.vault.auths.approle.GenerateSecretId.Request)
  */
 public final class GenerateSecretId {
     private GenerateSecretId() {

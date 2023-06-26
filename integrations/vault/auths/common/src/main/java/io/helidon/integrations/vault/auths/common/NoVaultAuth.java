@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.integrations.vault.auths.common;
 import java.util.Optional;
 
 import io.helidon.common.Weight;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
@@ -30,6 +31,7 @@ import io.helidon.integrations.vault.spi.VaultAuth;
  */
 @Weight(1)
 public class NoVaultAuth implements VaultAuth {
+    private static final Http.HeaderName VAULT_NAMESPACE_HEADER_NAME =  Http.Header.create("X-Vault-Namespace");
     /**
      * Required for service loader.
      */
@@ -52,13 +54,14 @@ public class NoVaultAuth implements VaultAuth {
             return Optional.empty();
         }
 
-        String address = vaultBuilder.address().orElseThrow(() -> new VaultApiException("Address must be defined"));
+        String address = vaultBuilder.address()
+                .orElseThrow(() -> new VaultApiException("Address must be defined"));
 
         return Optional.of(VaultRestApi.builder()
                                    .webClientBuilder(webclient -> {
                                        webclient.baseUri(address + "/v1");
                                        vaultBuilder.baseNamespace()
-                                               .ifPresent(ns -> webclient.addHeader("X-Vault-Namespace", ns));
+                                               .ifPresent(ns -> webclient.header(VAULT_NAMESPACE_HEADER_NAME, ns));
                                        vaultBuilder.webClientUpdater().accept(webclient);
                                    })
                                    .faultTolerance(vaultBuilder.ftHandler())

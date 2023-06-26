@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.Optional;
  *
  * @param <T> type of the {@link io.helidon.integrations.vault.Secret} provided by the engine
  */
-public interface Engine<T extends SecretsRx> {
+public interface Engine<T extends Secrets> {
     /**
      * Create a new versioned engine.
      *
@@ -35,7 +35,7 @@ public interface Engine<T extends SecretsRx> {
      * @param <T> type of secrets
      * @return a new engine
      */
-    static <T extends SecretsRx> Engine<T> create(Class<T> secrets, String type, String defaultMount, String version) {
+    static <T extends Secrets> Engine<T> create(Class<T> secrets, String type, String defaultMount, String version) {
         return EngineImpl.create(secrets, type, defaultMount, version);
     }
 
@@ -48,7 +48,7 @@ public interface Engine<T extends SecretsRx> {
      * @param <T> type of secrets
      * @return a new engine
      */
-    static <T extends SecretsRx> Engine<T> create(Class<T> secrets, String type, String defaultMount) {
+    static <T extends Secrets> Engine<T> create(Class<T> secrets, String type, String defaultMount) {
         return EngineImpl.create(secrets, type, defaultMount);
     }
 
@@ -67,7 +67,7 @@ public interface Engine<T extends SecretsRx> {
     Optional<String> version();
 
     /**
-     * Implementation class of the {@link SecretsRx} of this engine.
+     * Implementation class of the {@link Secrets} of this engine.
      *
      * @return secrets class
      * @see io.helidon.integrations.vault.Vault#secrets(Engine)

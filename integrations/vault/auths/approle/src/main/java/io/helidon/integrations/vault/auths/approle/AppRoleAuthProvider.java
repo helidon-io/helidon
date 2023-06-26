@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,38 +28,35 @@ import io.helidon.integrations.vault.spi.InjectionProvider;
 /**
  * Java Service Loader implementation for AppRole authentication method.
  */
-public class AppRoleAuthProvider implements AuthMethodProvider<AppRoleAuthRx>,
+public class AppRoleAuthProvider implements AuthMethodProvider<AppRoleAuth>,
                                             InjectionProvider {
     private static final List<InjectionType<?>> INJECTABLES;
 
     static {
         List<InjectionType<?>> injectables = new LinkedList<>();
 
-        injectables.add(InjectionType.create(AppRoleAuthRx.class,
-                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
-                                                     .map(it -> vault.auth(AppRoleAuthRx.AUTH_METHOD, it))
-                                                     .orElseGet(() -> vault.auth(AppRoleAuthRx.AUTH_METHOD))));
-
         injectables.add(InjectionType.create(AppRoleAuth.class,
-                                             (vault, config, instanceConfig) -> {
-                                                 AppRoleAuthRx rx = instanceConfig.vaultPath()
-                                                         .map(it -> vault.auth(AppRoleAuthRx.AUTH_METHOD, it))
-                                                         .orElseGet(() -> vault.auth(AppRoleAuthRx.AUTH_METHOD));
-
-                                                 return new AppRoleAuthImpl(rx);
-                                             }));
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.auth(AppRoleAuth.AUTH_METHOD, it))
+                                                     .orElseGet(() -> vault.auth(AppRoleAuth.AUTH_METHOD))));
 
         INJECTABLES = List.copyOf(injectables);
     }
 
-    @Override
-    public AuthMethod<AppRoleAuthRx> supportedMethod() {
-        return AppRoleAuthRx.AUTH_METHOD;
+    /**
+     * Create a new instance.
+     */
+    public AppRoleAuthProvider() {
     }
 
     @Override
-    public AppRoleAuthRx createAuth(Config config, RestApi restApi, String path) {
-        return new AppRoleAuthRxImpl(restApi, path);
+    public AuthMethod<AppRoleAuth> supportedMethod() {
+        return AppRoleAuth.AUTH_METHOD;
+    }
+
+    @Override
+    public AppRoleAuth createAuth(Config config, RestApi restApi, String path) {
+        return new AppRoleAuthImpl(restApi, path);
     }
 
     @Override
