@@ -59,16 +59,16 @@ class PkiSecretsImpl implements PkiSecrets {
                                                                   VaultOptionalResponse.<byte[], byte[]>vaultResponseBuilder()
                                                                           .entityProcessor(Function.identity()));
         return CaCertificateGet.Response.builder()
-                .entity(response.entity().orElseThrow(() ->
-                                                              VaultRestException.builder()
-                                                                      .headers(response.headers())
-                                                                      .requestId(response.requestId())
-                                                                      .status(response.status())
-                                                                      .vaultErrors(response.errors())
-                                                                      .message(
-                                                                              "CA Certificate is expected to be present, but is"
-                                                                                      + " not available")
-                                                                      .build()))
+                .entity(response.entity()
+                                .orElseThrow(() -> VaultRestException.builder()
+                                        .headers(response.headers())
+                                        .requestId(response.requestId())
+                                        .status(response.status())
+                                        .vaultErrors(response.errors())
+                                        .message(
+                                                "CA Certificate is expected to be present, but is"
+                                                        + " not available")
+                                        .build()))
                 .headers(response.headers())
                 .requestId(response.requestId())
                 .status(response.status())
@@ -102,16 +102,16 @@ class PkiSecretsImpl implements PkiSecrets {
                                                                   VaultOptionalResponse.<byte[], byte[]>vaultResponseBuilder()
                                                                           .entityProcessor(Function.identity()));
         return CrlGet.Response.builder()
-                .entity(response.entity().orElseThrow(() ->
-                                                              VaultRestException.builder()
-                                                                      .headers(response.headers())
-                                                                      .requestId(response.requestId())
-                                                                      .status(response.status())
-                                                                      .vaultErrors(response.errors())
-                                                                      .message(
-                                                                              "CRL is expected to be present, but is not "
-                                                                                      + "available")
-                                                                      .build()))
+                .entity(response.entity()
+                                .orElseThrow(() -> VaultRestException.builder()
+                                        .headers(response.headers())
+                                        .requestId(response.requestId())
+                                        .status(response.status())
+                                        .vaultErrors(response.errors())
+                                        .message(
+                                                "CRL is expected to be present, but is not "
+                                                        + "available")
+                                        .build()))
                 .headers(response.headers())
                 .requestId(response.requestId())
                 .status(response.status())
