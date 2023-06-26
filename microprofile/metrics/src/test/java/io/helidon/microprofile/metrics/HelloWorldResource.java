@@ -41,6 +41,7 @@ import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.RegistryScope;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
@@ -102,8 +103,9 @@ public class HelloWorldResource {
     @Inject
     MetricRegistry metricRegistry;
 
+    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    @RegistryScope(scope = MetricRegistry.VENDOR_SCOPE)
+    @RegistryType(type = MetricRegistry.Type.VENDOR)
     private MetricRegistry vendorRegistry;
 
     public HelloWorldResource() {

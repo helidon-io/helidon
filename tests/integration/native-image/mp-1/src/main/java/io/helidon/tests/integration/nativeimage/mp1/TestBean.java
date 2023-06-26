@@ -35,7 +35,7 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.RegistryScope;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -62,8 +62,9 @@ public class TestBean {
     @Inject
     private MetricRegistry metricRegistry;
 
+    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
+    @RegistryType(type = MetricRegistry.Type.BASE)
     private MetricRegistry baseRegistry;
 
     private final AtomicInteger retries = new AtomicInteger();

@@ -20,9 +20,9 @@ import io.helidon.metrics.api.RegistryFactory;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
-import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.RegistryScope;
+import org.eclipse.microprofile.metrics.MetricRegistry.Type;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
 /**
  * Producer of each type of registry.
@@ -36,50 +36,30 @@ final class RegistryProducer {
     private RegistryProducer() {
     }
 
-//    @Produces
+    @Produces
     public static org.eclipse.microprofile.metrics.MetricRegistry getDefaultRegistry() {
         return getApplicationRegistry();
     }
 
-    // TODO - uncomment the following two lines once MP metrics makes @RegistryScope a qualifier.
-//    @Produces
-//    @RegistryScope()
+    // TODO Once RegistryScope becomes a qualifier, use it instead of RegistryType.
+    @Produces
+    @RegistryType(type = Type.APPLICATION)
     public static org.eclipse.microprofile.metrics.MetricRegistry getApplicationRegistry() {
         return RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
     }
 
     @Produces
-    public static MetricRegistry getRegistry(InjectionPoint injectionPoint) {
-        RegistryScope registryScope = injectionPoint.getAnnotated()
-                                                    .getAnnotation(RegistryScope.class);
-        String scope = registryScope != null && !registryScope.scope().isBlank()
-                ? registryScope.scope()
-                : MetricRegistry.APPLICATION_SCOPE;
-        return RegistryFactory.getInstance().getRegistry(scope);
+    // TODO Once RegistryScope becomes a qualifier, use it instead of RegistryType.
+    @RegistryType(type = Type.BASE)
+    public static org.eclipse.microprofile.metrics.MetricRegistry getBaseRegistry() {
+        return RegistryFactory.getInstance().getRegistry(MetricRegistry.BASE_SCOPE);
     }
 
-    // TODO add the following back in (and make the preceding getApplicationRegistry like these two)
-    // once MP metrics makes RegistryScope a qualifier.
-    //
-//    @Produces
-//    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
-//    public static org.eclipse.microprofile.metrics.MetricRegistry getBaseRegistry() {
-//        return RegistryFactory.getInstance().getRegistry(MetricRegistry.BASE_SCOPE);
-//    }
-//
-//    @Produces
-//    @RegistryScope(scope = MetricRegistry.VENDOR_SCOPE)
-//    public static org.eclipse.microprofile.metrics.MetricRegistry getVendorRegistry() {
-//        return RegistryFactory.getInstance().getRegistry(MetricRegistry.VENDOR_SCOPE);
-//    }
-
-    /**
-     * Return the base registry.
-     *
-     * @return base registry
-     */
-    static MetricRegistry getBaseRegistry() {
-        return RegistryFactory.getInstance().getRegistry(MetricRegistry.BASE_SCOPE);
+    // TODO Once RegistryScope becomes a qualifier, use it instead of RegistryType.
+    @Produces
+    @RegistryType(type = Type.VENDOR)
+    public static org.eclipse.microprofile.metrics.MetricRegistry getVendorRegistry() {
+        return RegistryFactory.getInstance().getRegistry(MetricRegistry.VENDOR_SCOPE);
     }
 
     /**

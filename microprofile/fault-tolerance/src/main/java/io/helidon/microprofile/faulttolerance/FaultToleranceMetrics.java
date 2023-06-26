@@ -22,7 +22,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.metrics.api.Registry;
 
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.util.AnnotationLiteral;
@@ -35,7 +34,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.RegistryScope;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.getRealClass;
 
@@ -48,7 +47,7 @@ class FaultToleranceMetrics {
 
     private static final ReentrantLock LOCK = new ReentrantLock();
     private static final LazyValue<MetricRegistry> METRIC_REGISTRY = LazyValue.create(
-            () -> CDI.current().select(MetricRegistry.class, new BaseRegistryScopeLiteral()).get());
+            () -> CDI.current().select(MetricRegistry.class, new BaseRegistryTypeLiteral()).get());
 
     private FaultToleranceMetrics() {
     }
@@ -64,11 +63,11 @@ class FaultToleranceMetrics {
     /**
      * Annotation literal to inject base registry.
      */
-    static class BaseRegistryScopeLiteral extends AnnotationLiteral<RegistryScope> implements RegistryScope {
+    static class BaseRegistryTypeLiteral extends AnnotationLiteral<RegistryType> implements RegistryType {
 
         @Override
-        public String scope() {
-            return Registry.BASE_SCOPE;
+        public MetricRegistry.Type type() {
+            return MetricRegistry.Type.BASE;
         }
     }
 

@@ -20,9 +20,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
@@ -78,7 +76,7 @@ class MetricProducer {
                 }
             }
         }
-        return result.toArray(new Tag[result.size()]);
+        return result.toArray(new Tag[0]);
     }
 
     private static String getName(InjectionPoint ip) {
@@ -103,18 +101,18 @@ class MetricProducer {
 
     @Produces
     private Counter produceCounter(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, Counted.class, registry::getCounters,
+        return produceMetric(registry, ip, Counted.class,
                 registry::counter, Counter.class);
     }
 
     @Produces
     private Timer produceTimer(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, Timed.class, registry::getTimers, registry::timer, Timer.class);
+        return produceMetric(registry, ip, Timed.class, registry::timer, Timer.class);
     }
 
     @Produces
     private Histogram produceHistogram(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, null, registry::getHistograms,
+        return produceMetric(registry, ip, null,
                 registry::histogram, Histogram.class);
     }
 
@@ -147,21 +145,20 @@ class MetricProducer {
      * @param registry metric registry to use
      * @param ip the injection point
      * @param annotationClass annotation which represents a declaration of a metric
-     * @param getTypedMetricsFn caller-provided factory for creating the correct
      * type of metric (if there is no pre-existing one)
      * @param registerFn caller-provided function for registering a newly-created metric
      * @param clazz class for the metric type of interest
      * @return the existing metric (if any), or the newly-created and registered one
      */
     private <T extends org.eclipse.microprofile.metrics.Metric, U extends Annotation> T produceMetric(MetricRegistry registry,
-            InjectionPoint ip, Class<U> annotationClass, Supplier<Map<MetricID, T>> getTypedMetricsFn,
+            InjectionPoint ip, Class<U> annotationClass,
             BiFunction<Metadata, Tag[], T> registerFn, Class<T> clazz) {
 
         final Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);
         final Tag[] tags = tags(metricAnno);
         final MetricID metricID = new MetricID(getName(metricAnno, ip), tags);
 
-        T result = getTypedMetricsFn.get().get(metricID);
+        T result = registry.getMetric(metricID, clazz);
         if (result != null) {
             final Annotation specificMetricAnno = annotationClass == null ? null
                     : ip.getAnnotated().getAnnotation(annotationClass);

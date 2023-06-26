@@ -22,6 +22,7 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.RegistryScope;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -41,8 +42,9 @@ public class HelloWorldRestEndpointSimpleTimerDisabledTest {
         MetricsMpServiceTest.cleanUpSyntheticSimpleTimerRegistry();
     }
 
+    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
+    @RegistryType(type = MetricRegistry.Type.BASE)
     MetricRegistry syntheticTimerRegistry;
 
     boolean isSyntheticSimpleTimerPresent() {

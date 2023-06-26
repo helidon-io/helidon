@@ -40,6 +40,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.RegistryScope;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
@@ -58,7 +59,7 @@ class HelloWorldAsyncResponseWithRestRequestTest {
     WebTarget webTarget;
 
     @Inject
-    @RegistryScope(scope = Registry.BASE_SCOPE)
+    @RegistryType(type = MetricRegistry.Type.BASE)
     private MetricRegistry baseRegistry;
 
     @Test

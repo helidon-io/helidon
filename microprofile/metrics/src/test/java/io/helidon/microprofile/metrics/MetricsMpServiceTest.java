@@ -26,6 +26,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.RegistryScope;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.AfterAll;
 
 /**
@@ -49,8 +50,9 @@ public class MetricsMpServiceTest {
     @Inject
     private MetricRegistry registry;
 
+    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
+    @RegistryType(type = MetricRegistry.Type.BASE)
     private MetricRegistry baseRegistry;
 
     MetricRegistry syntheticTimerTimerRegistry() {

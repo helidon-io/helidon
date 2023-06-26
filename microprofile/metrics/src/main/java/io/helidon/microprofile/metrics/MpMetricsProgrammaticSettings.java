@@ -21,6 +21,14 @@ import io.helidon.metrics.api.MetricsProgrammaticSettings;
  * MP implementation of metrics programmatic settings.
  */
 public class MpMetricsProgrammaticSettings implements MetricsProgrammaticSettings {
+
+    /**
+     * Creates a new instance (explicit for style checking and service loading).
+     *
+     */
+    public MpMetricsProgrammaticSettings() {
+    }
+
     @Override
     public String scopeTagName() {
         return "mp_scope";

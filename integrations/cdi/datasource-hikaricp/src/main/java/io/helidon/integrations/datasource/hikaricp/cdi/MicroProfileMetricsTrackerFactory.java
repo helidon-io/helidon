@@ -21,7 +21,7 @@ import com.zaxxer.hikari.metrics.PoolStats;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.RegistryScope;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
 @ApplicationScoped
 class MicroProfileMetricsTrackerFactory implements MetricsTrackerFactory {
@@ -34,8 +34,9 @@ class MicroProfileMetricsTrackerFactory implements MetricsTrackerFactory {
         this.registry = null;
     }
 
+    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    MicroProfileMetricsTrackerFactory(@RegistryScope(scope = "vendor") final MetricRegistry registry) {
+    MicroProfileMetricsTrackerFactory(@RegistryType(type = MetricRegistry.Type.VENDOR) final MetricRegistry registry) {
         super();
         this.registry = registry;
     }

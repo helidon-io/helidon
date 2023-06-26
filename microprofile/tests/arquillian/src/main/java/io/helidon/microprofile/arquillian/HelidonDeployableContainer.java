@@ -46,7 +46,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
 
 import io.helidon.config.mp.MpConfigSources;
-import io.helidon.metrics.api.Registry;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;
@@ -58,7 +57,7 @@ import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.RegistryScope;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
@@ -116,11 +115,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     /**
      * Annotation literal to inject base registry.
      */
-    static class BaseRegistryTypeLiteral extends AnnotationLiteral<RegistryScope> implements RegistryScope {
+    static class BaseRegistryTypeLiteral extends AnnotationLiteral<RegistryType> implements RegistryType {
 
         @Override
-        public String scope() {
-            return Registry.BASE_SCOPE;
+        public MetricRegistry.Type type() {
+            return MetricRegistry.Type.BASE;
         }
     }
 

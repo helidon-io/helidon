@@ -15,14 +15,13 @@
  */
 package io.helidon.microprofile.messaging.metrics;
 
-import io.helidon.metrics.api.Registry;
 import io.helidon.microprofile.messaging.MessagingChannelProcessor;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.RegistryScope;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
 /**
@@ -33,8 +32,9 @@ public class MessagingCounter implements MessagingChannelProcessor {
 
     private final MetricRegistry metricsRegistry;
 
+    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    MessagingCounter(@RegistryScope(scope = Registry.BASE_SCOPE) MetricRegistry metricsRegistry) {
+    MessagingCounter(@RegistryType(type = MetricRegistry.Type.BASE) MetricRegistry metricsRegistry) {
         this.metricsRegistry = metricsRegistry;
     }
 

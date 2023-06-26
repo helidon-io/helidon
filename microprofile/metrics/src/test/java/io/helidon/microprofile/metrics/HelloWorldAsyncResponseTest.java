@@ -33,6 +33,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.RegistryScope;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -63,12 +64,14 @@ public class HelloWorldAsyncResponseTest {
     @Inject
     MetricRegistry registry;
 
+    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
+    @RegistryType(type = MetricRegistry.Type.BASE)
     private MetricRegistry syntheticTimerRegistry;
 
+    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    @RegistryScope(scope = MetricRegistry.VENDOR_SCOPE)
+    @RegistryType(type = MetricRegistry.Type.VENDOR)
     private MetricRegistry vendorRegistry;
 
     @Disabled
