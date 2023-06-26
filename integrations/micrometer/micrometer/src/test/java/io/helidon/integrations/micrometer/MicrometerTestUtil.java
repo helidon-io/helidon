@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 package io.helidon.integrations.micrometer;
 
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
 
 public class MicrometerTestUtil {
 
@@ -36,7 +34,7 @@ public class MicrometerTestUtil {
      * server.
      * @return the {@code WebServer} set up with OpenAPI support
      */
-    public static WebServer startServer(MicrometerSupport.Builder builder) {
+    public static WebServer startServer(MicrometerFeature.Builder builder) {
         try {
             return startServer(0, builder);
         } catch (InterruptedException | ExecutionException | TimeoutException ex) {
@@ -46,16 +44,13 @@ public class MicrometerTestUtil {
 
     public static WebServer startServer(
             int port,
-            MicrometerSupport.Builder... builders) throws
+            MicrometerFeature.Builder builder) throws
             InterruptedException, ExecutionException, TimeoutException {
-        WebServer result = WebServer.builder(Routing.builder()
-                .register(builders)
-                .build())
+        WebServer result = WebServer.builder()
                 .port(port)
+                .routing(router -> router.addFeature(() -> builder.build()))
                 .build()
-                .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .start();
         LOGGER.log(Level.INFO, "Started server at: https://localhost:{0}", result.port());
         return result;
     }

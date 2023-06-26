@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import java.util.function.Function;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.reactive.webserver.Handler;
-import io.helidon.reactive.webserver.ServerRequest;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;
@@ -79,25 +77,6 @@ class MicrometerPrometheusRegistrySupport extends MicrometerBuiltInRegistrySuppo
                     .orElse("")
                     .equals("prometheus")) {
                 return Optional.of(NimaPrometheusHandler.create(registry));
-            } else {
-                return Optional.empty();
-            }
-        };
-    }
-
-    @Override
-    public Function<ServerRequest, Optional<Handler>> requestToHandlerFn(MeterRegistry registry) {
-        /*
-         * Deal with a request if the MediaType is text/plain or the query parameter "type" specifies "prometheus".
-         */
-        return (ServerRequest req) -> {
-            if (req.headers()
-                    .bestAccepted(MediaTypes.TEXT_PLAIN).isPresent()
-                    || req.queryParams()
-                    .first("type")
-                    .orElse("")
-                    .equals("prometheus")) {
-                return Optional.of(ReactivePrometheusHandler.create(registry));
             } else {
                 return Optional.empty();
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,6 @@ module io.helidon.integrations.micrometer {
 
     requires io.helidon.config;
     requires io.helidon.common.http;
-    requires io.helidon.reactive.servicecommon;
-    requires io.helidon.reactive.webserver.cors;
     requires io.helidon.nima.servicecommon;
     requires io.helidon.nima.webserver.cors;
 

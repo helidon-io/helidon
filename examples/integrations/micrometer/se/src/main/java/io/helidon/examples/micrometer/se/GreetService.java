@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,11 @@ import java.util.Collections;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRequest;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
@@ -51,7 +52,7 @@ import jakarta.json.JsonObject;
  * </p>
  */
 
-public class GreetService implements Service {
+public class GreetService implements HttpService {
 
     /**
      * The config value for the key {@code greeting}.
@@ -74,14 +75,13 @@ public class GreetService implements Service {
      * @param rules the routing rules.
      */
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules
-            .get((req, resp) -> getTimer.record((Runnable) req::next)) // Update the timer with every GET.
+            .get("/", (req, resp) -> getTimer.record(() -> {})) // Update the timer with every GET.
             .get("/", this::getDefaultMessageHandler)
             .get("/{name}",
                     (req, resp) -> {
                             personalizedGetCounter.increment();
-                            req.next();
                         }, // Count personalized GETs...
                     this::getMessageHandler) // ...and process them.
             .put("/greeting", this::updateGreetingHandler);
@@ -92,7 +92,7 @@ public class GreetService implements Service {
      * @param request the server request
      * @param response the server response
      */
-    private void getDefaultMessageHandler(ServerRequest request,
+    private void getDefaultMessageHandler(HttpRequest request,
                                    ServerResponse response) {
         sendResponse(response, "World");
     }
@@ -104,7 +104,7 @@ public class GreetService implements Service {
      */
     private void getMessageHandler(ServerRequest request,
                             ServerResponse response) {
-        String name = request.path().param("name");
+        String name = request.path().pathParameters().first("name").get();
         sendResponse(response, name);
     }
 
@@ -135,6 +135,7 @@ public class GreetService implements Service {
      */
     private void updateGreetingHandler(ServerRequest request,
                                        ServerResponse response) {
-        request.content().as(JsonObject.class).thenAccept(jo -> updateGreetingFromJson(jo, response));
+        JsonObject obj = request.content().as(JsonObject.class);
+        updateGreetingFromJson(obj, response);
     }
 }
