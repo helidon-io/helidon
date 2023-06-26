@@ -44,9 +44,10 @@ class WebClientGaugeInProgress extends WebClientMetric {
 
     @Override
     public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
+        // Used to use ConcurrentGauge. Converted to use a Gauge monitoring an AtomicLong instead.
         Metadata metadata = createMetadata(request, null);
         var value = values.computeIfAbsent(metadata, m -> new AtomicLong());
-        Gauge<?> gauge = metricRegistry().gauge(metadata, value, AtomicLong::get);
+        metricRegistry().gauge(metadata, value, AtomicLong::get);
         boolean shouldBeHandled = handlesMethod(request.method());
         if (!shouldBeHandled) {
             return Single.just(request);
