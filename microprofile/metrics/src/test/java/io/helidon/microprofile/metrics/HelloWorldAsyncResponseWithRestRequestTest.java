@@ -55,38 +55,24 @@ class HelloWorldAsyncResponseWithRestRequestTest {
     @Test
     void checkForAsyncMethodRESTRequestMetric() throws NoSuchMethodException, IOException {
 
-        JsonObject restRequest = null; // = getRESTRequestJSON();
-        Response metricsResponse = webTarget.path("/metrics/base")
-                .request(MediaType.TEXT_PLAIN)
-                .get();
+        JsonObject restRequest = getRESTRequestJSON();
 
-        assertThat("Status retrieving REST request metrics", metricsResponse.getStatus(), is(200));
-        String prometheusOutput = metricsResponse.readEntity(String.class);
-//        double count = getRESTRequestValueForGetAsyncMethod(prometheusOutput, "REST_request_seconds_count", false);
-//        assertThat("REST request count value", count, is(0.0D));
+        // Make sure count is 0 before invoking.
+        long getAsyncCount = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(restRequest,
+                                                                                              "count",
+                                                                                              false))
+                .longValue();
+        assertThat("getAsync count value before invocation", getAsyncCount, is(0L));
 
-// TODO Do the equivalent as the code just below but using Prometheus output.
+        JsonNumber getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(restRequest,
+                                                                                             "elapsedTime",
+                                                                                             false));
+        assertThat("getAsync elapsedTime value before invocation", getAsyncTime.longValue(), is(0L));
 
-//        // Make sure count is 0 before invoking.
-//        long getAsyncCount = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(restRequest,
-//                                                                                              "count",
-//                                                                                              false))
-//                .longValue();
-//        assertThat("getAsync count value before invocation", getAsyncCount, is(0L));
-//
-//        JsonNumber getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(restRequest,
-//                                                                                             "elapsedTime",
-//                                                                                             false));
-//        assertThat("getAsync elapsedTime value before invocation", getAsyncTime.longValue(), is(0L));
-//
-//        JsonValue getAsyncMin = getRESTRequestValueForGetAsyncMethod(restRequest,
-//                                                                     "minTimeDuration",
-//                                                                     true);
-//        assertThat("Min before invocation", getAsyncMin.getValueType(), is(JsonValue.ValueType.NULL));
-//        JsonValue getAsyncMax = getRESTRequestValueForGetAsyncMethod(restRequest,
-//                                                                     "maxTimeDuration",
-//                                                                     true);
-//        assertThat("Max before invocation", getAsyncMax.getValueType(), is(JsonValue.ValueType.NULL));
+        JsonNumber getAsyncMax = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(restRequest,
+                                                                     "max",
+                                                                     false));
+        assertThat("Max before invocation", getAsyncMax.doubleValue(), is(0.0D));
 
         // Access the async endpoint.
 
@@ -105,7 +91,6 @@ class HelloWorldAsyncResponseWithRestRequestTest {
         // With async endpoints, metrics updates can occur after the server sends the response.
         // Retry as needed (including fetching the metrics again) for a little while for the count to change.
 
-        String stuff = getRESTRequestProm();
         assertThatWithRetry("getAsync count value after invocation",
                             () -> JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(
                                     // Set the reference using fresh metrics and get that newly-set JSON object, then
@@ -116,11 +101,11 @@ class HelloWorldAsyncResponseWithRestRequestTest {
                                     .longValue(),
                             is(1L));
 
-//        // Reuse (no need to update the atomic reference again) the freshly-fetched metrics JSON.
-//        getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(nextRestRequest.get(),
-//                                                                                  "elapsedTime",
-//                                                                                  false));
-//        assertThat("getAsync elapsedTime value after invocation", getAsyncTime.longValue(), is(greaterThan(0L)));
+        // Reuse (no need to update the atomic reference again) the freshly-fetched metrics JSON.
+        getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(nextRestRequest.get(),
+                                                                                  "elapsedTime",
+                                                                                  false));
+        assertThat("getAsync elapsedTime value after invocation", getAsyncTime.longValue(), is(greaterThan(0L)));
     }
 
     private JsonObject getRESTRequestJSON() {

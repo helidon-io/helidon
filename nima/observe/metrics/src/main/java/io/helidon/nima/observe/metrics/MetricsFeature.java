@@ -16,6 +16,7 @@
 package io.helidon.nima.observe.metrics;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -182,15 +183,11 @@ public class MetricsFeature extends HelidonFeatureSupport {
     @Override
     protected void postSetup(HttpRouting.Builder defaultRouting, HttpRouting.Builder featureRouting) {
         configureVendorMetrics(defaultRouting);
+        RegistryFactory.getInstance().getRegistry(Registry.BASE_SCOPE); // to trigger lazy creation if it's not already done.
     }
 
     private void getAll(ServerRequest req, ServerResponse res) {
-        getAll(req, res, queryAll(req, "scope"), queryAll(req, "name"));
-    }
-
-    private Iterable<String> queryAll(ServerRequest req, String name) {
-        UriQuery uriQuery = req.query();
-        return uriQuery.isEmpty() ? EMPTY_ITERABLE : uriQuery.all(name);
+        getAll(req, res, req.query().all("scope", List::of), req.query().all("name", List::of));
     }
 
     private void getAll(ServerRequest req, ServerResponse res, Iterable<String> scopeSelection, Iterable<String> nameSelection) {
@@ -202,7 +199,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
         }
 
         try {
-            String output = RegistryFactory.getInstance().scrape(mediaType,
+            Object output = RegistryFactory.getInstance().scrape(mediaType,
                                                                  scopeSelection,
                                                                  nameSelection);
             res.status(Http.Status.OK_200)
@@ -217,7 +214,9 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
     private static MediaType bestAccepted(ServerRequest req) {
         return req.headers()
-                .bestAccepted(MediaTypes.TEXT_PLAIN, MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .bestAccepted(MediaTypes.TEXT_PLAIN,
+                              MediaTypes.APPLICATION_OPENMETRICS_TEXT,
+                              MediaTypes.APPLICATION_JSON)
                 .orElse(null);
     }
 
@@ -240,7 +239,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
         // routing to each scope
         // As of Helidon 4, users should use /metrics?scope=xyz instead of /metrics/xyz, and
-        // /metrics/?scope=xyz&name=abc isntead of /metrics/xyz/abc. These routings are kept
+        // /metrics/?scope=xyz&name=abc instead of /metrics/xyz/abc. These routings are kept
         // temporarily for backward compatibility.
         Stream.of(app, base, vendor)
                 .forEach(registry -> {

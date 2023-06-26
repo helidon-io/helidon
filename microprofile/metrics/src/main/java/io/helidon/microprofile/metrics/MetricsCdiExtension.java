@@ -118,7 +118,6 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * </p>
  */
 public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature> {
-// TODO change above to use the real MetricsFeature, not the temporary MP-specific one.
     private static final System.Logger LOGGER = System.getLogger(MetricsCdiExtension.class.getName());
 
     static final Set<Class<? extends Annotation>> ALL_METRIC_ANNOTATIONS = Set.of(
@@ -144,22 +143,21 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
 
     static final String SYNTHETIC_TIMER_METRIC_NAME = "REST.request";
-    static final String SYNTHETIC_SIMPLE_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME =
+    static final String SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME =
             SYNTHETIC_TIMER_METRIC_NAME + ".unmappedException.total";
 
-    static final Metadata SYNTHETIC_SIMPLE_TIMER_METADATA = Metadata.builder()
+    static final Metadata SYNTHETIC_TIMER_METADATA = Metadata.builder()
             .withName(SYNTHETIC_TIMER_METRIC_NAME)
             .withDescription("""
                                      The number of invocations and total response time of this RESTful resource method since the \
                                      start of the server. The metric will not record the elapsed time nor count of a REST \
                                      request if it resulted in an unmapped exception. Also tracks the highest recorded time \
-                                     duration within the previous completed full minute and lowest recorded time duration within \
-                                     the previous completed full minute.""")
+                                     duration and the 50th, 75th, 95th, 98th, 99th and 99.9th percentile.""")
             .withUnit(MetricUnits.NANOSECONDS)
             .build();
 
-    static final Metadata SYNTHETIC_SIMPLE_TIMER_UNMAPPED_EXCEPTION_METADATA = Metadata.builder()
-            .withName(SYNTHETIC_SIMPLE_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME)
+    static final Metadata SYNTHETIC_TIMER_UNMAPPED_EXCEPTION_METADATA = Metadata.builder()
+            .withName(SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME)
             .withDescription("""
                                      The total number of unmapped exceptions that occur from this RESTful resouce method since \
                                      the start of the server.""")
@@ -540,7 +538,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
      *
      * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
      */
-    private void recordSimplyTimedForRestResources(@Observes
+    private void recordTimedForRestResources(@Observes
                                                    @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class,
                                                            DELETE.class, PATCH.class})
                                                            ProcessAnnotatedType<?> pat) {
@@ -599,7 +597,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 () -> String.format("Registering synthetic SimpleTimer for %s#%s", method.getDeclaringClass().getName(),
                         method.getName()));
         return getRegistryForSyntheticRestRequestMetrics()
-                .timer(SYNTHETIC_SIMPLE_TIMER_METADATA, syntheticRestRequestMetricTags(method));
+                .timer(SYNTHETIC_TIMER_METADATA, syntheticRestRequestMetricTags(method));
     }
 
     /**
@@ -613,7 +611,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                    () -> String.format("Registering synthetic Counter for %s#%s", method.getDeclaringClass().getName(),
                                        method.getName()));
         return getRegistryForSyntheticRestRequestMetrics()
-                .counter(SYNTHETIC_SIMPLE_TIMER_UNMAPPED_EXCEPTION_METADATA, syntheticRestRequestMetricTags(method));
+                .counter(SYNTHETIC_TIMER_UNMAPPED_EXCEPTION_METADATA, syntheticRestRequestMetricTags(method));
     }
 
     private void registerAndSaveRestRequestMetrics(Method method) {
@@ -641,7 +639,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
      * @return {@code MetricID} for the counter for this Java method
      */
     static MetricID restEndpointCounterMetricID(Method method) {
-        return new MetricID(SYNTHETIC_SIMPLE_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME, syntheticRestRequestMetricTags(method));
+        return new MetricID(SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME, syntheticRestRequestMetricTags(method));
     }
 
     /**
@@ -685,12 +683,12 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     private void registerRestRequestMetrics() {
         restRequestMetricsToRegister.forEach(this::registerAndSaveRestRequestMetrics);
         if (LOGGER.isLoggable(Level.DEBUG)) {
-            Set<Class<?>> syntheticSimpleTimerAnnotatedClassesIgnored = new HashSet<>(methodsWithRestRequestMetrics.keySet());
-            syntheticSimpleTimerAnnotatedClassesIgnored.removeAll(restRequestMetricsClassesProcessed);
-            if (!syntheticSimpleTimerAnnotatedClassesIgnored.isEmpty()) {
+            Set<Class<?>> syntheticTimerAnnotatedClassesIgnored = new HashSet<>(methodsWithRestRequestMetrics.keySet());
+            syntheticTimerAnnotatedClassesIgnored.removeAll(restRequestMetricsClassesProcessed);
+            if (!syntheticTimerAnnotatedClassesIgnored.isEmpty()) {
                 LOGGER.log(Level.DEBUG, () ->
-                        "Classes with synthetic SimplyTimer annotations added that were not processed, probably "
-                                + "because they were vetoed:" + syntheticSimpleTimerAnnotatedClassesIgnored.toString());
+                        "Classes with synthetic Timed annotations added that were not processed, probably "
+                                + "because they were vetoed:" + syntheticTimerAnnotatedClassesIgnored.toString());
             }
         }
         restRequestMetricsClassesProcessed.clear();

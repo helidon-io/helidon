@@ -161,7 +161,14 @@ public interface RegistryFactory {
      * @throws java.lang.IllegalArgumentException if the implementation cannot handle the requested media type
      * @throws java.lang.UnsupportedOperationException if the implementation cannot expose its metrics
      */
-    String scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection);
+    Object scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection);
+
+    /**
+     * Returns the current scopes represented by registries created by the factory.
+     *
+     * @return scopes
+     */
+    Iterable<String> scopes();
 
     /**
      * Called to start required background tasks of a factory (if any).

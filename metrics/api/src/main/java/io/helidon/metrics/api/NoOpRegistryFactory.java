@@ -57,9 +57,14 @@ class NoOpRegistryFactory implements RegistryFactory {
     }
 
     @Override
-    public String scrape(MediaType mediaType,
+    public Object scrape(MediaType mediaType,
                          Iterable<String> scopeSelection,
                          Iterable<String> meterNameSelection) {
         throw new UnsupportedOperationException("NoOp registry does not support output");
+    }
+
+    @Override
+    public Iterable<String> scopes() {
+        return NO_OP_REGISTRIES.keySet();
     }
 }

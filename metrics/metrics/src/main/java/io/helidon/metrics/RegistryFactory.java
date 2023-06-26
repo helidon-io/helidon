@@ -22,6 +22,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsProgrammaticSettings;
 import io.helidon.metrics.api.MetricsSettings;
@@ -176,17 +177,32 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     }
 
     @Override
-    public String scrape(MediaType mediaType,
+    public Object scrape(MediaType mediaType,
                          Iterable<String> scopeSelection,
                          Iterable<String> meterNameSelection) {
-        MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder()
-                .resultMediaType(mediaType)
-                .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
-                .scopeSelection(scopeSelection)
-                .meterNameSelection(meterNameSelection)
-                .build();
+        if (mediaType.equals(MediaTypes.TEXT_PLAIN) || mediaType.equals(MediaTypes.APPLICATION_OPENMETRICS_TEXT)) {
+            MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder()
+                    .resultMediaType(mediaType)
+                    .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
+                    .scopeSelection(scopeSelection)
+                    .meterNameSelection(meterNameSelection)
+                    .build();
 
-        return formatter.filteredOutput();
+            return formatter.filteredOutput();
+        } else if (mediaType.equals(MediaTypes.APPLICATION_JSON)) {
+            MicrometerJsonFormatter formatter = MicrometerJsonFormatter.builder()
+                    .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
+                    .scopeSelection(scopeSelection)
+                    .meterNameSelection(meterNameSelection)
+                    .build();
+            return formatter.data(true); // temporarily for backward compatibility
+        }
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterable<String> scopes() {
+        return registries.keySet();
     }
 
     @Override
