@@ -63,7 +63,6 @@ class MetricsTest extends FaultToleranceTest {
         MetricRegistry metricRegistry = getMetricRegistry();
         metricRegistry.counter(Metadata.builder()
                 .withName("dcounter")
-                .withType(MetricType.COUNTER)
                 .withUnit(MetricUnits.NONE)
                 .build());
         metricRegistry.counter("dcounter").inc();
