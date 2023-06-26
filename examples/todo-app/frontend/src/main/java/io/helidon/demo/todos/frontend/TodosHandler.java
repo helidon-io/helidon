@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.common.http.Http;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
@@ -95,9 +96,7 @@ public final class TodosHandler implements Service {
     private Metadata counterMetadata(String name, String description) {
         return Metadata.builder()
                 .withName(name)
-                .withDisplayName(name)
                 .withDescription(description)
-                .withType(MetricType.COUNTER)
                 .withUnit(MetricUnits.NONE)
                 .build();
     }

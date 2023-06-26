@@ -50,14 +50,14 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * JSON formatter for a Micrometer meter registry.
  */
-class MicrometerJsonFormatter {
+class JsonFormatter {
 
     /**
      * Returns a new builder for a formatter.
      *
      * @return new builder
      */
-    static MicrometerJsonFormatter.Builder builder() {
+    static JsonFormatter.Builder builder() {
         return new Builder();
     }
 
@@ -67,7 +67,7 @@ class MicrometerJsonFormatter {
     private final Iterable<String> scopeSelection;
     private final String scopeTagName;
 
-    private MicrometerJsonFormatter(Builder builder) {
+    private JsonFormatter(Builder builder) {
         meterNameSelection = builder.meterNameSelection;
         scopeSelection = builder.scopeSelection;
         scopeTagName = builder.scopeTagName;
@@ -531,15 +531,17 @@ class MicrometerJsonFormatter {
                             MetricID childID = child.id();
 
                             if (metric().metric() instanceof Histogram histogram) {
-                                sameNameBuilder.add(valueId("count", childID), histogram.getCount());
-                                sameNameBuilder.add(valueId("max", childID), histogram.getSnapshot().getMax());
-                                sameNameBuilder.add(valueId("mean", childID), histogram.getSnapshot().getMean());
-                                sameNameBuilder.add(valueId("total", childID), histogram.getSum());
+                                Histogram typedChild = (Histogram) child.metric();
+                                sameNameBuilder.add(valueId("count", childID), typedChild.getCount());
+                                sameNameBuilder.add(valueId("max", childID), typedChild.getSnapshot().getMax());
+                                sameNameBuilder.add(valueId("mean", childID), typedChild.getSnapshot().getMean());
+                                sameNameBuilder.add(valueId("total", childID), typedChild.getSum());
                             } else if (metric().metric() instanceof Timer timer) {
-                                sameNameBuilder.add(valueId("count", childID), timer.getCount());
-                                sameNameBuilder.add(valueId("elapsedTime", childID), timer.getElapsedTime().toSeconds());
-                                sameNameBuilder.add(valueId("max", childID), timer.getSnapshot().getMax());
-                                sameNameBuilder.add(valueId("mean", childID), timer.getSnapshot().getMean());
+                                Timer typedChild = (Timer) child.metric();
+                                sameNameBuilder.add(valueId("count", childID), typedChild.getCount());
+                                sameNameBuilder.add(valueId("elapsedTime", childID), typedChild.getElapsedTime().toSeconds());
+                                sameNameBuilder.add(valueId("max", childID), typedChild.getSnapshot().getMax());
+                                sameNameBuilder.add(valueId("mean", childID), typedChild.getSnapshot().getMean());
                             } else {
                                 throw new IllegalArgumentException("Unrecognized meter type "
                                                                            + metric().metric().getClass().getName());
@@ -562,7 +564,7 @@ class MicrometerJsonFormatter {
                 }
             }
 
-    static class Builder implements io.helidon.common.Builder<Builder, MicrometerJsonFormatter> {
+    static class Builder implements io.helidon.common.Builder<Builder, JsonFormatter> {
 
         private Iterable<String> meterNameSelection = Set.of();
         private String scopeTagName;
@@ -575,8 +577,8 @@ class MicrometerJsonFormatter {
         }
 
         @Override
-        public MicrometerJsonFormatter build() {
-            return new MicrometerJsonFormatter(this);
+        public JsonFormatter build() {
+            return new JsonFormatter(this);
         }
 
         /**

@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.http.Http.Status;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;

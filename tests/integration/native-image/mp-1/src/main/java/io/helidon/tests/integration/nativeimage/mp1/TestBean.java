@@ -35,7 +35,7 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -63,7 +63,7 @@ public class TestBean {
     private MetricRegistry metricRegistry;
 
     @Inject
-    @RegistryType(type = Registry.BASE_SCOPE)
+    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
     private MetricRegistry baseRegistry;
 
     private final AtomicInteger retries = new AtomicInteger();
@@ -156,10 +156,10 @@ public class TestBean {
     }
 
     public String appRegistry() {
-        return "SimpleTimers.size(): " + metricRegistry.getSimpleTimers().size();
+        return "SimpleTimers.size(): " + metricRegistry.getTimers().size();
     }
 
     public String baseRegistry() {
-        return "SimpleTimers.size(): " + metricRegistry.getSimpleTimers().size();
+        return "SimpleTimers.size(): " + metricRegistry.getTimers().size();
     }
 }

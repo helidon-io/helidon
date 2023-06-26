@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
@@ -84,14 +85,12 @@ public class GreetService implements Service {
         Metadata metadata = Metadata.builder()
                 .withName(TIMER_FOR_GETS)
                 .withUnit(MetricUnits.NANOSECONDS)
-                .withType(MetricType.TIMER)
                 .build();
         timerForGets = registry.timer(metadata);
 
         metadata = Metadata.builder()
                 .withName(COUNTER_FOR_PERSONALIZED_GREETINGS)
                 .withUnit(MetricUnits.NONE)
-                .withType(MetricType.COUNTER)
                 .build();
         personalizedGreetingsCounter = registry.counter(metadata);
     }

@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;

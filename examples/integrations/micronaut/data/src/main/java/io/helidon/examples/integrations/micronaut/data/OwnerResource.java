@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
  * JAX-RS resource, and the MicroProfile entry point to manage pet owners.
@@ -63,7 +63,7 @@ public class OwnerResource {
      */
     @Path("/{name}")
     @GET
-    @SimplyTimed
+    @Timed
     public Owner owner(@PathParam("name") @Pattern(regexp = "\\w+[\\w+\\s?]*\\w") String name) {
         return ownerRepository.findByName(name)
                 .orElseThrow(() -> new NotFoundException("Owner by name " + name + " does not exist"));

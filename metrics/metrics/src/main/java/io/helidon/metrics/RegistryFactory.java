@@ -190,7 +190,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
             return formatter.filteredOutput();
         } else if (mediaType.equals(MediaTypes.APPLICATION_JSON)) {
-            MicrometerJsonFormatter formatter = MicrometerJsonFormatter.builder()
+            JsonFormatter formatter = JsonFormatter.builder()
                     .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
                     .scopeSelection(scopeSelection)
                     .meterNameSelection(meterNameSelection)

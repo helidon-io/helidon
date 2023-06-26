@@ -18,6 +18,7 @@ package io.helidon.integrations.microstream.metrics;
 
 import java.util.Date;
 
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 
 import one.microstream.X;

@@ -30,13 +30,13 @@ import static org.hamcrest.Matchers.is;
 
 class TestJsonFormatter {
 
-    private static MicrometerJsonFormatter formatter;
+    private static JsonFormatter formatter;
     private static Registry appRegistry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
     private static Registry myRegistry = RegistryFactory.getInstance().getRegistry("jsonFormatterTestScope");
 
     @BeforeAll
     static void init() {
-        formatter = MicrometerJsonFormatter.builder()
+        formatter = JsonFormatter.builder()
                 .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
                 .build();
     }

@@ -17,6 +17,7 @@ package io.helidon.examples.se.httpstatuscount;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
@@ -56,9 +57,7 @@ public class HttpStatusMetricService implements Service {
         MetricRegistry appRegistry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
         Metadata metadata = Metadata.builder()
                 .withName(STATUS_COUNTER_NAME)
-                .withDisplayName("HTTP response values")
                 .withDescription("Counts the number of HTTP responses in each status category (1xx, 2xx, etc.)")
-                .withType(MetricType.COUNTER)
                 .withUnit(MetricUnits.NONE)
                 .build();
         // Declare the counters and keep references to them.
