@@ -17,7 +17,7 @@
 /**
  * Helidon WebClient Security.
  */
-module helidon.nima.webclient.security {
+module io.helidon.nima.webclient.security {
 
     requires io.helidon.nima.webclient;
     requires io.helidon.security;

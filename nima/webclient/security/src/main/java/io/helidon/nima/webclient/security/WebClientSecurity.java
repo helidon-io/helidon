@@ -94,7 +94,7 @@ public class WebClientSecurity implements WebClientService {
 
         SecurityContext context;
 
-        if (null == security) {
+        if (security == null) {
             if (maybeContext.isEmpty()) {
                 return chain.proceed(request);
             } else {
@@ -175,11 +175,15 @@ public class WebClientSecurity implements WebClientService {
 
             Map<String, List<String>> newHeaders = providerResponse.requestHeaders();
 
-            LOGGER.log(Level.TRACE, () -> "Client filter header(s). SIZE: " + newHeaders.size());
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Client filter header(s). SIZE: " + newHeaders.size());
+            }
 
             ClientRequestHeaders clientHeaders = request.headers();
             for (Map.Entry<String, List<String>> entry : newHeaders.entrySet()) {
-                LOGGER.log(Level.TRACE, () -> "    + Header: " + entry.getKey() + ": " + entry.getValue());
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, "    + Header: " + entry.getKey() + ": " + entry.getValue());
+                }
 
                 //replace existing
                 Http.HeaderName headerName = Http.Header.create(entry.getKey());
