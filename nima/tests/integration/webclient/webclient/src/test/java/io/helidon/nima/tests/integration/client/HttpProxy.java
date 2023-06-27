@@ -41,6 +41,7 @@ class HttpProxy {
     private final String password;
     // Starts with -1 because there is one first test connection to verify the HttpProxy is available
     private final AtomicInteger counter = new AtomicInteger(-1);
+    private int connectedPort;
 
     HttpProxy(int port, String user, String password) {
         this.port = port;
@@ -54,8 +55,9 @@ class HttpProxy {
 
     boolean start() {
         executor.submit(() -> {
-            LOGGER.log(Level.INFO, "Listening connections in port: " + port);
             try (ServerSocket server = new ServerSocket(port)) {
+                this.connectedPort = server.getLocalPort();
+                LOGGER.log(Level.INFO, "Listening connections in port: " + connectedPort);
                 while (!stop) {
                     Socket origin = server.accept();
                     LOGGER.log(Level.DEBUG, "Open: " + origin);
@@ -78,7 +80,7 @@ class HttpProxy {
         boolean responding = false;
         while (!responding) {
             try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(port), 10000);
+                socket.connect(new InetSocketAddress(connectedPort), 10000);
                 responding = true;
             } catch (IOException e) {}
         }
@@ -94,12 +96,16 @@ class HttpProxy {
         try {
             // Make the server to check stop boolean
             try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(port), 10000);
+                socket.connect(new InetSocketAddress(connectedPort), 10000);
             } catch (IOException e) {}
             return executor.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             return false;
         }
+    }
+
+    int connectedPort() {
+        return connectedPort;
     }
 
     private class MiddleCommunicator {

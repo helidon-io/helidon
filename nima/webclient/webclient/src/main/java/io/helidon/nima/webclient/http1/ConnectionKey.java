@@ -30,7 +30,7 @@ import io.helidon.nima.webclient.spi.DnsResolver;
  * @param tls TLS to be used in connection
  * @param dnsResolver DNS resolver to be used
  * @param dnsAddressLookup DNS address lookup strategy
- * @param proxy Proxy
+ * @param proxy Proxy server to use for outgoing requests
  */
 record ConnectionKey(String scheme,
                             String host,

@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 class HttpProxyTest {
 
     private static final String PROXY_HOST = "localhost";
-    private static final int PROXY_PORT = 18081;
+    private int proxyPort;
     private HttpProxy httpProxy;
 
     private final Http1Client client;
@@ -49,8 +49,9 @@ class HttpProxyTest {
 
     @BeforeEach
     public void before() {
-        httpProxy = new HttpProxy(PROXY_PORT);
+        httpProxy = new HttpProxy(0);
         httpProxy.start();
+        proxyPort = httpProxy.connectedPort();
     }
 
     @AfterEach
@@ -74,7 +75,7 @@ class HttpProxyTest {
 
     @Test
     void testNoHosts() {
-        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(PROXY_PORT).addNoProxy(PROXY_HOST).build();
+        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(proxyPort).addNoProxy(PROXY_HOST).build();
         try (Http1ClientResponse response = client.get("/get").proxy(proxy).request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
@@ -85,13 +86,13 @@ class HttpProxyTest {
 
     @Test
     void testNoProxyType() {
-        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(PROXY_PORT).build();
+        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(proxyPort).build();
         successVerify(proxy);
     }
 
     @Test
     void testSimpleProxy() {
-        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST).port(PROXY_PORT).build();
+        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST).port(proxyPort).build();
         successVerify(proxy);
     }
 

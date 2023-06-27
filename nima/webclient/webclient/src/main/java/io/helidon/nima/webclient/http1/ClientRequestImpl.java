@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -337,7 +338,7 @@ class ClientRequestImpl implements Http1ClientRequest {
 
     @Override
     public Http1ClientRequest proxy(Proxy proxy) {
-        this.proxy = proxy;
+        this.proxy = Objects.requireNonNull(proxy);
         return this;
     }
 

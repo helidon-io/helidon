@@ -19,7 +19,6 @@ package io.helidon.nima.webclient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-import java.net.URI;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -37,7 +36,7 @@ class ProxyTest {
                                      ".0.0.1",
                                      "[::1]");
 
-        Function<URI, Boolean> fun = Proxy.prepareNoProxy(noProxy);
+        Function<UriHelper, Boolean> fun = Proxy.prepareNoProxy(noProxy);
 
         assertThat("[::1]:80", fun.apply(address("[::1]", 80)), is(true));
         assertThat("localhost:8080", fun.apply(address("localhost", 8080)), is(true));
@@ -61,7 +60,11 @@ class ProxyTest {
 
     }
 
-    private URI address(String host, int port) {
-        return URI.create("http://" + host + ":" + port);
+    private UriHelper address(String host, int port) {
+        UriHelper uri = UriHelper.create();
+        uri.scheme("http");
+        uri.host(host);
+        uri.port(port);
+        return uri;
     }
 }

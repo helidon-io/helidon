@@ -18,7 +18,7 @@ package io.helidon.nima.webclient;
 
 import java.lang.System.Logger.Level;
 import java.net.InetSocketAddress;
-import java.net.URI;
+import java.net.ProxySelector;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -67,18 +67,27 @@ public class Proxy {
     private final ProxyType type;
     private final String host;
     private final int port;
-    private final Function<URI, Boolean> noProxy;
+    private final Function<UriHelper, Boolean> noProxy;
     private final Optional<String> username;
     private final Optional<char[]> password;
+    private final ProxySelector systemSelector;
+    private final boolean useSystemSelector;
 
     private Proxy(Proxy.Builder builder) {
         this.type = builder.type();
+        this.systemSelector = builder.systemSelector();
         this.host = builder.host();
+        this.useSystemSelector = ((null == host) && (null != systemSelector));
 
         this.port = builder.port();
         this.username = builder.username();
         this.password = builder.password();
-        this.noProxy = prepareNoProxy(builder.noProxyHosts());
+
+        if (useSystemSelector) {
+            this.noProxy = inetSocketAddress -> true;
+        } else {
+            this.noProxy = prepareNoProxy(builder.noProxyHosts());
+        }
     }
 
     /**
@@ -120,25 +129,17 @@ public class Proxy {
     }
 
     /**
-     * Verifies whether the current host is inside noHosts.
+     * Create from environment and system properties.
      *
-     * @param uri the uri
-     * @return true if it is in no hosts, otherwise false
+     * @return a proxy instance configured based on this system settings
      */
-    public boolean isNoHosts(URI uri) {
-        return noProxy.apply(uri);
+    public static Proxy create() {
+        return builder()
+                .useSystemSelector(true)
+                .build();
     }
 
-    /**
-     * Get proxy type. For testing purposes.
-     *
-     * @return the proxy type
-     */
-    ProxyType type() {
-        return type;
-    }
-
-    static Function<URI, Boolean> prepareNoProxy(Set<String> noProxyHosts) {
+    static Function<UriHelper, Boolean> prepareNoProxy(Set<String> noProxyHosts) {
         if (noProxyHosts.isEmpty()) {
             // if no exceptions, then simple
             return address -> false;
@@ -154,8 +155,8 @@ public class Proxy {
         }
 
         if (simple) {
-            return address -> noProxyHosts.contains(address.getHost()) || noProxyHosts
-                    .contains(address.getHost() + ":" + address.getPort());
+            return address -> noProxyHosts.contains(address.host())
+                    || noProxyHosts.contains(address.host() + ":" + address.port());
         }
 
         List<BiFunction<String, Integer, Boolean>> hostMatchers = new LinkedList<>();
@@ -194,8 +195,8 @@ public class Proxy {
 
         // complicated - must check for . prefixes
         return address -> {
-            String host = resolveHost(address.getHost());
-            int port = address.getPort();
+            String host = resolveHost(address.host());
+            int port = address.port();
 
             // first need to make sure whether I have an IP address or a hostname
             if (isIpV4(host) || isIpV6Host(host)) {
@@ -278,6 +279,29 @@ public class Proxy {
     }
 
     /**
+     * Get proxy type. For testing purposes.
+     *
+     * @return the proxy type
+     */
+    ProxyType type() {
+        return type;
+    }
+
+    Function<UriHelper, Boolean> noProxyPredicate() {
+        return noProxy;
+    }
+
+    /**
+     * Verifies whether the current host is inside noHosts.
+     *
+     * @param uri the uri
+     * @return true if it is in no hosts, otherwise false
+     */
+    public boolean isNoHosts(UriHelper uri) {
+        return noProxy.apply(uri);
+    }
+
+    /**
      * Creates an InetSocketAddress from a host:port.
      * @return the InetSocketAddress
      */
@@ -311,16 +335,18 @@ public class Proxy {
         }
         Proxy proxy = (Proxy) o;
         return port == proxy.port
+                && useSystemSelector == proxy.useSystemSelector
                 && type == proxy.type
                 && Objects.equals(host, proxy.host)
                 && Objects.equals(noProxy, proxy.noProxy)
                 && Objects.equals(username, proxy.username)
-                && Objects.equals(password, proxy.password);
+                && Objects.equals(password, proxy.password)
+                && Objects.equals(systemSelector, proxy.systemSelector);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, host, port, noProxy, username, password);
+        return Objects.hash(type, host, port, noProxy, username, password, systemSelector, useSystemSelector);
     }
 
     /**
@@ -335,13 +361,14 @@ public class Proxy {
         private int port = 80;
         private String username;
         private char[] password;
+        private ProxySelector systemSelector;
 
         private Builder() {
         }
 
         @Override
         public Proxy build() {
-            if ((null == host) || host.isEmpty()) {
+            if ((null == host) || (host.isEmpty() && (null == systemSelector))) {
                 return NO_PROXY;
             }
             return new Proxy(this);
@@ -356,6 +383,11 @@ public class Proxy {
          *     <th>key</th>
          *     <th>default</th>
          *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>use-system-selector</td>
+         *     <td>{@code false}</td>
+         *     <td>Whether system proxy selector should be used</td>
          * </tr>
          * <tr>
          *     <td>type</td>
@@ -393,12 +425,15 @@ public class Proxy {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            config.get("type").asString().map(ProxyType::valueOf).ifPresentOrElse(this::type, () -> type(ProxyType.HTTP));
-            config.get("host").asString().ifPresent(this::host);
-            config.get("port").asInt().ifPresent(this::port);
-            config.get("username").asString().ifPresent(this::username);
-            config.get("password").asString().map(String::toCharArray).ifPresent(this::password);
-            config.get("no-proxy").asList(String.class).ifPresent(hosts -> hosts.forEach(this::addNoProxy));
+            config.get("use-system-selector").asBoolean().ifPresent(this::useSystemSelector);
+            if (this.type != ProxyType.SYSTEM) {
+                config.get("type").asString().map(ProxyType::valueOf).ifPresentOrElse(this::type, () -> type(ProxyType.HTTP));
+                config.get("host").asString().ifPresent(this::host);
+                config.get("port").asInt().ifPresent(this::port);
+                config.get("username").asString().ifPresent(this::username);
+                config.get("password").asString().map(String::toCharArray).ifPresent(this::password);
+                config.get("no-proxy").asList(String.class).ifPresent(hosts -> hosts.forEach(this::addNoProxy));
+            }
             return this;
         }
 
@@ -484,6 +519,27 @@ public class Proxy {
             return this;
         }
 
+        /**
+         * Configure proxy from environment variables and system properties.
+         *
+         * @param useIt use system selector
+         * @return updated builder instance
+         */
+        @ConfiguredOption("false")
+        public Builder useSystemSelector(boolean useIt) {
+            if (useIt) {
+                this.type = ProxyType.SYSTEM;
+                this.systemSelector = ProxySelector.getDefault();
+            } else {
+                if (this.type == ProxyType.SYSTEM) {
+                    this.type = ProxyType.NONE;
+                }
+                this.systemSelector = null;
+            }
+
+            return this;
+        }
+
         ProxyType type() {
             return type;
         }
@@ -507,6 +563,10 @@ public class Proxy {
         Optional<char[]> password() {
             return Optional.ofNullable(password);
         }
+
+        ProxySelector systemSelector() {
+            return systemSelector;
+        }
     }
 
     /**
@@ -520,9 +580,13 @@ public class Proxy {
         NONE,
 
         /**
+         * Proxy obtained from system.
+         */
+        SYSTEM,
+
+        /**
          * HTTP proxy.
          */
         HTTP;
-        // TODO Add SOCKS?
     }
 }

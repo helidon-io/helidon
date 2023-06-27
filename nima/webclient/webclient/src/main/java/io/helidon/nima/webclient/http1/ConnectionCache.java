@@ -79,7 +79,8 @@ class ConnectionCache {
                                                      uri.authority(),
                                                      tls,
                                                      clientConfig.socketOptions().connectTimeout(),
-                                                     clientConfig.socketOptions().readTimeout(), proxy);
+                                                     clientConfig.socketOptions().readTimeout(),
+                                                     proxy);
 
         var connectionQueue = CHANNEL_CACHE.computeIfAbsent(keepAliveKey,
                                                             it -> new LinkedBlockingDeque<>(clientConfig.connectionQueueSize()));

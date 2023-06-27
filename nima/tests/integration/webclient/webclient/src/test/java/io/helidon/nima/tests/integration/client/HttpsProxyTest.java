@@ -20,6 +20,8 @@ import static io.helidon.common.http.Http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.io.IOException;
+
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.Keys;
@@ -44,8 +46,8 @@ import org.junit.jupiter.api.Test;
 class HttpsProxyTest {
 
     private static final String PROXY_HOST = "localhost";
-    private static final int PROXY_PORT = 18081;
-    private static final HttpProxy httpProxy = new HttpProxy(PROXY_PORT);
+    private static int PROXY_PORT;
+    private static HttpProxy httpProxy;
 
     private final Http1Client client;
 
@@ -73,8 +75,10 @@ class HttpsProxyTest {
     }
 
     @BeforeAll
-    public static void beforeAll() {
+    public static void beforeAll() throws IOException {
+        httpProxy = new HttpProxy(0);
         httpProxy.start();
+        PROXY_PORT = httpProxy.connectedPort();
     }
 
     @AfterAll

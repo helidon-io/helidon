@@ -26,7 +26,7 @@
 
     <groupId>io.helidon.nima.tests.integration.webclient</groupId>
     <artifactId>helidon-nima-tests-integration-webclient-project</artifactId>
-    <name>Helidon Níma Tests Integration WebServer Project</name>
+    <name>Helidon Níma Tests Integration WebClient Project</name>
     <packaging>pom</packaging>
 
     <modules>

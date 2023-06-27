@@ -21,7 +21,6 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -44,6 +43,7 @@ import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.Proxy;
+import io.helidon.nima.webclient.UriHelper;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -121,25 +121,30 @@ class Http1ClientConnection implements ClientConnection {
     }
 
     private int connectToProxy(InetSocketAddress remoteAddress) throws IOException {
+        String hostPort = remoteAddress.getHostName() + ":" + remoteAddress.getPort();
+        String newLine = "\r\n";
         HelidonSocket tempSocket = PlainSocket.client(socket, createChannelId(socket));
         StringBuilder httpConnect = new StringBuilder();
-        httpConnect.append("CONNECT ").append(remoteAddress.getHostName())
-        .append(":").append(remoteAddress.getPort()).append(" HTTP/1.1\r\n")
-        .append("Host: ").append(remoteAddress.getHostName()).append(":").append(remoteAddress.getPort())
-        .append("\r\n")
-        .append("Accept: */*\r\n\r\n");
-        // TODO Authentication
+        httpConnect.append("CONNECT ").append(hostPort).append(" HTTP/1.1").append(newLine)
+        .append("Host: ").append(hostPort).append(newLine)
+        .append("Accept: */*").append(newLine).append(newLine);
+
         if (LOGGER.isLoggable(DEBUG)) {
             LOGGER.log(DEBUG, String.format("Proxy client connected %s %s",
                                             connectionKey.proxy().address(),
                                             Thread.currentThread().getName()));
         }
-        DataWriter writer = SocketWriter.create(null, tempSocket, -1);
+        DataWriter writer = SocketWriter.create(tempSocket);
         BufferData data = BufferData.create(httpConnect.toString().getBytes(StandardCharsets.UTF_8));
         writer.writeNow(data);
         DataReader reader = new DataReader(tempSocket);
-        Status responseStatus = Http1StatusParser.readStatus(reader, 256);
-        return responseStatus.code();
+        int statusCode = readStatusCode(reader);
+        return statusCode;
+    }
+
+    private int readStatusCode(DataReader reader) {
+        String[] firstLine = reader.readLine().split(" ");
+        return Integer.parseInt(firstLine[1]);
     }
 
     private String createChannelId(Socket socket) {
@@ -152,7 +157,8 @@ class Http1ClientConnection implements ClientConnection {
             socket.setSoTimeout((int) options.readTimeout().toMillis());
             options.configureSocket(socket);
             InetSocketAddress remoteAddress = inetSocketAddress();
-            EstablishConnection.configure(this, remoteAddress);
+            StrategyConnection strategy = StrategyConnection.get(this, remoteAddress);
+            strategy.connect(this, remoteAddress);
             channelId = createChannelId(socket);
         } catch (IOException e) {
             throw new UncheckedIOException("Could not connect to " + connectionKey.host() + ":" + connectionKey.port(), e);
@@ -267,7 +273,7 @@ class Http1ClientConnection implements ClientConnection {
         return String.join(", ", certs);
     }
 
-    private enum EstablishConnection {
+    private enum StrategyConnection {
         PLAIN {
             @Override
             protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
@@ -321,16 +327,17 @@ class Http1ClientConnection implements ClientConnection {
 
         protected abstract void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException;
 
-        static void configure(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
-            EstablishConnection connector = null;
-            ConnectionKey key = connection.connectionKey;
-            Proxy proxy = key.proxy();
-            if (proxy != null  && !proxy.isNoHosts(URI.create("http://" + remoteAddress.getHostName() + ":" + remoteAddress.getPort()))) {
-                connector = key.tls() != null ? PROXY_HTTPS : PROXY_PLAIN;
+        static StrategyConnection get(Http1ClientConnection connection, InetSocketAddress remoteAddress) {
+            Proxy proxy = connection.connectionKey.proxy();
+            UriHelper uri = UriHelper.create();
+            uri.scheme("http");
+            uri.host(remoteAddress.getHostName());
+            uri.port(remoteAddress.getPort());
+            if (proxy != null  && !proxy.isNoHosts(uri)) {
+                return connection.connectionKey.tls() != null ? StrategyConnection.PROXY_HTTPS : StrategyConnection.PROXY_PLAIN;
             } else {
-                connector = key.tls() != null ? HTTPS : PLAIN;
+                return connection.connectionKey.tls() != null ? StrategyConnection.HTTPS : StrategyConnection.PLAIN;
             }
-            connector.connect(connection, remoteAddress);
         }
     }
 }
