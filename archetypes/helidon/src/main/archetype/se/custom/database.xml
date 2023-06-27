@@ -285,9 +285,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
                             <include>src/*/java/**/*.java.mustache</include>
                             <include>src/*/resources/**/*</include>
                         </includes>
-                        <excludes>
-                            <exclude if="${server} != 'oracledb'">src/*/resources/**/serial-config.properties</exclude>
-                        </excludes>
                     </templates>
                     <model>
                         <list key="dependencies">

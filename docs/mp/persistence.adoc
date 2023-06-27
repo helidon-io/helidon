@@ -197,7 +197,7 @@ managed]
 [source,xml]
 ----
 <dependency>
-    <groupId>com.h2database</groupId>
+    <groupId>io.helidon.integrations.db</groupId>
     <artifactId>h2</artifactId>
     <scope>runtime</scope> <!--1-->
 </dependency>
@@ -229,19 +229,12 @@ managed]
 [source,xml]
 ----
 <dependency>
-    <groupId>com.oracle.database.jdbc</groupId> <!--1-->
-    <artifactId>ojdbc11</artifactId> <!--2-->
-    <scope>runtime</scope> <!--3-->
+    <groupId>io.helidon.integrations.db</groupId>
+    <artifactId>ojdbc</artifactId>
+    <scope>runtime</scope> <!--1-->
 </dependency>
 ----
-<1> See
-    https://www.oracle.com/database/technologies/maven-central-guide.html[[Developer's
-    Guide For Oracle JDBC 21c on Maven Central] for more details.
-<2> The `ojdbc11` artifact
-    https://www.oracle.com/database/technologies/maven-central-guide.html#:~:text=ojdbc11.jar,JDK14%20and%20JDK15[implements
-    relevant parts of the JDBC 4.3 specification], which forms part of
-    Java 17, which is the Java version targeted by Helidon 3.
-<3> The `scope` is `runtime`, indicating that the Oracle
+<1> The `scope` is `runtime`, indicating that the Oracle
     JDBC driver classes will be available on the runtime classpath.
 
 === Configuration [[DS-Configuration]]
