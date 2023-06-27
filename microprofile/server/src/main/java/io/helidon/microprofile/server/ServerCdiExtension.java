@@ -43,8 +43,8 @@ import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpService;
@@ -92,7 +92,7 @@ public class ServerCdiExtension implements Extension {
     private final Map<Bean<?>, RoutingConfiguration> serviceBeans = Collections.synchronizedMap(new IdentityHashMap<>());
     private final List<HttpRouting.Builder> routingsWithKPIMetrics = new ArrayList<>();
     // build time
-    private ServerConfig.Builder serverBuilder = WebServer.builder()
+    private WebServerConfig.Builder serverBuilder = WebServer.builder()
             .shutdownHook(false) // we use a custom CDI shutdown hook in HelidonContainerImpl
             .port(7001);
     private HttpRouting.Builder routingBuilder = HttpRouting.builder();
@@ -261,7 +261,7 @@ public class ServerCdiExtension implements Extension {
      *
      * @return web server configuration builder
      */
-    ServerConfig.Builder serverBuilder() {
+    WebServerConfig.Builder serverBuilder() {
         return serverBuilder;
     }
 

@@ -27,8 +27,8 @@ import io.helidon.pico.api.Contract;
  * Server that opens server sockets and handles requests through routing.
  */
 @Contract
-@RuntimeType.PrototypedBy(ServerConfig.class)
-public interface WebServer extends RuntimeType.Api<ServerConfig> {
+@RuntimeType.PrototypedBy(WebServerConfig.class)
+public interface WebServer extends RuntimeType.Api<WebServerConfig> {
     /**
      * The default server socket configuration name. All the default server socket
      * configuration such as {@link WebServer#port(String)}
@@ -42,7 +42,7 @@ public interface WebServer extends RuntimeType.Api<ServerConfig> {
      * @param serverConfig configuration
      * @return a new web server
      */
-    static WebServer create(ServerConfig serverConfig) {
+    static WebServer create(WebServerConfig serverConfig) {
         return new LoomServer(serverConfig);
     }
 
@@ -52,8 +52,8 @@ public interface WebServer extends RuntimeType.Api<ServerConfig> {
      * @param builderConsumer consumer of configuration builder
      * @return a new web server
      */
-    static WebServer create(Consumer<ServerConfig.Builder> builderConsumer) {
-        ServerConfig.Builder b = ServerConfig.builder();
+    static WebServer create(Consumer<WebServerConfig.Builder> builderConsumer) {
+        WebServerConfig.Builder b = WebServerConfig.builder();
         builderConsumer.accept(b);
         return b.build();
     }
@@ -63,8 +63,8 @@ public interface WebServer extends RuntimeType.Api<ServerConfig> {
      *
      * @return builder
      */
-    static ServerConfig.Builder builder() {
-        return ServerConfig.builder();
+    static WebServerConfig.Builder builder() {
+        return WebServerConfig.builder();
     }
 
     /**

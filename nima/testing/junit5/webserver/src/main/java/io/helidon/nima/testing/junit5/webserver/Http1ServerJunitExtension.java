@@ -26,8 +26,8 @@ import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpRules;
 
@@ -114,7 +114,7 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
     private static class RoutingParamHandler implements ParamHandler<HttpRouting.Builder> {
         @Override
         public HttpRouting.Builder get(String socketName,
-                                       ServerConfig.Builder serverBuilder,
+                                       WebServerConfig.Builder serverBuilder,
                                        ListenerConfig.Builder listenerBuilder,
                                        Router.RouterBuilder<?> routerBuilder) {
             return HttpRouting.builder();
@@ -122,7 +122,7 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
 
         @Override
         public void handle(String socketName,
-                           ServerConfig.Builder serverBuilder,
+                           WebServerConfig.Builder serverBuilder,
                            ListenerConfig.Builder listenerBuilder,
                            Router.RouterBuilder<?> routerBuilder,
                            HttpRouting.Builder value) {
@@ -134,7 +134,7 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
     private static class RouterParamHandler implements ParamHandler<Router.RouterBuilder<?>> {
         @Override
         public Router.RouterBuilder<?> get(String socketName,
-                                           ServerConfig.Builder serverBuilder,
+                                           WebServerConfig.Builder serverBuilder,
                                            ListenerConfig.Builder listenerBuilder,
                                            Router.RouterBuilder<?> routerBuilder) {
             return routerBuilder;
@@ -144,7 +144,7 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
     private static class ListenerConfigurationParamHandler implements ParamHandler<ListenerConfig.Builder> {
         @Override
         public ListenerConfig.Builder get(String socketName,
-                                          ServerConfig.Builder serverBuilder,
+                                          WebServerConfig.Builder serverBuilder,
                                           ListenerConfig.Builder listenerBuilder,
                                           Router.RouterBuilder<?> routerBuilder) {
             return listenerBuilder;

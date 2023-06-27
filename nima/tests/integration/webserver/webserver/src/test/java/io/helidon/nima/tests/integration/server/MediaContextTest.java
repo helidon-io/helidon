@@ -31,7 +31,7 @@ import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ class MediaContextTest {
     }
 
     @SetUpServer
-    static void server(ServerConfig.Builder server) {
+    static void server(WebServerConfig.Builder server) {
         server.mediaContext(new CustomizedMediaContext());
     }
 

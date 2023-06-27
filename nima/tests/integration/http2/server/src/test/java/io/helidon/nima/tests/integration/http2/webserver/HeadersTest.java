@@ -34,7 +34,7 @@ import io.helidon.nima.http2.webserver.Http2Upgrader;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http1.Http1Config;
@@ -55,7 +55,7 @@ public class HeadersTest {
     private static final String DATA = "Helidon!!!".repeat(10);
 
     @SetUpServer
-    static void setUpServer(ServerConfig.Builder serverBuilder) {
+    static void setUpServer(WebServerConfig.Builder serverBuilder) {
         Http2Config http2Config = Http2Config.builder()
                 .sendErrorDetails(true)
                 .maxHeaderListSize(128_000)
