@@ -80,7 +80,7 @@ class CommonMetadataManager {
         if (currentTagNames == null) {
             return tagNameSets.put(metricName, tagNames);
         }
-        enforceConsistentTagNames(currentTagNames, tagNames);
+        enforceConsistentTagNames(metricName, currentTagNames, tagNames);
         return tagNames;
     }
 
@@ -108,15 +108,17 @@ class CommonMetadataManager {
         if (a == null || b == null) {
             return false;
         }
+        // Try to merge description and units.
         return a.getName().equals(b.getName())
                 && Objects.equals(a.getDescription(), b.getDescription())
                 && Objects.equals(a.getUnit(), b.getUnit());
     }
 
-    private static void enforceConsistentTagNames(Set<String> existingTagNames, Set<String> newTagNames) {
+    private static void enforceConsistentTagNames(String metricName, Set<String> existingTagNames, Set<String> newTagNames) {
         if (!existingTagNames.equals(newTagNames)) {
-            throw new IllegalArgumentException(String.format("New tag names %s conflict with existing tag names %s",
+            throw new IllegalArgumentException(String.format("New tag names %s for metric %s conflict with existing tag names %s",
                                                              newTagNames,
+                                                             metricName,
                                                              existingTagNames));
         }
     }
