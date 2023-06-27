@@ -21,14 +21,16 @@ import io.helidon.pico.tools.ExternalModuleCreatorRequest;
 import io.helidon.pico.tools.ExternalModuleCreatorResponse;
 
 /**
- * Implementors are responsible for creating an {@link io.helidon.pico.tools.ActivatorCreatorRequest} that can be then passed to the
- * {@link ActivatorCreator} based upon the scanning and reflective introspection of a set of classes found in an external
+ * Implementors are responsible for creating an {@link io.helidon.pico.tools.ActivatorCreatorRequest} that can be then passed
+ * to the
+ * {@link io.helidon.pico.tools.spi.ActivatorCreator} based upon the scanning and reflective introspection of a set of classes
+ * found in an external
  * jar module.
  * This involves a two-step process of first preparing to create using
- * {@link #prepareToCreateExternalModule(io.helidon.pico.tools.ExternalModuleCreatorRequest)}, followed by taking the response and proceeding
- * to call {@link ActivatorCreator#createModuleActivators(io.helidon.pico.tools.ActivatorCreatorRequest)}.
- *
- * @see io.helidon.pico.tools.ExternalModuleCreatorProvider
+ * {@link #prepareToCreateExternalModule(io.helidon.pico.tools.ExternalModuleCreatorRequest)}, followed by taking the response
+ * and proceeding
+ * to call
+ * {@link io.helidon.pico.tools.spi.ActivatorCreator#createModuleActivators(io.helidon.pico.tools.ActivatorCreatorRequest)}.
  */
 @Contract
 public interface ExternalModuleCreator {

@@ -17,13 +17,12 @@
 package io.helidon.pico.tests.pico;
 
 import io.helidon.config.Config;
-import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
+import io.helidon.pico.tools.TypeNames;
 
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Default;
-import jakarta.inject.Singleton;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,9 +63,9 @@ class JavaxTest {
         assertThat(sp.toString(),
                    equalTo("AnApplicationScopedService:INIT"));
         assertThat(sp.serviceInfo().qualifiers(),
-                   contains(QualifierAndValueDefault.create(Default.class)));
+                   contains(Qualifier.create(Default.class)));
         assertThat(sp.serviceInfo().scopeTypeNames(),
-                   containsInAnyOrder(Singleton.class.getName(), ApplicationScoped.class.getName()));
+                   containsInAnyOrder(TypeNames.JAKARTA_SINGLETON_TYPE, TypeNames.JAKARTA_APPLICATION_SCOPED_TYPE));
     }
 
 }

@@ -16,12 +16,12 @@
 
 package io.helidon.pico.runtime;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.api.ServiceInfo;
-import io.helidon.pico.api.ServiceInfoDefault;
 
 /**
  * Basic {@link io.helidon.pico.api.Application} implementation. A Pico application is-a service provider also.
@@ -34,11 +34,15 @@ class PicoApplicationServiceProvider extends AbstractServiceProvider<Application
     }
 
     static ServiceInfo createServiceInfo(Application app) {
-        ServiceInfoDefault.Builder builder = ServiceInfoDefault.builder()
-                .serviceTypeName(app.getClass().getName())
-                .addContractsImplemented(Application.class.getName());
-        app.named().ifPresent(name -> builder.addQualifier(QualifierAndValueDefault.createNamed(name)));
+        ServiceInfo.Builder builder = ServiceInfo.builder()
+                .serviceTypeName(app.getClass())
+                .addContractImplemented(TypeName.create(Application.class));
+        app.named().ifPresent(name -> builder.addQualifier(Qualifier.createNamed(name)));
         return builder.build();
     }
 
+    @Override
+    public Class<?> serviceType() {
+        return Application.class;
+    }
 }

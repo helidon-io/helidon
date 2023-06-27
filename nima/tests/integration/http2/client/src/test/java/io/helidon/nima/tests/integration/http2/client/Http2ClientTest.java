@@ -20,7 +20,7 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.webclient.Http2;
 import io.helidon.nima.http2.webclient.Http2Client;
@@ -32,6 +32,7 @@ import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -69,10 +70,11 @@ class Http2ClientTest {
     }
 
     @SetUpServer
-    static void setUpServer(WebServer.Builder serverBuilder) {
-        KeyConfig privateKeyConfig = KeyConfig.keystoreBuilder()
-                .keystore(Resource.create("certificate.p12"))
-                .keystorePassphrase("helidon")
+    static void setUpServer(ServerConfig.Builder serverBuilder) {
+        Keys privateKeyConfig = Keys.builder()
+                .keystore(keystore -> keystore
+                        .keystore(Resource.create("certificate.p12"))
+                        .keystorePassphrase("helidon"))
                 .build();
 
         Tls tls = Tls.builder()
@@ -80,8 +82,8 @@ class Http2ClientTest {
                 .privateKeyCertChain(privateKeyConfig.certChain())
                 .build();
 
-        serverBuilder.socket("https",
-                             socketBuilder -> socketBuilder.tls(tls));
+        serverBuilder.putSocket("https",
+                                socketBuilder -> socketBuilder.tls(tls));
     }
 
     @SetUpRoute

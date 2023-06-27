@@ -23,7 +23,7 @@ import java.util.Optional;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
-import io.helidon.pico.api.PicoServicesConfig;
+import io.helidon.pico.api.PicoServices;
 
 import static io.helidon.pico.tools.CommonUtils.hasValue;
 import static io.helidon.pico.tools.CommonUtils.toList;
@@ -37,56 +37,43 @@ public class Options {
     /**
      * Tag for putting Pico's annotation processing into debug mode.
      */
-    public static final String TAG_DEBUG = PicoServicesConfig.TAG_DEBUG;
-
+    public static final String TAG_DEBUG = PicoServices.TAG_DEBUG;
     /**
      * Treat all super types as a contract for a given service type being added.
      */
-    public static final String TAG_AUTO_ADD_NON_CONTRACT_INTERFACES = PicoServicesConfig.NAME + ".autoAddNonContractInterfaces";
-
+    public static final String TAG_AUTO_ADD_NON_CONTRACT_INTERFACES = "pico.autoAddNonContractInterfaces";
     /**
      * Pre-creates a placeholder for an {@link io.helidon.pico.api.Application}.
      */
-    public static final String TAG_APPLICATION_PRE_CREATE = ActivatorCreatorConfigOptions.TAG_APPLICATION_PRE_CREATE;
-
-    /**
-     * For future use. Should the module-info.java be automatically patched to reflect the pico DI model.
-     */
-    static final String TAG_AUTO_PATCH_MODULE_INFO = PicoServicesConfig.NAME + ".autoPatchModuleInfo";
-
+    public static final String TAG_APPLICATION_PRE_CREATE = "pico.application.pre.create";
     /**
      * Identify the module name being processed or the desired target module name.
      */
-    public static final String TAG_MODULE_NAME = PicoServicesConfig.TAG_MODULE_NAME;
-
+    public static final String TAG_MODULE_NAME = "modulename";
     /**
      * Identify the pico sidecar (module-info.java.pico) module file name or path.
      */
-    public static final String TAG_PICO_MODULE_NAME = PicoServicesConfig.NAME + "." + TAG_MODULE_NAME;
-
-    /**
-     * Identify the additional annotation type names that will trigger interception.
-     */
-    static final String TAG_ALLOW_LISTED_INTERCEPTOR_ANNOTATIONS = PicoServicesConfig.NAME
-            + ".allowListedInterceptorAnnotations";
-
+    public static final String TAG_PICO_MODULE_NAME = "pico." + TAG_MODULE_NAME;
     /**
      * Identify whether any application scopes (from ee) is translated to {@link jakarta.inject.Singleton}.
      */
-    public static final String TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE = PicoServicesConfig.NAME
-            + ".mapApplicationToSingletonScope";
-
+    public static final String TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE = "pico.mapApplicationToSingletonScope";
     /**
      * Identify whether any unsupported types should trigger annotation processing to keep going (the default is to fail).
      */
-    public static final String TAG_IGNORE_UNSUPPORTED_ANNOTATIONS = PicoServicesConfig.NAME
-            + ".ignoreUnsupportedAnnotations";
-
+    public static final String TAG_IGNORE_UNSUPPORTED_ANNOTATIONS = "pico.ignoreUnsupportedAnnotations";
     /**
      * Identify invalid usage of the {@code module-info.java} for appropriate Pico references (the default is to fail).
      */
-    public static final String TAG_IGNORE_MODULE_USAGE = PicoServicesConfig.NAME
-            + ".ignoreModuleUsage";
+    public static final String TAG_IGNORE_MODULE_USAGE = "pico.ignoreModuleUsage";
+    /**
+     * For future use. Should the module-info.java be automatically patched to reflect the pico DI model.
+     */
+    static final String TAG_AUTO_PATCH_MODULE_INFO = "pico.autoPatchModuleInfo";
+    /**
+     * Identify the additional annotation type names that will trigger interception.
+     */
+    static final String TAG_ALLOW_LISTED_INTERCEPTOR_ANNOTATIONS = "pico.allowListedInterceptorAnnotations";
 
     private static final Map<String, String> OPTS = new HashMap<>();
 
@@ -144,19 +131,6 @@ public class Options {
     }
 
     /**
-     * This only supports the subset of options that pico cares about, and should not be generally used for options.
-     *
-     * @param option the key (assumed to be meaningful to this class)
-     * @param defaultVal the default value used if the associated value is null.
-     * @return the option value
-     */
-    private static String getOption(String option,
-                                    String defaultVal) {
-        assert (OPTS.containsKey(option));
-        return OPTS.getOrDefault(option, defaultVal);
-    }
-
-    /**
      * Returns a non-null list of comma-delimited string value options.
      *
      * @param option the key (assumed to be meaningful to this class)
@@ -169,6 +143,19 @@ public class Options {
         }
 
         return toList(result);
+    }
+
+    /**
+     * This only supports the subset of options that pico cares about, and should not be generally used for options.
+     *
+     * @param option the key (assumed to be meaningful to this class)
+     * @param defaultVal the default value used if the associated value is null.
+     * @return the option value
+     */
+    private static String getOption(String option,
+                                    String defaultVal) {
+        assert (OPTS.containsKey(option));
+        return OPTS.getOrDefault(option, defaultVal);
     }
 
     private static boolean isOptionEnabled(String option,

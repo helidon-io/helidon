@@ -23,8 +23,8 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
 
@@ -52,7 +52,8 @@ public class CoordinatorTest {
     @BeforeAll
     static void beforeAll() {
         LazyValue<URI> coordinatorUri = LazyValue.create(() ->
-                URI.create("http://localhost:" + server.port(COORDINATOR_ROUTING_NAME) + "/lra-coordinator"));
+                                                                 URI.create("http://localhost:" + server.port(
+                                                                         COORDINATOR_ROUTING_NAME) + "/lra-coordinator"));
 
         coordinatorService = CoordinatorService.builder()
                 .url(coordinatorUri::get)
@@ -60,20 +61,20 @@ public class CoordinatorTest {
                                 () -> ConfigSources.create(Map.of(
                                         "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator"
                                 )).build(),
-                                () -> ConfigSources.classpath("application.yaml").build()
-                        )
-                        .build().get(CoordinatorService.CONFIG_PREFIX))
+                                () -> ConfigSources.classpath("application.yaml").build())
+                                .build()
+                                .get(CoordinatorService.CONFIG_PREFIX))
                 .build();
         server = WebServer.builder()
                 .shutdownHook(true)
                 .host("localhost")
                 .routing(r -> r.register(CONTEXT_PATH, () -> rules -> rules.put((req, res) -> res.send())))
-                .socket(COORDINATOR_ROUTING_NAME, (socket, routing) -> {
-                    socket.port(0);
-                    routing.addRouting(HttpRouting.builder().register("/lra-coordinator", coordinatorService));
-                })
-                .build();
-        server.start();
+                .putSocket(COORDINATOR_ROUTING_NAME, ListenerConfig.builder()
+                        .port(0)
+                        .routing(it -> it.register("/lra-coordinator", coordinatorService)))
+                .build()
+                .start();
+
         serverUrl = "http://localhost:" + server.port();
         webClient = WebClient.builder()
                 .keepAlive(false)

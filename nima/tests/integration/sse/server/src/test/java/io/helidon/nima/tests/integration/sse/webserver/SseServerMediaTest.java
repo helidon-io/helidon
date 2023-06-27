@@ -69,16 +69,16 @@ class SseServerMediaTest {
         rules.get("/sse", SseServerMediaTest::sse);
     }
 
+    @Test
+    void testSseJson() {
+        testSse("/sse", "data:HELLO\n\ndata:world\n\n");
+    }
+
     private static void sse(ServerRequest req, ServerResponse res) {
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
             sseSink.emit(SseEvent.create("hello", MY_PLAIN_TEXT))        // custom media type
                     .emit(SseEvent.create("world"));                          // text/plain by default
         }
-    }
-
-    @Test
-    void testSseJson() {
-        testSse("/sse", "data:HELLO\n\ndata:world\n\n");
     }
 
     private void testSse(String path, String result) {
@@ -92,6 +92,10 @@ class SseServerMediaTest {
     public static class MyStringSupport extends StringSupport {
 
         private static final EntityWriter<?> WRITER = new MyStringWriter();
+
+        private MyStringSupport(String name) {
+            super(name);
+        }
 
         @Override
         public <T> WriterResponse<T> writer(GenericType<T> type,
@@ -109,7 +113,6 @@ class SseServerMediaTest {
         }
 
         private static final class MyStringWriter implements EntityWriter<String> {
-
 
             @Override
             public void write(GenericType<String> type,
@@ -148,8 +151,8 @@ class SseServerMediaTest {
         }
 
         @Override
-        public MediaSupport create(Config config) {
-            return new MyStringSupport();
+        public MediaSupport create(Config config, String name) {
+            return new MyStringSupport(name);
         }
 
         @Override

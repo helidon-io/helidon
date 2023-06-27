@@ -72,6 +72,7 @@ public final class Nima1Main {
                 .addRouting(WsRouting.builder()
                                     .endpoint("/ws/messages", WebSocketEndpoint::new)
                                     .build())
+                .build()
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet");

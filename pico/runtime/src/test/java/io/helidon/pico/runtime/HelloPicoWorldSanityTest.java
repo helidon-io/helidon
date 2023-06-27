@@ -22,20 +22,19 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.Weighted;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.pico.api.ActivationRequest;
-import io.helidon.pico.api.ActivationRequestDefault;
 import io.helidon.pico.api.ActivationResult;
 import io.helidon.pico.api.Application;
-import io.helidon.pico.api.BootstrapDefault;
+import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.DeActivationRequest;
 import io.helidon.pico.api.Injector;
-import io.helidon.pico.api.InjectorOptionsDefault;
+import io.helidon.pico.api.InjectorOptions;
 import io.helidon.pico.api.ModuleComponent;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
@@ -73,12 +72,12 @@ class HelloPicoWorldSanityTest {
     void setUp() {
         tearDown();
         Config config = Config.builder(
-                ConfigSources.create(
-                        Map.of(PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true"), "config-1"))
+                        ConfigSources.create(
+                                Map.of("pico.permits-dynamic", "true"), "config-1"))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
-        PicoServices.globalBootstrap(BootstrapDefault.builder().config(config).build());
+        PicoServices.globalBootstrap(Bootstrap.builder().config(config).build());
     }
 
     @AfterEach
@@ -134,17 +133,17 @@ class HelloPicoWorldSanityTest {
 
         ServiceInfo serviceInfo = helloProvider1.serviceInfo();
         assertThat(serviceInfo.serviceTypeName(),
-                   equalTo(HelloPicoWorldImpl.class.getName()));
+                   equalTo(TypeName.create(HelloPicoWorldImpl.class)));
         assertThat(serviceInfo.contractsImplemented(),
-                   containsInAnyOrder(HelloPicoWorld.class.getName()));
+                   containsInAnyOrder(TypeName.create(HelloPicoWorld.class)));
         assertThat(serviceInfo.externalContractsImplemented().size(),
                    equalTo(0));
         assertThat(serviceInfo.scopeTypeNames(),
-                   containsInAnyOrder(Singleton.class.getName()));
+                   containsInAnyOrder(TypeName.create(Singleton.class)));
         assertThat(serviceInfo.qualifiers().size(),
                    equalTo(0));
         assertThat(serviceInfo.activatorTypeName().orElseThrow(),
-                   equalTo(HelloPicoImpl$$picoActivator.class.getName()));
+                   equalTo(TypeName.create(HelloPicoImpl$$picoActivator.class)));
         assertThat(serviceInfo.declaredRunLevel(),
                    optionalValue(equalTo(0)));
         assertThat(serviceInfo.realizedRunLevel(),
@@ -182,7 +181,7 @@ class HelloPicoWorldSanityTest {
 
         // deactivate just the Hello service
         ActivationResult result = helloProvider1.deActivator().orElseThrow()
-                .deactivate(DeActivationRequest.defaultDeactivationRequest());
+                .deactivate(DeActivationRequest.create());
         assertThat(result.finished(), is(true));
         assertThat(result.success(), is(true));
         assertThat(result.serviceProvider(), sameInstance(helloProvider2));
@@ -208,7 +207,7 @@ class HelloPicoWorldSanityTest {
         HelloPicoImpl$$picoActivator subversiveWay = new HelloPicoImpl$$picoActivator();
         subversiveWay.picoServices(Optional.of(picoServices));
 
-        ActivationResult result = injector.activateInject(subversiveWay, InjectorOptionsDefault.builder().build());
+        ActivationResult result = injector.activateInject(subversiveWay, InjectorOptions.builder().build());
         assertThat(result.finished(), is(true));
         assertThat(result.success(), is(true));
 
@@ -224,13 +223,14 @@ class HelloPicoWorldSanityTest {
 
         // the above is subversive because it is disconnected from the "real" activator
         Services services = picoServices.services();
-        ServiceProvider<?> realHelloProvider = ((DefaultServices) services).serviceProviderFor(HelloPicoWorldImpl.class.getName());
+        ServiceProvider<?> realHelloProvider =
+                ((DefaultServices) services).serviceProviderFor(TypeName.create(HelloPicoWorldImpl.class));
         assertThat(subversiveWay, not(sameInstance(realHelloProvider)));
 
         assertThat(realHelloProvider.currentActivationPhase(),
                    equalTo(Phase.INIT));
 
-        result = injector.deactivate(subversiveWay, InjectorOptionsDefault.builder().build());
+        result = injector.deactivate(subversiveWay, InjectorOptions.builder().build());
         assertThat(result.success(), is(true));
     }
 
@@ -239,7 +239,7 @@ class HelloPicoWorldSanityTest {
         HelloPicoImpl$$picoActivator activator = new HelloPicoImpl$$picoActivator();
         activator.picoServices(PicoServices.picoServices());
 
-        ActivationResult result = activator.activate(ActivationRequest.create(Phase.INJECTING));
+        ActivationResult result = activator.activate(ActivationRequest.builder().targetPhase(Phase.INJECTING).build());
         assertThat(result.success(), is(true));
 
         assertThat(activator.currentActivationPhase(), is(Phase.INJECTING));
@@ -271,7 +271,7 @@ class HelloPicoWorldSanityTest {
         assertThat(resolutions.size(), equalTo(injectionPlan.size()));
 
         // now take us through activation
-        result = activator.activate(ActivationRequestDefault.builder()
+        result = activator.activate(ActivationRequest.builder()
                                             .startingPhase(activator.currentActivationPhase())
                                             .build());
         assertThat(result.success(), is(true));

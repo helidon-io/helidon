@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import io.helidon.common.http.ClientRequestHeaders;
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.common.tls.Tls;
@@ -129,6 +130,11 @@ class HttpClientTest {
         }
 
         @Override
+        public FakeHttpClientRequest headers(Headers headers) {
+            return null;
+        }
+
+        @Override
         public FakeHttpClientRequest headers(Function<ClientRequestHeaders, WritableHeaders<?>> headersConsumer) {
             return null;
         }
@@ -145,6 +151,11 @@ class HttpClientTest {
 
         @Override
         public Http1ClientResponse request() {
+            return null;
+        }
+
+        @Override
+        public ClientRequestHeaders headers() {
             return null;
         }
 

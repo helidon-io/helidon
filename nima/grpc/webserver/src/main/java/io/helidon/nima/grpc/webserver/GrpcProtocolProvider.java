@@ -16,25 +16,16 @@
 
 package io.helidon.nima.grpc.webserver;
 
-import io.helidon.common.http.Headers;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.HttpPrologue;
-import io.helidon.config.Config;
-import io.helidon.nima.http2.Http2Headers;
-import io.helidon.nima.http2.Http2Settings;
-import io.helidon.nima.http2.Http2StreamState;
-import io.helidon.nima.http2.Http2StreamWriter;
 import io.helidon.nima.http2.webserver.spi.Http2SubProtocolProvider;
 import io.helidon.nima.http2.webserver.spi.Http2SubProtocolSelector;
-import io.helidon.nima.http2.webserver.spi.SubProtocolResult;
-import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.Router;
+import io.helidon.nima.webserver.ProtocolConfigs;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation of grpc sub-protocol of HTTP/2.
  */
-public class GrpcProtocolProvider implements Http2SubProtocolProvider {
+public class GrpcProtocolProvider implements Http2SubProtocolProvider<GrpcConfig> {
+    static final String CONFIG_NAME = "grpc";
+
     /**
      * Default constructor required by Java {@link java.util.ServiceLoader}.
      *
@@ -45,57 +36,17 @@ public class GrpcProtocolProvider implements Http2SubProtocolProvider {
     }
 
     @Override
-    public String configKey() {
-        return "grpc";
+    public String protocolType() {
+        return CONFIG_NAME;
     }
 
     @Override
-    public Http2SubProtocolSelector create(Config config) {
-        return new GrpcProtocolSelector();
+    public Class<GrpcConfig> protocolConfigType() {
+        return GrpcConfig.class;
     }
 
-    private static class GrpcProtocolSelector implements Http2SubProtocolSelector {
-        @Override
-        public SubProtocolResult subProtocol(ConnectionContext ctx,
-                                             HttpPrologue prologue,
-                                             Http2Headers headers,
-                                             Http2StreamWriter streamWriter,
-                                             int streamId,
-                                             Http2Settings serverSettings,
-                                             Http2Settings clientSettings,
-                                             Http2StreamState currentStreamState,
-                                             Router router) {
-            if (prologue.method() != Http.Method.POST) {
-                return NOT_SUPPORTED;
-            }
-
-            // we know this is HTTP/2, so no need to check protocol and version
-            Headers httpHeaders = headers.httpHeaders();
-
-            if (httpHeaders.contains(Header.CONTENT_TYPE)) {
-                String contentType = httpHeaders.get(Header.CONTENT_TYPE).value();
-
-                if (contentType.startsWith("application/grpc")) {
-                    GrpcRouting routing = router.routing(GrpcRouting.class, GrpcRouting.empty());
-
-                    Grpc<?, ?> route = routing.findRoute(prologue);
-
-                    if (route == null) {
-                        return new SubProtocolResult(true,
-                                                     new GrpcProtocolHandlerNotFound(streamWriter, streamId, currentStreamState));
-                    }
-                    return new SubProtocolResult(true,
-                                                 new GrpcProtocolHandler(prologue,
-                                                                         headers,
-                                                                         streamWriter,
-                                                                         streamId,
-                                                                         serverSettings,
-                                                                         clientSettings,
-                                                                         currentStreamState,
-                                                                         route));
-                }
-            }
-            return NOT_SUPPORTED;
-        }
+    @Override
+    public Http2SubProtocolSelector create(GrpcConfig config, ProtocolConfigs configs) {
+        return GrpcProtocolSelector.create();
     }
 }

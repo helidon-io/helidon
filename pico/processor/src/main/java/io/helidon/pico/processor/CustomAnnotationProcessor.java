@@ -16,8 +16,8 @@
 
 package io.helidon.pico.processor;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,28 +31,30 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.processor.TypeFactory;
+import io.helidon.common.processor.TypeInfoFactory;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
-import io.helidon.pico.tools.CustomAnnotationTemplateRequestDefault;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.CustomAnnotationTemplateResponseDefault;
+import io.helidon.pico.tools.CustomAnnotationTemplateResponses;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 import static io.helidon.pico.processor.ActiveProcessorUtils.MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
 import static io.helidon.pico.processor.GeneralProcessorUtils.hasValue;
 import static io.helidon.pico.processor.GeneralProcessorUtils.rootStackTraceElementOf;
-import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
-import static io.helidon.pico.tools.TypeTools.createTypedElementInfoFromElement;
+import static io.helidon.pico.tools.TypeTools.isStatic;
+import static io.helidon.pico.tools.TypeTools.toAccess;
 import static io.helidon.pico.tools.TypeTools.toFilePath;
 
 /**
@@ -78,7 +80,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
             try {
                 Set<String> annoTypes = creator.annoTypes();
                 annoTypes.forEach(annoType -> {
-                    PRODUCERS_BY_ANNOTATION.compute(TypeNameDefault.createFromTypeName(annoType), (k, v) -> {
+                    PRODUCERS_BY_ANNOTATION.compute(TypeName.create(annoType), (k, v) -> {
                         if (v == null) {
                             v = new LinkedHashSet<>();
                         }
@@ -109,7 +111,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
         try {
             if (!roundEnv.processingOver()) {
                 for (String annoType : getSupportedAnnotationTypes()) {
-                    TypeName annoName = TypeNameDefault.createFromTypeName(annoType);
+                    TypeName annoName = TypeName.create(annoType);
                     Optional<TypeElement> annoElement = toTypeElement(annoName);
                     if (annoElement.isEmpty()) {
                         continue;
@@ -122,7 +124,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
         } catch (Throwable t) {
             utils().error(getClass().getSimpleName() + " error during processing; " + t + " @ "
-                          + rootStackTraceElementOf(t), t);
+                                  + rootStackTraceElementOf(t), t);
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
             throw new ToolsException("Error while processing: " + t + " @ "
                                              + rootStackTraceElementOf(t), t);
@@ -136,7 +138,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
 
     Set<CustomAnnotationTemplateCreator> producersForType(TypeName annoTypeName) {
         Set<CustomAnnotationTemplateCreator> set = PRODUCERS_BY_ANNOTATION.get(annoTypeName);
-        return (set == null) ? null : Collections.unmodifiableSet(set);
+        return (set == null) ? Set.of() : Set.copyOf(set);
     }
 
     void doInner(TypeName annoTypeName,
@@ -152,18 +154,19 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
 
         for (Element typeToProcess : typesToProcess) {
             try {
-                CustomAnnotationTemplateRequestDefault.Builder req = toRequestBuilder(annoTypeName, typeToProcess);
+                CustomAnnotationTemplateRequest.Builder req = toRequestBuilder(annoTypeName, typeToProcess);
                 if (req == null) {
                     continue;
                 }
 
-                CustomAnnotationTemplateResponseDefault.Builder res = CustomAnnotationTemplateResponseDefault.builder()
-                        .request(req);
+                CustomAnnotationTemplateResponse.Builder res = CustomAnnotationTemplateResponse.builder();
+
                 for (CustomAnnotationTemplateCreator producer : producers) {
                     req.genericTemplateCreator(new GenericTemplateCreatorDefault(producer.getClass(), utils()));
+                    res.request(req);
                     CustomAnnotationTemplateResponse producerResponse = process(producer, req);
                     if (producerResponse != null) {
-                        res = CustomAnnotationTemplateResponse.aggregate(req, res, producerResponse);
+                        res = CustomAnnotationTemplateResponses.aggregate(req, res, producerResponse);
                     }
                 }
                 CustomAnnotationTemplateResponse response = res.build();
@@ -180,12 +183,12 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
         AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, utils());
         CodeGenFiler codegen = CodeGenFiler.create(filer);
         response.generatedSourceCode().forEach(codegen::codegenJavaFilerOut);
-        response.generatedResources().forEach((TypedElementInfo, resourceBody) -> {
-            String fileType = TypedElementInfo.elementName();
+        response.generatedResources().forEach((typedElementName, resourceBody) -> {
+            String fileType = typedElementName.elementName();
             if (!hasValue(fileType)) {
                 fileType = ".generated";
             }
-            codegen.codegenResourceFilerOut(toFilePath(TypedElementInfo.typeName(), fileType), resourceBody);
+            codegen.codegenResourceFilerOut(toFilePath(typedElementName.typeName(), fileType), resourceBody);
         });
     }
 
@@ -199,7 +202,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
             CustomAnnotationTemplateResponse res = producer.create(req).orElse(null);
             if (res != null && req.isFilerEnabled() && !res.generatedSourceCode().isEmpty()) {
                 res.generatedSourceCode().entrySet().forEach(entry -> {
-                    TypeNameDefault.ensureIsFQN(entry.getKey());
+                    TypeFactory.ensureIsFqn(entry.getKey());
                     if (!hasValue(entry.getValue())) {
                         throw new ToolsException("Expected to have valid code for: " + req + " for " + entry);
                     }
@@ -211,16 +214,16 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
         }
     }
 
-    CustomAnnotationTemplateRequestDefault.Builder toRequestBuilder(TypeName annoTypeName,
-                                                                    Element typeToProcess) {
+    CustomAnnotationTemplateRequest.Builder toRequestBuilder(TypeName annoTypeName,
+                                                             Element typeToProcess) {
         TypeElement enclosingClassType = toEnclosingClassTypeElement(typeToProcess);
-        TypeName enclosingClassTypeName = createTypeNameFromElement(enclosingClassType).orElse(null);
+        TypeName enclosingClassTypeName = TypeFactory.createTypeName(enclosingClassType).orElse(null);
         if (enclosingClassTypeName == null) {
             return null;
         }
 
         TypeInfo enclosingClassTypeInfo = utils()
-                .toTypeInfo(enclosingClassType, enclosingClassType.asType(), (typedElement) -> true)
+                .toTypeInfo(enclosingClassType, (typedElement) -> true)
                 .orElseThrow();
         ServiceInfoBasics siInfo = GeneralProcessorUtils.toBasicServiceInfo(enclosingClassTypeInfo);
         if (siInfo == null) {
@@ -228,12 +231,30 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
         }
 
         Elements elements = processingEnv.getElementUtils();
-        return CustomAnnotationTemplateRequestDefault.builder()
-                .filerEnabled(true)
+        return CustomAnnotationTemplateRequest.builder()
+                .isFilerEnabled(true)
                 .annoTypeName(annoTypeName)
                 .serviceInfo(siInfo)
-                .targetElement(createTypedElementInfoFromElement(typeToProcess, elements).orElseThrow())
-                .enclosingTypeInfo(enclosingClassTypeInfo);
+                .targetElement(TypeInfoFactory.createTypedElementInfoFromElement(processingEnv, typeToProcess, elements)
+                                       .orElseThrow())
+                .enclosingTypeInfo(enclosingClassTypeInfo)
+                // the following are duplicates that should be removed - get them from the enclosingTypeInfo instead
+                // see https://github.com/helidon-io/helidon/issues/6773
+                .targetElementArgs(toArgs(typeToProcess))
+                .targetElementAccess(toAccess(typeToProcess))
+                .isElementStatic(isStatic(typeToProcess));
+    }
+
+    List<TypedElementInfo> toArgs(Element typeToProcess) {
+        if (!(typeToProcess instanceof ExecutableElement executableElement)) {
+            return List.of();
+        }
+
+        Elements elements = processingEnv.getElementUtils();
+        List<TypedElementInfo> result = new ArrayList<>();
+        executableElement.getParameters().forEach(v -> result.add(
+                TypeInfoFactory.createTypedElementInfoFromElement(processingEnv, v, elements).orElseThrow()));
+        return result;
     }
 
     private static ServiceLoader<CustomAnnotationTemplateCreator> loader() {

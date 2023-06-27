@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.METHOD)
 @Inherited
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.CLASS)
 @Repeatable(ConfiguredOptions.class)
 public @interface ConfiguredOption {
     /**
@@ -122,10 +122,30 @@ public @interface ConfiguredOption {
     /**
      * Set to true if the configuration may be provided by another module not know to us.
      * The provider must then be configured to {@link Configured#provides()} this type.
+     * In addition, the {@link #providerType()} must be set to the correct service provider interface,
+     * so code can be correctly generated.
      *
      * @return whether this requires a provider with configuration, defaults to {@code false}
      */
     boolean provider() default false;
+
+    /**
+     * If {@link #provider()}, this points to the provider interface that is used to discover
+     * implementations.
+     *
+     * @return type of the provider.
+     */
+    Class<?> providerType() default ConfiguredOption.class;
+
+    /**
+     * Whether to discover all services using a service loader by default.
+     * When set to true, all services discovered by the service loader will be added (even if no configuration
+     * node exists for them). When se to false, only services that have a configuration node will be added.
+     * This can be overridden by {@code discover-services} configuration option under this option's key.
+     *
+     * @return whether to discover services by default for a provider
+     */
+    boolean providerDiscoverServices() default true;
 
     /**
      * For options that have a predefined set of allowed values.
@@ -148,6 +168,21 @@ public @interface ConfiguredOption {
      * @return whether to merge the child nodes directly with parent node without a key
      */
     boolean mergeWithParent() default false;
+
+    /**
+     * Is this method also available as a public builder method, or is it only used for configuration.
+     *
+     * @return whether the method is also a builder method ({@code true}), or only config method ({@code false})
+     */
+    boolean builderMethod() default true;
+
+    /**
+     * This can be set to {@code false} for options, where this annotation is used for other purposes, and in fact does not
+     * indicate something to be loaded from configuration.
+     *
+     * @return whether this option should be configured from configuration
+     */
+    boolean configured() default true;
 
     /**
      * Option kind.

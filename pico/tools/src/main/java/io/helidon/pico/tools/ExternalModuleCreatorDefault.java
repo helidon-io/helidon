@@ -20,22 +20,26 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.ElementKind;
 import io.helidon.pico.api.InjectionPointInfo;
-import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.runtime.Dependencies;
 import io.helidon.pico.tools.spi.ExternalModuleCreator;
 
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
+import io.github.classgraph.ClassMemberInfo;
 import io.github.classgraph.FieldInfo;
 import io.github.classgraph.MethodInfo;
 import io.github.classgraph.MethodParameterInfo;
@@ -44,10 +48,9 @@ import io.github.classgraph.PackageInfo;
 import io.github.classgraph.ScanResult;
 import jakarta.inject.Singleton;
 
-import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
 import static io.helidon.pico.api.ServiceInfoBasics.DEFAULT_PICO_WEIGHT;
 import static io.helidon.pico.tools.TypeTools.createInjectionPointInfo;
-import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
+import static io.helidon.pico.tools.TypeTools.createQualifierSet;
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromClassInfo;
 import static io.helidon.pico.tools.TypeTools.extractScopeTypeName;
 import static io.helidon.pico.tools.TypeTools.hasAnnotation;
@@ -65,6 +68,8 @@ import static java.util.function.Predicate.not;
 @Singleton
 @Weight(DEFAULT_PICO_WEIGHT)
 public class ExternalModuleCreatorDefault extends AbstractCreator implements ExternalModuleCreator {
+    private static final Set<String> SERVICE_DEFINING_ANNOTATIONS = Set.of(TypeNames.JAKARTA_SINGLETON,
+                                                                           TypeNames.JAKARTA_APPLICATION_SCOPED);
     private final LazyValue<ScanResult> scan = LazyValue.create(ReflectionHandler.INSTANCE.scan());
     private final ServicesToProcess services = ServicesToProcess.servicesInstance();
 
@@ -78,12 +83,19 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
         super(TemplateHelper.DEFAULT_TEMPLATE_NAME);
     }
 
+    static boolean isPicoSupported(TypeName serviceTypeName,
+                                   MethodInfo methodInfo,
+                                   System.Logger logger) {
+        return PicoSupported.isSupportedInjectionPoint(logger, serviceTypeName, methodInfo.toString(),
+                                                       isPrivate(methodInfo.getModifiers()), methodInfo.isStatic());
+    }
+
     @Override
     public ExternalModuleCreatorResponse prepareToCreateExternalModule(ExternalModuleCreatorRequest req) {
         Objects.requireNonNull(req);
 
-        ExternalModuleCreatorResponseDefault.Builder responseBuilder =
-                ExternalModuleCreatorResponseDefault.builder();
+        ExternalModuleCreatorResponse.Builder responseBuilder =
+                ExternalModuleCreatorResponse.builder();
         Collection<String> packageNames = req.packageNamesToScan();
         if (packageNames.isEmpty()) {
             return handleError(req, new ToolsException("Package names to scan are required"), responseBuilder);
@@ -92,14 +104,15 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
         Collection<Path> targetExternalJars = identifyExternalJars(packageNames);
         if (1 != targetExternalJars.size()) {
             return handleError(req, new ToolsException("The package names provided " + packageNames
-                                                     + " must map to a single jar file, but instead found: "
-                                                     + targetExternalJars), responseBuilder);
+                                                               + " must map to a single jar file, but instead found: "
+                                                               + targetExternalJars), responseBuilder);
         }
 
         try {
             // handle the explicit qualifiers passed in
             req.serviceTypeToQualifiersMap().forEach((serviceTypeName, qualifiers) ->
-                services.addQualifiers(createFromTypeName(serviceTypeName), qualifiers));
+                                                             services.addQualifiers(TypeName.create(serviceTypeName),
+                                                                                    qualifiers));
 
             // process each found service type
             scan.get().getAllStandardClasses()
@@ -129,6 +142,18 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
         } finally {
             services.reset(false);
         }
+    }
+
+    ExternalModuleCreatorResponse handleError(ExternalModuleCreatorRequest request,
+                                              ToolsException e,
+                                              ExternalModuleCreatorResponse.Builder builder) {
+        if (request == null || request.throwIfError()) {
+            throw e;
+        }
+
+        logger().log(System.Logger.Level.ERROR, e.getMessage(), e);
+
+        return builder.error(e).success(false).build();
     }
 
     private Collection<Path> identifyExternalJars(Collection<String> packageNames) {
@@ -169,7 +194,10 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
         services.addServiceTypeName(serviceTypeName);
         services.addTypeForContract(serviceTypeName, serviceTypeName, true);
         services.addExternalRequiredModules(serviceTypeName, requiresModule);
-        services.addParentServiceType(serviceTypeName, createTypeNameFromClassInfo(classInfo.getSuperclass()));
+        ClassInfo superclass = classInfo.getSuperclass();
+        if (superclass != null) {
+            handleSuperClass(serviceTypeName, superclass);
+        }
         List<TypeName> hierarchy = ActivatorCreatorDefault.serviceTypeHierarchy(serviceTypeName, scan);
         services.addServiceTypeHierarchy(serviceTypeName, hierarchy);
         if (hierarchy != null) {
@@ -185,13 +213,13 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
             ClassInfoList list = classInfo.getInterfaces();
             for (ClassInfo contractClassInfo : list) {
                 String cn = contractClassInfo.getName();
-                TypeName contract = createFromTypeName(cn);
+                TypeName contract = TypeName.create(cn);
                 services.addTypeForContract(serviceTypeName, contract, true);
             }
             if (firstRound) {
                 String cn = providesContractType(classInfo);
                 if (cn != null) {
-                    TypeName contract = createFromTypeName(cn);
+                    TypeName contract = TypeName.create(cn);
                     services.addTypeForContract(serviceTypeName, contract, true);
                     services.addProviderFor(serviceTypeName, Collections.singleton(contract));
                 }
@@ -201,14 +229,54 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
         }
     }
 
+    private void handleSuperClass(TypeName serviceTypeName, ClassInfo superclass) {
+        // looking for the closes type that is either a bean, or that has injection points (as that type MUST have an activator)
+        findActivatedInHierarchy(superclass, new HashSet<>())
+                .ifPresent(it -> services.addParentServiceType(serviceTypeName, TypeName.builder(it.genericTypeName())
+                        .className(it.classNameWithEnclosingNames()
+                                           .replace('.', '$') + ActivatorCreatorDefault.INNER_ACTIVATOR_CLASS_NAME)
+                        .build()));
+    }
+
+    private Optional<TypeName> findActivatedInHierarchy(ClassInfo superClass, HashSet<ClassInfo> processed) {
+        if (!processed.add(superClass)) {
+            return Optional.empty();
+        }
+        // any type that has
+        // - @Singleton on type (or any other "service defining annotation"), or has @Scope meta annotation
+        // - @Inject on any field or constructor
+        // same code in PicoAnnotationProcessor for TypeInfo
+        for (ClassInfo annotation : superClass.getAnnotations()) {
+            if (SERVICE_DEFINING_ANNOTATIONS.contains(annotation.getName())) {
+                return Optional.of(TypeName.create(superClass.getName()));
+            }
+        }
+        for (FieldInfo field : superClass.getDeclaredFieldInfo()) {
+            if (hasInjectAnnotation(field)) {
+                return Optional.of(TypeName.create(superClass.getName()));
+            }
+        }
+        for (MethodInfo method : superClass.getDeclaredMethodAndConstructorInfo()) {
+            if (hasInjectAnnotation(method)) {
+                return Optional.of(TypeName.create(superClass.getName()));
+            }
+        }
+        return Optional.ofNullable(superClass.getSuperclass())
+                .flatMap(it -> findActivatedInHierarchy(it, processed));
+    }
+
+    private boolean hasInjectAnnotation(ClassMemberInfo member) {
+        return member.hasAnnotation(TypeNames.JAKARTA_INJECT) || member.hasAnnotation(TypeNames.JAVAX_INJECT);
+    }
+
     private void processScopeAndQualifiers(ClassInfo classInfo,
                                            TypeName serviceTypeName) {
-        String scopeTypeName = extractScopeTypeName(classInfo);
+        TypeName scopeTypeName = extractScopeTypeName(classInfo);
         if (scopeTypeName != null) {
             services.addScopeTypeName(serviceTypeName, scopeTypeName);
         }
 
-        Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(classInfo);
+        Set<Qualifier> qualifiers = createQualifierSet(classInfo);
         if (!qualifiers.isEmpty()) {
             services.addQualifiers(serviceTypeName, qualifiers);
         }
@@ -231,19 +299,19 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
 
     private void processDependencies(ClassInfo classInfo,
                                      TypeName serviceTypeName) {
-        Dependencies.BuilderContinuation continuation = Dependencies.builder(serviceTypeName.name());
+        Dependencies.BuilderContinuation continuation = Dependencies.builder(serviceTypeName);
         for (FieldInfo fieldInfo : classInfo.getFieldInfo()) {
             continuation = continuationProcess(serviceTypeName, continuation, fieldInfo);
         }
 
         for (MethodInfo ctorInfo : classInfo.getDeclaredConstructorInfo()) {
             continuation = continuationProcess(serviceTypeName,
-                                               continuation, InjectionPointInfo.ElementKind.CONSTRUCTOR, ctorInfo);
+                                               continuation, ElementKind.CONSTRUCTOR, ctorInfo);
         }
 
         for (MethodInfo methodInfo : classInfo.getDeclaredMethodInfo()) {
             continuation = continuationProcess(serviceTypeName,
-                                               continuation, InjectionPointInfo.ElementKind.METHOD, methodInfo);
+                                               continuation, ElementKind.METHOD, methodInfo);
         }
 
         DependenciesInfo dependencies = continuation.build();
@@ -269,7 +337,7 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
 
     private Dependencies.BuilderContinuation continuationProcess(TypeName serviceTypeName,
                                                                  Dependencies.BuilderContinuation continuation,
-                                                                 InjectionPointInfo.ElementKind kind,
+                                                                 ElementKind kind,
                                                                  MethodInfo methodInfo) {
         if (hasAnnotation(methodInfo, TypeNames.JAKARTA_INJECT)) {
             if (!isPicoSupported(serviceTypeName, methodInfo, logger())) {
@@ -279,7 +347,10 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
             MethodParameterInfo[] params = methodInfo.getParameterInfo();
             if (params.length == 0) {
                 continuation = continuation.add(methodInfo.getName(), Void.class, kind,
-                                toAccess(methodInfo.getModifiers())).staticDeclaration(isStatic(methodInfo.getModifiers()));
+                                                toAccess(methodInfo.getModifiers()))
+                        .ipName(methodInfo.getName())
+                        .ipType(TypeName.create(Void.class))
+                        .staticDeclaration(isStatic(methodInfo.getModifiers()));
             } else {
                 int count = 0;
                 for (MethodParameterInfo ignore : params) {
@@ -290,25 +361,6 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
             }
         }
         return continuation;
-    }
-
-    static boolean isPicoSupported(TypeName serviceTypeName,
-                                   MethodInfo methodInfo,
-                                   System.Logger logger) {
-        return PicoSupported.isSupportedInjectionPoint(logger, serviceTypeName, methodInfo.toString(),
-                                                       isPrivate(methodInfo.getModifiers()), methodInfo.isStatic());
-    }
-
-    ExternalModuleCreatorResponse handleError(ExternalModuleCreatorRequest request,
-                                              ToolsException e,
-                                              ExternalModuleCreatorResponseDefault.Builder builder) {
-        if (request == null || request.throwIfError()) {
-            throw e;
-        }
-
-        logger().log(System.Logger.Level.ERROR, e.getMessage(), e);
-
-        return builder.error(e).success(false).build();
     }
 
 }

@@ -20,10 +20,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.tools.spi.ApplicationCreator;
@@ -54,7 +52,7 @@ class ApplicationCreatorDefaultTest extends AbstractBaseCreator {
     @Test
     void codegenHelloWorldApplication() {
         ApplicationCreator creator = this.applicationCreator;
-        ServiceInfoCriteria allServices = ServiceInfoCriteriaDefault.builder().build();
+        ServiceInfoCriteria allServices = ServiceInfoCriteria.builder().build();
 
         PicoServices picoServices = PicoServices.picoServices().orElseThrow();
         Services services = picoServices.services();
@@ -62,11 +60,11 @@ class ApplicationCreatorDefaultTest extends AbstractBaseCreator {
         assertThat(serviceProviders.size(), is(0));
 
         List<TypeName> serviceTypeNames = serviceProviders.stream()
-                .map(sp -> TypeNameDefault.createFromTypeName(sp.serviceInfo().serviceTypeName()))
-                .collect(Collectors.toList());
+                .map(sp -> sp.serviceInfo().serviceTypeName())
+                .toList();
 
         // note: this test needs to align with target/pico/... for this to work/test properly
-        CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
+        CodeGenPaths codeGenPaths = CodeGenPaths.builder()
                 .generatedSourcesPath("target/pico/generated-sources")
                 .outputPath("target/pico/generated-classes")
                 .build();
@@ -77,14 +75,14 @@ class ApplicationCreatorDefaultTest extends AbstractBaseCreator {
         String classpath = System.getProperty("java.class.path");
         String separator = System.getProperty("path.separator");
         String[] ignoredClasspath = classpath.split(separator);
-        ApplicationCreatorRequest req = ApplicationCreatorRequestDefault.builder()
-                .codeGen(ApplicationCreatorCodeGenDefault.builder()
-                                        .className(ApplicationCreatorDefault.toApplicationClassName("test"))
-                                        .classPrefixName("test")
-                                        .build())
+        ApplicationCreatorRequest req = ApplicationCreatorRequest.builder()
+                .codeGen(ApplicationCreatorCodeGen.builder()
+                                 .className(ActivatorCreatorDefault.applicationClassName("test"))
+                                 .classPrefixName("test")
+                                 .build())
                 .codeGenPaths(codeGenPaths)
-                .configOptions(ApplicationCreatorConfigOptionsDefault.builder()
-                                       .permittedProviderTypes(ApplicationCreatorConfigOptions.PermittedProviderType.ALL)
+                .configOptions(ApplicationCreatorConfigOptions.builder()
+                                       .permittedProviderTypes(PermittedProviderType.ALL)
                                        .build())
                 .filer(filer)
                 .messager(directFiler)

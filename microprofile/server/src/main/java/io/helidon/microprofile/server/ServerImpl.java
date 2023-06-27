@@ -64,11 +64,10 @@ public class ServerImpl implements Server {
         serverExtension.context(helidonContainer.context());
 
         serverExtension.serverBuilder()
-                        .port(builder.port())
-                        .defaultSocket(it -> it.bindAddress(listenHost));
+                .port(builder.port())
+                .address(listenHost);
 
         serverExtension.listenHost(this.host);
-
 
     }
 

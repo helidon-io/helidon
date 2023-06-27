@@ -27,7 +27,7 @@ import junit.framework.TestFailure;
 import junit.framework.TestResult;
 import org.atinject.tck.Tck;
 import org.atinject.tck.auto.Car;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;

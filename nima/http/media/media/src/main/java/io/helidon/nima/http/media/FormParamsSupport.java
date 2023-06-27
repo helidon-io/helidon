@@ -151,6 +151,16 @@ public class FormParamsSupport implements MediaSupport {
                 }).orElseGet(() -> new WriterResponse<T>(SupportLevel.COMPATIBLE, FormParamsSupport::urlEncodedWriter));
     }
 
+    @Override
+    public String name() {
+        return "form-params";
+    }
+
+    @Override
+    public String type() {
+        return "form-params";
+    }
+
     private static <T> EntityReader<T> urlEncodedReader() {
         return URL_READER;
     }

@@ -43,8 +43,8 @@ import org.eclipse.microprofile.config.Config;
  * </ul>
  * Example:
  * <pre>
- * google_client_secret=${AES=mYRkg+4Q4hua1kvpCCI2hg==}
- * service_password=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
+ * google_client_secret=${GCM=mYRkg+4Q4hua1kvpCCI2hg==}
+ * service_password=${RSA-P=mYRkg+4Q4hua1kvpCCI2hg==}
  * another_password=${service_password}
  * cleartext_password=${CLEAR=known_password}
  * </pre>
@@ -55,8 +55,6 @@ import org.eclipse.microprofile.config.Config;
  * @see ConfigProperties#REQUIRE_ENCRYPTION_ENV_VARIABLE
  */
 public final class MpEncryptionFilter implements MpConfigFilter {
-    private static final String PREFIX_LEGACY_AES = "${AES=";
-    private static final String PREFIX_LEGACY_RSA = "${RSA=";
     static final String PREFIX_GCM = "${GCM=";
     static final String PREFIX_RSA = "${RSA-P=";
     private static final System.Logger LOGGER = System.getLogger(MpEncryptionFilter.class.getName());
@@ -161,16 +159,7 @@ public final class MpEncryptionFilter implements MpConfigFilter {
 
     private String decryptRsa(PrivateKey privateKey, String value) {
         // service_password=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
-        if (value.startsWith(PREFIX_LEGACY_RSA)) {
-            LOGGER.log(Level.WARNING, () -> "You are using legacy RSA encryption. Please re-encrypt the value with RSA-P.");
-            String b64Value = removePlaceholder(PREFIX_LEGACY_RSA, value);
-            try {
-                return EncryptionUtil.decryptRsaLegacy(privateKey, b64Value);
-            } catch (ConfigEncryptionException e) {
-                LOGGER.log(Level.TRACE, () -> "Failed to decrypt " + value, e);
-                return value;
-            }
-        } else if (value.startsWith(PREFIX_RSA)) {
+        if (value.startsWith(PREFIX_RSA)) {
             String b64Value = removePlaceholder(PREFIX_RSA, value);
             try {
                 return EncryptionUtil.decryptRsa(privateKey, b64Value);
@@ -186,16 +175,7 @@ public final class MpEncryptionFilter implements MpConfigFilter {
     private String decryptAes(char[] masterPassword, String value) {
         // google_client_secret=${AES=mYRkg+4Q4hua1kvpCCI2hg==}
 
-        if (value.startsWith(PREFIX_LEGACY_AES)) {
-            LOGGER.log(Level.WARNING, () -> "You are using legacy AES encryption. Please re-encrypt the value with GCM.");
-            String b64Value = value.substring(PREFIX_LEGACY_AES.length(), value.length() - 1);
-            try {
-                return EncryptionUtil.decryptAesLegacy(masterPassword, b64Value);
-            } catch (ConfigEncryptionException e) {
-                LOGGER.log(Level.TRACE, () -> "Failed to decrypt " + value, e);
-                return value;
-            }
-        } else if (value.startsWith(PREFIX_GCM)) {
+        if (value.startsWith(PREFIX_GCM)) {
             String b64Value = value.substring(PREFIX_GCM.length(), value.length() - 1);
             try {
                 return EncryptionUtil.decryptAes(masterPassword, b64Value);

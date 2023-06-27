@@ -23,7 +23,8 @@ import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServer.Builder;
+import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.ServerConfig.Builder;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.security.auth.x500.X500Principal;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.config.MapConfigSource;
 import io.helidon.reactive.webclient.WebClient;
@@ -133,12 +133,12 @@ public class MtlsTest {
             .tls(WebClientTls.builder()
                 // the certificate is self-signed so we can use it for TLS, but its CN obviously doesn't match 'localhost'
                 .disableHostnameVerification(true)
-                .certificateTrustStore(KeyConfig.pemBuilder()
-                    .certificates(Resource.create("ssl/certificate.pem"))
+                .certificateTrustStore(Keys.builder()
+                                               .pem(pemBuilder -> pemBuilder.certificates(Resource.create("ssl/certificate.pem")))
                     .build())
-                .clientKeyStore(KeyConfig.pemBuilder()
-                    .key(Resource.create("ssl/key.pkcs8.pem"))
-                    .certChain(Resource.create("ssl/certificate.pem"))
+                .clientKeyStore(Keys.builder()
+                                        .pem(pemBuilder -> pemBuilder.key(Resource.create("ssl/key.pkcs8.pem"))
+                    .certChain(Resource.create("ssl/certificate.pem")))
                     .build())
                 .build())
             .build();

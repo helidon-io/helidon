@@ -22,7 +22,7 @@ import java.util.Objects;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.configdriven.configuredby.test.ASingletonServiceContract;
-import io.helidon.pico.configdriven.configuredby.test.FakeWebServerContract;
+import io.helidon.pico.configdriven.tests.config.FakeWebServerContract;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -42,6 +42,14 @@ public class ASimpleRunLevelService implements Resettable {
 
     @Inject // testing an empty/void ctor here
     public ASimpleRunLevelService() {
+    }
+
+    public static int getPostConstructCount() {
+        return postConstructCount;
+    }
+
+    public static int getPreDestroyCount() {
+        return preDestroyCount;
     }
 
     @Inject
@@ -80,14 +88,6 @@ public class ASimpleRunLevelService implements Resettable {
         Objects.requireNonNull(fakeWebServers);
         preDestroyCount++;
         running = false;
-    }
-
-    public static int getPostConstructCount() {
-        return postConstructCount;
-    }
-
-    public static int getPreDestroyCount() {
-        return preDestroyCount;
     }
 
     public boolean isRunning() {

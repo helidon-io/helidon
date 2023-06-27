@@ -1,0 +1,85 @@
+{{!
+Copyright (c) 2023 Oracle and/or its affiliates.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+}}
+package {{packageName}};
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import io.helidon.common.GenericType;
+import io.helidon.nima.faulttolerance.RetryConfig;
+import io.helidon.nima.faulttolerance.ErrorChecker;
+import io.helidon.nima.faulttolerance.Retry;
+import io.helidon.nima.faulttolerance.RetryMethod;
+
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
+
+@Singleton
+@Named("{{enclosingClassTypeName.name}}.{{retry.methodName}}")
+{{{generatedSticker}}}
+class {{className}} implements RetryMethod {
+    private static final Set<Class<? extends Throwable>> APPLY_ON = Set.of(
+       {{#each retry.applyOn}}{{this}}.class{{#unless @last}},
+      {{/unless}}{{/each}}
+    );
+    private static final Set<Class<? extends Throwable>> SKIP_ON = Set.of(
+       {{#each retry.skipOn}}{{this}}.class{{#unless @last}},
+      {{/unless}}{{/each}}
+    );
+    private static final ErrorChecker ERROR_CHECKER = ErrorChecker.create(SKIP_ON, APPLY_ON);
+    private static final List<GenericType<?>> PARAM_TYPES = List.of(
+      {{#each retry.paramTypes}}new GenericType<{{this}}>() {}{{#unless @last}},
+      {{/unless}}{{/each}}
+    );
+
+    private final Retry retry;
+    {{#if retry.retryNamed}}
+    @Inject{{/if}}
+    {{className}}({{#if retry.retryNamed}}@Named("{{retry.retryName}}") Optional<Retry> namedRetry{{/if}}) {
+      {{#if retry.retryNamed}}this.retry = namedRetry.orElseGet({{className}}::produceRetry);{{else}}this.retry = produceRetry();{{/if}}
+    }
+
+    private static Retry produceRetry() {
+      Retry.RetryPolicy policy = Retry.{{#if retry.isDelaying}}DelayingRetryPolicy.builder()
+        .delayFactor({{retry.delayFactor}}){{else}}JitterRetryPolicy.builder()
+        .jitter(Duration.of({{retry.jitter}}, ChronoUnit.{{retry.timeUnit}})){{/if}}
+        .calls({{retry.calls}})
+        .delay(Duration.of({{retry.delay}}, ChronoUnit.{{retry.timeUnit}}))
+        .build();
+
+      return RetryConfig.builder()
+                .applyOn(APPLY_ON)
+                .skipOn(SKIP_ON)
+                .retryPolicy(policy)
+                .overallTimeout(Duration.of({{retry.overallTimeout}}, ChronoUnit.{{retry.timeUnit}}))
+                .name("{{retry.customName}}")
+                .build();
+    }
+
+    @Override
+    public Retry retry() {
+      return retry;
+    }
+
+    @Override
+    public List<GenericType<?>> parameterTypes() {
+      return PARAM_TYPES;
+    }
+}

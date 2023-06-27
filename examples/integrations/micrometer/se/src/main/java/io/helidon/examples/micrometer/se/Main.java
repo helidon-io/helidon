@@ -20,7 +20,6 @@ import io.helidon.config.Config;
 import io.helidon.integrations.micrometer.MicrometerFeature;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.WebServer.Builder;
 import io.helidon.nima.webserver.http.HttpRouting;
 
 import io.micrometer.core.instrument.Counter;
@@ -60,10 +59,11 @@ public final class Main {
         // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        Builder builder = WebServer.builder()
+        WebServer server = WebServer.builder()
                 .config(config.get("server"))
-                .routing(r -> setupRouting(r, config));
-        WebServer server = builder.build().start();
+                .routing(r -> setupRouting(r, config))
+                .build()
+                .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet");
         return server;

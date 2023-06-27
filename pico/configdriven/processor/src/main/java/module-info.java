@@ -19,21 +19,14 @@
  */
 module io.helidon.pico.configdriven.processor {
     requires java.compiler;
-    requires jakarta.inject;
+
     requires io.helidon.common;
-    requires io.helidon.common.config;
-    requires io.helidon.config.metadata;
-    requires io.helidon.builder.processor.tools;
     requires io.helidon.common.types;
-    requires io.helidon.pico.api;
-    requires transitive io.helidon.builder.config;
-    requires transitive io.helidon.builder.processor;
-    requires transitive io.helidon.builder.processor.spi;
-    requires transitive io.helidon.pico.processor;
-    requires transitive io.helidon.pico.tools;
+    requires io.helidon.common.processor;
+    requires io.helidon.pico.processor;
 
     exports io.helidon.pico.configdriven.processor;
 
     provides javax.annotation.processing.Processor with
-            io.helidon.pico.configdriven.processor.ConfiguredByAnnotationProcessor;
+            io.helidon.pico.configdriven.processor.ConfigDrivenProcessor;
 }

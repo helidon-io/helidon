@@ -17,6 +17,7 @@
 package io.helidon.nima.webserver.http;
 
 import io.helidon.common.http.Http;
+import io.helidon.pico.api.Contract;
 
 /**
  * This class is only used by generated code.
@@ -26,6 +27,7 @@ import io.helidon.common.http.Http;
  * @see io.helidon.nima.webserver.http.Handler
  */
 @Deprecated(since = "4.0.0")
+@Contract
 public interface GeneratedHandler extends Handler {
     /**
      * HTTP Method of this handler.

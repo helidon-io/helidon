@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.builder.test.testsubjects.MapCase;
-import io.helidon.builder.test.testsubjects.TestMapCase;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -38,7 +37,7 @@ class MapCaseTest {
 
     @Test
     void testIt() {
-        TestMapCase.Builder builder = TestMapCase.builder();
+        MapCase.Builder builder = MapCase.builder();
 
         assertThat(builder.stringToString(),
                    sameInstance(builder.stringToString()));
@@ -69,12 +68,7 @@ class MapCaseTest {
                    equalTo(1));
         builder.stringToDependencies(map);
 
-        // allow augmentation of the collection within the maps - see how we understand the values are collections that we add to
-        // instead of replace
-        builder.addDependency("m", Set.of(Mockito.mock(MapCase.Dependency.class)));
-        assertThat(builder.stringToDependencies().get("m").size(),
-                   equalTo(2));
-        // true singular version on the value parameter as well
+         // true singular version on the value parameter as well
         builder.addDependency("n", Mockito.mock(MapCase.Dependency.class));
         assertThat(builder.stringToDependencies().get("n").size(),
                    equalTo(1));
@@ -82,27 +76,33 @@ class MapCaseTest {
                    equalTo(2));
 
         // map of maps
-        builder.addStringToDependencyMap("p", Map.of("1", Mockito.mock(MapCase.Dependency.class)));
+        builder.putStringToDependencyMap("p", Map.of("1", Mockito.mock(MapCase.Dependency.class)));
         assertThat(builder.stringToDependencyMap().get("p").size(),
                    equalTo(1));
-        builder.addStringToDependencyMap("p", Map.of("2", Mockito.mock(MapCase.Dependency.class)));
-        assertThat(builder.stringToDependencyMap().get("p").size(),
-                   equalTo(2));
         assertThat(builder.stringToDependencyMap().size(),
                    equalTo(1));
 
         // map of lists
         builder.addStringToStringList("1", List.of("a", "b"));
-        builder.addStringToStringList("1", List.of("c", "d"));
-        builder.addStringToStringList("1", "e");
-        builder.addStringToStringList("2", "x");
-
-        assertThat(builder.stringToStringList().size(),
-                   equalTo(2));
         assertThat(builder.stringToStringList().get("1"),
-                   contains("a", "b", "c", "d", "e"));
-        assertThat(builder.stringToStringList().get("2"),
-                   contains("x"));
+                   contains("a", "b"));
     }
 
+    @Test
+    void testAddToMapValueList() {
+        MapCase mapCase = MapCase.builder()
+                .addStringToStringList("1", List.of("a", "b"))
+                .addStringToStringList("1", List.of("c", "d"))
+                .addStringToStringList("1", "e")
+                .putStringToStringList("2", List.of("y"))
+                .putStringToStringList("2", List.of("x"))
+                .build();
+
+        assertThat(mapCase.stringToStringList().size(),
+                   equalTo(2));
+        assertThat(mapCase.stringToStringList().get("1"),
+                   contains("a", "b", "c", "d", "e"));
+        assertThat(mapCase.stringToStringList().get("2"),
+                   contains("x"));
+    }
 }

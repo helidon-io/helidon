@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.examples.nima.grpc.strings.Strings;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.common.tls.Tls;
@@ -54,7 +54,7 @@ public class ProtocolsMain {
     public static void main(String[] args) {
         LogConfig.configureRuntime();
 
-        KeyConfig privateKeyConfig = privateKey();
+        Keys privateKeyConfig = privateKey();
 
         Tls tls = Tls.builder()
                 .privateKey(privateKeyConfig.privateKey().get())
@@ -62,14 +62,14 @@ public class ProtocolsMain {
                 .build();
 
         WebServer.builder()
-                .defaultSocket(builder -> builder.port(8080)
-                        .host("127.0.0.1"))
-                .socket("https",
-                        builder -> builder.port(8081)
-                                .host("127.0.0.1")
-                                .tls(tls)
-                                .receiveBufferSize(4096)
-                                .backlog(8192)
+                .port(8080)
+                .host("127.0.0.1")
+                .putSocket("https",
+                           builder -> builder.port(8081)
+                                   .host("127.0.0.1")
+                                   .tls(tls)
+                                   .receiveBufferSize(4096)
+                                   .backlog(8192)
                 )
                 .routing(router -> router
                         .get("/", (req, res) -> res.send(RESPONSE))
@@ -79,9 +79,12 @@ public class ProtocolsMain {
                                     .unary(Strings.getDescriptor(),
                                            "StringService",
                                            "Upper",
-                                           ProtocolsMain::grpcUpper))
+                                           ProtocolsMain::grpcUpper)
+                                    .build())
                 .addRouting(WsRouting.builder()
-                                    .endpoint("/tyrus/echo", ProtocolsMain::wsEcho))
+                                    .endpoint("/tyrus/echo", ProtocolsMain::wsEcho)
+                                    .build())
+                .build()
                 .start();
     }
 
@@ -108,12 +111,13 @@ public class ProtocolsMain {
         };
     }
 
-    private static KeyConfig privateKey() {
+    private static Keys privateKey() {
         String password = "helidon";
 
-        return KeyConfig.keystoreBuilder()
-                .keystore(Resource.create("certificate.p12"))
-                .keystorePassphrase(password)
+        return Keys.builder()
+                .keystore(keystore -> keystore
+                        .keystore(Resource.create("certificate.p12"))
+                        .passphrase(password))
                 .build();
     }
 }

@@ -21,12 +21,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.nima.graphql.server.GraphQlService;
-import io.helidon.nima.webserver.http.HttpRouting;
 
 import graphql.schema.GraphQLSchema;
 import jakarta.annotation.Priority;
@@ -78,7 +76,7 @@ public class GraphQlCdiExtension implements Extension {
     }
 
     void collectApis(@Observes @WithAnnotations({Type.class, Input.class,
-                                                        Interface.class}) ProcessAnnotatedType<?> processAnnotatedType) {
+            Interface.class}) ProcessAnnotatedType<?> processAnnotatedType) {
         // these are directly added
         this.collectedApis.add(processAnnotatedType.getAnnotatedType().getJavaClass());
     }
@@ -129,13 +127,9 @@ public class GraphQlCdiExtension implements Extension {
             ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
             Optional<String> routingNameConfig = config.getOptionalValue("graphql.routing", String.class);
 
-            HttpRouting.Builder routing = routingNameConfig.stream()
-                    .filter(Predicate.not("@default"::equals))
-                    .map(server::serverNamedRoutingBuilder)
-                    .findFirst()
-                    .orElseGet(server::serverRoutingBuilder);
-
-            routing.register(service);
+            routingNameConfig.map(server::serverNamedRoutingBuilder)
+                    .orElseGet(server::serverRoutingBuilder)
+                    .register(service);
         } catch (Throwable e) {
             LOGGER.log(Level.WARNING, "Failed to set up routing with web server, maybe server extension missing?", e);
         }

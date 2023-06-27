@@ -16,15 +16,15 @@
 
 package io.helidon.pico.api;
 
-import io.helidon.builder.BuilderInterceptor;
+import io.helidon.builder.api.Prototype;
 
 /**
  * Ensures that all external contracts are also treated as normal contracts, etc.
  */
-class ServiceInfoBuildInterceptor implements BuilderInterceptor<ServiceInfoDefault.Builder> {
+class ServiceInfoBuildInterceptor implements Prototype.BuilderInterceptor<ServiceInfo.BuilderBase<?, ?>> {
 
     @Override
-    public ServiceInfoDefault.Builder intercept(ServiceInfoDefault.Builder target) {
+    public ServiceInfo.BuilderBase<?, ?> intercept(ServiceInfo.BuilderBase<?, ?> target) {
         target.addContractsImplemented(target.externalContractsImplemented());
         return target;
     }

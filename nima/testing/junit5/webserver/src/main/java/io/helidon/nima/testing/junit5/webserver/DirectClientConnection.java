@@ -16,6 +16,7 @@
 
 package io.helidon.nima.testing.junit5.webserver;
 
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -23,9 +24,11 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.PeerInfo;
-import io.helidon.config.Config;
 import io.helidon.nima.webclient.ClientConnection;
+import io.helidon.nima.webserver.ProtocolConfigs;
 import io.helidon.nima.webserver.Router;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http1.Http1Config;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
 
@@ -129,10 +132,10 @@ class DirectClientConnection implements ClientConnection {
         });
     }
 
+    @SuppressWarnings("deprecation")
     private void startServer() {
-        ServerConnection connection = Http1ConnectionProvider.builder()
-                .build()
-                .create(it -> Config.empty())
+        ServerConnection connection = new Http1ConnectionProvider()
+                .create(WebServer.DEFAULT_SOCKET_NAME, Http1Config.create(), ProtocolConfigs.create(List.of()))
                 .connection(serverContext);
 
         serverContext.executor()

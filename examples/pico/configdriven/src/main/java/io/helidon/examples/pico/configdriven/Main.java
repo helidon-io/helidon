@@ -19,7 +19,7 @@ package io.helidon.examples.pico.configdriven;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.examples.pico.basics.ToolBox;
-import io.helidon.pico.api.BootstrapDefault;
+import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.Services;
 
@@ -40,7 +40,7 @@ public class Main {
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
-        BootstrapDefault bootstrap = BootstrapDefault.builder()
+        Bootstrap bootstrap = Bootstrap.builder()
                 .config(config)
                 .build();
         PicoServices.globalBootstrap(bootstrap);

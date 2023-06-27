@@ -16,26 +16,37 @@
 
 package io.helidon.nima.http2.webserver.spi;
 
-import io.helidon.config.Config;
+import io.helidon.nima.webserver.ProtocolConfigs;
+import io.helidon.nima.webserver.spi.ProtocolConfig;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for HTTP/2 sub-protocols.
+ *
+ * @param <T> type of the protocol configuration used by the provider
  */
-public interface Http2SubProtocolProvider {
+public interface Http2SubProtocolProvider<T extends ProtocolConfig> {
 
     /**
-     * Provider's specific configuration node name.
+     * Provider's type, also expected as the configuration node name.
      *
-     * @return name of the node to request
+     * @return type of this provider, such as {@code grpc}
      */
-    String configKey();
+    String protocolType();
+
+    /**
+     * Type of supported configuration.
+     *
+     * @return protocol config type
+     */
+    Class<T> protocolConfigType();
 
     /**
      * Creates an instance of HTTP/2 sub-protocol selector.
      *
-     * @param config {@link io.helidon.config.Config} configuration node located on the node returned by {@link #configKey()}
+     * @param config configuration of this protocol
+     * @param configs configuration for possible nested protocols
      * @return new HTTP/2 sub-protocol selector
      */
-    Http2SubProtocolSelector create(Config config);
+    Http2SubProtocolSelector create(T config, ProtocolConfigs configs);
 
 }

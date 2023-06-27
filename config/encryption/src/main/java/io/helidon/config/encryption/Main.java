@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.nio.file.Paths;
 import java.security.PublicKey;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 
 /**
  * Cli access to secret encryption.
@@ -53,11 +53,11 @@ public final class Main {
     private static void help() {
         System.out.println("To encrypt password using master password to be used in a property file:");
         System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
-                + "aes masterPassword secretToEncrypt");
+                                   + "aes masterPassword secretToEncrypt");
         System.out.println();
         System.out.println("To encrypt password using public key to be used in a property file:");
         System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
-               + "rsa /path/to/pkcs12keystore keystorePassphrase publicCertAlias secretToEncrypt");
+                                   + "rsa /path/to/pkcs12keystore keystorePassphrase publicCertAlias secretToEncrypt");
     }
 
     enum Algorithm {
@@ -97,57 +97,6 @@ public final class Main {
             }
         }
 
-        private void parseRsa(String[] cliArgs) {
-            this.algorithm = Algorithm.rsa;
-            // /path/to/pkcs12keystore keystorePassphrase "
-            //        + "publicCertAlias secretToEncrypt
-            /*
-            0: algorithm
-            1: path to keystore
-            2: keystore passphrase
-            3: public certificate alias (to extract public key)
-            4: secret to encrypt (optional)
-            */
-            if (cliArgs.length < 4) {
-                throw new ValidationException(
-                        "RSA encryption must have at least three parameters: keystorePath, keystorePassword and alias of "
-                                + "certificate for public key");
-            }
-            if (cliArgs.length == 4) {
-                secret = "";
-            } else {
-                secret = cliArgs[4];
-            }
-            Path keyPath = Paths.get(cliArgs[1]);
-            if (!Files.exists(keyPath) || !Files.isRegularFile(keyPath)) {
-                throw new ValidationException(
-                        "For rsa encryption the second parameter must be a keystore path, "
-                                + "yet it is not accessible as a file: "
-                                + keyPath.toAbsolutePath());
-            }
-            String certAlias = cliArgs[3];
-            KeyConfig kc = KeyConfig.keystoreBuilder()
-                    .keystore(Resource.create(keyPath))
-                    .keystorePassphrase(cliArgs[2].toCharArray())
-                    .certAlias(certAlias)
-                    .build();
-
-            publicKey = kc.publicKey()
-                    .orElseThrow(() -> new ValidationException("There is no public key available for cert alias: " + certAlias));
-        }
-
-        private void parseAes(String[] cliArgs) {
-            String config = cliArgs[1];
-            if (cliArgs.length == 2) {
-                this.secret = "";
-            } else {
-                this.secret = cliArgs[2];
-            }
-
-            this.algorithm = Algorithm.aes;
-            this.masterPassword = config;
-        }
-
         String encrypt() {
             switch (algorithm) {
             case aes:
@@ -181,6 +130,57 @@ public final class Main {
 
         String getSecret() {
             return secret;
+        }
+
+        private void parseRsa(String[] cliArgs) {
+            this.algorithm = Algorithm.rsa;
+            // /path/to/pkcs12keystore keystorePassphrase "
+            //        + "publicCertAlias secretToEncrypt
+            /*
+            0: algorithm
+            1: path to keystore
+            2: keystore passphrase
+            3: public certificate alias (to extract public key)
+            4: secret to encrypt (optional)
+            */
+            if (cliArgs.length < 4) {
+                throw new ValidationException(
+                        "RSA encryption must have at least three parameters: keystorePath, keystorePassword and alias of "
+                                + "certificate for public key");
+            }
+            if (cliArgs.length == 4) {
+                secret = "";
+            } else {
+                secret = cliArgs[4];
+            }
+            Path keyPath = Paths.get(cliArgs[1]);
+            if (!Files.exists(keyPath) || !Files.isRegularFile(keyPath)) {
+                throw new ValidationException(
+                        "For rsa encryption the second parameter must be a keystore path, "
+                                + "yet it is not accessible as a file: "
+                                + keyPath.toAbsolutePath());
+            }
+            String certAlias = cliArgs[3];
+            Keys kc = Keys.builder()
+                    .keystore(keystoreBuilder -> keystoreBuilder.keystore(Resource.create(keyPath))
+                            .passphrase(cliArgs[2].toCharArray())
+                            .certAlias(certAlias))
+                    .build();
+
+            publicKey = kc.publicKey()
+                    .orElseThrow(() -> new ValidationException("There is no public key available for cert alias: " + certAlias));
+        }
+
+        private void parseAes(String[] cliArgs) {
+            String config = cliArgs[1];
+            if (cliArgs.length == 2) {
+                this.secret = "";
+            } else {
+                this.secret = cliArgs[2];
+            }
+
+            this.algorithm = Algorithm.aes;
+            this.masterPassword = config;
         }
     }
 }

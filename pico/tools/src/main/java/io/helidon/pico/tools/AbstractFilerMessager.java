@@ -45,7 +45,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
 
 /**
  * Used to abstract processor based filer from direct filer (the latter used via maven plugin and other tooling).
@@ -70,10 +69,6 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
         this.logger = logger;
     }
 
-    System.Logger logger() {
-        return logger;
-    }
-
     /**
      * Create an annotation based filer abstraction.
      *
@@ -83,7 +78,7 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
      */
     public static AbstractFilerMessager createAnnotationBasedFiler(ProcessingEnvironment processingEnv,
                                                                    Messager msgr) {
-        return new AbstractFilerMessager(Objects.requireNonNull(processingEnv.getFiler()), msgr) {};
+        return new AbstractFilerMessager(Objects.requireNonNull(processingEnv.getFiler()), msgr) { };
     }
 
     /**
@@ -95,7 +90,11 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
      */
     public static AbstractFilerMessager createDirectFiler(CodeGenPaths paths,
                                                           System.Logger logger) {
-        return new DirectFilerMessager(Objects.requireNonNull(paths), logger) {};
+        return new DirectFilerMessager(Objects.requireNonNull(paths), logger) { };
+    }
+
+    System.Logger logger() {
+        return logger;
     }
 
     @Override
@@ -200,7 +199,6 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
         }
     }
 
-
     static class DirectFilerMessager extends AbstractFilerMessager {
         private final CodeGenPaths paths;
 
@@ -221,23 +219,6 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
             return getResource(location, moduleAndPkg, relativeName, false);
         }
 
-        private FileObject getResource(JavaFileManager.Location location,
-                                       CharSequence ignoreModuleAndPkg,
-                                       CharSequence relativeName,
-                                       boolean expectedToExist) throws IOException {
-            if (StandardLocation.CLASS_OUTPUT != location) {
-                throw new IllegalStateException(location + " is not supported for: " + relativeName);
-            }
-
-            File outDir = new File(paths.outputPath().orElseThrow());
-            File resourceFile = new File(outDir, relativeName.toString());
-            if (expectedToExist && !resourceFile.exists()) {
-                throw new NoSuchFileException(resourceFile.getPath());
-            }
-
-            return new DirectFileObject(resourceFile);
-        }
-
         @Override
         public FileObject createResource(JavaFileManager.Location location,
                                          CharSequence moduleAndPkg,
@@ -255,7 +236,7 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
 
         Path toSourcePath(JavaFileManager.Location location,
                           String name) {
-            return toSourcePath(location, TypeNameDefault.createFromTypeName(name));
+            return toSourcePath(location, TypeName.create(name));
         }
 
         Path toSourcePath(JavaFileManager.Location location,
@@ -276,8 +257,24 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
 
             return new File(sourcePath, TypeTools.toFilePath(typeName)).toPath();
         }
-    }
 
+        private FileObject getResource(JavaFileManager.Location location,
+                                       CharSequence ignoreModuleAndPkg,
+                                       CharSequence relativeName,
+                                       boolean expectedToExist) throws IOException {
+            if (StandardLocation.CLASS_OUTPUT != location) {
+                throw new IllegalStateException(location + " is not supported for: " + relativeName);
+            }
+
+            File outDir = new File(paths.outputPath().orElseThrow());
+            File resourceFile = new File(outDir, relativeName.toString());
+            if (expectedToExist && !resourceFile.exists()) {
+                throw new NoSuchFileException(resourceFile.getPath());
+            }
+
+            return new DirectFileObject(resourceFile);
+        }
+    }
 
     static class DirectFileObject implements FileObject {
         private final File file;
@@ -338,7 +335,6 @@ public abstract class AbstractFilerMessager implements Filer, Messager {
             return String.valueOf(file);
         }
     }
-
 
     static class DirectJavaFileObject extends DirectFileObject implements JavaFileObject {
         DirectJavaFileObject(File javaFile) {

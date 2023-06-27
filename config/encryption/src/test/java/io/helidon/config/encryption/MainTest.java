@@ -21,7 +21,7 @@ import java.security.PrivateKey;
 import java.util.Base64;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 
 import org.junit.jupiter.api.Test;
 
@@ -55,7 +55,8 @@ public class MainTest {
         );
 
         String orig = EncryptionUtil.decryptAes(ecp.getMasterPassword().toCharArray(),
-                                                encrypted.substring(EncryptionFilter.PREFIX_GCM.length(), encrypted.length() - 1));
+                                                encrypted.substring(EncryptionFilter.PREFIX_GCM.length(),
+                                                                    encrypted.length() - 1));
 
         assertThat(orig, is(secret));
 
@@ -70,10 +71,11 @@ public class MainTest {
         String certAlias = "1";
 
         String[] args = new String[] {"rsa", keystorePath, keystorePass, certAlias, secret};
-        PrivateKey pk = KeyConfig.keystoreBuilder()
-                .keystore(Resource.create(Paths.get(keystorePath)))
-                .keyAlias("1")
-                .keystorePassphrase(keystorePass.toCharArray())
+        PrivateKey pk = Keys.builder()
+                .keystore(keystoreBuilder -> keystoreBuilder.keystore(Resource.create(Paths.get(keystorePath)))
+                        .keyAlias("1")
+                        .passphrase(keystorePass.toCharArray())
+                )
                 .build()
                 .privateKey().orElseThrow(AssertionError::new);
 

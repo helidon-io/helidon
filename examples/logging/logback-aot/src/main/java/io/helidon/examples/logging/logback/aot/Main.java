@@ -62,6 +62,7 @@ public final class Main {
         WebServer server = WebServer.builder()
                 .port(8080)
                 .routing(Main::routing)
+                .build()
                 .start();
     }
 

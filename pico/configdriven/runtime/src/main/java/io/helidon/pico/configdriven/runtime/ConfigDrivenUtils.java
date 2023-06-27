@@ -16,10 +16,6 @@
 
 package io.helidon.pico.configdriven.runtime;
 
-import java.util.Optional;
-
-import io.helidon.builder.config.spi.MetaConfigBeanInfo;
-import io.helidon.config.Config;
 import io.helidon.pico.api.ServiceInfoCriteria;
 
 final class ConfigDrivenUtils {
@@ -37,36 +33,4 @@ final class ConfigDrivenUtils {
     static boolean hasValue(String val) {
         return (val != null) && !val.isBlank();
     }
-
-    static String validatedConfigKey(String configKey) {
-        if (!hasValue(configKey)) {
-            throw new IllegalStateException("The config key was expected to be non-blank");
-        }
-        return configKey;
-    }
-
-    static String validatedConfigKey(MetaConfigBeanInfo metaConfigBeanInfo) {
-        return validatedConfigKey(metaConfigBeanInfo.value());
-    }
-
-    static Config safeDowncastOf(io.helidon.common.config.Config config) {
-        if (!(config instanceof Config)) {
-            throw new IllegalStateException(config.getClass() + " is not supported - the only type supported is " + Config.class);
-        }
-
-        return (Config) config;
-    }
-
-    static Optional<Integer> toNumeric(String val) {
-        if (val == null) {
-            return Optional.empty();
-        }
-
-        try {
-            return Optional.of(Integer.parseInt(val));
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
-
 }

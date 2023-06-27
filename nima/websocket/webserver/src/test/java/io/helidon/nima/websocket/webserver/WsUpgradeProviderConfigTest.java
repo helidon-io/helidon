@@ -16,32 +16,17 @@
 
 package io.helidon.nima.websocket.webserver;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import io.helidon.common.buffers.DataReader;
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.ListenerConfiguration;
-import io.helidon.nima.webserver.ListenerContext;
-import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http1.Http1Connection;
-import io.helidon.nima.webserver.http1.Http1ConnectionSelector;
-import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
-import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+import io.helidon.nima.webserver.ProtocolConfigs;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class WsUpgradeProviderConfigTest {
 
@@ -53,58 +38,27 @@ public class WsUpgradeProviderConfigTest {
         // This will pick up application.yaml from the classpath as default configuration file
         Config config = Config.create();
 
-        // Builds LoomServer instance including connectionProviders list.
-        WebServer.Builder wsBuilder = WebServer.builder()
-                .config(config.get("server"));
+        WsProtocolConfigProvider provider = new WsProtocolConfigProvider();
+        WsConfig wsConfig = provider.create(config.get(provider.configKey()), "@default");
 
-        // Call wsBuilder.connectionProviders() trough reflection
-        Method connectionProviders
-                = WebServer.Builder.class.getDeclaredMethod("connectionProviders", (Class<?>[]) null);
-        connectionProviders.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        List<ServerConnectionSelector> providers
-                = (List<ServerConnectionSelector>) connectionProviders.invoke(wsBuilder, (Object[]) null);
+        WsUpgrader upgrader = (WsUpgrader) new WsUpgradeProvider().create(wsConfig, ProtocolConfigs.create(List.of()));
 
-        for (ServerConnectionSelector provider : providers) {
-            if (provider instanceof Http1ConnectionSelector) {
-                Http1Connection conn = (Http1Connection) provider.connection(mockContext());
-                assertThat(conn, notNullValue());
-
-                // Retrieve private upgradeProviderMap from Http1Connection trough reflection
-                Field upgradeProviderMapField = Http1Connection.class.getDeclaredField("upgradeProviderMap");
-                upgradeProviderMapField.setAccessible(true);
-                @SuppressWarnings("unchecked")
-                Map<String, Http1Upgrader> upgradeProviderMap = (Map<String, Http1Upgrader>) upgradeProviderMapField.get(conn);
-
-                WsUpgrader upgrader = (WsUpgrader) upgradeProviderMap.get("websocket");
-                Set<String> origins = upgrader.origins();
-                assertThat(origins, containsInAnyOrder("origin1", "origin2", "origin3"));
-            }
-        }
+        Set<String> origins = upgrader.origins();
+        assertThat(origins, containsInAnyOrder("origin1", "origin2", "origin3"));
 
     }
 
     // Verify that WsUpgrader is properly configured from builder
     @Test
     void testUpgraderConfigBuilder() {
-        WsUpgrader upgrader = (WsUpgrader) WsUpgradeProvider.builder()
-                .addOrigin("bOrigin1")
-                .addOrigin("bOrigin2")
-                .build()
-                .create(it -> Config.empty());
+        WsUpgrader upgrader = WsUpgrader.create(
+                WsConfig.builder()
+                        .name("@default")
+                        .addOrigin("bOrigin1")
+                        .addOrigin("bOrigin2")
+                        .build());
 
         Set<String> origins = upgrader.origins();
         assertThat(origins, containsInAnyOrder("bOrigin1", "bOrigin2"));
     }
-
-    private static ConnectionContext mockContext() {
-        ConnectionContext ctx = mock(ConnectionContext.class);
-        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
-        when(ctx.router()).thenReturn(Router.empty());
-        ListenerContext lc = mock(ListenerContext.class);
-        when(lc.config()).thenReturn(ListenerConfiguration.create("@default"));
-        when(ctx.listenerContext()).thenReturn(lc);
-        return ctx;
-    }
-
 }

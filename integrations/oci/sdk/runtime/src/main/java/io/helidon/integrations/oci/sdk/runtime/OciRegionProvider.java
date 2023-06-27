@@ -20,7 +20,6 @@ import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.ContextualServiceQueryDefault;
 import io.helidon.pico.api.InjectionPointProvider;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.ServiceInfoBasics;
@@ -42,7 +41,7 @@ class OciRegionProvider implements InjectionPointProvider<Region> {
 
     @Override
     public Region get() {
-        return first(ContextualServiceQueryDefault.builder()
+        return first(ContextualServiceQuery.builder()
                              .serviceInfoCriteria(PicoServices.EMPTY_CRITERIA)
                              .expected(false)
                              .build())

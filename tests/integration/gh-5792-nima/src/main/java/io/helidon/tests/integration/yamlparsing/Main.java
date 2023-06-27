@@ -36,11 +36,12 @@ public final class Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-         // load logging configuration
+        // load logging configuration
         LogConfig.configureRuntime();
 
         WebServer server = WebServer.builder()
                 .routing(Main::routing)
+                .build()
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet");

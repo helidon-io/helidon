@@ -16,6 +16,9 @@
 
 package io.helidon.pico.tools;
 
+import io.helidon.common.types.TypeName;
+import io.helidon.pico.runtime.AbstractServiceProvider;
+
 /**
  * Type name constants.
  * <p>
@@ -62,21 +65,43 @@ public final class TypeNames {
      * Pico class name {@value} for {@code InjectionPointProvider}.
      */
     public static final String PICO_INJECTION_POINT_PROVIDER = "io.helidon.pico.api.InjectionPointProvider";
-
     /**
-     * Pico class name {@value} for {@code AbstractConfiguredServiceProvider}.
+     * Pico {@value PICO_INJECTION_POINT_PROVIDER} type.
+     */
+    public static final TypeName PICO_INJECTION_POINT_PROVIDER_TYPE = TypeName.create(PICO_INJECTION_POINT_PROVIDER);
+    /**
+     * Pico service provider type name.
+     */
+    public static final String PICO_SERVICE_PROVIDER = "io.helidon.pico.api.ServiceProvider";
+    /**
+     * Pico service provider type.
+     */
+    public static final TypeName PICO_SERVICE_PROVIDER_TYPE = TypeName.create("io.helidon.pico.api.ServiceProvider");
+    /**
+     * Pico abstract service provider type.
+     */
+    public static final TypeName PICO_ABSTRACT_SERVICE_PROVIDER_TYPE = TypeName.create(AbstractServiceProvider.class);
+    /**
+     * Pico class name {@value} for {@code ConfigDrivenServiceProviderBase}.
      */
     public static final String PICO_ABSTRACT_CONFIGURED_SERVICE_PROVIDER =
-            "io.helidon.pico.configdriven.runtime.AbstractConfiguredServiceProvider";
-
+            "io.helidon.pico.configdriven.runtime.ConfigDrivenServiceProviderBase";
     /**
      * Jakarta {@value} annotation.
      */
     public static final String JAKARTA_APPLICATION_SCOPED = "jakarta.enterprise.context.ApplicationScoped";
     /**
+     * Jakarta {@value #JAKARTA_APPLICATION_SCOPED} annotation type.
+     */
+    public static final TypeName JAKARTA_APPLICATION_SCOPED_TYPE = TypeName.create(JAKARTA_APPLICATION_SCOPED);
+    /**
      * Jakarta {@value} annotation.
      */
     public static final String JAKARTA_INJECT = "jakarta.inject.Inject";
+    /**
+     * Jakarta {@value #JAKARTA_INJECT} annotation type.
+     */
+    public static final TypeName JAKARTA_INJECT_TYPE = TypeName.create(JAKARTA_INJECT);
     /**
      * Jakarta {@value} annotation.
      */
@@ -86,9 +111,17 @@ public final class TypeNames {
      */
     public static final String JAKARTA_POST_CONSTRUCT = "jakarta.annotation.PostConstruct";
     /**
+     * Jakarta {@value #JAKARTA_POST_CONSTRUCT} annotation type.
+     */
+    public static final TypeName JAKARTA_POST_CONSTRUCT_TYPE = TypeName.create(JAKARTA_POST_CONSTRUCT);
+    /**
      * Jakarta {@value} annotation.
      */
     public static final String JAKARTA_PRE_DESTROY = "jakarta.annotation.PreDestroy";
+    /**
+     * Jakarta {@value #JAKARTA_PRE_DESTROY} annotation type.
+     */
+    public static final TypeName JAKARTA_PRE_DESTROY_TYPE = TypeName.create(JAKARTA_PRE_DESTROY);
     /**
      * Jakarta {@value} annotation.
      */
@@ -97,6 +130,10 @@ public final class TypeNames {
      * Jakarta {@value} type.
      */
     public static final String JAKARTA_PROVIDER = "jakarta.inject.Provider";
+    /**
+     * Jakarta {@value #JAKARTA_PROVIDER} type.
+     */
+    public static final TypeName JAKARTA_PROVIDER_TYPE = TypeName.create(JAKARTA_PROVIDER);
     /**
      * Jakarta {@value} annotation.
      */
@@ -114,9 +151,17 @@ public final class TypeNames {
      */
     public static final String JAKARTA_SCOPE = "jakarta.inject.Scope";
     /**
+     * Jakarta {@value #JAKARTA_SCOPE} annotation type.
+     */
+    public static final TypeName JAKARTA_SCOPE_TYPE = TypeName.create(JAKARTA_SCOPE);
+    /**
      * Jakarta {@value} annotation.
      */
     public static final String JAKARTA_SINGLETON = "jakarta.inject.Singleton";
+    /**
+     * Jakarta {@value #JAKARTA_SINGLETON} annotation type.
+     */
+    public static final TypeName JAKARTA_SINGLETON_TYPE = TypeName.create(JAKARTA_SINGLETON);
     /**
      * Jakarta CDI {@value} annotation.
      */
@@ -214,6 +259,10 @@ public final class TypeNames {
      */
     public static final String JAVAX_INJECT = "javax.inject.Inject";
     /**
+     * Jakarta legacy {@value #JAVAX_INJECT} annotation type.
+     */
+    public static final TypeName JAVAX_INJECT_TYPE = TypeName.create(JAVAX_INJECT);
+    /**
      * Jakarta legacy {@value} annotation.
      */
     public static final String JAVAX_POST_CONSTRUCT = "javax.annotation.PostConstruct";
@@ -233,6 +282,10 @@ public final class TypeNames {
      * Jakarta legacy {@value} type.
      */
     public static final String JAVAX_PROVIDER = "javax.inject.Provider";
+    /**
+     * Jakarta legacy {@value JAVAX_PROVIDER} type.
+     */
+    public static final TypeName JAVAX_PROVIDER_TYPE = TypeName.create(JAVAX_PROVIDER);
     /**
      * Jakarta legacy {@value} annotation.
      */

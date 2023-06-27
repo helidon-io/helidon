@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.api.PicoServicesConfig;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.runtime.AbstractServiceProvider;
 import io.helidon.pico.runtime.ServiceBinderDefault;
@@ -50,7 +49,7 @@ public abstract class AbstractCreator {
 
     // no special chars since this will be used as a package and class name
     static final String NAME_PREFIX = "Pico$$";
-    static final String PICO_FRAMEWORK_MODULE = PicoServicesConfig.FQN + ".runtime";
+    static final String PICO_FRAMEWORK_MODULE = "io.helidon.pico.runtime";
     static final String MODULE_NAME_SUFFIX = "Module";
 
     private final System.Logger logger = System.getLogger(getClass().getName());
@@ -60,6 +59,53 @@ public abstract class AbstractCreator {
     AbstractCreator(String templateName) {
         this.templateHelper = TemplateHelper.create();
         this.templateName = templateName;
+    }
+
+    /**
+     * Generates the {@link io.helidon.pico.api.Activator} source code for the provided service providers. Custom
+     * service providers (see {@link AbstractServiceProvider#isCustom()}) do not qualify to
+     * have activators code generated.
+     *
+     * @param sp the collection of service providers
+     * @return the code generated string for the service provider given
+     */
+    static String toActivatorCodeGen(ServiceProvider<?> sp) {
+        if (sp instanceof AbstractServiceProvider && ((AbstractServiceProvider<?>) sp).isCustom()) {
+            return null;
+        }
+        return ServiceBinderDefault.toRootProvider(sp).activator().orElseThrow().getClass().getName() + ".INSTANCE";
+    }
+
+    /**
+     * Generates the {@link io.helidon.pico.api.Activator} source code for the provided service providers.
+     *
+     * @param coll the collection of service providers
+     * @return the code generated string for the collection of service providers given
+     */
+    static String toActivatorCodeGen(Collection<ServiceProvider<?>> coll) {
+        return CommonUtils.toString(coll, AbstractCreator::toActivatorCodeGen, null);
+    }
+
+    static Set<TypeName> toAllContracts(Map<TypeName, Set<TypeName>> servicesToContracts) {
+        Set<TypeName> result = new LinkedHashSet<>();
+        servicesToContracts.forEach((serviceTypeName, cn) -> result.addAll(cn));
+        return result;
+    }
+
+    /**
+     * Creates the {@link io.helidon.pico.tools.CodeGenPaths} given the current batch of services to process.
+     *
+     * @param servicesToProcess the services to process
+     * @return the payload for code gen paths
+     */
+    static CodeGenPaths createCodeGenPaths(ServicesToProcess servicesToProcess) {
+        Path moduleInfoFilePath = servicesToProcess.lastGeneratedModuleInfoFilePath();
+        if (moduleInfoFilePath == null) {
+            moduleInfoFilePath = servicesToProcess.lastKnownModuleInfoFilePath();
+        }
+        return CodeGenPaths.builder()
+                .moduleInfoPath(Optional.ofNullable((moduleInfoFilePath != null) ? moduleInfoFilePath.toString() : null))
+                .build();
     }
 
     System.Logger logger() {
@@ -91,37 +137,15 @@ public abstract class AbstractCreator {
     /**
      * The generated sticker string.
      *
-     * @param req the creator request
+     * @param generator type of the generator (annotation processor)
+     * @param trigger type of the trigger (class that caused the annotation processing, or annotation processor itself)
+     * @param generatedType type of the generated class
      * @return the sticker
      */
-    String toGeneratedSticker(GeneralCreatorRequest req) {
-        String generator = (null == req) ? null : req.generator().orElse(null);
-        return templateHelper.generatedStickerFor((generator != null) ? generator : getClass().getName());
-    }
-
-    /**
-     * Generates the {@link io.helidon.pico.api.Activator} source code for the provided service providers. Custom
-     * service providers (see {@link AbstractServiceProvider#isCustom()}) do not qualify to
-     * have activators code generated.
-     *
-     * @param sp the collection of service providers
-     * @return the code generated string for the service provider given
-     */
-    static String toActivatorCodeGen(ServiceProvider<?> sp) {
-        if (sp instanceof AbstractServiceProvider && ((AbstractServiceProvider<?>) sp).isCustom()) {
-            return null;
-        }
-        return ServiceBinderDefault.toRootProvider(sp).activator().orElseThrow().getClass().getName() + ".INSTANCE";
-    }
-
-    /**
-     * Generates the {@link io.helidon.pico.api.Activator} source code for the provided service providers.
-     *
-     * @param coll the collection of service providers
-     * @return the code generated string for the collection of service providers given
-     */
-    static String toActivatorCodeGen(Collection<ServiceProvider<?>> coll) {
-        return CommonUtils.toString(coll, AbstractCreator::toActivatorCodeGen, null);
+    String toGeneratedSticker(TypeName generator, TypeName trigger, TypeName generatedType) {
+        return templateHelper.generatedStickerFor(generator,
+                                                  trigger,
+                                                  generatedType);
     }
 
     /**
@@ -131,21 +155,23 @@ public abstract class AbstractCreator {
      * @param generatedAnno  the generator sticker value
      * @return the modified descriptor, fluent style
      */
-    ModuleInfoDescriptorDefault.Builder addPicoProviderRequirementsTo(ModuleInfoDescriptorDefault.Builder moduleInfo,
-                                                                      String generatedAnno) {
+    ModuleInfoDescriptor.Builder addPicoProviderRequirementsTo(ModuleInfoDescriptor.Builder moduleInfo,
+                                                               String generatedAnno) {
         Objects.requireNonNull(generatedAnno);
         // requirements on the pico services framework itself
-        String preComment = "    // " + PicoServicesConfig.NAME + " services - Generated(" + generatedAnno + ")";
-        ModuleInfoDescriptor.addIfAbsent(moduleInfo, PICO_FRAMEWORK_MODULE, ModuleInfoItemDefault.builder()
+        String preComment = "    // Pico services - " + generatedAnno;
+        ModuleInfoUtil.addIfAbsent(moduleInfo, PICO_FRAMEWORK_MODULE, ModuleInfoItem.builder()
                 .requires(true)
                 .target(PICO_FRAMEWORK_MODULE)
-                .transitiveUsed(true)
+                .isTransitiveUsed(true)
                 .addPrecomment(preComment));
         return moduleInfo;
     }
 
     ModuleInfoDescriptor createModuleInfo(ModuleInfoCreatorRequest req) {
-        String generatedAnno = templateHelper.generatedStickerFor(getClass().getName());
+        TypeName processor = TypeName.create(getClass());
+
+        String generatedAnno = templateHelper.generatedStickerFor(processor, processor, TypeName.create("module-info"));
         String moduleInfoPath = req.moduleInfoPath().orElse(null);
         String moduleName = req.name().orElse(null);
         TypeName moduleTypeName = req.moduleTypeName();
@@ -157,10 +183,10 @@ public abstract class AbstractCreator {
         Map<TypeName, Set<TypeName>> contracts = req.contracts();
         Map<TypeName, Set<TypeName>> externalContracts = req.externalContracts();
 
-        ModuleInfoDescriptorDefault.Builder descriptorBuilder;
+        ModuleInfoDescriptor.Builder descriptorBuilder;
         if (moduleInfoPath != null) {
-            descriptorBuilder = ModuleInfoDescriptorDefault
-                    .toBuilder(ModuleInfoDescriptor.create(Paths.get(moduleInfoPath)));
+            descriptorBuilder = ModuleInfoDescriptor
+                    .builder(ModuleInfoDescriptor.create(Paths.get(moduleInfoPath)));
             if (hasValue(moduleName) && ModuleUtils.isUnnamedModuleName(descriptorBuilder.name())) {
                 descriptorBuilder.name(moduleName);
             }
@@ -168,69 +194,63 @@ public abstract class AbstractCreator {
                     : "bad module name: " + moduleName + " targeting " + descriptorBuilder.name();
             moduleName = descriptorBuilder.name();
         } else {
-            descriptorBuilder = ModuleInfoDescriptorDefault.builder().name(moduleName);
-            descriptorBuilder.headerComment("// @Generated(" + generatedAnno + ")");
+            descriptorBuilder = ModuleInfoDescriptor.builder().name(moduleName);
+            descriptorBuilder.headerComment("// " + generatedAnno);
         }
 
-        boolean isTestModule = ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX.equals(classPrefixName);
+        boolean isTestModule = "test".equals(classPrefixName);
         if (isTestModule) {
             String baseModuleName = ModuleUtils.normalizedBaseModuleName(moduleName);
-            ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, baseModuleName, ModuleInfoItemDefault.builder()
+            ModuleInfoUtil.addIfAbsent(descriptorBuilder, baseModuleName, ModuleInfoItem.builder()
                     .requires(true)
                     .target(baseModuleName)
-                    .transitiveUsed(true));
+                    .isTransitiveUsed(true));
         }
 
         if (isModuleCreated && (moduleTypeName != null)) {
             if (!isTestModule) {
-                ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, moduleTypeName.packageName(),
-                                                 ModuleInfoItemDefault.builder()
+                ModuleInfoUtil.addIfAbsent(descriptorBuilder, moduleTypeName.packageName(),
+                                                 ModuleInfoItem.builder()
                                                          .exports(true)
                                                          .target(moduleTypeName.packageName()));
             }
-            ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, TypeNames.PICO_MODULE,
-                                             ModuleInfoItemDefault.builder()
+            ModuleInfoUtil.addIfAbsent(descriptorBuilder, TypeNames.PICO_MODULE,
+                                             ModuleInfoItem.builder()
                                                      .provides(true)
                                                      .target(TypeNames.PICO_MODULE)
                                                      .addWithOrTo(moduleTypeName.name())
-                                                     .addPrecomment("    // "
-                                                                            + PicoServicesConfig.NAME
-                                                                            + " module - Generated("
-                                                                            + generatedAnno + ")"));
+                                                     .addPrecomment("    // Pico module - " + generatedAnno));
         }
         if (isApplicationCreated && applicationTypeName != null) {
             if (!isTestModule) {
-                ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, applicationTypeName.packageName(),
-                                                 ModuleInfoItemDefault.builder()
+                ModuleInfoUtil.addIfAbsent(descriptorBuilder, applicationTypeName.packageName(),
+                                                 ModuleInfoItem.builder()
                                                          .exports(true)
                                                          .target(applicationTypeName.packageName()));
             }
-            ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, TypeNames.PICO_APPLICATION,
-                                             ModuleInfoItemDefault.builder()
+            ModuleInfoUtil.addIfAbsent(descriptorBuilder, TypeNames.PICO_APPLICATION,
+                                             ModuleInfoItem.builder()
                                                      .provides(true)
                                                      .target(TypeNames.PICO_APPLICATION)
                                                      .addWithOrTo(applicationTypeName.name())
-                                                     .addPrecomment("    // "
-                                                                            + PicoServicesConfig.NAME
-                                                                            + " application - Generated("
-                                                                            + generatedAnno + ")"));
+                                                     .addPrecomment("    // Pico application - " + generatedAnno));
         }
 
-        String preComment = "    // " + PicoServicesConfig.NAME + " external contract usage - Generated(" + generatedAnno + ")";
+        String preComment = "    // Pico external contract usage - " + generatedAnno;
         if (modulesRequired != null) {
             for (String externalModuleName : modulesRequired) {
                 if (!needToDeclareModuleUsage(externalModuleName)) {
                     continue;
                 }
 
-                ModuleInfoItemDefault.Builder itemBuilder = ModuleInfoItemDefault.builder()
+                ModuleInfoItem.Builder itemBuilder = ModuleInfoItem.builder()
                         .requires(true)
                         .target(externalModuleName);
                 if (hasValue(preComment)) {
                     itemBuilder.addPrecomment(preComment);
                 }
 
-                boolean added = ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, externalModuleName, itemBuilder);
+                boolean added = ModuleInfoUtil.addIfAbsent(descriptorBuilder, externalModuleName, itemBuilder);
                 if (added) {
                     preComment = "";
                 }
@@ -244,21 +264,21 @@ public abstract class AbstractCreator {
                 continue;
             }
 
-            ModuleInfoItemDefault.Builder itemBuilder = ModuleInfoItemDefault.builder()
+            ModuleInfoItem.Builder itemBuilder = ModuleInfoItem.builder()
                     .uses(true)
                     .target(cn.name());
             if (hasValue(preComment)) {
                 itemBuilder.addPrecomment(preComment);
             }
 
-            boolean added = ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, cn.name(), itemBuilder);
+            boolean added = ModuleInfoUtil.addIfAbsent(descriptorBuilder, cn.name(), itemBuilder);
             if (added) {
                 preComment = "";
             }
         }
 
         if (!isTestModule && (contracts != null)) {
-            preComment = "    // " + PicoServicesConfig.NAME + " contract usage - Generated(" + generatedAnno + ")";
+            preComment = "    // Pico contract usage - " + generatedAnno;
             for (Map.Entry<TypeName, Set<TypeName>> e : contracts.entrySet()) {
                 for (TypeName contract : e.getValue()) {
                     if (!allExternalContracts.contains(contract)) {
@@ -267,14 +287,14 @@ public abstract class AbstractCreator {
                             continue;
                         }
 
-                        ModuleInfoItemDefault.Builder itemBuilder = ModuleInfoItemDefault.builder()
+                        ModuleInfoItem.Builder itemBuilder = ModuleInfoItem.builder()
                                 .exports(true)
                                 .target(packageName);
                         if (hasValue(preComment)) {
                             itemBuilder.addPrecomment(preComment);
                         }
 
-                        boolean added = ModuleInfoDescriptor.addIfAbsent(descriptorBuilder, packageName, itemBuilder);
+                        boolean added = ModuleInfoUtil.addIfAbsent(descriptorBuilder, packageName, itemBuilder);
                         if (added) {
                             preComment = "";
                         }
@@ -284,28 +304,6 @@ public abstract class AbstractCreator {
         }
 
         return addPicoProviderRequirementsTo(descriptorBuilder, generatedAnno);
-    }
-
-    static Set<TypeName> toAllContracts(Map<TypeName, Set<TypeName>> servicesToContracts) {
-        Set<TypeName> result = new LinkedHashSet<>();
-        servicesToContracts.forEach((serviceTypeName, cn) -> result.addAll(cn));
-        return result;
-    }
-
-    /**
-     * Creates the {@link io.helidon.pico.tools.CodeGenPaths} given the current batch of services to process.
-     *
-     * @param servicesToProcess the services to process
-     * @return the payload for code gen paths
-     */
-    static CodeGenPaths createCodeGenPaths(ServicesToProcess servicesToProcess) {
-        Path moduleInfoFilePath = servicesToProcess.lastGeneratedModuleInfoFilePath();
-        if (moduleInfoFilePath == null) {
-            moduleInfoFilePath = servicesToProcess.lastKnownModuleInfoFilePath();
-        }
-        return CodeGenPathsDefault.builder()
-                .moduleInfoPath(Optional.ofNullable((moduleInfoFilePath != null) ? moduleInfoFilePath.toString() : null))
-                .build();
     }
 
 }

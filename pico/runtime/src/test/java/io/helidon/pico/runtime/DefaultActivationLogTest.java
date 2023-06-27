@@ -16,7 +16,7 @@
 
 package io.helidon.pico.runtime;
 
-import io.helidon.pico.api.ActivationLogEntryDefault;
+import io.helidon.pico.api.ActivationLogEntry;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +33,7 @@ class DefaultActivationLogTest {
     void testRetainedLog() {
         DefaultActivationLog log = DefaultActivationLog.createRetainedLog(LOGGER);
         log.level(System.Logger.Level.INFO);
-        log.record(ActivationLogEntryDefault.builder().build());
+        log.record(ActivationLogEntry.builder().build());
 
         assertThat(log.toQuery(), optionalPresent());
         assertThat(log.toQuery().orElseThrow().fullActivationLog().size(), equalTo(1));
@@ -45,7 +45,7 @@ class DefaultActivationLogTest {
     void unretainedLog() {
         DefaultActivationLog log = DefaultActivationLog.createUnretainedLog(LOGGER);
         log.level(System.Logger.Level.INFO);
-        log.record(ActivationLogEntryDefault.builder().build());
+        log.record(ActivationLogEntry.builder().build());
 
         assertThat(log.toQuery(), optionalEmpty());
     }

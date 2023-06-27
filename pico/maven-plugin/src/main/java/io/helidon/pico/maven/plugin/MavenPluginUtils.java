@@ -23,25 +23,20 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
-import io.helidon.builder.config.spi.HelidonConfigBeanRegistry;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.api.BootstrapDefault;
+import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.PicoServicesHolder;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.configdriven.runtime.ConfigBeanRegistry;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.spi.ApplicationCreator;
 import io.helidon.pico.tools.spi.ExternalModuleCreator;
-
-import static io.helidon.pico.api.PicoServicesConfig.KEY_PERMITS_DYNAMIC;
-import static io.helidon.pico.api.PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS;
-import static io.helidon.pico.api.PicoServicesConfig.NAME;
 
 final class MavenPluginUtils {
     private MavenPluginUtils() {
@@ -109,7 +104,7 @@ final class MavenPluginUtils {
 
     static LazyValue<PicoServices> lazyCreate(Config config) {
         return LazyValue.create(() -> {
-            PicoServices.globalBootstrap(BootstrapDefault.builder()
+            PicoServices.globalBootstrap(Bootstrap.builder()
                                                  .config(config)
                                                  .limitRuntimePhase(Phase.GATHERING_DEPENDENCIES)
                                                  .build());
@@ -119,8 +114,8 @@ final class MavenPluginUtils {
 
     static Config basicConfig(boolean apps) {
         return Config.builder(ConfigSources.create(
-                        Map.of(NAME + "." + KEY_PERMITS_DYNAMIC, "true",
-                               NAME + "." + KEY_USES_COMPILE_TIME_APPLICATIONS, String.valueOf(apps)),
+                        Map.of("pico.permits-dynamic", "true",
+                               "pico.uses-compile-time-applications", String.valueOf(apps)),
                         "config-1"))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -130,9 +125,9 @@ final class MavenPluginUtils {
     private static class Internal extends PicoServicesHolder {
         public static void reset() {
             PicoServicesHolder.reset();
-            HelidonConfigBeanRegistry cbr = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
-            if (cbr instanceof Resettable) {
-                ((Resettable) cbr).reset(true);
+            ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
+            if (cbr instanceof Resettable resettable) {
+                resettable.reset(true);
             }
         }
     }

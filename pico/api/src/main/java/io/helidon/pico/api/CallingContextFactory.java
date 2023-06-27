@@ -16,16 +16,39 @@
 
 package io.helidon.pico.api;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
  * Factory for creating {@link CallingContext} and builders for the calling context.
  * After a calling context builder is created, it should be amended with as much contextual information as possible, and then
- * optionally set globally using {@link CallingContext#globalCallingContext(CallingContext, boolean)}.
+ * optionally set globally using {@link #globalCallingContext(CallingContext, boolean)}.
  */
 public class CallingContextFactory {
+    private static volatile CallingContext defaultCallingContext;
 
     private CallingContextFactory() {
+    }
+
+    /**
+     * Sets the default global calling context.
+     *
+     * @param callingContext the default global context
+     * @param throwIfAlreadySet should an exception be thrown if the global calling context was already set
+     * @throws java.lang.IllegalStateException if context was already set and the throwIfAlreadySet is active
+     */
+    public static void globalCallingContext(CallingContext callingContext,
+                                            boolean throwIfAlreadySet) {
+        Objects.requireNonNull(callingContext);
+
+        CallingContext global = defaultCallingContext;
+        if (global != null && throwIfAlreadySet) {
+            CallingContext currentCallingContext = CallingContextFactory.create(true).orElseThrow();
+            throw new IllegalStateException("Expected to be the owner of the calling context. This context is: "
+                                                    + currentCallingContext + "\n Context previously set was: " + global);
+        }
+
+        CallingContextFactory.defaultCallingContext = callingContext;
     }
 
     /**
@@ -34,11 +57,11 @@ public class CallingContextFactory {
      *
      * @param force forces the creation of the calling context even when debug is disabled
      * @return a new calling context if there is an indication that debug mode is enabled, or if the force flag is set
-     * @see io.helidon.pico.api.PicoServices#isDebugEnabled()
+     * @see io.helidon.pico.api.PicoServicesConfig#debug()
      */
     public static Optional<CallingContext> create(boolean force) {
-        Optional<CallingContextDefault.Builder> optBuilder = createBuilder(force);
-        return optBuilder.map(CallingContextDefault.Builder::build);
+        Optional<CallingContext.Builder> optBuilder = createBuilder(force);
+        return optBuilder.map(CallingContext.Builder::build);
 
     }
 
@@ -48,16 +71,18 @@ public class CallingContextFactory {
      *
      * @param force forces the creation of the calling context even when debug is disabled
      * @return a new calling context builder if there is an indication that debug mode is enabled, or if the force flag is set
-     * @see io.helidon.pico.api.PicoServices#isDebugEnabled()
+     * @see io.helidon.pico.api.PicoServicesConfig#debug()
      */
-    public static Optional<CallingContextDefault.Builder> createBuilder(boolean force) {
-        boolean createIt = (force || PicoServices.isDebugEnabled());
-        if (!createIt) {
-            return Optional.empty();
-        }
+    public static Optional<CallingContext.Builder> createBuilder(boolean force) {
+        if (force || PicoServices.picoServices()
+                .map(PicoServices::config)
+                .map(PicoServicesConfig::shouldDebug)
+                .orElse(false)) {
 
-        return Optional.of(CallingContextDefault.builder()
-                                   .trace(new RuntimeException().getStackTrace()));
+            return Optional.of(CallingContext.builder()
+                                       .stackTrace(new RuntimeException().getStackTrace()));
+        }
+        return Optional.empty();
     }
 
 }
