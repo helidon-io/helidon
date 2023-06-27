@@ -10,7 +10,7 @@ mvn package
 java -jar greeting/target/helidon-examples-microprofile-telemetry-greeting.jar
 ```
 
-Run Jaeger tracer. If you prefer to use Docker, run in terminal: 
+Run Jaeger tracer. If you prefer to use Docker, run in terminal:
 ```bash
 docker run -d --name jaeger \
   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
