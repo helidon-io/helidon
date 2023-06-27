@@ -27,8 +27,8 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -55,7 +55,7 @@ class RestApiTest {
     private static RestApi restApi;
 
     @SetUpServer
-    static void setupServer(ServerConfig.Builder serverBuilder) {
+    static void setupServer(WebServerConfig.Builder serverBuilder) {
         serverBuilder.routing(routing -> routing.register("/api", TestApiService::new))
                 .mediaContext(MediaContext.builder().addMediaSupport(JsonpSupport.create()).build());
     }
