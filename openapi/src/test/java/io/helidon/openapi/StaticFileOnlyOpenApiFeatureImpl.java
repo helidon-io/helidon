@@ -24,7 +24,7 @@ import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import org.yaml.snakeyaml.Yaml;
 
-public class StaticFileOnlyOpenApiFeatureImpl extends OpenApiFeature {
+class StaticFileOnlyOpenApiFeatureImpl extends OpenApiFeature {
 
     private static final System.Logger LOGGER = System.getLogger(StaticFileOnlyOpenApiFeatureImpl.class.getName());
 
