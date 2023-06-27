@@ -57,11 +57,17 @@ class MainTest {
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
         }
     }
-
     @Test
     void testDeadlockHealthCheck() {
         try (Http1ClientResponse response = client.get("/observe/health/live/deadlock").request()) {
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+        }
+    }
+
+    @Test
+    void testMetricsObserver() {
+        try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
         }
     }
 }
