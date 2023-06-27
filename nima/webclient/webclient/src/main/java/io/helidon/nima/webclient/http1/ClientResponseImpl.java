@@ -16,6 +16,7 @@
 
 package io.helidon.nima.webclient.http1;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -42,6 +43,7 @@ import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http.media.ReadableEntityBase;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ClientResponseEntity;
+import io.helidon.nima.webclient.UriHelper;
 import io.helidon.nima.webclient.http.spi.Source;
 import io.helidon.nima.webclient.http.spi.SourceHandlerProvider;
 
@@ -70,6 +72,7 @@ class ClientResponseImpl implements Http1ClientResponse {
     private final List<String> trailerNames;
     // Media type parsing mode configured on client.
     private final ParserMode parserMode;
+    private final UriHelper lastEndpointUri;
 
     private ClientConnection connection;
     private long entityLength;
@@ -83,6 +86,7 @@ class ClientResponseImpl implements Http1ClientResponse {
                        DataReader reader,
                        MediaContext mediaContext,
                        ParserMode parserMode,
+                       UriHelper lastEndpointUri,
                        CompletableFuture<Void> whenComplete) {
         this.responseStatus = responseStatus;
         this.requestHeaders = requestHeaders;
@@ -92,6 +96,7 @@ class ClientResponseImpl implements Http1ClientResponse {
         this.mediaContext = mediaContext;
         this.parserMode = parserMode;
         this.channelId = connection.channelId();
+        this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
 
         if (responseHeaders.contains(Header.CONTENT_LENGTH)) {
@@ -212,6 +217,11 @@ class ClientResponseImpl implements Http1ClientResponse {
         // no entity, just complete right now
         whenComplete.complete(null);
         return ReadableEntityBase.empty();
+    }
+
+    @Override
+    public URI lastEndpointUri() {
+        return lastEndpointUri.toUri();
     }
 
     private BufferData readEntityChunked(int estimate) {

@@ -17,6 +17,7 @@
 package io.helidon.nima.webclient;
 
 import java.io.InputStream;
+import java.net.URI;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
@@ -83,6 +84,13 @@ public interface ClientResponse extends AutoCloseable {
     default <T extends Source<?>> void source(GenericType<T> sourceType, T source) {
         throw new UnsupportedOperationException("No source available for " + sourceType);
     }
+
+    /**
+     * URI of the last request. (after redirection)
+     *
+     * @return last URI
+     */
+    URI lastEndpointUri();
 
     /**
      * Closes the response.
