@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -231,14 +231,7 @@ release_build(){
       -DstagingDescription="${STAGING_DESC}"
 
     # Create and push a git tag
-    local GIT_REMOTE=$(git config --get remote.origin.url | \
-        sed "s,https://\([^/]*\)/,git@\1:,")
-
-    git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
-    git remote set-url release "${GIT_REMOTE}"
-
-    git tag -f "${FULL_VERSION}"
-    git push --force release refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
 }
 
 # Invoke command
