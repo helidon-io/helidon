@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.Config;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
@@ -50,6 +51,25 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
      */
     static Http1ClientBuilder builder() {
         return new Http1ClientBuilder();
+    }
+
+    /**
+     * Create a new instance.
+     *
+     * @return client
+     */
+    static Http1Client create() {
+        return builder().build();
+    }
+
+    /**
+     * Create a new instance based on {@link Config}.
+     *
+     * @param config client config
+     * @return client
+     */
+    static Http1Client create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
