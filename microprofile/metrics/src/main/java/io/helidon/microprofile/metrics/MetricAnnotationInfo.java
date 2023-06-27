@@ -130,7 +130,39 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
         }
 
         Metric register(MetricRegistry registry) {
+            validateMetadata(registry);
             return registration.register(registry, metadata, tags);
+        }
+
+        private void validateMetadata(MetricRegistry registry) {
+            // Make sure the metadata from the annotation, represented in this registration prep, is consistent with any
+            // pre-existing metadata. We interpret "consistent" to mean that if the annotation specifies a value it must
+            // match the value in the pre-existing metadata; if the annotation does not specify a value then it is treated
+            // as a wildcard and is consistent with any value stored in the pre-existing metadata.
+            List<String> mismatches = new ArrayList<>();
+            Metadata existingMetadata = registry.getMetadata(metricName);
+            if (existingMetadata == null) {
+                return;
+            }
+            if (metadata.getUnit() != null
+                    && !metadata.getUnit().equals(existingMetadata.getUnit())) {
+                mismatches.add("unit");
+            }
+            if (metadata.getDescription() != null
+                    && !metadata.getDescription().equals(existingMetadata.getDescription())) {
+                mismatches.add("description");
+            }
+            if (!mismatches.isEmpty()) {
+                throw new IllegalArgumentException(String.format(
+                        """
+                                Attempt to look up or register a metric for annotation %s at %s failed; the metadata implied \
+                                by the annotation %s does not match the pre-existing metadata %s for %s""",
+                        annotationType.getName(),
+                        executable.toGenericString(),
+                        metadata,
+                        existingMetadata,
+                        mismatches));
+            }
         }
     }
 

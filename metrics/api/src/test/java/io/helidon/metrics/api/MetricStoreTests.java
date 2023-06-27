@@ -36,11 +36,6 @@ class MetricStoreTests {
 
     private static final Tag[] NO_TAGS = new Tag[0];
 
-    @BeforeEach
-    void clearCommonData() {
-        CommonMetadataManager.instance().clear();
-    }
-
     @Test
     void testConflictingMetadata() {
         Metadata meta1 = Metadata.builder()
