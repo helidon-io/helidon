@@ -239,12 +239,14 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     }
 
     private void registerMetricsForAnnotatedSites() {
-        MetricRegistry registry = getMetricRegistry();
         for (RegistrationPrep registrationPrep : annotatedSites) {
             metricAnnotationDiscoveriesByExecutable.get(registrationPrep.executable())
                     .forEach(discovery -> {
                         if (discovery.isActive()) { // All annotation discovery observers agreed to preserve the discovery.
-                            org.eclipse.microprofile.metrics.Metric metric = registrationPrep.register(registry);
+                            org.eclipse.microprofile.metrics.Metric metric =
+                                    registrationPrep.register(RegistryFactory
+                                                                      .getInstance()
+                                                                      .getRegistry(registrationPrep.scope()));
                             MetricID metricID = new MetricID(registrationPrep.metricName(), registrationPrep.tags());
                             metricRegistrationObservers.forEach(
                                     o -> o.onRegistration(discovery, registrationPrep.metadata(), metricID, metric));

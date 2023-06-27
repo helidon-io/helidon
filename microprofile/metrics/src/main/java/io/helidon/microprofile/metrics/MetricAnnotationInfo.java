@@ -54,6 +54,7 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
         private final Registration<?> registration;
         private final Executable executable;
         private final Class<? extends Annotation> annotationType;
+        private final String scope;
 
 
         static <A extends Annotation, E extends Member & AnnotatedElement, T extends Metric>
@@ -83,7 +84,9 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                                           info.tags(annotation),
                                           info.registerFunction,
                                           executable,
-                                          annotation.annotationType());
+                                          annotation.annotationType(),
+                                          info.scope(annotation)
+                                          );
         }
 
         private RegistrationPrep(String metricName,
@@ -91,13 +94,15 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                                  Tag[] tags,
                                  Registration<?> registration,
                                  Executable executable,
-                                 Class<? extends Annotation> annotationType) {
+                                 Class<? extends Annotation> annotationType,
+                                 String scope) {
             this.metricName = metricName;
             this.metadata = metadata;
             this.tags = tags;
             this.registration = registration;
             this.executable = executable;
             this.annotationType = annotationType;
+            this.scope = scope;
         }
 
         String metricName() {
@@ -120,6 +125,10 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
             return metadata;
         }
 
+        String scope() {
+            return scope;
+        }
+
         Metric register(MetricRegistry registry) {
             return registration.register(registry, metadata, tags);
         }
@@ -137,6 +146,7 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     Counted::description,
                     Counted::unit,
                     Counted::tags,
+                    Counted::scope,
                     MetricRegistry::counter,
                     Counter.class),
             Timed.class, new MetricAnnotationInfo<>(
@@ -146,6 +156,7 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
                     Timed::description,
                     Timed::unit,
                     Timed::tags,
+                    Timed::scope,
                     MetricRegistry::timer,
                     Timer.class)
     );
@@ -156,6 +167,7 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
     private final Function<A, String> annotationDescriptorFunction;
     private final Function<A, String> annotationUnitsFunction;
     private final Function<A, String[]> annotationTagsFunction;
+    private final Function<A, String> annotationScopeFunction;
     private final Registration<T> registerFunction;
     private final Class<? extends Metric> metricType;
 
@@ -167,6 +179,7 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
             Function<A, String> annotationDescriptorFunction,
             Function<A, String> annotationUnitsFunction,
             Function<A, String[]> annotationTagsFunction,
+            Function<A, String> annotationScopeFunction,
             Registration<T> registerFunction,
             Class<? extends Metric> metricType) {
         this.annotationClass = annotationClass;
@@ -175,6 +188,7 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
         this.annotationDescriptorFunction = annotationDescriptorFunction;
         this.annotationUnitsFunction = annotationUnitsFunction;
         this.annotationTagsFunction = annotationTagsFunction;
+        this.annotationScopeFunction = annotationScopeFunction;
         this.registerFunction = registerFunction;
         this.metricType = metricType;
     }
@@ -218,6 +232,10 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
 
     Tag[] tags(Annotation a) {
         return tags(annotationTagsFunction.apply(annotationClass.cast(a)));
+    }
+
+    String scope(Annotation a) {
+        return annotationScopeFunction.apply(annotationClass.cast(a));
     }
 
     Class<? extends Metric> metricType() {

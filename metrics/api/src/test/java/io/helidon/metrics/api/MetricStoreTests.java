@@ -20,6 +20,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,6 +35,11 @@ class MetricStoreTests {
     private static final RegistrySettings REGISTRY_SETTINGS = RegistrySettings.create();
 
     private static final Tag[] NO_TAGS = new Tag[0];
+
+    @BeforeEach
+    void clearCommonData() {
+        CommonMetadataManager.instance().clear();
+    }
 
     @Test
     void testConflictingMetadata() {
@@ -112,6 +118,6 @@ class MetricStoreTests {
         store.getOrRegisterMetric(metadata, Counter.class, tags1);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                                                    () ->store.getOrRegisterMetric(metadata, Counter.class, tags2));
-        assertThat("Exception due to inconsistent tag sets", ex.getMessage(), containsString("Inconsistent"));
+        assertThat("Exception due to inconsistent tag sets", ex.getMessage(), containsString("conflict with"));
     }
 }

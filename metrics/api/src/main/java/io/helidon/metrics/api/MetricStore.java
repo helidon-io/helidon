@@ -20,8 +20,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -119,17 +117,18 @@ class MetricStore {
     <U extends Metric> U getOrRegisterMetric(Metadata newMetadata, Class<U> clazz, Tag... tags) {
         Class<? extends Metric> newBaseType = baseMetricClass(clazz);
         return writeAccess(() -> {
+            MetricID newMetricID = new MetricID(newMetadata.getName(), tags);
+            CommonMetadataManager.instance().checkOrStoreTagNames(newMetricID.getName(),
+                                                                  newMetricID.getTags().keySet());
+            CommonMetadataManager.instance().checkOrStoreMetadata(newMetadata);
             HelidonMetric metric = getMetricLocked(newMetadata.getName(), tags);
             if (metric == null) {
-                MetricID newMetricID = new MetricID(newMetadata.getName(), tags);
-                ensureTagNamesConsistent(newMetricID);
                 getConsistentMetadataLocked(newMetadata);
                 metric = registerMetricLocked(newMetricID,
                                               createEnabledAwareMetric(clazz, newMetadata, tags));
                 return clazz.cast(metric);
             }
-            ensureConsistentMetricTypes(metric, newBaseType, () -> new MetricID(newMetadata.getName(), tags));
-            enforceConsistentMetadata(metric.metadata(), newMetadata);
+            ensureConsistentMetricTypes(metric, newBaseType, () -> newMetricID);
             return clazz.cast(metric);
         });
     }
@@ -375,8 +374,9 @@ class MetricStore {
         return writeAccess(() -> {
             HelidonMetric metric = metricFactory.get();
             MetricID newMetricID = metricIDFactory.get();
+            CommonMetadataManager.instance().checkOrStoreTagNames(newMetricID.getName(),
+                                                                  newMetricID.getTags().keySet());
             if (metric == null) {
-                    ensureTagNamesConsistent(newMetricID);
                     Metadata metadata = metadataFactory.get();
                     if (metadata == null) {
                         metadata = registerMetadataLocked(metricName);
@@ -427,7 +427,7 @@ class MetricStore {
     private Metadata getConsistentMetadataLocked(Metadata newMetadata) {
         Metadata metadata = allMetadata.get(newMetadata.getName());
         if (metadata != null) {
-            enforceConsistentMetadata(metadata, newMetadata);
+            CommonMetadataManager.instance().checkOrStoreMetadata(newMetadata);
         } else {
             registerMetadataLocked(newMetadata);
         }
@@ -442,6 +442,7 @@ class MetricStore {
     }
 
     private Metadata registerMetadataLocked(Metadata metadata) {
+        CommonMetadataManager.instance().checkOrStoreMetadata(metadata);
         allMetadata.put(metadata.getName(), metadata);
         return metadata;
     }
@@ -456,17 +457,6 @@ class MetricStore {
         }
     }
 
-    private void ensureTagNamesConsistent(MetricID newID) {
-        // See if there is a matching metric using only the name; if so, make sure
-        // the tag names for the two metric IDs are the same. We
-        // only need to check the first same-named metric because
-        // any others would have already passed this check before being added.
-        List<MetricID> sameNamedMetricIDs = allMetricIDsByName.get(newID.getName());
-        if (sameNamedMetricIDs != null && !sameNamedMetricIDs.isEmpty()) {
-            ensureTagNamesConsistent(sameNamedMetricIDs.get(0), newID);
-        }
-    }
-
     private void ensureConsistentMetricTypes(HelidonMetric existingMetric,
                                              Class<? extends Metric> newBaseType,
                                              Supplier<MetricID> metricIDSupplier) {
@@ -477,7 +467,7 @@ class MetricStore {
                             + " when previously-registered metric "
                             + tempID.getName()
                             + Arrays.asList(tempID.getTagsAsArray())
-                            + " is of incompatible type " + existingMetric.getClass());
+                            + " is of incompatible type " + baseMetricClass(existingMetric.getClass()));
         }
     }
 
@@ -504,38 +494,6 @@ class MetricStore {
         return (HelidonMetric) (registrySettings.isMetricEnabled(metricName)
                 ? gaugeFactory.apply(metadata)
                 : noOpMetricFactory.gauge(scope, metadata, null));
-    }
-
-//    private <T extends HelidonMetric, U extends Metric> U toType(T m1, Class<U> clazz) {
-//        MetricType type1 = toType(m1);
-//        MetricType type2 = MetricType.from(clazz);
-//        if (type1 == type2) {
-//            return clazz.cast(m1);
-//        }
-//        throw new IllegalArgumentException("Metric types " + type1.toString()
-//                                                   + " and " + type2.toString() + " do not match");
-//    }
-//
-//    private MetricType toType(Metric metric) {
-//        Class<? extends Metric> clazz = toMetricClass(metric);
-//        return MetricType.from(clazz == null ? metric.getClass() : clazz);
-//    }
-
-    private static <T extends Metric> Class<? extends Metric> toMetricClass(T metric) {
-        // Find subtype of Metric, needed for user-defined metrics
-        Class<?> clazz = metric.getClass();
-        do {
-            Optional<Class<?>> optionalClass = Arrays.stream(clazz.getInterfaces())
-                    .filter(Metric.class::isAssignableFrom)
-                    .findFirst();
-            if (optionalClass.isPresent()) {
-                clazz = optionalClass.get();
-                break;
-            }
-            clazz = clazz.getSuperclass();
-        } while (clazz != null);
-
-        return (Class<? extends Metric>) clazz;
     }
 
     private <S> S readAccess(Callable<S> action) {
@@ -567,23 +525,5 @@ class MetricStore {
         return newTags.equals(tagMap);
     }
 
-    private static void enforceConsistentMetadata(Metadata existingMetadata, Metadata newMetadata) {
-        if (!metadataMatches(existingMetadata, newMetadata)) {
-            throw new IllegalArgumentException("New metadata conflicts with existing metadata with the same name; existing: "
-                                                       + existingMetadata + ", new: "
-                                                       + newMetadata);
-        }
-    }
 
-    static <T extends Metadata, U extends Metadata> boolean metadataMatches(T a, U b) {
-        if (a == b) {
-            return true;
-        }
-        if (a == null || b == null) {
-            return false;
-        }
-        return a.getName().equals(b.getName())
-                && Objects.equals(a.getDescription(), b.getDescription())
-                && Objects.equals(a.getUnit(), b.getUnit());
-    }
 }

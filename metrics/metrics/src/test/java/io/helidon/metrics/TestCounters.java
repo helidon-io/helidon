@@ -54,7 +54,7 @@ class TestCounters {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                      () -> metricRegistry.counter("conflictingCounterDueToTags",
                                                   new Tag[] {new Tag("tag1", "value1")}));
-        assertThat("Inconsistent tags check", ex.getMessage(), containsString("Inconsistent"));
+        assertThat("Inconsistent tags check", ex.getMessage(), containsString("conflict with"));
     }
 
     @Test
