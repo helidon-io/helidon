@@ -286,7 +286,7 @@ class ClientRequestImpl implements Http2ClientRequest {
     private Http2ClientResponse readResponse(Http2ClientStream stream) {
         Http2Headers headers = stream.readHeaders();
 
-        return new ClientResponseImpl(headers, stream);
+        return new ClientResponseImpl(headers, stream, uri);
     }
 
     private byte[] entityBytes(Object entity) {
