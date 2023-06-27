@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -38,7 +39,6 @@ import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class MicrometerSimplePrometheusTest {
@@ -83,13 +83,12 @@ public class MicrometerSimplePrometheusTest {
     }
 
     @Test
-    @Disabled("Cannot parse media type: TEXT_PLAIN")
     public void checkViaMediaType() throws ExecutionException, InterruptedException {
         timer1.record(2L, TimeUnit.SECONDS);
         counter1.increment(3);
         gauge1.set(4);
         Http1ClientResponse response = webClient.get()
-                .header(Header.ACCEPT, MediaTypes.TEXT_PLAIN.toString())
+                .header(Header.ACCEPT, HttpMediaType.TEXT_PLAIN.toString())
                 .path("/micrometer")
                 .request();
 

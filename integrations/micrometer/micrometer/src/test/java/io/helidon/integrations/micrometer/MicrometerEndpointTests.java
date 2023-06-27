@@ -27,7 +27,6 @@ import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webserver.WebServer;
 
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class MicrometerEndpointTests {
@@ -36,13 +35,11 @@ public class MicrometerEndpointTests {
 
 
     @Test
-    @Disabled("406 Not Acceptable")
     public void testDefaultEndpoint() throws ExecutionException, InterruptedException {
         runTest(MicrometerFeature.DEFAULT_CONTEXT, MicrometerFeature::create);
     }
 
     @Test
-    @Disabled("406 Not Acceptable")
     public void testExplicitEndpointWithDefaultBuiltInRegistryViaConfig() throws ExecutionException, InterruptedException {
         String context = "/aa";
         runTest(context, () -> MicrometerFeature.builder()
