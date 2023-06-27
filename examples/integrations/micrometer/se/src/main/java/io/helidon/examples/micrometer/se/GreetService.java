@@ -77,11 +77,12 @@ public class GreetService implements HttpService {
     @Override
     public void routing(HttpRules rules) {
         rules
-            .get("/", (req, resp) -> getTimer.record(() -> {})) // Update the timer with every GET.
+            .get((req, resp) -> getTimer.record(resp::next)) // Update the timer with every GET.
             .get("/", this::getDefaultMessageHandler)
             .get("/{name}",
                     (req, resp) -> {
                             personalizedGetCounter.increment();
+                            resp.next();
                         }, // Count personalized GETs...
                     this::getMessageHandler) // ...and process them.
             .put("/greeting", this::updateGreetingHandler);

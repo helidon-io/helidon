@@ -19,8 +19,8 @@ package io.helidon.examples.micrometer.se;
 import io.helidon.config.Config;
 import io.helidon.integrations.micrometer.MicrometerFeature;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
@@ -41,6 +41,7 @@ public final class Main {
 
     /**
      * Application main entry point.
+     *
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
@@ -55,10 +56,26 @@ public final class Main {
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // By default this will pick up application.yaml from the classpath
+        // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        MicrometerFeature micrometerSupport = MicrometerFeature.create();
+        WebServer server = WebServer.builder()
+                .config(config.get("server"))
+                .routing(r -> setupRouting(r, config))
+                .start();
+
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet");
+        return server;
+    }
+
+    /**
+     * Setup routing.
+     *
+     * @param routing routing builder
+     * @param config  config
+     */
+    static void setupRouting(HttpRouting.Builder routing, Config config) {
+        MicrometerFeature micrometerSupport = MicrometerFeature.create(config);
         Counter personalizedGetCounter = micrometerSupport.registry()
                 .counter(PERSONALIZED_GETS_COUNTER_NAME);
         Timer getTimer = Timer.builder(ALL_GETS_TIMER_NAME)
@@ -67,18 +84,7 @@ public final class Main {
 
         GreetService greetService = new GreetService(config, getTimer, personalizedGetCounter);
 
-        // Get webserver config from the "server" section of application.yaml
-        WebServer webServer = WebServer.builder()
-                .host("localhost")
-                .config(config.get("server"))
-                .port(-1)
-                .addMediaSupport(JsonpSupport.create(config))
-                .routing(router -> router
-                        .register("/greet", () -> greetService)
-                        .addFeature(() -> MicrometerFeature.builder().config(config).build()))
-                .build()
-                .start();
-        System.out.println("WEB server is up! http://localhost:" + webServer.port() + "/greet");
-        return webServer;
+        routing.register("/greet", greetService)
+                .addFeature(micrometerSupport);
     }
 }

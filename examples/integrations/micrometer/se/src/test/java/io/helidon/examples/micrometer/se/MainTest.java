@@ -15,16 +15,12 @@
  */
 package io.helidon.examples.micrometer.se;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import java.util.Collections;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.http.Http;
-import io.helidon.nima.http.media.jsonp.JsonpSupport;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.config.Config;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
@@ -32,25 +28,27 @@ import io.helidon.nima.webserver.WebServer;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 // we need to first call the methods, before validating metrics
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@ServerTest
 public class MainTest {
 
     private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonObject TEST_JSON_OBJECT;
-    private static WebServer webServer;
-    private static Http1Client webClient;
 
     private static double expectedPersonalizedGets;
     private static double expectedAllGets;
+    private final Http1Client client;
 
     static {
         TEST_JSON_OBJECT = JSON_BF.createObjectBuilder()
@@ -58,37 +56,13 @@ public class MainTest {
                 .build();
     }
 
-    @BeforeAll
-    public static void startTheServer() {
-        webServer = Main.startServer();
-
-        webClient = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port())
-                .addMediaSupport(JsonpSupport.create(Config.empty()))
-                .build();
+    public MainTest(Http1Client client) {
+        this.client = client;
     }
 
-    @AfterAll
-    public static void stopServer() {
-        webServer.stop();
-    }
-
-    private static JsonObject get() {
-        return get("/greet");
-    }
-
-    private static JsonObject get(String path) {
-        JsonObject jsonObject = webClient.get()
-                .path(path)
-                .request(JsonObject.class);
-        expectedAllGets++;
-        return jsonObject;
-    }
-
-    private static JsonObject personalizedGet(String name) {
-        JsonObject result = get("/greet/" + name);
-        expectedPersonalizedGets++;
-        return result;
+    @SetUpServer
+    public static void setup(WebServer.Builder builder) {
+        builder.routing(r -> Main.setupRouting(r, Config.create()));
     }
 
     @Test
@@ -108,12 +82,12 @@ public class MainTest {
     @Test
     @Order(3)
     void testUpdateGreeting() {
-
-        Http1ClientResponse response = webClient.put()
+        try (Http1ClientResponse response = client.put()
                 .path("/greet/greeting")
-                .submit(TEST_JSON_OBJECT);
+                .submit(TEST_JSON_OBJECT)) {
 
-        assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+        }
 
         JsonObject jsonObject = personalizedGet("Joe");
         assertThat(jsonObject.getString("greeting"), is("Hola Joe!"));
@@ -122,7 +96,7 @@ public class MainTest {
     @Test
     @Order(4)
     void testMicrometer() {
-        Http1ClientResponse response = webClient.get()
+        Http1ClientResponse response = client.get()
                 .path("/micrometer")
                 .request();
 
@@ -139,5 +113,23 @@ public class MainTest {
         assertThat("Unable to find expected counter result " + expected + "; output is " + output,
                 output, containsString(expected));
         response.close();
+    }
+
+    private JsonObject get() {
+        return get("/greet");
+    }
+
+    private JsonObject get(String path) {
+        JsonObject jsonObject = client.get()
+                .path(path)
+                .request(JsonObject.class);
+        expectedAllGets++;
+        return jsonObject;
+    }
+
+    private JsonObject personalizedGet(String name) {
+        JsonObject result = get("/greet/" + name);
+        expectedPersonalizedGets++;
+        return result;
     }
 }

@@ -65,7 +65,7 @@ class MicrometerPrometheusRegistrySupport extends MicrometerBuiltInRegistrySuppo
 
     @Override
     public Function<io.helidon.nima.webserver.http.ServerRequest,
-            Optional<io.helidon.nima.webserver.http.Handler>> requestNimaToHandlerFn(MeterRegistry registry) {
+            Optional<io.helidon.nima.webserver.http.Handler>> requestToHandlerFn(MeterRegistry registry) {
         /*
          * Deal with a request if the MediaType is text/plain or the query parameter "type" specifies "prometheus".
          */
@@ -76,7 +76,7 @@ class MicrometerPrometheusRegistrySupport extends MicrometerBuiltInRegistrySuppo
                     .first("type")
                     .orElse("")
                     .equals("prometheus")) {
-                return Optional.of(NimaPrometheusHandler.create(registry));
+                return Optional.of(PrometheusHandler.create(registry));
             } else {
                 return Optional.empty();
             }

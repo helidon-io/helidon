@@ -61,7 +61,7 @@ public class MicrometerSimplePrometheusTest {
                     // If there is no media type, assume text/plain which means, for us, Prometheus.
                     if (req.headers().bestAccepted(MediaTypes.TEXT_PLAIN).isPresent()
                             || req.query().first("type").orElse("").equals("prometheus")) {
-                        return Optional.of(NimaPrometheusHandler.create(registry));
+                        return Optional.of(PrometheusHandler.create(registry));
                     } else {
                         return Optional.empty();
                     }

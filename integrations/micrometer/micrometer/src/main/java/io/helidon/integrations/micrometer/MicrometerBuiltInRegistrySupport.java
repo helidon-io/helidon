@@ -91,7 +91,7 @@ abstract class MicrometerBuiltInRegistrySupport {
     abstract MeterRegistry createRegistry(MeterRegistryConfig meterRegistryConfig);
 
     abstract Function<io.helidon.nima.webserver.http.ServerRequest,
-            Optional<io.helidon.nima.webserver.http.Handler>> requestNimaToHandlerFn(
+            Optional<io.helidon.nima.webserver.http.Handler>> requestToHandlerFn(
             MeterRegistry meterRegistry);
 
 

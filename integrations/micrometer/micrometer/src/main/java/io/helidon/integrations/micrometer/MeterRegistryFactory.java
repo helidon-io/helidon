@@ -63,7 +63,8 @@ import io.micrometer.core.instrument.config.MeterRegistryConfig;
  *     In Micrometer, different registries report their contents in different formats. Further, there is no common abstract
  *     method defined on {@code MeterRegistry} which all implementations override; each {@code MeterRegistry}  has its own
  *     particular way of furnishing metrics output.
- *
+ * </p>
+ * <p>
  *     By default, we use a {@code PrometheusMeterRegistry} to support Prometheus/OpenMetrics format. Developers can enroll other
  *     registries to support other formats. We need to know which registry to use in response to receiving an HTTP request for
  *     Micrometer metrics output.
@@ -96,7 +97,7 @@ public final class MeterRegistryFactory {
     private static MeterRegistryFactory instance = create();
 
     private final CompositeMeterRegistry compositeMeterRegistry;
-    private final List<Enrollment> nimaRegistryEnrollments;
+    private final List<Enrollment> registryEnrollments;
 
     // for testing
     private final Map<BuiltInRegistryType, MeterRegistry> builtInRegistryEnrollments = new HashMap<>();
@@ -152,13 +153,15 @@ public final class MeterRegistryFactory {
 
     private MeterRegistryFactory(Builder builder) {
         compositeMeterRegistry = new CompositeMeterRegistry();
+        if (builder.explicitAndBuiltInEnrollments().isEmpty()) {
+            builder.enrollBuiltInRegistry(BuiltInRegistryType.PROMETHEUS);
+        }
+        registryEnrollments = builder.explicitAndBuiltInEnrollments();
         builder.builtInRegistriesRequested.forEach((builtInRegistryType, builtInRegistrySupport) -> {
             MeterRegistry meterRegistry = builtInRegistrySupport.registry();
             builtInRegistryEnrollments.put(builtInRegistryType, meterRegistry);
         });
-
-        nimaRegistryEnrollments = builder.nimaRegistryEnrollments();
-        nimaRegistryEnrollments.forEach(e -> compositeMeterRegistry.add(e.meterRegistry()));
+        registryEnrollments.forEach(e -> compositeMeterRegistry.add(e.meterRegistry()));
     }
 
     /**
@@ -225,7 +228,7 @@ public final class MeterRegistryFactory {
 
     io.helidon.nima.webserver.http.Handler matchingHandler(io.helidon.nima.webserver.http.ServerRequest serverRequest,
                                                            io.helidon.nima.webserver.http.ServerResponse serverResponse) {
-        return nimaRegistryEnrollments.stream()
+        return registryEnrollments.stream()
                 .map(e -> e.handlerFn().apply(serverRequest))
                 .flatMap(Optional::stream)
                 .findFirst()
@@ -239,7 +242,7 @@ public final class MeterRegistryFactory {
      */
     public static class Builder implements io.helidon.common.Builder<Builder, MeterRegistryFactory> {
 
-        private final List<Enrollment> explicitNimaRegistryEnrollments = new ArrayList<>();
+        private final List<Enrollment> explicitRegistryEnrollments = new ArrayList<>();
 
         private final Map<BuiltInRegistryType, MicrometerBuiltInRegistrySupport> builtInRegistriesRequested = new HashMap<>();
 
@@ -306,7 +309,7 @@ public final class MeterRegistryFactory {
         public Builder enrollRegistry(MeterRegistry meterRegistry,
                                           Function<ServerRequest,
                                                   Optional<Handler>> handlerFunction) {
-            explicitNimaRegistryEnrollments.add(new Enrollment(meterRegistry, handlerFunction));
+            explicitRegistryEnrollments.add(new Enrollment(meterRegistry, handlerFunction));
             return this;
         }
 
@@ -315,12 +318,12 @@ public final class MeterRegistryFactory {
             return logRecords;
         }
 
-        List<Enrollment> nimaRegistryEnrollments() {
-            List<Enrollment> result = new ArrayList<>(explicitNimaRegistryEnrollments);
+        List<Enrollment> explicitAndBuiltInEnrollments() {
+            List<Enrollment> result = new ArrayList<>(explicitRegistryEnrollments);
             builtInRegistriesRequested.forEach((builtInRegistrySupportType, builtInRegistrySupport) -> {
                 MeterRegistry meterRegistry = builtInRegistrySupport.registry();
                 result.add(new Enrollment(meterRegistry,
-                                          builtInRegistrySupport.requestNimaToHandlerFn(meterRegistry)));
+                                          builtInRegistrySupport.requestToHandlerFn(meterRegistry)));
             });
             return result;
         }
