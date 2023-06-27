@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.reactive.webclient.WebClientTls;
@@ -42,30 +42,28 @@ public class SslTest {
     private static WebServer webServer;
     private static WebClient client;
 
-    /**
-     * Start the secured Web Server
-     *
-     * @param port the port on which to start the secured server; if less than 1,
-     *             the port is dynamically selected
-     * @throws Exception in case of an error
-     */
-    private static void startServer(int port) throws Exception {
-        webServer = WebServer.builder(
-                Routing.builder()
-                        .any((req, res) -> res.send("It works!")))
+    @BeforeAll
+    public static void startServer() throws Exception {
+        // start the server at a free port
+        startServer(0);
+    }
 
-                .port(port)
-                .tls(WebServerTls.builder()
-                             .privateKey(KeyConfig.pemBuilder()
-                                                 .key(Resource.create("ssl/key.pkcs8.pem"))
-                                                 .certChain(Resource.create("ssl/certificate.pem"))
-                                                 .build()))
-                .build()
-                .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+    @BeforeAll
+    public static void createClientAcceptingAllCertificates() {
+        client = WebClient.builder()
+                .tls(WebClientTls.builder()
+                             .trustAll(true)
+                             .build())
+                .build();
+    }
 
-        LOGGER.info("Started secured server at: https://localhost:" + webServer.port());
+    @AfterAll
+    public static void close() throws Exception {
+        if (webServer != null) {
+            webServer.shutdown()
+                    .toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS);
+        }
     }
 
     @Test
@@ -108,27 +106,29 @@ public class SslTest {
                 .get();
     }
 
-    @BeforeAll
-    public static void startServer() throws Exception {
-        // start the server at a free port
-        startServer(0);
-    }
+    /**
+     * Start the secured Web Server
+     *
+     * @param port the port on which to start the secured server; if less than 1,
+     *             the port is dynamically selected
+     * @throws Exception in case of an error
+     */
+    private static void startServer(int port) throws Exception {
+        webServer = WebServer.builder(
+                        Routing.builder()
+                                .any((req, res) -> res.send("It works!")))
 
-    @BeforeAll
-    public static void createClientAcceptingAllCertificates() {
-        client = WebClient.builder()
-                .tls(WebClientTls.builder()
-                             .trustAll(true)
-                             .build())
-                .build();
-    }
+                .port(port)
+                .tls(WebServerTls.builder()
+                             .privateKey(Keys.builder()
+                                                 .pem(pemBuilder -> pemBuilder.key(Resource.create("ssl/key.pkcs8.pem"))
+                                                         .certChain(Resource.create("ssl/certificate.pem")))
+                                                 .build()))
+                .build()
+                .start()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
 
-    @AfterAll
-    public static void close() throws Exception {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
-        }
+        LOGGER.info("Started secured server at: https://localhost:" + webServer.port());
     }
 }

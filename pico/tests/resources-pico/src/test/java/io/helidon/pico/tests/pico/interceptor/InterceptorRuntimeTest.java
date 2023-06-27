@@ -24,15 +24,13 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.pico.api.Interceptor;
 import io.helidon.pico.api.PicoException;
 import io.helidon.pico.api.PicoServices;
+import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
-import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 import io.helidon.pico.testing.ReflectionBasedSingletonServiceProvider;
@@ -47,12 +45,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.pico.api.PicoServicesConfig.KEY_PERMITS_DYNAMIC;
-import static io.helidon.pico.api.PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS;
-import static io.helidon.pico.api.PicoServicesConfig.KEY_USES_COMPILE_TIME_MODULES;
-import static io.helidon.pico.api.PicoServicesConfig.NAME;
-import static io.helidon.pico.api.QualifierAndValueDefault.create;
-import static io.helidon.pico.api.QualifierAndValueDefault.createNamed;
+import static io.helidon.pico.api.Qualifier.create;
+import static io.helidon.pico.api.Qualifier.createNamed;
 import static io.helidon.pico.testing.PicoTestingSupport.basicTestableConfig;
 import static io.helidon.pico.testing.PicoTestingSupport.bind;
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
@@ -91,31 +85,31 @@ class InterceptorRuntimeTest {
 
     @Test
     void createNoArgBasedInterceptorSource() throws Exception {
-        TypeName interceptorTypeName = TypeNameDefault.create(XImpl$$Pico$$Interceptor.class);
+        TypeName interceptorTypeName = TypeName.create(XImpl$$Pico$$Interceptor.class);
         String path = toFilePath(interceptorTypeName);
         File file = new File("./target/generated-sources/annotations", path);
         assertThat(file.exists(), is(true));
         String java = Files.readString(file.toPath());
         assertEquals(loadStringFromResource("expected/ximpl-interceptor._java_"),
-                   java);
+                     java);
     }
 
     @Disabled // will be handled in https://github.com/helidon-io/helidon/issues/6542
     @Test
     void createInterfaceBasedInterceptorSource() throws Exception {
-        TypeName interceptorTypeName = TypeNameDefault.create(YImpl$$Pico$$Interceptor.class);
+        TypeName interceptorTypeName = TypeName.create(YImpl$$Pico$$Interceptor.class);
         String path = toFilePath(interceptorTypeName);
         File file = new File("./target/generated-sources/annotations", path);
         assertThat(file.exists(), is(true));
         String java = Files.readString(file.toPath());
         assertEquals(loadStringFromResource("expected/yimpl-interceptor._java_"),
-                   java);
+                     java);
     }
 
     @Test
     void runtimeWithNoInterception() throws Exception {
-        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
-                .addContractImplemented(Closeable.class.getName())
+        ServiceInfoCriteria criteria = ServiceInfoCriteria.builder()
+                .addContractImplemented(Closeable.class)
                 .includeIntercepted(true)
                 .build();
         List<ServiceProvider<?>> closeableProviders = services.lookupAll(criteria);
@@ -124,8 +118,8 @@ class InterceptorRuntimeTest {
                    contains("XImpl$$Pico$$Interceptor:INIT", "YImpl$$Pico$$Interceptor:INIT",
                             "XImpl:INIT", "YImpl:INIT"));
 
-        criteria = ServiceInfoCriteriaDefault.builder()
-                .addContractImplemented(Closeable.class.getName())
+        criteria = ServiceInfoCriteria.builder()
+                .addContractImplemented(Closeable.class)
                 .includeIntercepted(false)
                 .build();
         closeableProviders = services.lookupAll(criteria);
@@ -167,13 +161,13 @@ class InterceptorRuntimeTest {
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
         ServiceProvider<?> yimplProvider = services
                 .lookupFirst(
-                        ServiceInfoCriteriaDefault.builder()
-                                .addContractImplemented(Closeable.class.getName())
+                        ServiceInfoCriteria.builder()
+                                .addContractImplemented(Closeable.class)
                                 .qualifiers(Set.of(create(Named.class, ClassNamedY.class.getName())))
                                 .build());
         assertThat(toDescription(yimplProvider),
                    equalTo("YImpl$$Pico$$Interceptor:INIT"));
-        IB ibOnYInterceptor = (IB)yimplProvider.get();
+        IB ibOnYInterceptor = (IB) yimplProvider.get();
         sval = ibOnYInterceptor.methodIB2("test");
         assertThat(sval,
                    equalTo("test"));
@@ -183,24 +177,24 @@ class InterceptorRuntimeTest {
     void runtimeWithInterception() throws Exception {
         // disable application and modules to effectively start with an empty registry
         Config config = Config.builder(
-                ConfigSources.create(
-                        Map.of(NAME + "." + KEY_PERMITS_DYNAMIC, "true",
-                               NAME + "." + KEY_USES_COMPILE_TIME_APPLICATIONS, "false",
-                               NAME + "." + KEY_USES_COMPILE_TIME_MODULES, "true"),
-                        "config-1"))
+                        ConfigSources.create(
+                                Map.of("pico.permits-dynamic", "true",
+                                       "pico.uses-compile-time-applications", "false",
+                                       "pico.uses-compile-time-modules", "true"),
+                                "config-1"))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
         tearDown();
         setUp(config);
         bind(picoServices, ReflectionBasedSingletonServiceProvider
-                              .create(TestNamedInterceptor.class,
-                                      ServiceInfoDefault.builder()
-                                              .serviceTypeName(TestNamedInterceptor.class.getName())
-                                              .addQualifier(createNamed(TestNamed.class.getName()))
-                                              .addQualifier(createNamed(InterceptorBasedAnno.class.getName()))
-                                              .addExternalContractsImplemented(Interceptor.class.getName())
-                                              .build()));
+                .create(TestNamedInterceptor.class,
+                        ServiceInfo.builder()
+                                .serviceTypeName(TestNamedInterceptor.class)
+                                .addQualifier(createNamed(TestNamed.class.getName()))
+                                .addQualifier(createNamed(InterceptorBasedAnno.class.getName()))
+                                .addExternalContractImplemented(Interceptor.class)
+                                .build()));
         assertThat(TestNamedInterceptor.ctorCount.get(),
                    equalTo(0));
 
@@ -249,8 +243,8 @@ class InterceptorRuntimeTest {
         // we cannot look up by service type here - we need to instead lookup by one of the interfaces
         ServiceProvider<?> yimplProvider = services
                 .lookupFirst(
-                        ServiceInfoCriteriaDefault.builder()
-                                .addContractImplemented(Closeable.class.getName())
+                        ServiceInfoCriteria.builder()
+                                .addContractImplemented(Closeable.class)
                                 .qualifiers(Set.of(create(Named.class, ClassNamedY.class.getName())))
                                 .build());
         assertThat(toDescription(yimplProvider),

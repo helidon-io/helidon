@@ -21,7 +21,6 @@ import java.util.List;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 
@@ -38,7 +37,7 @@ public class Main {
     public static void main(String... args) {
         Services services = PicoServices.realizedServices();
 
-        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
+        ServiceInfoCriteria criteria = ServiceInfoCriteria.builder()
                 .runLevel(RunLevel.STARTUP)
                 .build();
 

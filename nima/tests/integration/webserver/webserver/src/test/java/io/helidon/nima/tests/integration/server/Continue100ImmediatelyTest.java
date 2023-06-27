@@ -15,19 +15,6 @@
  */
 package io.helidon.nima.tests.integration.server;
 
-import io.helidon.common.http.Http;
-import io.helidon.common.http.PathMatchers;
-import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.Handler;
-import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http1.Http1ConfigDefault;
-import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
-import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
@@ -36,6 +23,23 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+
+import io.helidon.common.http.Http;
+import io.helidon.common.http.PathMatchers;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.Handler;
+import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.http1.Http1Config;
+import io.helidon.nima.webserver.http1.Http1ConnectionSelector;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
@@ -47,7 +51,7 @@ class Continue100ImmediatelyTest {
     private static final Map<String, CompletableFuture<String>> BLOCKER_MAP = new ConcurrentHashMap<>();
     private static int defaultPort;
 
-    private static Handler anyHandler = (req, res) -> {
+    private static final Handler ANY_HANDLER = (req, res) -> {
         if (Boolean.parseBoolean(req.headers()
                 .first(Http.Header.create("test-fail-before-read"))
                 .orElse("false"))) {
@@ -80,37 +84,37 @@ class Continue100ImmediatelyTest {
         res.send("Got " + s.getBytes().length + " bytes of data");
     };
 
+    Continue100ImmediatelyTest(WebServer server) {
+        defaultPort = server.port();
+    }
+
     @SetUpServer
-    static void server(WebServer.Builder wsb){
-        ServerConnectionProvider http1 = Http1ConnectionProvider.builder()
-                .http1Config(Http1ConfigDefault.builder()
-                        .continueImmediately(true)
-                        .build())
+    static void server(ServerConfig.Builder wsb) {
+        ServerConnectionSelector http1 = Http1ConnectionSelector.builder()
+                .config(Http1Config.builder()
+                                .continueImmediately(true)
+                                .build())
                 .build();
 
-        wsb.addConnectionProvider(http1);
+        wsb.addConnectionSelector(http1);
     }
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
         router.route(Http.Method.predicate(Http.Method.PUT, Http.Method.POST),
-                        PathMatchers.exact("/redirect"), (req, res) ->
+                     PathMatchers.exact("/redirect"), (req, res) ->
 
-                                res.status(Http.Status.MOVED_PERMANENTLY_301)
-                                        .header(Http.Header.LOCATION, "/")
-                                        // force 301 to not use chunked encoding
-                                        // https://github.com/helidon-io/helidon/issues/5713
-                                        .header(Http.Header.CONTENT_LENGTH, "0")
-                                        .send()
+                             res.status(Http.Status.MOVED_PERMANENTLY_301)
+                                     .header(Http.Header.LOCATION, "/")
+                                     // force 301 to not use chunked encoding
+                                     // https://github.com/helidon-io/helidon/issues/5713
+                                     .header(Http.Header.CONTENT_LENGTH, "0")
+                                     .send()
                 )
                 .route(Http.Method.predicate(Http.Method.PUT, Http.Method.POST),
-                        PathMatchers.exact("/"), anyHandler)
+                       PathMatchers.exact("/"), ANY_HANDLER)
                 .route(Http.Method.predicate(Http.Method.GET),
-                        PathMatchers.exact("/"), (req, res) -> res.status(Http.Status.OK_200).send("GET TEST"));
-    }
-
-    public Continue100ImmediatelyTest(WebServer server) {
-        defaultPort = server.port();
+                       PathMatchers.exact("/"), (req, res) -> res.status(Http.Status.OK_200).send("GET TEST"));
     }
 
     @Test

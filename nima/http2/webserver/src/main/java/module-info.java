@@ -16,6 +16,8 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.nima.http2.webserver.Http2ProtocolConfigProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider;
 
 /**
  * HTTP/2 WebServer.
@@ -39,18 +41,19 @@ module io.helidon.nima.http2.webserver {
     requires transitive io.helidon.nima.http2;
     requires transitive io.helidon.nima.http.encoding;
     requires transitive io.helidon.nima.http.media;
-    requires io.helidon.builder;
-    requires io.helidon.builder.config;
+    requires io.helidon.builder.api;
 
     exports io.helidon.nima.http2.webserver;
     exports io.helidon.nima.http2.webserver.spi;
 
     // to support prior knowledge for h2c
-    provides io.helidon.nima.webserver.spi.ServerConnectionProvider
+    provides ServerConnectionSelectorProvider
             with io.helidon.nima.http2.webserver.Http2ConnectionProvider;
     // to support upgrade requests for h2c
     provides io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider
             with io.helidon.nima.http2.webserver.Http2UpgradeProvider;
+    provides io.helidon.nima.webserver.spi.ProtocolConfigProvider
+            with Http2ProtocolConfigProvider;
 
     uses io.helidon.nima.http2.webserver.spi.Http2SubProtocolProvider;
 }

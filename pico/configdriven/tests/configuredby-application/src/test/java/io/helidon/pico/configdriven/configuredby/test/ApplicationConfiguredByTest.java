@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.Metrics;
 import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.configdriven.configuredby.application.test.ASimpleRunLevelService;
 
@@ -46,34 +46,35 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
     @Test
     void verifyMinimalLookups() {
         resetWith(io.helidon.config.Config.builder(createBasicTestingConfigSource(), createRootDefault8080TestingConfigSource())
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .build());
+                          .disableEnvironmentVariablesSource()
+                          .disableSystemPropertiesSource()
+                          .build());
 
         Metrics metrics = picoServices.metrics().orElseThrow();
         Set<ServiceInfoCriteria> criteriaSearchLog = picoServices.lookups().orElseThrow();
-        Set<String> contractSearchLog = criteriaSearchLog.stream()
+        Set<TypeName> contractSearchLog = criteriaSearchLog.stream()
                 .flatMap(it -> it.contractsImplemented().stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-        Set<String> servicesSearchLog = criteriaSearchLog.stream()
+        Set<TypeName> servicesSearchLog = criteriaSearchLog.stream()
                 .flatMap(it -> it.serviceTypeName().stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-        Set<String> searchLog = new LinkedHashSet<>(contractSearchLog);
+        Set<TypeName> searchLog = new LinkedHashSet<>(contractSearchLog);
         searchLog.addAll(servicesSearchLog);
 
         // we expect three classes of lookups here:
         // 1) Any and all config beans (like FakeServerConfig).
         // 2) Any *Optional* unknown services (like the FakeTracer).
         // 3) Any intercepted service (like ZImpl).
-        assertThat(searchLog,
+        assertThat("Full log: " + searchLog,
+                   searchLog,
                    containsInAnyOrder(
                            // config beans are always looked up
-                           "io.helidon.builder.config.testsubjects.fakes.FakeServerConfig",
+                           TypeName.create("io.helidon.pico.configdriven.tests.config.FakeServerConfig"),
                            // tracer doesn't really exist, so it is looked up out of best-effort (as an optional injection dep)
-                           "io.helidon.builder.config.testsubjects.fakes.FakeTracer",
+                           TypeName.create("io.helidon.pico.configdriven.tests.config.FakeTracer"),
                            // ZImpl is intercepted
-                           "io.helidon.pico.configdriven.interceptor.test.ZImpl"
-                           ));
+                           TypeName.create("io.helidon.pico.configdriven.interceptor.test.ZImpl")
+                   ));
         assertThat("lookup log: " + criteriaSearchLog,
                    metrics.lookupCount().orElseThrow(),
                    is(3));
@@ -94,7 +95,7 @@ class ApplicationConfiguredByTest extends AbstractConfiguredByTest {
         assertThat(ASimpleRunLevelService.getPreDestroyCount(),
                    is(0));
 
-        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
+        ServiceInfoCriteria criteria = ServiceInfoCriteria.builder()
                 .runLevel(RunLevel.STARTUP)
                 .build();
         List<ServiceProvider<?>> startups = services.lookupAll(criteria);

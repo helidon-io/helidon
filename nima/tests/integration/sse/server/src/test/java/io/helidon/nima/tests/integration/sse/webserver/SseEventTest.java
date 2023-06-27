@@ -31,7 +31,7 @@ class SseEventTest extends SseBaseTest {
 
     MediaContext mediaContext = MediaContext.create();
     MediaContext emptyMediaContext = MediaContext.builder()
-            .discoverServices(false)
+            .mediaSupportsDiscoverServices(false)
             .build();
 
     @Test
@@ -67,7 +67,7 @@ class SseEventTest extends SseBaseTest {
                 .mediaContext(mediaContext)
                 .build();
         assertThrows(IllegalArgumentException.class,
-                () -> event.data(HelloWorld.class, MediaTypes.TEXT_YAML));
+                     () -> event.data(HelloWorld.class, MediaTypes.TEXT_YAML));
     }
 
     @Test

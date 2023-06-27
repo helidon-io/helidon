@@ -49,8 +49,8 @@ public class PicoServiceProviderException extends PicoException {
                                         Throwable cause) {
         super(msg, cause);
 
-        if (cause instanceof PicoServiceProviderException) {
-           this.serviceProvider = ((PicoServiceProviderException) cause).serviceProvider().orElse(null);
+        if (cause instanceof PicoServiceProviderException picoExc) {
+           this.serviceProvider = picoExc.serviceProvider().orElse(null);
         } else {
            this.serviceProvider = null;
         }

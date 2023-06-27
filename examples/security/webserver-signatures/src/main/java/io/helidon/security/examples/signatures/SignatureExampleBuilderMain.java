@@ -27,7 +27,7 @@ import java.util.Optional;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.HttpMediaType;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 import io.helidon.security.CompositeProviderFlag;
@@ -175,11 +175,12 @@ public class SignatureExampleBuilderMain {
                                                          .build())
                                      .addInbound(InboundClientDefinition.builder("service1-rsa")
                                                          .principalName("Service1 - RSA signature")
-                                                         .publicKeyConfig(KeyConfig.keystoreBuilder()
+                                                         .publicKeyConfig(Keys.builder()
+                                                                                  .keystore(keystore -> keystore
                                                                                   .keystore(Resource.create(Paths.get(
                                                                                           "src/main/resources/keystore.p12")))
-                                                                                  .keystorePassphrase("password".toCharArray())
-                                                                                  .certAlias("service_cert")
+                                                                                  .passphrase("password".toCharArray())
+                                                                                  .certAlias("service_cert"))
                                                                                   .build())
                                                          .build())
                                      .build(),
@@ -213,11 +214,12 @@ public class SignatureExampleBuilderMain {
                 .addPath("/service2-rsa.*")
                 .customObject(OutboundTargetDefinition.class,
                               OutboundTargetDefinition.builder("service1-rsa")
-                                      .privateKeyConfig(KeyConfig.keystoreBuilder()
+                                      .privateKeyConfig(Keys.builder()
+                                                                .keystore(keystore -> keystore
                                                                 .keystore(Resource.create(Paths.get(
                                                                         "src/main/resources/keystore.p12")))
-                                                                .keystorePassphrase("password".toCharArray())
-                                                                .keyAlias("myPrivateKey")
+                                                                .passphrase("password".toCharArray())
+                                                                .keyAlias("myPrivateKey"))
                                                                 .build())
                                       .build())
                 .build();

@@ -37,6 +37,7 @@ public class StaticContentMain {
                 .host("127.0.0.1")
                 .port(8080)
                 .routing(StaticContentMain::routing)
+                .build()
                 .start();
         System.out.println("You can access static content on http://localhost:8080/favicon.ico");
         System.out.println("You can access static endpoint on http://localhost:8080/api/greet");

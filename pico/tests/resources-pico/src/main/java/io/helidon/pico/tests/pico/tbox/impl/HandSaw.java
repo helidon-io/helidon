@@ -19,10 +19,10 @@ package io.helidon.pico.tests.pico.tbox.impl;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.pico.api.ContextualServiceQueryDefault;
+import io.helidon.pico.api.ContextualServiceQuery;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.InjectionPointProvider;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
+import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.tests.pico.tbox.AbstractBlade;
 import io.helidon.pico.tests.pico.tbox.AbstractSaw;
@@ -126,9 +126,9 @@ public class HandSaw extends AbstractSaw {
         verifyInjected(setterInjectedAllProviderListInSubClass, getClass() +
                  ".setAllBlades(List<AbstractBlade> blades)", setterInjectedAllProviderListInSubClassInjectedCount, 1, ServiceProvider.class);
         List<AbstractBlade> blades = setterInjectedAllProviderListInSubClass.get(0)
-                .list(ContextualServiceQueryDefault.builder()
-                              .serviceInfoCriteria(ServiceInfoCriteriaDefault.builder()
-                                                           .addContractImplemented(AbstractBlade.class.getName())
+                .list(ContextualServiceQuery.builder()
+                              .serviceInfoCriteria(ServiceInfoCriteria.builder()
+                                                           .addContractImplemented(AbstractBlade.class)
                                                            .build())
                               .build());
         verifyInjected(blades, getClass() +

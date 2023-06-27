@@ -36,9 +36,10 @@ public final class Main {
      */
     public static void main(String[] args) {
         WebServer server = WebServer.builder()
-                                    .routing(Main::routing)
-                                    .port(8080)
-                                    .start();
+                .routing(Main::routing)
+                .port(8080)
+                .build()
+                .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port());
     }
@@ -50,13 +51,13 @@ public final class Main {
      */
     static void routing(HttpRules rules) {
         rules.any("/", (req, res) -> {
-                 res.status(Http.Status.MOVED_PERMANENTLY_301);
-                 res.header(UI_LOCATION);
-                 res.send();
-             })
-             .register("/ui", StaticContentService.builder("WEB")
-                                                  .welcomeFileName("index.html")
-                                                  .build())
-             .register("/api", new FileService());
+                    res.status(Http.Status.MOVED_PERMANENTLY_301);
+                    res.header(UI_LOCATION);
+                    res.send();
+                })
+                .register("/ui", StaticContentService.builder("WEB")
+                        .welcomeFileName("index.html")
+                        .build())
+                .register("/api", new FileService());
     }
 }

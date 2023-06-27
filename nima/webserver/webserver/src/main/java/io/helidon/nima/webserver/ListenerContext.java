@@ -61,7 +61,7 @@ public interface ListenerContext {
      *
      * @return listener configuration
      */
-    ListenerConfiguration config();
+    ListenerConfig config();
 
     /**
      * Virtual thread per task executor service that can be used to execute tasks.

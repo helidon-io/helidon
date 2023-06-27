@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.Phase;
 
 /**
@@ -58,7 +59,7 @@ class NonSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
 
         if (instance != null) {
             serviceProvider.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
-            List<String> serviceTypeOrdering = Objects.requireNonNull(delegate.serviceTypeInjectionOrder());
+            List<TypeName> serviceTypeOrdering = Objects.requireNonNull(delegate.serviceTypeInjectionOrder());
             LinkedHashSet<String> injections = new LinkedHashSet<>();
             serviceTypeOrdering.forEach((forServiceType) -> {
                 delegate.doInjectingFields(instance, deps, injections, forServiceType);
@@ -80,4 +81,8 @@ class NonSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
         return instance;
     }
 
+    @Override
+    public Class<?> serviceType() {
+        return delegate.serviceType();
+    }
 }

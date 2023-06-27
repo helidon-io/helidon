@@ -25,22 +25,21 @@ module io.helidon.pico.tools {
     requires jakarta.inject;
     requires handlebars;
     requires io.github.classgraph;
-    requires io.helidon.builder;
+    requires io.helidon.builder.api;
     requires io.helidon.common;
     requires io.helidon.common.config;
-    requires io.helidon.builder.processor.spi;
+    requires io.helidon.common.processor;
     requires transitive io.helidon.common.types;
     requires transitive io.helidon.pico.runtime;
-    requires transitive io.helidon.builder.processor.tools;
 
     exports io.helidon.pico.tools;
     exports io.helidon.pico.tools.spi;
 
-    uses io.helidon.pico.tools.spi.ActivatorCreator;
+    uses io.helidon.pico.tools.spi.InterceptorCreator;
     uses io.helidon.pico.tools.spi.ApplicationCreator;
     uses io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
     uses io.helidon.pico.tools.spi.ExternalModuleCreator;
-    uses io.helidon.pico.tools.spi.InterceptorCreator;
+    uses io.helidon.pico.tools.spi.ActivatorCreator;
     uses io.helidon.pico.tools.spi.ModuleComponentNamer;
 
     provides io.helidon.pico.tools.spi.ActivatorCreator

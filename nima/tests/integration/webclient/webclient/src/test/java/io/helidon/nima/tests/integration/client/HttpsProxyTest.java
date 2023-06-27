@@ -22,7 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
@@ -32,6 +32,7 @@ import io.helidon.nima.webclient.Proxy.ProxyType;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -49,10 +50,11 @@ class HttpsProxyTest {
     private final Http1Client client;
 
     @SetUpServer
-    static void server(WebServer.Builder builder) {
-        KeyConfig privateKeyConfig = KeyConfig.keystoreBuilder()
-                .keystore(Resource.create("server.p12"))
-                .keystorePassphrase("password")
+    static void server(ServerConfig.Builder builder) {
+        Keys privateKeyConfig = Keys.builder()
+                .keystore(keystore -> keystore
+                        .keystore(Resource.create("server.p12"))
+                        .passphrase("password"))
                 .build();
 
         Tls tls = Tls.builder()

@@ -19,7 +19,9 @@
  */
 module io.helidon.pico.configdriven.api {
     requires static jakarta.inject;
-    requires static io.helidon.builder.config;
+
+    requires io.helidon.pico.api;
+    requires io.helidon.common.config;
 
     exports io.helidon.pico.configdriven.api;
 }

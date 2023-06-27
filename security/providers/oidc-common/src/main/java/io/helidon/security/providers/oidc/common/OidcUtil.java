@@ -56,7 +56,7 @@ final class OidcUtil {
         Http1Client.Http1ClientBuilder webClientBuilder = WebClient.builder()
                 .addService(WebClientTracing.create())
                 .mediaContext(MediaContext.builder()
-                                      .discoverServices(false)
+                                      .mediaSupportsDiscoverServices(false)
                                       .addMediaSupport(JsonpSupport.create(Config.empty()))
                                       .build())
                 .channelOptions(SocketOptions.builder()

@@ -25,11 +25,9 @@ import java.util.Set;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.PicoServicesConfig;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
+import io.helidon.pico.api.ServiceInfoCriteria;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
-import io.helidon.pico.tools.ActivatorCreatorCodeGen;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Build;
@@ -58,7 +56,7 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
      * The classname to use for the Pico {@link io.helidon.pico.api.Application} test class.
      * If not found the classname will be inferred.
      */
-    @Parameter(property = PicoServicesConfig.FQN + ".application.class.name", readonly = true
+    @Parameter(property = "io.helidon.pico.application.class.name", readonly = true
                // note: the default value handling doesn't work here for "$$"!!
                //               defaultValue = DefaultApplicationCreator.APPLICATION_NAME
                )
@@ -76,6 +74,12 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
      */
     @Parameter(defaultValue = "${project.build.testOutputDirectory}", required = true, readonly = true)
     private File testOutputDirectory;
+
+    /**
+     * Default constructor.
+     */
+    public TestApplicationCreatorMojo() {
+    }
 
     @Override
     File getGeneratedSourceDirectory() {
@@ -124,13 +128,7 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     @Override
     String getClassPrefixName() {
-        return upperFirstChar(ActivatorCreatorCodeGen.DEFAULT_TEST_CLASS_PREFIX_NAME);
-    }
-
-    /**
-     * Default constructor.
-     */
-    public TestApplicationCreatorMojo() {
+        return upperFirstChar("test");
     }
 
     /**
@@ -152,7 +150,7 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
             // retrieves all the services in the registry
             List<ServiceProvider<?>> allServices = services
-                    .lookupAll(ServiceInfoCriteriaDefault.builder().build(), false);
+                    .lookupAll(ServiceInfoCriteria.builder().build(), false);
             Set<TypeName> serviceTypeNames = toNames(allServices);
             getLog().debug("excluding service type names: " + serviceTypeNames);
             return serviceTypeNames;

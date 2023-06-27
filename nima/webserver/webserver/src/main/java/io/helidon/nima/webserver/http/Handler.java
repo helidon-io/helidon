@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,6 +131,8 @@ public interface Handler extends ServerLifecycle {
      *
      * @param req request
      * @param res response
+     * @throws java.lang.Exception may throw checked exceptions that are handled by the server, either by error handler, or
+     *      by returning an internal server error (default handling)
      */
     void handle(ServerRequest req, ServerResponse res) throws Exception;
 }

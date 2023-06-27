@@ -16,20 +16,6 @@
 
 package io.helidon.nima.tests.integration.http2.webserver;
 
-import io.helidon.nima.http2.webserver.Http2ConfigDefault;
-import io.helidon.nima.http2.webserver.Http2ConnectionProvider;
-import io.helidon.nima.http2.webserver.Http2Route;
-import io.helidon.nima.http2.webserver.Http2UpgradeProvider;
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -40,6 +26,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.helidon.nima.http2.webserver.Http2Config;
+import io.helidon.nima.http2.webserver.Http2ConnectionSelector;
+import io.helidon.nima.http2.webserver.Http2Route;
+import io.helidon.nima.http2.webserver.Http2Upgrader;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.http1.Http1Config;
+import io.helidon.nima.webserver.http1.Http1ConnectionSelector;
+
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
@@ -52,21 +55,22 @@ public class HeadersTest {
     private static final String DATA = "Helidon!!!".repeat(10);
 
     @SetUpServer
-    static void setUpServer(WebServer.Builder serverBuilder) {
+    static void setUpServer(ServerConfig.Builder serverBuilder) {
+        Http2Config http2Config = Http2Config.builder()
+                .sendErrorDetails(true)
+                .maxHeaderListSize(128_000)
+                .build();
+
         serverBuilder.port(-1)
+                .protocolsDiscoverServices(false)
                 // HTTP/2 prior knowledge config
-                .addConnectionProvider(Http2ConnectionProvider.builder()
-                        .http2Config(Http2ConfigDefault.builder()
-                                .sendErrorDetails(true)
-                                .maxHeaderListSize(128_000))
-                        .build())
+                .addConnectionSelector(Http2ConnectionSelector.builder()
+                                               .http2Config(http2Config)
+                                               .build())
                 // HTTP/1.1 -> HTTP/2 upgrade config
-                .addConnectionProvider(Http1ConnectionProvider.builder()
-                        .addUpgradeProvider(Http2UpgradeProvider.builder()
-                                .http2Config(Http2ConfigDefault.builder()
-                                        .sendErrorDetails(true)
-                                        .maxHeaderListSize(128_000))
-                                .build())
+                .addConnectionSelector(Http1ConnectionSelector.builder()
+                                               .config(Http1Config.create())
+                        .addUpgrader(Http2Upgrader.create(http2Config))
                         .build());
     }
 

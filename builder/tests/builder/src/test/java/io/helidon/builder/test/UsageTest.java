@@ -17,13 +17,9 @@
 package io.helidon.builder.test;
 
 import io.helidon.builder.test.testsubjects.A;
-import io.helidon.builder.test.testsubjects.ADefault;
 import io.helidon.builder.test.testsubjects.B;
-import io.helidon.builder.test.testsubjects.BDefault;
 import io.helidon.builder.test.testsubjects.C;
-import io.helidon.builder.test.testsubjects.CDefault;
 import io.helidon.builder.test.testsubjects.T;
-import io.helidon.builder.test.testsubjects.TDefault;
 
 import org.junit.jupiter.api.Test;
 
@@ -35,13 +31,13 @@ class UsageTest {
 
     @Test
     void testIt() {
-        A a = ADefault.builder()
+        A a = A.builder()
                 .a("hello")
                 .build();
         assertThat(a, notNullValue());
         assertThat(a.a(), is("hello"));
 
-        B b = BDefault.builder()
+        B b = B.builder()
                 .a("hello")
                 .b("helloB")
                 .build();
@@ -49,7 +45,7 @@ class UsageTest {
         assertThat(b.a(), is("hello"));
         assertThat(b.b(), is("helloB"));
 
-        C c = CDefault.builder()
+        C c = C.builder()
                 .a("hello")
                 .c("helloC")
                 .b("helloB")
@@ -59,7 +55,7 @@ class UsageTest {
         assertThat(c.b(), is("helloB"));
         assertThat(c.c(), is("helloC"));
 
-        T t = TDefault.builder()
+        T t = T.builder()
                 .a("hello")
                 .t("helloT")
                 .b("helloB")

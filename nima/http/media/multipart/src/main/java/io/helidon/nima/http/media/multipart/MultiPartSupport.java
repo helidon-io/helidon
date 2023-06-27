@@ -17,6 +17,7 @@
 package io.helidon.nima.http.media.multipart;
 
 import java.lang.System.Logger.Level;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
@@ -44,9 +45,11 @@ public class MultiPartSupport implements MediaSupport {
     private static final HttpMediaType DEFAULT_HTTP_MEDIA_TYPE = HttpMediaType.create(MediaTypes.MULTIPART_FORM_DATA)
             .withParameter("boundary", DEFAULT_BOUNDARY);
 
+    private final String name;
     private MediaContext context;
 
-    private MultiPartSupport() {
+    private MultiPartSupport(String name) {
+        this.name = Objects.requireNonNull(name);
     }
 
     /**
@@ -56,7 +59,28 @@ public class MultiPartSupport implements MediaSupport {
      * @return a new {@link MultiPartSupport}
      */
     public static MediaSupport create(Config config) {
-        return new MultiPartSupport();
+        return create(config, "multi-part");
+    }
+
+    /**
+     * Creates a new named {@link MultiPartSupport}.
+     *
+     * @param config must not be {@code null}
+     * @param name name of the multi-part support
+     * @return a new {@link MultiPartSupport}
+     */
+    public static MediaSupport create(Config config, String name) {
+        return new MultiPartSupport(name);
+    }
+
+    @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
+    public String type() {
+        return "multi-part";
     }
 
     @Override

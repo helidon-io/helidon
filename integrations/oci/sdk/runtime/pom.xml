@@ -45,26 +45,24 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-config</artifactId>
+            <artifactId>helidon-builder-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.pico.configdriven</groupId>
+            <artifactId>helidon-pico-configdriven-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.pico</groupId>
             <artifactId>helidon-pico-runtime</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope> <!-- to support the Generated annotation -->
-        </dependency>
-        <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.pico.configdriven</groupId>
-            <artifactId>helidon-pico-configdriven-processor</artifactId>
-            <optional>true</optional> <!-- force reactor dependencies -->
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
@@ -103,7 +101,7 @@
                         </path>
                         <path>
                             <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-config-processor</artifactId>
+                            <artifactId>helidon-builder-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>

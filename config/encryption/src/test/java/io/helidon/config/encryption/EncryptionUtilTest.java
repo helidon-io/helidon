@@ -26,7 +26,7 @@ import java.util.Base64;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.crypto.CryptoException;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -49,11 +49,11 @@ public class EncryptionUtilTest {
 
     @BeforeAll
     public static void staticInit() {
-        KeyConfig kc = KeyConfig.keystoreBuilder()
-                .keystore(Resource.create(".ssh/keystore.p12"))
-                .keystorePassphrase("j4c".toCharArray())
-                .keyAlias("1")
-                .certAlias("1")
+        Keys kc = Keys.builder()
+                .keystore(keystoreBuilder -> keystoreBuilder.keystore(Resource.create(".ssh/keystore.p12"))
+                        .passphrase("j4c".toCharArray())
+                        .keyAlias("1")
+                        .certAlias("1"))
                 .build();
 
         privateKey = kc.privateKey().orElseThrow(AssertionError::new);
@@ -77,30 +77,6 @@ public class EncryptionUtilTest {
             assertThat(e.getMessage(), is("Failed to encrypt using RSA key"));
             assertThat(cause.getClass(), sameInstance(CryptoException.class));
         }
-    }
-
-    private PublicKey generateDsaPublicKey() throws NoSuchAlgorithmException {
-        KeyPairGenerator gen = KeyPairGenerator.getInstance("DSA");
-        gen.initialize(1024);
-        KeyPair keyPair = gen.generateKeyPair();
-        return keyPair.getPublic();
-    }
-
-    private void testPki(PublicKey encryptionKey, PrivateKey decryptionKey, boolean mustBeSeeded) {
-        String encryptedBase64 = EncryptionUtil.encryptRsa(encryptionKey, TEST_SECRET);
-        String decrypted = EncryptionUtil.decryptRsa(decryptionKey, encryptedBase64);
-
-        assertThat(decrypted, is(TEST_SECRET));
-
-        String encryptedAgain = EncryptionUtil.encryptRsa(encryptionKey, TEST_SECRET);
-
-        if (mustBeSeeded) {
-            assertThat(encryptedAgain, is(not((encryptedBase64))));
-        }
-
-        decrypted = EncryptionUtil.decryptRsa(decryptionKey, encryptedAgain);
-
-        assertThat(decrypted, is(TEST_SECRET));
     }
 
     @Test
@@ -131,5 +107,29 @@ public class EncryptionUtilTest {
         } catch (Exception e) {
             //this is OK
         }
+    }
+
+    private PublicKey generateDsaPublicKey() throws NoSuchAlgorithmException {
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("DSA");
+        gen.initialize(1024);
+        KeyPair keyPair = gen.generateKeyPair();
+        return keyPair.getPublic();
+    }
+
+    private void testPki(PublicKey encryptionKey, PrivateKey decryptionKey, boolean mustBeSeeded) {
+        String encryptedBase64 = EncryptionUtil.encryptRsa(encryptionKey, TEST_SECRET);
+        String decrypted = EncryptionUtil.decryptRsa(decryptionKey, encryptedBase64);
+
+        assertThat(decrypted, is(TEST_SECRET));
+
+        String encryptedAgain = EncryptionUtil.encryptRsa(encryptionKey, TEST_SECRET);
+
+        if (mustBeSeeded) {
+            assertThat(encryptedAgain, is(not((encryptedBase64))));
+        }
+
+        decrypted = EncryptionUtil.decryptRsa(decryptionKey, encryptedAgain);
+
+        assertThat(decrypted, is(TEST_SECRET));
     }
 }

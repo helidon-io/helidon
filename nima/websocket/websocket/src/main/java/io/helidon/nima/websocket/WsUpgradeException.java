@@ -16,11 +16,10 @@
 
 package io.helidon.nima.websocket;
 
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.HttpPrologue;
 
 /**
- * An exception that may be thrown by {@link WsListener#onHttpUpgrade(HttpPrologue, Headers)}
+ * An exception that may be thrown by {@link WsListener#onHttpUpgrade(HttpPrologue, io.helidon.common.http.Headers)}
  * during handshake process to reject a websocket upgrade.
  */
 public class WsUpgradeException extends Exception {

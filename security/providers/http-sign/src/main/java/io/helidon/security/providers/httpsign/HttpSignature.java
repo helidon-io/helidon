@@ -39,7 +39,7 @@ import java.util.Optional;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.security.SecurityEnvironment;
 
 /**
@@ -264,7 +264,7 @@ class HttpSignature {
         }
     }
 
-    private byte[] signRsaSha256(SecurityEnvironment env, KeyConfig keyConfig, Map<String, List<String>> newHeaders) {
+    private byte[] signRsaSha256(SecurityEnvironment env, Keys keyConfig, Map<String, List<String>> newHeaders) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
             signature.initSign(keyConfig.privateKey().orElseThrow(() ->

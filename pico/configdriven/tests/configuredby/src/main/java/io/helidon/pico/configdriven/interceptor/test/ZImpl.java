@@ -19,7 +19,7 @@ package io.helidon.pico.configdriven.interceptor.test;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.pico.configdriven.configuredby.test.FakeWebServer;
+import io.helidon.pico.configdriven.tests.config.FakeWebServer;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;

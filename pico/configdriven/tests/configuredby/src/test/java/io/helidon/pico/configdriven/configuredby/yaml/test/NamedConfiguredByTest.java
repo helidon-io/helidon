@@ -16,24 +16,23 @@
 
 package io.helidon.pico.configdriven.configuredby.yaml.test;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
-import io.helidon.builder.config.spi.GeneratedConfigBean;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.yaml.YamlConfigParser;
 import io.helidon.pico.api.Bootstrap;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.Services;
+import io.helidon.pico.configdriven.api.NamedInstance;
 import io.helidon.pico.configdriven.runtime.ConfigBeanRegistry;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
@@ -48,7 +47,7 @@ class NamedConfiguredByTest {
 
     @BeforeAll
     static void initialStateChecks() {
-        ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
+        ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
         assertThat(cbr.ready(), is(false));
     }
 
@@ -70,19 +69,22 @@ class NamedConfiguredByTest {
 
         Config config = Config.builder()
                 .addSource(ConfigSources.classpath("application.yaml"))
+                .addParser(YamlConfigParser.create())
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
         resetWith(config);
     }
 
-    @Disabled("Will be addressed in #6674")
     @Test
     void namedConfiguredServices() {
-        ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
-        Map<String, Collection<GeneratedConfigBean>> all = cbr.allConfigBeans();
-        assertThat(all.keySet(),
-                   containsInAnyOrder("ft.asyncs.first", "ft.asyncs.second", "ft.bulkheads", "server"));
+        ConfigBeanRegistry cbr = ConfigBeanRegistry.instance();
+        Map<Class<?>, List<NamedInstance<?>>> allConfigBeans = cbr.allConfigBeans();
+
+        List<NamedInstance<?>> namedInstances = allConfigBeans.get(AsyncConfig.class);
+
+        assertThat(namedInstances.stream().map(NamedInstance::name).toList(),
+                   containsInAnyOrder("first", "second"));
     }
 
 }

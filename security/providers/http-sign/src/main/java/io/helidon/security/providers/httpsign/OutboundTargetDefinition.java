@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.security.util.TokenHandler;
 
@@ -31,7 +31,7 @@ import io.helidon.security.util.TokenHandler;
 public final class OutboundTargetDefinition {
     private final String keyId;
     private final String algorithm;
-    private final KeyConfig keyConfig;
+    private final Keys keyConfig;
     private final HttpSignHeader header;
     private final byte[] hmacSharedSecret;
     private final SignedHeadersConfig signedHeadersConfig;
@@ -113,7 +113,7 @@ public final class OutboundTargetDefinition {
      *
      * @return private key location and configuration or empty optional if not configured
      */
-    public Optional<KeyConfig> keyConfig() {
+    public Optional<Keys> keyConfig() {
         return Optional.ofNullable(keyConfig);
     }
 
@@ -182,7 +182,7 @@ public final class OutboundTargetDefinition {
 
         private String keyId;
         private String algorithm;
-        private KeyConfig keyConfig;
+        private Keys keyConfig;
         private HttpSignHeader header = HttpSignHeader.SIGNATURE;
         private byte[] hmacSharedSecret;
         private SignedHeadersConfig signedHeadersConfig = HttpSignProvider.DEFAULT_REQUIRED_HEADERS;
@@ -216,7 +216,7 @@ public final class OutboundTargetDefinition {
 
         /**
          * Algorithm used by this signature.
-         * Set automatically on call to methods {@link #privateKeyConfig(KeyConfig)} and {@link #hmacSecret(byte[])}.
+         * Set automatically on call to methods {@link #privateKeyConfig(io.helidon.common.pki.Keys)} and {@link #hmacSecret(byte[])}.
          *
          * @param algorithm algorithm to use for outbound signatures
          * @return updated builder instance
@@ -234,7 +234,7 @@ public final class OutboundTargetDefinition {
          * @param keyConfig private key configuration for outbound signatures
          * @return updated builder instance
          */
-        public Builder privateKeyConfig(KeyConfig keyConfig) {
+        public Builder privateKeyConfig(Keys keyConfig) {
             if (null == algorithm) {
                 algorithm = HttpSignProvider.ALGORITHM_RSA;
             }
@@ -312,7 +312,7 @@ public final class OutboundTargetDefinition {
             this.keyId(config.get("key-id").asString().get());      // mandatory
             config.get("header").asString().map(HttpSignHeader::valueOf).ifPresent(this::header);
             config.get("sign-headers").as(SignedHeadersConfig::create).ifPresent(this::signedHeaders);
-            config.get("private-key").as(KeyConfig::create).ifPresent(this::privateKeyConfig);
+            config.get("private-key").as(Keys::create).ifPresent(this::privateKeyConfig);
             config.get("hmac.secret").asString().ifPresent(this::hmacSecret);
 
             // last, as we configure defaults based on configuration

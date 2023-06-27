@@ -16,6 +16,8 @@
 
 package io.helidon.nima.http.media.jsonb;
 
+import java.util.Objects;
+
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.http.Headers;
@@ -44,7 +46,10 @@ public class JsonbSupport implements MediaSupport {
     private final JsonbReader reader = new JsonbReader(JSON_B);
     private final JsonbWriter writer = new JsonbWriter(JSON_B);
 
-    private JsonbSupport() {
+    private final String name;
+
+    private JsonbSupport(String name) {
+        this.name = name;
     }
 
     /**
@@ -54,7 +59,32 @@ public class JsonbSupport implements MediaSupport {
      * @return a new {@link JsonbSupport}
      */
     public static MediaSupport create(Config config) {
-        return new JsonbSupport();
+        return create(config, "jsonb");
+    }
+
+    /**
+     * Creates a new {@link JsonbSupport}.
+     *
+     * @param config must not be {@code null}
+     * @param name name of this instance
+     * @return a new {@link JsonbSupport}
+     * @see #create(io.helidon.common.config.Config)
+     */
+    public static MediaSupport create(Config config, String name) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+
+        return new JsonbSupport(name);
+    }
+
+    @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
+    public String type() {
+        return "jsonb";
     }
 
     @Override

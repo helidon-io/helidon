@@ -50,5 +50,6 @@
         <module>features</module>
         <module>task</module>
         <module>types</module>
+        <module>processor</module>
     </modules>
 </project>

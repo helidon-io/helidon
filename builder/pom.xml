@@ -37,13 +37,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>builder</module>
-        <module>processor-spi</module>
-        <module>processor-tools</module>
+        <module>api</module>
         <module>processor</module>
-        <module>builder-config</module>
-        <module>builder-config-processor</module>
-        <module>testing</module>
         <module>tests</module>
     </modules>
 </project>

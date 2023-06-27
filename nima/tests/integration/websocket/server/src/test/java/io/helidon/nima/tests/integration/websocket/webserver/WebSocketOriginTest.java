@@ -32,13 +32,15 @@ import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
+import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.http1.Http1Config;
+import io.helidon.nima.webserver.http1.Http1ConnectionSelector;
 import io.helidon.nima.websocket.WsCloseCodes;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
+import io.helidon.nima.websocket.webserver.WsConfig;
 import io.helidon.nima.websocket.webserver.WsRouting;
-import io.helidon.nima.websocket.webserver.WsUpgradeProvider;
+import io.helidon.nima.websocket.webserver.WsUpgrader;
 
 import org.junit.jupiter.api.Test;
 
@@ -59,11 +61,12 @@ class WebSocketOriginTest {
     }
 
     @SetUpServer
-    static void updateServer(WebServer.Builder builder) {
-        builder.addConnectionProvider(Http1ConnectionProvider.builder()
-                                              .addUpgradeProvider(WsUpgradeProvider.builder()
-                                                                          .addOrigin("NimaTest")
-                                                                          .build())
+    static void updateServer(ServerConfig.Builder builder) {
+        builder.addConnectionSelector(Http1ConnectionSelector.builder()
+                                              .config(Http1Config.create())
+                                              .addUpgrader(WsUpgrader.create(WsConfig.builder()
+                                                                                     .addOrigin("NimaTest")
+                                                                                     .build()))
                                               .build());
     }
 

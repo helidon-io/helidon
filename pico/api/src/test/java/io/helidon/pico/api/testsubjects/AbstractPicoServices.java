@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.ActivationLog;
 import io.helidon.pico.api.ActivationResult;
 import io.helidon.pico.api.Injector;
@@ -52,7 +53,7 @@ abstract class AbstractPicoServices implements PicoServices {
     }
 
     @Override
-    public Optional<Map<String, ActivationResult>> shutdown() {
+    public Optional<Map<TypeName, ActivationResult>> shutdown() {
         return Optional.empty();
     }
 

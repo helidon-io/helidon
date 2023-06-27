@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
@@ -40,12 +41,17 @@ import io.helidon.common.http.WritableHeaders;
 public class StringSupport implements MediaSupport {
     private static final EntityReader READER = new StringReader();
     private static final EntityWriter WRITER = new StringWriter();
+    private final String name;
 
     // MyStringSupportProvider in SseServerMediaTest extends this class so protected access is required
+
     /**
      * Creates an instance of media support for strings.
+     *
+     * @param name name of this instance
      */
-    protected StringSupport() {
+    protected StringSupport(String name) {
+        this.name = Objects.requireNonNull(name);
     }
 
     /**
@@ -54,7 +60,7 @@ public class StringSupport implements MediaSupport {
      * @return a new media support
      */
     public static MediaSupport create() {
-        return new StringSupport();
+        return new StringSupport("string");
     }
 
     @Override
@@ -91,6 +97,16 @@ public class StringSupport implements MediaSupport {
             return new WriterResponse<>(SupportLevel.SUPPORTED, StringSupport::writer);
         }
         return WriterResponse.unsupported();
+    }
+
+    @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
+    public String type() {
+        return "string";
     }
 
     private static <T> EntityReader<T> reader() {

@@ -34,7 +34,6 @@ import io.helidon.nima.http2.webclient.Http2ClientResponse;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.Handler;
-import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -69,12 +68,12 @@ class PostTest {
         server = WebServer.builder()
                 .host("localhost")
                 .port(-1)
-                .addRouting(HttpRouting.builder()
-                                    .route(Http.Method.POST, "/string", Handler.create(String.class, Routes::string))
-                                    .route(Http.Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))
-                                    .route(Http.Method.POST, "/chunked", Routes::chunked)
-                                    .route(Http.Method.POST, "/headers", Routes::headers)
-                                    .route(Http.Method.POST, "/close", Routes::close)
+                .routing(routing -> routing
+                        .route(Http.Method.POST, "/string", Handler.create(String.class, Routes::string))
+                        .route(Http.Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))
+                        .route(Http.Method.POST, "/chunked", Routes::chunked)
+                        .route(Http.Method.POST, "/headers", Routes::headers)
+                        .route(Http.Method.POST, "/close", Routes::close)
                 )
                 .build()
                 .start();

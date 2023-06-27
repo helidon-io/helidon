@@ -101,7 +101,7 @@ import static java.util.function.Predicate.not;
  *
  * <h2>Configuration</h2>
  *
- * This extension uses the {@link OciConfigBean} for configuration. Refer to it
+ * This extension uses the {@link OciConfig} for configuration. Refer to it
  * for details.
  *
  * @see <a
@@ -110,7 +110,7 @@ import static java.util.function.Predicate.not;
  */
 public final class OciExtension {
     static final System.Logger LOGGER = System.getLogger(OciExtension.class.getName());
-    static final LazyValue<OciConfigBean> DEFAULT_OCI_CONFIG_BEAN = LazyValue.create(() -> OciConfigBeanDefault.builder()
+    static final LazyValue<OciConfig> DEFAULT_OCI_CONFIG_BEAN = LazyValue.create(() -> OciConfig.builder()
             .authStrategies(Arrays.stream(OciAuthenticationDetailsProvider.AuthStrategy.values())
                                     .filter(not(it -> it == OciAuthenticationDetailsProvider.AuthStrategy.AUTO))
                                     .map(OciAuthenticationDetailsProvider.AuthStrategy::id)
@@ -121,12 +121,12 @@ public final class OciExtension {
     }
 
     /**
-     * Returns the {@link OciConfigBean} that is currently defined in the bootstrap environment. If one is not defined under
-     * config {@link OciConfigBean#NAME} then a default implementation will be constructed.
+     * Returns the {@link OciConfig} that is currently defined in the bootstrap environment. If one is not defined under
+     * config {@value OciConfig#CONFIG_KEY} then a default implementation will be constructed.
      *
      * @return the bootstrap oci config bean
      */
-    public static OciConfigBean ociConfig() {
+    public static OciConfig ociConfig() {
         Optional<Bootstrap> bootstrap = PicoServices.globalBootstrap();
         if (bootstrap.isEmpty()) {
             LOGGER.log(System.Logger.Level.DEBUG, "No bootstrap - using default oci config");
@@ -139,14 +139,14 @@ public final class OciExtension {
             return DEFAULT_OCI_CONFIG_BEAN.get();
         }
 
-        config = config.get(OciConfigBean.NAME);
+        config = config.get(OciConfig.CONFIG_KEY);
         if (!config.exists()) {
             LOGGER.log(System.Logger.Level.DEBUG, "No oci config in bootstrap - using default oci config");
             return DEFAULT_OCI_CONFIG_BEAN.get();
         }
 
         LOGGER.log(System.Logger.Level.DEBUG, "Using specified oci config");
-        return OciConfigBeanDefault.toBuilder(config);
+        return OciConfig.create(config);
     }
 
 }

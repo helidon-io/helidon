@@ -21,27 +21,25 @@ import java.util.Set;
 
 import javax.lang.model.element.ElementKind;
 
-import io.helidon.common.types.AnnotationAndValue;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
-import io.helidon.common.types.TypeInfoDefault;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.common.types.TypedElementInfoDefault;
+import io.helidon.pico.api.AccessModifier;
+import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoBasics;
-import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.processor.testsubjects.BasicEndpoint;
 import io.helidon.pico.processor.testsubjects.ExtensibleGET;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
-import io.helidon.pico.tools.CustomAnnotationTemplateRequestDefault;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.types.TypeNameDefault.create;
-import static io.helidon.common.types.TypeNameDefault.createFromTypeName;
+import static io.helidon.common.types.TypeName.create;
 import static io.helidon.pico.processor.TestUtils.loadStringFromResource;
-import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromAnnotations;
+import static io.helidon.pico.tools.TypeTools.createAnnotationListFromAnnotations;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -62,27 +60,33 @@ class CustomAnnotationProcessorTest {
     void extensibleGET() {
         CustomAnnotationProcessor processor = new CustomAnnotationProcessor();
 
-        List<AnnotationAndValue> annotations = createAnnotationAndValueListFromAnnotations(BasicEndpoint.class.getAnnotations());
-        TypeInfo enclosingTypeInfo = TypeInfoDefault.builder()
+        List<Annotation> annotations = createAnnotationListFromAnnotations(BasicEndpoint.class.getAnnotations());
+        TypeInfo enclosingTypeInfo = TypeInfo.builder()
+                .typeKind(TypeValues.KIND_CLASS)
                 .typeName(create(BasicEndpoint.class))
                 .annotations(annotations)
                 .build();
-        TypedElementInfo target = TypedElementInfoDefault.builder()
+        TypedElementInfo target = TypedElementInfo.builder()
                 .typeName(create(String.class))
-                .elementKind(ElementKind.METHOD.name())
+                .elementTypeKind(ElementKind.METHOD.name())
                 .elementName("itWorks")
                 .build();
-        TypedElementInfo arg1 = TypedElementInfoDefault.builder()
+        TypedElementInfo arg1 = TypedElementInfo.builder()
                 .typeName(create(String.class))
                 .elementName("header")
+                .elementTypeKind(TypeValues.KIND_PARAMETER)
                 .build();
-        ServiceInfoBasics serviceInfo = ServiceInfoDefault.builder();
+        ServiceInfoBasics serviceInfo = ServiceInfo.builder()
+                .serviceTypeName(BasicEndpoint.class)
+                .build();
         GenericTemplateCreatorDefault genericTemplateCreator =
                 new GenericTemplateCreatorDefault(ExtensibleGetTemplateProducer.class);
-        CustomAnnotationTemplateRequest req = CustomAnnotationTemplateRequestDefault.builder()
+        CustomAnnotationTemplateRequest req = CustomAnnotationTemplateRequest.builder()
                 .annoTypeName(create(ExtensibleGET.class))
                 .serviceInfo(serviceInfo)
                 .targetElement(target)
+                .targetElementArgs(List.of(arg1))
+                .targetElementAccess(AccessModifier.PUBLIC)
                 .enclosingTypeInfo(enclosingTypeInfo)
                 .genericTemplateCreator(genericTemplateCreator)
                 .build();
@@ -94,14 +98,14 @@ class CustomAnnotationProcessorTest {
         CustomAnnotationTemplateResponse res = processor.process(producers.iterator().next(), req);
         assertThat(res.request().annoTypeName().name(), equalTo(ExtensibleGET.class.getName()));
         TypeName generatedTypeName =
-                createFromTypeName("io.helidon.pico.processor.testsubjects.BasicEndpoint_ExtensibleGET_itWorks");
+                TypeName.create("io.helidon.pico.processor.testsubjects.BasicEndpoint_ExtensibleGET_itWorks");
         assertThat(res.generatedSourceCode(),
                    hasKey(generatedTypeName));
         assertThat(res.toString(), res.generatedSourceCode().size(),
                    is(1));
         String generatedSource = res.generatedSourceCode().get(generatedTypeName);
         assertThat(generatedSource,
-                            equalTo(loadStringFromResource("expected/BasicEndpoint_ExtensibleGET._java_")));
+                   equalTo(loadStringFromResource("expected/BasicEndpoint_ExtensibleGET._java_")));
     }
 
 }

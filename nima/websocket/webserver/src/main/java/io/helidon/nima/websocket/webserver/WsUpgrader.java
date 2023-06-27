@@ -88,21 +88,29 @@ public class WsUpgrader implements Http1Upgrader {
      * Supported version header.
      */
     protected static final Http.HeaderValue SUPPORTED_VERSION_HEADER = Header.create(WS_VERSION, SUPPORTED_VERSION);
-
+    static final Headers EMPTY_HEADERS = WritableHeaders.create();
     private static final System.Logger LOGGER = System.getLogger(WsUpgrader.class.getName());
     private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(US_ASCII);
     private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
     private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
     private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
     private static final byte[] HEADERS_SEPARATOR = "\r\n".getBytes(US_ASCII);
-    static final Headers EMPTY_HEADERS = WritableHeaders.create();
-
     private final Set<String> origins;
     private final boolean anyOrigin;
 
-    protected WsUpgrader(Set<String> origins) {
-        this.origins = origins;
+    protected WsUpgrader(WsConfig wsConfig) {
+        this.origins = wsConfig.origins();
         this.anyOrigin = this.origins.isEmpty();
+    }
+
+    /**
+     * WebSocket upgrader for HTTP/1.
+     *
+     * @param config configuration of web socket protocol
+     * @return a new upgrader
+     */
+    public static WsUpgrader create(WsConfig config) {
+        return new WsUpgrader(config);
     }
 
     @Override

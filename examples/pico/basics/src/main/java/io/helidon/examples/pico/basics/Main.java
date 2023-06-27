@@ -21,7 +21,6 @@ import java.util.List;
 import io.helidon.pico.api.PicoServices;
 import io.helidon.pico.api.RunLevel;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 
@@ -41,7 +40,7 @@ public class Main {
         // 0. Demonstrates programmatic lookup from Pico's Services registry.
         // 1. when a service is being managed by a DI provider (like Pico) it should be "looked up" or injected instead of new'ed
         // 2. Notice we get a ServiceProvider - service providers allow for lazy initialization
-        ServiceInfoCriteria criteria = ServiceInfoCriteriaDefault.builder()
+        ServiceInfoCriteria criteria = ServiceInfoCriteria.builder()
                 .runLevel(RunLevel.STARTUP)
                 .build();
 

@@ -70,16 +70,16 @@
             <artifactId>helidon-nima-http-encoding</artifactId>
         </dependency>
         <dependency>
-            <!-- @ConfigBean -->
-            <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-config</artifactId>
+            <!-- @ConfigBean, @ConfigDriven -->
+            <groupId>io.helidon.pico.configdriven</groupId>
+            <artifactId>helidon-pico-configdriven-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features</artifactId>
         </dependency>
         <dependency>
-            <!-- @ConfiguredBy -->
+            <!-- Required classes for compilation -->
             <groupId>io.helidon.pico.configdriven</groupId>
             <artifactId>helidon-pico-configdriven-runtime</artifactId>
             <optional>true</optional>
@@ -94,16 +94,9 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-config-processor</artifactId>
-            <scope>provided</scope> <!-- force reactor ordering -->
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.pico.configdriven</groupId>
             <artifactId>helidon-pico-configdriven-processor</artifactId>
-            <scope>provided</scope> <!-- force reactor ordering -->
-            <optional>true</optional>
+            <optional>true</optional> <!-- force reactor ordering -->
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>
@@ -182,13 +175,13 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-config-processor</artifactId>
+                            <groupId>io.helidon.config</groupId>
+                            <artifactId>helidon-config-metadata-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>

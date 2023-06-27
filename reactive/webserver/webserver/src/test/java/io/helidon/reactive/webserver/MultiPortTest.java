@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
-import io.helidon.common.pki.KeyConfig;
+import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.reactive.webclient.WebClient;
@@ -74,11 +74,11 @@ public class MultiPortTest {
         };
 
         webServerTls = WebServerTls.builder()
-                .privateKey(KeyConfig.keystoreBuilder()
-                                    .keystore(Resource.create("ssl/certificate.p12"))
-                                    .keystorePassphrase("helidon".toCharArray())
+                .privateKey(Keys.builder()
+                                    .keystore(keystoreBuilder -> keystoreBuilder.keystore(Resource.create("ssl/certificate.p12"))
+                                            .passphrase("helidon".toCharArray()))
                                     .build())
-                .build();
+                                    .build();
     }
 
     @AfterEach
@@ -110,9 +110,9 @@ public class MultiPortTest {
                         .get("/variable", (req, res) -> res.send("Variable 8080")));
 
         WebServer webServerTls = WebServer.builder(
-                Routing.builder()
-                        .get("/", commonHandler)
-                        .get("/variable", (req, res) -> res.send("Variable 8443")))
+                        Routing.builder()
+                                .get("/", commonHandler)
+                                .get("/variable", (req, res) -> res.send("Variable 8443")))
                 .tls(this.webServerTls)
                 .build();
 
@@ -207,22 +207,22 @@ public class MultiPortTest {
                 .routing(r -> r.get("/foo", commonHandler))
                 .socket("redirect", (socket, router) -> router
                         .addRouting(Routing.builder()
-                                .any((req, res) -> {
-                                    res.status(Http.Status.MOVED_PERMANENTLY_301)
-                                            .headers()
-                                            .add(Http.Header.LOCATION,
-                                                    String.format("https://%s:%d%s",
-                                                            Optional.of(req.headers()
-                                                                    .get(Http.Header.HOST))
-                                                                    .map(Http.HeaderValue::value)
-                                                                    .map(s -> s.contains(":") ? s
-                                                                            .subSequence(0, s.indexOf(":")) : s)
-                                                                    .orElseThrow(() -> new IllegalStateException(
-                                                                            "Header 'Host' not found!")),
-                                                            req.webServer().port(),
-                                                            req.path()));
-                                    res.send();
-                                })))
+                                            .any((req, res) -> {
+                                                res.status(Http.Status.MOVED_PERMANENTLY_301)
+                                                        .headers()
+                                                        .add(Http.Header.LOCATION,
+                                                             String.format("https://%s:%d%s",
+                                                                           Optional.of(req.headers()
+                                                                                               .get(Http.Header.HOST))
+                                                                                   .map(Http.HeaderValue::value)
+                                                                                   .map(s -> s.contains(":") ? s
+                                                                                           .subSequence(0, s.indexOf(":")) : s)
+                                                                                   .orElseThrow(() -> new IllegalStateException(
+                                                                                           "Header 'Host' not found!")),
+                                                                           req.webServer().port(),
+                                                                           req.path()));
+                                                res.send();
+                                            })))
                 .build();
 
         webServer.start()
@@ -240,8 +240,8 @@ public class MultiPortTest {
                 .thenApply(it -> {
                     assertThat("Unexpected response: " + it,
                                it.headers(), hasHeaderValue(Http.Header.LOCATION,
-                               AllOf.allOf(StringContains.containsString("https://localhost:"),
-                                           StringContains.containsString("/foo"))));
+                                                            AllOf.allOf(StringContains.containsString("https://localhost:"),
+                                                                        StringContains.containsString("/foo"))));
                     assertThat("Unexpected response: " + it, it.status(), is(Http.Status.MOVED_PERMANENTLY_301));
                     return it;
                 })
@@ -262,7 +262,7 @@ public class MultiPortTest {
                 .routing(r -> r.get("/", (req, res) -> res.send("Plain!")))
                 .config(config.get("webserver"))
                 .socket("secured", (s, r) -> r.addRouting(Routing.builder()
-                        .get("/", (req, res) -> res.send("Secured!")))
+                                                                  .get("/", (req, res) -> res.send("Secured!")))
                 )
                 .build();
 

@@ -21,7 +21,6 @@ import java.util.Optional;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.ServiceInjectionPlanBinder;
 
-import jakarta.annotation.Generated;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
@@ -30,7 +29,7 @@ import jakarta.inject.Singleton;
  * It is expected that this module should have eventually generated the "final" Application using the pico-maven-plugin
  * attached to the compile phase. See the documentation for more information.
 */
-@Generated({{{generatedanno}}})
+{{{generatedanno}}}
 @Singleton {{#modulename}}@Named({{classname}}.NAME){{/modulename}}
 public final class {{classname}} implements Application {
 {{#modulename}}

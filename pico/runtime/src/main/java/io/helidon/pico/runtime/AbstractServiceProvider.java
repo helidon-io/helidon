@@ -31,24 +31,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.TypeNameDefault;
+import io.helidon.common.types.TypeName;
 import io.helidon.pico.api.ActivationLog;
-import io.helidon.pico.api.ActivationLogEntryDefault;
+import io.helidon.pico.api.ActivationLogEntry;
 import io.helidon.pico.api.ActivationPhaseReceiver;
 import io.helidon.pico.api.ActivationRequest;
 import io.helidon.pico.api.ActivationResult;
-import io.helidon.pico.api.ActivationResultDefault;
 import io.helidon.pico.api.ActivationStatus;
 import io.helidon.pico.api.Activator;
 import io.helidon.pico.api.ContextualServiceQuery;
 import io.helidon.pico.api.DeActivationRequest;
 import io.helidon.pico.api.DeActivator;
 import io.helidon.pico.api.DependenciesInfo;
-import io.helidon.pico.api.DependenciesInfoDefault;
 import io.helidon.pico.api.Event;
 import io.helidon.pico.api.InjectionException;
 import io.helidon.pico.api.InjectionPointInfo;
-import io.helidon.pico.api.InjectionPointInfoDefault;
 import io.helidon.pico.api.InjectionPointProvider;
 import io.helidon.pico.api.Phase;
 import io.helidon.pico.api.PicoServiceProviderException;
@@ -59,8 +56,6 @@ import io.helidon.pico.api.PreDestroyMethod;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceInfoCriteriaDefault;
-import io.helidon.pico.api.ServiceInfoDefault;
 import io.helidon.pico.api.ServiceInjectionPlanBinder;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.ServiceProviderBindable;
@@ -68,8 +63,6 @@ import io.helidon.pico.spi.InjectionResolver;
 
 import jakarta.inject.Provider;
 
-import static io.helidon.pico.api.PicoServices.createActivationRequestDefault;
-import static io.helidon.pico.api.PicoServices.isDebugEnabled;
 import static io.helidon.pico.runtime.ServiceUtils.isQualifiedInjectionTarget;
 
 /**
@@ -85,7 +78,7 @@ public abstract class AbstractServiceProvider<T>
                    DeActivator,
                    ActivationPhaseReceiver,
                    Resettable {
-    static final DependenciesInfo NO_DEPS = DependenciesInfoDefault.builder().build();
+    static final DependenciesInfo NO_DEPS = DependenciesInfo.builder().build();
     private static final System.Logger LOGGER = System.getLogger(AbstractServiceProvider.class.getName());
 
     private final Semaphore activationSemaphore = new Semaphore(1);
@@ -124,7 +117,7 @@ public abstract class AbstractServiceProvider<T>
             this.serviceRef.set(instance);
             this.phase = (phase != null) ? phase : Phase.ACTIVE;
         }
-        this.serviceInfo = ServiceInfoDefault.toBuilder(serviceInfo).build();
+        this.serviceInfo = ServiceInfo.builder(serviceInfo).build();
         this.picoServices = Objects.requireNonNull(picoServices);
         this.log = picoServices.activationLog().orElseThrow();
         onInitialized();
@@ -207,11 +200,10 @@ public abstract class AbstractServiceProvider<T>
     }
 
     PicoServices requiredPicoServices() {
-        PicoServices picoServices = picoServices().orElse(null);
-        if (picoServices == null) {
-            throw new PicoServiceProviderException(description() + ": picoServices should have been previously set", this);
-        }
-        return picoServices;
+        return picoServices()
+                .orElseThrow(() -> new PicoServiceProviderException(description()
+                                                                            + ": picoServices should have been previously set",
+                                                                    this));
     }
 
     @Override
@@ -248,7 +240,7 @@ public abstract class AbstractServiceProvider<T>
             if (moduleInfoName != null) {
                 throw alreadyInitialized();
             }
-            this.serviceInfo = ServiceInfoDefault.toBuilder(serviceInfo).moduleName(moduleName).build();
+            this.serviceInfo = ServiceInfo.builder(serviceInfo).moduleName(moduleName).build();
         }
     }
 
@@ -284,7 +276,7 @@ public abstract class AbstractServiceProvider<T>
             throw alreadyInitialized();
         }
         this.thisIsAnInterceptor = true;
-        this.serviceInfo = ServiceInfoDefault.toBuilder(this.serviceInfo)
+        this.serviceInfo = ServiceInfo.builder(this.serviceInfo)
                 .addQualifiers(intercepted.serviceInfo().qualifiers())
                 .build();
     }
@@ -323,8 +315,8 @@ public abstract class AbstractServiceProvider<T>
      * @return this name assigned to this provider
      */
     public String name(boolean simple) {
-        String name = serviceInfo().serviceTypeName();
-        return (simple) ? TypeNameDefault.createFromTypeName(name).className() : name;
+        TypeName name = serviceInfo().serviceTypeName();
+        return (simple) ? name.classNameWithEnclosingNames().replace('.', '$') : name.fqName();
     }
 
     @Override
@@ -411,11 +403,17 @@ public abstract class AbstractServiceProvider<T>
     @Override
     public ActivationResult activate(ActivationRequest req) {
         if (isAlreadyAtTargetPhase(req.targetPhase())) {
-            return ActivationResult.createSuccess(this);
+            return ActivationResult.builder()
+                    .serviceProvider(this)
+                    .startingActivationPhase(currentActivationPhase())
+                    .finishingActivationPhase(currentActivationPhase())
+                    .targetActivationPhase(currentActivationPhase())
+                    .finishingStatus(ActivationStatus.SUCCESS)
+                    .build();
         }
 
         LogEntryAndResult logEntryAndResult = preambleActivate(req);
-        ActivationResultDefault.Builder res = logEntryAndResult.activationResult;
+        ActivationResult.Builder res = logEntryAndResult.activationResult;
 
         // if we get here then we own the semaphore for activation...
         try {
@@ -537,10 +535,10 @@ public abstract class AbstractServiceProvider<T>
                                                                   Class<?> serviceType) {
                 try {
                     InjectionResolver resolver = (InjectionResolver) AbstractServiceProvider.this;
-                    ServiceInfoCriteria serviceInfo = ServiceInfoCriteriaDefault.builder()
-                            .serviceTypeName(serviceType.getName())
+                    ServiceInfoCriteria serviceInfo = ServiceInfoCriteria.builder()
+                            .serviceTypeName(TypeName.create(serviceType))
                             .build();
-                    InjectionPointInfo ipInfo = InjectionPointInfoDefault.builder()
+                    InjectionPointInfo ipInfo = InjectionPointInfo.builder()
                             .id(id)
                             .dependencyToServiceInfo(serviceInfo);
                     Object resolved = Objects.requireNonNull(
@@ -589,9 +587,9 @@ public abstract class AbstractServiceProvider<T>
                 return ipInfo;
             }
 
-            private PicoInjectionPlanDefault.Builder createBuilder(String id) {
+            private PicoInjectionPlan.Builder createBuilder(String id) {
                 ipInfo = safeGetIpInfo(id);
-                return PicoInjectionPlanDefault.builder()
+                return PicoInjectionPlan.builder()
                         .injectionPointInfo(ipInfo)
                         .serviceProvider(self);
             }
@@ -632,7 +630,9 @@ public abstract class AbstractServiceProvider<T>
             didAcquire = activationSemaphore.tryAcquire(1, TimeUnit.MILLISECONDS);
 
             if (service != null) {
-                System.Logger.Level level = (isDebugEnabled())
+                System.Logger.Level level = (PicoServices.picoServices().map(PicoServices::config)
+                                                     .map(PicoServicesConfig::shouldDebug)
+                                                     .orElse(false))
                         ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
                 logger().log(level, "Resetting " + this);
                 if (deep && service instanceof Resettable) {
@@ -683,7 +683,13 @@ public abstract class AbstractServiceProvider<T>
     @Override
     public ActivationResult deactivate(DeActivationRequest req) {
         if (!currentActivationPhase().eligibleForDeactivation()) {
-            return ActivationResult.createSuccess(this);
+            return ActivationResult.builder()
+                    .serviceProvider(this)
+                    .startingActivationPhase(currentActivationPhase())
+                    .finishingActivationPhase(currentActivationPhase())
+                    .targetActivationPhase(currentActivationPhase())
+                    .finishingStatus(ActivationStatus.SUCCESS)
+                    .build();
         }
 
         PicoServices picoServices = requiredPicoServices();
@@ -696,7 +702,7 @@ public abstract class AbstractServiceProvider<T>
         boolean didAcquire = false;
         try {
             // let's wait a bit on the semaphore until we read timeout (probably detecting a deadlock situation)
-            if (!activationSemaphore.tryAcquire(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS)) {
+            if (!activationSemaphore.tryAcquire(cfg.activationDeadlockDetectionTimeout().toMillis(), TimeUnit.MILLISECONDS)) {
                 // if we couldn't grab the semaphore than we (or someone else) is busy activating this services, or
                 // we deadlocked.
                 InjectionException e = timedOutDeActivationInjectionError(logEntryAndResult.logEntry);
@@ -864,7 +870,7 @@ public abstract class AbstractServiceProvider<T>
 
             if (serviceOrProvider == null
                     || Phase.ACTIVE != currentActivationPhase()) {
-                ActivationRequest req = createActivationRequestDefault();
+                ActivationRequest req = PicoServices.createActivationRequestDefault();
                 ActivationResult res = activate(req);
                 if (res.failure()) {
                     if (ctx.expected()) {
@@ -935,7 +941,7 @@ public abstract class AbstractServiceProvider<T>
      *
      * @return the order of injection
      */
-    protected List<String> serviceTypeInjectionOrder() {
+    protected List<TypeName> serviceTypeInjectionOrder() {
         return Collections.singletonList(serviceInfo.serviceTypeName());
     }
 
@@ -950,7 +956,7 @@ public abstract class AbstractServiceProvider<T>
     protected void doInjectingFields(Object target,
                                      Map<String, Object> deps,
                                      Set<String> injections,
-                                     String forServiceType) {
+                                     TypeName forServiceType) {
         // NOP; meant to be overridden
     }
 
@@ -965,7 +971,7 @@ public abstract class AbstractServiceProvider<T>
     protected void doInjectingMethods(Object target,
                                       Map<String, Object> deps,
                                       Set<String> injections,
-                                      String forServiceType) {
+                                      TypeName forServiceType) {
         // NOP; meant to be overridden
     }
 
@@ -1035,12 +1041,12 @@ public abstract class AbstractServiceProvider<T>
      */
     protected LogEntryAndResult createLogEntryAndResult(Phase targetPhase) {
         Phase currentPhase = currentActivationPhase();
-        ActivationResultDefault.Builder activationResult = ActivationResultDefault.builder()
+        ActivationResult.Builder activationResult = ActivationResult.builder()
                 .serviceProvider(this)
                 .startingActivationPhase(currentPhase)
                 .finishingActivationPhase(currentPhase)
                 .targetActivationPhase(targetPhase);
-        ActivationLogEntryDefault.Builder logEntry = ActivationLogEntryDefault.builder()
+        ActivationLogEntry.Builder logEntry = ActivationLogEntry.builder()
                 .serviceProvider(this)
                 .event(Event.STARTING)
                 .threadId(Thread.currentThread().getId())
@@ -1092,9 +1098,13 @@ public abstract class AbstractServiceProvider<T>
 
             if (value.resolved().isEmpty()) {
                 // update the original plans map to properly reflect the resolved value
-                mutablePlans.put(key, PicoInjectionPlanDefault.toBuilder(value)
+                mutablePlans.put(key, PicoInjectionPlan.builder(value)
                         .wasResolved(true)
-                        .resolved(Optional.ofNullable(resolved))
+                        .update(builder -> {
+                            if (resolved != null) {
+                                builder.resolved(resolved);
+                            }
+                        })
                         .build());
             }
         });
@@ -1112,7 +1122,7 @@ public abstract class AbstractServiceProvider<T>
                         Optional<ActivationLog> log) {
         InjectionException e;
 
-        ActivationLogEntryDefault.Builder res = logEntryAndResult.logEntry;
+        ActivationLogEntry.Builder res = logEntryAndResult.logEntry;
         Throwable prev = res.error().orElse(null);
         if (prev == null || !(t instanceof InjectionException)) {
             String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "Failed to complete operation";
@@ -1166,7 +1176,7 @@ public abstract class AbstractServiceProvider<T>
         boolean didAcquire = false;
         try {
             // let's wait a bit on the semaphore until we read timeout (probably detecting a deadlock situation)
-            if (!activationSemaphore.tryAcquire(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS)) {
+            if (!activationSemaphore.tryAcquire(cfg.activationDeadlockDetectionTimeout().toMillis(), TimeUnit.MILLISECONDS)) {
                 // if we couldn't get semaphore than we (or someone else) is busy activating this services, or we deadlocked
                 onFailedFinish(logEntryAndResult,
                                timedOutActivationInjectionError(logEntryAndResult.logEntry),
@@ -1245,7 +1255,7 @@ public abstract class AbstractServiceProvider<T>
         startTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
 
         T target = Objects.requireNonNull(serviceRef.get());
-        List<String> serviceTypeOrdering = serviceTypeInjectionOrder();
+        List<TypeName> serviceTypeOrdering = serviceTypeInjectionOrder();
         LinkedHashSet<String> injections = new LinkedHashSet<>();
         serviceTypeOrdering.forEach((forServiceType) -> {
             try {
@@ -1268,7 +1278,7 @@ public abstract class AbstractServiceProvider<T>
         startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVE);
     }
 
-    private InjectionException recursiveActivationInjectionError(ActivationLogEntryDefault.Builder entry) {
+    private InjectionException recursiveActivationInjectionError(ActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("A circular dependency found during activation of " + targetServiceProvider,
                                                       targetServiceProvider);
@@ -1277,7 +1287,7 @@ public abstract class AbstractServiceProvider<T>
         return e;
     }
 
-    private InjectionException timedOutActivationInjectionError(ActivationLogEntryDefault.Builder entry) {
+    private InjectionException timedOutActivationInjectionError(ActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("Timed out during activation of " + targetServiceProvider,
                                                       targetServiceProvider);
@@ -1286,7 +1296,7 @@ public abstract class AbstractServiceProvider<T>
         return e;
     }
 
-    private InjectionException timedOutDeActivationInjectionError(ActivationLogEntryDefault.Builder entry) {
+    private InjectionException timedOutDeActivationInjectionError(ActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("Timed out during deactivation of " + targetServiceProvider,
                                                       targetServiceProvider);
@@ -1295,7 +1305,7 @@ public abstract class AbstractServiceProvider<T>
         return e;
     }
 
-    private InjectionException interruptedPreActivationInjectionError(ActivationLogEntryDefault.Builder entry,
+    private InjectionException interruptedPreActivationInjectionError(ActivationLogEntry.Builder entry,
                                                                       Throwable cause) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("A circular dependency found during activation of " + targetServiceProvider,
@@ -1332,7 +1342,7 @@ public abstract class AbstractServiceProvider<T>
                 + prev + " and the second = " + ipDep + "; both use the id '" + id
                 + "'; note that the second will override the first";
         if (log != null) {
-            log.record(ActivationLogEntryDefault.builder()
+            log.record(ActivationLogEntry.builder()
                                .serviceProvider(this)
                                .injectionPoint(ipDep)
                                .message(message)
@@ -1349,20 +1359,20 @@ public abstract class AbstractServiceProvider<T>
      */
     // note that for one result, there may be N logEntry records we will build and write to the log
     protected static class LogEntryAndResult /* implements Cloneable*/ {
-        private final ActivationResultDefault.Builder activationResult;
-        private final ActivationLogEntryDefault.Builder logEntry;
+        private final ActivationResult.Builder activationResult;
+        private final ActivationLogEntry.Builder logEntry;
 
-        LogEntryAndResult(ActivationLogEntryDefault.Builder logEntry,
-                          ActivationResultDefault.Builder activationResult) {
+        LogEntryAndResult(ActivationLogEntry.Builder logEntry,
+                          ActivationResult.Builder activationResult) {
             this.logEntry = logEntry;
             this.activationResult = activationResult;
         }
 
-        ActivationResultDefault.Builder activationResult() {
+        ActivationResult.Builder activationResult() {
             return activationResult;
         }
 
-        ActivationLogEntryDefault.Builder logEntry() {
+        ActivationLogEntry.Builder logEntry() {
             return logEntry;
         }
     }

@@ -25,18 +25,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.pico.api.PicoServicesConfig;
-import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.tools.AbstractFilerMessager;
 import io.helidon.pico.tools.ActivatorCreatorConfigOptions;
-import io.helidon.pico.tools.ActivatorCreatorConfigOptionsDefault;
 import io.helidon.pico.tools.ActivatorCreatorRequest;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CodeGenPaths;
-import io.helidon.pico.tools.CodeGenPathsDefault;
 import io.helidon.pico.tools.ExternalModuleCreatorRequest;
-import io.helidon.pico.tools.ExternalModuleCreatorRequestDefault;
 import io.helidon.pico.tools.ExternalModuleCreatorResponse;
 import io.helidon.pico.tools.spi.ActivatorCreator;
 import io.helidon.pico.tools.spi.ExternalModuleCreator;
@@ -96,13 +92,13 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
     /**
      * Establishes whether strict jsr-330 compliance is in effect.
      */
-    @Parameter(name = "supportsJsr330Strict", property = PicoServicesConfig.KEY_SUPPORTS_JSR330 + ".strict")
+    @Parameter(name = "supportsJsr330Strict", property = "pico.supports-jsr330.strict")
     private boolean supportsJsr330Strict;
 
     /**
      * Specify where to place generated source files created by annotation processing.
      */
-    @Parameter(defaultValue = "${project.build.directory}/generated-sources/" + PicoServicesConfig.NAME)
+    @Parameter(defaultValue = "${project.build.directory}/generated-sources/pico")
     private File generatedSourcesDirectory;
 
     /**
@@ -121,12 +117,12 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
     /**
      * @return the explicit qualifiers that should be setup as part of activator creation
      */
-    Map<String, Set<QualifierAndValue>> getServiceTypeToQualifiers() {
+    Map<String, Set<Qualifier>> getServiceTypeToQualifiers() {
         if (serviceTypeQualifiers == null) {
             return Map.of();
         }
 
-        Map<String, Set<QualifierAndValue>> result = new LinkedHashMap<>();
+        Map<String, Set<Qualifier>> result = new LinkedHashMap<>();
         serviceTypeQualifiers.forEach((serviceTypeQualifiers) -> result.putAll(serviceTypeQualifiers.toMap()));
         return result;
     }
@@ -168,25 +164,25 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
 
             ExternalModuleCreator externalModuleCreator = externalModuleCreator();
 
-            ActivatorCreatorConfigOptions configOptions = ActivatorCreatorConfigOptionsDefault.builder()
+            ActivatorCreatorConfigOptions configOptions = ActivatorCreatorConfigOptions.builder()
                     .supportsJsr330InStrictMode(isSupportsJsr330InStrictMode())
                     .build();
             String generatedSourceDir = getGeneratedSourceDirectory().getPath();
 
-            CodeGenPaths codeGenPaths = CodeGenPathsDefault.builder()
+            CodeGenPaths codeGenPaths = CodeGenPaths.builder()
                     .generatedSourcesPath(generatedSourceDir)
                     .outputPath(getOutputDirectory().getPath())
                     .metaInfServicesPath(new File(getOutputDirectory(), "META-INF/services").getPath())
                     .build();
             AbstractFilerMessager directFiler = AbstractFilerMessager.createDirectFiler(codeGenPaths, getLogger());
             CodeGenFiler codeGenFiler = CodeGenFiler.create(directFiler);
-            ExternalModuleCreatorRequest request = ExternalModuleCreatorRequestDefault.builder()
+            ExternalModuleCreatorRequest request = ExternalModuleCreatorRequest.builder()
                     .packageNamesToScan(getPackageNames())
                     .serviceTypeToQualifiersMap(getServiceTypeToQualifiers())
                     .throwIfError(isFailOnWarning())
                     .activatorCreatorConfigOptions(configOptions)
                     .codeGenPaths(codeGenPaths)
-                    .moduleName(Optional.ofNullable(getModuleName()))
+                    .update(it -> Optional.ofNullable(getModuleName()).ifPresent(it::moduleName))
                     .filer(codeGenFiler)
                     .build();
             ExternalModuleCreatorResponse res = externalModuleCreator.prepareToCreateExternalModule(request);

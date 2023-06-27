@@ -25,7 +25,8 @@ import io.helidon.pico.tools.InterceptorCreatorResponse;
 
 /**
  * Implementors of this contract are responsible for code-generating the Pico
- * {@link io.helidon.pico.api.Activator}s and {@link io.helidon.pico.api.ServiceProvider}s for service types found in your DI-enabled
+ * {@link io.helidon.pico.api.Activator}s and {@link io.helidon.pico.api.ServiceProvider}s for service types found in your
+ * DI-enabled
  * module.
  * <p>
  * The typical scenario will have 1-SingletonServiceType:1-GeneratedPicoActivatorClassForThatService:1-ServiceProvider

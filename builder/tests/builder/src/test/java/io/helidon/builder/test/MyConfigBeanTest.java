@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.builder.test;
 
 import io.helidon.builder.test.testsubjects.MyConfigBean;
-import io.helidon.builder.test.testsubjects.MyConfigBeanImpl;
 import io.helidon.builder.test.testsubjects.MyConfigBeanManualImpl;
 
 import org.junit.jupiter.api.Test;
@@ -45,38 +44,46 @@ class MyConfigBeanTest {
 
     @Test
     void codeGen() {
-        MyConfigBean val = MyConfigBeanImpl.builder().name("test").build();
-        assertThat(val.toString(),
-                   equalTo("MyConfigBean(name=test, enabled=false, port=8080)"));
+        MyConfigBean val = MyConfigBean.builder().setName("test").build();
 
-        val = MyConfigBeanImpl.toBuilder(val)
-                .name("test")
-                .enabled(true)
-                .port(80)
+        assertThat(val.getName(), is("test"));
+        assertThat(val.isEnabled(), is(false));
+        assertThat(val.getPort(), is(8080));
+
+        val = MyConfigBean.builder(val)
+                .setName("test")
+                .setEnabled(true)
+                .setPort(80)
                 .build();
-        assertThat(val.toString(),
-                   equalTo("MyConfigBean(name=test, enabled=true, port=80)"));
+
+        assertThat(val.getName(), is("test"));
+        assertThat(val.isEnabled(), is(true));
+        assertThat(val.getPort(), is(80));
     }
 
     @Test
     void mixed() {
         MyConfigBean val1 = MyConfigBeanManualImpl.builder().name("initial").build();
-        val1 = MyConfigBeanImpl.toBuilder(val1)
-                .name("test")
-                .enabled(true)
-                .port(80)
+        val1 = MyConfigBean.builder(val1)
+                .setName("test")
+                .setEnabled(true)
+                .setPort(80)
                 .build();
-        assertThat(val1.toString(),
-                   equalTo("MyConfigBean(name=test, enabled=true, port=80)"));
 
-        MyConfigBean val2 = MyConfigBeanImpl.builder().name("test").build();
+        assertThat(val1.getName(), is("test"));
+        assertThat(val1.isEnabled(), is(true));
+        assertThat(val1.getPort(), is(80));
+
+        MyConfigBean val2 = MyConfigBean.builder().setName("test").build();
         val2 = MyConfigBeanManualImpl.toBuilder(val2)
                 .name("test")
                 .enabled(true)
                 .port(80)
                 .build();
-        assertThat(val2.toString(),
-                   equalTo("MyConfigBeanManualImpl(name=test, enabled=true, port=80)"));
+
+        assertThat(val2.getName(), is("test"));
+        assertThat(val2.isEnabled(), is(true));
+        assertThat(val2.getPort(), is(80));
 
         assertThat(val1.hashCode(), is(val2.hashCode()));
         assertThat(val1, equalTo(val2));

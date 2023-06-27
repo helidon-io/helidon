@@ -35,13 +35,11 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.RoundEnvironment;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNameDefault;
+import io.helidon.pico.api.AccessModifier;
 import io.helidon.pico.api.Application;
 import io.helidon.pico.api.DependenciesInfo;
-import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.ModuleComponent;
-import io.helidon.pico.api.PicoServicesConfig;
-import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.api.Resettable;
 import io.helidon.pico.runtime.Dependencies;
 
@@ -69,20 +67,21 @@ public class ServicesToProcess implements Resettable {
     private final Map<TypeName, Boolean> servicesToLockParentServiceTypeName = new LinkedHashMap<>();
     private final Map<TypeName, TypeName> servicesToParentServiceTypeNames = new LinkedHashMap<>();
     private final Map<TypeName, String> servicesToActivatorGenericDecl = new LinkedHashMap<>();
-    private final Map<TypeName, InjectionPointInfo.Access> servicesToAccess = new LinkedHashMap<>();
+    private final Map<TypeName, AccessModifier> servicesToAccess = new LinkedHashMap<>();
     private final Map<TypeName, Boolean> servicesToIsAbstract = new LinkedHashMap<>();
     private final Map<TypeName, DependenciesInfo> servicesToDependencies = new LinkedHashMap<>();
     private final Map<TypeName, String> servicesToPreDestroyMethod = new LinkedHashMap<>();
     private final Map<TypeName, String> servicesToPostConstructMethod = new LinkedHashMap<>();
     private final Map<TypeName, Double> servicesToWeightedPriority = new LinkedHashMap<>();
     private final Map<TypeName, Integer> servicesToRunLevel = new LinkedHashMap<>();
-    private final Map<TypeName, Set<String>> servicesToScopeTypeNames = new LinkedHashMap<>();
-    private final Map<TypeName, Set<QualifierAndValue>> servicesToQualifiers = new LinkedHashMap<>();
+    private final Map<TypeName, Set<TypeName>> servicesToScopeTypeNames = new LinkedHashMap<>();
+    private final Map<TypeName, Set<Qualifier>> servicesToQualifiers = new LinkedHashMap<>();
     private final Map<TypeName, Set<TypeName>> servicesToProviderFor = new LinkedHashMap<>();
     private final Map<TypeName, InterceptionPlan> interceptorPlanFor = new LinkedHashMap<>();
     private final Map<TypeName, List<String>> extraCodeGen = new LinkedHashMap<>();
     private final Map<TypeName, List<String>> extraActivatorClassComments = new LinkedHashMap<>();
     private final Map<TypeName, List<TypeName>> serviceTypeHierarchy = new LinkedHashMap<>();
+    private final Map<TypeName, String> servicesToDefaultConstructor = new LinkedHashMap<>();
 
     private Path lastKnownSourcePathBeingProcessed;
     private String lastKnownTypeSuffix;
@@ -94,6 +93,9 @@ public class ServicesToProcess implements Resettable {
     private ModuleInfoDescriptor lastGeneratedModuleInfoDescriptor;
     private String lastGeneratedPackageName;
 
+    private ServicesToProcess() {
+    }
+
     /**
      * The current services to process instance.
      *
@@ -101,9 +103,6 @@ public class ServicesToProcess implements Resettable {
      */
     public static ServicesToProcess servicesInstance() {
         return SERVICES;
-    }
-
-    private ServicesToProcess() {
     }
 
     /**
@@ -116,6 +115,60 @@ public class ServicesToProcess implements Resettable {
         return new ServicesToProcess();
     }
 
+    /**
+     * Called to signal the beginning of an annotation processing phase.
+     *
+     * @param processor the processor running
+     * @param annotations the annotations being processed
+     * @param roundEnv the round env
+     */
+    public static void onBeginProcessing(Messager processor,
+                                         Set<?> annotations,
+                                         RoundEnvironment roundEnv) {
+        boolean reallyStarted = !annotations.isEmpty();
+        if (reallyStarted && !roundEnv.processingOver()) {
+            RUNNING_PROCESSORS.incrementAndGet();
+        }
+        processor.debug(processor.getClass()
+                                .getSimpleName() + " processing " + annotations + "; really-started=" + reallyStarted);
+    }
+
+    /**
+     * Called to add a runnable to call when done with all annotation processing.
+     *
+     * @param runnable the runnable to call
+     */
+    public static void addOnDoneRunnable(Runnable runnable) {
+        RUNNABLES_TO_CALL_WHEN_DONE.add(runnable);
+    }
+
+    /**
+     * Called to signal the end of an annotation processing phase.
+     *
+     * @param processor the processor running
+     * @param annotations the annotations being processed
+     * @param roundEnv the round env
+     */
+    public static void onEndProcessing(Messager processor,
+                                       Set<?> annotations,
+                                       RoundEnvironment roundEnv) {
+        boolean done = annotations.isEmpty();
+        if (done && roundEnv.processingOver()) {
+            RUNNING_PROCESSORS.decrementAndGet();
+        }
+        processor.debug(processor.getClass().getSimpleName() + " finished processing; done-done=" + done);
+
+        if (done && RUNNING_PROCESSORS.get() == 0) {
+            // perform module analysis to ensure the proper definitions are specified for modules and applications
+            ServicesToProcess.servicesInstance().performModuleUsageValidation(processor);
+        }
+
+        if (done) {
+            RUNNABLES_TO_CALL_WHEN_DONE.forEach(Runnable::run);
+            RUNNABLES_TO_CALL_WHEN_DONE.clear();
+        }
+    }
+
     @Override
     public boolean reset(boolean ignoredDeep) {
         servicesTypeNames.clear();
@@ -123,11 +176,11 @@ public class ServicesToProcess implements Resettable {
         servicesToContracts.clear();
         servicesToExternalContracts.clear();
         // we intentionally except parent service type names from being cleared - we need to remember this fact!
-//        if (false) {
-//            servicesToLockParentServiceTypeName.clear();
-//            servicesToParentServiceTypeNames.clear();
-//            servicesToActivatorGenericDecl.clear();
-//        }
+        //        if (false) {
+        //            servicesToLockParentServiceTypeName.clear();
+        //            servicesToParentServiceTypeNames.clear();
+        //            servicesToActivatorGenericDecl.clear();
+        //        }
         servicesToAccess.clear();
         servicesToIsAbstract.clear();
         servicesToDependencies.clear();
@@ -234,7 +287,7 @@ public class ServicesToProcess implements Resettable {
      * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public void addAccessLevel(TypeName serviceTypeName,
-                               InjectionPointInfo.Access access) {
+                               AccessModifier access) {
         Objects.requireNonNull(serviceTypeName);
         Objects.requireNonNull(access);
         addServiceTypeName(serviceTypeName);
@@ -247,7 +300,7 @@ public class ServicesToProcess implements Resettable {
     /**
      * @return the map of service type names to each respective access level
      */
-    Map<TypeName, InjectionPointInfo.Access> accessLevels() {
+    Map<TypeName, AccessModifier> accessLevels() {
         return servicesToAccess;
     }
 
@@ -461,8 +514,7 @@ public class ServicesToProcess implements Resettable {
      * @param dependencies the dependencies
      */
     public void addDependencies(DependenciesInfo dependencies) {
-        TypeName serviceTypeName =
-                TypeNameDefault.createFromTypeName(dependencies.fromServiceTypeName().orElseThrow());
+        TypeName serviceTypeName = dependencies.fromServiceTypeName().orElseThrow();
         addServiceTypeName(serviceTypeName);
         DependenciesInfo prevDependencies = servicesToDependencies.get(serviceTypeName);
         if (prevDependencies != null) {
@@ -542,7 +594,7 @@ public class ServicesToProcess implements Resettable {
      * @param scopeTypeName its scope type name
      */
     public void addScopeTypeName(TypeName serviceTypeName,
-                                 String scopeTypeName) {
+                                 TypeName scopeTypeName) {
         Objects.requireNonNull(scopeTypeName);
         addServiceTypeName(serviceTypeName);
 
@@ -579,12 +631,12 @@ public class ServicesToProcess implements Resettable {
      * @throws IllegalStateException thrown if internal state inconsistencies are found
      */
     public void addQualifiers(TypeName serviceTypeName,
-                              Set<QualifierAndValue> qualifiers) {
+                              Set<Qualifier> qualifiers) {
         addServiceTypeName(serviceTypeName);
         Object prev = servicesToQualifiers.put(serviceTypeName, qualifiers);
         if (prev != null) {
             throw new IllegalStateException("Can only support setting qualifiers once for " + serviceTypeName
-                    + "; prev = " + prev + " and new = " + qualifiers);
+                                                    + "; prev = " + prev + " and new = " + qualifiers);
         }
     }
 
@@ -634,6 +686,10 @@ public class ServicesToProcess implements Resettable {
         return new TreeMap<>(servicesToPreDestroyMethod);
     }
 
+    Map<TypeName, String> defaultConstructors() {
+        return new TreeMap<>(servicesToDefaultConstructor);
+    }
+
     /**
      * Fetches the map of service types to their priorities.
      *
@@ -657,7 +713,7 @@ public class ServicesToProcess implements Resettable {
      *
      * @return the map of service types to their scope type names
      */
-    public Map<TypeName, Set<String>> scopeTypeNames() {
+    public Map<TypeName, Set<TypeName>> scopeTypeNames() {
         return new TreeMap<>(servicesToScopeTypeNames);
     }
 
@@ -671,7 +727,7 @@ public class ServicesToProcess implements Resettable {
     /**
      * @return fetches the map of service types to the set of qualifiers associated with each
      */
-    Map<TypeName, Set<QualifierAndValue>> qualifiers() {
+    Map<TypeName, Set<Qualifier>> qualifiers() {
         return new TreeMap<>(servicesToQualifiers);
     }
 
@@ -825,63 +881,18 @@ public class ServicesToProcess implements Resettable {
         }
 
         ModuleInfoDescriptor descriptor = lastKnownModuleInfoDescriptor();
-        String packageName = innerToSuggestedGeneratedPackageName(descriptor, serviceTypeNames(), PicoServicesConfig.NAME);
-
+        String packageName = innerToSuggestedGeneratedPackageName(descriptor, serviceTypeNames(), "pico");
         return Objects.requireNonNull(packageName);
     }
 
     /**
-     * Called to signal the beginning of an annotation processing phase.
+     * Use a custom default constructor code.
      *
-     * @param processor the processor running
-     * @param annotations the annotations being processed
-     * @param roundEnv the round env
+     * @param serviceType type of service
+     * @param constructor constructor generated code
      */
-    public static void onBeginProcessing(Messager processor,
-                                         Set<?> annotations,
-                                         RoundEnvironment roundEnv) {
-        boolean reallyStarted = !annotations.isEmpty();
-        if (reallyStarted && !roundEnv.processingOver()) {
-            RUNNING_PROCESSORS.incrementAndGet();
-        }
-        processor.debug(processor.getClass()
-                                .getSimpleName() + " processing " + annotations + "; really-started=" + reallyStarted);
-    }
-
-    /**
-     * Called to add a runnable to call when done with all annotation processing.
-     *
-     * @param runnable the runnable to call
-     */
-    public static void addOnDoneRunnable(Runnable runnable) {
-        RUNNABLES_TO_CALL_WHEN_DONE.add(runnable);
-    }
-
-    /**
-     * Called to signal the end of an annotation processing phase.
-     *
-     * @param processor the processor running
-     * @param annotations the annotations being processed
-     * @param roundEnv the round env
-     */
-    public static void onEndProcessing(Messager processor,
-                                       Set<?> annotations,
-                                       RoundEnvironment roundEnv) {
-        boolean done = annotations.isEmpty();
-        if (done && roundEnv.processingOver()) {
-            RUNNING_PROCESSORS.decrementAndGet();
-        }
-        processor.debug(processor.getClass().getSimpleName() + " finished processing; done-done=" + done);
-
-        if (done && RUNNING_PROCESSORS.get() == 0) {
-            // perform module analysis to ensure the proper definitions are specified for modules and applications
-            ServicesToProcess.servicesInstance().performModuleUsageValidation(processor);
-        }
-
-        if (done) {
-            RUNNABLES_TO_CALL_WHEN_DONE.forEach(Runnable::run);
-            RUNNABLES_TO_CALL_WHEN_DONE.clear();
-        }
+    public void defaultConstructor(TypeName serviceType, String constructor) {
+        this.servicesToDefaultConstructor.put(serviceType, constructor);
     }
 
     /**
@@ -916,7 +927,8 @@ public class ServicesToProcess implements Resettable {
             if (moduleInfoItem.isEmpty() || !moduleInfoItem.get().provides()) {
                 IllegalStateException te = new IllegalStateException("Expected to have a 'provides "
                                                                              + ModuleComponent.class.getName()
-                                                               + " with ... ' entry in " + lastKnownModuleInfoFilePath + message);
+                                                                             + " with ... ' entry in "
+                                                                             + lastKnownModuleInfoFilePath + message);
                 if (shouldWarnOnly) {
                     processor.warn(te.getMessage(), te);
                 } else {

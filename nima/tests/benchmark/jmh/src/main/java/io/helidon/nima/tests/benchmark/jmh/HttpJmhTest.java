@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,15 +58,14 @@ public class HttpJmhTest {
         LogConfig.configureRuntime();
 
         server = WebServer.builder()
-                .defaultSocket(socket -> socket
-                        .connectionOptions(builder -> builder
-                                .readTimeout(Duration.ZERO)
-                                .connectTimeout(Duration.ZERO)
-                                .socketSendBufferSize(64000)
-                                .socketReceiveBufferSize(64000))
-                        .writeQueueLength(4000)
-                        .host("127.0.0.1")
-                        .backlog(8192))
+                .connectionOptions(builder -> builder
+                        .readTimeout(Duration.ZERO)
+                        .connectTimeout(Duration.ZERO)
+                        .socketSendBufferSize(64000)
+                        .socketReceiveBufferSize(64000))
+                .writeQueueLength(4000)
+                .host("127.0.0.1")
+                .backlog(8192)
                 .routing(router -> router.route(Http1Route.route(Http.Method.GET, "/plaintext", new PlaintextHandler())))
                 .build()
                 .start();

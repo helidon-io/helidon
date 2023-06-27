@@ -20,13 +20,13 @@ import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.Set;
 
-import io.helidon.builder.Singular;
-import io.helidon.common.types.AnnotationAndValueDefault;
+import io.helidon.builder.api.Prototype;
+import io.helidon.common.types.Annotation;
 import io.helidon.config.Config;
-import io.helidon.pico.api.InjectionPointInfoDefault;
+import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.PicoServiceProviderException;
 import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.QualifierAndValueDefault;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.api.ServiceProvider;
 import io.helidon.pico.api.Services;
 
@@ -73,15 +73,15 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void testUserHomePrivateKeyPath() {
-        OciConfigBean ociConfigBean = Objects.requireNonNull(OciExtension.ociConfig());
-        MatcherAssert.assertThat(OciAuthenticationDetailsProvider.userHomePrivateKeyPath(ociConfigBean),
+        OciConfig ociConfig = Objects.requireNonNull(OciExtension.ociConfig());
+        MatcherAssert.assertThat(OciAuthenticationDetailsProvider.userHomePrivateKeyPath(ociConfig),
                                  endsWith("/.oci/oci_api_key.pem"));
 
-        ociConfigBean = OciConfigBeanDefault.toBuilder(ociConfigBean)
+        ociConfig = OciConfig.builder(ociConfig)
                 .configPath("/decoy/path")
                 .authKeyFile("key.pem")
                 .build();
-        MatcherAssert.assertThat(OciAuthenticationDetailsProvider.userHomePrivateKeyPath(ociConfigBean),
+        MatcherAssert.assertThat(OciAuthenticationDetailsProvider.userHomePrivateKeyPath(ociConfig),
                                  endsWith("/.oci/key.pem"));
     }
 
@@ -90,37 +90,37 @@ class OciAuthenticationDetailsProviderTest {
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(null),
                    nullValue());
 
-        InjectionPointInfoDefault.Builder ipi = InjectionPointInfoDefault.builder()
+        InjectionPointInfo.Builder ipi = InjectionPointInfo.builder()
                 .annotations(Set.of());
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    nullValue());
 
-        ipi.addAnnotation(AnnotationAndValueDefault.create(Singular.class));
+        ipi.addAnnotation(Annotation.create(Prototype.Singular.class));
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    nullValue());
 
-        ipi.addAnnotation(AnnotationAndValueDefault.create(Named.class));
+        ipi.addAnnotation(Annotation.create(Named.class));
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    nullValue());
 
-        ipi.qualifiers(Set.of(QualifierAndValueDefault.create(Singular.class),
-                               QualifierAndValueDefault.create(Named.class, "")));
+        ipi.qualifiers(Set.of(Qualifier.create(Prototype.Singular.class),
+                              Qualifier.create(Named.class, "")));
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    nullValue());
 
-        ipi.qualifiers(Set.of(QualifierAndValueDefault.create(Singular.class),
-                              QualifierAndValueDefault.create(Named.class, " profileName ")));
+        ipi.qualifiers(Set.of(Qualifier.create(Prototype.Singular.class),
+                              Qualifier.create(Named.class, " profileName ")));
         assertThat(OciAuthenticationDetailsProvider.toNamedProfile(ipi),
                    equalTo("profileName"));
     }
 
     @Test
     void authStrategiesAvailability() {
-        Config config = OciConfigBeanTest.createTestConfig(
-                        OciConfigBeanTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.TAG_AUTO),
-                        OciConfigBeanTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"))
-                .get(OciConfigBean.NAME);
-        OciConfigBean cfg = OciConfigBeanDefault.toBuilder(config).build();
+        Config config = OciConfigTest.createTestConfig(
+                        OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.TAG_AUTO),
+                        OciConfigTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"))
+                .get(OciConfig.CONFIG_KEY);
+        OciConfig cfg = OciConfig.create(config);
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.AUTO.isAvailable(cfg),
                    is(true));
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.CONFIG.isAvailable(cfg),
@@ -132,12 +132,12 @@ class OciAuthenticationDetailsProviderTest {
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.RESOURCE_PRINCIPAL.isAvailable(cfg),
                    is(false));
 
-        config = OciConfigBeanTest.createTestConfig(
-                        OciConfigBeanTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.TAG_AUTO),
-                        OciConfigBeanTest.ociAuthConfigFile("./target", null),
-                        OciConfigBeanTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", "pkp", null))
-                .get(OciConfigBean.NAME);
-        cfg = OciConfigBeanDefault.toBuilder(config).build();
+        config = OciConfigTest.createTestConfig(
+                        OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.TAG_AUTO),
+                        OciConfigTest.ociAuthConfigFile("./target", null),
+                        OciConfigTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", "pkp", null))
+                .get(OciConfig.CONFIG_KEY);
+        cfg = OciConfig.create(config);
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.AUTO.isAvailable(cfg),
                    is(true));
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.CONFIG.isAvailable(cfg),
@@ -152,14 +152,14 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void selectionWhenNoConfigIsSet() {
-        Config config = OciConfigBeanTest.createTestConfig(
-                OciConfigBeanTest.basicTestingConfigSource());
+        Config config = OciConfigTest.createTestConfig(
+                OciConfigTest.basicTestingConfigSource());
         resetWith(config);
 
         ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =
                 services.lookupFirst(AbstractAuthenticationDetailsProvider.class, true).orElseThrow();
 
-        PicoServiceProviderException e = assertThrows(PicoServiceProviderException.class, () -> authServiceProvider.get());
+        PicoServiceProviderException e = assertThrows(PicoServiceProviderException.class, authServiceProvider::get);
         assertThat(e.getCause().getMessage(),
                    equalTo("No instances of com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider available for use. " +
                            "Verify your configuration named: oci"));
@@ -167,10 +167,10 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void selectionWhenFileConfigIsSetWithAuto() {
-        Config config = OciConfigBeanTest.createTestConfig(
-                OciConfigBeanTest.basicTestingConfigSource(),
-                OciConfigBeanTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.TAG_AUTO),
-                OciConfigBeanTest.ociAuthConfigFile("./target", "profile"));
+        Config config = OciConfigTest.createTestConfig(
+                OciConfigTest.basicTestingConfigSource(),
+                OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.TAG_AUTO),
+                OciConfigTest.ociAuthConfigFile("./target", "profile"));
         resetWith(config);
 
         ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =
@@ -183,10 +183,10 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void selectionWhenSimpleConfigIsSetWithAuto() {
-        Config config = OciConfigBeanTest.createTestConfig(
-                OciConfigBeanTest.basicTestingConfigSource(),
-                OciConfigBeanTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.TAG_AUTO),
-                OciConfigBeanTest.ociAuthSimpleConfig("tenant", "user", "passphrase", "fp", "privKey", null, "us-phoenix-1"));
+        Config config = OciConfigTest.createTestConfig(
+                OciConfigTest.basicTestingConfigSource(),
+                OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.TAG_AUTO),
+                OciConfigTest.ociAuthSimpleConfig("tenant", "user", "passphrase", "fp", "privKey", null, "us-phoenix-1"));
         resetWith(config);
 
         ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =

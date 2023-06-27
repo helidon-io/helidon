@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.builder.test.testsubjects.EdgeCases;
-import io.helidon.builder.test.testsubjects.EdgeCasesDefault;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,11 +33,11 @@ class EdgeCasesTest {
 
     @Test
     void testBasics() {
-        EdgeCases val = EdgeCasesDefault.builder().build();
+        EdgeCases val = EdgeCases.builder().build();
         assertThat(val.optionalIntegerWithDefault().get(), is(-1));
         assertThat(val.optionalStringWithDefault().get(), equalTo("test"));
 
-        val = EdgeCasesDefault.toBuilder(val).optionalIntegerWithDefault(-2).build();
+        val = EdgeCases.builder(val).optionalIntegerWithDefault(-2).build();
         assertThat(val.optionalIntegerWithDefault().get(), is(-2));
         assertThat(val.optionalStringWithDefault().get(), equalTo("test"));
     }
@@ -46,7 +45,7 @@ class EdgeCasesTest {
     @Test
     void listOfObjects() {
         List<?> listOfGenericObjects = List.of("test1");
-        EdgeCases val = EdgeCasesDefault.builder()
+        EdgeCases val = EdgeCases.builder()
                 .listOfObjects(listOfGenericObjects)
                 .addListOfObject("test2")
                 .build();
@@ -57,9 +56,9 @@ class EdgeCasesTest {
     void mapOfEdgeCases() {
         AnotherEdgeCase anotherEdgeCase = mock(AnotherEdgeCase.class);
         Map<String, ? extends EdgeCases> mapOfEdgeCases = Map.of("test1", anotherEdgeCase);
-        EdgeCases val = EdgeCasesDefault.builder()
+        EdgeCases val = EdgeCases.builder()
                 .mapOfEdgeCases(mapOfEdgeCases)
-                .addMapOfEdgeCase("test2", anotherEdgeCase)
+                .putMapOfEdgeCase("test2", anotherEdgeCase)
                 .build();
         assertThat(val.mapOfEdgeCases().keySet(), equalTo(Set.of("test1", "test2")));
     }

@@ -18,16 +18,17 @@ package {{packagename}};
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.types.TypeName;
 
-import io.helidon.pico.api.DependenciesInfoDefault;
-import io.helidon.pico.api.ServiceInfoDefault;
+import io.helidon.pico.api.AccessModifier;
 import io.helidon.pico.api.DependenciesInfo;
+import io.helidon.pico.api.ElementKind;
 import io.helidon.pico.api.PostConstructMethod;
 import io.helidon.pico.api.PreDestroyMethod;
 import io.helidon.pico.api.RunLevel;
+import io.helidon.pico.api.ServiceInfo;
 import io.helidon.pico.runtime.Dependencies;
 
-import jakarta.annotation.Generated;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.util.List;
@@ -36,8 +37,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static io.helidon.pico.api.ElementInfo.Access;
-import static io.helidon.pico.api.ElementInfo.ElementKind;
+
 import static io.helidon.pico.api.InjectionPointInfo.CONSTRUCTOR;
 
 /**{{#description}}
@@ -47,16 +47,16 @@ import static io.helidon.pico.api.InjectionPointInfo.CONSTRUCTOR;
 // @Singleton{{#weight}}
 @Weight({{{.}}}){{/weight}} {{#isrunlevelset}}@RunLevel({{runlevel}}){{/isrunlevelset}}
 @SuppressWarnings("unchecked")
-@Generated({{{generatedanno}}})
+{{{generatedanno}}}
 public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}}
             extends {{{parent}}} {
-    private static final ServiceInfoDefault serviceInfo =
-        ServiceInfoDefault.builder()
-            .serviceTypeName({{packagename}}.{{classname}}.class.getName()){{#contracts}}
-            .addContractsImplemented({{.}}.class.getName()){{/contracts}}{{#externalcontracts}}
-            .addExternalContractsImplemented({{.}}.class.getName()){{/externalcontracts}}
-            .activatorTypeName({{flatclassname}}{{activatorsuffix}}.class.getName()){{^isprovider}}{{#scopetypenames}}
-            .addScopeTypeName({{{.}}}.class.getName()){{/scopetypenames}}{{/isprovider}}{{#qualifiers}}
+    private static final ServiceInfo serviceInfo =
+        ServiceInfo.builder()
+            .serviceTypeName({{packagename}}.{{classname}}.class){{#contracts}}
+            .addContractImplemented({{.}}.class){{/contracts}}{{#externalcontracts}}
+            .addExternalContractImplemented({{.}}.class){{/externalcontracts}}
+            .activatorTypeName({{flatclassname}}{{activatorsuffix}}.class){{^isprovider}}{{#scopetypenames}}
+            .addScopeTypeName({{{.}}}.class){{/scopetypenames}}{{/isprovider}}{{#qualifiers}}
             {{{.}}}{{/qualifiers}}{{#isweightset}}
             .declaredWeight({{weight}}){{/isweightset}}{{#isrunlevelset}}
             .declaredRunLevel({{runlevel}}){{/isrunlevelset}}
@@ -71,7 +71,7 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}}
      * Default activator constructor.
      */
     protected {{flatclassname}}{{activatorsuffix}}() {
-        serviceInfo(serviceInfo);
+        {{{constructor}}}
     }
 
     /**
@@ -79,6 +79,7 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}}
      *
      * @return the service type of the managed service
      */
+    @Override
     public Class<?> serviceType() {
         return {{packagename}}.{{classname}}.class;
     }
@@ -96,16 +97,16 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}}
 {{/isprovider}}
     @Override
     public DependenciesInfo dependencies() {
-        DependenciesInfo deps = Dependencies.builder({{packagename}}.{{classname}}.class.getName()){{#dependencies}}
+        DependenciesInfo deps = Dependencies.builder({{packagename}}.{{classname}}.class){{#dependencies}}
                 {{{.}}}{{/dependencies}}
                 .build();
         return Dependencies.combine(super.dependencies(), deps);
     }
 {{#isconcrete}}{{#if issupportsjsr330instrictmode}}{{#if injectionorder}}
     @Override
-    protected List<String> serviceTypeInjectionOrder() {
-        List<String> order = new java.util.ArrayList<>();{{#injectionorder}}
-        order.add("{{{.}}}");{{/injectionorder}}
+    protected List<TypeName> serviceTypeInjectionOrder() {
+        List<TypeName> order = new java.util.ArrayList<>();{{#injectionorder}}
+        order.add(TypeName.create({{{.}}}.class));{{/injectionorder}}
         return order;
     }
 {{/if}}{{/if}}
@@ -116,7 +117,7 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}}
     }{{/isconcrete}}
 {{#if injectedfields}}
     @Override
-    protected void doInjectingFields(Object t, Map<String, Object> deps, Set<String> injections, String forServiceType) {
+    protected void doInjectingFields(Object t, Map<String, Object> deps, Set<String> injections, io.helidon.common.types.TypeName forServiceType) {
         super.doInjectingFields(t, deps, injections, forServiceType);{{#if issupportsjsr330instrictmode}}
         if (forServiceType != null && !{{packagename}}.{{classname}}.class.getName().equals(forServiceType)) {
             return;
@@ -130,7 +131,7 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}}
     }
 {{/if}}{{#if injectedmethods}}
     @Override
-    protected void doInjectingMethods(Object t, Map<String, Object> deps, Set<String> injections, String forServiceType) { {{#if injectedmethodsskippedinparent}}
+    protected void doInjectingMethods(Object t, Map<String, Object> deps, Set<String> injections, TypeName forServiceType) { {{#if injectedmethodsskippedinparent}}
         if (injections.isEmpty()) { {{#injectedmethodsskippedinparent}}
             injections.add("{{{id}}}");{{/injectedmethodsskippedinparent}}
         }{{/if}}

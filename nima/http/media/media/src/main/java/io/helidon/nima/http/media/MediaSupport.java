@@ -19,13 +19,14 @@ package io.helidon.nima.http.media;
 import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.config.NamedService;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.WritableHeaders;
 
 /**
  * Media support to be registered with {@link io.helidon.nima.http.media.MediaContext}.
  */
-public interface MediaSupport {
+public interface MediaSupport extends NamedService {
     /**
      * Once all providers are discovered/configured and context is established,
      * the {@link io.helidon.nima.http.media.MediaContext} calls this

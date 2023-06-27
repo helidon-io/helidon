@@ -36,13 +36,11 @@ module io.helidon.nima.webclient {
     requires static io.helidon.common.features.api;
     // @ConfiguredOption etc
     requires static io.helidon.config.metadata;
-    // @ConfigBean
-    requires static io.helidon.builder.config;
     // @Generated
     requires static jakarta.annotation;
 
     // @Builder - validator is a runtime dependency
-    requires io.helidon.builder;
+    requires io.helidon.builder.api;
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.context;

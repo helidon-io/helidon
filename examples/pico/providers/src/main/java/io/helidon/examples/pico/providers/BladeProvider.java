@@ -26,7 +26,7 @@ import io.helidon.examples.pico.basics.Little;
 import io.helidon.pico.api.ContextualServiceQuery;
 import io.helidon.pico.api.InjectionPointInfo;
 import io.helidon.pico.api.InjectionPointProvider;
-import io.helidon.pico.api.QualifierAndValue;
+import io.helidon.pico.api.Qualifier;
 import io.helidon.pico.api.ServiceInfoCriteria;
 
 import jakarta.inject.Singleton;
@@ -70,7 +70,7 @@ public class BladeProvider implements InjectionPointProvider<Blade> {
         return result;
     }
 
-    static boolean contains(Collection<QualifierAndValue> qualifiers,
+    static boolean contains(Collection<Qualifier> qualifiers,
                             Class<? extends Annotation> anno) {
         return qualifiers.stream().anyMatch(it -> it.typeName().name().equals(anno.getName()));
     }

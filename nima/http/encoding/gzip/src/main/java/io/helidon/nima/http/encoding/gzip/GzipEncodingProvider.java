@@ -16,76 +16,23 @@
 
 package io.helidon.nima.http.encoding.gzip;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.util.Set;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
-
 import io.helidon.common.Weighted;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.http.encoding.ContentDecoder;
-import io.helidon.nima.http.encoding.ContentEncoder;
+import io.helidon.common.config.Config;
+import io.helidon.nima.http.encoding.ContentEncoding;
 import io.helidon.nima.http.encoding.spi.ContentEncodingProvider;
-
-import static io.helidon.common.http.Http.Header.CONTENT_LENGTH;
 
 /**
  * Support for gzip content encoding.
  */
 public class GzipEncodingProvider implements ContentEncodingProvider, Weighted {
-    private static final HeaderValue CONTENT_ENCODING_GZIP = Http.Header.createCached(Http.Header.CONTENT_ENCODING,
-                                                                                      false,
-                                                                                      false,
-                                                                                      "gzip");
-
     @Override
-    public Set<String> ids() {
-        return Set.of("gzip", "x-gzip");
+    public String configKey() {
+        return "gzip";
     }
 
     @Override
-    public boolean supportsEncoding() {
-        return true;
-    }
-
-    @Override
-    public boolean supportsDecoding() {
-        return true;
-    }
-
-    @Override
-    public ContentDecoder decoder() {
-        return network -> {
-            try {
-                return new GZIPInputStream(network);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        };
-    }
-
-    @Override
-    public ContentEncoder encoder() {
-        return new ContentEncoder() {
-            @Override
-            public OutputStream encode(OutputStream network) {
-                try {
-                    return new GZIPOutputStream(network);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
-
-            @Override
-            public void headers(WritableHeaders<?> headers) {
-                headers.add(CONTENT_ENCODING_GZIP);
-                headers.remove(CONTENT_LENGTH);
-            }
-        };
+    public ContentEncoding create(Config config, String name) {
+        return new GzipEncoding(name);
     }
 
     @Override

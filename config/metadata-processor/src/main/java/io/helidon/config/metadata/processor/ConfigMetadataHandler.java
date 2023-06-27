@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,14 @@ package io.helidon.config.metadata.processor;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -87,8 +89,10 @@ class ConfigMetadataHandler {
      * Type mirrors we use for comparison
      */
     private TypeMirror builderType;
+    private TypeMirror factoryType;
     private TypeMirror configType;
     private TypeMirror commonConfigType;
+    private TypeMirror erasedOptionalType;
     private TypeMirror erasedListType;
     private TypeMirror erasedIterableType;
     private TypeMirror erasedSetType;
@@ -98,6 +102,42 @@ class ConfigMetadataHandler {
      * Public constructor required for service loader.
      */
     ConfigMetadataHandler() {
+    }
+
+    static <T> T findValue(AnnotationMirror annotationMirror,
+                           String name,
+                           Class<T> type,
+                           T defaultValue) {
+        return findValue(annotationMirror, name)
+                .map(type::cast)
+                .orElse(defaultValue);
+    }
+
+    static <T> Optional<T> findValue(AnnotationMirror annotationMirror,
+                                     String name,
+                                     Class<T> type) {
+        return findValue(annotationMirror, name)
+                .map(type::cast);
+    }
+
+    static Optional<Object> findValue(AnnotationMirror mirror, String name) {
+        for (var entry : mirror.getElementValues().entrySet()) {
+            if (entry.getKey().getSimpleName().contentEquals(name)) {
+                return Optional.of(entry.getValue().getValue());
+            }
+        }
+        return Optional.empty();
+    }
+
+    static List<AllowedValue> allowedValues(Elements elementUtils, TypeElement typeElement) {
+        if (typeElement != null && typeElement.getKind() == ElementKind.ENUM) {
+            return typeElement.getEnclosedElements()
+                    .stream()
+                    .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
+                    .map(element -> new AllowedValue(element.toString(), javadoc(elementUtils.getDocComment(element))))
+                    .collect(Collectors.toList());
+        }
+        return List.of();
     }
 
     synchronized void init(ProcessingEnvironment processingEnv) {
@@ -113,6 +153,10 @@ class ConfigMetadataHandler {
         if (builderTypeElement != null) {
             builderType = builderTypeElement.asType();
         }
+        TypeElement factoryTypeElement = elementUtils.getTypeElement("io.helidon.builder.api.Prototype.Factory");
+        if (factoryTypeElement != null) {
+            factoryType = factoryTypeElement.asType();
+        }
         TypeElement configTypeElement = elementUtils.getTypeElement("io.helidon.config.Config");
         if (configTypeElement != null) {
             configType = configTypeElement.asType();
@@ -122,6 +166,7 @@ class ConfigMetadataHandler {
             commonConfigType = commonConfigTypeElement.asType();
         }
 
+        erasedOptionalType = typeUtils.erasure(elementUtils.getTypeElement(Optional.class.getName()).asType());
         erasedListType = typeUtils.erasure(elementUtils.getTypeElement(List.class.getName()).asType());
         erasedSetType = typeUtils.erasure(elementUtils.getTypeElement(Set.class.getName()).asType());
         erasedIterableType = typeUtils.erasure(elementUtils.getTypeElement(Iterable.class.getName()).asType());
@@ -139,13 +184,77 @@ class ConfigMetadataHandler {
         }
     }
 
-    private boolean doProcess(RoundEnvironment roundEnv) {
-        Set<? extends Element> classes = roundEnv.getElementsAnnotatedWith(configuredElement);
-        for (Element aClass : classes) {
-            processClass(aClass);
+    @SuppressWarnings("unchecked")
+    List<ConfiguredOptionData> findConfiguredOptionAnnotations(ExecutableElement element) {
+        Optional<AnnotationMirror> annotation = findAnnotation(element, CONFIGURED_OPTIONS_CLASS);
+
+        if (annotation.isPresent()) {
+            return findValue(annotation.get(), "value", List.class, List.of())
+                    .stream()
+                    .map(it -> ConfiguredOptionData.create(elementUtils, typeUtils, (AnnotationMirror) it))
+                    .toList();
         }
 
+        annotation = findAnnotation(element, CONFIGURED_OPTION_CLASS);
+
+        return annotation.map(List::of)
+                .orElseGet(List::of)
+                .stream()
+                .map(it -> ConfiguredOptionData.create(elementUtils, typeUtils, it))
+                .toList();
+    }
+
+    /*
+    Method name is camel case (such as maxInitialLineLength)
+    result is dash separated and lower cased (such as max-initial-line-length).
+    Note that this same method was created in ConfigUtils in common-config, but since this
+    module should not have any dependencies in it a copy was left here as well.
+     */
+    String toConfigKey(String methodName) {
+        StringBuilder result = new StringBuilder(methodName.length() + 5);
+
+        char[] chars = methodName.toCharArray();
+        for (char aChar : chars) {
+            if (Character.isUpperCase(aChar)) {
+                if (result.length() == 0) {
+                    result.append(Character.toLowerCase(aChar));
+                } else {
+                    result.append('-')
+                            .append(Character.toLowerCase(aChar));
+                }
+            } else {
+                result.append(aChar);
+            }
+        }
+
+        return result.toString();
+    }
+
+    private static String javadoc(String docComment) {
+        if (null == docComment) {
+            return "";
+        }
+
+        String javadoc = docComment;
+        int index = javadoc.indexOf("@param");
+        if (index > -1) {
+            javadoc = docComment.substring(0, index);
+        }
+        // replace all {@code xxx} with 'xxx'
+        javadoc = JAVADOC_CODE.matcher(javadoc).replaceAll(it -> '`' + it.group(1) + '`');
+        // replace all {@link ...} with just the name
+        javadoc = JAVADOC_LINK.matcher(javadoc).replaceAll(it -> it.group(1));
+
+        return javadoc.trim();
+    }
+
+    private boolean doProcess(RoundEnvironment roundEnv) {
         if (roundEnv.processingOver()) {
+            Set<? extends Element> classes = roundEnv.getElementsAnnotatedWith(configuredElement);
+            for (Element aClass : classes) {
+                processClass(aClass);
+            }
+
             storeMetadata();
         }
 
@@ -169,20 +278,46 @@ class ConfigMetadataHandler {
         return Optional.empty();
     }
 
-    private void processConfiguredAnnotation(Element aClass, AnnotationMirror mirror) {
-        boolean standalone = findValue(mirror, "root", Boolean.class, false);
-        String keyPrefix = findValue(mirror, "prefix", String.class, "");
-        String description = findValue(mirror, "description", String.class, "");
-        boolean ignoreBuildMethod = findValue(mirror, "ignoreBuildMethod", Boolean.class, false);
-
-        String className = aClass.toString();
-        String targetClass = className;
-        boolean isBuilder = false;
+    private void processConfiguredAnnotation(Element aClass, AnnotationMirror configuredAnnotation) {
+        ConfiguredAnnotation configured = ConfiguredAnnotation.create(configuredAnnotation);
 
         TypeElement classElement = (TypeElement) aClass;
 
-        if (!ignoreBuildMethod
-                && typeUtils.isAssignable(typeUtils.erasure(aClass.asType()), typeUtils.erasure(builderType))) {
+        if (findAnnotation(aClass, "io.helidon.builder.api.Prototype.Blueprint").isPresent()) {
+            processAnnotatedInterface(classElement, configured);
+        } else {
+            processAnnotatedClass(classElement, configured);
+        }
+    }
+
+    private boolean isBuilder(TypeElement classElement) {
+        return typeUtils.isAssignable(typeUtils.erasure(classElement.asType()), typeUtils.erasure(builderType));
+    }
+
+    private void processAnnotatedInterface(TypeElement interfaceElement, ConfiguredAnnotation configured) {
+        String blueprintType = toDocumentedName(interfaceElement);
+        String targetType = typeForBlueprint(interfaceElement, blueprintType);
+        ConfiguredType type = new ConfiguredType(configured,
+                                                 blueprintType,
+                                                 targetType,
+                                                 true);
+
+        newOptions.put(targetType, type);
+
+        String module = elementUtils.getModuleOf(interfaceElement).toString();
+        moduleTypes.computeIfAbsent(module, it -> new ArrayList<>()).add(targetType);
+
+        addInterfaces(type, interfaceElement);
+
+        processBlueprint(interfaceElement, type, blueprintType, targetType);
+    }
+
+    private void processAnnotatedClass(TypeElement classElement, ConfiguredAnnotation configured) {
+
+        String className = classElement.toString();
+        String targetClass = className;
+        boolean isBuilder = false;
+        if (!configured.ignoreBuildMethod() && isBuilder(classElement)) {
             // this is a builder, we need the target type
             BuilderTypeInfo foundBuilder = findBuilder(classElement);
             isBuilder = foundBuilder.isBuilder;
@@ -198,16 +333,14 @@ class ConfigMetadataHandler {
           - an interface/abstract class only used for inheritance
          */
 
-        ConfiguredType type = new ConfiguredType(className,
+        ConfiguredType type = new ConfiguredType(configured,
+                                                 className,
                                                  targetClass,
-                                                 standalone,
-                                                 keyPrefix,
-                                                 description,
-                                                 toProvides(aClass));
+                                                 false);
 
         newOptions.put(targetClass, type);
-        String module = elementUtils.getModuleOf(aClass).toString();
-        moduleTypes.computeIfAbsent(module, it -> new LinkedList<>()).add(targetClass);
+        String module = elementUtils.getModuleOf(classElement).toString();
+        moduleTypes.computeIfAbsent(module, it -> new ArrayList<>()).add(targetClass);
 
         /*
          we also need to know all superclasses / interfaces that are configurable to allow merging
@@ -221,26 +354,22 @@ class ConfigMetadataHandler {
             processBuilderType(classElement, type, className, targetClass);
         } else {
             // standalone class with create method(s), or interface/abstract class
-            processTargetType(classElement, type, className, standalone);
+            processTargetType(classElement, type, className, type.standalone());
         }
     }
 
-    private <T> T findValue(AnnotationMirror annotationMirror,
-                            String name,
-                            Class<T> type,
-                            T defaultValue) {
-        return findValue(annotationMirror, name)
-                .map(type::cast)
-                .orElse(defaultValue);
-    }
-
-    private Optional<Object> findValue(AnnotationMirror mirror, String name) {
-        for (var entry : mirror.getElementValues().entrySet()) {
-            if (entry.getKey().getSimpleName().contentEquals(name)) {
-                return Optional.of(entry.getValue().getValue());
+    private String typeForBlueprint(TypeElement interfaceElement, String configObjectType) {
+        // if the type implements `Factory<X>`, we want to return X, otherwise "pure" config object
+        List<? extends TypeMirror> interfaces = interfaceElement.getInterfaces();
+        for (TypeMirror anInterface : interfaces) {
+            if (anInterface instanceof DeclaredType type) {
+                if (typeUtils.isSameType(typeUtils.erasure(factoryType), typeUtils.erasure(type))) {
+                    TypeMirror builtType = type.getTypeArguments().get(0);
+                    return typeUtils.erasure(builtType).toString();
+                }
             }
         }
-        return Optional.empty();
+        return configObjectType;
     }
 
     private BuilderTypeInfo findBuilder(TypeElement classElement) {
@@ -319,15 +448,54 @@ class ConfigMetadataHandler {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private List<String> toProvides(Element aClass) {
-        return findAnnotation(aClass, CONFIGURED_CLASS)
-                .map(mirror -> (List<AnnotationValue>) findValue(mirror, "provides", List.class, List.of()))
-                .map(values -> values.stream()
-                        .map(AnnotationValue::getValue)
-                        .map(Object::toString)
-                        .collect(Collectors.toList()))
-                .orElseGet(List::of);
+    private void processBlueprint(TypeElement interfaceElement,
+                                  ConfiguredType type,
+                                  String configObjectType,
+                                  String targetType) {
+
+        type.addProducer(new ProducerMethod(true, configObjectType, "create", new String[] {"io.helidon.config.Config"}));
+        type.addProducer(new ProducerMethod(true, configObjectType, "builder", new String[0]));
+
+        if (!targetType.equals(configObjectType)) {
+            // target type may not have the method (if it is for example PrivateKey)
+            type.addProducer(new ProducerMethod(false, configObjectType, "fromConfig", new String[0]));
+        }
+
+        // and now process all blueprint methods - must be non default, non static
+        // methods on this interface
+
+        elementUtils.getAllMembers(interfaceElement)
+                .stream()
+                .filter(this::isMethod)
+                .map(this::toExecutableElement)
+                .filter(it -> isMine(interfaceElement, it))
+                .filter(Predicate.not(this::isStatic))
+                .filter(Predicate.not(this::isDefault))
+                .forEach(it -> processBlueprintMethod(it, type, configObjectType));
+    }
+
+    private boolean isVoid(ExecutableElement element) {
+        return element.getReturnType().getKind() == TypeKind.VOID;
+    }
+
+    private boolean isDefault(Element element) {
+        return element.getModifiers().contains(Modifier.DEFAULT);
+    }
+
+    private boolean isPublic(Element element) {
+        return element.getModifiers().contains(Modifier.PUBLIC);
+    }
+
+    private boolean isStatic(Element element) {
+        return element.getModifiers().contains(Modifier.STATIC);
+    }
+
+    private ExecutableElement toExecutableElement(Element element) {
+        return (ExecutableElement) element;
+    }
+
+    private boolean isMethod(Element element) {
+        return element.getKind() == ElementKind.METHOD;
     }
 
     private void processBuilderType(TypeElement builderElement,
@@ -345,14 +513,14 @@ class ConfigMetadataHandler {
 
         elementUtils.getAllMembers(builderElement)
                 .stream()
-                .filter(it -> it.getKind() == ElementKind.METHOD)
-                .map(ExecutableElement.class::cast)
+                .filter(this::isMethod)
+                .map(this::toExecutableElement)
                 // the method is declared by this builder (if not, it is from super class or interface -> already handled)
                 .filter(it -> isMine(builderElement, it))
                 // public
-                .filter(it -> it.getModifiers().contains(Modifier.PUBLIC))
+                .filter(this::isPublic)
                 // not static
-                .filter(it -> !it.getModifiers().contains(Modifier.STATIC))
+                .filter(Predicate.not(this::isStatic))
                 // return the same type (e.g. Builder)
                 .filter(it -> isBuilderMethod(builderElement, it))
                 .forEach(it -> processBuilderMethod(it, type, className));
@@ -426,15 +594,13 @@ class ConfigMetadataHandler {
             }
             // now let's find all methods with @ConfiguredOption
             for (ExecutableElement validMethod : validMethods) {
-                List<AnnotationMirror> options = findConfiguredOptionAnnotations(validMethod);
+                List<ConfiguredOptionData> options = findConfiguredOptionAnnotations(validMethod);
 
                 if (options.isEmpty()) {
                     continue;
                 }
 
-                for (AnnotationMirror option : options) {
-                    ConfiguredOptionData data = ConfiguredOptionData.create(elementUtils, typeUtils, option);
-
+                for (ConfiguredOptionData data : options) {
                     if ((data.name == null || data.name.isBlank()) && !data.merge) {
                         messager.printMessage(Diagnostic.Kind.ERROR,
                                               "ConfiguredOption on " + typeElement + "."
@@ -449,8 +615,7 @@ class ConfigMetadataHandler {
                                               "ConfiguredOption on " + typeElement + "." + validMethod
                                                       + " does not have description defined. It is mandatory on non-builder "
                                                       + "methods",
-                                              typeElement,
-                                              option);
+                                              typeElement);
                         return;
                     }
 
@@ -550,18 +715,52 @@ class ConfigMetadataHandler {
                 });
     }
 
+    private void processBlueprintMethod(ExecutableElement element, ConfiguredType configuredType, String configObjectType) {
+        List<ConfiguredOptionData> options = findConfiguredOptionAnnotations(element);
+
+        for (ConfiguredOptionData data : options) {
+            String name = key(data.name, element);
+            String description = description(data.description, element);
+            String defaultValue = defaultValue(data.defaultValue);
+            boolean experimental = data.experimental;
+            OptionType type = typeForBlueprint(data, element);
+            boolean optional = defaultValue != null || !data.required;
+            boolean deprecated = data.deprecated;
+            List<AllowedValue> allowedValues = allowedValues(data, type.elementType);
+
+            String[] paramTypes = new String[] {type.elementType};
+
+            ProducerMethod builderMethod = new ProducerMethod(false,
+                                                              configObjectType + ".Builder",
+                                                              element.getSimpleName().toString(),
+                                                              paramTypes);
+
+            ConfiguredProperty property = new ConfiguredProperty(builderMethod.toString(),
+                                                                 name,
+                                                                 description,
+                                                                 defaultValue,
+                                                                 type.elementType,
+                                                                 experimental,
+                                                                 optional,
+                                                                 type.kind,
+                                                                 data.provider,
+                                                                 deprecated,
+                                                                 data.merge,
+                                                                 allowedValues);
+            configuredType.addProperty(property);
+        }
+    }
+
     private void processBuilderMethod(ExecutableElement element,
                                       ConfiguredType configuredType,
                                       String className) {
 
-        List<AnnotationMirror> options = findConfiguredOptionAnnotations(element);
+        List<ConfiguredOptionData> options = findConfiguredOptionAnnotations(element);
         if (options.isEmpty()) {
             return;
         }
 
-        for (AnnotationMirror option : options) {
-            ConfiguredOptionData data = ConfiguredOptionData.create(elementUtils, typeUtils, option);
-
+        for (ConfiguredOptionData data : options) {
             String name = key(data.name, element);
             String description = description(data.description, element);
             String defaultValue = defaultValue(data.defaultValue);
@@ -610,6 +809,61 @@ class ConfigMetadataHandler {
 
     private String defaultValue(String defaultValue) {
         return UNCONFIGURED_OPTION.equals(defaultValue) ? null : defaultValue;
+    }
+
+    private OptionType typeForBlueprint(ConfiguredOptionData annotation, ExecutableElement element) {
+        if (annotation.type == null || annotation.type.equals(CONFIGURED_OPTION_CLASS)) {
+            return typeForBlueprintFromSignature(element, annotation);
+        } else {
+            // use the one defined on annotation
+            return new OptionType(annotation.type, annotation.kind);
+        }
+    }
+
+    private OptionType typeForBlueprintFromSignature(ExecutableElement element, ConfiguredOptionData annotation) {
+        // guess from method
+
+        if (!element.getParameters().isEmpty()) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "Method " + element + " is annotated with @Configured, "
+                    + "yet it has a parameter. Interface methods must not have parameters.", element);
+            throw new IllegalStateException("Could not determine property type");
+        }
+
+        TypeMirror paramType = element.getReturnType();
+        if (paramType.getKind() == TypeKind.VOID) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "Method " + element + " is annotated with @Configured, "
+                    + "yet it is void. Interface methods must return the property type.", element);
+            throw new IllegalStateException("Could not determine property type");
+        }
+
+        TypeMirror erasedType = typeUtils.erasure(paramType);
+
+        if (typeUtils.isSameType(erasedOptionalType, erasedType)) {
+            DeclaredType type = (DeclaredType) paramType;
+            TypeMirror genericType = type.getTypeArguments().get(0);
+            return new OptionType(genericType.toString(), "VALUE");
+        }
+
+        if (typeUtils.isSameType(erasedListType, erasedType) || typeUtils.isSameType(erasedType, erasedSetType)
+                || typeUtils.isSameType(erasedType, erasedIterableType)) {
+            DeclaredType type = (DeclaredType) paramType;
+            TypeMirror genericType = type.getTypeArguments().get(0);
+            return new OptionType(genericType.toString(), "LIST");
+        }
+
+        if (typeUtils.isSameType(erasedMapType, erasedType)) {
+            DeclaredType type = (DeclaredType) paramType;
+            TypeMirror genericType = type.getTypeArguments().get(1);
+            return new OptionType(genericType.toString(), "MAP");
+        }
+
+        String typeName;
+        if (paramType instanceof PrimitiveType) {
+            typeName = typeUtils.boxedClass((PrimitiveType) paramType).toString();
+        } else {
+            typeName = paramType.toString();
+        }
+        return new OptionType(typeName, annotation.kind);
     }
 
     private OptionType type(ConfiguredOptionData annotation, ExecutableElement element) {
@@ -663,24 +917,6 @@ class ConfigMetadataHandler {
         return annotationValue;
     }
 
-    private static String javadoc(String docComment) {
-        if (null == docComment) {
-            return "";
-        }
-
-        String javadoc = docComment;
-        int index = javadoc.indexOf("@param");
-        if (index > -1) {
-            javadoc = docComment.substring(0, index);
-        }
-        // replace all {@code xxx} with 'xxx'
-        javadoc = JAVADOC_CODE.matcher(javadoc).replaceAll(it -> '`' + it.group(1) + '`');
-        // replace all {@link ...} with just the name
-        javadoc = JAVADOC_LINK.matcher(javadoc).replaceAll(it -> it.group(1));
-
-        return javadoc.trim();
-    }
-
     private void storeMetadata() {
         try (PrintWriter metaWriter = new PrintWriter(filer.createResource(StandardLocation.CLASS_OUTPUT,
                                                                            "",
@@ -715,57 +951,6 @@ class ConfigMetadataHandler {
         return e.getClass().getName() + ": " + e.getMessage();
     }
 
-    @SuppressWarnings("unchecked")
-    List<AnnotationMirror> findConfiguredOptionAnnotations(ExecutableElement element) {
-        Optional<AnnotationMirror> annotation = findAnnotation(element, CONFIGURED_OPTIONS_CLASS);
-
-        if (annotation.isPresent()) {
-            return findValue(annotation.get(), "value", List.class, List.of());
-        }
-
-        annotation = findAnnotation(element, CONFIGURED_OPTION_CLASS);
-
-        return annotation.map(List::of)
-                .orElseGet(List::of);
-    }
-
-    /*
-    Method name is camel case (such as maxInitialLineLength)
-    result is dash separated and lower cased (such as max-initial-line-length).
-    Note that this same method was created in ConfigUtils in common-config, but since this
-    module should not have any dependencies in it a copy was left here as well.
-     */
-    String toConfigKey(String methodName) {
-        StringBuilder result = new StringBuilder(methodName.length() + 5);
-
-        char[] chars = methodName.toCharArray();
-        for (char aChar : chars) {
-            if (Character.isUpperCase(aChar)) {
-                if (result.length() == 0) {
-                    result.append(Character.toLowerCase(aChar));
-                } else {
-                    result.append('-')
-                            .append(Character.toLowerCase(aChar));
-                }
-            } else {
-                result.append(aChar);
-            }
-        }
-
-        return result.toString();
-    }
-
-    static List<AllowedValue> allowedValues(Elements elementUtils, TypeElement typeElement) {
-        if (typeElement != null && typeElement.getKind() == ElementKind.ENUM) {
-            return typeElement.getEnclosedElements()
-                    .stream()
-                    .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
-                    .map(element -> new AllowedValue(element.toString(), javadoc(elementUtils.getDocComment(element))))
-                    .collect(Collectors.toList());
-        }
-        return List.of();
-    }
-
     private List<AllowedValue> allowedValues(ConfiguredOptionData annotation, String type) {
         if (type.equals(annotation.type) || !annotation.allowedValues.isEmpty()) {
             // this was already processed due to an explicit type defined in the annotation
@@ -773,6 +958,15 @@ class ConfigMetadataHandler {
             return annotation.allowedValues;
         }
         return allowedValues(elementUtils, elementUtils.getTypeElement(type));
+    }
+
+    private String toDocumentedName(TypeElement interfaceElement) {
+        String className = interfaceElement.toString();
+
+        return findAnnotation(interfaceElement,
+                              "io.helidon.builder.api.Prototype.Blueprint").filter(it -> className.endsWith("Blueprint"))
+                .map(it -> className.substring(0, className.length() - "Blueprint".length()))
+                .orElse(className);
     }
 
     private static final class OptionType {
@@ -797,6 +991,14 @@ class ConfigMetadataHandler {
             this.description = description;
         }
 
+        String value() {
+            return value;
+        }
+
+        String description() {
+            return description;
+        }
+
         private static AllowedValue create(AnnotationMirror annotationMirror) {
             AllowedValue result = new AllowedValue();
             Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues = annotationMirror.getElementValues();
@@ -813,14 +1015,6 @@ class ConfigMetadataHandler {
             }
 
             return result;
-        }
-
-        String value() {
-            return value;
-        }
-
-        String description() {
-            return description;
         }
     }
 

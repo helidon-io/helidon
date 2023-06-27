@@ -29,6 +29,7 @@ import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
+import io.helidon.nima.webserver.spi.ProtocolConfig;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 import jakarta.json.Json;
@@ -49,19 +50,23 @@ public class WebServerConfigTest {
     void testConnectionProvidersEnabled() {
         // This will pick up application.yaml from the classpath as default configuration file
         Config config = Config.create();
-        WebServer.Builder wsBuilder = WebServer.builder().config(config.get("server"));
-        List<ServerConnectionSelector> providers = wsBuilder.connectionProviders();
-        // Providers shall be loaded with ServiceLoader.
+        var wsConfig = WebServer.builder().config(config.get("server")).buildPrototype();
+        List<ServerConnectionSelector> providers = wsConfig.connectionSelectors();
+        // this is a list of selectors explicitly configured
         assertThat(providers, notNullValue());
-        assertThat(providers, is(not(empty())));
+        assertThat(providers, is(empty()));
+        // and this is combined with service loader lookup
+        List<ProtocolConfig> protocols = wsConfig.protocols();
+        assertThat(protocols, notNullValue());
+        assertThat(protocols, not(empty()));
     }
 
     @Test
     void testConnectionProvidersDisabled() {
         // This will pick up application.yaml from the classpath as default configuration file
         Config config = Config.create();
-        WebServer.Builder wsBuilder = WebServer.builder().config(config.get("server2"));
-        List<ServerConnectionSelector> providers = wsBuilder.connectionProviders();
+        var wsConfig = WebServer.builder().config(config.get("server2")).buildPrototype();
+        List<ServerConnectionSelector> providers = wsConfig.connectionSelectors();
         // No providers shall be loaded with ServiceLoader disabled for connection providers.
         assertThat(providers, notNullValue());
         assertThat(providers, is(empty()));
@@ -72,10 +77,10 @@ public class WebServerConfigTest {
     void testContentEncodingConfig() {
         // This will pick up application.yaml from the classpath as default configuration file
         Config config = Config.create();
-        WebServer.Builder wsBuilder = WebServer.builder().config(config.get("server"));
-        ContentEncodingContext contentEncodingContext = wsBuilder.contentEncodingContext();
-        assertThat(contentEncodingContext.contentEncodingEnabled(), is(true));
-        assertThat(contentEncodingContext.contentDecodingEnabled(), is(true));
+        var wsConfig = WebServer.builder().config(config.get("server")).buildPrototype();
+        ContentEncodingContext contentEncodingContext = wsConfig.contentEncoding().orElseThrow();
+        assertThat(contentEncodingContext.contentEncodingEnabled(), is(false));
+        assertThat(contentEncodingContext.contentDecodingEnabled(), is(false));
         failsWith(() -> contentEncodingContext.decoder("gzip"), NoSuchElementException.class);
         failsWith(() -> contentEncodingContext.decoder("gzip"), NoSuchElementException.class);
         failsWith(() -> contentEncodingContext.encoder("gzip"), NoSuchElementException.class);
@@ -91,19 +96,18 @@ public class WebServerConfigTest {
     void testMediaSupportFileConfigJson() throws IOException {
         Config config = Config.create();
         Config server = config.get("server2");
-        WebServer.Builder wsBuilder = WebServer.builder().config(server);
-        wsBuilder.build(); // triggers processing of media context
-        MediaContext mediaContext = wsBuilder.mediaContext();
+        var wsConfig = WebServer.builder().config(server).buildPrototype();
+        MediaContext mediaContext = wsConfig.mediaContext().orElseThrow();
         assertThat(mediaContext, is(notNullValue()));
         WritableHeaders<?> writableHeaders = WritableHeaders.create();
         EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
         writer.write(GenericType.create(JsonObject.class),
-                Json.createObjectBuilder()
-                        .add("name", "John Smith")
-                        .build(),
-                outputStream,
-                writableHeaders);
+                     Json.createObjectBuilder()
+                             .add("name", "John Smith")
+                             .build(),
+                     outputStream,
+                     writableHeaders);
         outputStream.close();
         // Verify written data
         JsonObject verify = Json.createObjectBuilder()
@@ -120,21 +124,20 @@ public class WebServerConfigTest {
     @Test
     void testMediaSupportFileConfigNoJson() throws IOException {
         Config config = Config.create();
-        WebServer.Builder wsBuilder = WebServer.builder().config(config.get("server"));
-        wsBuilder.build(); // trigger processing of media context
-        MediaContext mediaContext = wsBuilder.mediaContext();
+        var wsConfig = WebServer.builder().config(config.get("server")).buildPrototype();
+        MediaContext mediaContext = wsConfig.mediaContext().orElseThrow();
         assertThat(mediaContext, is(notNullValue()));
         WritableHeaders<?> writableHeaders = WritableHeaders.create();
         EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
         failsWith(() -> writer.write(
-                        GenericType.create(JsonObject.class),
-                        Json.createObjectBuilder()
-                                .add("name", "John Smith")
-                                .build(),
-                        outputStream,
-                        writableHeaders),
-                IllegalArgumentException.class);
+                          GenericType.create(JsonObject.class),
+                          Json.createObjectBuilder()
+                                  .add("name", "John Smith")
+                                  .build(),
+                          outputStream,
+                          writableHeaders),
+                  IllegalArgumentException.class);
         outputStream.close();
     }
 
@@ -145,23 +148,24 @@ public class WebServerConfigTest {
     @Test
     void testMediaSupportManualConfigJson() throws IOException {
         Config config = Config.create();
-        WebServer.Builder wsBuilder = WebServer.builder()
+        var wsConfig = WebServer.builder()
                 .config(config.get("server"))
                 .mediaContext(MediaContext.builder()
-                        .discoverServices(false)
-                        .addMediaSupport(JsonpSupport.create(Config.empty()))
-                        .build());
-        MediaContext mediaContext = wsBuilder.mediaContext();
+                                      .mediaSupportsDiscoverServices(false)
+                                      .addMediaSupport(JsonpSupport.create(Config.empty()))
+                                      .build())
+                .buildPrototype();
+        MediaContext mediaContext = wsConfig.mediaContext().orElseThrow();
         assertThat(mediaContext, is(notNullValue()));
         WritableHeaders<?> writableHeaders = WritableHeaders.create();
         EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
         writer.write(GenericType.create(JsonObject.class),
-                                        Json.createObjectBuilder()
-                                                .add("name", "John Smith")
-                                                .build(),
-                                        outputStream,
-                                        writableHeaders);
+                     Json.createObjectBuilder()
+                             .add("name", "John Smith")
+                             .build(),
+                     outputStream,
+                     writableHeaders);
         outputStream.close();
         // Verify written data
         JsonObject verify = Json.createObjectBuilder()
@@ -178,24 +182,25 @@ public class WebServerConfigTest {
     @Test
     void testMediaSupportManualConfigNoJson() throws IOException {
         Config config = Config.create();
-        WebServer.Builder wsBuilder = WebServer.builder()
+        var wsConfig = WebServer.builder()
                 .config(config.get("server"))
                 .mediaContext(MediaContext.builder()
-                        .discoverServices(false)
-                        .build());
-        MediaContext mediaContext = wsBuilder.mediaContext();
+                                      .mediaSupportsDiscoverServices(false)
+                                      .build())
+                .buildPrototype();
+        MediaContext mediaContext = wsConfig.mediaContext().orElseThrow();
         assertThat(mediaContext, is(notNullValue()));
         WritableHeaders<?> writableHeaders = WritableHeaders.create();
         EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
         failsWith(() -> writer.write(
-                GenericType.create(JsonObject.class),
-                        Json.createObjectBuilder()
-                                .add("name", "John Smith")
-                                .build(),
-                        outputStream,
-                        writableHeaders),
-                IllegalArgumentException.class);
+                          GenericType.create(JsonObject.class),
+                          Json.createObjectBuilder()
+                                  .add("name", "John Smith")
+                                  .build(),
+                          outputStream,
+                          writableHeaders),
+                  IllegalArgumentException.class);
         outputStream.close();
     }
 

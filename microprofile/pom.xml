@@ -46,7 +46,6 @@
         <module>openapi</module>
         <module>rest-client</module>
         <module>access-log</module>
-        <module>grpc</module>
         <module>cdi</module>
         <module>weld</module>
         <module>websocket</module>
