@@ -32,7 +32,7 @@ import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -70,7 +70,7 @@ class Http2ClientTest {
     }
 
     @SetUpServer
-    static void setUpServer(ServerConfig.Builder serverBuilder) {
+    static void setUpServer(WebServerConfig.Builder serverBuilder) {
         Keys privateKeyConfig = Keys.builder()
                 .keystore(keystore -> keystore
                         .keystore(Resource.create("certificate.p12"))

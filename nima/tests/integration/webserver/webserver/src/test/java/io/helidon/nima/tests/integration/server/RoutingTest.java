@@ -19,7 +19,7 @@ package io.helidon.nima.tests.integration.server;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServerConfig;
 
 @ServerTest
 class RoutingTest extends RoutingTestBase {
@@ -29,7 +29,7 @@ class RoutingTest extends RoutingTestBase {
     }
 
     @SetUpServer
-    static void setUp(ServerConfig.Builder builder) {
+    static void setUp(WebServerConfig.Builder builder) {
         builder.routing(routing -> routing
                 .get("/my path", (req, res) -> res.send("done"))
                 .get("/českáCesta", (req, res) -> res.send("done"))

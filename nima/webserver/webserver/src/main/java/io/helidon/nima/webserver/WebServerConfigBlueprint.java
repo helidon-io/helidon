@@ -27,13 +27,13 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.configdriven.api.ConfigBean;
 
 /**
- * Server configuration bean.
+ * WebServer configuration bean.
  * See {@link io.helidon.nima.webserver.WebServer#create(java.util.function.Consumer)}.
  */
-@Prototype.Blueprint(builderInterceptor = ServerConfigBlueprint.ServerConfigInterceptor.class)
+@Prototype.Blueprint(builderInterceptor = WebServerConfigBlueprint.ServerConfigInterceptor.class)
 @Configured(root = true, prefix = "server")
 @ConfigBean(wantDefault = true)
-interface ServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Factory<WebServer> {
+interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Factory<WebServer> {
     /**
      * When true the webserver registers a shutdown hook with the JVM Runtime.
      * <p>
@@ -62,9 +62,9 @@ interface ServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Facto
      */
     Optional<Context> serverContext();
 
-    class ServerConfigInterceptor implements Prototype.BuilderInterceptor<ServerConfig.BuilderBase<?, ?>> {
+    class ServerConfigInterceptor implements Prototype.BuilderInterceptor<WebServerConfig.BuilderBase<?, ?>> {
         @Override
-        public ServerConfig.BuilderBase<?, ?> intercept(ServerConfig.BuilderBase<?, ?> target) {
+        public WebServerConfig.BuilderBase<?, ?> intercept(WebServerConfig.BuilderBase<?, ?> target) {
             if (target.sockets().containsKey(WebServer.DEFAULT_SOCKET_NAME)) {
                 throw new ConfigException("Default socket must be configured directly on server config node, or through"
                                                   + " \"ServerConfig.Builder\", not as a separated socket.");

@@ -20,8 +20,8 @@ import java.util.Optional;
 
 import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -37,7 +37,7 @@ public interface ServerJunitExtension extends HelidonJunitExtension {
      *
      * @param builder builder to update, will be used to build server instance
      */
-    default void updateServerBuilder(ServerConfig.Builder builder) {
+    default void updateServerBuilder(WebServerConfig.Builder builder) {
     }
 
     /**
@@ -97,7 +97,7 @@ public interface ServerJunitExtension extends HelidonJunitExtension {
          * @return a new instance to inject as a parameter to the method
          */
         T get(String socketName,
-              ServerConfig.Builder serverBuilder,
+              WebServerConfig.Builder serverBuilder,
               ListenerConfig.Builder listenerBuilder,
               Router.RouterBuilder<?> routerBuilder);
 
@@ -109,12 +109,12 @@ public interface ServerJunitExtension extends HelidonJunitExtension {
          * @param listenerBuilder builder of the listener
          * @param routerBuilder   router builder
          * @param value           the value we provided with
-         *                        {@link #get(String, io.helidon.nima.webserver.ServerConfig.Builder,
+         *                        {@link #get(String, io.helidon.nima.webserver.WebServerConfig.Builder,
          *                        io.helidon.nima.webserver.ListenerConfig.Builder,
          *                        io.helidon.nima.webserver.Router.RouterBuilder)}
          */
         default void handle(String socketName,
-                            ServerConfig.Builder serverBuilder,
+                            WebServerConfig.Builder serverBuilder,
                             ListenerConfig.Builder listenerBuilder,
                             Router.RouterBuilder<?> routerBuilder,
                             T value) {

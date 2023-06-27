@@ -28,7 +28,7 @@ import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http1.Http1Route;
@@ -62,7 +62,7 @@ class BadRequestTest {
     }
 
     @SetUpServer
-    static void setUpServer(ServerConfig.Builder builder) {
+    static void setUpServer(WebServerConfig.Builder builder) {
         builder.directHandlers(DirectHandlers.builder()
                                        .addHandler(DirectHandler.EventType.BAD_REQUEST, BadRequestTest::badRequestHandler)
                                        .build());

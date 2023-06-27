@@ -245,7 +245,7 @@ interface ListenerConfigBlueprint {
      * WebServer context when using this method
      *
      * @return listener context
-     * @see ServerConfig#serverContext()
+     * @see WebServerConfig#serverContext()
      */
     Optional<Context> listenerContext();
 

@@ -22,7 +22,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.ListenerConfig;
-import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -56,7 +56,7 @@ class TestServerTest {
     }
 
     @SetUpServer
-    static void setUp(ServerConfig.Builder builder) {
+    static void setUp(WebServerConfig.Builder builder) {
         Context serverContext = Context.create();
         serverContext.register(TestServerTest.class, "server");
 

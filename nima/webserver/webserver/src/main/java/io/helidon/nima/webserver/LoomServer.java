@@ -55,7 +55,7 @@ import io.helidon.pico.configdriven.api.ConfigDriven;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
-@ConfigDriven(value = ServerConfigBlueprint.class, activateByDefault = true)
+@ConfigDriven(value = WebServerConfigBlueprint.class, activateByDefault = true)
 class LoomServer implements WebServer {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
@@ -66,14 +66,14 @@ class LoomServer implements WebServer {
     private final Lock lifecycleLock = new ReentrantLock();
     private final ExecutorService executorService;
     private final Context context;
-    private final ServerConfig serverConfig;
+    private final WebServerConfig serverConfig;
     private final boolean registerShutdownHook;
 
     private volatile Thread shutdownHook;
     private volatile List<ListenerFuture> startFutures;
     private volatile boolean alreadyStarted = false;
 
-    LoomServer(ServerConfig serverConfig) {
+    LoomServer(WebServerConfig serverConfig) {
         this.registerShutdownHook = serverConfig.shutdownHook();
         this.context = serverConfig.serverContext()
                 .orElseGet(() -> Context.builder()
@@ -117,12 +117,12 @@ class LoomServer implements WebServer {
 
     // based on Pico services
     @Inject
-    LoomServer(ServerConfig serverConfig, List<ServiceProvider<HttpFeature>> features) {
+    LoomServer(WebServerConfig serverConfig, List<ServiceProvider<HttpFeature>> features) {
         this(addFeatures(serverConfig, features));
     }
 
     @Override
-    public ServerConfig prototype() {
+    public WebServerConfig prototype() {
         return serverConfig;
     }
 
@@ -207,8 +207,8 @@ class LoomServer implements WebServer {
         return context;
     }
 
-    private static ServerConfig addFeatures(ServerConfig serverConfig, List<ServiceProvider<HttpFeature>> features) {
-        ServerConfig.Builder newBuilder = ServerConfig.builder(serverConfig);
+    private static WebServerConfig addFeatures(WebServerConfig serverConfig, List<ServiceProvider<HttpFeature>> features) {
+        WebServerConfig.Builder newBuilder = WebServerConfig.builder(serverConfig);
 
         List<HttpFeature> defaultSocket = new ArrayList<>();
         Map<String, List<HttpFeature>> customSockets = new LinkedHashMap<>();
