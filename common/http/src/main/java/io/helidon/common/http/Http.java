@@ -959,27 +959,6 @@ public final class Http {
             }
         }
 
-        // validate header value based on https://www.rfc-editor.org/rfc/rfc7230#section-3.2 and returns the error message if
-        // invalid or null if otherwise.
-        private static String validateValueErrorMessage(String value) {
-            char[] vChars = value.toCharArray();
-            int vLength = vChars.length;
-            for (int i = 0; i < vLength; i++) {
-                char vChar = vChars[i];
-                if (i == 0) {
-                    if (vChar < '!' || vChar == '\u007f') {
-                        return "First character of the header value is invalid";
-                    }
-                } else {
-                    if (vChar < ' ' && vChar != '\t' || vChar == '\u007f') {
-                        return "Character at position " + (i + 1) + " of the header value is invalid";
-                    }
-                }
-            }
-            return null;
-        }
-
-
         /**
          * Check validity of header name and values.
          *
@@ -990,9 +969,28 @@ public final class Http {
             // validate that header name only contains valid characters
             HttpToken.validate(name);
             // Validate header value
-            String errorMessage = validateValueErrorMessage(values());
-            if (errorMessage != null) {
-                throw new IllegalArgumentException(errorMessage + " for header '" + name + "'");
+            validateValue(name, values());
+        }
+
+
+        // validate header value based on https://www.rfc-editor.org/rfc/rfc7230#section-3.2 and throws IllegalArgumentException
+        // if invalid.
+        private static void validateValue(String name, String value) throws IllegalArgumentException {
+            char[] vChars = value.toCharArray();
+            int vLength = vChars.length;
+            for (int i = 0; i < vLength; i++) {
+                char vChar = vChars[i];
+                if (i == 0) {
+                    if (vChar < '!' || vChar == '\u007f') {
+                        throw new IllegalArgumentException("First character of the header value is invalid"
+                                                                   + " for header '" + name + "'");
+                    }
+                } else {
+                    if (vChar < ' ' && vChar != '\t' || vChar == '\u007f') {
+                        throw new IllegalArgumentException("Character at position " + (i + 1) + " of the header value is invalid"
+                                                                   + " for header '" + name + "'");
+                    }
+                }
             }
         }
 
