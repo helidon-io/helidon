@@ -43,6 +43,7 @@ import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http.media.ReadableEntityBase;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ClientResponseEntity;
+import io.helidon.nima.webclient.UriHelper;
 import io.helidon.nima.webclient.http.spi.Source;
 import io.helidon.nima.webclient.http.spi.SourceHandlerProvider;
 
@@ -71,7 +72,7 @@ class ClientResponseImpl implements Http1ClientResponse {
     private final List<String> trailerNames;
     // Media type parsing mode configured on client.
     private final ParserMode parserMode;
-    private final URI lastEndpointUri;
+    private final UriHelper lastEndpointUri;
 
     private ClientConnection connection;
     private long entityLength;
@@ -85,7 +86,7 @@ class ClientResponseImpl implements Http1ClientResponse {
                        DataReader reader,
                        MediaContext mediaContext,
                        ParserMode parserMode,
-                       URI lastEndpointUri,
+                       UriHelper lastEndpointUri,
                        CompletableFuture<Void> whenComplete) {
         this.responseStatus = responseStatus;
         this.requestHeaders = requestHeaders;
@@ -220,7 +221,7 @@ class ClientResponseImpl implements Http1ClientResponse {
 
     @Override
     public URI lastEndpointUri() {
-        return lastEndpointUri;
+        return lastEndpointUri.toUri();
     }
 
     private BufferData readEntityChunked(int estimate) {
