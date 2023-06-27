@@ -123,7 +123,7 @@ public class WebClientSecurity implements WebClientService {
 
             outboundEnv.method(request.method().text())
                     .path(request.uri().path())
-                    .targetUri(URI.create(request.uri().scheme() + "://" + request.uri().authority()))
+                    .targetUri(URI.create(request.uri().toString()))
                     .queryParams(request.query());
 
             request.headers()
