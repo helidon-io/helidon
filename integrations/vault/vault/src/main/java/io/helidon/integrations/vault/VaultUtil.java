@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ public final class VaultUtil {
      * Return a map of a json object that is nested in the provided object.
      * If the name is {@code nil} or not present, returns an empty map.
      *
-     * @param object  JSON object to process
-     * @param name name of a nested JSON object to return as a map
+     * @param object JSON object to process
+     * @param name   name of a nested JSON object to return as a map
      * @return map representation of the nested object
      */
     public static Map<String, String> toMap(JsonObject object, String name) {
@@ -89,22 +89,14 @@ public final class VaultUtil {
      * @throws VaultRestException in case the value is array or object
      */
     private static String stringValue(JsonValue value) {
-        switch (value.getValueType()) {
-        case ARRAY:
-            throw new VaultApiException("Cannot create a simple String from an array: " + value);
-        case OBJECT:
-            throw new VaultApiException("Cannot create a simple String from an object: " + value);
-        case STRING:
-            return ((JsonString) value).getString();
-        case TRUE:
-            return "true";
-        case FALSE:
-            return "false";
-        case NULL:
-            return "null";
-        case NUMBER:
-        default:
-            return value.toString();
-        }
+        return switch (value.getValueType()) {
+            case ARRAY -> throw new VaultApiException("Cannot create a simple String from an array: " + value);
+            case OBJECT -> throw new VaultApiException("Cannot create a simple String from an object: " + value);
+            case STRING -> ((JsonString) value).getString();
+            case TRUE -> "true";
+            case FALSE -> "false";
+            case NULL -> "null";
+            default -> value.toString();
+        };
     }
 }

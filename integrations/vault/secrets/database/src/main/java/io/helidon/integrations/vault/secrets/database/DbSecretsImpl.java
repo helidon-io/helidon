@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,66 @@
 
 package io.helidon.integrations.vault.secrets.database;
 
+import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.ListSecrets;
+import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 
-class DbSecretsImpl implements DbSecrets {
-    private final DbSecretsRx delegate;
+import jakarta.json.JsonObject;
 
-    DbSecretsImpl(DbSecretsRx delegate) {
-        this.delegate = delegate;
+class DbSecretsImpl implements DbSecrets {
+    private final RestApi restApi;
+    private final String mount;
+
+    DbSecretsImpl(RestApi restApi, String mount) {
+        this.restApi = restApi;
+        this.mount = mount;
     }
 
     @Override
     public VaultOptionalResponse<ListSecrets.Response> list(ListSecrets.Request request) {
-        return delegate.list(request).await();
+        String apiPath = mount + "/config";
+
+        return restApi.invokeOptional(Vault.LIST,
+                apiPath,
+                request,
+                VaultOptionalResponse.<ListSecrets.Response, JsonObject>vaultResponseBuilder()
+                                     .entityProcessor(ListSecrets.Response::create));
     }
 
     @Override
     public VaultOptionalResponse<DbGet.Response> get(DbGet.Request request) {
-        return delegate.get(request).await();
+        String name = request.name();
+        String apiPath = mount + "/creds/" + name;
+
+        return restApi.get(apiPath, request, VaultOptionalResponse.<DbGet.Response, JsonObject>vaultResponseBuilder()
+                                                                  .entityProcessor(json -> DbGet.Response.create(name, json)));
     }
 
     @Override
     public DbCreateRole.Response createRole(DbCreateRole.Request request) {
-        return delegate.createRole(request).await();
+        String apiPath = mount + "/roles/" + request.name();
+
+        return restApi.post(apiPath, request, DbCreateRole.Response.builder());
     }
 
     @Override
-    public DbConfigure.Response configure(DbConfigure.Request<?> request) {
-        return delegate.configure(request).await();
+    public DbConfigure.Response configure(DbConfigure.Request<?> dbRequest) {
+        String apiPath = mount + "/config/" + dbRequest.name();
+
+        return restApi.post(apiPath, dbRequest, DbConfigure.Response.builder());
     }
 
     @Override
     public DbDelete.Response delete(DbDelete.Request request) {
-        return delegate.delete(request).await();
+        String apiPath = mount + "/config/" + request.name();
+        return restApi.delete(apiPath, request, DbDelete.Response.builder());
     }
 
     @Override
     public DbDeleteRole.Response deleteRole(DbDeleteRole.Request request) {
-        return delegate.deleteRole(request).await();
+        String apiPath = mount + "/roles/" + request.name();
+
+        return restApi.delete(apiPath, request, DbDeleteRole.Response.builder());
     }
 }

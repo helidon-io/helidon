@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.spi.SecretsEngineProvider;
 
 /**
- * Service for {@link DbSecretsRx#ENGINE}.
+ * Service for {@link DbSecrets#ENGINE}.
  */
-public class DbEngineProvider implements SecretsEngineProvider<DbSecretsRx>,
+public class DbEngineProvider implements SecretsEngineProvider<DbSecrets>,
                                          io.helidon.integrations.vault.spi.InjectionProvider {
 
     private static final List<InjectionType<?>> INJECTABLES;
@@ -35,31 +35,22 @@ public class DbEngineProvider implements SecretsEngineProvider<DbSecretsRx>,
     static {
         List<InjectionType<?>> injectables = new LinkedList<>();
 
-        injectables.add(InjectionType.create(DbSecretsRx.class,
-                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
-                                                     .map(it -> vault.secrets(DbSecretsRx.ENGINE, it))
-                                                     .orElseGet(() -> vault.secrets(DbSecretsRx.ENGINE))));
-
         injectables.add(InjectionType.create(DbSecrets.class,
-                                             (vault, config, instanceConfig) -> {
-                                                 DbSecretsRx rx = instanceConfig.vaultPath()
-                                                         .map(it -> vault.secrets(DbSecretsRx.ENGINE, it))
-                                                         .orElseGet(() -> vault.secrets(DbSecretsRx.ENGINE));
-
-                                                 return new DbSecretsImpl(rx);
-                                             }));
+                (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                                 .map(it -> vault.secrets(DbSecrets.ENGINE, it))
+                                                                 .orElseGet(() -> vault.secrets(DbSecrets.ENGINE))));
 
         INJECTABLES = List.copyOf(injectables);
     }
 
     @Override
-    public Engine<DbSecretsRx> supportedEngine() {
-        return DbSecretsRx.ENGINE;
+    public Engine<DbSecrets> supportedEngine() {
+        return DbSecrets.ENGINE;
     }
 
     @Override
-    public DbSecretsRx createSecrets(Config config, RestApi restApi, String mount) {
-        return new DbSecretsRxImpl(restApi, mount);
+    public DbSecrets createSecrets(Config config, RestApi restApi, String mount) {
+        return new DbSecretsImpl(restApi, mount);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public enum PkiFormat {
     DER("der"),
     /**
      * PEM with private key (for
-     * {@link io.helidon.integrations.vault.secrets.pki.PkiSecretsRx#issueCertificate(IssueCertificate.Request)}.
+     * {@link io.helidon.integrations.vault.secrets.pki.PkiSecrets#issueCertificate(IssueCertificate.Request)}.
      * When used, the certificate response is bundled with private key.
      */
     PEM_BUNDLE("pem_bundle");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,23 +18,17 @@ package io.helidon.integrations.vault.auths.approle;
 
 import java.util.Optional;
 
+import io.helidon.integrations.vault.AuthMethod;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 
 /**
  * Vault authentication method for AppRole.
- * All methods block the current thread. This implementation is not suitable for reactive programming.
- * Use {@link io.helidon.integrations.vault.auths.approle.AppRoleAuthRx} in reactive code.
  */
 public interface AppRoleAuth {
     /**
-     * Create AppRole blocking API from its reactive counterpart.
-     *
-     * @param reactive AppRole reactive API
-     * @return AppRole blocking API
+     * Authentication method.
      */
-    static AppRoleAuth create(AppRoleAuthRx reactive) {
-        return new AppRoleAuthImpl(reactive);
-    }
+    AuthMethod<AppRoleAuth> AUTH_METHOD = AuthMethod.create(AppRoleAuth.class, "approle", "approle");
 
     /**
      * Creates a new AppRole or updates an existing AppRole. There

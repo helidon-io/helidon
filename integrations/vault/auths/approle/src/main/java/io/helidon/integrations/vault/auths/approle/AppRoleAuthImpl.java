@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,64 @@
 
 package io.helidon.integrations.vault.auths.approle;
 
+import io.helidon.common.http.Http;
+import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 
-class AppRoleAuthImpl implements AppRoleAuth {
-    private final AppRoleAuthRx delegate;
+import jakarta.json.JsonObject;
 
-    AppRoleAuthImpl(AppRoleAuthRx delegate) {
-        this.delegate = delegate;
+class AppRoleAuthImpl implements AppRoleAuth {
+    private final RestApi restApi;
+    private final String path;
+
+    AppRoleAuthImpl(RestApi restApi, String path) {
+        this.restApi = restApi;
+        this.path = path;
     }
 
     @Override
     public CreateAppRole.Response createAppRole(CreateAppRole.Request request) {
-        return delegate.createAppRole(request).await();
+        String apiPath = "/auth/" + path + "/role/" + request.roleName();
+
+        return restApi.post(apiPath, request, CreateAppRole.Response.builder());
     }
 
     @Override
     public DeleteAppRole.Response deleteAppRole(DeleteAppRole.Request request) {
-        return delegate.deleteAppRole(request).await();
+        String apiPath = "/auth/" + path + "/role/" + request.roleName();
+
+        return restApi.delete(apiPath, request, DeleteAppRole.Response.builder());
     }
 
     @Override
     public VaultOptionalResponse<ReadRoleId.Response> readRoleId(ReadRoleId.Request request) {
-        return delegate.readRoleId(request).await();
+        String apiPath = "/auth/" + path + "/role/" + request.roleName() + "/role-id";
+
+        return restApi.get(apiPath, request, VaultOptionalResponse.<ReadRoleId.Response, JsonObject>vaultResponseBuilder()
+                .entityProcessor(ReadRoleId.Response::create));
     }
 
     @Override
     public GenerateSecretId.Response generateSecretId(GenerateSecretId.Request request) {
-        return delegate.generateSecretId(request).await();
+        String apiPath = "/auth/" + path + "/role/" + request.roleName() + "/secret-id";
+
+        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, GenerateSecretId.Response.builder());
     }
 
     @Override
     public DestroySecretId.Response destroySecretId(DestroySecretId.Request request) {
-        return delegate.destroySecretId(request).await();
+        String apiPath = "/auth/" + path + "/role/" + request.roleName() + "/secret-id/destroy";
+
+        return restApi.post(apiPath, request, DestroySecretId.Response.builder());
     }
 
     @Override
     public Login.Response login(Login.Request request) {
-        return delegate.login(request).await();
+        String apiPath = "/auth/" + path + "/login";
+
+        return restApi.invokeWithResponse(Http.Method.POST,
+                                          apiPath,
+                                          request,
+                                          Login.Response.builder());
     }
 }

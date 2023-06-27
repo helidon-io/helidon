@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import io.helidon.integrations.vault.spi.InjectionProvider;
 /**
  * Java Service Loader service for Token Authentication method support.
  */
-public class TokenAuthProvider implements AuthMethodProvider<TokenAuthRx>,
+public class TokenAuthProvider implements AuthMethodProvider<TokenAuth>,
                                           InjectionProvider {
 
     private static final List<InjectionType<?>> INJECTABLES;
@@ -36,31 +36,28 @@ public class TokenAuthProvider implements AuthMethodProvider<TokenAuthRx>,
     static {
         List<InjectionType<?>> injectables = new LinkedList<>();
 
-        injectables.add(InjectionType.create(TokenAuthRx.class,
-                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
-                                                     .map(it -> vault.auth(TokenAuthRx.AUTH_METHOD, it))
-                                                     .orElseGet(() -> vault.auth(TokenAuthRx.AUTH_METHOD))));
-
         injectables.add(InjectionType.create(TokenAuth.class,
-                                             (vault, config, instanceConfig) -> {
-                                                 TokenAuthRx rx = instanceConfig.vaultPath()
-                                                         .map(it -> vault.auth(TokenAuthRx.AUTH_METHOD, it))
-                                                         .orElseGet(() -> vault.auth(TokenAuthRx.AUTH_METHOD));
-
-                                                 return new TokenAuthImpl(rx);
-                                             }));
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.auth(TokenAuth.AUTH_METHOD, it))
+                                                     .orElseGet(() -> vault.auth(TokenAuth.AUTH_METHOD))));
 
         INJECTABLES = List.copyOf(injectables);
     }
 
-    @Override
-    public AuthMethod<TokenAuthRx> supportedMethod() {
-        return TokenAuthRx.AUTH_METHOD;
+    /**
+     * Create a new instance.
+     */
+    public TokenAuthProvider() {
     }
 
     @Override
-    public TokenAuthRx createAuth(Config config, RestApi restApi, String path) {
-        return new TokenAuthRxImpl(restApi, path);
+    public AuthMethod<TokenAuth> supportedMethod() {
+        return TokenAuth.AUTH_METHOD;
+    }
+
+    @Override
+    public TokenAuth createAuth(Config config, RestApi restApi, String path) {
+        return new TokenAuthImpl(restApi, path);
     }
 
     @Override

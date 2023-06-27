@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import io.helidon.integrations.vault.spi.SecretsEngineProvider;
 /**
  * Java Service Loader service for PKI Secrets engine for Vault integration.
  */
-public class PkiEngineProvider implements SecretsEngineProvider<PkiSecretsRx>,
+public class PkiEngineProvider implements SecretsEngineProvider<PkiSecrets>,
                                           InjectionProvider {
 
     private static final List<InjectionType<?>> INJECTABLES;
@@ -36,31 +36,22 @@ public class PkiEngineProvider implements SecretsEngineProvider<PkiSecretsRx>,
     static {
         List<InjectionType<?>> injectables = new LinkedList<>();
 
-        injectables.add(InjectionType.create(PkiSecretsRx.class,
-                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
-                                                     .map(it -> vault.secrets(PkiSecretsRx.ENGINE, it))
-                                                     .orElseGet(() -> vault.secrets(PkiSecretsRx.ENGINE))));
-
         injectables.add(InjectionType.create(PkiSecrets.class,
-                                             (vault, config, instanceConfig) -> {
-                                                 PkiSecretsRx rx = instanceConfig.vaultPath()
-                                                         .map(it -> vault.secrets(PkiSecretsRx.ENGINE, it))
-                                                         .orElseGet(() -> vault.secrets(PkiSecretsRx.ENGINE));
-
-                                                 return new PkiSecretsImpl(rx);
-                                             }));
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.secrets(PkiSecrets.ENGINE, it))
+                                                     .orElseGet(() -> vault.secrets(PkiSecrets.ENGINE))));
 
         INJECTABLES = List.copyOf(injectables);
     }
 
     @Override
-    public Engine<PkiSecretsRx> supportedEngine() {
-        return PkiSecretsRx.ENGINE;
+    public Engine<PkiSecrets> supportedEngine() {
+        return PkiSecrets.ENGINE;
     }
 
     @Override
-    public PkiSecretsRx createSecrets(Config config, RestApi restApi, String mount) {
-        return new PkiSecretsRxImpl(restApi, mount);
+    public PkiSecrets createSecrets(Config config, RestApi restApi, String mount) {
+        return new PkiSecretsImpl(restApi, mount);
     }
 
     @Override

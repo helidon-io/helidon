@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import io.helidon.integrations.vault.spi.SecretsEngineProvider;
 /**
  * Provider supporting the {@code Cubbyhole} secrets engine API.
  */
-public class CubbyholeEngineProvider implements SecretsEngineProvider<CubbyholeSecretsRx>,
+public class CubbyholeEngineProvider implements SecretsEngineProvider<CubbyholeSecrets>,
                                                 io.helidon.integrations.vault.spi.InjectionProvider {
 
     private static final List<InjectionType<?>> INJECTABLES;
@@ -35,19 +35,10 @@ public class CubbyholeEngineProvider implements SecretsEngineProvider<CubbyholeS
     static {
         List<InjectionType<?>> injectables = new LinkedList<>();
 
-        injectables.add(InjectionType.create(CubbyholeSecretsRx.class,
-                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
-                                                     .map(it -> vault.secrets(CubbyholeSecretsRx.ENGINE, it))
-                                                     .orElseGet(() -> vault.secrets(CubbyholeSecretsRx.ENGINE))));
-
         injectables.add(InjectionType.create(CubbyholeSecrets.class,
-                                             (vault, config, instanceConfig) -> {
-                                                 CubbyholeSecretsRx rx = instanceConfig.vaultPath()
-                                                         .map(it -> vault.secrets(CubbyholeSecretsRx.ENGINE, it))
-                                                         .orElseGet(() -> vault.secrets(CubbyholeSecretsRx.ENGINE));
-
-                                                 return new CubbyholeSecretsImpl(rx);
-                                             }));
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.secrets(CubbyholeSecrets.ENGINE, it))
+                                                     .orElseGet(() -> vault.secrets(CubbyholeSecrets.ENGINE))));
 
         INJECTABLES = List.copyOf(injectables);
     }
@@ -60,13 +51,13 @@ public class CubbyholeEngineProvider implements SecretsEngineProvider<CubbyholeS
     }
 
     @Override
-    public Engine<CubbyholeSecretsRx> supportedEngine() {
-        return CubbyholeSecretsRx.ENGINE;
+    public Engine<CubbyholeSecrets> supportedEngine() {
+        return CubbyholeSecrets.ENGINE;
     }
 
     @Override
-    public CubbyholeSecretsRx createSecrets(Config config, RestApi restApi, String mount) {
-        return new CubbyholeSecretsRxImpl(restApi, mount);
+    public CubbyholeSecrets createSecrets(Config config, RestApi restApi, String mount) {
+        return new CubbyholeSecretsImpl(restApi, mount);
     }
 
     @Override
