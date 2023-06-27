@@ -62,6 +62,7 @@ public final class Main {
         WebServer server = WebServer.builder()
                 .config(config.get("server"))
                 .routing(r -> setupRouting(r, config))
+                .build()
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet");
