@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.reactive.webserver.Handler;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.nima.webserver.http.Handler;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -63,7 +63,8 @@ import io.micrometer.core.instrument.config.MeterRegistryConfig;
  *     In Micrometer, different registries report their contents in different formats. Further, there is no common abstract
  *     method defined on {@code MeterRegistry} which all implementations override; each {@code MeterRegistry}  has its own
  *     particular way of furnishing metrics output.
- *
+ * </p>
+ * <p>
  *     By default, we use a {@code PrometheusMeterRegistry} to support Prometheus/OpenMetrics format. Developers can enroll other
  *     registries to support other formats. We need to know which registry to use in response to receiving an HTTP request for
  *     Micrometer metrics output.
@@ -97,7 +98,6 @@ public final class MeterRegistryFactory {
 
     private final CompositeMeterRegistry compositeMeterRegistry;
     private final List<Enrollment> registryEnrollments;
-    private final List<NimaEnrollment> nimaRegistryEnrollments;
 
     // for testing
     private final Map<BuiltInRegistryType, MeterRegistry> builtInRegistryEnrollments = new HashMap<>();
@@ -162,9 +162,6 @@ public final class MeterRegistryFactory {
             builtInRegistryEnrollments.put(builtInRegistryType, meterRegistry);
         });
         registryEnrollments.forEach(e -> compositeMeterRegistry.add(e.meterRegistry()));
-
-        nimaRegistryEnrollments = builder.nimaRegistryEnrollments();
-        nimaRegistryEnrollments.forEach(e -> compositeMeterRegistry.add(e.meterRegistry()));
     }
 
     /**
@@ -229,19 +226,9 @@ public final class MeterRegistryFactory {
         }
     }
 
-    Handler matchingHandler(ServerRequest serverRequest, ServerResponse serverResponse) {
-        return registryEnrollments.stream()
-                .map(e -> e.handlerFn().apply(serverRequest))
-                .flatMap(Optional::stream)
-                .findFirst()
-                .orElse((req, res) -> res
-                        .status(Http.Status.NOT_ACCEPTABLE_406)
-                        .send(NO_MATCHING_REGISTRY_ERROR_MESSAGE));
-    }
-
     io.helidon.nima.webserver.http.Handler matchingHandler(io.helidon.nima.webserver.http.ServerRequest serverRequest,
                                                            io.helidon.nima.webserver.http.ServerResponse serverResponse) {
-        return nimaRegistryEnrollments.stream()
+        return registryEnrollments.stream()
                 .map(e -> e.handlerFn().apply(serverRequest))
                 .flatMap(Optional::stream)
                 .findFirst()
@@ -256,7 +243,6 @@ public final class MeterRegistryFactory {
     public static class Builder implements io.helidon.common.Builder<Builder, MeterRegistryFactory> {
 
         private final List<Enrollment> explicitRegistryEnrollments = new ArrayList<>();
-        private final List<NimaEnrollment> explicitNimaRegistryEnrollments = new ArrayList<>();
 
         private final Map<BuiltInRegistryType, MicrometerBuiltInRegistrySupport> builtInRegistriesRequested = new HashMap<>();
 
@@ -320,23 +306,10 @@ public final class MeterRegistryFactory {
          * @param handlerFunction returns {@code Optional<Handler>}; if present, capable of responding to the specified request
          * @return updated builder instance
          */
-        public Builder enrollRegistry(MeterRegistry meterRegistry, Function<ServerRequest, Optional<Handler>> handlerFunction) {
+        public Builder enrollRegistry(MeterRegistry meterRegistry,
+                                          Function<ServerRequest,
+                                                  Optional<Handler>> handlerFunction) {
             explicitRegistryEnrollments.add(new Enrollment(meterRegistry, handlerFunction));
-            return this;
-        }
-
-        /**
-         * Records a {@code MetricRegistry} to be managed by {@code MicrometerSupport}, along with the function that returns an
-         * {@code Optional} of a {@code Handler} for processing a given request to the Micrometer endpoint.
-         *
-         * @param meterRegistry the registry to enroll
-         * @param handlerFunction returns {@code Optional<Handler>}; if present, capable of responding to the specified request
-         * @return updated builder instance
-         */
-        public Builder enrollRegistryNima(MeterRegistry meterRegistry,
-                                          Function<io.helidon.nima.webserver.http.ServerRequest,
-                                                  Optional<io.helidon.nima.webserver.http.Handler>> handlerFunction) {
-            explicitNimaRegistryEnrollments.add(new NimaEnrollment(meterRegistry, handlerFunction));
             return this;
         }
 
@@ -345,22 +318,12 @@ public final class MeterRegistryFactory {
             return logRecords;
         }
 
-        private List<Enrollment> explicitAndBuiltInEnrollments() {
+        List<Enrollment> explicitAndBuiltInEnrollments() {
             List<Enrollment> result = new ArrayList<>(explicitRegistryEnrollments);
             builtInRegistriesRequested.forEach((builtInRegistrySupportType, builtInRegistrySupport) -> {
                 MeterRegistry meterRegistry = builtInRegistrySupport.registry();
                 result.add(new Enrollment(meterRegistry,
-                        builtInRegistrySupport.requestToHandlerFn(meterRegistry)));
-            });
-            return result;
-        }
-
-        List<NimaEnrollment> nimaRegistryEnrollments() {
-            List<NimaEnrollment> result = new ArrayList<>(explicitNimaRegistryEnrollments);
-            builtInRegistriesRequested.forEach((builtInRegistrySupportType, builtInRegistrySupport) -> {
-                MeterRegistry meterRegistry = builtInRegistrySupport.registry();
-                result.add(new NimaEnrollment(meterRegistry,
-                                          builtInRegistrySupport.requestNimaToHandlerFn(meterRegistry)));
+                                          builtInRegistrySupport.requestToHandlerFn(meterRegistry)));
             });
             return result;
         }
@@ -432,33 +395,13 @@ public final class MeterRegistryFactory {
         return builtInRegistryEnrollments;
     }
 
-
     private static class Enrollment {
-
-        private final MeterRegistry meterRegistry;
-        private final Function<ServerRequest, Optional<Handler>> handlerFn;
-
-        private Enrollment(MeterRegistry meterRegistry, Function<ServerRequest, Optional<Handler>> handlerFn) {
-            this.meterRegistry = meterRegistry;
-            this.handlerFn = handlerFn;
-        }
-
-        private MeterRegistry meterRegistry() {
-            return meterRegistry;
-        }
-
-        private Function<ServerRequest, Optional<Handler>> handlerFn() {
-            return handlerFn;
-        }
-    }
-
-    private static class NimaEnrollment {
 
         private final MeterRegistry meterRegistry;
         private final Function<io.helidon.nima.webserver.http.ServerRequest,
                 Optional<io.helidon.nima.webserver.http.Handler>> handlerFn;
 
-        private NimaEnrollment(MeterRegistry meterRegistry,
+        private Enrollment(MeterRegistry meterRegistry,
                                Function<io.helidon.nima.webserver.http.ServerRequest,
                                        Optional<io.helidon.nima.webserver.http.Handler>> handlerFn) {
             this.meterRegistry = meterRegistry;

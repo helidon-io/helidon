@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,14 +34,14 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
-public class MicrometerSupportBuilderTest {
+public class MicrometerFeatureBuilderTest {
 
     @Test
     public void testValidBuiltInRegistries() {
         MeterRegistryFactory factory = MeterRegistryFactory.builder()
                 .enrollBuiltInRegistry(MeterRegistryFactory.BuiltInRegistryType.PROMETHEUS, PrometheusConfig.DEFAULT)
                 .build();
-        MicrometerSupport support = MicrometerSupport.builder()
+        MicrometerFeature support = MicrometerFeature.builder()
                 .meterRegistryFactorySupplier(factory)
                 .build();
 
@@ -63,7 +63,7 @@ public class MicrometerSupportBuilderTest {
                 .enrollRegistry(registry, r -> Optional.of((req, resp) -> resp.send(registry.scrape())))
                 .build();
 
-        MicrometerSupport support = MicrometerSupport.builder()
+        MicrometerFeature support = MicrometerFeature.builder()
                 .meterRegistryFactorySupplier(factory)
                 .build();
 
@@ -86,7 +86,7 @@ public class MicrometerSupportBuilderTest {
                 .enrollBuiltInRegistry(MeterRegistryFactory.BuiltInRegistryType.PROMETHEUS, PrometheusConfig.DEFAULT)
                 .build();
 
-        MicrometerSupport support = MicrometerSupport.builder()
+        MicrometerFeature support = MicrometerFeature.builder()
                 .meterRegistryFactorySupplier(factory)
                 .build();
 
@@ -109,7 +109,7 @@ public class MicrometerSupportBuilderTest {
         assertThat(factoryBuilder.logRecords(), is(empty()));
 
         MeterRegistryFactory factory = factoryBuilder.build();
-        MicrometerSupport support = MicrometerSupport.builder()
+        MicrometerFeature support = MicrometerFeature.builder()
                 .config(config.get("metrics.micrometer"))
                 .meterRegistryFactorySupplier(factory)
                 .build();
@@ -134,10 +134,10 @@ public class MicrometerSupportBuilderTest {
         MeterRegistryFactory.Builder factoryBuilder = MeterRegistryFactory.builder()
                 .config(config.get("metrics.micrometer"));
         MeterRegistryFactory factory = factoryBuilder.build();
-        MicrometerSupport.Builder builder = MicrometerSupport.builder()
+        MicrometerFeature.Builder builder = MicrometerFeature.builder()
                 .meterRegistryFactorySupplier(factory);
 
-        MicrometerSupport support = builder.build();
+        MicrometerFeature support = builder.build();
 
         assertThat("Too many or too few enrolled registries", factory.registries().size(), is(1));
 
@@ -153,12 +153,12 @@ public class MicrometerSupportBuilderTest {
 
         MeterRegistryFactory factory = factoryBuilder.build();
 
-        MicrometerSupport.Builder builder = MicrometerSupport.builder()
+        MicrometerFeature.Builder builder = MicrometerFeature.builder()
                 .config(config.get("metrics.micrometer"))
                 .meterRegistryFactorySupplier(factory);
 
         assertThat(factoryBuilder.logRecords(), is(empty()));
-        MicrometerSupport support = builder.build();
+        MicrometerFeature support = builder.build();
 
         Set<MeterRegistry> registries = factory.registries();
         assertThat("Unexpectedly found no enrolled registry", registries, is(not(empty())));
@@ -179,12 +179,12 @@ public class MicrometerSupportBuilderTest {
 
         MeterRegistryFactory factory = factoryBuilder.build();
 
-        MicrometerSupport.Builder builder = MicrometerSupport.builder()
+        MicrometerFeature.Builder builder = MicrometerFeature.builder()
                 .config(config.get("metrics.micrometer"))
                 .meterRegistryFactorySupplier(factory);
 
         assertThat(factoryBuilder.logRecords(), is(empty()));
-        MicrometerSupport support = builder.build();
+        MicrometerFeature support = builder.build();
 
         // Even though the test data defines two Prometheus registries, internally we use a map to store
         // them, keyed by the enum. So the map will contain only one.

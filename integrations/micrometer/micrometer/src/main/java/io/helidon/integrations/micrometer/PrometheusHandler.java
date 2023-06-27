@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,16 +30,16 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 /**
  * Handler for dealing with HTTP requests to the Micrometer endpoint that specify prometheus as the registry type.
  */
-class NimaPrometheusHandler implements Handler {
+class PrometheusHandler implements Handler {
 
     private final PrometheusMeterRegistry registry;
 
-    private NimaPrometheusHandler(PrometheusMeterRegistry registry) {
+    private PrometheusHandler(PrometheusMeterRegistry registry) {
         this.registry = registry;
     }
 
-    static NimaPrometheusHandler create(MeterRegistry registry) {
-        return new NimaPrometheusHandler(PrometheusMeterRegistry.class.cast(registry));
+    static PrometheusHandler create(MeterRegistry registry) {
+        return new PrometheusHandler(PrometheusMeterRegistry.class.cast(registry));
     }
 
     @Override
