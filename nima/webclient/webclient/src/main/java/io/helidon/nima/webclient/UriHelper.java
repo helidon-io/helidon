@@ -95,6 +95,15 @@ public class UriHelper {
     }
 
     /**
+     * Convert instance to {@link java.net.URI}.
+     *
+     * @return the converted URI
+     */
+    public URI toUri() {
+        return URI.create(toString());
+    }
+
+    /**
      * Scheme of this URI.
      *
      * @param scheme to use (such as {@code http})
