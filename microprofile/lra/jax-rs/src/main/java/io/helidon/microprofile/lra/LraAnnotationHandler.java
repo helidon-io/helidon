@@ -22,9 +22,9 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
+import java.util.function.Supplier;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.common.reactive.Single;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
 import io.helidon.lra.coordinator.client.Participant;
@@ -171,11 +171,11 @@ class LraAnnotationHandler implements AnnotationHandler {
     }
 
     private URI start(String clientId, PropagatedHeaders headers, long timeOut) {
-        return awaitCoordinator(coordinatorClient.start(clientId, headers, timeOut));
+        return callCoordinator(() -> coordinatorClient.start(clientId, headers, timeOut));
     }
 
     private URI start(URI parentLraId, String clientId, PropagatedHeaders headers, long timeOut) {
-        return awaitCoordinator(coordinatorClient.start(parentLraId, clientId, headers, timeOut));
+        return callCoordinator(() -> coordinatorClient.start(parentLraId, clientId, headers, timeOut));
     }
 
     private void join(ContainerRequestContext reqCtx,
@@ -183,16 +183,16 @@ class LraAnnotationHandler implements AnnotationHandler {
                       PropagatedHeaders propagatedHeaders,
                       long timeLimit,
                       Participant participant) {
-        awaitCoordinator(coordinatorClient.join(lraId, propagatedHeaders, timeLimit, participant))
+        callCoordinator(() -> coordinatorClient.join(lraId, propagatedHeaders, timeLimit, participant))
                 .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri.toASCIIString()));
     }
 
     private void close(URI lraId, PropagatedHeaders headers) {
-        awaitCoordinator(coordinatorClient.close(lraId, headers));
+        callCoordinator(() -> coordinatorClient.close(lraId, headers));
     }
 
     private void cancel(URI lraId, PropagatedHeaders headers) {
-        awaitCoordinator(coordinatorClient.cancel(lraId, headers));
+        callCoordinator(() -> coordinatorClient.cancel(lraId, headers));
     }
 
     private void setHeaderPropagationContext(ContainerRequestContext reqCtx, PropagatedHeaders propagatedHeaders) {
@@ -216,10 +216,17 @@ class LraAnnotationHandler implements AnnotationHandler {
                 .ifPresent(context -> context.register(LRA_HTTP_PARENT_CONTEXT_HEADER, lraId));
     }
 
-    private <T> T awaitCoordinator(Single<T> single) {
+    private void callCoordinator(Runnable supplier) {
+        callCoordinator(() -> {
+            supplier.run();
+            return null;
+        });
+    }
+
+    private <T> T callCoordinator(Supplier<T> supplier) {
         try {
             // Connection timeout should be handled by client impl separately
-            return single.await(coordinatorTimeout);
+            return supplier.get();
         } catch (CompletionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof CoordinatorConnectionException) {

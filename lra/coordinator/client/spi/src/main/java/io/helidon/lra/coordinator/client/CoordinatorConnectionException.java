@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ package io.helidon.lra.coordinator.client;
  * Exception in communication with coordinator.
  */
 public class CoordinatorConnectionException extends RuntimeException {
-    private int status;
+    private final int status;
 
     /**
      * Creates exception describing an error in communication with coordinator.

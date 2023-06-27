@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.microprofile.lra;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -102,7 +103,7 @@ public class CoordinatorLocatorService {
                     + " not found."));
         }
 
-        client.init(() -> coordinatorUriSupplier.get(), coordinatorTimeout, coordinatorTimeoutUnit);
+        client.init(() -> coordinatorUriSupplier.get(), Duration.ofMillis(coordinatorTimeoutUnit.toMillis(coordinatorTimeout)));
 
         return client;
     }
