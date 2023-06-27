@@ -106,9 +106,8 @@ public class FollowRedirectsTest extends AbstractTest {
         assertThat(r.getStatus(), is(200));
         assertThat(r.readEntity(String.class), is("GET"));
 
-        // todo WebClient does not provider resolved URI
-        // assertThat(r.getHeaderString(RedirectTestFilter.RESOLVED_URI_HEADER),
-        //        is(UriBuilder.fromUri(getBaseUri()).path(RedirectResource.class).build().toString()));
+        assertThat(r.getHeaderString(RedirectTestFilter.RESOLVED_URI_HEADER),
+                is(UriBuilder.fromUri(getBaseUri()).path(RedirectResource.class).build().toString()));
     }
 
     @Test

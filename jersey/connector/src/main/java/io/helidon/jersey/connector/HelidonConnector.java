@@ -149,12 +149,17 @@ class HelidonConnector implements Connector {
             }
         }, request);
 
+        // copy headers
         for (Http.HeaderValue header : httpResponse.headers()) {
             for (String v : header.allValues()) {
                 response.getHeaders().add(header.name(), v);
             }
         }
 
+        // last URI, possibly after redirections
+        response.setResolvedRequestUri(httpResponse.lastEndpointUri());
+
+        // handle entity
         ReadableEntity entity = httpResponse.entity();
         if (entity.hasEntity()) {
             response.setEntityStream(entity.inputStream());
