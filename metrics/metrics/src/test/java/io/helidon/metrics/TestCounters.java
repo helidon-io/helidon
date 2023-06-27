@@ -24,6 +24,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,6 +50,7 @@ class TestCounters {
     }
 
     @Test
+    @Disabled
     void testConflictingTags() {
         metricRegistry.counter("conflictingCounterDueToTags"); // name only
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,

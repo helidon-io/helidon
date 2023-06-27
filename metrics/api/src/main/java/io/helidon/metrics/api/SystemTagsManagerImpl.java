@@ -88,7 +88,9 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     @Override
     public Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope) {
-        return new MultiIterable<>(explicitTags, scopeIterable(scope));
+        return new MultiIterable<>(explicitTags,
+                                   systemTags.entrySet(),
+                                   scopeIterable(scope));
     }
 
     private Iterable<Map.Entry<String, String>> scopeIterable(String scope) {

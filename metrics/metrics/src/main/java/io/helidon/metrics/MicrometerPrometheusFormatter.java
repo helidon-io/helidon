@@ -201,6 +201,21 @@ public class MicrometerPrometheusFormatter {
     /**
      * Prepares a set containing the names of meters from the specified Prometheus meter registry which match
      * the specified meter name selection.
+     * <p>
+     *     For meters with multiple values, the Prometheus essentially creates and actually displays in its output
+     *     additional or "child" meters. A child meter's name is the parent's name plus a suffixes consisting
+     *     of the child meter's units (if any) plus the child name. For example, the timer {@code myDelay}  has child meters
+     *     {@code myDelay_seconds_count}, {@code myDelay_seconds_sum}, and {@code myDelay_seconds_max}. (The output contains
+     *     repetitions of the parent meter's name for each quantile, but that does not affect the meter names we need to ask
+     *     the Prometheus meter registry to retrieve for us when we scrape.)
+     * </p>
+     * <p>
+     *     We interpret any name selection passed to this method as specifying a parent name. We can ask the Prometheus meter
+     *     registry to select specific meters by name when we scrape, but we need to pass it an expanded name selection that
+     *     includes the relevant child meter names as well as the parent name. One way to choose those is
+     *     first to collect the names from the Prometheus meter registry itself and derive the names to have the meter registry
+     *     select by from those matching meters, their units, etc.
+     * </p>
      *
      * @param prometheusMeterRegistry Prometheus meter registry to query
      * @param meterNameSelection meter names to select
@@ -216,7 +231,7 @@ public class MicrometerPrometheusFormatter {
             return null;
         }
 
-        Set<String> result = new HashSet<>();
+        Set<String> expandedMeterNameSelection = new HashSet<>();
         while (meterNames.hasNext()) {
             String meterName = meterNames.next();
             String normalizedMeterName = normalizeMeterName(meterName);
@@ -236,10 +251,10 @@ public class MicrometerPrometheusFormatter {
                     });
 
             unitsForMeter.forEach(units -> suffixesForMeter.forEach(
-                    suffix -> result.add(normalizedMeterName + units + suffix)));
+                    suffix -> expandedMeterNameSelection.add(normalizedMeterName + units + suffix)));
         }
 
-        return result;
+        return expandedMeterNameSelection;
     }
 
     /**
@@ -251,8 +266,8 @@ public class MicrometerPrometheusFormatter {
     static Set<String> meterNameSuffixes(Meter.Type meterType) {
         return switch (meterType) {
             case COUNTER -> Set.of("_total");
-            case LONG_TASK_TIMER -> Set.of("_count", "_sum", "_max");
-            case DISTRIBUTION_SUMMARY, TIMER, GAUGE, OTHER -> Set.of();
+            case DISTRIBUTION_SUMMARY, LONG_TASK_TIMER, TIMER -> Set.of("_count", "_sum", "_max");
+            case GAUGE, OTHER -> Set.of();
         };
     }
 

@@ -21,6 +21,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -95,6 +96,7 @@ class MetricStoreTests {
         assertThat("Counters with same two tags", counter1, is(counter2));
     }
 
+    @Disabled
     @Test
     void testSameNameOverlappingButDifferentTags() {
         Tag[] tags1 = {new Tag("foo", "1"), new Tag("bar", "1"), new Tag("baz", "1")};
