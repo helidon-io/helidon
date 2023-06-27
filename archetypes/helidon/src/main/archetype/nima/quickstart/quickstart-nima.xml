@@ -64,6 +64,14 @@ curl -X GET http://localhost:8080/greet/Jose
                     <value key="groupId">jakarta.json</value>
                     <value key="artifactId">jakarta.json-api</value>
                 </map>
+                <map order="999">
+                    <value key="groupId">io.helidon.nima.observe</value>
+                    <value key="artifactId">helidon-nima-observe-metrics</value>
+                </map>
+                <map order="999">
+                    <value key="groupId">io.helidon.metrics</value>
+                    <value key="artifactId">helidon-metrics</value>
+                </map>
             </list>
             <list key="Main-helidon-imports">
                 <value>io.helidon.health.checks.DeadlockHealthCheck</value>
@@ -76,7 +84,7 @@ curl -X GET http://localhost:8080/greet/Jose
             <list key="Main-routing">
                 <value><![CDATA[
         ObserveFeature observe = ObserveFeature.builder()
-                .useSystemServices(false)
+                .useSystemServices(true)
                 .addProvider(HealthObserveProvider.create(HealthFeature.builder()
                                                                   .useSystemServices(false)
                                                                   .addCheck(HeapMemoryHealthCheck.create())
@@ -119,6 +127,13 @@ curl -X GET http://localhost:8080/greet/Jose
     void testDeadlockHealthCheck() {
         try (Http1ClientResponse response = client.get("/observe/health/live/deadlock").request()) {
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+        }
+    }
+
+    @Test
+    void testMetricsObserver() {
+        try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
         }
     }
 ]]></value>
