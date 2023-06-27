@@ -41,7 +41,7 @@ import io.helidon.nima.http2.webserver.Http2ConnectionSelector;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
@@ -73,7 +73,7 @@ class FlowControlTest {
     }
 
     @SetUpServer
-    static void setUpServer(ServerConfig.Builder serverBuilder) {
+    static void setUpServer(WebServerConfig.Builder serverBuilder) {
         serverBuilder
                 .addConnectionSelector(Http2ConnectionSelector.builder()
                                                .http2Config(Http2Config.builder()

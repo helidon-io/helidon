@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,24 +19,22 @@ package io.helidon.integrations.vault.secrets.kv2;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 
 /**
  * Secrets for KV version 2 secrets engine blocking implementation.
- * All methods block the current thread. This implementation is not suitable for reactive programming.
- * Use {@link io.helidon.integrations.vault.secrets.kv2.Kv2SecretsRx} in reactive code.
  */
 public interface Kv2Secrets extends Secrets {
+
     /**
-     * Create blocking Key/Vault secrets from its reactive counterpart.
-     *
-     * @param reactiveSecrets reactive secrets
-     * @return blocking secrets
+     * KV (Key/Value) secrets engine version 2.
+     * <p>
+     * Documentation:
+     * <a href="https://www.vaultproject.io/docs/secrets/kv/kv-v2">https://www.vaultproject.io/docs/secrets/kv/kv-v2</a>
      */
-    static Kv2Secrets create(Kv2SecretsRx reactiveSecrets) {
-        return new Kv2SecretsImpl(reactiveSecrets);
-    }
+    Engine<Kv2Secrets> ENGINE = Engine.create(Kv2Secrets.class, "kv", "secret", "2");
 
     /**
      * Get the latest version of a secret.

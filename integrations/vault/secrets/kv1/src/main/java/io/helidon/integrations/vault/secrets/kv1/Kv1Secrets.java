@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,24 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 
 /**
  * Secrets for KV version 1 secrets engine.
- * All methods block the current thread. This implementation is not suitable for reactive programming.
- * Use {@link io.helidon.integrations.vault.secrets.kv1.Kv1SecretsRx} in reactive code.
  */
 public interface Kv1Secrets extends Secrets {
+
+    /**
+     * KV (Key/Value) secrets engine version 1.
+     * <p>
+     * Documentation:
+     * <a href="https://www.vaultproject.io/docs/secrets/kv/kv-v1">https://www.vaultproject.io/docs/secrets/kv/kv-v1</a>
+     */
+    Engine<Kv1Secrets> ENGINE = Engine.create(Kv1Secrets.class, "kv", "kv1", "1");
+
     /**
      * Get a secret.
      *

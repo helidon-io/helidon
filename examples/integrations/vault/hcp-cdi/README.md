@@ -1,4 +1,4 @@
-HCP Vault Integration with Reactive APIs
+HCP Vault Integration with Helidon APIs
 ---
 
 This example expects an empty Vault. It uses the token to create all required resources.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.integrations.vault;
 
 import java.util.Optional;
 
-class EngineImpl<T extends SecretsRx> implements Engine<T> {
+class EngineImpl<T extends Secrets> implements Engine<T> {
     private final Class<T> secrets;
     private final String type;
     private final Optional<String> version;
@@ -38,11 +38,11 @@ class EngineImpl<T extends SecretsRx> implements Engine<T> {
         this.version = Optional.of(version);
     }
 
-    static <T extends SecretsRx> Engine<T> create(Class<T> secrets, String type, String defaultMountPoint, String version) {
+    static <T extends Secrets> Engine<T> create(Class<T> secrets, String type, String defaultMountPoint, String version) {
         return new EngineImpl<>(secrets, type, defaultMountPoint, version);
     }
 
-    static <T extends SecretsRx> Engine<T> create(Class<T> secrets, String type, String defaultMountPoint) {
+    static <T extends Secrets> Engine<T> create(Class<T> secrets, String type, String defaultMountPoint) {
         return new EngineImpl<>(secrets, type, defaultMountPoint);
     }
 

@@ -21,15 +21,15 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.ApiRequest;
+import io.helidon.integrations.common.rest.ApiRestException;
 import io.helidon.integrations.common.rest.ResponseBuilder;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.common.rest.RestApiBase;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 import io.helidon.integrations.vault.VaultRestException;
 import io.helidon.integrations.vault.VaultUtil;
-import io.helidon.reactive.webclient.WebClientResponse;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
 import jakarta.json.JsonObject;
 
@@ -55,47 +55,44 @@ public class VaultRestApi extends RestApiBase {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected <T> Single<T> emptyResponse(String path,
-                                          ApiRequest<?> request,
-                                          Http.Method method,
-                                          String requestId,
-                                          WebClientResponse response,
-                                          ResponseBuilder<?, T, ?> responseBuilder) {
+    protected <T> T emptyResponse(String path,
+                                  ApiRequest<?> request,
+                                  Http.Method method,
+                                  String requestId,
+                                  Http1ClientResponse response,
+                                  ResponseBuilder<?, T, ?> responseBuilder) {
 
         if (responseBuilder instanceof VaultOptionalResponse.Builder) {
             // this is caused by 404, 304 etc.
             // we will try to read the entity
-            return response.content()
-                    .as(JsonObject.class)
-                    .map(json -> {
-                        List<String> errors = VaultUtil.arrayToList(json.getJsonArray("errors"));
-
-                        return (T) ((VaultOptionalResponse.Builder<?, ?>) responseBuilder)
-                                .errors(errors)
-                                .headers(response.headers())
-                                .status(response.status())
-                                .requestId(requestId)
-                                .build();
-                    })
-                    .onErrorResumeWithSingle(throwable -> {
-                        LOGGER.log(Level.TRACE,
-                                () -> "Failed to read response entity for status " + response.status() + ", ignoring for"
-                                        + " optional response",
-                                throwable);
-                        return super.emptyResponse(path, request, method, requestId, response, responseBuilder);
-                    });
-        } else {
-            return super.emptyResponse(path, request, method, requestId, response, responseBuilder);
+            try {
+                JsonObject json = response.entity()
+                                          .as(JsonObject.class);
+                List<String> errors = VaultUtil.arrayToList(json.getJsonArray("errors"));
+                return (T) ((VaultOptionalResponse.Builder<?, ?>) responseBuilder)
+                        .errors(errors)
+                        .headers(response.headers())
+                        .status(response.status())
+                        .requestId(requestId)
+                        .build();
+            } catch (Throwable ex) {
+                LOGGER.log(Level.TRACE,
+                        () -> "Failed to read response entity for status " + response.status() + ", ignoring for"
+                                + " optional response",
+                        ex);
+                return super.emptyResponse(path, request, method, requestId, response, responseBuilder);
+            }
         }
+        return super.emptyResponse(path, request, method, requestId, response, responseBuilder);
     }
 
     @Override
-    protected Throwable readError(String path,
-                                  ApiRequest<?> request,
-                                  Http.Method method,
-                                  String requestId,
-                                  WebClientResponse response,
-                                  JsonObject entity) {
+    protected ApiRestException readError(String path,
+                                         ApiRequest<?> request,
+                                         Http.Method method,
+                                         String requestId,
+                                         Http1ClientResponse response,
+                                         JsonObject entity) {
 
         String message = "Failed to invoke " + method + " on path " + path;
 
@@ -108,13 +105,13 @@ public class VaultRestApi extends RestApiBase {
         }
 
         return VaultRestException.builder()
-                .status(response.status())
-                .vaultErrors(vaultErrors)
-                .message(message + ". Status " + response.status() + ". Vault errors " + vaultErrors)
-                .apiSpecificError(vaultErrors.toString())
-                .requestId(requestId)
-                .headers(response.headers())
-                .build();
+                                 .status(response.status())
+                                 .vaultErrors(vaultErrors)
+                                 .message(message + ". Status " + response.status() + ". Vault errors " + vaultErrors)
+                                 .apiSpecificError(vaultErrors.toString())
+                                 .requestId(requestId)
+                                 .headers(response.headers())
+                                 .build();
     }
 
     /**

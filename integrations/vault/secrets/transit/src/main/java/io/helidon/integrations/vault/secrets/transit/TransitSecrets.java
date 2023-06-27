@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.vault.secrets.transit;
 
+import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
@@ -25,19 +26,13 @@ import io.helidon.integrations.vault.VaultOptionalResponse;
  */
 public interface TransitSecrets extends Secrets {
     /**
-     * Create blocking transit secrets from its reactive counterpart.
-     * This method should not be used when injection is available, as an instance
-     * of this class can be injected.
-     * This method should never be used in reactive environment, unless running
-     * in an executor service (use the {@link io.helidon.integrations.vault.secrets.transit.TransitSecretsRx}
-     * operations in reactive environment).
-     *
-     * @param reactive reactive transit secrets
-     * @return blocking transit secrets
+     * Transit Secrets engine.
+     * <p>
+     * Documentation:
+     * <a href="https://www.vaultproject.io/docs/secrets/transit">https://www.vaultproject.io/docs/secrets/transit</a>
      */
-    static TransitSecrets create(TransitSecretsRx reactive) {
-        return new TransitSecretsImpl(reactive);
-    }
+    Engine<TransitSecrets> ENGINE = Engine.create(TransitSecrets.class, "transit", "transit");
+
     /**
      * List available keys.
      *
@@ -51,7 +46,7 @@ public interface TransitSecrets extends Secrets {
      * Creates a new named encryption key of the specified type.
      *
      * @param request create key request
-     * @return future with response
+     * @return response
      */
     CreateKey.Response createKey(CreateKey.Request request);
 
@@ -62,7 +57,7 @@ public interface TransitSecrets extends Secrets {
      * must be called before deleting.
      *
      * @param request delete key request
-     * @return future with response
+     * @return response
      */
     DeleteKey.Response deleteKey(DeleteKey.Request request);
 
@@ -70,7 +65,7 @@ public interface TransitSecrets extends Secrets {
      * Tune configuration of a key.
      *
      * @param request update configuration request
-     * @return future with response
+     * @return response
      * @see io.helidon.integrations.vault.secrets.transit.UpdateKeyConfig.Request#allowDeletion(boolean)
      */
     UpdateKeyConfig.Response updateKeyConfig(UpdateKeyConfig.Request request);
@@ -82,7 +77,7 @@ public interface TransitSecrets extends Secrets {
      * parameter is empty or not). If the user only has update capability and the key does not exist, an error will be returned.
      *
      * @param request encrypt request
-     * @return future with response
+     * @return response
      */
     Encrypt.Response encrypt(Encrypt.Request request);
 
@@ -94,7 +89,7 @@ public interface TransitSecrets extends Secrets {
      * be returned.
      *
      * @param request encrypt request
-     * @return future with response
+     * @return response
      */
     EncryptBatch.Response encrypt(EncryptBatch.Request request);
 
@@ -102,7 +97,7 @@ public interface TransitSecrets extends Secrets {
      * Decrypts the provided ciphertext using the named key.
      *
      * @param request decrypt request
-     * @return future with response
+     * @return response
      */
     Decrypt.Response decrypt(Decrypt.Request request);
 
@@ -110,7 +105,7 @@ public interface TransitSecrets extends Secrets {
      * Decrypts the provided batch of ciphertext strings using the named key.
      *
      * @param request decrypt request
-     * @return future with response
+     * @return response
      */
     DecryptBatch.Response decrypt(DecryptBatch.Request request);
 

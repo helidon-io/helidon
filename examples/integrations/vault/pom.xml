@@ -32,7 +32,7 @@
     <description>Examples of integration with Vault.</description>
 
     <modules>
-        <module>hcp-reactive</module>
+        <module>hcp</module>
         <module>hcp-cdi</module>
     </modules>
 </project>

@@ -72,6 +72,9 @@ public class JacksonSupport implements MediaSupport {
      * @return a new {@link JacksonSupport}
      */
     public static MediaSupport create(Config config, String name) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+
         ObjectMapper objectMapper = new ObjectMapper()
                 .registerModule(new ParameterNamesModule())
                 .registerModule(new Jdk8Module())

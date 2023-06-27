@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,38 +28,29 @@ import io.helidon.integrations.vault.spi.SecretsEngineProvider;
 /**
  * Java Service Loader service for Transit engine.
  */
-public class TransitEngineProvider implements SecretsEngineProvider<TransitSecretsRx>,
+public class TransitEngineProvider implements SecretsEngineProvider<TransitSecrets>,
                                               InjectionProvider {
     private static final List<InjectionType<?>> INJECTABLES;
 
     static {
         List<InjectionType<?>> injectables = new LinkedList<>();
 
-        injectables.add(InjectionType.create(TransitSecretsRx.class,
-                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
-                                                     .map(it -> vault.secrets(TransitSecretsRx.ENGINE, it))
-                                                     .orElseGet(() -> vault.secrets(TransitSecretsRx.ENGINE))));
-
         injectables.add(InjectionType.create(TransitSecrets.class,
-                                             (vault, config, instanceConfig) -> {
-                                                 TransitSecretsRx rx = instanceConfig.vaultPath()
-                                                         .map(it -> vault.secrets(TransitSecretsRx.ENGINE, it))
-                                                         .orElseGet(() -> vault.secrets(TransitSecretsRx.ENGINE));
-
-                                                 return new TransitSecretsImpl(rx);
-                                             }));
+                                             (vault, config, instanceConfig) -> instanceConfig.vaultPath()
+                                                     .map(it -> vault.secrets(TransitSecrets.ENGINE, it))
+                                                     .orElseGet(() -> vault.secrets(TransitSecrets.ENGINE))));
 
         INJECTABLES = List.copyOf(injectables);
     }
 
     @Override
-    public Engine<TransitSecretsRx> supportedEngine() {
-        return TransitSecretsRx.ENGINE;
+    public Engine<TransitSecrets> supportedEngine() {
+        return TransitSecrets.ENGINE;
     }
 
     @Override
-    public TransitSecretsRx createSecrets(Config config, RestApi restAccess, String mount) {
-        return new TransitSecretsRxImpl(restAccess, mount);
+    public TransitSecrets createSecrets(Config config, RestApi restAccess, String mount) {
+        return new TransitSecretsImpl(restAccess, mount);
     }
 
     @Override

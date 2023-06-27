@@ -26,9 +26,9 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.spi.VaultAuth;
-import io.helidon.reactive.faulttolerance.FaultTolerance;
-import io.helidon.reactive.faulttolerance.FtHandler;
-import io.helidon.reactive.webclient.WebClient;
+import io.helidon.nima.faulttolerance.FaultTolerance;
+import io.helidon.nima.faulttolerance.FtHandler;
+import io.helidon.nima.webclient.http1.Http1Client.Http1ClientBuilder;
 
 /**
  * Main entry point to Vault operations.
@@ -57,7 +57,7 @@ public interface Vault {
      *
      * @param config configuration
      * @return a new Vault
-     * @see io.helidon.integrations.vault.Vault.Builder#config(io.helidon.config.Config)
+     * @see Vault.Builder#config(io.helidon.config.Config)
      */
     static Vault create(Config config) {
         return builder()
@@ -69,22 +69,22 @@ public interface Vault {
      * Get access to secrets using the provided engine, using the default mount point of that engine.
      *
      * @param engine engine to use, such as {@code Kv2Secrets#ENGINE}
-     * @param <T> type of the {@link SecretsRx} the engine supports,
+     * @param <T> type of the {@link Secrets} the engine supports,
      *           such as {@code io.helidon.integrations.vault.Kv2Secrets}
-     * @return instance of {@link SecretsRx} specific to the used engine
+     * @return instance of {@link Secrets} specific to the used engine
      */
-    <T extends SecretsRx> T secrets(Engine<T> engine);
+    <T extends Secrets> T secrets(Engine<T> engine);
 
     /**
      * Get access to secrets using the provided engine, using a custom mount point.
      *
      * @param engine engine to use, such as {@code Kv2Secrets#ENGINE}
      * @param mount mount point for the engine (such as when the same engine is configured more than once in the Vault)
-     * @param <T> type of the {@link SecretsRx} the engine supports,
+     * @param <T> type of the {@link Secrets} the engine supports,
      *           such as {@code Kv2Secrets}
-     * @return instance of {@link SecretsRx} specific to the used engine
+     * @return instance of {@link Secrets} specific to the used engine
      */
-    <T extends SecretsRx> T secrets(Engine<T> engine, String mount);
+    <T extends Secrets> T secrets(Engine<T> engine, String mount);
 
     /**
      * Get access to authentication method.
@@ -128,7 +128,7 @@ public interface Vault {
         private String address;
         private String token;
         private String baseNamespace;
-        private Consumer<WebClient.Builder> webClientUpdater = it -> {};
+        private Consumer<Http1ClientBuilder> webClientUpdater = it -> {};
 
         private Builder() {
         }
@@ -159,8 +159,8 @@ public interface Vault {
         }
 
         /**
-         * Add a {@link io.helidon.integrations.vault.spi.VaultAuth} to use with this Vault.
-         * Also all {@link io.helidon.integrations.vault.spi.VaultAuth VaultAuths} discovered by service loader are used.
+         * Add a {@link VaultAuth} to use with this Vault.
+         * Also all {@link VaultAuth VaultAuths} discovered by service loader are used.
          *
          * @param vaultAuth vault authentication mechanism to use
          * @return updated builder
@@ -193,7 +193,7 @@ public interface Vault {
         }
 
         /**
-         * An {@link io.helidon.reactive.faulttolerance.FtHandler} can be configured to be used by all calls to the
+         * An {@link FtHandler} can be configured to be used by all calls to the
          * Vault, to add support for retries, circuit breakers, bulkhead etc.
          *
          * @param faultTolerance fault tolerance handler to use
@@ -205,20 +205,20 @@ public interface Vault {
         }
 
         /**
-         * A consumer that updates {@link WebClient.Builder}.
+         * A consumer that updates {@link Http1ClientBuilder}.
          * The consumer may be invoked multiple times, for example when a Vault authentication
          * must use an un-authenticated Vault to authenticate.
          *
          * @param updater update the web client builder
          * @return updated builder instance
          */
-        public Builder updateWebClient(Consumer<WebClient.Builder> updater) {
+        public Builder updateWebClient(Consumer<Http1ClientBuilder> updater) {
             this.webClientUpdater = updater;
             return this;
         }
 
         /**
-         * Do not discover {@link io.helidon.integrations.vault.spi.VaultAuth} implementations
+         * Do not discover {@link VaultAuth} implementations
          * using a service loader.
          *
          * @return updated builder instance
@@ -304,7 +304,7 @@ public interface Vault {
          *
          * @return web client updater
          */
-        public Consumer<WebClient.Builder> webClientUpdater() {
+        public Consumer<Http1ClientBuilder> webClientUpdater() {
             return webClientUpdater;
         }
     }

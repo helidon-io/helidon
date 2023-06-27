@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,54 @@
 
 package io.helidon.integrations.vault.sys;
 
-class SysImpl implements Sys {
-    private final SysRx delegate;
+import io.helidon.integrations.common.rest.RestApi;
 
-    SysImpl(SysRx delegate) {
-        this.delegate = delegate;
+class SysImpl implements Sys {
+    private final RestApi restApi;
+
+    SysImpl(RestApi restApi) {
+        this.restApi = restApi;
     }
 
     @Override
     public EnableEngine.Response enableEngine(EnableEngine.Request request) {
-        return delegate.enableEngine(request).await();
+        String apiPath = "/sys/mounts/" + request.path();
+
+        return restApi.post(apiPath, request, EnableEngine.Response.builder());
     }
 
     @Override
     public DisableEngine.Response disableEngine(DisableEngine.Request request) {
-        return delegate.disableEngine(request).await();
+        String apiPath = "/sys/mounts/" + request.path();
+
+        return restApi.delete(apiPath, request, DisableEngine.Response.builder());
     }
 
     @Override
     public EnableAuth.Response enableAuth(EnableAuth.Request request) {
-        return delegate.enableAuth(request).await();
+        String apiPath = "/sys/auth/" + request.path();
+
+        return restApi.post(apiPath, request, EnableAuth.Response.builder());
     }
 
     @Override
     public DisableAuth.Response disableAuth(DisableAuth.Request request) {
-        return delegate.disableAuth(request).await();
+        String apiPath = "/sys/auth/" + request.path();
+
+        return restApi.delete(apiPath, request, DisableAuth.Response.builder());
     }
 
     @Override
     public CreatePolicy.Response createPolicy(CreatePolicy.Request request) {
-        return delegate.createPolicy(request).await();
+        String apiPath = "/sys/policy/" + request.name();
+
+        return restApi.put(apiPath, request, CreatePolicy.Response.builder());
     }
 
     @Override
     public DeletePolicy.Response deletePolicy(DeletePolicy.Request request) {
-        return delegate.deletePolicy(request).await();
+        String apiPath = "/sys/policy/" + request.name();
+
+        return restApi.delete(apiPath, request, DeletePolicy.Response.builder());
     }
 }

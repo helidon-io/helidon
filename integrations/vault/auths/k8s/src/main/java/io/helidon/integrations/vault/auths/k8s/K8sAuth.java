@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,30 @@
 
 package io.helidon.integrations.vault.auths.k8s;
 
+import io.helidon.integrations.vault.AuthMethod;
+
 /**
  * Kubernetes authentication method API.
- *
- * All methods block the current thread. This implementation is not suitable for reactive programming.
- * Use {@link io.helidon.integrations.vault.auths.k8s.K8sAuthRx} in reactive code.
  */
 public interface K8sAuth {
     /**
+     * Kubernetes authentication method.
+     */
+    AuthMethod<K8sAuth> AUTH_METHOD = AuthMethod.create(K8sAuth.class, "kubernetes", "kubernetes");
+
+    /**
      * Service token type.
      */
-    String TYPE_SERVICE = K8sAuthRx.TYPE_SERVICE;
+    String TYPE_SERVICE = "service";
     /**
      * Batch token type.
      */
-    String TYPE_BATCH = K8sAuthRx.TYPE_BATCH;
+    String TYPE_BATCH = "batch";
     /**
      * Default token type.
      */
-    String TYPE_DEFAULT = K8sAuthRx.TYPE_DEFAULT;
+    String TYPE_DEFAULT = "default";
 
-    /**
-     * Create blocking Kubernetes authentication API from its reactive counterpart.
-     *
-     * @param reactive k8s reactive API
-     * @return k8s blocking API
-     */
-    static K8sAuth create(K8sAuthRx reactive) {
-        return new K8sAuthImpl(reactive);
-    }
     /**
      * Registers a role in the auth method. Role types have specific entities that can perform login operations against this
      * endpoint. Constraints specific to the role type must be set on the role. These are applied to the authenticated entities

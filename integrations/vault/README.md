@@ -8,7 +8,7 @@ Integration with Hashicorp Vault and with vaults compatible with its API.
 
 Why a custom implementation?
 The `com.bettercloud:vault-java-driver` is dependency free, though it implements its own JSON parsing and HTTP client libraries.
-As we have both of these libraries as part of Helidon, such code is a risk. Also we need a non-blocking reactive client, which is not implemented by that library.
+As we have both of these libraries as part of Helidon, such code is a risk.
 
 This implementation is based on Java Service Loader to load implementations of the vault's SPIs
 - `io.helidon.integrations.vault.spi.SecretsEngineProvider` - secret engines (kv1, kv2, transit, PKI)

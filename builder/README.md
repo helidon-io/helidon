@@ -60,6 +60,18 @@ interface MyConfigBeanBlueprint {
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <!--
+                 the following section is to enable correct reactor ordering without adding processor 
+                 to module classpath/module path
+                 this is ONLY needed when adding (any) Helidon processor to a Helidon module (within the same Maven project)
+                -->
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.builder</groupId>
+                        <artifactId>helidon-builder-processor</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

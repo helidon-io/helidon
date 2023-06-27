@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,33 @@
 
 package io.helidon.integrations.vault.auths.token;
 
+import io.helidon.integrations.vault.AuthMethod;
+
 /**
  * Token authentication method API.
- *
- * All methods block the current thread. This implementation is not suitable for reactive programming.
- * Use {@link io.helidon.integrations.vault.auths.token.TokenAuthRx} in reactive code.
  */
 public interface TokenAuth {
+
+    /**
+     * Token authentication method.
+     * <p>
+     * Documentation:
+     * <a href="https://www.vaultproject.io/api-docs/auth/token">https://www.vaultproject.io/api-docs/auth/token</a>
+     */
+    AuthMethod<TokenAuth> AUTH_METHOD = AuthMethod.create(TokenAuth.class, "token", "token");
+
     /**
      * Service token type.
      */
-    String TYPE_SERVICE = TokenAuthRx.TYPE_SERVICE;
+    String TYPE_SERVICE = "service";
     /**
      * Batch token type.
      */
-    String TYPE_BATCH = TokenAuthRx.TYPE_BATCH;
+    String TYPE_BATCH = "batch";
     /**
      * Default token type.
      */
-    String TYPE_DEFAULT = TokenAuthRx.TYPE_DEFAULT;
-
-    /**
-     * Create blocking token authentication method from its reactive counterpart.
-     *
-     * @param reactive reactive token authentication method API
-     * @return blocking token authentication method API
-     */
-    static TokenAuth create(TokenAuthRx reactive) {
-        return new TokenAuthImpl(reactive);
-    }
+    String TYPE_DEFAULT = "default";
 
     /**
      * Create a new child token with default configuration.

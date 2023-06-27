@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,5 @@
  * Vault integration with CDI.
  * Exposes all APIs discovered through
  * {@link io.helidon.integrations.vault.spi.InjectionProvider} service loader.
- * This is usually the blocking and reactive API for various secret engines and authentication methods.
  */
 package io.helidon.integrations.vault.cdi;

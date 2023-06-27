@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,57 @@
 
 package io.helidon.integrations.vault.auths.token;
 
-class TokenAuthImpl implements TokenAuth {
-    private final TokenAuthRx delegate;
+import io.helidon.common.http.Http;
+import io.helidon.integrations.common.rest.RestApi;
 
-    TokenAuthImpl(TokenAuthRx delegate) {
-        this.delegate = delegate;
+class TokenAuthImpl implements TokenAuth {
+    private final RestApi restApi;
+    private final String path;
+
+    TokenAuthImpl(RestApi restApi, String path) {
+        this.restApi = restApi;
+        this.path = path;
     }
 
     @Override
     public CreateToken.Response createToken(CreateToken.Request request) {
-        return delegate.createToken(request).await();
+        String apiPath = "/auth/" + path + "/create" + request.roleName().map(it -> "/" + it).orElse("");
+
+        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, CreateToken.Response.builder());
     }
 
     @Override
     public RenewToken.Response renew(RenewToken.Request request) {
-        return delegate.renew(request).await();
+        String apiPath = "/auth/" + path + "/renew";
+
+        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, RenewToken.Response.builder());
     }
 
     @Override
     public RevokeToken.Response revoke(RevokeToken.Request request) {
-        return delegate.revoke(request).await();
+        String apiPath = "/auth/" + path + "/revoke";
+
+        return restApi.post(apiPath, request, RevokeToken.Response.builder());
     }
 
     @Override
     public CreateTokenRole.Response createTokenRole(CreateTokenRole.Request request) {
-        return delegate.createTokenRole(request).await();
+        String apiPath = "/auth/" + path + "/roles/" + request.roleName();
+
+        return restApi.post(apiPath, request, CreateTokenRole.Response.builder());
     }
 
     @Override
     public DeleteTokenRole.Response deleteTokenRole(DeleteTokenRole.Request request) {
-        return delegate.deleteTokenRole(request).await();
+        String apiPath = "/auth/" + path + "/roles/" + request.roleName();
+
+        return restApi.delete(apiPath, request, DeleteTokenRole.Response.builder());
     }
 
     @Override
     public RevokeAndOrphanToken.Response revokeAndOrphan(RevokeAndOrphanToken.Request request) {
-        return delegate.revokeAndOrphan(request).await();
+        String apiPath = "/auth/" + path + "/revoke-orphan";
+
+        return restApi.post(apiPath, request, RevokeAndOrphanToken.Response.builder());
     }
 }

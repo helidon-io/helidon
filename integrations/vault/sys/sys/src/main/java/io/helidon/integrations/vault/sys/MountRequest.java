@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,9 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
 /**
- * A builder for {@link SysRx#enableEngine(io.helidon.integrations.vault.sys.EnableEngine.Request)}
+ * A builder for {@link Sys#enableEngine(io.helidon.integrations.vault.sys.EnableEngine.Request)}
  * , and
- * {@link SysRx#enableAuth(io.helidon.integrations.vault.sys.EnableAuth.Request)} methods.
+ * {@link Sys#enableAuth(io.helidon.integrations.vault.sys.EnableAuth.Request)} methods.
  */
 abstract class MountRequest<T extends MountRequest<T>> extends VaultRequest<T> {
     private final Config config = new Config();
@@ -143,6 +143,11 @@ abstract class MountRequest<T extends MountRequest<T>> extends VaultRequest<T> {
         }
     }
 
+    /**
+     * Specifies the default path where the engine/method will be mounted, if no path is defined.
+     *
+     * @param defaultMount default path to configure
+     */
     protected void defaultPath(String defaultMount) {
         if (path == null) {
             path = defaultMount;

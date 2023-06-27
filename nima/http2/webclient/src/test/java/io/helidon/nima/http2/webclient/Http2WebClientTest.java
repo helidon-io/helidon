@@ -37,7 +37,7 @@ import io.helidon.nima.http2.webserver.Http2ConnectionSelector;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http1.Http1Route;
 
@@ -85,7 +85,7 @@ class Http2WebClientTest {
     }
 
     @SetUpServer
-    static void setUpServer(ServerConfig.Builder serverBuilder) {
+    static void setUpServer(WebServerConfig.Builder serverBuilder) {
         executorService = Executors.newFixedThreadPool(5);
 
         Keys privateKeyConfig =

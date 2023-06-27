@@ -36,8 +36,8 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.testing.junit5.webserver.spi.ServerJunitExtension;
 import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.ServerConfig;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -80,7 +80,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
             throw new IllegalStateException("Invalid test class for this extension: " + testClass);
         }
 
-        ServerConfig.Builder builder = WebServer.builder()
+        WebServerConfig.Builder builder = WebServer.builder()
                 .port(0)
                 .shutdownHook(false)
                 .host("localhost");
@@ -183,14 +183,14 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
         return uri;
     }
 
-    private void setupServer(ServerConfig.Builder builder) {
+    private void setupServer(WebServerConfig.Builder builder) {
         withStaticMethods(testClass, SetUpServer.class, (setUpServer, method) -> {
             Class<?>[] parameterTypes = method.getParameterTypes();
             if (parameterTypes.length != 1) {
                 throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
                                                            + " does not have exactly one parameter (Server.Builder)");
             }
-            if (!parameterTypes[0].equals(ServerConfig.Builder.class)) {
+            if (!parameterTypes[0].equals(WebServerConfig.Builder.class)) {
                 throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
                                                            + " does not have exactly one parameter (Server.Builder)");
             }
@@ -203,7 +203,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
         });
     }
 
-    private void addRouting(ServerConfig.Builder builder) {
+    private void addRouting(WebServerConfig.Builder builder) {
         Map<String, ListenerConfig.Builder> listenerConfigs = new HashMap<>();
         Map<String, Router.Builder> routerBuilders = new HashMap<>();
 
@@ -299,7 +299,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
     private interface SetUpRouteHandler {
         void handle(String socketName,
-                    ServerConfig.Builder serverBuilder,
+                    WebServerConfig.Builder serverBuilder,
                     ListenerConfig.Builder listenerBuilder,
                     Router.RouterBuilder<?> routerBuilder);
     }
