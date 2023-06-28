@@ -14,11 +14,24 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
+/**
+ * Helidon WebClient Tracing.
+ */
+@Feature(value = "Tracing",
+         description = "Web client support for tracing",
+         in = HelidonFlavor.SE,
+         path = {"WebClient", "Tracing"}
+)
 module io.helidon.nima.webclient.tracing {
-    exports io.helidon.nima.webclient.tracing;
+    requires static io.helidon.common.features.api;
 
     requires io.helidon.nima.webclient;
     requires io.helidon.tracing;
+
+    exports io.helidon.nima.webclient.tracing;
 
     provides io.helidon.nima.webclient.spi.WebClientServiceProvider
             with io.helidon.nima.webclient.tracing.WebClientTracingProvider;
