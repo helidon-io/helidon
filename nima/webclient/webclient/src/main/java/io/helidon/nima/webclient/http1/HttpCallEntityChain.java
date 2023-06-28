@@ -39,13 +39,14 @@ class HttpCallEntityChain extends HttpCallChainBase {
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final Object entity;
 
-    HttpCallEntityChain(Http1ClientConfig clientConfig,
+    HttpCallEntityChain(ClientRequestImpl request,
+                        Http1ClientConfig clientConfig,
                         ClientConnection connection,
                         Tls tls,
                         CompletableFuture<WebClientServiceRequest> whenSent,
                         CompletableFuture<WebClientServiceResponse> whenComplete,
                         Object entity) {
-        super(clientConfig, connection, tls);
+        super(clientConfig, connection, tls, request.keepAlive());
         this.clientConfig = clientConfig;
         this.whenSent = whenSent;
         this.whenComplete = whenComplete;

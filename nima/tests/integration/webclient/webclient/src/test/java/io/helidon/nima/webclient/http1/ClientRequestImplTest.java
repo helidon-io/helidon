@@ -219,7 +219,8 @@ class ClientRequestImplTest {
             connectionNow = ConnectionCache.connection(requestImpl.clientConfig(),
                                                        null,
                                                        requestImpl.uri(),
-                                                       requestImpl.headers());
+                                                       requestImpl.headers(),
+                                                       requestImpl.keepAlive());
             request.connection(connectionNow);
             Http1ClientResponse response = request.request();
             // connection will be queued up
@@ -242,9 +243,10 @@ class ClientRequestImplTest {
             Http1ClientRequest request = injectedHttp1client.put("/test");
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
             connectionList.add(ConnectionCache.connection(requestImpl.clientConfig(),
-                                                       null,
-                                                       requestImpl.uri(),
-                                                       requestImpl.headers()));
+                                                          null,
+                                                          requestImpl.uri(),
+                                                          requestImpl.headers(),
+                                                          requestImpl.keepAlive()));
             request.connection(connectionList.get(i));
             responseList.add(request.request());
         }
@@ -261,9 +263,10 @@ class ClientRequestImplTest {
             Http1ClientRequest request = injectedHttp1client.put("/test");
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
             connection = ConnectionCache.connection(requestImpl.clientConfig(),
-                                                          null,
-                                                          requestImpl.uri(),
-                                                          requestImpl.headers());
+                                                    null,
+                                                    requestImpl.uri(),
+                                                    requestImpl.headers(),
+                                                    requestImpl.keepAlive());
             request.connection(connection);
             response = request.request();
             if (i < connectionQueueSize) {
@@ -280,9 +283,10 @@ class ClientRequestImplTest {
         Http1ClientRequest request = injectedHttp1client.put("/test");
         ClientRequestImpl requestImpl = (ClientRequestImpl) request;
         ClientConnection connectionNow = ConnectionCache.connection(requestImpl.clientConfig(),
-                                                null,
-                                                requestImpl.uri(),
-                                                requestImpl.headers());
+                                                                    null,
+                                                                    requestImpl.uri(),
+                                                                    requestImpl.headers(),
+                                                                    requestImpl.keepAlive());
         request.connection(connectionNow);
         Http1ClientResponse responseNow = request.request();
         // Verify that the connection was dequeued
