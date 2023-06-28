@@ -14,7 +14,6 @@ on:
 env:
   JAVA_VERSION: '11'
   JAVA_DISTRO: 'temurin'
-  HELIDON_PIPELINES: 'true'
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
 
 concurrency:
