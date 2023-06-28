@@ -33,7 +33,8 @@
     <modules>
         <module>tck-config</module>
         <module>tck-health</module>
-        <module>tck-metrics</module>
+<!--        Very temporary change to try later Arquillian release with other tcks -->
+<!--        <module>tck-metrics</module>-->
         <module>tck-messaging</module>
         <module>tck-graphql</module>
         <module>tck-jwt-auth</module>

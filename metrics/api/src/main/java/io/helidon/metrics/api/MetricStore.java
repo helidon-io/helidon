@@ -236,13 +236,13 @@ class MetricStore implements FunctionalCounterRegistry {
     }
 
     private static void enforceConsistentTagNames(String metricName, Set<String> existingTagNames, Set<String> newTagNames) {
-//        if (!existingTagNames.equals(newTagNames)) {
-//            throw new IllegalArgumentException(String.format(
-//                    "New tag names %s for metric %s conflict with existing tag names %s",
-//                    newTagNames,
-//                    metricName,
-//                    existingTagNames));
-//        }
+        if (!existingTagNames.equals(newTagNames)) {
+            throw new IllegalArgumentException(String.format(
+                    "New tag names %s for metric %s conflict with existing tag names %s",
+                    newTagNames,
+                    metricName,
+                    existingTagNames));
+        }
     }
 
     /**

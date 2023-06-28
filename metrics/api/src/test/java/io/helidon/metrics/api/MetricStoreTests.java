@@ -96,7 +96,6 @@ class MetricStoreTests {
         assertThat("Counters with same two tags", counter1, is(counter2));
     }
 
-    @Disabled
     @Test
     void testSameNameOverlappingButDifferentTags() {
         Tag[] tags1 = {new Tag("foo", "1"), new Tag("bar", "1"), new Tag("baz", "1")};
