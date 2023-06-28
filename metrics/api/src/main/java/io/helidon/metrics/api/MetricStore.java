@@ -336,6 +336,7 @@ class MetricStore implements FunctionalCounterRegistry {
                 if (metricIDsForName.isEmpty()) {
                     allMetricIDsByName.remove(metricID.getName());
                     allMetadata.remove(metricID.getName());
+                    tagNameSets.remove(metricID.getName());
                 }
                 HelidonMetric doomedMetric = allMetrics.remove(metricID);
                 if (doomedMetric != null) {
@@ -368,6 +369,7 @@ class MetricStore implements FunctionalCounterRegistry {
             }
             allMetricIDsByName.remove(name);
             allMetadata.remove(name);
+            tagNameSets.remove(name);
 
             return result;
         });
