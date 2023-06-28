@@ -34,7 +34,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Disabled
+@Disabled("https://github.com/helidon-io/helidon/issues/7094")
 @AddConfig(key = "security.providers.1.oidc.cookie-use", value = "false")
 @AddConfig(key = "security.providers.1.oidc.query-param-use", value = "true")
 class QueryBasedLoginIT extends CommonLoginBase {

@@ -42,7 +42,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
-@Disabled
+@Disabled("https://github.com/helidon-io/helidon/issues/7094")
 @HelidonTest(resetPerTest = true)
 @AddBean(TestResource.class)
 @AddConfig(key = "security.providers.1.oidc.oidc-metadata-well-known", value = "false")

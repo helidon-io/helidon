@@ -31,7 +31,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Disabled
+@Disabled("https://github.com/helidon-io/helidon/issues/7094")
 class CookieBasedLoginIT extends CommonLoginBase {
 
     @Test

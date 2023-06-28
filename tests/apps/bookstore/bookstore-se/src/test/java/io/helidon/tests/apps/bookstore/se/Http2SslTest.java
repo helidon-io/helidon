@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests SSL/TLS with HTTP 2 upgrades and compression.
  */
-@Disabled
+@Disabled("https://github.com/helidon-io/helidon/issues/7097")
 public class Http2SslTest {
 
     private static WebServer webServer;
