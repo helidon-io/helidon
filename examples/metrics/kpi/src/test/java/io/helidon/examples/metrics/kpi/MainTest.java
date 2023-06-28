@@ -19,6 +19,7 @@ package io.helidon.examples.metrics.kpi;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.metrics.api.Registry;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientResponse;
@@ -27,7 +28,6 @@ import io.helidon.reactive.webserver.WebServer;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.is;
 
 public class MainTest {
 
-    private static final MetricRegistry.Type KPI_REGISTRY_TYPE = Registry.VENDOR_SCOPE;
+    private static final String KPI_REGISTRY_TYPE = Registry.VENDOR_SCOPE;
     private static WebServer webServer;
     private static WebClient webClient;
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
@@ -123,12 +123,12 @@ public class MainTest {
         assertThat("Response body from personalized greeting", get, containsString("Hello Joe!"));
 
         String openMetricsOutput = webClient.get()
-                .path("/metrics/" + KPI_REGISTRY_TYPE.getName())
+                .path("/metrics/" + KPI_REGISTRY_TYPE)
                 .request(String.class)
                 .await();
 
         assertThat("Returned metrics output",
                    openMetricsOutput,
-                   containsString("# TYPE " + KPI_REGISTRY_TYPE.getName() + "_requests_inFlight_current"));
+                   containsString("# TYPE " + KPI_REGISTRY_TYPE + "_requests_inFlight"));
     }
 }
