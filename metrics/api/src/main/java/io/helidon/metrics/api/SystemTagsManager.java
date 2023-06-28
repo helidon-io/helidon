@@ -20,7 +20,8 @@ import java.util.Map;
 import org.eclipse.microprofile.metrics.MetricID;
 
 /**
- * Deals with global and app-level tags to be included in output for all metrics.
+ * Deals with global, app-level, and scope to be included in the external representation (output and IDs in delegate
+ * meter registries) for all metrics.
  */
 public interface SystemTagsManager {
 
@@ -48,17 +49,19 @@ public interface SystemTagsManager {
      * Returns a single iterator over the explicit tags in the metric ID plus any global and app tags.
      *
      * @param metricID metric ID possibly containing explicit tag settings
+     * @param scope the registry scope
      * @return iterator over all tags, explicit and global and app
      */
-    Iterable<Map.Entry<String, String>> allTags(MetricID metricID);
+    Iterable<Map.Entry<String, String>> allTags(MetricID metricID, String scope);
 
     /**
      * Returns a single iterator over the explicit tags in the provided map plus any global and app tags.
      *
      * @param explicitTags map containing explicitly-defined tags for a metric
+     * @param scope registry scope
      * @return iterator over all tags, explicit and global and app
      */
-    Iterable<Map.Entry<String, String>> allTags(Map<String, String> explicitTags);
+    Iterable<Map.Entry<String, String>> allTags(Map<String, String> explicitTags, String scope);
 
     /**
      * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
@@ -69,4 +72,24 @@ public interface SystemTagsManager {
      * @return iterator over all tags, explicit and global and app
      */
     Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope);
+
+    /**
+     * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
+     * and app tags, <em>without</em>> a tag for scope.
+     *
+     * @param explicitTags iterable over the key/value pairs for tags
+     * @return iterator over all tags, explicit and global and app
+     * @deprecated use a variant which accepts {@code scope} instead
+     */
+    @Deprecated(since = "4.0.0", forRemoval = true)
+    Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags);
+
+    /**
+     * Creates a new {@link org.eclipse.microprofile.metrics.MetricID} using the original ID and adding the system tags.
+     *
+     * @param original original metric ID
+     * @param scope scope to use in augmenting the tags
+     * @return augmented metric ID
+     */
+    MetricID metricIdWithAllTags(MetricID original, String scope);
 }

@@ -237,10 +237,11 @@ class MetricStore implements FunctionalCounterRegistry {
 
     private static void enforceConsistentTagNames(String metricName, Set<String> existingTagNames, Set<String> newTagNames) {
 //        if (!existingTagNames.equals(newTagNames)) {
-//            throw new IllegalArgumentException(String.format("New tag names %s for metric %s conflict with existing tag names %s",
-//                                                             newTagNames,
-//                                                             metricName,
-//                                                             existingTagNames));
+//            throw new IllegalArgumentException(String.format(
+//                    "New tag names %s for metric %s conflict with existing tag names %s",
+//                    newTagNames,
+//                    metricName,
+//                    existingTagNames));
 //        }
     }
 
@@ -340,7 +341,9 @@ class MetricStore implements FunctionalCounterRegistry {
                 if (doomedMetric != null) {
                     doomedMetric.markAsDeleted();
                 }
-                doRemove.accept(metricID, doomedMetric);
+                doRemove.accept(SystemTagsManager.instance()
+                                        .metricIdWithAllTags(metricID, scope),
+                                doomedMetric);
                 return doomedMetric != null;
             }
         });
@@ -354,11 +357,13 @@ class MetricStore implements FunctionalCounterRegistry {
             }
             boolean result = false;
             for (MetricID metricID : doomedMetricsIDs) {
-                HelidonMetric metric = allMetrics.get(metricID);
-                if (metric != null) {
-                    metric.markAsDeleted();
+                HelidonMetric doomedMetric = allMetrics.get(metricID);
+                if (doomedMetric != null) {
+                    doomedMetric.markAsDeleted();
                     result |= allMetrics.remove(metricID) != null;
-                    doRemove.accept(metricID, metric);
+                    doRemove.accept(SystemTagsManager.instance()
+                                            .metricIdWithAllTags(metricID, scope),
+                                    doomedMetric);
                 }
             }
             allMetricIDsByName.remove(name);

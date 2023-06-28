@@ -100,7 +100,7 @@ final class BaseRegistry extends Registry {
                             + "attribute displays the approximate time when the Java "
                             + "virtual machine "
                             + "started.")
-            .withUnit(MetricUnits.MILLISECONDS)
+            .withUnit(MetricUnits.SECONDS)
             .build();
 
     private static final Metadata THREAD_COUNT = Metadata.builder()
@@ -221,7 +221,8 @@ final class BaseRegistry extends Registry {
             String poolName = gcBean.getName();
             registerFunctionalCounter(result, gcCountMeta(), gcBean, GarbageCollectorMXBean::getCollectionCount,
                                       new Tag("name", poolName));
-            register(result, gcTimeMeta(), gcBean, GarbageCollectorMXBean::getCollectionTime,
+            // Express the GC time in seconds.
+            registerFunctionalCounter(result, gcTimeMeta(), gcBean, bean -> bean.getCollectionTime() / 1000.0D,
                     new Tag("name", poolName));
         }
 
@@ -238,7 +239,7 @@ final class BaseRegistry extends Registry {
                                     + "timer to measure the elapsed time. This attribute may display the same value "
                                     + "even if the collection count has been incremented if the collection elapsed "
                                     + "time is very short.")
-                .withUnit(MetricUnits.MILLISECONDS)
+                .withUnit(MetricUnits.SECONDS)
                 .build();
     }
 
@@ -250,14 +251,6 @@ final class BaseRegistry extends Registry {
                                     + "-1 if the collection count is undefined for this collector.")
                 .withUnit(MetricUnits.NONE)
                 .build();
-    }
-
-    private static <T> void register(BaseRegistry registry,
-                                                       Metadata meta,
-                                                       T object,
-                                                       ToDoubleFunction<T> func,
-                                                       Tag... tags) {
-        registry.gauge(meta, object, func::applyAsDouble, tags);
     }
 
     private static <T, R extends Number>  void register(BaseRegistry registry,

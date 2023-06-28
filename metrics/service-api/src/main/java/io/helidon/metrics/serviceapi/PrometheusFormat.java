@@ -192,7 +192,7 @@ public final class PrometheusFormat {
 
     private static String tags(Map<String, String> tags) {
         StringJoiner sj = new StringJoiner(",", "{", "}").setEmptyValue("");
-        SystemTagsManager.instance().allTags(tags).forEach(entry -> {
+        SystemTagsManager.instance().allTags(tags.entrySet()).forEach(entry -> {
             if (entry.getKey() != null) {
                 sj.add(String.format("%s=\"%s\"", prometheusClean(entry.getKey(), ""), prometheusTagValue(entry.getValue())));
             }
