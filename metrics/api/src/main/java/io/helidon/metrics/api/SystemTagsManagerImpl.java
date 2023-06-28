@@ -109,6 +109,12 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     }
 
     @Override
+    public Iterable<Map.Entry<String, String>> allTags(MetricID metricId) {
+        return new MultiIterable<>(metricId.getTags().entrySet(),
+                                   systemTags.entrySet());
+    }
+
+    @Override
     public MetricID metricIdWithAllTags(MetricID original, String scope) {
         List<Tag> tags = new ArrayList<>();
         List.of(original.getTags().entrySet(),

@@ -85,6 +85,17 @@ public interface SystemTagsManager {
     Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags);
 
     /**
+     * Returns a single iterator over the explicit tags in the provided {@link org.eclipse.microprofile.metrics.MetricID}, plus
+     * any global and app tags <em>without</em> scope.
+     *
+     * @param metricId metric ID
+     * @return iterator over all tags, explicit and global and app, without a tag for scope
+     * @deprecated use a variant which accepts {@code scope} instance
+     */
+    @Deprecated(since = "4.0.0", forRemoval = true)
+    Iterable<Map.Entry<String, String>> allTags(MetricID metricId);
+
+    /**
      * Creates a new {@link org.eclipse.microprofile.metrics.MetricID} using the original ID and adding the system tags.
      *
      * @param original original metric ID
