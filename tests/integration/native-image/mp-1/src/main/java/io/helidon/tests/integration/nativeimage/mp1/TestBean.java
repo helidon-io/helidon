@@ -157,10 +157,10 @@ public class TestBean {
     }
 
     public String appRegistry() {
-        return "SimpleTimers.size(): " + metricRegistry.getTimers().size();
+        return "Timers.size(): " + metricRegistry.getTimers().size();
     }
 
     public String baseRegistry() {
-        return "SimpleTimers.size(): " + metricRegistry.getTimers().size();
+        return "Timers.size(): " + baseRegistry.getTimers().size();
     }
 }

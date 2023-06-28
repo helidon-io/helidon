@@ -182,7 +182,7 @@ class JsonFormatter {
     private static Tag[] tags(Map<String, String> tagMap, String scope) {
         List<Tag> result = new ArrayList<>();
         SystemTagsManager.instance()
-                .allTags(tagMap.entrySet(), scope)
+                .allTags(tagMap.entrySet())
                 .forEach(entry -> result.add(new Tag(entry.getKey(), entry.getValue())));
         return result.toArray(new Tag[0]);
     }

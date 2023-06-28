@@ -50,10 +50,10 @@ class TestJsonFormatter {
         JsonObject result = formatter.data(false);
 
         assertThat("Counter 1",
-                   result.getJsonNumber("jsonCounter1;_testScope_=application").intValue(),
+                   result.getJsonNumber("jsonCounter1").intValue(),
                    is(2));
         assertThat("Counter 2",
-                   result.getJsonNumber("jsonCounter2;_testScope_=jsonFormatterTestScope;t1=1").intValue(),
+                   result.getJsonNumber("jsonCounter2;t1=1").intValue(),
                    is(3));
 
 
