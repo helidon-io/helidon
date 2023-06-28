@@ -37,8 +37,7 @@ import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
 
 class HttpCallOutputStreamChain extends HttpCallChainBase {
-    private final int maxStatusLineLength;
-    private final boolean sendExpect100Continue;
+    private final Http1ClientConfig clientConfig;
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final ClientRequest.OutputStreamHandler osHandler;
@@ -50,8 +49,7 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
                               CompletableFuture<WebClientServiceResponse> whenComplete,
                               ClientRequest.OutputStreamHandler osHandler) {
         super(clientConfig, connection, tls);
-        this.maxStatusLineLength = clientConfig.maxStatusLineLength();
-        this.sendExpect100Continue = clientConfig.sendExpectContinue();
+        this.clientConfig = clientConfig;
         this.whenSent = whenSent;
         this.whenComplete = whenComplete;
         this.osHandler = osHandler;
@@ -69,8 +67,7 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
                                                                             reader,
                                                                             writeBuffer,
                                                                             headers,
-                                                                            maxStatusLineLength,
-                                                                            sendExpect100Continue,
+                                                                            clientConfig,
                                                                             serviceRequest,
                                                                             whenSent);
 
@@ -84,7 +81,7 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
 
-        Http.Status responseStatus = Http1StatusParser.readStatus(reader, maxStatusLineLength);
+        Http.Status responseStatus = Http1StatusParser.readStatus(reader, clientConfig.maxStatusLineLength());
         ClientResponseHeaders responseHeaders = readHeaders(reader);
 
         return WebClientServiceResponse.builder()
@@ -105,8 +102,7 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
         private final DataReader reader;
         private final WebClientServiceRequest request;
         private final CompletableFuture<WebClientServiceRequest> whenSent;
-        private final int maxStatusLineLength;
-        private final boolean sendExpect100Continue;
+        private final Http1ClientConfig clientConfig;
         private final WritableHeaders<?> headers;
         private final BufferData prologue;
 
@@ -121,16 +117,14 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
                                              DataReader reader,
                                              BufferData prologue,
                                              WritableHeaders<?> headers,
-                                             int maxStatusLineLength,
-                                             boolean sendExpect100Continue,
+                                             Http1ClientConfig clientConfig,
                                              WebClientServiceRequest request,
                                              CompletableFuture<WebClientServiceRequest> whenSent) {
             this.writer = writer;
             this.reader = reader;
             this.headers = headers;
             this.prologue = prologue;
-            this.maxStatusLineLength = maxStatusLineLength;
-            this.sendExpect100Continue = sendExpect100Continue;
+            this.clientConfig = clientConfig;
             this.contentLength = headers.contentLength().orElse(-1);
             this.chunked = contentLength == -1 || headers.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
             this.request = request;
@@ -229,7 +223,7 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
         }
 
         private void sendPrologueAndHeader() {
-            boolean expects100Continue = sendExpect100Continue && chunked && !noData;
+            boolean expects100Continue = clientConfig.sendExpectContinue() && chunked && !noData;
             if (expects100Continue) {
                 headers.add(Http.HeaderValues.EXPECT_100);
             }
@@ -251,13 +245,13 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
 
             // todo validate request headers
             BufferData headerBuffer = BufferData.growing(128);
-            writeHeaders(headers, headerBuffer);
+            writeHeaders(headers, headerBuffer, clientConfig.validateHeaders());
             writer.writeNow(headerBuffer);
 
             whenSent.complete(request);
 
             if (expects100Continue) {
-                Http.Status responseStatus = Http1StatusParser.readStatus(reader, maxStatusLineLength);
+                Http.Status responseStatus = Http1StatusParser.readStatus(reader, clientConfig.maxStatusLineLength());
                 if (responseStatus != Http.Status.CONTINUE_100) {
                     throw new IllegalStateException("Expected a status of '100 Continue' but received a '"
                                                             + responseStatus + "' instead");

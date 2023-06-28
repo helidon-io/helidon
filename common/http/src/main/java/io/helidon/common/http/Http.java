@@ -238,7 +238,6 @@ public final class Http {
             return method;
         }
 
-
         /**
          * Create a predicate for the provided methods.
          *
@@ -956,6 +955,41 @@ public final class Http {
             } else {
                 for (String value : allValues()) {
                     writeHeader(buffer, nameBytes, value.getBytes(StandardCharsets.US_ASCII));
+                }
+            }
+        }
+
+        /**
+         * Check validity of header name and values.
+         *
+         * @throws IllegalArgumentException in case the HeaderValue is not valid
+         */
+        default void validate() throws IllegalArgumentException {
+            String name = name();
+            // validate that header name only contains valid characters
+            HttpToken.validate(name);
+            // Validate header value
+            validateValue(name, values());
+        }
+
+
+        // validate header value based on https://www.rfc-editor.org/rfc/rfc7230#section-3.2 and throws IllegalArgumentException
+        // if invalid.
+        private static void validateValue(String name, String value) throws IllegalArgumentException {
+            char[] vChars = value.toCharArray();
+            int vLength = vChars.length;
+            for (int i = 0; i < vLength; i++) {
+                char vChar = vChars[i];
+                if (i == 0) {
+                    if (vChar < '!' || vChar == '\u007f') {
+                        throw new IllegalArgumentException("First character of the header value is invalid"
+                                                                   + " for header '" + name + "'");
+                    }
+                } else {
+                    if (vChar < ' ' && vChar != '\t' || vChar == '\u007f') {
+                        throw new IllegalArgumentException("Character at position " + (i + 1) + " of the header value is invalid"
+                                                                   + " for header '" + name + "'");
+                    }
                 }
             }
         }
