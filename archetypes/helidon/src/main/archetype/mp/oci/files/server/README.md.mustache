@@ -161,7 +161,7 @@ particularly the following relevant sections:
 2. `Application-Specific Metrics Data` - allows application-specific metrics to be created using CDI.
 
 As part of the example, some of the methods in src.main.java.{{package}}.server.GreetResource.java
-where annotated with Application-Specific metrics such as @Counted, @Metered and @Timed as shown below:
+where annotated with Application-Specific metrics such as @Counted and @Timed as shown below:
 ```java
     @Counted(name = "getDefaultMessage", absolute = true)
     @Override
@@ -171,14 +171,6 @@ where annotated with Application-Specific metrics such as @Counted, @Metered and
         return createGreetResponse("World");
     }
     
-    @Metered(absolute = true, unit = MetricUnits.MILLISECONDS)
-    @Override
-    public GreetResponse getMessage(String name) {
-        LOGGER.info("getMessage(" +  name + ") is invoked");
-        publishMetricAndLog("getMessage");
-        return createGreetResponse(name);
-    }
-
     @Timed(name = "updateGreeting", absolute = true, unit = MetricUnits.MILLISECONDS)
     @Override
     public void updateGreeting(@Valid @NotNull GreetUpdate body) {
