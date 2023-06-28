@@ -19,6 +19,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
+import io.helidon.metrics.api.FunctionalCounterRegistry;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -40,6 +42,19 @@ public interface MetricFactory {
      * @return new counter
      */
     Counter counter(String scope, Metadata metadata, Tag... tags);
+
+    /**
+     * Creates a (read-only) counter which wraps an object capable of furnishing a double value.
+     *
+     * @param scope registry scope
+     * @param metadata metadata describing the new counter
+     * @param origin object which provides the value
+     * @param function function which, when applied to the origin, provides the value of the counter
+     * @param tags further identifying the counter
+     * @return new counter
+     * @param <T> type of the origin object
+     */
+    <T> Counter counter(String scope, Metadata metadata, T origin, ToDoubleFunction<T> function, Tag... tags);
 
     /**
      * Creates a timer.

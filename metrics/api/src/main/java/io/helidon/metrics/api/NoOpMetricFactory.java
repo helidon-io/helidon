@@ -35,6 +35,11 @@ class NoOpMetricFactory implements MetricFactory {
     }
 
     @Override
+    public <T> Counter counter(String scope, Metadata metadata, T origin, ToDoubleFunction<T> function, Tag... tags) {
+        return NoOpMetricImpl.NoOpFunctionalCounterImpl.create(scope, metadata, origin, function, tags);
+    }
+
+    @Override
     public Timer timer(String scope, Metadata metadata, Tag... tags) {
         return NoOpMetricImpl.NoOpTimerImpl.create(scope, metadata, tags);
     }

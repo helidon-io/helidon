@@ -29,7 +29,7 @@ import org.eclipse.microprofile.metrics.Tag;
 /**
  * Implementation of {@link Counter}.
  */
-final class HelidonCounter extends MetricImpl implements Counter, SampledMetric {
+class HelidonCounter extends MetricImpl implements Counter, SampledMetric {
     private final io.micrometer.core.instrument.Counter delegate;
 
     private HelidonCounter(String scope, Metadata metadata, io.micrometer.core.instrument.Counter delegate) {

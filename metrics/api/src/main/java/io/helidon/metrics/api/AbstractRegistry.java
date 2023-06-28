@@ -418,6 +418,15 @@ public abstract class AbstractRegistry implements Registry {
     }
 
     /**
+     * Returns a reference to the underlying metric store that is capable of creating a functional counter.
+     *
+     * @return the metric store
+     */
+    protected FunctionalCounterRegistry metricStore() {
+        return metricStore;
+    }
+
+    /**
      * Creates a gauge instance according to the specified supplier which returns the gauge value.
      *
      * @param metadata metadata to use in creating the gauge

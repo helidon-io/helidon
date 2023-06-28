@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 import io.helidon.metrics.api.AbstractRegistry;
@@ -26,9 +27,11 @@ import io.helidon.metrics.api.MetricInstance;
 import io.helidon.metrics.api.RegistrySettings;
 
 import io.micrometer.core.instrument.Metrics;
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Metrics registry.
@@ -52,6 +55,11 @@ public class Registry extends AbstractRegistry {
     public void update(RegistrySettings registrySettings) {
         super.update(registrySettings);
         this.registrySettings.set(registrySettings);
+    }
+
+    @Override
+    public <T> Counter counter(Metadata metadata, T origin, ToDoubleFunction<T> function, Tag... tags) {
+        return metricStore().counter(metadata, origin, function, tags);
     }
 
     @Override

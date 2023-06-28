@@ -209,8 +209,8 @@ final class BaseRegistry extends Registry {
 
         ClassLoadingMXBean clBean = ManagementFactory.getClassLoadingMXBean();
         register(result, CL_LOADED_COUNT, clBean, ClassLoadingMXBean::getLoadedClassCount);
-        register(result, CL_LOADED_TOTAL, clBean, ClassLoadingMXBean::getTotalLoadedClassCount);
-        register(result, CL_UNLOADED_COUNT, clBean, ClassLoadingMXBean::getUnloadedClassCount);
+        registerFunctionalCounter(result, CL_LOADED_TOTAL, clBean, ClassLoadingMXBean::getTotalLoadedClassCount);
+        registerFunctionalCounter(result, CL_UNLOADED_COUNT, clBean, ClassLoadingMXBean::getUnloadedClassCount);
 
         OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
         register(result, OS_AVAILABLE_CPU, osBean, OperatingSystemMXBean::getAvailableProcessors);
@@ -219,8 +219,8 @@ final class BaseRegistry extends Registry {
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcBean : gcBeans) {
             String poolName = gcBean.getName();
-            register(result, gcCountMeta(), gcBean, GarbageCollectorMXBean::getCollectionCount,
-                            new Tag("name", poolName));
+            registerFunctionalCounter(result, gcCountMeta(), gcBean, GarbageCollectorMXBean::getCollectionCount,
+                                      new Tag("name", poolName));
             register(result, gcTimeMeta(), gcBean, GarbageCollectorMXBean::getCollectionTime,
                     new Tag("name", poolName));
         }
@@ -274,4 +274,16 @@ final class BaseRegistry extends Registry {
     private static <T, R extends Number>  void register(BaseRegistry registry, Metadata meta, T object, Function<T, R> func) {
         register(registry, meta, object, func, NO_TAGS);
     }
+
+    private static <T> void registerFunctionalCounter(BaseRegistry registry,
+                                                      Metadata meta,
+                                                      T object,
+                                                      ToDoubleFunction<T> func,
+                                                      Tag... tags) {
+        if (registry.metricsSettings.baseMetricsSettings().isBaseMetricEnabled(meta.getName())
+                && registry.metricsSettings.isMetricEnabled(Registry.BASE_SCOPE, meta.getName())) {
+            registry.counter(meta, object, func, tags);
+        }
+    }
+
 }

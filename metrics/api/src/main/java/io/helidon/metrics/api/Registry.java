@@ -27,7 +27,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 /**
  * Helidon Metric registry.
  */
-public interface Registry extends MetricRegistry {
+public interface Registry extends FunctionalCounterRegistry, MetricRegistry {
 
     /**
      * Built-in scope names.
@@ -43,7 +43,7 @@ public interface Registry extends MetricRegistry {
     boolean enabled(String metricName);
 
     /**
-     * Steam all metrics from this registry.
+     * Stream all metrics from this registry.
      *
      * @return stream of metric instances and their IDs
      */

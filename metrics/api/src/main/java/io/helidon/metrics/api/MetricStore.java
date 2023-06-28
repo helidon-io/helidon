@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,7 +61,7 @@ import org.eclipse.microprofile.metrics.Timer;
  *     holding all this information. That, plus the type generality, makes for quite the class here.
  * </p>
  */
-class MetricStore {
+class MetricStore implements FunctionalCounterRegistry {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock(true);
 
@@ -75,6 +76,11 @@ class MetricStore {
     private final MetricFactory noOpMetricFactory = new NoOpMetricFactory();
     private final String scope;
     private final BiConsumer<MetricID, HelidonMetric> doRemove;
+
+    @Override
+    public <T> Counter counter(Metadata metadata, T origin, ToDoubleFunction<T> function, Tag... tags) {
+        return getOrRegisterMetric(metadata, Counter.class, origin, function, tags);
+    }
 
     static MetricStore create(RegistrySettings registrySettings,
                               MetricFactory metricFactory,
@@ -184,6 +190,30 @@ class MetricStore {
                                   () -> allMetadata.get(metricID.getName()),
                                   () -> metricID,
                                   (Metadata metadata) -> metricFactory.gauge(scope, metadata, valueSupplier));
+    }
+
+    <T, U extends Metric> U getOrRegisterMetric(Metadata newMetadata,
+                                                Class<U> clazz,
+                                                T origin,
+                                                ToDoubleFunction<T> function,
+                                                Tag... tags) {
+        Class<? extends Metric> newBaseType = baseMetricClass(clazz);
+        return writeAccess(() -> {
+            enforceConsistentType(newMetadata.getName(), newBaseType);
+            MetricID newMetricID = new MetricID(newMetadata.getName(), tags);
+            checkOrStoreTagNames(newMetricID.getName(),
+                                 newMetricID.getTags().keySet());
+            checkOrStoreMetadata(newMetadata);
+            HelidonMetric metric = getMetricLocked(newMetadata.getName(), tags);
+            if (metric == null) {
+                getConsistentMetadataLocked(newMetadata);
+                metric = registerMetricLocked(newMetricID,
+                                              createEnabledAwareMetric(newBaseType, newMetadata, origin, function, tags));
+                return clazz.cast(metric);
+            }
+            ensureConsistentMetricTypes(metric, newBaseType, () -> newMetricID);
+            return clazz.cast(metric);
+        });
     }
 
     /**
@@ -571,6 +601,23 @@ class MetricStore {
             result = factoryToUse.timer(scope, metadata, tags);
         } else {
             throw new IllegalArgumentException("Cannot identify correct metric type for " + clazz.getName());
+        }
+        return (HelidonMetric) result;
+    }
+
+    private <U extends Metric, T> HelidonMetric createEnabledAwareMetric(Class<U> clazz,
+                                                                         Metadata metadata,
+                                                                         T origin,
+                                                                         ToDoubleFunction<T> function,
+                                                                         Tag... tags) {
+        String metricName = metadata.getName();
+        Class<? extends Metric> baseClass = baseMetricClass(clazz);
+        Metric result;
+        MetricFactory factoryToUse = registrySettings.isMetricEnabled(metricName) ? metricFactory : noOpMetricFactory;
+        if (baseClass.isAssignableFrom(Counter.class)) {
+            result = factoryToUse.counter(scope, metadata, origin, function, tags);
+        } else {
+            throw new IllegalArgumentException("Cannot identify correct function metric type for " + clazz.getName());
         }
         return (HelidonMetric) result;
     }

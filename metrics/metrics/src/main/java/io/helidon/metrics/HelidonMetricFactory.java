@@ -88,4 +88,9 @@ class HelidonMetricFactory implements MetricFactory {
     public <T> Gauge<Double> gauge(String scope, Metadata metadata, T target, ToDoubleFunction<T> fn, Tag... tags) {
         return HelidonGauge.create(meterRegistry, scope, metadata, target, fn, tags);
     }
+
+    @Override
+    public <T> Counter counter(String scope, Metadata metadata, T origin, ToDoubleFunction<T> function, Tag... tags) {
+        return HelidonFunctionalCounter.create(meterRegistry, scope, metadata, origin, function, tags);
+    }
 }

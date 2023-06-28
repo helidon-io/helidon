@@ -19,11 +19,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Implementation of {@link MetricRegistry} which returns no-op metrics implementations.
@@ -82,5 +85,10 @@ class NoOpMetricRegistry extends AbstractRegistry {
     @Override
     protected void doRemove(MetricID metricId, HelidonMetric metric) {
         // The no-op registry does not have a delegate registry (such as Micrometer) to keep synchronized.
+    }
+
+    @Override
+    public <T> Counter counter(Metadata metadata, T origin, ToDoubleFunction<T> function, Tag... tags) {
+        return NoOpMetricImpl.NoOpFunctionalCounterImpl.create(scope(), metadata, origin, function, tags);
     }
 }

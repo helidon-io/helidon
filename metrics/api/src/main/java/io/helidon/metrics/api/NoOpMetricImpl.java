@@ -257,6 +257,36 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
         }
     }
 
+    static class NoOpFunctionalCounterImpl<T> extends NoOpMetricImpl implements Counter {
+
+        static <T> NoOpFunctionalCounterImpl create(String registryType,
+                                                Metadata metadata,
+                                                T origin,
+                                                ToDoubleFunction<T> function,
+                                                Tag... tags) {
+            return new NoOpFunctionalCounterImpl(registryType, metadata);
+        }
+
+        private NoOpFunctionalCounterImpl(String registryType, Metadata metadata) {
+            super(registryType, metadata);
+        }
+
+        @Override
+        public void inc() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void inc(long n) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long getCount() {
+            return 0;
+        }
+    }
+
     private static Timer.Context timerContext() {
         return new NoOpTimerImpl.Context() {
         };
