@@ -419,7 +419,7 @@ public class OciMetricsSupport implements HttpService {
          * Sets the {@link NameFormatter} to use in formatting metric
          * names. See the
          * {@link NameFormatter#format(
-         * MetricID, String, Metadata)} method for details
+         * Metric, MetricID, String, Metadata)} method for details
          * about the default formatting.
          *
          * @param nameFormatter the formatter to use

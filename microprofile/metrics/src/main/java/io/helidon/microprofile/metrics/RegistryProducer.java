@@ -20,7 +20,6 @@ import io.helidon.metrics.api.RegistryFactory;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
-import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
@@ -69,6 +68,6 @@ final class RegistryProducer {
      */
     static void clearApplicationRegistry() {
         MetricRegistry applicationRegistry = getApplicationRegistry();
-        applicationRegistry.removeMatching(MetricFilter.ALL);
+        applicationRegistry.getNames().forEach(applicationRegistry::remove);
     }
 }
