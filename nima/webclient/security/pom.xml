@@ -14,8 +14,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
   -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -25,8 +25,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>helidon-nima-webclient-tracing</artifactId>
-    <name>Helidon Níma WebClient Tracing</name>
+    <artifactId>helidon-nima-webclient-security</artifactId>
+    <name>Helidon Níma WebClient Security</name>
 
     <dependencies>
         <dependency>
@@ -34,33 +34,17 @@
             <artifactId>helidon-nima-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing</artifactId>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.testing</groupId>
-            <artifactId>helidon-common-testing-http-junit5</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -88,4 +72,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

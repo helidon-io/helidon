@@ -74,7 +74,7 @@ class ClientRequestImpl implements Http1ClientRequest {
                       Map<String, String> properties) {
         this.method = method;
         this.uri = helper;
-        this.properties = properties;
+        this.properties = new HashMap<>(properties);
 
         this.clientConfig = clientConfig;
         this.mediaContext = clientConfig.mediaContext();

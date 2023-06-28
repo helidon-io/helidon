@@ -18,21 +18,22 @@ import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * Helidon WebClient Tracing.
+ * Helidon WebClient Security.
  */
-@Feature(value = "Tracing",
-         description = "Web client support for tracing",
+@Feature(value = "Security",
+         description = "Web client support for security",
          in = HelidonFlavor.SE,
-         path = {"WebClient", "Tracing"}
+         path = {"WebClient", "Security"}
 )
-module io.helidon.nima.webclient.tracing {
+module io.helidon.nima.webclient.security {
     requires static io.helidon.common.features.api;
 
     requires io.helidon.nima.webclient;
-    requires io.helidon.tracing;
+    requires io.helidon.security;
+    requires io.helidon.security.providers.common;
 
-    exports io.helidon.nima.webclient.tracing;
+    exports io.helidon.nima.webclient.security;
 
     provides io.helidon.nima.webclient.spi.WebClientServiceProvider
-            with io.helidon.nima.webclient.tracing.WebClientTracingProvider;
+            with io.helidon.nima.webclient.security.WebClientSecurityProvider;
 }
