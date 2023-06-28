@@ -341,7 +341,7 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                                     <list key="dependencies">
                                         <map>
                                             <value key="groupId">io.helidon.integrations.db</value>
-                                            <value key="artifactId">ojdbc8</value>
+                                            <value key="artifactId">ojdbc</value>
                                             <value key="scope">runtime</value>
                                         </map>
                                         <map>
