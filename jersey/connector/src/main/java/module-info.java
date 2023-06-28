@@ -17,8 +17,8 @@
 import io.helidon.jersey.connector.HelidonConnectorProvider;
 
 /**
- * A {@link org.glassfish.jersey.client.spi.Connector} that utilizes the Helidon HTTP Client to send and receive
- *  * HTTP request and responses.
+ * A {@link org.glassfish.jersey.client.spi.Connector} that utilizes the Helidon HTTP Client to send
+ * and receive HTTP request and responses.
  */
 module io.helidon.jersey.connector {
     requires java.logging;
@@ -26,9 +26,7 @@ module io.helidon.jersey.connector {
     requires jakarta.ws.rs;
     requires jersey.client;
     requires jersey.common;
-    requires io.helidon.common.reactive;
-    requires io.helidon.reactive.webclient;
-    requires io.netty.codec.http;
+    requires io.helidon.nima.webclient;
 
     exports io.helidon.jersey.connector;
     provides org.glassfish.jersey.client.spi.ConnectorProvider with HelidonConnectorProvider;

@@ -32,6 +32,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
@@ -42,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests SSL/TLS with HTTP 2 upgrades and compression.
  */
+@Disabled("https://github.com/helidon-io/helidon/issues/7097")
 public class Http2SslTest {
 
     private static WebServer webServer;
@@ -50,7 +52,7 @@ public class Http2SslTest {
     @BeforeAll
     public static void startServer() throws Exception {
         webServer = TestServer.start(true, true, true);
-        client = TestServer.newOkHttpClient(true);
+        client = TestServer.newOkHttpClient(true, true);
     }
 
     @AfterAll

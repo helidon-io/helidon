@@ -27,6 +27,7 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.nima.webserver.WebServer;
@@ -113,23 +114,26 @@ class TestServer {
             Request request = chain.request();
 
             long t1 = System.nanoTime();
-            System.out.println(String.format("Sending request %s on %s%n%s",
-                    request.url(), chain.connection(), request.headers()));
+            System.out.println(String.format("Sending request %s %s on %s%n%s",
+                    request.method(), request.url(), chain.connection(), request.headers()));
 
             Response response = chain.proceed(request);
 
             long t2 = System.nanoTime();
-            System.out.println(String.format("Received response for %s in %.1fms%nProtocol is %s%n%s",
-                    response.request().url(), (t2 - t1) / 1e6d, response.protocol(), response.headers()));
+            System.out.println(String.format("Received response %d for %s in %.1fms%nProtocol is %s%n%s",
+                    response.code(), response.request().url(), (t2 - t1) / 1e6d, response.protocol(),
+                    response.headers()));
 
             return response;
         }
     }
 
-    static OkHttpClient newOkHttpClient(boolean ssl) throws Exception {
+    static OkHttpClient newOkHttpClient(boolean ssl, boolean http2) throws Exception {
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
                 .addNetworkInterceptor(new LoggingInterceptor())
-                .protocols(Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1));
+                .retryOnConnectionFailure(false)
+                .protocols(http2 ? Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1)
+                                 : List.of(Protocol.HTTP_1_1));
         if (ssl) {
             SSLContext sslContext = setupSSLTrust();
             clientBuilder.sslSocketFactory(sslContext.getSocketFactory(), TRUST_MANAGER);

@@ -42,7 +42,7 @@ public class MainTest {
     @BeforeAll
     public static void startServer() throws Exception {
         webServer = TestServer.start(false, false, false);
-        client = TestServer.newOkHttpClient(false);
+        client = TestServer.newOkHttpClient(false, false);
     }
 
     @AfterAll
