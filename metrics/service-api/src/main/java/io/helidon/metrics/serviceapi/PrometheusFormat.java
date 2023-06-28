@@ -286,6 +286,9 @@ public final class PrometheusFormat {
                                   long count,
                                   long sum,
                                   boolean withHelpType) {
+        // # TYPE application:file_sizes_mean_bytes gauge
+        // application:file_sizes_mean_bytes 4738.231
+        appendPrometheusElement(sb, name, "mean", withHelpType, "gauge", snap.mean());
 
         // # HELP file_sizes_bytes_max Users file size
         // # TYPE file_sizes_bytes_max gauge
@@ -329,20 +332,20 @@ public final class PrometheusFormat {
         sb.append("\n");
     }
 
-//    private static void appendPrometheusElement(StringBuilder sb,
-//                                                PrometheusName name,
-//                                                String statName,
-//                                                boolean withHelpType,
-//                                                String typeName,
-//                                                Sample.Derived derived) {
-//        appendPrometheusElement(sb,
-//                                name,
-//                                () -> name.nameStatUnits(statName),
-//                                withHelpType,
-//                                typeName,
-//                                derived.value(),
-//                                derived.sample());
-//    }
+    private static void appendPrometheusElement(StringBuilder sb,
+                                                PrometheusName name,
+                                                String statName,
+                                                boolean withHelpType,
+                                                String typeName,
+                                                Sample.Derived derived) {
+        appendPrometheusElement(sb,
+                                name,
+                                () -> name.nameStatUnits(statName),
+                                withHelpType,
+                                typeName,
+                                derived.value(),
+                                derived.sample());
+    }
 
     private static void appendPrometheusElement(StringBuilder sb,
                                                 PrometheusName name,

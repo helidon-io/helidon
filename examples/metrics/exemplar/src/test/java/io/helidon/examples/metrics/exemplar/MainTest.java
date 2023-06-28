@@ -148,10 +148,14 @@ public class MainTest {
 
     }
 
+    // TODO Helidon will be delegating exemplar handling to the underlying implementation. This is a work in progress.
     private static String valueMatcher(String statName) {
         // application_timerForGets_mean_seconds 0.010275403147594316 # {trace_id="cfd13196e6a9fb0c"} 0.002189822 1617799841.963000
         return "application_" + GreetService.TIMER_FOR_GETS
-                + "_" + statName + "_seconds [\\d\\.]+ # \\{trace_id=\"[^\"]+\"\\} [\\d\\.]+ [\\d\\.]+";
+                // TODO Following is the original, exemplar-matching pattern. Suppressed temporarily while we migrate
+                // exemplar support.
+                // + "_" + statName + "_seconds [\\d\\.]+ # \\{trace_id=\"[^\"]+\"\\} [\\d\\.]+ [\\d\\.]+";
+                + "_" + statName + "_seconds [\\d\\.]+.*";
     }
 
 }
