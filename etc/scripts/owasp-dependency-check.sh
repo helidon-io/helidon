@@ -28,7 +28,7 @@ readonly RESULT_FILE=$(mktemp -t XXXdependency-check-result)
 
 die() { cat ${RESULT_FILE} ; echo "Dependency report in ${WS_DIR}/target" ; echo "${1}" ; exit 1 ;}
 
-if [ "${PIPELINE}" = "true" ] ; then
+if [ -n "${JENKINS_HOME}"  ] || [ "${GITHUB_ACTIONS}" = "true" ]; then
     # If in pipeline do a priming build before scan
     mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml clean install -DskipTests
 fi

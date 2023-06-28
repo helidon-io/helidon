@@ -68,11 +68,39 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
     MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
     MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.showDateTime=true"
     MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
-    export MAVEN_OPTS
-    MAVEN_ARGS="${MAVEN_ARGS} -B"
+    MAVEN_ARGS="${MAVEN_ARGS} -B ${MAVEN_HTTP_ARGS}"
+
+    if [ -n "${JENKINS_HOME}" ] ; then
+        export PATH="/tools/apache-maven-3.8.6/bin:${JAVA_HOME}/bin:/tools/node-v12/bin:${PATH}"
+        if [ -n "${GITHUB_SSH_KEY}" ] ; then
+            export GIT_SSH_COMMAND="ssh -i ${GITHUB_SSH_KEY}"
+        fi
+        if [ -n "${NPM_CONFIG_REGISTRY}" ] ; then
+            MAVEN_ARGS="${MAVEN_ARGS} -Dnpm.download.root=${NPM_CONFIG_REGISTRY}/npm/-/"
+        fi
+        if [ -n "${https_proxy}" ] && [[ ! "${https_proxy}" =~ ^http:// ]] ; then
+            export https_proxy="http://${https_proxy}"
+        fi
+        if [ -n "${http_proxy}" ] && [[ ! "${http_proxy}" =~ ^http:// ]] ; then
+            export http_proxy="http://${http_proxy}"
+        fi
+        if [ ! -e "${HOME}/.npmrc" ] ; then
+            if [ -n "${NPM_CONFIG_REGISTRY}" ] ; then
+                echo "registry = ${NPM_CONFIG_REGISTRY}" >> ${HOME}/.npmrc
+            fi
+            if [ -n "${https_proxy}" ] ; then
+                echo "https-proxy = ${https_proxy}" >> ${HOME}/.npmrc
+            fi
+            if [ -n "${http_proxy}" ] ; then
+                echo "proxy = ${http_proxy}" >> ${HOME}/.npmrc
+            fi
+            if [ -n "${NO_PROXY}" ] ; then
+                echo "noproxy = ${NO_PROXY}" >> ${HOME}/.npmrc
+            fi
+        fi
+    fi
 
     if [ -n "${RELEASE_WORKFLOW}" ] ; then
-        export PIPELINE="true"
         if [ -n "${MAVEN_SETTINGS}" ] ; then
             export MAVEN_SETTINGS_FILE="${HOME}/.m2/settings.xml"
             echo "${MAVEN_SETTINGS}" > "${MAVEN_SETTINGS_FILE}"
@@ -98,6 +126,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
         fi
     fi
     export MAVEN_ARGS
+    export MAVEN_OPTS
 else
     echo "WARNING: ${WS_DIR}/etc/scripts/includes/pipeline-env.sh included multiple times."
 fi

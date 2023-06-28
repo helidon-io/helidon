@@ -231,6 +231,7 @@ release_build(){
       -DstagingDescription="${STAGING_DESC}"
 
     # Create and push a git tag
+    git tag -f "${FULL_VERSION}"
     git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
 }
 
