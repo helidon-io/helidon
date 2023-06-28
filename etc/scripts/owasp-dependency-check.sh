@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ readonly RESULT_FILE=$(mktemp -t XXXdependency-check-result)
 
 die() { cat ${RESULT_FILE} ; echo "Dependency report in ${WS_DIR}/target" ; echo "${1}" ; exit 1 ;}
 
-if [ "${PIPELINE}" = "true" ] ; then
+if [ -n "${JENKINS_HOME}"  ] || [ "${GITHUB_ACTIONS}" = "true" ]; then
     # If in pipeline do a priming build before scan
     mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml clean install -DskipTests
 fi
