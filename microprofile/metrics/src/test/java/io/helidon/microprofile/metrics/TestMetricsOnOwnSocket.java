@@ -103,11 +103,11 @@ public class TestMetricsOnOwnSocket {
             assertThat(descr + " metrics sampling response", r.getStatus(), is(Http.Status.OK_200.code()));
 
             JsonObject metrics = r.readEntity(JsonObject.class);
-            assertThat("Check for requests.load", metrics.containsKey("requests.load;mp_scope=vendor"), is(true));
+            assertThat("Check for requests.load", metrics.containsKey("requests.load"), is(true));
             // In Helidon 4, requests.load changed from a meter to a counter (backends can do the time-series analysis), so
             // just fetch it as a number.
-            assertThat("Load count type", metrics.get("requests.load;mp_scope=vendor"), is(instanceOf(JsonNumber.class)));
-            JsonNumber load = metrics.getJsonNumber("requests.load;mp_scope=vendor");
+            assertThat("Load count type", metrics.get("requests.load"), is(instanceOf(JsonNumber.class)));
+            JsonNumber load = metrics.getJsonNumber("requests.load");
 
             return load.intValue();
         }
