@@ -16,6 +16,7 @@
 
 package io.helidon.tests.integration.oidc;
 
+import io.helidon.jersey.connector.HelidonConnectorProvider;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
@@ -41,7 +42,7 @@ class CommonLoginBase {
             .withReuse(true);
 
     private static final ClientConfig CONFIG = new ClientConfig()
-            // .connectorProvider(new HelidonConnectorProvider())
+            .connectorProvider(new HelidonConnectorProvider())
             .property(ClientProperties.CONNECT_TIMEOUT, 10000000)
             .property(ClientProperties.READ_TIMEOUT, 10000000)
             .property(ClientProperties.FOLLOW_REDIRECTS, true);
