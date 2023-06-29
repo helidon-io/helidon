@@ -246,12 +246,6 @@ public abstract class ReadableEntityBase implements ReadableEntity {
 
         @Override
         public void close() throws IOException {
-            while (!finished) {
-                ensureBuffer(512);
-                if (currentBuffer != null) {
-                    currentBuffer.skip(currentBuffer.available());
-                }
-            }
             super.close();
         }
 
