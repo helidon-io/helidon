@@ -66,6 +66,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private ClientConnection connection;
     private UriFragment fragment = UriFragment.empty();
     private boolean skipUriEncoding = false;
+    private boolean keepAlive;
 
     ClientRequestImpl(Http1ClientConfig clientConfig,
                       Http.Method method,
@@ -82,6 +83,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         this.maxRedirects = clientConfig.maxRedirects();
         this.tls = clientConfig.tls().orElse(null);
         this.query = query;
+        this.keepAlive = clientConfig.defaultKeepAlive();
 
         this.requestId = "http1-client-" + COUNTER.getAndIncrement();
         this.explicitHeaders = WritableHeaders.create(clientConfig.defaultHeaders());
@@ -199,7 +201,8 @@ class ClientRequestImpl implements Http1ClientRequest {
         rejectHeadWithEntity();
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        WebClientService.Chain callChain = new HttpCallOutputStreamChain(clientConfig,
+        WebClientService.Chain callChain = new HttpCallOutputStreamChain(this,
+                                                                         clientConfig,
                                                                          connection,
                                                                          tls,
                                                                          whenSent,
@@ -244,12 +247,22 @@ class ClientRequestImpl implements Http1ClientRequest {
         return this;
     }
 
+    @Override
+    public Http1ClientRequest keepAlive(boolean keepAlive) {
+        this.keepAlive = keepAlive;
+        return this;
+    }
+
     Http1ClientConfig clientConfig() {
         return clientConfig;
     }
 
     UriHelper uri() {
         return uri;
+    }
+
+    boolean keepAlive() {
+        return keepAlive;
     }
 
     @Override
@@ -306,7 +319,8 @@ class ClientRequestImpl implements Http1ClientRequest {
     private ClientResponseImpl invokeRequestWithEntity(Object entity) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        WebClientService.Chain callChain = new HttpCallEntityChain(clientConfig,
+        WebClientService.Chain callChain = new HttpCallEntityChain(this,
+                                                                   clientConfig,
                                                                    connection,
                                                                    tls,
                                                                    whenSent,
