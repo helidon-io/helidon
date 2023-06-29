@@ -42,7 +42,7 @@ class RedirectInterceptor implements HttpInterceptor {
             LOGGER.finest(() -> "(client reqID: " + requestId + ") Redirecting to " + newUri);
             WebClientRequestBuilder requestBuilder;
             if (httpResponse.status().code() == Http.Status.TEMPORARY_REDIRECT_307.code()
-                    || httpResponse.status().code() == 308) {
+                    || httpResponse.status().code() == Http.Status.PERMANENT_REDIRECT_308.code()) {
                 requestBuilder = WebClientRequestBuilderImpl
                         .create(clientRequest, Http.Method.valueOf(clientRequest.method().name()));
             } else {
