@@ -18,9 +18,9 @@ package io.helidon.examples.quickstart.se;
 
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.openapi.SeOpenApiFeature;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.openapi.OpenApiFeature;
 
 /**
  * The application main class.
@@ -54,7 +54,7 @@ public final class Main {
      * Updates HTTP Routing and registers observe providers.
      */
     static void routing(HttpRouting.Builder routing) {
-        SeOpenApiFeature openApi = SeOpenApiFeature.builder().build();
+        OpenApiFeature openApi = OpenApiFeature.builder().build();
         GreetService greetService = new GreetService();
         routing.addFeature(openApi)
                 .register("/greet", greetService)

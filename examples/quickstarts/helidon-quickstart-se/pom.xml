@@ -58,8 +58,8 @@
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.openapi</groupId>
-            <artifactId>helidon-nima-openapi</artifactId>
+            <groupId>io.helidon.openapi</groupId>
+            <artifactId>helidon-openapi</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
