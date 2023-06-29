@@ -18,7 +18,8 @@ app:
   json-library: jsonp
 
 server:
-  port: 8080
+  # Random port
+  port: -1
   host: 0.0.0.0
 
 #  ssl:
