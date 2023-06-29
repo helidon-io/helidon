@@ -21,8 +21,10 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.HexFormat;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -99,6 +101,18 @@ class Http1ClientConnection implements ClientConnection {
     @Override
     public String channelId() {
         return channelId;
+    }
+
+    @Override
+    public void readTimeout(Duration readTimeout) {
+        if (!isConnected()) {
+            throw new IllegalStateException("Read timeout cannot be set, because connection has not been established.");
+        }
+        try {
+            socket.setSoTimeout((int) readTimeout.toMillis());
+        } catch (SocketException e) {
+            throw new UncheckedIOException("Could not set read timeout to the connection with the channel id: " + channelId, e);
+        }
     }
 
     boolean isConnected() {

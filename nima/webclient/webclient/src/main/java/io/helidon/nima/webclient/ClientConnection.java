@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.nima.webclient;
+
+import java.time.Duration;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
@@ -54,4 +56,11 @@ public interface ClientConnection {
      * @return id of this channel (connection)
      */
     String channelId();
+
+    /**
+     * Read timeout for this connection.
+     *
+     * @param readTimeout connection read timeout
+     */
+    void readTimeout(Duration readTimeout);
 }

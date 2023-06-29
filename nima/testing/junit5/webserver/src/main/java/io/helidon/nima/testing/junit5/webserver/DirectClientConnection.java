@@ -16,6 +16,7 @@
 
 package io.helidon.nima.testing.junit5.webserver;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -80,6 +81,11 @@ class DirectClientConnection implements ClientConnection {
     @Override
     public String channelId() {
         return "unit-client";
+    }
+
+    @Override
+    public void readTimeout(Duration readTimeout) {
+        //NOOP
     }
 
     private DataWriter writer(ArrayBlockingQueue<byte[]> queue) {

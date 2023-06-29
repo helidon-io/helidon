@@ -16,6 +16,8 @@
 
 package io.helidon.nima.webclient.http1;
 
+import java.time.Duration;
+
 import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
@@ -25,6 +27,14 @@ import io.helidon.nima.webclient.ClientRequest;
  * Client request for HTTP/1.1.
  */
 public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest, Http1ClientResponse> {
+
+    /**
+     * Read timeout for this request.
+     *
+     * @param readTimeout response read timeout
+     * @return updated client request
+     */
+    Http1ClientRequest readTimeout(Duration readTimeout);
 
     /**
      * HTTP Method.
