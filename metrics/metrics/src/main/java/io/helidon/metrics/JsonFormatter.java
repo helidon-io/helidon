@@ -82,8 +82,6 @@ class JsonFormatter {
 
         boolean organizeByScope = shouldOrganizeByScope(isByScopeRequested);
 
-//        Map<String, Map<String, MeterOutputBuilder>> meterOutputBuildersByScope = organizeByScope ? new HashMap<>() : null;
-//        Map<String, MeterOutputBuilder> meterOutputBuildersIgnoringScope = organizeByScope ? null : new HashMap<>();
         Map<String, Map<String, MetricOutputBuilder>> meterOutputBuildersByScope = organizeByScope ? new HashMap<>() : null;
         Map<String, MetricOutputBuilder> meterOutputBuildersIgnoringScope = organizeByScope ? null : new HashMap<>();
 
@@ -144,34 +142,14 @@ class JsonFormatter {
                     }
                 });
           }
-//            Metrics.globalRegistry.forEachMeter(meter -> {
-//                Meter.Id meterId = meter.getId();
-//                if (matchesName(meterId)) {
-//                    String matchingScope = matchingScope(meterId);
-//                    if (matchingScope != null) {
-//                        Map<String, MeterOutputBuilder> meterOutputBuildersWithinParent =
-//                                organizeByScope ? meterOutputBuildersByScope
-//                                        .computeIfAbsent(matchingScope,
-//                                                         ms -> new HashMap<>())
-//                                        : meterOutputBuildersIgnoringScope;
-//
-//                        // Find the output builder for the key relevant to this meter and then add this meter's contribution
-//                        // to the output.
-//                        MeterOutputBuilder meterOutputBuilder = meterOutputBuildersWithinParent
-//                                .computeIfAbsent(meterOutputKey(meter),
-//                                                 k -> MeterOutputBuilder.create(meter));
-//                        meterOutputBuilder.add(meter);
-//                    }
-//                }
-//            });
         });
 
         JsonObjectBuilder top = JSON.createObjectBuilder();
         if (organizeByScope) {
             meterOutputBuildersByScope.forEach((scope, outputBuilders) -> {
                 JsonObjectBuilder scopeBuilder = JSON.createObjectBuilder();
-                top.add(scope, scopeBuilder);
                 outputBuilders.forEach((key, outputBuilder) -> outputBuilder.apply(scopeBuilder));
+                top.add(scope, scopeBuilder);
             });
         } else {
             meterOutputBuildersIgnoringScope.forEach((key, outputBuilder) -> outputBuilder.apply(top));
