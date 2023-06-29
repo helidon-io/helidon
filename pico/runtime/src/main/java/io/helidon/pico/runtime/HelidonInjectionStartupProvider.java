@@ -14,23 +14,27 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.nima.faulttolerance;
+package io.helidon.pico.runtime;
 
-import io.helidon.nima.Helidon;
+import io.helidon.pico.api.Helidon;
+import io.helidon.spi.HelidonStartupProvider;
 
 /**
- * Main class of the example, starts Helidon with injection support.
+ * Service provider implementation, should only be used from {@link java.util.ServiceLoader}.
+ * See {@link io.helidon.pico.api.Helidon} type to discover programmatic API.
  */
-public final class FtMain {
-    private FtMain() {
+public class HelidonInjectionStartupProvider implements HelidonStartupProvider {
+    /**
+     * Required default constructor needed for {@link java.util.ServiceLoader}.
+     *
+     * @deprecated please do not use directly
+     */
+    @Deprecated
+    public HelidonInjectionStartupProvider() {
     }
 
-    /**
-     * Start the example.
-     *
-     * @param args ignored
-     */
-    public static void main(String[] args) {
+    @Override
+    public void start(String[] arguments) {
         Helidon.start();
     }
 }

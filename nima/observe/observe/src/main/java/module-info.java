@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ module io.helidon.nima.observe {
     requires transitive io.helidon.nima.webserver.cors;
     requires io.helidon.common.http;
     requires io.helidon.nima.webserver;
-    requires io.helidon.nima;
 
     exports io.helidon.nima.observe;
     exports io.helidon.nima.observe.spi;

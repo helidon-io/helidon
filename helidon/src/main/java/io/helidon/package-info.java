@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 /**
- * APIs shared across all Helidon features that are injection based.
+ * Startup of Helidon applications.
+ *
+ * @see io.helidon.Main
  */
-package io.helidon.nima.common.api;
+package io.helidon;

@@ -30,10 +30,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima</groupId>
-            <artifactId>helidon-nima</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.nima.observe</groupId>
             <artifactId>helidon-nima-observe</artifactId>
         </dependency>

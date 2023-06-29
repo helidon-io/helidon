@@ -16,6 +16,7 @@
 
 package io.helidon.examples.nima.faulttolerance;
 
+import io.helidon.Main;
 import io.helidon.common.http.Http;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -39,7 +40,7 @@ class FaultToleranceTest {
 
     @BeforeAll
     static void init() {
-        FtMain.main(new String[0]);
+        Main.main(new String[0]);
         WebServer webServer = PicoServices.realizedServices()
                 .lookup(WebServer.class)
                 .get();
@@ -59,8 +60,8 @@ class FaultToleranceTest {
 
     @AfterAll
     static void shutDown() {
-        //        PicoServices.picoServices()
-        //                .map(PicoServices::shutdown);
+        PicoServices.picoServices()
+                .map(PicoServices::shutdown);
     }
 
     @Test
@@ -95,7 +96,6 @@ class FaultToleranceTest {
     }
 
     @Test
-    @Disabled
     void testGreetNamedFallback() {
         String response = webClient.get("/greet/helidon")
                 .queryParam("throw", "true")

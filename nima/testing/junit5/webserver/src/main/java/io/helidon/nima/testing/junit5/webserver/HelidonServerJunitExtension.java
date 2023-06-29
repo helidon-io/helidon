@@ -30,6 +30,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.LogConfig;
@@ -81,6 +82,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
         }
 
         WebServerConfig.Builder builder = WebServer.builder()
+                .config(GlobalConfig.config().get("server"))
                 .port(0)
                 .shutdownHook(false)
                 .host("localhost");

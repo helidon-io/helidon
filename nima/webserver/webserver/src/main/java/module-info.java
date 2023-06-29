@@ -35,7 +35,6 @@ module io.helidon.nima.webserver {
     requires transitive io.helidon.common.security;
     requires io.helidon.logging.common;
     requires io.helidon.builder.api;
-    requires io.helidon.nima.common.api;
     requires io.helidon.common.features.api;
     requires io.helidon.common.features;
     requires io.helidon.common.task;

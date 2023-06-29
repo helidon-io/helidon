@@ -43,7 +43,6 @@ import io.helidon.common.config.ConfigException;
 import io.helidon.common.context.Context;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.nima.common.api.Startable;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
@@ -51,8 +50,10 @@ import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.pico.api.ServiceProvider;
+import io.helidon.pico.api.Startable;
 import io.helidon.pico.configdriven.api.ConfigDriven;
 
+import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 
 @ConfigDriven(value = WebServerConfigBlueprint.class, activateByDefault = true)
@@ -158,6 +159,7 @@ class LoomServer implements WebServer, Startable {
     }
 
     @Override
+    @PreDestroy
     public WebServer stop() {
         try {
             lifecycleLock.lockInterruptibly();

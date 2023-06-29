@@ -34,10 +34,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.common</groupId>
-            <artifactId>helidon-nima-common-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-http</artifactId>
         </dependency>

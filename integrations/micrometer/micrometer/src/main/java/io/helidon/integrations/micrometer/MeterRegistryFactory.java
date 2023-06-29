@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.http.Http;
-import io.helidon.config.Config;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;

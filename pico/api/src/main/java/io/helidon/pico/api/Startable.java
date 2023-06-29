@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.common.api;
-
-import io.helidon.pico.api.Contract;
+package io.helidon.pico.api;
 
 /**
  * Some components may require start when Helidon is bootstrapped, such as WebServer (to open server sockets).
  * This interface is a Helidon Injection contract, that allows us to discover all startable services and start them
  * on boot when desired.
+ * <p>
+ * This contract should be used for cases where the construction of the object (using constructor, and maybe
+ * {@link jakarta.annotation.PostConstruct} - where we create a fully configured instance) is different from its start
+ * transition (such as opening sockets, connecting to remote messaging queues, streams, topics, etc.).
+ *
+ * @see io.helidon.pico.api.Helidon#start()
  */
 @Contract
 public interface Startable {

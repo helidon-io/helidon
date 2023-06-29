@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.helidon.nima {
+
+/**
+ * Types need to start a Helidon application.
+ */
+module io.helidon {
     requires io.helidon.common;
-    requires io.helidon.config;
     requires io.helidon.logging.common;
-    requires io.helidon.pico.api;
-    
-    requires io.helidon.nima.common.api;
 
-    requires jakarta.inject;
+    exports io.helidon;
+    exports io.helidon.spi;
 
-    requires io.helidon.common.types;
-    requires io.helidon.pico.runtime;
-
-    exports io.helidon.nima;
-
-    provides io.helidon.pico.api.ModuleComponent with io.helidon.nima.Pico$$Module;
+    uses io.helidon.spi.HelidonStartupProvider;
 }

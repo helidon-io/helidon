@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima;
+package io.helidon.pico.api;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -22,15 +22,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.common.api.Startable;
-import io.helidon.pico.api.Bootstrap;
-import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.PicoServicesHolder;
-import io.helidon.pico.api.ServiceProvider;
-import io.helidon.pico.api.Services;
 
 /**
- * Main entry point for applications using Helidon Injection service registry.
+ * Entry point to service registry based Helidon applications.
+ *
+ * @see #start()
+ * @see #serviceRegistry()
  */
 public class Helidon {
     private static final System.Logger LOGGER = System.getLogger(Helidon.class.getName());
@@ -50,21 +47,12 @@ public class Helidon {
     }
 
     /**
-     * Main method to start Helidon Injection service registry and services that should be initialized at startup.
-     *
-     * @param args currently ignored
-     */
-    public static void main(String[] args) {
-        start();
-    }
-
-    /**
      * Initialize Helidon Injection service registry. In case the intent is to also start services, such as WebServer,
      * see {@link #start()}.
      *
      * @return service registry
      */
-    public static Services services() {
+    public static Services serviceRegistry() {
         if (REGISTRY_INITIALIZED.compareAndSet(false, true)) {
             basicInit();
             registryInit(false);
@@ -85,7 +73,7 @@ public class Helidon {
             basicInit();
             registryInit(true);
         } else {
-            LOGGER.log(System.Logger.Level.WARNING, "Duplicate call to method Nima.start().");
+            LOGGER.log(System.Logger.Level.WARNING, "Duplicate call to method Helidon.start().");
         }
     }
 
@@ -104,10 +92,6 @@ public class Helidon {
 
             boolean explicitConfig = GlobalConfig.configured();
             Config bootstrapConfig = GlobalConfig.config();
-
-            if (explicitConfig) {
-                ConfigProvider.explicitConfig(bootstrapConfig);
-            }
 
             Bootstrap bootstrap = Bootstrap.builder()
                     .config(bootstrapConfig)

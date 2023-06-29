@@ -55,7 +55,6 @@ class GreetEndpoint {
     String greetNamed(@Endpoint.PathParam("name") String name,
                       @Endpoint.QueryParam(value = "throw", defaultValue = "false") String shouldThrow,
                       @Endpoint.HeaderParam(Http.Header.HOST_STRING) String hostHeader) {
-        System.out.println(Thread.currentThread().getName());
         if ("true".equalsIgnoreCase(shouldThrow)) {
             throw new PicoException("Failed on purpose");
         }

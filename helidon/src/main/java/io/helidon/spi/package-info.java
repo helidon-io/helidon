@@ -15,10 +15,7 @@
  */
 
 /**
- * APIs for Helidon features.
+ * Extension point to support a single main class ({@link io.helidon.Main}) to start various styles of applications,
+ * such as Helidon injection based applications, and Helidon MicroProfile applications.
  */
-module io.helidon.nima.common.api {
-    requires static io.helidon.pico.api;
-
-    exports io.helidon.nima.common.api;
-}
+package io.helidon.spi;
