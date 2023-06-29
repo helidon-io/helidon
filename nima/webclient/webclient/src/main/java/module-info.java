@@ -48,10 +48,10 @@ module io.helidon.nima.webclient {
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common.socket;
     requires transitive io.helidon.common.uri;
-    requires transitive io.helidon.config;
     requires transitive io.helidon.nima.common.tls;
     requires transitive io.helidon.nima.http.encoding;
     requires transitive io.helidon.nima.http.media;
+    requires transitive io.helidon.common.config;
 
     exports io.helidon.nima.webclient;
     exports io.helidon.nima.webclient.spi;

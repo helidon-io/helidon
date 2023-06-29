@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public class MicrometerTestAddingMeters {
                 .enrollBuiltInRegistry(MeterRegistryFactory.BuiltInRegistryType.PROMETHEUS, PrometheusConfig.DEFAULT)
                 .build();
 
-        MicrometerSupport support = MicrometerSupport.builder()
+        MicrometerFeature support = MicrometerFeature.builder()
                 .meterRegistryFactorySupplier(factory)
                 .build();
 

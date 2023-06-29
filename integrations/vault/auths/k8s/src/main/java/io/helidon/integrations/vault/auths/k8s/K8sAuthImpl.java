@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,43 @@
 
 package io.helidon.integrations.vault.auths.k8s;
 
-class K8sAuthImpl implements K8sAuth {
-    private final K8sAuthRx delegate;
+import io.helidon.common.http.Http;
+import io.helidon.integrations.common.rest.RestApi;
 
-    K8sAuthImpl(K8sAuthRx delegate) {
-        this.delegate = delegate;
+class K8sAuthImpl implements K8sAuth {
+    private final RestApi restApi;
+    private final String path;
+
+    K8sAuthImpl(RestApi restApi, String path) {
+        this.restApi = restApi;
+        this.path = path;
     }
 
     @Override
     public CreateRole.Response createRole(CreateRole.Request request) {
-        return delegate.createRole(request).await();
+        String apiPath = "/auth/" + path + "/role/" + request.roleName();
+
+        return restApi.post(apiPath, request, CreateRole.Response.builder());
     }
 
     @Override
     public DeleteRole.Response deleteRole(DeleteRole.Request request) {
-        return delegate.deleteRole(request).await();
-    }
+        String apiPath = "/auth/" + path + "/role/" + request.roleName();
 
-    @Override
-    public Login.Response login(Login.Request request) {
-        return delegate.login(request).await();
+        return restApi.delete(apiPath, request, DeleteRole.Response.builder());
     }
 
     @Override
     public ConfigureK8s.Response configure(ConfigureK8s.Request request) {
-        return delegate.configure(request).await();
+        String apiPath = "/auth/" + path + "/config";
+
+        return restApi.post(apiPath, request, ConfigureK8s.Response.builder());
+    }
+
+    @Override
+    public Login.Response login(Login.Request request) {
+        String apiPath = "/auth/" + path + "/login";
+
+        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, Login.Response.builder());
     }
 }

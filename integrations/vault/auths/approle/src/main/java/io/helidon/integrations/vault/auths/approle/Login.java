@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public class Login {
 
         /**
          * Role ID of the AppRole.
-         * This is the ID, not the name. Use {@link AppRoleAuthRx#readRoleId(String)} or UI to obtain the id.
+         * This is the ID, not the name. Use {@link AppRoleAuth#readRoleId(String)} or UI to obtain the id.
          *
          * @param roleId role ID
          * @return updated request

@@ -67,7 +67,11 @@ public final class Http1HeadersParser {
             reader.skip(2);
             maxLength -= eol + 1;
 
-            headers.add(Http.Header.create(header, value));
+            Http.HeaderValue headerValue = Http.Header.create(header, value);
+            headers.add(headerValue);
+            if (validate) {
+                headerValue.validate();
+            }
             if (maxLength < 0) {
                 throw new IllegalStateException("Header size exceeded");
             }
@@ -113,9 +117,6 @@ public final class Http1HeadersParser {
         }
 
         String headerName = reader.readAsciiString(col);
-        if (validate) {
-            HttpToken.validate(headerName);
-        }
         Http.HeaderName header = Http.Header.create(headerName);
         reader.skip(1); // skip the colon character
 

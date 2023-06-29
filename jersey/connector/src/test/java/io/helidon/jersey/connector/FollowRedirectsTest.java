@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package io.helidon.jersey.connector;
 
 import java.io.IOException;
@@ -32,6 +31,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.ClientResponse;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,33 +59,31 @@ public class FollowRedirectsTest extends AbstractTest {
 
     @BeforeAll
     public static void setup() {
-        redirectResource =  new RedirectResource();
+        redirectResource = new RedirectResource();
         UncachedResponseMethodExecutor executor = new UncachedResponseMethodExecutor(redirectResource::redirect);
-        AbstractTest.extensions.set(new Extension[] {
+        Extension[] extensions = new Extension[]{
                 executor,
                 new ContentLengthSetter()
-        });
+        };
 
-        AbstractTest.rules.set(
-                () -> {
-                    wireMock.stubFor(
-                            WireMock.get(WireMock.urlEqualTo("/test/redirect")).willReturn(
-                                    WireMock.ok().withTransformers(executor.getName())
-                            )
-                    );
-                    wireMock.stubFor(
-                            WireMock.get(WireMock.urlEqualTo("/test")).willReturn(
-                                    WireMock.ok(redirectResource.get())
-                            )
-                    );
-                });
-
-        AbstractTest.setup();
+        Rules rules = () -> {
+            wireMockServer.stubFor(
+                    WireMock.get(WireMock.urlEqualTo("/test/redirect")).willReturn(
+                            WireMock.ok().withTransformers(executor.getName())
+                    )
+            );
+            wireMockServer.stubFor(
+                    WireMock.get(WireMock.urlEqualTo("/test")).willReturn(
+                            WireMock.ok(redirectResource.get())
+                    )
+            );
+        };
+        setup(rules, extensions);
     }
 
     @Override
-    protected WebTarget target(String uri, String entityType) {
-        WebTarget target = super.target(uri, entityType);
+    protected WebTarget target(String uri) {
+        WebTarget target = super.target(uri);
         target.register(RedirectTestFilter.class);
         return target;
     }
@@ -95,16 +93,16 @@ public class FollowRedirectsTest extends AbstractTest {
 
         @Override
         public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
-            if (responseContext instanceof ClientResponse) {
-                ClientResponse clientResponse = (ClientResponse) responseContext;
-                responseContext.getHeaders().putSingle(RESOLVED_URI_HEADER, clientResponse.getResolvedRequestUri().toString());
+            if (responseContext instanceof ClientResponse clientResponse) {
+                responseContext.getHeaders().putSingle(RESOLVED_URI_HEADER,
+                        clientResponse.getResolvedRequestUri().toString());
             }
         }
     }
 
-    @ParamTest
-    public void testDoFollow(String entityType) {
-        Response r = target("test/redirect", entityType).register(RedirectTestFilter.class).request().get();
+    @Test
+    public void testDoFollow() {
+        Response r = target("test/redirect").register(RedirectTestFilter.class).request().get();
         assertThat(r.getStatus(), is(200));
         assertThat(r.readEntity(String.class), is("GET"));
 
@@ -112,9 +110,9 @@ public class FollowRedirectsTest extends AbstractTest {
                 is(UriBuilder.fromUri(getBaseUri()).path(RedirectResource.class).build().toString()));
     }
 
-    @ParamTest
-    public void testDontFollow(String entityType) {
-        WebTarget t = target("test/redirect", entityType);
+    @Test
+    public void testDontFollow() {
+        WebTarget t = target("test/redirect");
         t.property(ClientProperties.FOLLOW_REDIRECTS, false);
         assertThat(t.request().get().getStatus(), is(303));
     }

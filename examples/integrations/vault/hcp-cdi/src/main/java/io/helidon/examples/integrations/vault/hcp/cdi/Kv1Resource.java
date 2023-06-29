@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.integrations.vault.hcp.reactive;
+package io.helidon.examples.integrations.vault.hcp.cdi;
 
 import java.util.Map;
 import java.util.Optional;
@@ -23,7 +23,6 @@ import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.secrets.kv1.CreateKv1;
 import io.helidon.integrations.vault.secrets.kv1.DeleteKv1;
 import io.helidon.integrations.vault.secrets.kv1.Kv1Secrets;
-import io.helidon.integrations.vault.secrets.kv1.Kv1SecretsRx;
 import io.helidon.integrations.vault.sys.DisableEngine;
 import io.helidon.integrations.vault.sys.EnableEngine;
 import io.helidon.integrations.vault.sys.Sys;
@@ -58,7 +57,7 @@ public class Kv1Resource {
     @Path("/engine")
     @GET
     public Response enableEngine() {
-        EnableEngine.Response response = sys.enableEngine(Kv1SecretsRx.ENGINE);
+        EnableEngine.Response response = sys.enableEngine(Kv1Secrets.ENGINE);
 
         return Response.ok()
                 .entity("Key/value version 1 secret engine is now enabled. Original status: " + response.status().code())
@@ -72,7 +71,7 @@ public class Kv1Resource {
     @Path("/engine")
     @DELETE
     public Response disableEngine() {
-        DisableEngine.Response response = sys.disableEngine(Kv1SecretsRx.ENGINE);
+        DisableEngine.Response response = sys.disableEngine(Kv1Secrets.ENGINE);
         return Response.ok()
                 .entity("Key/value version 1 secret engine is now disabled. Original status: " + response.status().code())
                 .build();

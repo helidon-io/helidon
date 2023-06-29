@@ -5,7 +5,7 @@ There are two different approaches for [OCI SDK](https://docs.oracle.com/en-us/i
 * **Helidon SE** (not using _CDI_). For this refer to the information below.
 
 ## Helidon Injection Framework and OCI SDK Integration
-This section only applies for **Helidon SE** type applications. If you are using **Helidon MP** then this section does not apply to you, and you should instead refer to the [cdi](./cdi) module. If you are using **Heldion SE** then continue reading below. Please familiarize yourself with the basics of the [Helidon Injection Framework](../../../pico) and terminology before continuing further.
+This section only applies for **Helidon SE** type applications. If you are using **Helidon MP** then this section does not apply to you, and you should instead refer to the [cdi](./cdi) module. If you are using **Helidon SE** then continue reading below. Please familiarize yourself with the basics of the [Helidon Injection Framework](../../../pico) and terminology before continuing further.
 
 The **Helidon Injection Framework** offers two modules for integrating with the **OCI SDK API** - the _processor_ module and the _runtime_ module.
 

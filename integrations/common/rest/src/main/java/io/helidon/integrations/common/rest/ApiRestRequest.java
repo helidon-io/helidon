@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import io.helidon.common.media.type.MediaType;
  * Common base class for REST requests.
  * This class acts as a mutable builder without a build method, as the intended use is to pass it
  * to a {@code io.helidon.integrations.common.rest.RestApi}, not to send it around for parallel processing.
- *
+ * <p>
  * Path is not a part of this request.
  *
  * @param <T> type of the request
@@ -49,7 +49,7 @@ public abstract class ApiRestRequest<T extends ApiRequest<T>> implements ApiRequ
     /**
      * Add an HTTP header.
      *
-     * @param name name of the header
+     * @param name  name of the header
      * @param value header value(s)
      * @return updated request
      */
@@ -62,7 +62,7 @@ public abstract class ApiRestRequest<T extends ApiRequest<T>> implements ApiRequ
     /**
      * Add an HTTP query parameter.
      *
-     * @param name name of the parameter
+     * @param name  name of the parameter
      * @param value parameter value(s)
      * @return updated request
      */

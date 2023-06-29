@@ -37,12 +37,12 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient</artifactId>
+            <groupId>io.helidon.nima.webclient</groupId>
+            <artifactId>helidon-nima-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.fault-tolerance</groupId>
-            <artifactId>helidon-reactive-fault-tolerance</artifactId>
+            <groupId>io.helidon.nima.fault-tolerance</groupId>
+            <artifactId>helidon-nima-fault-tolerance</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>

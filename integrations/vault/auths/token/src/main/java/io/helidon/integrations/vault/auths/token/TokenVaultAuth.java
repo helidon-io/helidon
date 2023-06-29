@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
@@ -31,11 +32,13 @@ import io.helidon.integrations.vault.spi.VaultAuth;
 /**
  * Java Service Loader implementation for authenticating using a token.
  * You can create a new instance using {@link #builder()}.
- * To use a custom built instance, use {@link Vault.Builder#addVaultAuth(io.helidon.integrations.vault.spi.VaultAuth)}.
+ * To use a custom built instance, use {@link Vault.Builder#addVaultAuth(VaultAuth)}.
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class TokenVaultAuth implements VaultAuth {
     private static final System.Logger LOGGER = System.getLogger(TokenVaultAuth.class.getName());
+    private static final Http.HeaderName VAULT_TOKEN_HEADER_NAME =  Http.Header.create("X-Vault-Token");
+    private static final Http.HeaderName VAULT_NAMESPACE_HEADER_NAME =  Http.Header.create("X-Vault-Namespace");
     private final String token;
     private final String baseNamespace;
 
@@ -77,26 +80,27 @@ public class TokenVaultAuth implements VaultAuth {
 
     private RestApi restApi(Vault.Builder vaultBuilder, String token) {
         String address = vaultBuilder.address()
-                .orElseThrow(() -> new VaultApiException("Address is required when using token authentication"));
+                                     .orElseThrow(() -> new VaultApiException(
+                                             "Address is required when using token authentication"));
 
         LOGGER.log(Level.INFO, "Authenticated Vault " + address + " using a token");
 
         return VaultRestApi.builder()
-                .webClientBuilder(builder -> {
-                    builder.config(vaultBuilder.config().get("webclient"))
-                            .baseUri(address + "/v1")
-                            .addHeader("X-Vault-Token", token);
-                    Optional.ofNullable(baseNamespace)
-                            .or(vaultBuilder::baseNamespace)
-                            .ifPresent(ns -> builder.addHeader("X-Vault-Namespace", ns));
-                    vaultBuilder.webClientUpdater().accept(builder);
-                })
-                .faultTolerance(vaultBuilder.ftHandler())
-                .build();
+                           .webClientBuilder(builder -> {
+                               builder.config(vaultBuilder.config().get("webclient"))
+                                      .baseUri(address + "/v1")
+                                      .header(VAULT_TOKEN_HEADER_NAME, token);
+                               Optional.ofNullable(baseNamespace)
+                                       .or(vaultBuilder::baseNamespace)
+                                       .ifPresent(ns -> builder.header(VAULT_NAMESPACE_HEADER_NAME, ns));
+                               vaultBuilder.webClientUpdater().accept(builder);
+                           })
+                           .faultTolerance(vaultBuilder.ftHandler())
+                           .build();
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.integrations.vault.auths.token.TokenVaultAuth}.
+     * Fluent API builder for {@link TokenVaultAuth}.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, TokenVaultAuth> {
         private String baseNamespace;

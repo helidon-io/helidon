@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ public interface ApiRequest<T extends ApiRequest<T>> {
      * Request media type.
      *
      * @return media type if configured
-     * @see #requestMediaType(io.helidon.common.media.type.MediaType)
+     * @see #requestMediaType(MediaType)
      */
     Optional<MediaType> requestMediaType();
 
@@ -118,7 +118,7 @@ public interface ApiRequest<T extends ApiRequest<T>> {
      * Response media type.
      *
      * @return media type if configured
-     * @see #responseMediaType(io.helidon.common.media.type.MediaType)
+     * @see #responseMediaType(MediaType)
      */
     Optional<MediaType> responseMediaType();
 

@@ -38,6 +38,7 @@
     <modules>
         <module>webclient</module>
         <module>tracing</module>
+        <module>security</module>
     </modules>
 
 </project>

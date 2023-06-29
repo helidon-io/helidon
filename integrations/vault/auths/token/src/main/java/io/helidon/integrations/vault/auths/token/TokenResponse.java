@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,8 +119,8 @@ public abstract class TokenResponse extends VaultResponse {
      *
      * @return token type
      *
-     * @see TokenAuthRx#TYPE_SERVICE
-     * @see TokenAuthRx#TYPE_BATCH
+     * @see TokenAuth#TYPE_SERVICE
+     * @see TokenAuth#TYPE_BATCH
      */
     public String tokenType() {
         return tokenType;

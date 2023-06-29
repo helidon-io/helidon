@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,86 +19,66 @@ package io.helidon.integrations.common.rest;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import io.helidon.common.http.Http;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webserver.Handler;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.Method.DELETE;
 import static io.helidon.common.http.Http.Method.GET;
-import static io.helidon.common.http.Http.Method.HEAD;
-import static io.helidon.common.http.Http.Method.POST;
 import static io.helidon.common.http.Http.Method.PUT;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.not;
 
+@ServerTest
 class RestApiTest {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
-    private static WebServer webServer;
     private static RestApi restApi;
 
-    @BeforeAll
-    static void initClass() {
-        webServer = WebServer.builder()
-                .host("localhost")
-                .routing(Routing.builder().register("/api", new TestApiService()))
-                .addMediaSupport(JsonpSupport.create())
-                .build()
-                .start()
-                .await(10, TimeUnit.SECONDS);
-
-        restApi = RestApiImpl.create(webServer.port());
+    @SetUpServer
+    static void setupServer(WebServerConfig.Builder serverBuilder) {
+        serverBuilder.routing(routing -> routing.register("/api", TestApiService::new))
+                .mediaContext(MediaContext.builder().addMediaSupport(JsonpSupport.create()).build());
     }
 
-    @AfterAll
-    static void destroyClass() {
-        if (webServer != null) {
-            webServer.shutdown().await(10, TimeUnit.SECONDS);
-        }
+    @BeforeAll
+    static void setupRestApi(WebServer webServer) {
+        restApi = RestApiImpl.create(webServer.port());
     }
 
     @Test
     void testQueryParam() {
-        EchoResponse response = restApi.invokeWithResponse(GET,
-                                                           "/echo",
-                                                           RestRequest.builder()
-                                                                   .addQueryParam("query", "queryValue"),
-                                                           EchoResponse.builder())
-                .await();
+        RestRequest request = RestRequest.builder().addQueryParam("query", "queryValue");
+        EchoResponse response = restApi.invokeWithResponse(GET, "/echo", request, EchoResponse.builder());
 
         assertThat(response.echoedPath, is("/api/echo"));
         assertThat(response.echoedQueryParams, is(Map.of("query", "queryValue")));
-
         assertThat(response.echoedEntity, is(Optional.empty()));
     }
 
     @Test
     void testHeaders() {
-        EchoResponse response = restApi.invokeWithResponse(GET,
-                                                           "/echo",
-                                                           RestRequest.builder()
-                                                                   .addHeader("header", "headerValue"),
-                                                           EchoResponse.builder())
-                .await();
+        RestRequest request = RestRequest.builder().addHeader("header", "headerValue");
+        EchoResponse response = restApi.invokeWithResponse(GET, "/echo", request, EchoResponse.builder());
 
         assertThat(response.echoedPath, is("/api/echo"));
         assertThat(response.echoedQueryParams, is(Map.of()));
@@ -108,17 +88,15 @@ class RestApiTest {
 
     @Test
     void testEntity() {
-        EchoResponse response = restApi.invokeWithResponse(PUT,
-                                                           "/echo",
-                                                           JsonRequest.builder()
-                                                                   .add("anInt", 42)
-                                                                   .add("aString", "value"),
-                                                           EchoResponse.builder())
-                .await();
+        JsonRequest request = JsonRequest.builder()
+                .add("anInt", 42)
+                .add("aString", "value");
+        EchoResponse response = restApi.invokeWithResponse(PUT, "/echo", request, EchoResponse.builder());
 
         assertThat(response.echoedPath, is("/api/echo"));
         assertThat(response.echoedQueryParams, is(Map.of()));
         assertThat(response.echoedEntity, not(Optional.empty()));
+        assertThat(response.echoedEntity.isPresent(), is(true));
         JsonObject jsonObject = response.echoedEntity.get();
 
         assertThat(jsonObject.getInt("anInt"), is(42));
@@ -128,12 +106,9 @@ class RestApiTest {
 
     @Test
     void testGetFound() {
-        var response = restApi.get("/echo",
-                                   RestRequest.builder(),
-                                   ApiOptionalResponse
-                                           .<JsonObject, JsonObject>apiResponseBuilder()
-                                           .entityProcessor(Function.identity()))
-                .await();
+        var responseBuilder = ApiOptionalResponse.<JsonObject, JsonObject>apiResponseBuilder()
+                .entityProcessor(Function.identity());
+        var response = restApi.get("/echo", RestRequest.builder(), responseBuilder);
 
         assertThat(response.entity(), not(Optional.empty()));
         assertThat(response.status(), is(Http.Status.OK_200));
@@ -141,23 +116,24 @@ class RestApiTest {
 
     @Test
     void testGetNotFound() {
-        var response = restApi.get("/missing",
-                                   RestRequest.builder(),
-                                   ApiOptionalResponse
-                                           .<JsonObject, JsonObject>apiResponseBuilder()
-                                           .entityProcessor(Function.identity()))
-                .await();
+        var responseBuilder = ApiOptionalResponse.<JsonObject, JsonObject>apiResponseBuilder()
+                .entityProcessor(Function.identity());
+        var response = restApi.get("/missing", RestRequest.builder(), responseBuilder);
 
         assertThat(response.entity(), is(Optional.empty()));
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 
-    private static class TestApiService implements Service {
+    private static class TestApiService implements HttpService {
 
         @Override
-        public void update(Routing.Rules rules) {
-            rules.anyOf(Set.of(GET, DELETE, HEAD), "/echo", this::echoNoEntity)
-                    .anyOf(Set.of(PUT, POST), "/echo", Handler.create(JsonObject.class, this::echo));
+        public void routing(HttpRules rules) {
+            rules.any("/echo", (req, res) -> {
+                switch (req.prologue().method().text()) {
+                case "GET", "DELETE", "HEAD" -> this.echoNoEntity(req, res);
+                case "PUT", "POST" -> this.echo(req, res, req.content().as(JsonObject.class));
+                }
+            });
         }
 
         private void echo(ServerRequest req, ServerResponse res, JsonObject entity) {
@@ -170,19 +146,19 @@ class RestApiTest {
 
         private JsonObjectBuilder common(ServerRequest req) {
             JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
-            objectBuilder.add("path", req.path().absolute().toRawString());
+            objectBuilder.add("path", req.path().absolute().rawPath());
 
-            Map<String, List<String>> queryParams = req.queryParams().toMap();
+            Map<String, List<String>> queryParams = req.query().toMap();
             if (!queryParams.isEmpty()) {
                 JsonObjectBuilder queryParamsBuilder = JSON.createObjectBuilder();
                 queryParams.forEach((key, values) -> queryParamsBuilder.add(key, values.iterator().next()));
                 objectBuilder.add("params", queryParamsBuilder);
             }
 
-            Map<String, List<String>> headers = req.headers().toMap();
-            if (!headers.isEmpty()) {
+            ServerRequestHeaders headers = req.headers();
+            if (headers.size() > 0) {
                 JsonObjectBuilder headersBuilder = JSON.createObjectBuilder();
-                headers.forEach((key, values) -> headersBuilder.add(key, values.iterator().next()));
+                headers.forEach(header -> headersBuilder.add(header.name(), header.value()));
                 objectBuilder.add("headers", headersBuilder);
             }
 
@@ -190,6 +166,7 @@ class RestApiTest {
         }
     }
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private static class EchoResponse extends ApiEntityResponse {
         private final String echoedPath;
         private final Map<String, String> echoedQueryParams;

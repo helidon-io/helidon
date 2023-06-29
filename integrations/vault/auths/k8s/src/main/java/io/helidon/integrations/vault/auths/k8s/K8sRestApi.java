@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,17 @@ import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.ApiRequest;
 import io.helidon.integrations.vault.VaultTokenBase;
 import io.helidon.integrations.vault.auths.common.VaultRestApi;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
 
 class K8sRestApi extends VaultRestApi {
+
+    private static final Http.HeaderName VAULT_TOKEN_HEADER_NAME = Http.Header.create("X-Vault-Token");
     private final AtomicReference<VaultTokenBase> currentToken = new AtomicReference<>();
 
-    private final K8sAuthRx auth;
+    private final K8sAuth auth;
     private final String roleName;
     private final String jwtToken;
 
@@ -46,39 +47,37 @@ class K8sRestApi extends VaultRestApi {
     }
 
     @Override
-    protected Single<WebClientRequestBuilder> updateRequestBuilderCommon(WebClientRequestBuilder requestBuilder,
-                                                                         String path,
-                                                                         ApiRequest<?> request,
-                                                                         Http.Method method,
-                                                                         String requestId) {
+    protected Http1ClientRequest updateRequestBuilderCommon(Http1ClientRequest requestBuilder,
+                                                            String path,
+                                                            ApiRequest<?> request,
+                                                            Http.Method method,
+                                                            String requestId) {
         VaultTokenBase k8sToken = currentToken.get();
 
         if (k8sToken != null) {
             if (!k8sToken.renewable() || k8sToken.created().plus(k8sToken.leaseDuration()).isAfter(Instant.now())) {
-                requestBuilder.headers().add("X-Vault-Token", k8sToken.token());
-                return Single.just(requestBuilder);
+                requestBuilder.header(VAULT_TOKEN_HEADER_NAME, k8sToken.token());
+                return requestBuilder;
             }
         }
 
         // we need to renew the token - this may be a concurrent operation, though we do not care who wins
-        return auth.login(Login.Request.create(roleName, jwtToken))
-                .map(it -> {
-                    VaultTokenBase token = it.token();
-                    currentToken.set(token);
-                    requestBuilder.headers().add("X-Vault-Token", token.token());
-                    return requestBuilder;
-                });
+        Login.Response response = auth.login(Login.Request.create(roleName, jwtToken));
+        VaultTokenBase token = response.token();
+        currentToken.set(token);
+        requestBuilder.header(VAULT_TOKEN_HEADER_NAME, token.token());
+        return requestBuilder;
     }
 
     static class Builder extends VaultRestApi.BuilderBase<Builder> {
-        private K8sAuthRx auth;
+        private K8sAuth auth;
         private String roleName;
         private String jwtToken;
 
         private Builder() {
         }
 
-        Builder auth(K8sAuthRx auth) {
+        Builder auth(K8sAuth auth) {
             this.auth = auth;
             return this;
         }

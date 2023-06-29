@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public final class VaultOptionalResponse<R> extends ApiOptionalResponse<R> {
      * @param builder subclass of builder of vault optional response
      * @param entity entity (if mapped from HTTP entity)
      */
-    protected VaultOptionalResponse(BuilderBase<?, ?, R> builder, Optional<R> entity) {
+    VaultOptionalResponse(BuilderBase<?, ?, R> builder, Optional<R> entity) {
         super(builder, entity);
         this.errors = List.copyOf(builder.errors());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.integrations.vault.Engine;
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.Secrets;
 import io.helidon.integrations.vault.VaultOptionalResponse;
@@ -27,23 +28,15 @@ import io.helidon.integrations.vault.VaultOptionalResponse;
 /**
  * Cubbyhole engine secrets API.
  * Cubbyhole secrets are scoped to the current token and are not visible by other users.
- * This is a blocking API that blocks the current thread for each method. DO NOT USE IN REACTIVE CODE.
- *
- * @see io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeSecretsRx
  */
 public interface CubbyholeSecrets extends Secrets {
     /**
-     * Create a new instance of blocking API for Cubbyhole secrets from
-     * its reactive counterpart.
-     * In an environment supporting injection, an instance can be injected and
-     * this method should never be called.
-     *
-     * @param reactiveSecrets reactive Cubbyhole secrets
-     * @return blocking Cubbyhole secrets
+     * Cubbyhole (token scoped) secrets engine.
+     * <p>
+     * Documentation:
+     * <a href="https://www.vaultproject.io/docs/secrets/cubbyhole">https://www.vaultproject.io/docs/secrets/cubbyhole</a>
      */
-    static CubbyholeSecrets create(CubbyholeSecretsRx reactiveSecrets) {
-        return new CubbyholeSecretsImpl(reactiveSecrets);
-    }
+    Engine<CubbyholeSecrets> ENGINE = Engine.create(CubbyholeSecrets.class, "cubbyhole", "cubbyhole");
 
     /**
      * Get a Cubbyhole secret.
@@ -60,14 +53,14 @@ public interface CubbyholeSecrets extends Secrets {
     /**
      * Create a Cubbyhole secret.
      *
-     * @param path secret's path
+     * @param path   secret's path
      * @param values value of the new secret
      * @return vault response
      */
     default CreateCubbyhole.Response create(String path, Map<String, String> values) {
         return create(CreateCubbyhole.Request.builder()
-                              .path(path)
-                              .secretValues(values));
+                                             .path(path)
+                                             .secretValues(values));
     }
 
     /**
@@ -78,7 +71,7 @@ public interface CubbyholeSecrets extends Secrets {
      */
     default DeleteCubbyhole.Response delete(String path) {
         return delete(DeleteCubbyhole.Request.builder()
-                              .path(path));
+                                             .path(path));
     }
 
     /**

@@ -32,7 +32,7 @@ import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http1.Http1Config;
 import io.helidon.nima.webserver.http1.Http1ConnectionSelector;
 import io.helidon.nima.websocket.WsCloseCodes;
@@ -61,7 +61,7 @@ class WebSocketOriginTest {
     }
 
     @SetUpServer
-    static void updateServer(ServerConfig.Builder builder) {
+    static void updateServer(WebServerConfig.Builder builder) {
         builder.addConnectionSelector(Http1ConnectionSelector.builder()
                                               .config(Http1Config.create())
                                               .addUpgrader(WsUpgrader.create(WsConfig.builder()

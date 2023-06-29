@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
@@ -38,7 +39,7 @@ import io.helidon.integrations.vault.spi.VaultAuth;
 @Weight(Weighted.DEFAULT_WEIGHT + 50)
 public class K8sVaultAuth implements VaultAuth {
     private static final System.Logger LOGGER = System.getLogger(K8sVaultAuth.class.getName());
-
+    private static final Http.HeaderName VAULT_NAMESPACE_HEADER_NAME = Http.Header.create("X-Vault-Namespace");
     private final String serviceAccountToken;
     private final String tokenRole;
     private final String tokenLocation;
@@ -65,7 +66,7 @@ public class K8sVaultAuth implements VaultAuth {
     }
 
     /**
-     * A new builder for {@link io.helidon.integrations.vault.auths.k8s.K8sVaultAuth}.
+     * A new builder for {@link K8sVaultAuth}.
      *
      * @return a new builder
      */
@@ -108,15 +109,16 @@ public class K8sVaultAuth implements VaultAuth {
                 .or(() -> config.get("auth.k8s.token-role")
                         .asString()
                         .asOptional())
-                .orElseThrow(() -> new VaultApiException("Token role must be defined when using Kubernetes vault "
-                                                                 + "authentication."));
+                .orElseThrow(() -> new VaultApiException(
+                        "Token role must be defined when using Kubernetes vault authentication."));
 
         // this may be changed in the future, when running with a sidecar (there should be a way to get the address from evn)
         String address = vaultBuilder.address()
-                .orElseThrow(() -> new VaultApiException("Address is required when using k8s authentication"));
+                .orElseThrow(() -> new VaultApiException(
+                        "Address is required when using k8s authentication"));
 
+        // explicitly use default
         Vault.Builder loginVaultBuilder = Vault.builder()
-                // explicitly use default
                 .address(address)
                 .disableVaultAuthDiscovery()
                 .faultTolerance(vaultBuilder.ftHandler())
@@ -129,25 +131,28 @@ public class K8sVaultAuth implements VaultAuth {
         String methodPath = Optional.ofNullable(this.methodPath)
                 .orElseGet(() -> config.get("auth.k8s.path")
                         .asString()
-                        .orElse(K8sAuthRx.AUTH_METHOD.defaultPath()));
+                        .orElse(K8sAuth.AUTH_METHOD.defaultPath()));
 
-        LOGGER.log(Level.INFO, "Authenticated Vault " + address + "/" + methodPath + " using k8s, role \"" + roleName + "\"");
+        LOGGER.log(Level.INFO,
+                   "Authenticated Vault {0}/{1} using k8s, role \"{2}\"",
+                   address, methodPath, roleName);
+
         return Optional.of(K8sRestApi.k8sBuilder()
                                    .webClientBuilder(webclient -> {
                                        webclient.baseUri(address + "/v1");
                                        vaultBuilder.baseNamespace()
-                                               .ifPresent(ns -> webclient.addHeader("X-Vault-Namespace", ns));
+                                               .ifPresent(ns -> webclient.header(VAULT_NAMESPACE_HEADER_NAME, ns));
                                        vaultBuilder.webClientUpdater().accept(webclient);
                                    })
                                    .faultTolerance(vaultBuilder.ftHandler())
-                                   .auth(loginVault.auth(K8sAuthRx.AUTH_METHOD, methodPath))
+                                   .auth(loginVault.auth(K8sAuth.AUTH_METHOD, methodPath))
                                    .roleName(roleName)
                                    .jwtToken(jwtToken)
                                    .build());
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.integrations.vault.auths.k8s.K8sVaultAuth}.
+     * Fluent API builder for {@link K8sVaultAuth}.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, K8sVaultAuth> {
         private String serviceAccountToken;
@@ -200,7 +205,7 @@ public class K8sVaultAuth implements VaultAuth {
          * Custom method path.
          *
          * @param path path of the k8s method, defaults to
-         *          {@link io.helidon.integrations.vault.auths.k8s.K8sAuthRx#AUTH_METHOD}
+         *          {@link io.helidon.integrations.vault.auths.k8s.K8sAuth#AUTH_METHOD}
          *          default path
          * @return updated builder
          */

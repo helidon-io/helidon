@@ -34,11 +34,6 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-processor</artifactId>
-            <scope>provided</scope> <!-- force reactor to build processor 1st -->
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
@@ -104,6 +99,13 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.builder</groupId>
+                        <artifactId>helidon-builder-processor</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

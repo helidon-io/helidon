@@ -76,25 +76,19 @@ public class ParallelTest extends AbstractTest {
     @BeforeAll
     public static void setup() {
         LOGGER.addHandler(new ConsoleHandler());
-        final UncachedStringMethodExecutor executor = new UncachedStringMethodExecutor(resource::get);
+        UncachedStringMethodExecutor executor = new UncachedStringMethodExecutor(resource::get);
 
-        AbstractTest.extensions.set(new Extension[] {
+        Extension[] extensions = new Extension[]{
                 executor,
                 new ContentLengthSetter()
-        });
-
-        AbstractTest.rules.set(
-                () -> {
-                    wireMock.stubFor(
-                            WireMock.get(WireMock.urlEqualTo(PATH)).willReturn(
-                                    WireMock.ok().withTransformers(executor.getName())
-                            )
-                    );
-                });
-
-        AbstractTest.setup();
+        };
+        Rules rules = () -> wireMockServer.stubFor(
+                WireMock.get(WireMock.urlEqualTo(PATH)).willReturn(
+                        WireMock.ok().withTransformers(executor.getName())
+                )
+        );
+        setup(rules, extensions);
     }
-
 
     @Test
     public void testParallel() throws BrokenBarrierException, InterruptedException, TimeoutException {
@@ -109,8 +103,7 @@ public class ParallelTest extends AbstractTest {
                     public void run() {
                         try {
                             startBarrier.await();
-                            Response response;
-                            response = target.path(PATH).request().get();
+                            Response response = target.path(PATH).request().get();
                             assertThat(response.readEntity(String.class), is("GET"));
                             receivedCounter.incrementAndGet();
                         } catch (InterruptedException ex) {
@@ -134,9 +127,7 @@ public class ParallelTest extends AbstractTest {
                     doneLatch.await(10, TimeUnit.SECONDS),
                     is(true)
             );
-
             assertThat("Resource counter", resourceCounter.get(), is(PARALLEL_CLIENTS));
-
             assertThat("Received counter", receivedCounter.get(), is(PARALLEL_CLIENTS));
         } finally {
             executor.shutdownNow();

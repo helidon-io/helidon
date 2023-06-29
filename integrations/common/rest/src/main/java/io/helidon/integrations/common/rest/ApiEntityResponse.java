@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,16 +30,17 @@ public abstract class ApiEntityResponse extends ApiResponse {
     }
 
     /**
-     * Fluent API builder base to build subclasses of {@link io.helidon.integrations.common.rest.ApiEntityResponse}.
+     * Fluent API builder base to build subclasses of {@link ApiEntityResponse}.
      *
      * @param <B> type of the builder (subclass of this class)
      * @param <T> type of the response being built
-     * @param <X> type of the entity supported ({@link jakarta.json.JsonObject}, {@link io.helidon.common.reactive.Multi}, or
+     * @param <X> type of the entity supported ({@link jakarta.json.JsonObject}, {@link java.io.InputStream}, or
      *           {@code byte[]})
      */
     public abstract static class Builder<B extends Builder<B, T, X>, T extends ApiEntityResponse, X>
             extends ApiResponse.Builder<B, T>
             implements ResponseBuilder<B, T, X> {
+
         private X entity;
 
         /**
@@ -49,7 +50,7 @@ public abstract class ApiEntityResponse extends ApiResponse {
         }
 
         /**
-         * This method is invoked by {@link io.helidon.integrations.common.rest.RestApi} when an entity
+         * This method is invoked by {@link RestApi} when an entity
          * is received.
          *
          * @param entity entity
@@ -61,7 +62,7 @@ public abstract class ApiEntityResponse extends ApiResponse {
         }
 
         /**
-         * Accessor to entity that can be used in subclasses of {@link io.helidon.integrations.common.rest.ApiEntityResponse}
+         * Accessor to entity that can be used in subclasses of {@link ApiEntityResponse}
          *  to set up fields.
          *
          * @return received entity

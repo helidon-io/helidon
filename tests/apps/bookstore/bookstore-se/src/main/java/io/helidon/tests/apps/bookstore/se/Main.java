@@ -30,7 +30,7 @@ import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.observe.metrics.MetricsFeature;
 import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.ServerConfig;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -106,7 +106,7 @@ public final class Main {
                 .orElse(JsonLibrary.JSONP);
     }
 
-    private static void configureJsonSupport(ServerConfig.Builder wsBuilder, Config config) {
+    private static void configureJsonSupport(WebServerConfig.Builder wsBuilder, Config config) {
         JsonLibrary jsonLibrary = getJsonLibrary(config);
 
         wsBuilder.mediaContext(context -> {
@@ -119,7 +119,7 @@ public final class Main {
         });
     }
 
-    private static void configureSsl(ServerConfig.Builder wsBuilder, boolean useSsl) {
+    private static void configureSsl(WebServerConfig.Builder wsBuilder, boolean useSsl) {
         if (!useSsl) {
             return;
         }

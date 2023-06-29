@@ -62,6 +62,15 @@ public class JsonpSupport implements MediaSupport {
     }
 
     /**
+     * Creates a new named {@link JsonpSupport}.
+     *
+     * @return a new {@link JsonpSupport}
+     */
+    public static MediaSupport create() {
+        return new JsonpSupport("jsonp");
+    }
+
+    /**
      * Creates a new {@link JsonpSupport}.
      *
      * @param config must not be {@code null}

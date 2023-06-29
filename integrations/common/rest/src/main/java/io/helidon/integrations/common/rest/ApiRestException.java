@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.common.rest;
 
+import java.util.Formatter;
 import java.util.Optional;
 
 import io.helidon.common.http.Headers;
@@ -69,6 +70,7 @@ public abstract class ApiRestException extends ApiException {
 
     /**
      * API specific error message if such is available.
+     *
      * @return api specific error, probably obtained from a header or entity
      */
     public Optional<String> apiSpecificError() {
@@ -105,6 +107,18 @@ public abstract class ApiRestException extends ApiException {
          */
         public B message(String message) {
             this.message = message;
+            return me();
+        }
+
+        /**
+         * Message configured by {@link io.helidon.integrations.common.rest.RestApi}.
+         *
+         * @param format a {@link Formatter} string
+         * @param args   format string arguments
+         * @return updated builder
+         */
+        public B message(String format, Object... args) {
+            this.message = String.format(format, args);
             return me();
         }
 

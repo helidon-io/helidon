@@ -304,6 +304,7 @@ class ClientRequestImplTest {
         try (Http1ClientResponse response = injectedHttp1client.put("/redirect")
                 .submit("Test entity")) {
             assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.lastEndpointUri().getPath(), is("/afterRedirect"));
             assertThat(response.as(String.class), is(EXPECTED_GET_AFTER_REDIRECT_STRING));
         }
     }
@@ -318,6 +319,7 @@ class ClientRequestImplTest {
 
         try (Http1ClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
                 .submit("Test entity")) {
+            assertThat(response.lastEndpointUri().getPath(), is("/afterRedirect"));
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
         }
     }
