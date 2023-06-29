@@ -19,9 +19,11 @@ package io.helidon.jersey.connector;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
@@ -29,6 +31,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Version;
 import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.config.Config;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.webclient.WebClient;
@@ -48,6 +51,8 @@ import org.glassfish.jersey.client.spi.Connector;
 import org.glassfish.jersey.internal.util.PropertiesHelper;
 
 class HelidonConnector implements Connector {
+    static final Logger LOGGER = Logger.getLogger(HelidonConnector.class.getName());
+
     private static final String HELIDON_VERSION = "Helidon/" + Version.VERSION + " (java "
             + PropertiesHelper.getSystemProperty("java.runtime.version") + ")";
 
@@ -62,6 +67,7 @@ class HelidonConnector implements Connector {
         this.client = client;
         Map<String, Object> properties = config.getProperties();
         httpClient = WebClient.builder(Http1.PROTOCOL)
+                .config(helidonConfig(config).orElse(Config.empty()))
                 .connectTimeout(Duration.ofMillis(
                         ClientProperties.getValue(properties, ClientProperties.CONNECT_TIMEOUT, 10000)))
                 .readTimeout(Duration.ofMillis(
@@ -216,4 +222,24 @@ class HelidonConnector implements Connector {
     @Override
     public void close() {
     }
+
+    /**
+     * Returns the Helidon Connector configuration, if available.
+     *
+     * @param configuration from Jakarta REST
+     * @return an optional config
+     */
+    static Optional<Config> helidonConfig(Configuration configuration) {
+        Object helidonConfig = configuration.getProperty(HelidonProperties.CONFIG);
+        if (helidonConfig != null) {
+            if (!(helidonConfig instanceof Config)) {
+                LOGGER.warning(String.format("Ignoring Helidon Connector config at '%s'",
+                        HelidonProperties.CONFIG));
+            } else {
+                return Optional.of((Config) helidonConfig);
+            }
+        }
+        return Optional.empty();
+    }
+
 }

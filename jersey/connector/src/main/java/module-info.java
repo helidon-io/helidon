@@ -27,6 +27,7 @@ module io.helidon.jersey.connector {
     requires jersey.client;
     requires jersey.common;
     requires io.helidon.nima.webclient;
+    requires io.helidon.config;
 
     exports io.helidon.jersey.connector;
     provides org.glassfish.jersey.client.spi.ConnectorProvider with HelidonConnectorProvider;
