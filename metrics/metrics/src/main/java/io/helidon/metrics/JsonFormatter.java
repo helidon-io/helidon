@@ -22,8 +22,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.DoubleAccumulator;
@@ -78,7 +80,7 @@ class JsonFormatter {
      *
      * @return meter data
      */
-    public JsonObject data(boolean isByScopeRequested) {
+    public Optional<JsonObject> data(boolean isByScopeRequested) {
 
         boolean organizeByScope = shouldOrganizeByScope(isByScopeRequested);
 
@@ -115,6 +117,7 @@ class JsonFormatter {
             }
          */
 
+        AtomicBoolean isAnyOutput = new AtomicBoolean(false);
         RegistryFactory registryFactory = RegistryFactory.getInstance();
         registryFactory.scopes().forEach(scope -> {
             String matchingScope = matchingScope(scope);
@@ -139,6 +142,7 @@ class JsonFormatter {
                                     .computeIfAbsent(metricOutputKey(adjustedMetric),
                                                      k -> MetricOutputBuilder.create(adjustedMetric));
                             metricOutputBuilder.add(adjustedMetric);
+                            isAnyOutput.set(true);
 
                         }
                     }
@@ -156,7 +160,8 @@ class JsonFormatter {
         } else {
             meterOutputBuildersIgnoringScope.forEach((key, outputBuilder) -> outputBuilder.apply(top));
         }
-        return top.build();
+
+        return isAnyOutput.get() ? Optional.of(top.build()) : Optional.empty();
     }
 
     private static Tag[] tags(Map<String, String> tagMap, String scope) {

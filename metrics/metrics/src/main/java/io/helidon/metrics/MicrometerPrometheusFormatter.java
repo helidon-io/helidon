@@ -15,18 +15,20 @@
  */
 package io.helidon.metrics;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.MetricsProgrammaticSettings;
+import io.helidon.metrics.api.Registry;
+import io.helidon.metrics.api.RegistryFactory;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
@@ -68,14 +70,12 @@ public class MicrometerPrometheusFormatter {
     private final Iterable<String> scopeSelection;
     private final Iterable<String> meterSelection;
     private final MediaType resultMediaType;
-    private final Map<String, Function<String, Boolean>> metricEnabledChecks;
 
     private MicrometerPrometheusFormatter(Builder builder) {
         scopeTagName = builder.scopeTagName;
         scopeSelection = builder.scopeSelection;
         meterSelection = builder.meterNameSelection;
         resultMediaType = builder.resultMediaType;
-        metricEnabledChecks = prepareMetricEnabledChecks();
     }
 
     /**
@@ -84,7 +84,7 @@ public class MicrometerPrometheusFormatter {
      *
      * @return filtered Prometheus output
      */
-    public String filteredOutput() {
+    public Optional<String> filteredOutput() {
         return formattedOutput(prometheusMeterRegistry(),
                                resultMediaType,
                                scopeTagName,
@@ -102,16 +102,89 @@ public class MicrometerPrometheusFormatter {
      * @param meterNameSelection meter name to select; null if no meter name selection required
      * @return filtered output
      */
-    String formattedOutput(PrometheusMeterRegistry prometheusMeterRegistry,
+    Optional<String> formattedOutput(PrometheusMeterRegistry prometheusMeterRegistry,
                                   MediaType resultMediaType,
                                   String scopeTagName,
                                   Iterable<String> scopeSelection,
                                   Iterable<String> meterNameSelection) {
+        Set<String> meterNamesOfInterest = meterNamesOfInterest(prometheusMeterRegistry,
+                                                                          scopeSelection,
+                                                                          meterNameSelection);
+        if (meterNamesOfInterest.isEmpty()) {
+            return Optional.empty();
+        }
+
         String rawPrometheusOutput = prometheusMeterRegistry
                 .scrape(MicrometerPrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(resultMediaType),
-                        meterNamesOfInterest(prometheusMeterRegistry, scopeSelection, meterNameSelection));
+                        meterNamesOfInterest);
 
-        return filter(rawPrometheusOutput, scopeTagName, scopeSelection);
+        return rawPrometheusOutput.isBlank() ? Optional.empty() : Optional.of(rawPrometheusOutput);
+//        return filter(rawPrometheusOutput, scopeTagName, scopeSelection);
+    }
+
+    /**
+     * Prepares a set containing the names of meters from the specified Prometheus meter registry which match
+     * the specified scope and meter name selections.
+     * <p>
+     *     For meters with multiple values, the Prometheus essentially creates and actually displays in its output
+     *     additional or "child" meters. A child meter's name is the parent's name plus a suffix consisting
+     *     of the child meter's units (if any) plus the child name. For example, the timer {@code myDelay}  has child meters
+     *     {@code myDelay_seconds_count}, {@code myDelay_seconds_sum}, and {@code myDelay_seconds_max}. (The output contains
+     *     repetitions of the parent meter's name for each quantile, but that does not affect the meter names we need to ask
+     *     the Prometheus meter registry to retrieve for us when we scrape.)
+     * </p>
+     * <p>
+     *     We interpret any name selection passed to this method as specifying a parent name. We can ask the Prometheus meter
+     *     registry to select specific meters by meter name when we scrape, but we need to pass it an expanded name selection that
+     *     includes the relevant child meter names as well as the parent name. One way to choose those is first to collect the
+     *     names from the Prometheus meter registry itself and derive the names to have the meter registry select by from those
+     *     matching meters, their units, etc.
+     * </p>
+     *
+     * @param prometheusMeterRegistry Prometheus meter registry to query
+     * @param scopeSelection scope names to select
+     * @param meterNameSelection meter names to select
+     * @return set of matching meter names (with units and suffixes as needed) to match the names as stored in the meter registry
+     */
+    Set<String> meterNamesOfInterest(PrometheusMeterRegistry prometheusMeterRegistry,
+                                               Iterable<String> scopeSelection,
+                                               Iterable<String> meterNameSelection) {
+
+        Set<String> result = new HashSet<>();
+
+        for (String scopeName : scopeNamesToUse(scopeSelection)) {
+            Registry registry = RegistryFactory.getInstance().getRegistry(scopeName);
+
+            for (String metricName : metricNamesToUse(registry, meterNameSelection)) {
+                if (!registry.enabled(metricName)) {
+                    continue;
+                }
+
+                Set<String> allUnitsForMetricName = new HashSet<>();
+                allUnitsForMetricName.add("");
+                Set<String> allSuffixesForMetricName = new HashSet<>();
+                allSuffixesForMetricName.add("");
+
+                prometheusMeterRegistry.find(metricName)
+                        .meters()
+                        .forEach(meter -> {
+                            Meter.Id meterId = meter.getId();
+                            String meterScope = meterId.getTag(MetricsProgrammaticSettings.instance().scopeTagName());
+                            if (Objects.equals(meterScope, scopeName)) {
+                                allUnitsForMetricName.add("_" + meterId.getBaseUnit());
+                                allSuffixesForMetricName.addAll(meterNameSuffixes(meterId.getType()));
+                            }
+                        });
+
+                String normalizedMeterName = normalizeMeterName(metricName);
+
+                allUnitsForMetricName
+                        .forEach(units -> allSuffixesForMetricName
+                                .forEach(suffix -> result.add(normalizedMeterName + units + suffix)));
+
+            }
+        }
+        return result;
     }
 
     /**
@@ -183,16 +256,6 @@ public class MicrometerPrometheusFormatter {
                 .replaceFirst("# EOF\r?\n?", "");
     }
 
-    Map<String, Function<String, Boolean>> prepareMetricEnabledChecks() {
-
-        io.helidon.metrics.api.RegistryFactory factory = io.helidon.metrics.api.RegistryFactory.getInstance();
-        Map<String, Function<String, Boolean>> result = new HashMap<>();
-        io.helidon.metrics.api.RegistryFactory.getInstance().scopes().forEach(scopeName ->
-                                 result.put(scopeName, metricName -> factory.getRegistry(scopeName).enabled(metricName)));
-        return result;
-    }
-
-
     private static PrometheusMeterRegistry prometheusMeterRegistry() {
         return Metrics.globalRegistry.getRegistries().stream()
                 .filter(PrometheusMeterRegistry.class::isInstance)
@@ -213,80 +276,16 @@ public class MicrometerPrometheusFormatter {
         return result.toString();
     }
 
-    /**
-     * Prepares a set containing the names of meters from the specified Prometheus meter registry which match
-     * the specified meter name selection.
-     * <p>
-     *     For meters with multiple values, the Prometheus essentially creates and actually displays in its output
-     *     additional or "child" meters. A child meter's name is the parent's name plus a suffixes consisting
-     *     of the child meter's units (if any) plus the child name. For example, the timer {@code myDelay}  has child meters
-     *     {@code myDelay_seconds_count}, {@code myDelay_seconds_sum}, and {@code myDelay_seconds_max}. (The output contains
-     *     repetitions of the parent meter's name for each quantile, but that does not affect the meter names we need to ask
-     *     the Prometheus meter registry to retrieve for us when we scrape.)
-     * </p>
-     * <p>
-     *     We interpret any name selection passed to this method as specifying a parent name. We can ask the Prometheus meter
-     *     registry to select specific meters by name when we scrape, but we need to pass it an expanded name selection that
-     *     includes the relevant child meter names as well as the parent name. One way to choose those is
-     *     first to collect the names from the Prometheus meter registry itself and derive the names to have the meter registry
-     *     select by from those matching meters, their units, etc.
-     * </p>
-     *
-     * @param prometheusMeterRegistry Prometheus meter registry to query
-     * @param scopeSelection scope names to select
-     * @param meterNameSelection meter names to select
-     * @return set of matching meter names, augmented with units where needed to match the names as stored in the meter registry
-     */
-    Set<String> meterNamesOfInterest(PrometheusMeterRegistry prometheusMeterRegistry,
-                                            Iterable<String> scopeSelection,
-                                            Iterable<String> meterNameSelection) {
+    private static Iterable<String> scopeNamesToUse(Iterable<String> scopeSelection) {
+        return scopeSelection != null && scopeSelection.iterator().hasNext()
+                ? scopeSelection
+                : RegistryFactory.getInstance().scopes();
+    }
 
-        Set<String> result = new HashSet<>();
-
-        // Either the scopes specifically selected by the caller or all scopes.
-        Set<String> scopesOfInterest = new HashSet<>();
-        (
-                scopeSelection == null || !scopeSelection.iterator().hasNext()
-                        ? io.helidon.metrics.api.RegistryFactory.getInstance().scopes()
-                        : scopeSelection)
-                .forEach(scopesOfInterest::add);
-
-        Set<String> meterNamesOfInterest = new HashSet<>();
-        (meterNameSelection == null || !meterNameSelection.iterator().hasNext()
-            ? allNames(prometheusMeterRegistry)
-            : meterNameSelection).forEach(meterNamesOfInterest::add);
-
-        for (String meterNameOfInterest : meterNamesOfInterest) {
-
-            Set<String> allUnitsForMeterName = new HashSet<>();
-
-            Set<String> allSuffixesForMeterName = new HashSet<>();
-
-            prometheusMeterRegistry.find(meterNameOfInterest)
-                    .meters()
-                    .forEach(meter -> {
-                        Meter.Id meterId = meter.getId();
-                        String meterScope = meterId.getTag(MetricsProgrammaticSettings.instance().scopeTagName());
-                        if (scopesOfInterest.contains(meterScope)
-                                && metricEnabledChecks.getOrDefault(meterScope, s -> true).apply(meterNameOfInterest)) {
-                            if (allUnitsForMeterName.isEmpty()) {
-                                allUnitsForMeterName.add("");
-                            }
-                            allUnitsForMeterName.add("_" + meterId.getBaseUnit());
-                            if (allSuffixesForMeterName.isEmpty()) {
-                                allSuffixesForMeterName.add("");
-                            }
-                            allSuffixesForMeterName.addAll(meterNameSuffixes(meterId.getType()));
-                        }
-                    });
-
-            String normalizedMeterName = normalizeMeterName(meterNameOfInterest);
-
-            allUnitsForMeterName.forEach(units -> allSuffixesForMeterName.forEach(
-                    suffix -> result.add(normalizedMeterName + units + suffix)));
-        }
-
-        return result;
+    private static Iterable<String> metricNamesToUse(Registry registry, Iterable<String> meterNameSelection) {
+        return meterNameSelection != null && meterNameSelection.iterator().hasNext()
+                ? meterNameSelection
+                : registry.getNames();
     }
 
     /**
@@ -323,12 +322,6 @@ public class MicrometerPrometheusFormatter {
         // Remove non-identifier characters.
         result = result.replaceAll("[^A-Za-z0-9_]", "");
 
-        return result;
-    }
-
-    private static Iterable<String> allNames(PrometheusMeterRegistry prometheusMeterRegistry) {
-        Set<String> result = new HashSet<>();
-        prometheusMeterRegistry.forEachMeter(meter -> result.add(meter.getId().getName()));
         return result;
     }
 

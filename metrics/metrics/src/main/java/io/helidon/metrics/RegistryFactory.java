@@ -18,6 +18,7 @@ package io.helidon.metrics;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -177,9 +178,9 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     }
 
     @Override
-    public Object scrape(MediaType mediaType,
-                         Iterable<String> scopeSelection,
-                         Iterable<String> meterNameSelection) {
+    public Optional<?> scrape(MediaType mediaType,
+                                   Iterable<String> scopeSelection,
+                                   Iterable<String> meterNameSelection) {
         if (mediaType.equals(MediaTypes.TEXT_PLAIN) || mediaType.equals(MediaTypes.APPLICATION_OPENMETRICS_TEXT)) {
             var formatter =
                     MicrometerPrometheusFormatter
@@ -190,14 +191,14 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
                             .meterNameSelection(meterNameSelection)
                             .build();
 
-            return formatter.filteredOutput();
+            return Optional.ofNullable(formatter.filteredOutput());
         } else if (mediaType.equals(MediaTypes.APPLICATION_JSON)) {
             var formatter = JsonFormatter.builder()
                     .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
                     .scopeSelection(scopeSelection)
                     .meterNameSelection(meterNameSelection)
                     .build();
-            return formatter.data(true); // temporarily for backward compatibility
+            return formatter.data(true);
         }
         throw new UnsupportedOperationException();
     }

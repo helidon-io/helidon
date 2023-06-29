@@ -16,6 +16,7 @@
 
 package io.helidon.metrics.api;
 
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.media.type.MediaType;
@@ -157,11 +158,11 @@ public interface RegistryFactory {
      * @param mediaType {@link io.helidon.common.media.type.MediaType} to control the output format
      * @param scopeSelection {@link java.lang.Iterable} of individual scope names to include in the output
      * @param meterNameSelection {@link java.lang.Iterable} of individual meter names to include in the output
-     * @return {@link String} meter exposition as governed by the parameters
+     * @return {@link String} meter exposition as governed by the parameters; {@code empty} if no metrics matched the selections
      * @throws java.lang.IllegalArgumentException if the implementation cannot handle the requested media type
      * @throws java.lang.UnsupportedOperationException if the implementation cannot expose its metrics
      */
-    Object scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection);
+    Optional<?> scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection);
 
     /**
      * Returns the current scopes represented by registries created by the factory.

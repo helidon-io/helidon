@@ -15,6 +15,9 @@
  */
 package io.helidon.metrics;
 
+import java.util.Optional;
+
+import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.MetricsProgrammaticSettings;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
@@ -47,13 +50,14 @@ class TestJsonFormatter {
         Counter counter2 = myRegistry.counter("jsonCounter2", new Tag("t1", "1"));
         counter2.inc(3L);
 
-        JsonObject result = formatter.data(false);
+        Optional<JsonObject> result = formatter.data(false);
 
+        assertThat("Result", result, OptionalMatcher.optionalPresent());
         assertThat("Counter 1",
-                   result.getJsonNumber("jsonCounter1").intValue(),
+                   result.get().getJsonNumber("jsonCounter1").intValue(),
                    is(2));
         assertThat("Counter 2",
-                   result.getJsonNumber("jsonCounter2;t1=1").intValue(),
+                   result.get().getJsonNumber("jsonCounter2;t1=1").intValue(),
                    is(3));
 
 

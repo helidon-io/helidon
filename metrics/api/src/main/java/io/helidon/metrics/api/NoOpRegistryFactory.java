@@ -18,6 +18,7 @@ package io.helidon.metrics.api;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
 
@@ -57,9 +58,9 @@ class NoOpRegistryFactory implements RegistryFactory {
     }
 
     @Override
-    public Object scrape(MediaType mediaType,
-                         Iterable<String> scopeSelection,
-                         Iterable<String> meterNameSelection) {
+    public Optional<?> scrape(MediaType mediaType,
+                                   Iterable<String> scopeSelection,
+                                   Iterable<String> meterNameSelection) {
         throw new UnsupportedOperationException("NoOp registry does not support output");
     }
 

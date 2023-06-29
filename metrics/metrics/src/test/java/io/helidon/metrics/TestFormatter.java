@@ -15,12 +15,13 @@
  */
 package io.helidon.metrics;
 
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.MetricsProgrammaticSettings;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.SystemTagsManager;
@@ -34,6 +35,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyString;
+import static org.hamcrest.Matchers.not;
 
 public class TestFormatter {
 
@@ -42,12 +45,12 @@ public class TestFormatter {
 
     private static final String COUNTER_OUTPUT_PATTERN = ".*?^%s_total\\{.*%s=\"%s\".*?}\\s+(\\S).*?";
 
-    private static RegistryFactory registryFactory;
+    private static io.helidon.metrics.api.RegistryFactory registryFactory;
 
     @BeforeAll
     static void init() {
         MetricsSettings metricsSettings = MetricsSettings.create();
-        registryFactory = RegistryFactory.create(metricsSettings);
+        registryFactory = io.helidon.metrics.api.RegistryFactory.getInstance(metricsSettings);
         SystemTagsManager.create(metricsSettings);
     }
 
@@ -68,13 +71,14 @@ public class TestFormatter {
                 .orElseThrow(() -> new RuntimeException("Cannot find Prometheus registry"));
 
         MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder().build();
-        String promFormat = formatter.filteredOutput();
+        Optional<String> promFormat = formatter.filteredOutput();
+        assertThat("Prometheus output", promFormat, OptionalMatcher.optionalValue(not(isEmptyString())));
 
         // Want to match: any uninteresting lines, start-of-line, the meter name, the tags (capturing the scope tag value),
         // capture the meter value, further uninteresting text.
         Pattern expectedNameAndTagAndValue = counterPattern(counterName, SCOPE);
 
-        Matcher matcher = expectedNameAndTagAndValue.matcher(promFormat);
+        Matcher matcher = expectedNameAndTagAndValue.matcher(promFormat.get());
         assertThat("Pattern match check: output " + System.lineSeparator() + promFormat + System.lineSeparator(),
                    matcher.matches(),
                    is(true));
@@ -94,12 +98,13 @@ public class TestFormatter {
                 .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
                 .scopeSelection(Set.of(SCOPE))
                 .build();
-        String promFormat = formatter.filteredOutput();
+        Optional<String> promFormat = formatter.filteredOutput();
+        assertThat("Prometheus output", promFormat, OptionalMatcher.optionalValue(not(isEmptyString())));
 
         // Want to match: any uninteresting lines, start-of-line, the meter name, the tags (capturing the scope tag value),
         // capture the meter value, further uninteresting text.
         Pattern expectedNameAndTagAndValue = counterPattern(counterName, SCOPE);
-        Matcher matcher = expectedNameAndTagAndValue.matcher(promFormat);
+        Matcher matcher = expectedNameAndTagAndValue.matcher(promFormat.get());
         assertThat("Pattern match check: output " + System.lineSeparator() + promFormat + System.lineSeparator(),
                    matcher.matches(),
                    is(true));
@@ -111,7 +116,7 @@ public class TestFormatter {
         // Make sure the "other" counter is not also present in the output; it should have been suppressed
         // because of the scope filtering we requested.
         Pattern unexpectedNameAndTagAndValue = counterPattern(counterName, OTHER_SCOPE);
-        matcher = unexpectedNameAndTagAndValue.matcher(promFormat);
+        matcher = unexpectedNameAndTagAndValue.matcher(promFormat.get());
         assertThat("Pattern match check: output " + System.lineSeparator() + promFormat + System.lineSeparator(),
                    matcher.matches(),
                    is(false));
@@ -130,12 +135,13 @@ public class TestFormatter {
                 .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
                 .scopeSelection(Set.of(SCOPE, OTHER_SCOPE))
                 .build();
-        String promFormat = formatter.filteredOutput();
+        Optional<String> promFormat = formatter.filteredOutput();
+        assertThat("Prometheus output", promFormat, OptionalMatcher.optionalValue(not(isEmptyString())));
 
         // Want to match: any uninteresting lines, start-of-line, the meter name, the tags (capturing the scope tag value),
         // capture the meter value, further uninteresting text.
         Pattern expectedNameAndTagAndValue = counterPattern(counterName, SCOPE);
-        Matcher matcher = expectedNameAndTagAndValue.matcher(promFormat);
+        Matcher matcher = expectedNameAndTagAndValue.matcher(promFormat.get());
         assertThat("Pattern match check: output " + System.lineSeparator() + promFormat + System.lineSeparator(),
                    matcher.matches(),
                    is(true));
@@ -147,7 +153,7 @@ public class TestFormatter {
         // Make sure the "other" counter is also present in the output; it should have been included
         // because of the multiple scope filtering we requested.
         Pattern otherNameAndTagAndValue = counterPattern(otherCounterName, OTHER_SCOPE);
-        matcher = otherNameAndTagAndValue.matcher(promFormat);
+        matcher = otherNameAndTagAndValue.matcher(promFormat.get());
         assertThat("Pattern match check: output " + System.lineSeparator() + promFormat + System.lineSeparator(),
                    matcher.matches(),
                    is(true));
@@ -166,12 +172,13 @@ public class TestFormatter {
                 .resultMediaType(MediaTypes.TEXT_PLAIN)
                 .meterNameSelection(Set.of(counterName))
                 .build();
-        String promFormat = formatter.filteredOutput();
+        Optional<String> promFormat = formatter.filteredOutput();
+        assertThat("Prometheus output", promFormat, OptionalMatcher.optionalValue(not(isEmptyString())));
 
         // Want to match: any uninteresting lines, start-of-line, the meter name, the tags (capturing the scope tag value),
         // capture the meter value, further uninteresting text.
         Pattern expectedNameAndTagAndValue = counterPattern(counterName, SCOPE);
-        Matcher matcher = expectedNameAndTagAndValue.matcher(promFormat);
+        Matcher matcher = expectedNameAndTagAndValue.matcher(promFormat.get());
         assertThat("Pattern match check: output " + System.lineSeparator() + promFormat + System.lineSeparator(),
                    matcher.matches(),
                    is(true));
@@ -185,7 +192,7 @@ public class TestFormatter {
                                                                     + SCOPE
                                                                     + "\".*?}\\s+(\\S+).*?",
                                                             Pattern.MULTILINE + Pattern.DOTALL);
-        matcher = unexpectedNameAndTagValue.matcher(promFormat);
+        matcher = unexpectedNameAndTagValue.matcher(promFormat.get());
         assertThat("Pattern match check: output " + System.lineSeparator() + promFormat + System.lineSeparator(),
                    matcher.matches(),
                    is(false));

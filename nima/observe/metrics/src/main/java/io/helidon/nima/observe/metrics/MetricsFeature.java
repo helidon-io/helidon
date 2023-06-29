@@ -198,12 +198,17 @@ public class MetricsFeature extends HelidonFeatureSupport {
         }
 
         try {
-            Object output = RegistryFactory.getInstance().scrape(mediaType,
-                                                                 scopeSelection,
-                                                                 nameSelection);
-            res.status(Http.Status.OK_200)
-                    .headers().contentType(mediaType);
-            res.send(output);
+            Optional<?> output = RegistryFactory.getInstance().scrape(mediaType,
+                                                                           scopeSelection,
+                                                                           nameSelection);
+            if (output.isPresent()) {
+                res.status(Http.Status.OK_200)
+                        .headers().contentType(mediaType);
+                res.send(output.get());
+            } else {
+                res.status(Http.Status.NOT_FOUND_404);
+                res.send();
+            }
         } catch (UnsupportedOperationException ex) {
             // The registry factory does not support that media type.
             res.status(Http.Status.NOT_ACCEPTABLE_406);
