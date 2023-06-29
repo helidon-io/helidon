@@ -76,6 +76,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
     MAVEN_ARGS="${MAVEN_ARGS} -B ${MAVEN_HTTP_ARGS}"
 
     if [ -n "${JENKINS_HOME}" ] ; then
+      export JAVA_HOME="/tools/jdk17"
       export PATH="/tools/apache-maven-3.8.6/bin:${JAVA_HOME}/bin:/tools/node-v12/bin:${PATH}"
       if [ -n "${GITHUB_SSH_KEY}" ] ; then
           export GIT_SSH_COMMAND="ssh -i ${GITHUB_SSH_KEY}"
