@@ -66,6 +66,11 @@
             <artifactId>handlebars</artifactId>
         </dependency>
         <dependency>
+            <!-- required as handlebars use slf4j -->
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
         </dependency>
